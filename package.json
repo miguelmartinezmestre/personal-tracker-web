@@ -1,0 +1,25 @@
+{
+    "name": "my-fullstack-app",
+    "version": "0.0.0",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "turbo run build",
+        "dev": "turbo run dev",
+        "lint": "turbo run lint",
+        "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+        "clean": "rm -rf apps/frontend/node_modules apps/backend/node_modules packages/data-access/node_modules node_modules/ .turbo"
+    },
+    "devDependencies": {
+        "eslint": "^8.48.0",
+        "prettier": "^3.0.3",
+        "turbo": "latest"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "packageManager": "npm@10.8.2"
+}

@@ -1,0 +1,26 @@
+services:
+    db:
+        image: mysql:8.0
+        container_name: mysql_db
+        environment:
+            MYSQL_ROOT_PASSWORD: X?SLlRQle_2^D9)Z$T52
+        ports:
+            - '3306:3306'
+        volumes:
+            - ./mysql-data:/var/lib/mysql
+        networks:
+            - mysql_network
+    mailhog:
+        image: mailhog/mailhog
+        container_name: mailhog
+        ports:
+            - '1025:1025'
+            - '8025:8025'
+
+volumes:
+    mysql-data:
+        driver: local
+
+networks:
+    mysql_network:
+        driver: bridge
