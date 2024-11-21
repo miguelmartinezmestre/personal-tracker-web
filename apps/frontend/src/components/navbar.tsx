@@ -1,25 +1,20 @@
-export default function Navbar() {
+import { Link } from "@tanstack/react-router";
+
+export default function NavBar() {
+
     const links: { name: string, href: string }[] = [
-        { name: 'Inicio', href: '/' },
-        { name: 'Acerca', href: '/about' },
+        { name: 'Registrase', href: '/register' },
         { name: 'Iniciar sesión', href: '/login' },
-        { name: 'Registrase', href: '/register' }
+        { name: 'Mas Información', href: '/about' },
     ];
 
     return (
-        <nav className="bg-blue-600 text-white shadow">
-            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                <div className="font-bold text-xl">MiSitio</div>
-                <ul className="flex space-x-4">
-                    {links.map((link) => (
-                        <li key={link.name}>
-                            <a href={link.href} className="hover:underline">
-                                {link.name}
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </nav>
-    );
-};
+        <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0">
+            {links.map((link) => (
+                <Link key={link.name} href={link.href} className="text-gray-600 hover:text-gray-800">
+                    {link.name}
+                </Link>
+            ))}
+        </div>
+    )
+}
