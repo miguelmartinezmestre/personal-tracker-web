@@ -3,7 +3,7 @@ services:
         image: mysql:8.0
         container_name: mysql_db
         environment:
-            MYSQL_ROOT_PASSWORD: X?SLlRQle_2^D9)Z$T52
+            MYSQL_ROOT_PASSWORD: passwordmetricas1234
         ports:
             - '3306:3306'
         volumes:
