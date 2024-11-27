@@ -1,12 +1,16 @@
 import { Link } from "@tanstack/react-router";
 
-export default function NavBar() {
+type LinkItem = { name: string, href: string };
 
-    const links: { name: string, href: string }[] = [
-        { name: 'Registrase', href: '/register' },
-        { name: 'Iniciar sesión', href: '/login' },
-        { name: 'Mas Información', href: '/about' },
-    ];
+type LinkArray = LinkItem[];
+
+const links: LinkArray = [
+    { name: 'Registrase', href: '/register' },
+    { name: 'Iniciar sesión', href: '/login' },
+    { name: 'Mas Información', href: '/about' },
+];
+
+export default function NavBar() {
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0">
