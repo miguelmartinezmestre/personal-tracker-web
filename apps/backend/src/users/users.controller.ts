@@ -1,19 +1,66 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  NotFoundException,
+  Res,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
+import { Request, Response } from 'express';
+import { CookieGuard } from 'src/session.guard';
+import { PrismaService } from 'src/prisma.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private prisma: PrismaService,
+  ) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('/register')
+  @HttpCode(200)
+  register(
+    @Body() createUserDto: CreateUserDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.usersService.create(createUserDto, response);
   }
 
+  @Post('/login')
+  @HttpCode(200)
+  login(
+    @Body() loginUserDto: LoginUserDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.usersService.login(loginUserDto, response);
+  }
+
+  @Get('/auth')
+  @HttpCode(200)
+  auth(@Req() request: Request) {
+    return this.usersService.auth(request);
+  }
+
+  // @Post()
+  // create(@Body() createUserDto: CreateUserDto) {
+  //   return this.usersService.create(createUserDto);
+  // }
+
   @Get()
-  findAll() {
+  @UseGuards(CookieGuard)
+  findAll(@Req() request: Request) {
+    //@ts-ignore
+    console.log(request.user);
     return this.usersService.findAll();
   }
 
