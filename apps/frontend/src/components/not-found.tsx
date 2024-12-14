@@ -15,7 +15,7 @@ export default function NotFound() {
                         <Home className="mr-2 h-4 w-4" /> Ir al inicio
                     </button>
                 </Link>
-                <Link href="/search">
+                {/* <Link href="/search">
                     <button className="w-full md:w-auto">
                         <Search className="mr-2 h-4 w-4" /> Buscar contenido
                     </button>
@@ -24,11 +24,11 @@ export default function NotFound() {
                     <button className="w-full md:w-auto">
                         <TrendingUp className="mr-2 h-4 w-4" /> Ver tendencias
                     </button>
-                </Link>
+                </Link> */}
             </div>
-            <p className="mt-8 text-muted-foreground">
+            {/* <p className="mt-8 text-muted-foreground">
                 Si crees que esto es un error, por favor <Link href="/contact" className="text-primary hover:underline">contáctanos</Link>.
-            </p>
+            </p> */}
         </div>
     )
 }
