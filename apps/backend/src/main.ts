@@ -1,16 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import *  as cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser';
+import { ConsoleLogger } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(
+    AppModule,
+    // {
+    //   logger: new ConsoleLogger({
+    //     json: true,
+    //   }),
+    // }
+  );
 
-  app.use(cookieParser())
+  app.use(cookieParser());
 
   const config = new DocumentBuilder()
     .setTitle('Cats example')
@@ -22,7 +26,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, documentFactory);
 
   app.enableCors({
-    origin: 'http://localhost:5173', // La URL de tu aplicación React
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });

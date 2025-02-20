@@ -1,7 +1,9 @@
+import { baseUrl } from '../main';
+
 export type User = { username: string; email: string; password: string };
 
 export async function registerUser(user: User) {
-    const response = await fetch('http://localhost:3000/users/register', {
+    const response = await fetch(baseUrl + '/users/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -12,7 +14,7 @@ export async function registerUser(user: User) {
     const body = await response.json();
 
     if (!response.ok) {
-        console.log(body)
+        // console.log(body)
         throw new Error(body.message);
     }
 

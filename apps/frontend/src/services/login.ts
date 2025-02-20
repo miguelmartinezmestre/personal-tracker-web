@@ -1,8 +1,11 @@
+import { baseUrl } from '../main';
+
 export type LoginUser = { email: string; password: string };
 
 export async function loginUser(user: LoginUser) {
-    const response = await fetch('http://localhost:3000/users/login', {
+    const response = await fetch(baseUrl + '/users/login', {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -12,9 +15,9 @@ export async function loginUser(user: LoginUser) {
     const body = await response.json();
 
     if (!response.ok) {
-        console.log(body);
+        // console.log(body);
         throw new Error(body.message);
     }
 
-    return body;
+    return response.status === 200;
 }

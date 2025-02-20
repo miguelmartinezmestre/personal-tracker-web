@@ -1,11 +1,10 @@
-import { X, Menu } from "lucide-react";
-import NavBar from "./navbar";
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { X, Menu } from 'lucide-react';
+import NavBar from './navbar';
+import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 
 export default function Header() {
-
-    const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
         <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -19,7 +18,7 @@ export default function Header() {
                     <button
                         className="lg:hidden"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                        aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
                     >
                         {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                     </button>
@@ -34,5 +33,5 @@ export default function Header() {
                 )}
             </nav>
         </header>
-    )
+    );
 }
