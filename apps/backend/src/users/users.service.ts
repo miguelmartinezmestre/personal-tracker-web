@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from '../prisma.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { Response, Request } from 'express';
 import { createHash, randomBytes } from 'crypto';
@@ -11,7 +11,9 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async login(loginUserDto: LoginUserDto, response: Response) {
-    const user = await this.prisma.user.findFirst({
+    // console.log(loginUserDto);
+
+    const user = await this.prisma.user.findUnique({
       where: {
         email: loginUserDto.email,
       },
@@ -21,7 +23,7 @@ export class UsersService {
       .update(loginUserDto.password)
       .digest('hex');
 
-    console.log(hashedPassword, user.password);
+    // console.log(hashedPassword, user);
 
     if (user.password !== hashedPassword) {
       throw new UnauthorizedException('Incorrect credentials');
@@ -37,13 +39,26 @@ export class UsersService {
       },
     });
 
-    response.cookie('session_id', sessionId);
-    console.log('cookie', sessionId);
-    response.status(200);
-    response.json({ status: 'success' });
+    response
+      .cookie('session_id', sessionId, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+      })
+      .json({});
   }
 
   async create(createUserDto: CreateUserDto, response: Response) {
+    const foundUser = await this.prisma.user.findFirst({
+      where: {
+        email: createUserDto.email,
+      },
+    });
+
+    if (foundUser) {
+      throw new UnauthorizedException('User already exists');
+    }
+
     createUserDto.password = createHash('sha512')
       .update(createUserDto.password)
       .digest('hex');
@@ -62,16 +77,24 @@ export class UsersService {
       },
     });
 
-    response.cookie('session_id', sessionId);
-    console.log('cookie', sessionId);
-    response.status(200);
-    response.json({ status: 'success' });
+    response
+      .cookie('session_id', sessionId, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+      })
+      .json({});
+  }
+
+  async logout(response: Response) {
+    response.clearCookie('session_id');
+    response.status(200).json({ status: 'success' });
   }
 
   async auth(request: Request) {
     const session_id = request.cookies['session_id'];
 
-    console.log();
+    // console.log();
 
     const session = await this.prisma.session.findFirst({
       where: {
@@ -83,7 +106,15 @@ export class UsersService {
       throw new UnauthorizedException('Incorrect credentials');
     }
 
-    console.log(session.userId);
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.userId },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    };
   }
 
   findAll() {

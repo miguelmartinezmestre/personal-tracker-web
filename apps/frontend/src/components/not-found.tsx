@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router'
-import { Home, Search, TrendingUp } from 'lucide-react'
+import { Link } from '@tanstack/react-router';
+import { Home, Search, TrendingUp } from 'lucide-react';
 
 export default function NotFound() {
     return (
@@ -30,6 +30,5 @@ export default function NotFound() {
                 Si crees que esto es un error, por favor <Link href="/contact" className="text-primary hover:underline">contáctanos</Link>.
             </p> */}
         </div>
-    )
+    );
 }
-

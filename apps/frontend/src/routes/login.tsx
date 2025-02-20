@@ -3,21 +3,42 @@ import Footer from '../components/footer';
 import Header from '../components/header';
 import { useMutation } from '@tanstack/react-query';
 import { loginUser } from '../services/login';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '../components/ui/form';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { z } from 'zod';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/login')({
     component: RouteComponent,
 });
 
+const formSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+    // .min(8, {
+    //     message: "Password must be at least 8 characters.",
+    // }),
+});
+
 function RouteComponent() {
     const navigate = useNavigate();
     const mutation = useMutation({
-        mutationFn: (e: React.FormEvent<HTMLFormElement>) => {
-            e.preventDefault();
-
-            const formData = new FormData(e.target);
-
-            const email = String(formData.get('email'));
-            const password = String(formData.get('password'));
+        mutationFn: (values: z.infer<typeof formSchema>) => {
+            const email = values.email;
+            const password = values.password;
 
             if (!email || !password) {
                 throw new Error('Some required fields are empty');
@@ -28,35 +49,76 @@ function RouteComponent() {
                 password,
             });
         },
-        onSuccess: data => {
-            console.log(data);
-            if (data.status === 'success') {
-                navigate({ to: '/dashboard' });
-            }
-        },
-        onError: e => {
-            console.log(e.message);
-            // console.log(e)
+        onSuccess: () => navigate({ to: '/dashboard' }),
+        onError: (error: Error) => {
+            setLoginError(error.message);
         },
     });
+
+    // 1. Define your form.
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: 'abc@a.com',
+            password: '12345678',
+        },
+    });
+
+    // 2. Define a submit handler.
+    function onSubmit(values: z.infer<typeof formSchema>) {
+        // Do something with the form values.
+        // ✅ This will be type-safe and validated.
+        console.log(JSON.stringify(values, null, 2));
+        mutation.mutate(values);
+    }
+
+    const [loginError, setLoginError] = useState<string | null>(null);
 
     return (
         <div className="flex flex-col min-h-screen">
             <Header />
-
             <div className="flex items-center justify-center h-screen">
-                <form className="flex flex-col justity-center" onSubmit={mutation.mutate}>
-                    <label htmlFor="email">email:</label>
-                    <input type="email" name="email" className="border" />
-                    <label htmlFor="password">contraseña:</label>
-                    <input type="password" name="password" className="border" />
-                    <br />
-                    <button type="submit" className="border bg-gray-200">
-                        Iniciar sesión
-                    </button>
-                </form>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        {loginError && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{loginError}</AlertDescription>
+                            </Alert>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormDescription>This is your email.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormDescription>This is your password.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit">Iniciar sesión</Button>
+                    </form>
+                </Form>
             </div>
-
             <Footer />
         </div>
     );

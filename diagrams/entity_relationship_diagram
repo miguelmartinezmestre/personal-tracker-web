@@ -1,0 +1,41 @@
+erDiagram
+    User {
+        int user_id PK
+        string email
+        string password
+        string username
+    }
+
+    Objetives {
+        int goal_id PK
+        int user_id FK
+        string title
+        string description
+        string category
+        float target_value
+        float current_value
+        date deadline
+        string status
+    }
+
+    ProgressUpdate {
+        int update_id PK
+        int goal_id FK
+        float updated_value
+        datetime update_date
+        string comment
+    }
+
+    Notification {
+        int notification_id PK
+        int user_id FK
+        int goal_id FK
+        string notification_type
+        datetime notification_date
+        string message
+    }
+
+    User ||--o{ Objetives : "creates"
+    Objetives ||--o{ ProgressUpdate : "has updates"
+    User ||--o{ Notification : "receives"
+    Objetives ||--o{ Notification : "triggers"

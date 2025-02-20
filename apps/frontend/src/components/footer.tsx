@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from '@tanstack/react-router';
 
 export default function Footer() {
     return (
@@ -15,4 +15,4 @@ export default function Footer() {
             </div>
         </footer>
     );
-};
+}

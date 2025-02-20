@@ -17,8 +17,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { Request, Response } from 'express';
-import { CookieGuard } from 'src/session.guard';
-import { PrismaService } from 'src/prisma.service';
+import { CookieGuard } from '../session.guard';
+import { PrismaService } from '../prisma.service';
 
 @Controller('users')
 export class UsersController {
