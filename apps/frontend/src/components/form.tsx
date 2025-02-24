@@ -218,4 +218,3 @@ export function CustomForm({ onClose, refetch }: { onClose: () => void; refetch:
         </Form>
     );
 }
-

@@ -8,7 +8,13 @@ import { SessionsModule } from './sessions/sessions.module';
 import { EmailsModule } from './emails/emails.module';
 
 @Module({
-  imports: [UsersModule, GoalsModule, NotificationsModule, SessionsModule, EmailsModule],
+  imports: [
+    UsersModule,
+    GoalsModule,
+    NotificationsModule,
+    SessionsModule,
+    EmailsModule,
+  ],
   controllers: [],
   providers: [PrismaService, CookieGuard],
 })
