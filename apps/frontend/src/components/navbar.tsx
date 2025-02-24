@@ -16,7 +16,7 @@ export default function NavBar() {
             {links.map(link => (
                 <Link
                     key={link.name}
-                    href={link.href}
+                    to={link.href}
                     className="text-gray-600 hover:text-gray-800"
                 >
                     {link.name}

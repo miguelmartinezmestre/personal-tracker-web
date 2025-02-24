@@ -1,13 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AppSidebar } from '../components/app-sidebar';
-import { SidebarProvider, SidebarTrigger, SidebarInset } from '../components/ui/sidebar';
-import { Separator } from '../components/ui/separator';
 import { Graph1 } from '../components/graph1';
 import { Graph2 } from '../components/graph2';
 import { Graph3 } from '../components/graph3';
 import { DataTable } from '../components/table';
 import { ColumnDef } from '@tanstack/react-table';
-import useAuth from '../hooks/useAuth';
 import { DashboardLayout } from '../components/dashboard-layout';
 
 export const Route = createFileRoute('/dashboard')({
@@ -101,7 +97,7 @@ const data: Goal[] = [
     },
 ];
 function RouteComponent() {
-    const auth = useAuth();
+    // const auth = useAuth();
     // console.log(auth);
 
     // if(email && name && email !== '' && name !== '') {

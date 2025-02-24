@@ -8,23 +8,11 @@ import {
     Command,
     Frame,
     GalleryVerticalEnd,
-    Map,
-    PieChart,
     Settings2,
     SquareTerminal,
 } from 'lucide-react';
-
-import { NavMain } from './nav-main';
+import { Sidebar, SidebarContent } from './ui/sidebar';
 import { NavProjects } from './nav-projects';
-import { NavUser } from './nav-user';
-import { TeamSwitcher } from './team-switcher';
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
-    SidebarRail,
-} from '@/components/ui/sidebar';
 
 // This is sample data.
 const data = {
