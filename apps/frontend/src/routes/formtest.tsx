@@ -18,7 +18,7 @@ function RouteComponent() {
         name: '',
         email: '',
         password: '',
-        options: "option1" as const,
+        options: 'option1' as const,
         boolean: true,
     };
 

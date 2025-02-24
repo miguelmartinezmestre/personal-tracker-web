@@ -1,8 +1,14 @@
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@radix-ui/react-dialog";
-import { useState } from "react";
-import { ProfileForm } from "./objetives-modal";
-import { Button } from "./ui/button";
-import { DialogHeader } from "./ui/dialog";
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogTitle,
+    DialogDescription,
+} from '@radix-ui/react-dialog';
+import { useState } from 'react';
+import { ProfileForm } from './objetives-modal';
+import { Button } from './ui/button';
+import { DialogHeader } from './ui/dialog';
 
 export function Modal({ refetch }: { refetch: () => void }) {
     const [open, setOpen] = useState(false);
