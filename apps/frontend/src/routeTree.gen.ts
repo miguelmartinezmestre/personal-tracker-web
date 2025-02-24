@@ -11,30 +11,18 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SuspenseImport } from './routes/suspense'
-import { Route as SessionsImport } from './routes/sessions'
 import { Route as RegisterImport } from './routes/register'
-import { Route as ObjetivesImport } from './routes/objetives'
-import { Route as NotificationsImport } from './routes/notifications'
 import { Route as LoginImport } from './routes/login'
-import { Route as FormtestImport } from './routes/formtest'
-import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
+import { Route as DashboardIndexImport } from './routes/dashboard/index'
+import { Route as DashboardSessionsIndexImport } from './routes/dashboard/sessions/index'
+import { Route as DashboardObjetivesIndexImport } from './routes/dashboard/objetives/index'
+import { Route as DashboardNotificationsIndexImport } from './routes/dashboard/notifications/index'
+import { Route as DashboardHomeIndexImport } from './routes/dashboard/home/index'
+import { Route as DashboardObjetivesIdImport } from './routes/dashboard/objetives/$id'
 
 // Create/Update Routes
-
-const SuspenseRoute = SuspenseImport.update({
-  id: '/suspense',
-  path: '/suspense',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const SessionsRoute = SessionsImport.update({
-  id: '/sessions',
-  path: '/sessions',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const RegisterRoute = RegisterImport.update({
   id: '/register',
@@ -42,33 +30,9 @@ const RegisterRoute = RegisterImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ObjetivesRoute = ObjetivesImport.update({
-  id: '/objetives',
-  path: '/objetives',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const NotificationsRoute = NotificationsImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const LoginRoute = LoginImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const FormtestRoute = FormtestImport.update({
-  id: '/formtest',
-  path: '/formtest',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const DashboardRoute = DashboardImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -81,6 +45,43 @@ const AboutRoute = AboutImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DashboardIndexRoute = DashboardIndexImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DashboardSessionsIndexRoute = DashboardSessionsIndexImport.update({
+  id: '/dashboard/sessions/',
+  path: '/dashboard/sessions/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DashboardObjetivesIndexRoute = DashboardObjetivesIndexImport.update({
+  id: '/dashboard/objetives/',
+  path: '/dashboard/objetives/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DashboardNotificationsIndexRoute =
+  DashboardNotificationsIndexImport.update({
+    id: '/dashboard/notifications/',
+    path: '/dashboard/notifications/',
+    getParentRoute: () => rootRoute,
+  } as any)
+
+const DashboardHomeIndexRoute = DashboardHomeIndexImport.update({
+  id: '/dashboard/home/',
+  path: '/dashboard/home/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const DashboardObjetivesIdRoute = DashboardObjetivesIdImport.update({
+  id: '/dashboard/objetives/$id',
+  path: '/dashboard/objetives/$id',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,39 +103,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutImport
       parentRoute: typeof rootRoute
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardImport
-      parentRoute: typeof rootRoute
-    }
-    '/formtest': {
-      id: '/formtest'
-      path: '/formtest'
-      fullPath: '/formtest'
-      preLoaderRoute: typeof FormtestImport
-      parentRoute: typeof rootRoute
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
-      parentRoute: typeof rootRoute
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsImport
-      parentRoute: typeof rootRoute
-    }
-    '/objetives': {
-      id: '/objetives'
-      path: '/objetives'
-      fullPath: '/objetives'
-      preLoaderRoute: typeof ObjetivesImport
       parentRoute: typeof rootRoute
     }
     '/register': {
@@ -144,18 +117,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
-    '/sessions': {
-      id: '/sessions'
-      path: '/sessions'
-      fullPath: '/sessions'
-      preLoaderRoute: typeof SessionsImport
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardIndexImport
       parentRoute: typeof rootRoute
     }
-    '/suspense': {
-      id: '/suspense'
-      path: '/suspense'
-      fullPath: '/suspense'
-      preLoaderRoute: typeof SuspenseImport
+    '/dashboard/objetives/$id': {
+      id: '/dashboard/objetives/$id'
+      path: '/dashboard/objetives/$id'
+      fullPath: '/dashboard/objetives/$id'
+      preLoaderRoute: typeof DashboardObjetivesIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/dashboard/home/': {
+      id: '/dashboard/home/'
+      path: '/dashboard/home'
+      fullPath: '/dashboard/home'
+      preLoaderRoute: typeof DashboardHomeIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/dashboard/notifications/': {
+      id: '/dashboard/notifications/'
+      path: '/dashboard/notifications'
+      fullPath: '/dashboard/notifications'
+      preLoaderRoute: typeof DashboardNotificationsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/dashboard/objetives/': {
+      id: '/dashboard/objetives/'
+      path: '/dashboard/objetives'
+      fullPath: '/dashboard/objetives'
+      preLoaderRoute: typeof DashboardObjetivesIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/dashboard/sessions/': {
+      id: '/dashboard/sessions/'
+      path: '/dashboard/sessions'
+      fullPath: '/dashboard/sessions'
+      preLoaderRoute: typeof DashboardSessionsIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -166,41 +167,41 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/dashboard': typeof DashboardRoute
-  '/formtest': typeof FormtestRoute
   '/login': typeof LoginRoute
-  '/notifications': typeof NotificationsRoute
-  '/objetives': typeof ObjetivesRoute
   '/register': typeof RegisterRoute
-  '/sessions': typeof SessionsRoute
-  '/suspense': typeof SuspenseRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/objetives/$id': typeof DashboardObjetivesIdRoute
+  '/dashboard/home': typeof DashboardHomeIndexRoute
+  '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
+  '/dashboard/objetives': typeof DashboardObjetivesIndexRoute
+  '/dashboard/sessions': typeof DashboardSessionsIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/dashboard': typeof DashboardRoute
-  '/formtest': typeof FormtestRoute
   '/login': typeof LoginRoute
-  '/notifications': typeof NotificationsRoute
-  '/objetives': typeof ObjetivesRoute
   '/register': typeof RegisterRoute
-  '/sessions': typeof SessionsRoute
-  '/suspense': typeof SuspenseRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/objetives/$id': typeof DashboardObjetivesIdRoute
+  '/dashboard/home': typeof DashboardHomeIndexRoute
+  '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
+  '/dashboard/objetives': typeof DashboardObjetivesIndexRoute
+  '/dashboard/sessions': typeof DashboardSessionsIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/dashboard': typeof DashboardRoute
-  '/formtest': typeof FormtestRoute
   '/login': typeof LoginRoute
-  '/notifications': typeof NotificationsRoute
-  '/objetives': typeof ObjetivesRoute
   '/register': typeof RegisterRoute
-  '/sessions': typeof SessionsRoute
-  '/suspense': typeof SuspenseRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/objetives/$id': typeof DashboardObjetivesIdRoute
+  '/dashboard/home/': typeof DashboardHomeIndexRoute
+  '/dashboard/notifications/': typeof DashboardNotificationsIndexRoute
+  '/dashboard/objetives/': typeof DashboardObjetivesIndexRoute
+  '/dashboard/sessions/': typeof DashboardSessionsIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -208,65 +209,65 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/dashboard'
-    | '/formtest'
     | '/login'
-    | '/notifications'
-    | '/objetives'
     | '/register'
-    | '/sessions'
-    | '/suspense'
+    | '/dashboard'
+    | '/dashboard/objetives/$id'
+    | '/dashboard/home'
+    | '/dashboard/notifications'
+    | '/dashboard/objetives'
+    | '/dashboard/sessions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/dashboard'
-    | '/formtest'
     | '/login'
-    | '/notifications'
-    | '/objetives'
     | '/register'
-    | '/sessions'
-    | '/suspense'
+    | '/dashboard'
+    | '/dashboard/objetives/$id'
+    | '/dashboard/home'
+    | '/dashboard/notifications'
+    | '/dashboard/objetives'
+    | '/dashboard/sessions'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/dashboard'
-    | '/formtest'
     | '/login'
-    | '/notifications'
-    | '/objetives'
     | '/register'
-    | '/sessions'
-    | '/suspense'
+    | '/dashboard/'
+    | '/dashboard/objetives/$id'
+    | '/dashboard/home/'
+    | '/dashboard/notifications/'
+    | '/dashboard/objetives/'
+    | '/dashboard/sessions/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  DashboardRoute: typeof DashboardRoute
-  FormtestRoute: typeof FormtestRoute
   LoginRoute: typeof LoginRoute
-  NotificationsRoute: typeof NotificationsRoute
-  ObjetivesRoute: typeof ObjetivesRoute
   RegisterRoute: typeof RegisterRoute
-  SessionsRoute: typeof SessionsRoute
-  SuspenseRoute: typeof SuspenseRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardObjetivesIdRoute: typeof DashboardObjetivesIdRoute
+  DashboardHomeIndexRoute: typeof DashboardHomeIndexRoute
+  DashboardNotificationsIndexRoute: typeof DashboardNotificationsIndexRoute
+  DashboardObjetivesIndexRoute: typeof DashboardObjetivesIndexRoute
+  DashboardSessionsIndexRoute: typeof DashboardSessionsIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  DashboardRoute: DashboardRoute,
-  FormtestRoute: FormtestRoute,
   LoginRoute: LoginRoute,
-  NotificationsRoute: NotificationsRoute,
-  ObjetivesRoute: ObjetivesRoute,
   RegisterRoute: RegisterRoute,
-  SessionsRoute: SessionsRoute,
-  SuspenseRoute: SuspenseRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  DashboardObjetivesIdRoute: DashboardObjetivesIdRoute,
+  DashboardHomeIndexRoute: DashboardHomeIndexRoute,
+  DashboardNotificationsIndexRoute: DashboardNotificationsIndexRoute,
+  DashboardObjetivesIndexRoute: DashboardObjetivesIndexRoute,
+  DashboardSessionsIndexRoute: DashboardSessionsIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -281,14 +282,14 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
-        "/dashboard",
-        "/formtest",
         "/login",
-        "/notifications",
-        "/objetives",
         "/register",
-        "/sessions",
-        "/suspense"
+        "/dashboard/",
+        "/dashboard/objetives/$id",
+        "/dashboard/home/",
+        "/dashboard/notifications/",
+        "/dashboard/objetives/",
+        "/dashboard/sessions/"
       ]
     },
     "/": {
@@ -297,29 +298,29 @@ export const routeTree = rootRoute
     "/about": {
       "filePath": "about.tsx"
     },
-    "/dashboard": {
-      "filePath": "dashboard.tsx"
-    },
-    "/formtest": {
-      "filePath": "formtest.tsx"
-    },
     "/login": {
       "filePath": "login.tsx"
-    },
-    "/notifications": {
-      "filePath": "notifications.tsx"
-    },
-    "/objetives": {
-      "filePath": "objetives.tsx"
     },
     "/register": {
       "filePath": "register.tsx"
     },
-    "/sessions": {
-      "filePath": "sessions.tsx"
+    "/dashboard/": {
+      "filePath": "dashboard/index.tsx"
     },
-    "/suspense": {
-      "filePath": "suspense.tsx"
+    "/dashboard/objetives/$id": {
+      "filePath": "dashboard/objetives/$id.tsx"
+    },
+    "/dashboard/home/": {
+      "filePath": "dashboard/home/index.tsx"
+    },
+    "/dashboard/notifications/": {
+      "filePath": "dashboard/notifications/index.tsx"
+    },
+    "/dashboard/objetives/": {
+      "filePath": "dashboard/objetives/index.tsx"
+    },
+    "/dashboard/sessions/": {
+      "filePath": "dashboard/sessions/index.tsx"
     }
   }
 }

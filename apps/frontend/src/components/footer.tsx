@@ -1,5 +1,3 @@
-import { Link } from '@tanstack/react-router';
-
 export default function Footer() {
     return (
         <footer className="bg-gray-800 text-white">

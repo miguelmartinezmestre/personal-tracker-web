@@ -1,7 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import Navbar from '../components/navbar';
 import Footer from '../components/footer';
-import Section from '../components/section';
 import Header from '../components/header';
 
 export const Route = createFileRoute('/about')({

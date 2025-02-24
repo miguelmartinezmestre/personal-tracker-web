@@ -37,3 +37,17 @@ export async function getObjectives(userId: number): Promise<Objetive[]> {
 
     return body;
 }
+
+export async function updateObjective(objective: Objetive): Promise<Objetive> {
+    const response = await fetch(baseUrl + '/goals/' + objective.id, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(objective),
+    });
+
+    const body = await response.json();
+
+    return body;
+}

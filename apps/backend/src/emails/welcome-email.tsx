@@ -15,7 +15,7 @@ import {
   Tailwind,
   Text,
 } from '@react-email/components';
-import * as React from 'react';
+import React from 'react';
 
 interface EmailProps {
   username?: string;
@@ -29,7 +29,7 @@ interface EmailProps {
   inviteFromLocation?: string;
 }
 
-export const Email = ({
+export const WelcomeEmail = ({
   username,
   userImage,
   invitedByUsername,
@@ -135,7 +135,7 @@ export const Email = ({
   );
 };
 
-Email.PreviewProps = {
+WelcomeEmail.PreviewProps = {
   username: 'alanturing',
   userImage: 'https://localhost:3000',
   invitedByUsername: 'Alan',
@@ -147,4 +147,4 @@ Email.PreviewProps = {
   inviteFromLocation: 'São Paulo, Brazil',
 } as EmailProps;
 
-export default Email;
+export default WelcomeEmail;

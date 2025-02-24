@@ -44,5 +44,6 @@ export default function useAuth(): { email: string; name: string; id: number } {
         throw new Error('Authentication failed');
     }
 
+    //@ts-ignore
     return data;
 }

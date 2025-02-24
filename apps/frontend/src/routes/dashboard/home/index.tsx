@@ -1,18 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { AppSidebar } from '../components/app-sidebar';
-import { SidebarProvider, SidebarTrigger, SidebarInset } from '../components/ui/sidebar';
-import { Separator } from '../components/ui/separator';
-import { Graph1 } from '../components/graph1';
-import { Graph2 } from '../components/graph2';
-import { Graph3 } from '../components/graph3';
-import { DataTable } from '../components/table';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table';
-import useAuth from '../hooks/useAuth';
-import { DashboardLayout } from '../components/dashboard-layout';
+import useAuth from '../../../hooks/useAuth';
+import { Objetive } from '../../../models/objetive';
+import { getObjectives } from '../../../services/objetives';
+import { DashboardLayout } from '../../../components/dashboard-layout';
+import { Graph1 } from '../../../components/graph1';
+import { Graph2 } from '../../../components/graph2';
+import { Graph3 } from '../../../components/graph3';
+import { DataTable } from '../../../components/table';
 
-export const Route = createFileRoute('/dashboard')({
-    component: RouteComponent,
-});
+export const Route = createFileRoute('/dashboard/home/')({
+  component: RouteComponent,
+})
 
 export type Goal = {
     id: number;
@@ -102,11 +102,48 @@ const data: Goal[] = [
 ];
 function RouteComponent() {
     const auth = useAuth();
-    // console.log(auth);
 
-    // if(email && name && email !== '' && name !== '') {
-    //     return <div>Hello, {name}</div>;
-    // }
+    const { data, isLoading } = useQuery({
+        queryKey: ['objetives'],
+        queryFn: () => getObjectives(auth.id),
+    });
+
+    const columns: ColumnDef<Objetive>[] = [
+        {
+            accessorKey: 'title',
+            header: 'Titulo',
+        },
+        {
+            accessorKey: 'description',
+            header: 'Descripción',
+        },
+        {
+            accessorKey: 'targetValue',
+            header: 'Valor Objetivo',
+        },
+        {
+            accessorKey: 'currentValue',
+            header: 'Valor Actual',
+        },
+        {
+            accessorKey: 'deadline',
+            header: 'Fecha Limite',
+        },
+        {
+            accessorKey: 'status',
+            header: 'Estado',
+        },
+    ];
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
+    console.log(data);
+
+    if (!data) {
+        return <div>No data</div>;
+    }
 
     return (
         <DashboardLayout>
@@ -122,7 +159,7 @@ function RouteComponent() {
                 </div>
             </div>
             <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min">
-                <DataTable columns={columns} data={data} />;
+                <DataTable columns={columns} data={data} />
             </div>
         </DashboardLayout>
     );

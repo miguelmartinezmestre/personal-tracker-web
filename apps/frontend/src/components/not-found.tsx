@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Home, Search, TrendingUp } from 'lucide-react';
+import { Home } from 'lucide-react';
 
 export default function NotFound() {
     return (
@@ -10,7 +10,7 @@ export default function NotFound() {
             </p>
             <div className="flex flex-col gap-4 items-center">
                 <p className="text-lg mb-2">¿Qué te gustaría hacer?</p>
-                <Link href="/">
+                <Link to="/">
                     <button className="w-full md:w-auto">
                         <Home className="mr-2 h-4 w-4" /> Ir al inicio
                     </button>

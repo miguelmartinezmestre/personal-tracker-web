@@ -37,6 +37,31 @@ export class GoalsService {
       where: { id },
       data: updateGoalDto,
     });
+
+    const percentage = (updateGoalDto.currentValue / updateGoalDto.targetValue) * 100;
+
+    if (percentage === 100) {
+      await this.prisma.notification.create({
+        data: {
+          userId: updateGoalDto.userId,
+          message: 'Goal completed',
+          goalId: id,
+          notificationDate: new Date(),
+          notificationType: 'Goal Completed',
+        },
+      });
+    } else {
+      await this.prisma.notification.create({
+        data: {
+          userId: updateGoalDto.userId,
+          message: `Goal ${goal.title} is ${percentage}% completed`,
+          goalId: id,
+          notificationDate: new Date(),
+          notificationType: 'Goal Progress',
+        },
+      });
+    }
+
     return goal;
   }
 

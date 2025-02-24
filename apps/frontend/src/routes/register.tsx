@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import Footer from '../components/footer';
 import Header from '../components/header';
 import { useMutation } from '@tanstack/react-query';
-import { loginUser } from '../services/login';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -21,7 +20,6 @@ import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { registerUser } from '../services/register';
-import { wait } from '../utils';
 
 export const Route = createFileRoute('/register')({
     component: RouteComponent,
@@ -66,8 +64,8 @@ function RouteComponent() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            email: 'abc@a.com',
-            password: '12345678',
+            email: 'a@a.com',
+            password: 'a@a@134545',
             username: 'user',
         },
     });

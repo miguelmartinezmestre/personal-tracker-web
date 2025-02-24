@@ -1,33 +1,35 @@
+import { ReactNode } from 'react';
+import { Button } from './ui/button';
 import {
     Dialog,
-    DialogTrigger,
     DialogContent,
-    DialogTitle,
     DialogDescription,
-} from '@radix-ui/react-dialog';
-import { useState } from 'react';
-import { ProfileForm } from './objetives-modal';
-import { Button } from './ui/button';
-import { DialogHeader } from './ui/dialog';
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from './ui/dialog';
 
-export function Modal({ refetch }: { refetch: () => void }) {
-    const [open, setOpen] = useState(false);
+interface ModalProps {
+    title: string;
+    description: string;
+    children: ReactNode;
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    buttonHidden?: boolean;
+}
 
-    const handleClose = () => {
-        setOpen(false);
-    };
-
+export function Modal({ title, description, children, isOpen, onOpenChange, buttonHidden }: ModalProps) {
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">Crear</Button>
+                {!buttonHidden && <Button variant="outline">Crear</Button>}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Crear objetivo</DialogTitle>
-                    <DialogDescription></DialogDescription>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
-                <ProfileForm onClose={handleClose} refetch={refetch} />
+                <div className="grid gap-4 py-4">{children}</div>
             </DialogContent>
         </Dialog>
     );
