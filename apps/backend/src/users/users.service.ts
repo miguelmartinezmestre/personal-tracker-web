@@ -5,10 +5,14 @@ import { PrismaService } from '../prisma.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { Response, Request } from 'express';
 import { createHash, randomBytes } from 'crypto';
+import { EmailsService } from 'src/emails/emails.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailsService: EmailsService,
+  ) {}
 
   async login(loginUserDto: LoginUserDto, response: Response) {
     // console.log(loginUserDto);
@@ -38,6 +42,8 @@ export class UsersService {
         value: sessionId,
       },
     });
+
+    await this.emailsService.send();
 
     response
       .cookie('session_id', sessionId, {

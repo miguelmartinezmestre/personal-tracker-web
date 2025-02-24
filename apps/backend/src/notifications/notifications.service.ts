@@ -17,6 +17,14 @@ export class NotificationsService {
     return this.prisma.notification.findMany();
   }
 
+  async findByUser(userId: number) {
+    return this.prisma.notification.findMany({
+      where: {
+        userId,
+      },
+    });
+  }
+
   async findOne(id: number) {
     return this.prisma.notification.findUnique({
       where: { id },
