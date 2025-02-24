@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getObjectives } from '../services/objetives';
 import { Objetive } from '../models/objetive';
 import useAuth from '../hooks/useAuth';
+import { Button } from '../components/ui/button';
 export const Route = createFileRoute('/objetives')({
     component: RouteComponent,
 });
@@ -43,6 +44,54 @@ function RouteComponent() {
         {
             accessorKey: 'status',
             header: 'Status',
+        },
+        {
+            header: 'Update progress',
+            id: 'actions',
+            cell: ({ row }) => {
+                const objetiveRow = row.original;
+                return (
+                    <Button
+                        onClick={() => {
+                            alert(`Action for ${objetiveRow.title}`);
+                        }}
+                    >
+                        Update progress
+                    </Button>
+                );
+            },
+        },
+        {
+            header: 'Edit',
+            id: 'actions',
+            cell: ({ row }) => {
+                const objetiveRow = row.original;
+                return (
+                    <Button
+                        onClick={() => {
+                            alert(`Action for ${objetiveRow.title}`);
+                        }}
+                    >
+                        Edit
+                    </Button>
+                );
+            },
+        },
+        {
+            header: 'Delete',
+            id: 'actions',
+            cell: ({ row }) => {
+                const objetiveRow = row.original;
+                return (
+                    <Button
+                        onClick={() => {
+                            alert(`Action for ${objetiveRow.title}`);
+                        }}
+                    >
+                        Delete
+                    </Button>
+                );
+            },
         },
     ];
 

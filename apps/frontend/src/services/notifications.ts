@@ -1,8 +1,8 @@
 import { Notification } from '../models/notification';
 import { baseUrl } from '../main';
 
-export async function getNotifications(): Promise<Notification[]> {
-    const response = await fetch(baseUrl + '/notifications', {
+export async function getNotifications(userId: number): Promise<Notification[]> {
+    const response = await fetch(baseUrl + '/notifications/user/' + userId, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
