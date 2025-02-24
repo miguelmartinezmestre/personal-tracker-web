@@ -10,246 +10,268 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root';
-import { Route as SuspenseImport } from './routes/suspense';
-import { Route as SessionsImport } from './routes/sessions';
-import { Route as RegisterImport } from './routes/register';
-import { Route as ObjetivesImport } from './routes/objetives';
-import { Route as NotificationsImport } from './routes/notifications';
-import { Route as LoginImport } from './routes/login';
-import { Route as DashboardImport } from './routes/dashboard';
-import { Route as AboutImport } from './routes/about';
-import { Route as IndexImport } from './routes/index';
+import { Route as rootRoute } from './routes/__root'
+import { Route as SuspenseImport } from './routes/suspense'
+import { Route as SessionsImport } from './routes/sessions'
+import { Route as RegisterImport } from './routes/register'
+import { Route as ObjetivesImport } from './routes/objetives'
+import { Route as NotificationsImport } from './routes/notifications'
+import { Route as LoginImport } from './routes/login'
+import { Route as FormtestImport } from './routes/formtest'
+import { Route as DashboardImport } from './routes/dashboard'
+import { Route as AboutImport } from './routes/about'
+import { Route as IndexImport } from './routes/index'
 
 // Create/Update Routes
 
 const SuspenseRoute = SuspenseImport.update({
-    id: '/suspense',
-    path: '/suspense',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/suspense',
+  path: '/suspense',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const SessionsRoute = SessionsImport.update({
-    id: '/sessions',
-    path: '/sessions',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const RegisterRoute = RegisterImport.update({
-    id: '/register',
-    path: '/register',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const ObjetivesRoute = ObjetivesImport.update({
-    id: '/objetives',
-    path: '/objetives',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/objetives',
+  path: '/objetives',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const NotificationsRoute = NotificationsImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
-    id: '/login',
-    path: '/login',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const FormtestRoute = FormtestImport.update({
+  id: '/formtest',
+  path: '/formtest',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const DashboardRoute = DashboardImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AboutRoute = AboutImport.update({
-    id: '/about',
-    path: '/about',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => rootRoute,
-} as any);
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
-    interface FileRoutesByPath {
-        '/': {
-            id: '/';
-            path: '/';
-            fullPath: '/';
-            preLoaderRoute: typeof IndexImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/about': {
-            id: '/about';
-            path: '/about';
-            fullPath: '/about';
-            preLoaderRoute: typeof AboutImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/dashboard': {
-            id: '/dashboard';
-            path: '/dashboard';
-            fullPath: '/dashboard';
-            preLoaderRoute: typeof DashboardImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/login': {
-            id: '/login';
-            path: '/login';
-            fullPath: '/login';
-            preLoaderRoute: typeof LoginImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/notifications': {
-            id: '/notifications';
-            path: '/notifications';
-            fullPath: '/notifications';
-            preLoaderRoute: typeof NotificationsImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/objetives': {
-            id: '/objetives';
-            path: '/objetives';
-            fullPath: '/objetives';
-            preLoaderRoute: typeof ObjetivesImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/register': {
-            id: '/register';
-            path: '/register';
-            fullPath: '/register';
-            preLoaderRoute: typeof RegisterImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/sessions': {
-            id: '/sessions';
-            path: '/sessions';
-            fullPath: '/sessions';
-            preLoaderRoute: typeof SessionsImport;
-            parentRoute: typeof rootRoute;
-        };
-        '/suspense': {
-            id: '/suspense';
-            path: '/suspense';
-            fullPath: '/suspense';
-            preLoaderRoute: typeof SuspenseImport;
-            parentRoute: typeof rootRoute;
-        };
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutImport
+      parentRoute: typeof rootRoute
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardImport
+      parentRoute: typeof rootRoute
+    }
+    '/formtest': {
+      id: '/formtest'
+      path: '/formtest'
+      fullPath: '/formtest'
+      preLoaderRoute: typeof FormtestImport
+      parentRoute: typeof rootRoute
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsImport
+      parentRoute: typeof rootRoute
+    }
+    '/objetives': {
+      id: '/objetives'
+      path: '/objetives'
+      fullPath: '/objetives'
+      preLoaderRoute: typeof ObjetivesImport
+      parentRoute: typeof rootRoute
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterImport
+      parentRoute: typeof rootRoute
+    }
+    '/sessions': {
+      id: '/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsImport
+      parentRoute: typeof rootRoute
+    }
+    '/suspense': {
+      id: '/suspense'
+      path: '/suspense'
+      fullPath: '/suspense'
+      preLoaderRoute: typeof SuspenseImport
+      parentRoute: typeof rootRoute
+    }
+  }
 }
 
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-    '/': typeof IndexRoute;
-    '/about': typeof AboutRoute;
-    '/dashboard': typeof DashboardRoute;
-    '/login': typeof LoginRoute;
-    '/notifications': typeof NotificationsRoute;
-    '/objetives': typeof ObjetivesRoute;
-    '/register': typeof RegisterRoute;
-    '/sessions': typeof SessionsRoute;
-    '/suspense': typeof SuspenseRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRoute
+  '/formtest': typeof FormtestRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/objetives': typeof ObjetivesRoute
+  '/register': typeof RegisterRoute
+  '/sessions': typeof SessionsRoute
+  '/suspense': typeof SuspenseRoute
 }
 
 export interface FileRoutesByTo {
-    '/': typeof IndexRoute;
-    '/about': typeof AboutRoute;
-    '/dashboard': typeof DashboardRoute;
-    '/login': typeof LoginRoute;
-    '/notifications': typeof NotificationsRoute;
-    '/objetives': typeof ObjetivesRoute;
-    '/register': typeof RegisterRoute;
-    '/sessions': typeof SessionsRoute;
-    '/suspense': typeof SuspenseRoute;
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRoute
+  '/formtest': typeof FormtestRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/objetives': typeof ObjetivesRoute
+  '/register': typeof RegisterRoute
+  '/sessions': typeof SessionsRoute
+  '/suspense': typeof SuspenseRoute
 }
 
 export interface FileRoutesById {
-    __root__: typeof rootRoute;
-    '/': typeof IndexRoute;
-    '/about': typeof AboutRoute;
-    '/dashboard': typeof DashboardRoute;
-    '/login': typeof LoginRoute;
-    '/notifications': typeof NotificationsRoute;
-    '/objetives': typeof ObjetivesRoute;
-    '/register': typeof RegisterRoute;
-    '/sessions': typeof SessionsRoute;
-    '/suspense': typeof SuspenseRoute;
+  __root__: typeof rootRoute
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRoute
+  '/formtest': typeof FormtestRoute
+  '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
+  '/objetives': typeof ObjetivesRoute
+  '/register': typeof RegisterRoute
+  '/sessions': typeof SessionsRoute
+  '/suspense': typeof SuspenseRoute
 }
 
 export interface FileRouteTypes {
-    fileRoutesByFullPath: FileRoutesByFullPath;
-    fullPaths:
-        | '/'
-        | '/about'
-        | '/dashboard'
-        | '/login'
-        | '/notifications'
-        | '/objetives'
-        | '/register'
-        | '/sessions'
-        | '/suspense';
-    fileRoutesByTo: FileRoutesByTo;
-    to:
-        | '/'
-        | '/about'
-        | '/dashboard'
-        | '/login'
-        | '/notifications'
-        | '/objetives'
-        | '/register'
-        | '/sessions'
-        | '/suspense';
-    id:
-        | '__root__'
-        | '/'
-        | '/about'
-        | '/dashboard'
-        | '/login'
-        | '/notifications'
-        | '/objetives'
-        | '/register'
-        | '/sessions'
-        | '/suspense';
-    fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/dashboard'
+    | '/formtest'
+    | '/login'
+    | '/notifications'
+    | '/objetives'
+    | '/register'
+    | '/sessions'
+    | '/suspense'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/about'
+    | '/dashboard'
+    | '/formtest'
+    | '/login'
+    | '/notifications'
+    | '/objetives'
+    | '/register'
+    | '/sessions'
+    | '/suspense'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/dashboard'
+    | '/formtest'
+    | '/login'
+    | '/notifications'
+    | '/objetives'
+    | '/register'
+    | '/sessions'
+    | '/suspense'
+  fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-    IndexRoute: typeof IndexRoute;
-    AboutRoute: typeof AboutRoute;
-    DashboardRoute: typeof DashboardRoute;
-    LoginRoute: typeof LoginRoute;
-    NotificationsRoute: typeof NotificationsRoute;
-    ObjetivesRoute: typeof ObjetivesRoute;
-    RegisterRoute: typeof RegisterRoute;
-    SessionsRoute: typeof SessionsRoute;
-    SuspenseRoute: typeof SuspenseRoute;
+  IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  DashboardRoute: typeof DashboardRoute
+  FormtestRoute: typeof FormtestRoute
+  LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ObjetivesRoute: typeof ObjetivesRoute
+  RegisterRoute: typeof RegisterRoute
+  SessionsRoute: typeof SessionsRoute
+  SuspenseRoute: typeof SuspenseRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-    IndexRoute: IndexRoute,
-    AboutRoute: AboutRoute,
-    DashboardRoute: DashboardRoute,
-    LoginRoute: LoginRoute,
-    NotificationsRoute: NotificationsRoute,
-    ObjetivesRoute: ObjetivesRoute,
-    RegisterRoute: RegisterRoute,
-    SessionsRoute: SessionsRoute,
-    SuspenseRoute: SuspenseRoute,
-};
+  IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  DashboardRoute: DashboardRoute,
+  FormtestRoute: FormtestRoute,
+  LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
+  ObjetivesRoute: ObjetivesRoute,
+  RegisterRoute: RegisterRoute,
+  SessionsRoute: SessionsRoute,
+  SuspenseRoute: SuspenseRoute,
+}
 
 export const routeTree = rootRoute
-    ._addFileChildren(rootRouteChildren)
-    ._addFileTypes<FileRouteTypes>();
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
 
 /* ROUTE_MANIFEST_START
 {
@@ -260,6 +282,7 @@ export const routeTree = rootRoute
         "/",
         "/about",
         "/dashboard",
+        "/formtest",
         "/login",
         "/notifications",
         "/objetives",
@@ -276,6 +299,9 @@ export const routeTree = rootRoute
     },
     "/dashboard": {
       "filePath": "dashboard.tsx"
+    },
+    "/formtest": {
+      "filePath": "formtest.tsx"
     },
     "/login": {
       "filePath": "login.tsx"

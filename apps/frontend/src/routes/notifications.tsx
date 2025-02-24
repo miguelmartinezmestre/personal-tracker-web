@@ -6,14 +6,17 @@ import { ObjetivesModal } from '../components/objetives-modal';
 import { useQuery } from '@tanstack/react-query';
 import { getNotifications } from '../services/notifications';
 import { Notification } from '../models/notification';
+import useAuth from '../hooks/useAuth';
 export const Route = createFileRoute('/notifications')({
     component: RouteComponent,
 });
 
 function RouteComponent() {
+    const auth = useAuth();
+
     const { data, refetch, isLoading } = useQuery({
         queryKey: ['notifications'],
-        queryFn: getNotifications,
+        queryFn: () => getNotifications(auth.id),
     });
 
     const columns: ColumnDef<Notification>[] = [

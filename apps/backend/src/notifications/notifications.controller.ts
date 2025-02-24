@@ -30,6 +30,11 @@ export class NotificationsController {
     return this.notificationsService.findOne(+id);
   }
 
+  @Get('user/:id')
+  findByUser(@Param('id') id: number) {
+    return this.notificationsService.findByUser(+id);
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: number,
