@@ -27,7 +27,7 @@ const objetiveSchema = z.object({
 
 export function ObjetivesModal({ refetch }: { refetch: () => void }) {
     const [open, setOpen] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
     const auth = useAuth();
 
     const handleClose = () => {

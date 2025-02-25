@@ -16,7 +16,7 @@ export const Route = createFileRoute('/objetives')({
 
 function RouteComponent() {
     const auth = useAuth();
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
 
     const { data, refetch, isLoading } = useQuery({
         queryKey: ['objetives'],

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { render } from '@react-email/components';
-import Email from './welcome-email';
+import { WelcomeEmail } from './welcome-email';
 
 @Injectable()
 export class EmailsService {
@@ -21,7 +21,7 @@ export class EmailsService {
 
   async send() {
     const emailHtml = await render(
-      Email({
+      WelcomeEmail({
         username: 'alanturing',
         userImage: 'https://localhost:3000',
         invitedByUsername: 'Alan',

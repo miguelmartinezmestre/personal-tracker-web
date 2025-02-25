@@ -20,7 +20,7 @@ services:
         image: ghcr.io/chartdb/chartdb:latest
         container_name: chartdb
         environment:
-            OPENAI_API_KEY: ${OPENAI_API_KEY}
+            OPENAI_API_KEY: ""
         ports:
             - '8080:80'
 
