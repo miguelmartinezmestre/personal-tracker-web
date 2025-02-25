@@ -17,7 +17,6 @@ import { Route as RegisterImport } from './routes/register'
 import { Route as ObjetivesImport } from './routes/objetives'
 import { Route as NotificationsImport } from './routes/notifications'
 import { Route as LoginImport } from './routes/login'
-import { Route as FormtestImport } from './routes/formtest'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
@@ -57,12 +56,6 @@ const NotificationsRoute = NotificationsImport.update({
 const LoginRoute = LoginImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const FormtestRoute = FormtestImport.update({
-  id: '/formtest',
-  path: '/formtest',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -107,13 +100,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardImport
-      parentRoute: typeof rootRoute
-    }
-    '/formtest': {
-      id: '/formtest'
-      path: '/formtest'
-      fullPath: '/formtest'
-      preLoaderRoute: typeof FormtestImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -167,7 +153,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
-  '/formtest': typeof FormtestRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
   '/objetives': typeof ObjetivesRoute
@@ -180,7 +165,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
-  '/formtest': typeof FormtestRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
   '/objetives': typeof ObjetivesRoute
@@ -194,7 +178,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
-  '/formtest': typeof FormtestRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
   '/objetives': typeof ObjetivesRoute
@@ -209,7 +192,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
-    | '/formtest'
     | '/login'
     | '/notifications'
     | '/objetives'
@@ -221,7 +203,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
-    | '/formtest'
     | '/login'
     | '/notifications'
     | '/objetives'
@@ -233,7 +214,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
-    | '/formtest'
     | '/login'
     | '/notifications'
     | '/objetives'
@@ -247,7 +227,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   DashboardRoute: typeof DashboardRoute
-  FormtestRoute: typeof FormtestRoute
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
   ObjetivesRoute: typeof ObjetivesRoute
@@ -260,7 +239,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   DashboardRoute: DashboardRoute,
-  FormtestRoute: FormtestRoute,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
   ObjetivesRoute: ObjetivesRoute,
@@ -282,7 +260,6 @@ export const routeTree = rootRoute
         "/",
         "/about",
         "/dashboard",
-        "/formtest",
         "/login",
         "/notifications",
         "/objetives",
@@ -299,9 +276,6 @@ export const routeTree = rootRoute
     },
     "/dashboard": {
       "filePath": "dashboard.tsx"
-    },
-    "/formtest": {
-      "filePath": "formtest.tsx"
     },
     "/login": {
       "filePath": "login.tsx"

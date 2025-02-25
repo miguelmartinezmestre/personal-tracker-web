@@ -151,21 +151,56 @@ export function GenericForm<T extends z.ZodType<any, any>>({
 
     const renderFields = (schema: z.ZodTypeAny, prefix = '') => {
         if (schema instanceof z.ZodObject) {
-            return Object.entries(schema.shape).map(([key, field]) => {
+            const fields = Object.entries(schema.shape).map(([key, field]) => {
                 const fullKey = prefix ? `${prefix}.${key}` : key;
-                return (
-                    <div key={fullKey} className="space-y-2">
-                        <Label htmlFor={fullKey}>{key.replace(/([A-Z])/g, ' $1').trim()}</Label>
-                        {renderField(fullKey as Path<FormValues>, field as z.ZodTypeAny)}
-                        {form.formState.errors[key] && (
-                            <p className="text-sm text-red-500">
-                                {(form.formState.errors[key]?.message as string) ||
-                                    'This field is required'}
-                            </p>
-                        )}
-                    </div>
-                );
+                return {
+                    key: fullKey,
+                    name: key,
+                    field: field as z.ZodTypeAny,
+                };
             });
+
+            // Split fields into two columns
+            const midpoint = Math.ceil(fields.length / 2);
+            const leftFields = fields.slice(0, midpoint);
+            const rightFields = fields.slice(midpoint);
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        {leftFields.map(({ key, name, field }) => (
+                            <div key={key}>
+                                <Label htmlFor={key}>
+                                    {name.replace(/([A-Z])/g, ' $1').trim()}
+                                </Label>
+                                {renderField(key as Path<FormValues>, field)}
+                                {form.formState.errors[name] && (
+                                    <p className="text-sm text-red-500">
+                                        {(form.formState.errors[name]?.message as string) ||
+                                            'This field is required'}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="space-y-4">
+                        {rightFields.map(({ key, name, field }) => (
+                            <div key={key}>
+                                <Label htmlFor={key}>
+                                    {name.replace(/([A-Z])/g, ' $1').trim()}
+                                </Label>
+                                {renderField(key as Path<FormValues>, field)}
+                                {form.formState.errors[name] && (
+                                    <p className="text-sm text-red-500">
+                                        {(form.formState.errors[name]?.message as string) ||
+                                            'This field is required'}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
         } else {
             // For primitive schemas or other types, render a single field
             return (
@@ -184,7 +219,9 @@ export function GenericForm<T extends z.ZodType<any, any>>({
     return (
         <form onSubmit={form.handleSubmit(onSubmitHandler)} className={cn('space-y-4', className)}>
             {renderFields(schema)}
-            <Button type="submit">Submit</Button>
+            <div className="flex justify-end">
+                <Button type="submit">Submit</Button>
+            </div>
         </form>
     );
 }
