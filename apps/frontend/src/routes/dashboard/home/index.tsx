@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import useAuth from '../../../hooks/useAuth';
 import { Objetive } from '../../../models/objetive';
@@ -11,8 +11,8 @@ import { Graph3 } from '../../../components/graph3';
 import { DataTable } from '../../../components/table';
 
 export const Route = createFileRoute('/dashboard/home/')({
-  component: RouteComponent,
-})
+    component: RouteComponent,
+});
 
 export type Goal = {
     id: number;

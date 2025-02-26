@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import { DashboardLayout } from '../../../components/dashboard-layout';
 import { DataTable } from '../../../components/table';
@@ -7,9 +7,8 @@ import useAuth from '../../../hooks/useAuth';
 import { getNotifications } from '../../../services/notifications';
 
 export const Route = createFileRoute('/dashboard/notifications/')({
-  component: RouteComponent,
-})
-
+    component: RouteComponent,
+});
 
 function RouteComponent() {
     const auth = useAuth();
@@ -50,4 +49,3 @@ function RouteComponent() {
         </DashboardLayout>
     );
 }
-

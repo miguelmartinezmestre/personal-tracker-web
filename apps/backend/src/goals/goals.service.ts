@@ -38,7 +38,8 @@ export class GoalsService {
       data: updateGoalDto,
     });
 
-    const percentage = (updateGoalDto.currentValue / updateGoalDto.targetValue) * 100;
+    const percentage =
+      (updateGoalDto.currentValue / updateGoalDto.targetValue) * 100;
 
     if (percentage === 100) {
       await this.prisma.notification.create({
