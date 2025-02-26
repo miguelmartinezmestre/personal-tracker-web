@@ -14,7 +14,11 @@ export class UsersService {
     private emailsService: EmailsService,
   ) {}
 
-  async login(loginUserDto: LoginUserDto, request: Request, response: Response) {
+  async login(
+    loginUserDto: LoginUserDto,
+    request: Request,
+    response: Response,
+  ) {
     // console.log(loginUserDto);
 
     const userAgent = request.headers['user-agent'];

@@ -18,7 +18,14 @@ interface ModalProps {
     buttonHidden?: boolean;
 }
 
-export function Modal({ title, description, children, isOpen, onOpenChange, buttonHidden }: ModalProps) {
+export function Modal({
+    title,
+    description,
+    children,
+    isOpen,
+    onOpenChange,
+    buttonHidden,
+}: ModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
