@@ -3,16 +3,20 @@
 import * as React from 'react';
 import {
     AudioWaveform,
+    Bell,
     BookOpen,
     Bot,
     Command,
     Frame,
     GalleryVerticalEnd,
+    Home,
     Settings2,
     SquareTerminal,
 } from 'lucide-react';
-import { Sidebar, SidebarContent } from './ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter } from './ui/sidebar';
 import { NavProjects } from './nav-projects';
+import { NavUser } from './nav-user';
+import useAuth from '../hooks/useAuth';
 
 // This is sample data.
 const data = {
@@ -127,24 +131,31 @@ const data = {
     ],
     projects: [
         {
-            name: 'Metricas',
-            url: '/objetives',
+            name: 'Home',
+            url: '/dashboard/home',
+            icon: Home,
+        },
+        {
+            name: 'Objetives',
+            url: '/dashboard/objetives',
             icon: Frame,
         },
-        // {
-        //   name: "Sales & Marketing",
-        //   url: "#",
-        //   icon: PieChart,
-        // },
-        // {
-        //   name: "Travel",
-        //   url: "#",
-        //   icon: Map,
-        // },
+        {
+            name: 'Notifications',
+            url: '/dashboard/notifications',
+            icon: Bell,
+        },
+        {
+            name: 'Sesiones',
+            url: '/dashboard/sessions',
+            icon: Frame,
+        },
     ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const auth = useAuth();
+
     return (
         <Sidebar collapsible="icon" {...props}>
             {/* <SidebarHeader>
@@ -154,9 +165,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {/* <NavMain items={data.navMain} /> */}
                 <NavProjects projects={data.projects} />
             </SidebarContent>
-            {/* <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter> */}
+            <SidebarFooter>
+                <NavUser
+                    user={{
+                        name: auth ? auth.name : '',
+                        email: auth ? auth.email : '',
+                        avatar: '',
+                    }}
+                />
+            </SidebarFooter>
             {/* <SidebarRail /> */}
         </Sidebar>
     );

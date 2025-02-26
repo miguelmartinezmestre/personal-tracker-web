@@ -15,13 +15,14 @@ interface ModalProps {
     children: ReactNode;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
+    buttonHidden?: boolean;
 }
 
-export function Modal({ title, description, children, isOpen, onOpenChange }: ModalProps) {
+export function Modal({ title, description, children, isOpen, onOpenChange, buttonHidden }: ModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">Crear</Button>
+                {!buttonHidden && <Button variant="outline">Crear</Button>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>

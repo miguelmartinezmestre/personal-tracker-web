@@ -18,6 +18,10 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '../components/ui/sidebar';
+import { Button } from './ui/button';
+import { useMutation } from '@tanstack/react-query';
+import { logout } from '../services/users';
+import { useNavigate } from '@tanstack/react-router';
 
 export function NavUser({
     user,
@@ -29,6 +33,15 @@ export function NavUser({
     };
 }) {
     const { isMobile } = useSidebar();
+    const navigate = useNavigate();
+    const logoutMutation = useMutation({
+        mutationFn: logout,
+    });
+
+    const handleLogout = () => {
+        logoutMutation.mutate();
+        navigate({ to: '/' });
+    };
 
     return (
         <SidebarMenu>
@@ -69,7 +82,7 @@ export function NavUser({
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
+                        {/* <DropdownMenuGroup>
                             <DropdownMenuItem>
                                 <Sparkles />
                                 Upgrade to Pro
@@ -90,8 +103,8 @@ export function NavUser({
                                 Notifications
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuSeparator /> */}
+                        <DropdownMenuItem onClick={handleLogout}>
                             <LogOut />
                             Log out
                         </DropdownMenuItem>

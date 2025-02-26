@@ -14,8 +14,12 @@ export class UsersService {
     private emailsService: EmailsService,
   ) {}
 
-  async login(loginUserDto: LoginUserDto, response: Response) {
+  async login(loginUserDto: LoginUserDto, request: Request, response: Response) {
     // console.log(loginUserDto);
+
+    const userAgent = request.headers['user-agent'];
+
+    console.log(userAgent);
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -40,6 +44,7 @@ export class UsersService {
       data: {
         userId: user.id,
         value: sessionId,
+        userAgent: userAgent,
       },
     });
 
@@ -93,8 +98,7 @@ export class UsersService {
   }
 
   async logout(response: Response) {
-    response.clearCookie('session_id');
-    response.status(200).json({ status: 'success' });
+    response.clearCookie('session_id').json({});
   }
 
   async auth(request: Request) {

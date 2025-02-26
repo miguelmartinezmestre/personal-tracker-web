@@ -38,7 +38,27 @@ export function GenericForm<T extends z.ZodType<any, any>>({
             }
             return <Input type="text" id={name} {...form.register(name)} />;
         } else if (fieldSchema instanceof z.ZodNumber) {
-            return <Input type="number" id={name} {...form.register(name)} />;
+            return (
+                <Input type="number" id={name} {...form.register(name, { valueAsNumber: true })} />
+            );
+        } else if (fieldSchema instanceof z.ZodDate) {
+            // Format date value for the input
+            let dateValue = '';
+            const defaultValue = (defaultValues as any)[name];
+            if (defaultValue && defaultValue instanceof Date && !isNaN(defaultValue.getTime())) {
+                dateValue = defaultValue.toISOString().split('T')[0];
+            }
+
+            return (
+                <Input
+                    type="date"
+                    id={name}
+                    {...form.register(name, {
+                        setValueAs: value => (value ? new Date(value) : null),
+                    })}
+                    defaultValue={dateValue}
+                />
+            );
         } else if (fieldSchema instanceof z.ZodBoolean) {
             return (
                 <Checkbox
@@ -160,46 +180,52 @@ export function GenericForm<T extends z.ZodType<any, any>>({
                 };
             });
 
-            // Split fields into two columns
-            const midpoint = Math.ceil(fields.length / 2);
-            const leftFields = fields.slice(0, midpoint);
-            const rightFields = fields.slice(midpoint);
+            // Handle id field separately - it should be hidden
+            const idField = fields.find(field => field.name === 'id');
+            const visibleFields = fields.filter(field => field.name !== 'id');
+
+            // Split visible fields into two columns
+            const midpoint = Math.ceil(visibleFields.length / 2);
+            const leftFields = visibleFields.slice(0, midpoint);
+            const rightFields = visibleFields.slice(midpoint);
 
             return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        {leftFields.map(({ key, name, field }) => (
-                            <div key={key}>
-                                <Label htmlFor={key}>
-                                    {name.replace(/([A-Z])/g, ' $1').trim()}
-                                </Label>
-                                {renderField(key as Path<FormValues>, field)}
-                                {form.formState.errors[name] && (
-                                    <p className="text-sm text-red-500">
-                                        {(form.formState.errors[name]?.message as string) ||
-                                            'This field is required'}
-                                    </p>
-                                )}
-                            </div>
-                        ))}
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            {leftFields.map(({ key, name, field }) => (
+                                <div key={key}>
+                                    <Label htmlFor={key}>
+                                        {name.replace(/([A-Z])/g, ' $1').trim()}
+                                    </Label>
+                                    {renderField(key as Path<FormValues>, field)}
+                                    {form.formState.errors[name] && (
+                                        <p className="text-sm text-red-500">
+                                            {(form.formState.errors[name]?.message as string) ||
+                                                'This field is required'}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="space-y-4">
+                            {rightFields.map(({ key, name, field }) => (
+                                <div key={key}>
+                                    <Label htmlFor={key}>
+                                        {name.replace(/([A-Z])/g, ' $1').trim()}
+                                    </Label>
+                                    {renderField(key as Path<FormValues>, field)}
+                                    {form.formState.errors[name] && (
+                                        <p className="text-sm text-red-500">
+                                            {(form.formState.errors[name]?.message as string) ||
+                                                'This field is required'}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="space-y-4">
-                        {rightFields.map(({ key, name, field }) => (
-                            <div key={key}>
-                                <Label htmlFor={key}>
-                                    {name.replace(/([A-Z])/g, ' $1').trim()}
-                                </Label>
-                                {renderField(key as Path<FormValues>, field)}
-                                {form.formState.errors[name] && (
-                                    <p className="text-sm text-red-500">
-                                        {(form.formState.errors[name]?.message as string) ||
-                                            'This field is required'}
-                                    </p>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                </>
             );
         } else {
             // For primitive schemas or other types, render a single field
@@ -213,6 +239,7 @@ export function GenericForm<T extends z.ZodType<any, any>>({
     };
 
     const onSubmitHandler = (values: FormValues) => {
+        console.log(values);
         onSubmit(values);
     };
 

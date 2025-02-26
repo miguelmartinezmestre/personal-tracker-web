@@ -40,9 +40,10 @@ export class UsersController {
   @HttpCode(200)
   login(
     @Body() loginUserDto: LoginUserDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.usersService.login(loginUserDto, response);
+    return this.usersService.login(loginUserDto, request, response);
   }
 
   @Get('/auth')
@@ -55,6 +56,12 @@ export class UsersController {
   // create(@Body() createUserDto: CreateUserDto) {
   //   return this.usersService.create(createUserDto);
   // }
+
+  @Post('/logout')
+  @HttpCode(200)
+  logout(@Res({ passthrough: true }) response: Response) {
+    return this.usersService.logout(response);
+  }
 
   @Get()
   @UseGuards(CookieGuard)

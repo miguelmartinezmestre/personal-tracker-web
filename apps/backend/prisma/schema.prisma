@@ -28,6 +28,8 @@ model Session {
   user   User   @relation(fields: [userId], references: [id])
   userId Int
   value  String
+  userAgent String @default("")
+  createdAt DateTime @default(now())
 }
 
 model Goal {

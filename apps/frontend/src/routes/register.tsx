@@ -64,8 +64,8 @@ function RouteComponent() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            email: 'abc@a.com',
-            password: '12345678',
+            email: 'a@a.com',
+            password: 'a@a@134545',
             username: 'user',
         },
     });
