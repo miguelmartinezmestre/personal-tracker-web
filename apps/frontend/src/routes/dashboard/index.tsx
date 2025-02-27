@@ -1,17 +1,14 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { DashboardLayout } from '../../components/dashboard-layout';
-import useAuth from '../../hooks/useAuth';
 
 export const Route = createFileRoute('/dashboard/')({
-    component: RouteComponent,
+    component: IndexComponent,
 });
 
-function RouteComponent() {
-    const auth = useAuth();
-
+function IndexComponent() {
+    console.log('index');
     return (
-        <DashboardLayout>
+        <div>
             <Outlet />
-        </DashboardLayout>
+        </div>
     );
 }

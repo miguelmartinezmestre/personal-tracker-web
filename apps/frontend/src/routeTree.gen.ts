@@ -13,6 +13,7 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
+import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as DashboardIndexImport } from './routes/dashboard/index'
@@ -36,6 +37,12 @@ const LoginRoute = LoginImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const DashboardRoute = DashboardImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const AboutRoute = AboutImport.update({
   id: '/about',
   path: '/about',
@@ -49,40 +56,40 @@ const IndexRoute = IndexImport.update({
 } as any)
 
 const DashboardIndexRoute = DashboardIndexImport.update({
-  id: '/dashboard/',
-  path: '/dashboard/',
-  getParentRoute: () => rootRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 
 const DashboardSessionsIndexRoute = DashboardSessionsIndexImport.update({
-  id: '/dashboard/sessions/',
-  path: '/dashboard/sessions/',
-  getParentRoute: () => rootRoute,
+  id: '/sessions/',
+  path: '/sessions/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 
 const DashboardObjetivesIndexRoute = DashboardObjetivesIndexImport.update({
-  id: '/dashboard/objetives/',
-  path: '/dashboard/objetives/',
-  getParentRoute: () => rootRoute,
+  id: '/objetives/',
+  path: '/objetives/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 
 const DashboardNotificationsIndexRoute =
   DashboardNotificationsIndexImport.update({
-    id: '/dashboard/notifications/',
-    path: '/dashboard/notifications/',
-    getParentRoute: () => rootRoute,
+    id: '/notifications/',
+    path: '/notifications/',
+    getParentRoute: () => DashboardRoute,
   } as any)
 
 const DashboardHomeIndexRoute = DashboardHomeIndexImport.update({
-  id: '/dashboard/home/',
-  path: '/dashboard/home/',
-  getParentRoute: () => rootRoute,
+  id: '/home/',
+  path: '/home/',
+  getParentRoute: () => DashboardRoute,
 } as any)
 
 const DashboardObjetivesIdRoute = DashboardObjetivesIdImport.update({
-  id: '/dashboard/objetives/$id',
-  path: '/dashboard/objetives/$id',
-  getParentRoute: () => rootRoute,
+  id: '/objetives/$id',
+  path: '/objetives/$id',
+  getParentRoute: () => DashboardRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -103,6 +110,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutImport
       parentRoute: typeof rootRoute
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardImport
+      parentRoute: typeof rootRoute
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -119,57 +133,80 @@ declare module '@tanstack/react-router' {
     }
     '/dashboard/': {
       id: '/dashboard/'
-      path: '/dashboard'
-      fullPath: '/dashboard'
+      path: '/'
+      fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof DashboardImport
     }
     '/dashboard/objetives/$id': {
       id: '/dashboard/objetives/$id'
-      path: '/dashboard/objetives/$id'
+      path: '/objetives/$id'
       fullPath: '/dashboard/objetives/$id'
       preLoaderRoute: typeof DashboardObjetivesIdImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof DashboardImport
     }
     '/dashboard/home/': {
       id: '/dashboard/home/'
-      path: '/dashboard/home'
+      path: '/home'
       fullPath: '/dashboard/home'
       preLoaderRoute: typeof DashboardHomeIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof DashboardImport
     }
     '/dashboard/notifications/': {
       id: '/dashboard/notifications/'
-      path: '/dashboard/notifications'
+      path: '/notifications'
       fullPath: '/dashboard/notifications'
       preLoaderRoute: typeof DashboardNotificationsIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof DashboardImport
     }
     '/dashboard/objetives/': {
       id: '/dashboard/objetives/'
-      path: '/dashboard/objetives'
+      path: '/objetives'
       fullPath: '/dashboard/objetives'
       preLoaderRoute: typeof DashboardObjetivesIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof DashboardImport
     }
     '/dashboard/sessions/': {
       id: '/dashboard/sessions/'
-      path: '/dashboard/sessions'
+      path: '/sessions'
       fullPath: '/dashboard/sessions'
       preLoaderRoute: typeof DashboardSessionsIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof DashboardImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface DashboardRouteChildren {
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardObjetivesIdRoute: typeof DashboardObjetivesIdRoute
+  DashboardHomeIndexRoute: typeof DashboardHomeIndexRoute
+  DashboardNotificationsIndexRoute: typeof DashboardNotificationsIndexRoute
+  DashboardObjetivesIndexRoute: typeof DashboardObjetivesIndexRoute
+  DashboardSessionsIndexRoute: typeof DashboardSessionsIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardIndexRoute: DashboardIndexRoute,
+  DashboardObjetivesIdRoute: DashboardObjetivesIdRoute,
+  DashboardHomeIndexRoute: DashboardHomeIndexRoute,
+  DashboardNotificationsIndexRoute: DashboardNotificationsIndexRoute,
+  DashboardObjetivesIndexRoute: DashboardObjetivesIndexRoute,
+  DashboardSessionsIndexRoute: DashboardSessionsIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objetives/$id': typeof DashboardObjetivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
   '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
@@ -194,6 +231,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -209,9 +247,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/dashboard'
     | '/login'
     | '/register'
-    | '/dashboard'
+    | '/dashboard/'
     | '/dashboard/objetives/$id'
     | '/dashboard/home'
     | '/dashboard/notifications'
@@ -233,6 +272,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/dashboard'
     | '/login'
     | '/register'
     | '/dashboard/'
@@ -247,27 +287,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
-  DashboardIndexRoute: typeof DashboardIndexRoute
-  DashboardObjetivesIdRoute: typeof DashboardObjetivesIdRoute
-  DashboardHomeIndexRoute: typeof DashboardHomeIndexRoute
-  DashboardNotificationsIndexRoute: typeof DashboardNotificationsIndexRoute
-  DashboardObjetivesIndexRoute: typeof DashboardObjetivesIndexRoute
-  DashboardSessionsIndexRoute: typeof DashboardSessionsIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
-  DashboardIndexRoute: DashboardIndexRoute,
-  DashboardObjetivesIdRoute: DashboardObjetivesIdRoute,
-  DashboardHomeIndexRoute: DashboardHomeIndexRoute,
-  DashboardNotificationsIndexRoute: DashboardNotificationsIndexRoute,
-  DashboardObjetivesIndexRoute: DashboardObjetivesIndexRoute,
-  DashboardSessionsIndexRoute: DashboardSessionsIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -282,14 +312,9 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/about",
+        "/dashboard",
         "/login",
-        "/register",
-        "/dashboard/",
-        "/dashboard/objetives/$id",
-        "/dashboard/home/",
-        "/dashboard/notifications/",
-        "/dashboard/objetives/",
-        "/dashboard/sessions/"
+        "/register"
       ]
     },
     "/": {
@@ -298,6 +323,17 @@ export const routeTree = rootRoute
     "/about": {
       "filePath": "about.tsx"
     },
+    "/dashboard": {
+      "filePath": "dashboard.tsx",
+      "children": [
+        "/dashboard/",
+        "/dashboard/objetives/$id",
+        "/dashboard/home/",
+        "/dashboard/notifications/",
+        "/dashboard/objetives/",
+        "/dashboard/sessions/"
+      ]
+    },
     "/login": {
       "filePath": "login.tsx"
     },
@@ -305,22 +341,28 @@ export const routeTree = rootRoute
       "filePath": "register.tsx"
     },
     "/dashboard/": {
-      "filePath": "dashboard/index.tsx"
+      "filePath": "dashboard/index.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/objetives/$id": {
-      "filePath": "dashboard/objetives/$id.tsx"
+      "filePath": "dashboard/objetives/$id.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/home/": {
-      "filePath": "dashboard/home/index.tsx"
+      "filePath": "dashboard/home/index.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/notifications/": {
-      "filePath": "dashboard/notifications/index.tsx"
+      "filePath": "dashboard/notifications/index.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/objetives/": {
-      "filePath": "dashboard/objetives/index.tsx"
+      "filePath": "dashboard/objetives/index.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/sessions/": {
-      "filePath": "dashboard/sessions/index.tsx"
+      "filePath": "dashboard/sessions/index.tsx",
+      "parent": "/dashboard"
     }
   }
 }
