@@ -4,7 +4,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import useAuth from '../../../hooks/useAuth';
 import { Objetive } from '../../../models/objetive';
 import { getObjectives } from '../../../services/objetives';
-import { DashboardLayout } from '../../../components/dashboard-layout';
 import { Graph1 } from '../../../components/graph1';
 import { Graph2 } from '../../../components/graph2';
 import { Graph3 } from '../../../components/graph3';
@@ -146,7 +145,7 @@ function RouteComponent() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                 <div className="aspect-video rounded-xl bg-muted/50">
                     <Graph1 />
@@ -161,6 +160,6 @@ function RouteComponent() {
             <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min">
                 <DataTable columns={columns} data={data} />
             </div>
-        </DashboardLayout>
+        </>
     );
 }

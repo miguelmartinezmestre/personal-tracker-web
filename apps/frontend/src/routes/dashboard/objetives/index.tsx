@@ -3,7 +3,6 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
 import { z } from 'zod';
-import { DashboardLayout } from '../../../components/dashboard-layout';
 import { GenericForm } from '../../../components/generic-form';
 import { Modal } from '../../../components/modal';
 import { DataTable } from '../../../components/table';
@@ -215,7 +214,7 @@ function RouteComponent() {
     }
 
     return (
-        <DashboardLayout>
+        <>
             <Modal
                 title="Update progress"
                 description="Update the progress of the objetive"
@@ -243,6 +242,6 @@ function RouteComponent() {
                 />
             </Modal>
             <DataTable columns={columns} data={data} />
-        </DashboardLayout>
+        </>
     );
 }

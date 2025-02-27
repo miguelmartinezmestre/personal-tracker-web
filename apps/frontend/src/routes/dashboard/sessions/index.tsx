@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
-import { DashboardLayout } from '../../../components/dashboard-layout';
 import { DataTable } from '../../../components/table';
 import { getSessions } from '../../../services/sessions';
 import { Session } from '../../../models/session';
@@ -37,8 +36,8 @@ function RouteComponent() {
     console.log(data);
 
     return (
-        <DashboardLayout>
+        <>
             <DataTable columns={columns} data={data} />
-        </DashboardLayout>
+        </>
     );
 }
