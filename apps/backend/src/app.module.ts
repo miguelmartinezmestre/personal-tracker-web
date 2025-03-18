@@ -6,6 +6,7 @@ import { GoalsModule } from './goals/goals.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { EmailsModule } from './emails/emails.module';
+import { ProgressUpdatesModule } from './progress-updates/progress-updates.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { EmailsModule } from './emails/emails.module';
     NotificationsModule,
     SessionsModule,
     EmailsModule,
+    ProgressUpdatesModule,
   ],
   controllers: [],
   providers: [PrismaService, CookieGuard],
