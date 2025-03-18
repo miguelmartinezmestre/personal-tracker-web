@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
-import useAuth from '../../../hooks/useAuth';
 import { Objetive } from '../../../models/objetive';
 import { getObjectives } from '../../../services/objetives';
 import { Graph1 } from '../../../components/graph1';
 import { Graph2 } from '../../../components/graph2';
 import { Graph3 } from '../../../components/graph3';
 import { DataTable } from '../../../components/table';
+import { useAuthContext } from '../../../providers/auth-provider';
 
 export const Route = createFileRoute('/dashboard/home/')({
     component: RouteComponent,
@@ -100,11 +100,15 @@ const data: Goal[] = [
     },
 ];
 function RouteComponent() {
-    const auth = useAuth();
+    const { user, isLoading: isLoadingAuth } = useAuthContext();
+
+    if (isLoadingAuth) {
+        return <div>Loading...</div>;
+    }
 
     const { data, isLoading } = useQuery({
-        queryKey: ['objetives'],
-        queryFn: () => getObjectives(auth.id),
+        queryKey: ['objetives', { userId: user?.id }],
+        queryFn: () => getObjectives(user?.id ?? 0),
     });
 
     const columns: ColumnDef<Objetive>[] = [
@@ -137,8 +141,6 @@ function RouteComponent() {
     if (isLoading) {
         return <div>Loading...</div>;
     }
-
-    console.log(data);
 
     if (!data) {
         return <div>No data</div>;

@@ -4,6 +4,7 @@ import { baseUrl } from '../main';
 export async function createObjective(objective: Objetive): Promise<Objetive> {
     const response = await fetch(baseUrl + '/goals', {
         method: 'POST',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -13,7 +14,6 @@ export async function createObjective(objective: Objetive): Promise<Objetive> {
     const body = await response.json();
 
     if (!response.ok) {
-        // console.log(body)
         throw new Error(body.message);
     }
 
@@ -23,6 +23,7 @@ export async function createObjective(objective: Objetive): Promise<Objetive> {
 export async function getObjectives(userId: number): Promise<Objetive[]> {
     const response = await fetch(baseUrl + '/goals/user/' + userId, {
         method: 'GET',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -31,7 +32,6 @@ export async function getObjectives(userId: number): Promise<Objetive[]> {
     const body = await response.json();
 
     if (!response.ok) {
-        // console.log(body)
         throw new Error(body.message);
     }
 
@@ -41,6 +41,7 @@ export async function getObjectives(userId: number): Promise<Objetive[]> {
 export async function updateObjective(objective: Objetive): Promise<Objetive> {
     const response = await fetch(baseUrl + '/goals/' + objective.id, {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
         },

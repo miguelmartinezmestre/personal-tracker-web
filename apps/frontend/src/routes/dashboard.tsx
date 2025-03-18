@@ -1,22 +1,28 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { DashboardLayout } from '../components/dashboard-layout';
 import useAuth from '../hooks/useAuth';
-import { createContext } from 'react';
+import { AuthProvider } from '../providers/auth-provider';
 
 export const Route = createFileRoute('/dashboard')({
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const auth = useAuth();
+    const { email, name, id, isLoading } = useAuth();
+    const navigate = useNavigate();
+    if (isLoading) {
+        return <div className="flex items-center justify-center h-screen">Cargando...</div>;
+    }
 
-    // const context = createContext();
-
-    //add context
+    if (email === '' || name === '' || id === 0) {
+        navigate({ to: '/' });
+    }
 
     return (
-        <DashboardLayout>
-            <Outlet />
-        </DashboardLayout>
+        <AuthProvider value={{ user: { email, name, id }, isLoading }}>
+            <DashboardLayout>
+                <Outlet />
+            </DashboardLayout>
+        </AuthProvider>
     );
 }

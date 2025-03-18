@@ -59,6 +59,7 @@ export class UsersController {
 
   @Post('/logout')
   @HttpCode(200)
+  @UseGuards(CookieGuard)
   logout(@Res({ passthrough: true }) response: Response) {
     return this.usersService.logout(response);
   }
@@ -66,22 +67,23 @@ export class UsersController {
   @Get()
   @UseGuards(CookieGuard)
   findAll(@Req() request: Request) {
-    //@ts-ignore
-    console.log(request.user);
     return this.usersService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(CookieGuard)
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
   }
 
   @Patch(':id')
+  @UseGuards(CookieGuard)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
   }
 
   @Delete(':id')
+  @UseGuards(CookieGuard)
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
   }

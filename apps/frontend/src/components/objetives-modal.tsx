@@ -10,9 +10,9 @@ import { Button } from '../components/ui/button';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { createObjective } from '../services/objetives';
-import useAuth from '../hooks/useAuth';
 import { useState } from 'react';
 import { GenericForm } from './generic-form';
+import { useAuthContext } from '../providers/auth-provider';
 
 const objetiveSchema = z.object({
     title: z.string(),
@@ -26,9 +26,14 @@ const objetiveSchema = z.object({
 });
 
 export function ObjetivesModal({ refetch }: { refetch: () => void }) {
+    const { user, isLoading } = useAuthContext();
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
     const [open, setOpen] = useState(false);
     const [, setError] = useState<string | null>(null);
-    const auth = useAuth();
 
     const handleClose = () => {
         setOpen(false);
@@ -45,7 +50,7 @@ export function ObjetivesModal({ refetch }: { refetch: () => void }) {
                 deadline: values.deadline,
                 status: values.status,
                 unit: values.unit,
-                userId: auth ? Number(auth.id) : -1,
+                userId: user ? Number(user.id) : -1,
             });
         },
         onError: (error: Error) => {
@@ -58,7 +63,6 @@ export function ObjetivesModal({ refetch }: { refetch: () => void }) {
     });
 
     function onSubmit(values: z.infer<typeof objetiveSchema>) {
-        console.log(JSON.stringify(values, null, 2));
         mutation.mutate(values);
     }
 

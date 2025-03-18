@@ -5,7 +5,6 @@ export const Route = createFileRoute('/dashboard/')({
 });
 
 function IndexComponent() {
-    console.log('index');
     return (
         <div>
             <Outlet />

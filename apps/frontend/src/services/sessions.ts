@@ -4,6 +4,7 @@ import { baseUrl } from '../main';
 export async function getSessions(): Promise<Session[]> {
     const response = await fetch(baseUrl + '/sessions', {
         method: 'GET',
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
         },
