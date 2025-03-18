@@ -4,6 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/table';
 import { getNotifications } from '../../../services/notifications';
 import { useAuthContext } from '../../../providers/auth-provider';
+import { Notification } from '../../../models/notification';
 
 export const Route = createFileRoute('/dashboard/notifications/')({
     component: RouteComponent,
@@ -16,7 +17,7 @@ function RouteComponent() {
         return <div>Loading...</div>;
     }
 
-    const { data, refetch, isLoading } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['notifications', { userId: user?.id }],
         queryFn: () => getNotifications(user?.id ?? 0),
     });
@@ -43,8 +44,6 @@ function RouteComponent() {
     if (!data) {
         return <div>No data</div>;
     }
-
-    // console.log(data);
 
     return (
         <>

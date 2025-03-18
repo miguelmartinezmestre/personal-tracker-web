@@ -239,7 +239,6 @@ export function GenericForm<T extends z.ZodType<any, any>>({
     };
 
     const onSubmitHandler = (values: FormValues) => {
-        console.log(values);
         onSubmit(values);
     };
 

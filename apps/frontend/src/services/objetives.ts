@@ -14,7 +14,6 @@ export async function createObjective(objective: Objetive): Promise<Objetive> {
     const body = await response.json();
 
     if (!response.ok) {
-        // console.log(body)
         throw new Error(body.message);
     }
 
@@ -33,7 +32,6 @@ export async function getObjectives(userId: number): Promise<Objetive[]> {
     const body = await response.json();
 
     if (!response.ok) {
-        // console.log(body)
         throw new Error(body.message);
     }
 

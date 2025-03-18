@@ -63,7 +63,6 @@ export function ObjetivesModal({ refetch }: { refetch: () => void }) {
     });
 
     function onSubmit(values: z.infer<typeof objetiveSchema>) {
-        console.log(JSON.stringify(values, null, 2));
         mutation.mutate(values);
     }
 

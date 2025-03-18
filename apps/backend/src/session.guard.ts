@@ -12,7 +12,6 @@ export class CookieGuard implements CanActivate {
   constructor(@Inject(PrismaService) private prisma?: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    console.log('CookieGuard');
     const request = context.switchToHttp().getRequest() as Request;
     // Obtener cookies del cliente
     const cookies = request.cookies;

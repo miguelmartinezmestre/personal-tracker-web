@@ -19,11 +19,7 @@ export class UsersService {
     request: Request,
     response: Response,
   ) {
-    // console.log(loginUserDto);
-
     const userAgent = request.headers['user-agent'];
-
-    console.log(userAgent);
 
     const user = await this.prisma.user.findUnique({
       where: {
@@ -34,8 +30,6 @@ export class UsersService {
     const hashedPassword = createHash('sha512')
       .update(loginUserDto.password)
       .digest('hex');
-
-    // console.log(hashedPassword, user);
 
     if (user.password !== hashedPassword) {
       throw new UnauthorizedException('Incorrect credentials');
@@ -107,8 +101,6 @@ export class UsersService {
 
   async auth(request: Request) {
     const session_id = request.cookies['session_id'];
-
-    // console.log();
 
     const session = await this.prisma.session.findFirst({
       where: {

@@ -15,7 +15,6 @@ export async function loginUser(user: LoginUser) {
     const body = await response.json();
 
     if (!response.ok) {
-        // console.log(body);
         throw new Error(body.message);
     }
 

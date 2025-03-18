@@ -142,8 +142,6 @@ function RouteComponent() {
         return <div>Loading...</div>;
     }
 
-    // console.log(data);
-
     if (!data) {
         return <div>No data</div>;
     }

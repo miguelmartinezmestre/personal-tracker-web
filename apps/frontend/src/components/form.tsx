@@ -76,7 +76,6 @@ export function CustomForm({ onClose, refetch }: { onClose: () => void; refetch:
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(JSON.stringify(values, null, 2));
         mutation.mutate(values);
     }
 

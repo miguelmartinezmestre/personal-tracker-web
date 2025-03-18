@@ -67,8 +67,6 @@ export class UsersController {
   @Get()
   @UseGuards(CookieGuard)
   findAll(@Req() request: Request) {
-    //@ts-ignore
-    console.log(request.user);
     return this.usersService.findAll();
   }
 

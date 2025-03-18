@@ -5,10 +5,6 @@ import { AuthProvider } from '../providers/auth-provider';
 
 export const Route = createFileRoute('/dashboard')({
     component: RouteComponent,
-    beforeLoad: async ({ context }) => {
-        console.log(context);
-        console.log('Test');
-    },
 });
 
 function RouteComponent() {

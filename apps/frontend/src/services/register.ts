@@ -14,7 +14,6 @@ export async function registerUser(user: User) {
     const body = await response.json();
 
     if (!response.ok) {
-        // console.log(body)
         throw new Error(body.message);
     }
 

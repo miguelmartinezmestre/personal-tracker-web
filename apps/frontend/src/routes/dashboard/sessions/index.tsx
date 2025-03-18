@@ -40,8 +40,6 @@ function RouteComponent() {
         return <div>No data</div>;
     }
 
-    // console.log(data);
-
     return (
         <>
             <DataTable columns={columns} data={data} />

@@ -26,7 +26,7 @@ const defaultValues = {
     unit: 'a',
 };
 
-const objetiveSchema = z.object({
+const schema = z.object({
     id: z.number().optional(),
     title: z.string().min(1, { message: 'Title is required' }),
     description: z.string().min(1, { message: 'Description is required' }),
@@ -48,7 +48,7 @@ function RouteComponent() {
     const [, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [updateOpen, setUpdateOpen] = useState(false);
-    const [updateValues, setUpdateValues] = useState<z.infer<typeof objetiveSchema>>(defaultValues);
+    const [updateValues, setUpdateValues] = useState<z.infer<typeof schema>>(defaultValues);
 
     const { data, refetch, isLoading } = useQuery({
         queryKey: ['objetives', { userId: user?.id }],
@@ -56,8 +56,7 @@ function RouteComponent() {
     });
 
     const mutation = useMutation({
-        mutationFn: (values: z.infer<typeof objetiveSchema>) => {
-            console.log(values);
+        mutationFn: (values: z.infer<typeof schema>) => {
             return createObjective({
                 title: values.title,
                 description: values.description,
@@ -80,7 +79,7 @@ function RouteComponent() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: (values: z.infer<typeof objetiveSchema>) => {
+        mutationFn: (values: z.infer<typeof schema>) => {
             if (!values.id) {
                 throw new Error('ID is required for updating an objective');
             }
@@ -94,7 +93,7 @@ function RouteComponent() {
                 deadline: values.deadline,
                 status: values.status,
                 unit: values.unit,
-                userId: auth ? Number(auth.id) : -1,
+                userId: user ? Number(user.id) : -1,
             });
         },
         onError: (error: Error) => {
@@ -202,19 +201,15 @@ function RouteComponent() {
         return <div>Loading...</div>;
     }
 
-    // console.log(data);
-
     if (!data) {
         return <div>No data</div>;
     }
 
-    function onSubmit(values: z.infer<typeof objetiveSchema>) {
-        console.log(JSON.stringify(values, null, 2));
+    function onSubmit(values: z.infer<typeof schema>) {
         mutation.mutate(values);
     }
 
-    function onUpdateSubmit(values: z.infer<typeof objetiveSchema>) {
-        console.log(JSON.stringify(values, null, 2));
+    function onUpdateSubmit(values: z.infer<typeof schema>) {
         updateMutation.mutate(values);
     }
 
@@ -228,7 +223,7 @@ function RouteComponent() {
                 buttonHidden={true}
             >
                 <GenericForm
-                    schema={objetiveSchema}
+                    schema={schema}
                     defaultValues={updateValues}
                     onSubmit={onUpdateSubmit}
                 />
@@ -240,11 +235,7 @@ function RouteComponent() {
                 isOpen={open}
                 onOpenChange={setOpen}
             >
-                <GenericForm
-                    schema={objetiveSchema}
-                    defaultValues={defaultValues}
-                    onSubmit={onSubmit}
-                />
+                <GenericForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit} />
             </Modal>
             <DataTable columns={columns} data={data} />
         </>

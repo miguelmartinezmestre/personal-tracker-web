@@ -1,4 +1,4 @@
-import { createFileRoute, useParams } from '@tanstack/react-router';
+import { createFileRoute, useParams, Link } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/dashboard/objetives/$id')({
     component: RouteComponent,
@@ -7,7 +7,10 @@ export const Route = createFileRoute('/dashboard/objetives/$id')({
 function RouteComponent() {
     const { id } = useParams({ strict: false });
 
-    // console.log(id);
-
-    return <div>Hello "/objetives/$id"!{id}</div>;
+    return (
+        <div>
+            <Link to="/dashboard/objetives">Back</Link>
+            <h1>Objetive {id}</h1>
+        </div>
+    );
 }
