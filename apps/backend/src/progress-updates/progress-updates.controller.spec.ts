@@ -11,7 +11,9 @@ describe('ProgressUpdatesController', () => {
       providers: [ProgressUpdatesService],
     }).compile();
 
-    controller = module.get<ProgressUpdatesController>(ProgressUpdatesController);
+    controller = module.get<ProgressUpdatesController>(
+      ProgressUpdatesController,
+    );
   });
 
   it('should be defined', () => {

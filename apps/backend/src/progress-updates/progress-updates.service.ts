@@ -5,7 +5,6 @@ import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class ProgressUpdatesService {
-
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createProgressUpdateDto: CreateProgressUpdateDto) {
@@ -36,5 +35,4 @@ export class ProgressUpdatesService {
       where: { id },
     });
   }
-
 }

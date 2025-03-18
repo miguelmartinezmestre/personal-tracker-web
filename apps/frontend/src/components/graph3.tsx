@@ -1,7 +1,7 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
-import { CartesianGrid, Line, LineChart, XAxis } from 'recharts';
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis } from 'recharts';
 
 import {
     Card,
@@ -18,21 +18,27 @@ import {
     ChartTooltipContent,
 } from '../components/ui/chart';
 const chartData = [
-    { month: 'January', desktop: 186, mobile: 80 },
-    { month: 'February', desktop: 305, mobile: 200 },
-    { month: 'March', desktop: 237, mobile: 120 },
-    { month: 'April', desktop: 73, mobile: 190 },
-    { month: 'May', desktop: 209, mobile: 130 },
-    { month: 'June', desktop: 214, mobile: 140 },
+    { month: 'January', currentValue: 5, objetive: 90 },
+    { month: 'February', currentValue: 23, objetive: 90 },
+    { month: 'March', currentValue: 32, objetive: 90 },
+    { month: 'April', currentValue: 37, objetive: 90 },
+    { month: 'May', currentValue: 45, objetive: 90 },
+    { month: 'June', currentValue: 52, objetive: 90 },
+    { month: 'July', currentValue: 63, objetive: 90 },
+    { month: 'August', currentValue: 67, objetive: 90 },
+    { month: 'September', currentValue: 73, objetive: 90 },
+    { month: 'October', currentValue: 75, objetive: 90 },
+    { month: 'November', currentValue: 87, objetive: 90 },
+    { month: 'December', currentValue: 90, objetive: 90 },
 ];
 
 const chartConfig = {
-    desktop: {
-        label: 'Desktop',
+    currentValue: {
+        label: 'Valor Actual',
         color: 'hsl(var(--chart-1))',
     },
-    mobile: {
-        label: 'Mobile',
+    objetive: {
+        label: 'Objetivo',
         color: 'hsl(var(--chart-2))',
     },
 } satisfies ChartConfig;
@@ -64,19 +70,20 @@ export function Graph3() {
                         />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                         <Line
-                            dataKey="desktop"
+                            dataKey="currentValue"
                             type="monotone"
-                            stroke="var(--color-desktop)"
+                            stroke="var(--color-currentValue)"
                             strokeWidth={2}
                             dot={false}
                         />
                         <Line
-                            dataKey="mobile"
+                            dataKey="objetive"
                             type="monotone"
-                            stroke="var(--color-mobile)"
+                            stroke="var(--color-objetive)"
                             strokeWidth={2}
                             dot={false}
                         />
+                        <ReferenceLine y={100} stroke="red" strokeDasharray="5 5" />
                     </LineChart>
                 </ChartContainer>
             </CardContent>
