@@ -9,6 +9,15 @@ import { ThemeProvider } from './providers/theme-provider.tsx';
 
 export const baseUrl = 'http://localhost:3000';
 
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60,
+            gcTime: 1000 * 60,
+        },
+    },
+});
+
 const router = createRouter({
     routeTree,
     defaultNotFoundComponent: () => <NotFound />,
@@ -19,15 +28,6 @@ declare module '@tanstack/react-router' {
         router: typeof router;
     }
 }
-
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 1000,
-            gcTime: 1000 * 60,
-        },
-    },
-});
 
 createRoot(document.getElementById('root')!).render(
     // <StrictMode>

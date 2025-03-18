@@ -30,7 +30,7 @@ export class CookieGuard implements CanActivate {
     if (!session_id || !session) {
       throw new UnauthorizedException('Incorrect credentials');
     }
-    
+
     return true;
   }
 }
