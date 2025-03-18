@@ -19,7 +19,7 @@ async function fetchAuth(): Promise<{
     return response.json();
 }
 
-export default function useAuth(): { email: string; name: string; id: number } {
+export default function useAuth(): { email: string; name: string; id: number; isLoading: boolean } {
     const navigate = useNavigate();
 
     const { data, isError, isLoading } = useQuery<{
@@ -29,21 +29,17 @@ export default function useAuth(): { email: string; name: string; id: number } {
     }>({
         queryKey: ['auth'],
         queryFn: fetchAuth,
-        retry: false,
     });
-
-    // console.log('isError', isError);
 
     if (isError) {
         navigate({ to: '/' });
     }
 
-    console.log('data', data);
-
-    if (!isLoading && !data) {
-        throw new Error('Authentication failed');
-    }
-
     //@ts-ignore
-    return data;
+    return {
+        email: data ? data.email : '',
+        name: data ? data.name : '',
+        id: data ? data.id : 0,
+        isLoading,
+    };
 }

@@ -16,7 +16,7 @@ import {
 import { Sidebar, SidebarContent, SidebarFooter } from './ui/sidebar';
 import { NavProjects } from './nav-projects';
 import { NavUser } from './nav-user';
-import useAuth from '../hooks/useAuth';
+import { useAuthContext } from '../providers/auth-provider';
 
 // This is sample data.
 const data = {
@@ -154,7 +154,11 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const auth = useAuth();
+    const { user, isLoading } = useAuthContext();
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -168,8 +172,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarFooter>
                 <NavUser
                     user={{
-                        name: auth ? auth.name : '',
-                        email: auth ? auth.email : '',
+                        name: user ? user.name : '',
+                        email: user ? user.email : '',
                         avatar: '',
                     }}
                 />

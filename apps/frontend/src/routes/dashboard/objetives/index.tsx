@@ -7,9 +7,9 @@ import { GenericForm } from '../../../components/generic-form';
 import { Modal } from '../../../components/modal';
 import { DataTable } from '../../../components/table';
 import { Button } from '../../../components/ui/button';
-import useAuth from '../../../hooks/useAuth';
 import { Objetive } from '../../../models/objetive';
 import { getObjectives, createObjective, updateObjective } from '../../../services/objetives';
+import { useAuthContext } from '../../../providers/auth-provider';
 
 export const Route = createFileRoute('/dashboard/objetives/')({
     component: RouteComponent,
@@ -39,15 +39,20 @@ const objetiveSchema = z.object({
 });
 
 function RouteComponent() {
-    const auth = useAuth();
+    const { user, isLoading: isLoadingAuth } = useAuthContext();
+
+    if (isLoadingAuth) {
+        return <div>Loading...</div>;
+    }
+
     const [, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [updateOpen, setUpdateOpen] = useState(false);
     const [updateValues, setUpdateValues] = useState<z.infer<typeof objetiveSchema>>(defaultValues);
 
     const { data, refetch, isLoading } = useQuery({
-        queryKey: ['objetives'],
-        queryFn: () => getObjectives(auth.id),
+        queryKey: ['objetives', { userId: user?.id }],
+        queryFn: () => getObjectives(user?.id ?? 0),
     });
 
     const mutation = useMutation({
@@ -62,7 +67,7 @@ function RouteComponent() {
                 deadline: values.deadline,
                 status: values.status,
                 unit: values.unit,
-                userId: auth ? Number(auth.id) : -1,
+                userId: user ? Number(user.id) : -1,
             } as Objetive);
         },
         onError: (error: Error) => {
@@ -197,7 +202,7 @@ function RouteComponent() {
         return <div>Loading...</div>;
     }
 
-    console.log(data);
+    // console.log(data);
 
     if (!data) {
         return <div>No data</div>;

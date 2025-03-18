@@ -4,13 +4,20 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/table';
 import { getSessions } from '../../../services/sessions';
 import { Session } from '../../../models/session';
+import { useAuthContext } from '../../../providers/auth-provider';
 export const Route = createFileRoute('/dashboard/sessions/')({
     component: RouteComponent,
 });
 
 function RouteComponent() {
+    const { user, isLoading: isLoadingAuth } = useAuthContext();
+
+    if (isLoadingAuth) {
+        return <div>Loading...</div>;
+    }
+
     const { data, isLoading } = useQuery({
-        queryKey: ['sessions'],
+        queryKey: ['sessions', { userId: user?.id }],
         queryFn: getSessions,
     });
 
@@ -33,7 +40,7 @@ function RouteComponent() {
         return <div>No data</div>;
     }
 
-    console.log(data);
+    // console.log(data);
 
     return (
         <>

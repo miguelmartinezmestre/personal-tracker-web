@@ -14,8 +14,8 @@ import {
 } from '../components/ui/form';
 import { useMutation } from '@tanstack/react-query';
 import { createObjective } from '../services/objetives';
-import useAuth from '../hooks/useAuth';
 import { useState } from 'react';
+import { useAuthContext } from '../providers/auth-provider';
 
 const formSchema = z.object({
     title: z.string(),
@@ -29,8 +29,13 @@ const formSchema = z.object({
 });
 
 export function CustomForm({ onClose, refetch }: { onClose: () => void; refetch: () => void }) {
+    const { user, isLoading } = useAuthContext();
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
     const [error, setError] = useState<string | null>(null);
-    const auth = useAuth();
 
     // 1. Define your form.
     const form = useForm<z.infer<typeof formSchema>>({
@@ -47,10 +52,6 @@ export function CustomForm({ onClose, refetch }: { onClose: () => void; refetch:
         },
     });
 
-    if (auth) {
-        console.log(auth);
-    }
-
     const mutation = useMutation({
         mutationFn: (values: z.infer<typeof formSchema>) => {
             return createObjective({
@@ -62,7 +63,7 @@ export function CustomForm({ onClose, refetch }: { onClose: () => void; refetch:
                 deadline: values.deadline,
                 status: values.status,
                 unit: values.unit,
-                userId: auth ? Number(auth.id) : -1,
+                userId: user ? Number(user.id) : -1,
             });
         },
         onError: (error: Error) => {
