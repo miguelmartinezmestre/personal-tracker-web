@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from './ui/sidebar';
 import { useRouter } from '@tanstack/react-router';
-
+import { TanstackBreadcrumb } from './breadcrump';
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
@@ -16,9 +16,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <div className="flex items-center gap-2 px-4">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4" />
-                        <Button variant="outline" size="icon" onClick={() => router.history.back()}>
+                        {/* <Button variant="outline" size="icon" onClick={() => router.history.back()}>
                             <ArrowLeft className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
+                        <TanstackBreadcrumb />
                     </div>
                 </header>
                 <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
