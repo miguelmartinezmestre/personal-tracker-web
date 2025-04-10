@@ -8,9 +8,41 @@ export class ProgressUpdatesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createProgressUpdateDto: CreateProgressUpdateDto) {
-    return this.prisma.progressUpdate.create({
+    const progressUpdate = await this.prisma.progressUpdate.create({
       data: createProgressUpdateDto,
     });
+
+    const goal = await this.prisma.goal.findUnique({
+      where: { id: progressUpdate.goalId },
+    });
+
+    const percentage = (progressUpdate.updatedValue / goal.targetValue) * 100;
+
+    console.log(progressUpdate.updatedValue, goal.targetValue);
+
+    if (percentage === 100) {
+      await this.prisma.notification.create({
+        data: {
+          userId: goal.userId,
+          message: 'Goal completed',
+          goalId: progressUpdate.goalId,
+          notificationDate: new Date(),
+          notificationType: 'Goal Completed',
+        },
+      });
+    } else {
+      await this.prisma.notification.create({
+        data: {
+          userId: goal.userId,
+          message: `Goal ${goal.title} is ${percentage}% completed`,
+          goalId: progressUpdate.goalId,
+          notificationDate: new Date(),
+          notificationType: 'Goal Progress',
+        },
+      });
+    }
+
+    return progressUpdate;
   }
 
   async findAll() {
