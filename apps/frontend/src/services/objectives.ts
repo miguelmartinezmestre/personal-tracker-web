@@ -52,3 +52,21 @@ export async function updateObjective(objective: Objetive): Promise<Objetive> {
 
     return body;
 }
+
+export async function getObjective(id: number): Promise<Objetive> {
+    const response = await fetch(baseUrl + '/goals/' + id, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+        throw new Error(body.message);
+    }
+
+    return body;
+}

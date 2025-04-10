@@ -8,10 +8,11 @@ import { Modal } from '../../../components/modal';
 import { DataTable } from '../../../components/table';
 import { Button } from '../../../components/ui/button';
 import { Objetive } from '../../../models/objetive';
-import { getObjectives, createObjective, updateObjective } from '../../../services/objetives';
-import { useAuthContext } from '../../../providers/auth-provider';
 
-export const Route = createFileRoute('/dashboard/objetives/')({
+import { useAuthContext } from '../../../providers/auth-provider';
+import { createObjective, getObjectives, updateObjective } from '../../../services/objectives';
+
+export const Route = createFileRoute('/dashboard/objectives/')({
     component: RouteComponent,
 });
 
@@ -51,7 +52,7 @@ function RouteComponent() {
     const [updateValues, setUpdateValues] = useState<z.infer<typeof schema>>(defaultValues);
 
     const { data, refetch, isLoading } = useQuery({
-        queryKey: ['objetives', { userId: user?.id }],
+        queryKey: ['objectives', { userId: user?.id }],
         queryFn: () => getObjectives(user?.id ?? 0),
     });
 
@@ -154,7 +155,10 @@ function RouteComponent() {
                 const objetiveRow = row.original;
                 if (objetiveRow.id) {
                     return (
-                        <Link to="/dashboard/objetives/$id" params={{ id: String(objetiveRow.id) }}>
+                        <Link
+                            to="/dashboard/objectives/$id"
+                            params={{ id: String(objetiveRow.id) }}
+                        >
                             Ir actividad
                         </Link>
                     );

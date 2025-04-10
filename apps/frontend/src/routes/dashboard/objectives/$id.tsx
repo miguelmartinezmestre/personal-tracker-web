@@ -3,7 +3,7 @@ import { DataTable } from '../../../components/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuthContext } from '../../../providers/auth-provider';
-import { Graph3 } from '../../../components/graph3';
+import { Graph3, Progress } from '../../../components/graph3';
 import { Modal } from '../../../components/modal';
 import { GenericForm } from '../../../components/generic-form';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import {
 } from '../../../services/update-progress';
 import { UpdateProgress } from '../../../models/update-progress';
 import { z } from 'zod';
+import { getObjective } from '../../../services/objectives';
 
 const defaultValues = {
     goalId: 0,
@@ -30,7 +31,7 @@ const schema = z.object({
     comment: z.string().min(1, { message: 'Comment is required' }),
 });
 
-export const Route = createFileRoute('/dashboard/objetives/$id')({
+export const Route = createFileRoute('/dashboard/objectives/$id')({
     component: RouteComponent,
 });
 
@@ -53,11 +54,14 @@ function RouteComponent() {
         return <div>Loading...</div>;
     }
 
-    console.log(Number(id));
-
     const { data, refetch, isLoading } = useQuery({
-        queryKey: ['update-progress', { userId: user?.id }],
+        queryKey: ['update-progress', { userId: user?.id, goalId: Number(id) }],
         queryFn: () => getUpdateProgress(Number(id)),
+    });
+
+    const { data: objetiveData, isLoading: isLoadingObjetive } = useQuery({
+        queryKey: ['objetive', { userId: user?.id, goalId: Number(id) }],
+        queryFn: () => getObjective(Number(id)),
     });
 
     const mutation = useMutation({
@@ -180,11 +184,11 @@ function RouteComponent() {
         // },
     ];
 
-    if (isLoading) {
+    if (isLoading || isLoadingObjetive) {
         return <div>Loading...</div>;
     }
 
-    if (!data) {
+    if (!data || !objetiveData) {
         return <div>No data</div>;
     }
 
@@ -196,32 +200,22 @@ function RouteComponent() {
         updateMutation.mutate(values);
     }
 
+    const progressData: Progress[] = data.map(item => ({
+        date: new Date(item.updateDate),
+        currentValue: item.updatedValue,
+        objetive: objetiveData.targetValue,
+    }));
+
     return (
         <>
-            <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-                <div className="aspect-video rounded-xl bg-muted/50 w-full">
-                    <Graph3 />
-                </div>
-            </div>
-            <Modal
-                title="Update progress"
-                description="Update the progress of the objetive"
-                isOpen={updateOpen}
-                onOpenChange={setUpdateOpen}
-                buttonHidden={true}
-            >
-                <GenericForm
-                    schema={schema}
-                    defaultValues={updateValues}
-                    onSubmit={onUpdateSubmit}
-                />
-            </Modal>
+            <Graph3 data={progressData} />
 
             <Modal
                 title="Objetive"
                 description="Create a new objetive"
                 isOpen={open}
                 onOpenChange={setOpen}
+                buttonText="Update progress"
             >
                 <GenericForm schema={schema} defaultValues={defaultValues} onSubmit={onSubmit} />
             </Modal>

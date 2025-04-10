@@ -6,7 +6,7 @@ erDiagram
         string username
     }
 
-    Objetives {
+    Objectives {
         int goal_id PK
         int user_id FK
         string title
@@ -35,7 +35,7 @@ erDiagram
         string message
     }
 
-    User ||--o{ Objetives : "creates"
-    Objetives ||--o{ ProgressUpdate : "has updates"
+    User ||--o{ Objectives : "creates"
+    Objectives ||--o{ ProgressUpdate : "has updates"
     User ||--o{ Notification : "receives"
-    Objetives ||--o{ Notification : "triggers"
+    Objectives ||--o{ Notification : "triggers"

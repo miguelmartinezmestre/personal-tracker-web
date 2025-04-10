@@ -13,7 +13,7 @@ import {
     FormMessage,
 } from '../components/ui/form';
 import { useMutation } from '@tanstack/react-query';
-import { createObjective } from '../services/objetives';
+import { createObjective } from '../services/objectives';
 import { useState } from 'react';
 import { useAuthContext } from '../providers/auth-provider';
 

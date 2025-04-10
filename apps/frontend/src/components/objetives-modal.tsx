@@ -9,12 +9,12 @@ import {
 import { Button } from '../components/ui/button';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { createObjective } from '../services/objetives';
+import { createObjective } from '../services/objectives';
 import { useState } from 'react';
 import { GenericForm } from './generic-form';
 import { useAuthContext } from '../providers/auth-provider';
 
-const objetiveSchema = z.object({
+const objectiveSchema = z.object({
     title: z.string(),
     description: z.string(),
     category: z.string(),
@@ -25,7 +25,7 @@ const objetiveSchema = z.object({
     unit: z.string(),
 });
 
-export function ObjetivesModal({ refetch }: { refetch: () => void }) {
+export function ObjectivesModal({ refetch }: { refetch: () => void }) {
     const { user, isLoading } = useAuthContext();
 
     if (isLoading) {
@@ -40,7 +40,7 @@ export function ObjetivesModal({ refetch }: { refetch: () => void }) {
     };
 
     const mutation = useMutation({
-        mutationFn: (values: z.infer<typeof objetiveSchema>) => {
+        mutationFn: (values: z.infer<typeof objectiveSchema>) => {
             return createObjective({
                 title: values.title,
                 description: values.description,
@@ -62,7 +62,7 @@ export function ObjetivesModal({ refetch }: { refetch: () => void }) {
         },
     });
 
-    function onSubmit(values: z.infer<typeof objetiveSchema>) {
+    function onSubmit(values: z.infer<typeof objectiveSchema>) {
         mutation.mutate(values);
     }
 
@@ -89,7 +89,7 @@ export function ObjetivesModal({ refetch }: { refetch: () => void }) {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <GenericForm
-                        schema={objetiveSchema}
+                        schema={objectiveSchema}
                         defaultValues={defaultValues}
                         onSubmit={onSubmit}
                     />

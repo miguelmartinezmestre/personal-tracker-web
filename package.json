@@ -12,14 +12,18 @@
         "lint": "turbo run lint",
         "format": "prettier --write \"**/*.{ts,tsx,md}\"",
         "clean": "find . -type d -name \"node_modules\" -prune -exec rm -rf {} +",
-        "prepare": "husky"
+        "prepare": "husky",
+        "knip": "knip"
     },
     "devDependencies": {
+        "@types/node": "^22.13.13",
         "eslint": "^8.48.0",
         "husky": "^9.1.7",
+        "knip": "^5.46.2",
         "lint-staged": "^15.4.3",
         "prettier": "^3.5.2",
-        "turbo": "^2.4.2"
+        "turbo": "^2.4.2",
+        "typescript": "^5.8.2"
     },
     "engines": {
         "node": ">=14.0.0"
