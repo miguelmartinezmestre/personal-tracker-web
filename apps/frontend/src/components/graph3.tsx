@@ -17,20 +17,30 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from '../components/ui/chart';
-const chartData = [
-    { month: 'January', currentValue: 5, objetive: 90 },
-    { month: 'February', currentValue: 23, objetive: 90 },
-    { month: 'March', currentValue: 32, objetive: 90 },
-    { month: 'April', currentValue: 37, objetive: 90 },
-    { month: 'May', currentValue: 45, objetive: 90 },
-    { month: 'June', currentValue: 52, objetive: 90 },
-    { month: 'July', currentValue: 63, objetive: 90 },
-    { month: 'August', currentValue: 67, objetive: 90 },
-    { month: 'September', currentValue: 73, objetive: 90 },
-    { month: 'October', currentValue: 75, objetive: 90 },
-    { month: 'November', currentValue: 87, objetive: 90 },
-    { month: 'December', currentValue: 90, objetive: 90 },
-];
+// const chartData = [
+//     { date: new Date('2024-01-01'), currentValue: 5, objetive: 90 },
+//     { date: new Date('2024-02-01'), currentValue: 23, objetive: 90 },
+//     { date: new Date('2024-03-01'), currentValue: 32, objetive: 90 },
+//     { date: new Date('2024-04-01'), currentValue: 37, objetive: 90 },
+//     { date: new Date('2024-05-01'), currentValue: 45, objetive: 90 },
+//     { date: new Date('2024-06-01'), currentValue: 52, objetive: 90 },
+//     { date: new Date('2024-07-01'), currentValue: 63, objetive: 90 },
+//     { date: new Date('2024-08-01'), currentValue: 67, objetive: 90 },
+//     { date: new Date('2024-09-01'), currentValue: 73, objetive: 90 },
+//     { date: new Date('2024-10-01'), currentValue: 75, objetive: 90 },
+//     { date: new Date('2024-11-01'), currentValue: 87, objetive: 90 },
+//     { date: new Date('2024-12-01'), currentValue: 90, objetive: 90 },
+// ];
+
+export interface Progress {
+    date: Date;
+    currentValue: number;
+    objetive: number;
+}
+
+interface ProgressProps {
+    data: Progress[];
+}
 
 const chartConfig = {
     currentValue: {
@@ -43,7 +53,7 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-export function Graph3() {
+export function Graph3({ data }: ProgressProps) {
     return (
         <Card>
             <CardHeader>
@@ -54,7 +64,7 @@ export function Graph3() {
                 <ChartContainer config={chartConfig}>
                     <LineChart
                         accessibilityLayer
-                        data={chartData}
+                        data={data}
                         margin={{
                             left: 12,
                             right: 12,
@@ -62,11 +72,16 @@ export function Graph3() {
                     >
                         <CartesianGrid vertical={false} />
                         <XAxis
-                            dataKey="month"
+                            dataKey="date"
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
-                            tickFormatter={value => value.slice(0, 3)}
+                            tickFormatter={value =>
+                                value.toLocaleDateString('es-ES', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                })
+                            }
                         />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                         <Line
@@ -83,11 +98,11 @@ export function Graph3() {
                             strokeWidth={2}
                             dot={false}
                         />
-                        <ReferenceLine y={100} stroke="red" strokeDasharray="5 5" />
+                        {/* <ReferenceLine y={100} stroke="red" strokeDasharray="5 5" /> */}
                     </LineChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter>
+            {/* <CardFooter>
                 <div className="flex w-full items-start gap-2 text-sm">
                     <div className="grid gap-2">
                         <div className="flex items-center gap-2 font-medium leading-none">
@@ -98,7 +113,7 @@ export function Graph3() {
                         </div>
                     </div>
                 </div>
-            </CardFooter>
+            </CardFooter> */}
         </Card>
     );
 }

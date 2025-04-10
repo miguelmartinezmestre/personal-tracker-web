@@ -16,6 +16,7 @@ interface ModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     buttonHidden?: boolean;
+    buttonText?: string;
 }
 
 export function Modal({
@@ -25,11 +26,12 @@ export function Modal({
     isOpen,
     onOpenChange,
     buttonHidden,
+    buttonText,
 }: ModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
-                {!buttonHidden && <Button variant="outline">Crear</Button>}
+                {!buttonHidden && <Button variant="outline">{buttonText}</Button>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>

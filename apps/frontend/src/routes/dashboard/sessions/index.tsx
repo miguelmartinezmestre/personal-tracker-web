@@ -5,6 +5,7 @@ import { DataTable } from '../../../components/table';
 import { getSessions } from '../../../services/sessions';
 import { Session } from '../../../models/session';
 import { useAuthContext } from '../../../providers/auth-provider';
+import { UserAgentIcon } from '../../../components/user-agent';
 export const Route = createFileRoute('/dashboard/sessions/')({
     component: RouteComponent,
 });
@@ -25,6 +26,9 @@ function RouteComponent() {
         {
             accessorKey: 'userAgent',
             header: 'Dispositivo',
+            cell: ({ row }) => {
+                return <UserAgentIcon userAgent={row.original.userAgent} />;
+            },
         },
         {
             accessorKey: 'createdAt',
