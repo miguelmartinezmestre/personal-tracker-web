@@ -136,8 +136,8 @@ const data = {
             icon: Home,
         },
         {
-            name: 'Objetives',
-            url: '/dashboard/objetives',
+            name: 'Objectives',
+            url: '/dashboard/objectives',
             icon: Frame,
         },
         {

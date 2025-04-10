@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import { Objetive } from '../../../models/objetive';
-import { getObjectives } from '../../../services/objetives';
+import { getObjectives } from '../../../services/objectives';
 import { Graph1 } from '../../../components/graph1';
 import { Graph2 } from '../../../components/graph2';
 import { Graph3 } from '../../../components/graph3';
@@ -107,7 +107,7 @@ function RouteComponent() {
     }
 
     const { data, isLoading } = useQuery({
-        queryKey: ['objetives', { userId: user?.id }],
+        queryKey: ['objectives', { userId: user?.id }],
         queryFn: () => getObjectives(user?.id ?? 0),
     });
 
