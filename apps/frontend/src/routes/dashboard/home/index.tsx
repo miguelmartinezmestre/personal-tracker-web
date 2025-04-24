@@ -68,9 +68,9 @@ function RouteComponent() {
     return (
         <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Graph1 />
-            <Graph2 />
-            <Graph3 />
+                <Graph1 />
+                <Graph2 />
+                <Graph3 />
             </div>
             <DataTable columns={columns} data={data} />
         </>

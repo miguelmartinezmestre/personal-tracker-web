@@ -1,5 +1,3 @@
-
-
 import { ChevronsUpDown, LogOut } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
@@ -31,7 +29,7 @@ export function NavUser({
 }) {
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
-    
+
     const { logoutMutation } = useLogoutMutation();
 
     const handleLogout = () => {

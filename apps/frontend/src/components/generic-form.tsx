@@ -197,9 +197,7 @@ export function GenericForm<T extends z.ZodType<any, any>>({
                         <div className="space-y-4">
                             {leftFields.map(({ key, name, field }) => (
                                 <div key={key}>
-                                    <Label htmlFor={key}>
-                                        {getFieldLabel(field, name)}
-                                    </Label>
+                                    <Label htmlFor={key}>{getFieldLabel(field, name)}</Label>
                                     {renderField(key as Path<FormValues>, field)}
                                     {form.formState.errors[name] && (
                                         <p className="text-sm text-red-500">
@@ -213,9 +211,7 @@ export function GenericForm<T extends z.ZodType<any, any>>({
                         <div className="space-y-4">
                             {rightFields.map(({ key, name, field }) => (
                                 <div key={key}>
-                                    <Label htmlFor={key}>
-                                        {getFieldLabel(field, name)}
-                                    </Label>
+                                    <Label htmlFor={key}>{getFieldLabel(field, name)}</Label>
                                     {renderField(key as Path<FormValues>, field)}
                                     {form.formState.errors[name] && (
                                         <p className="text-sm text-red-500">

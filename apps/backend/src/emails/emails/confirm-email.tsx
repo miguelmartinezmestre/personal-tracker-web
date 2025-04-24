@@ -1,13 +1,19 @@
-import { Html, Preview, Tailwind, Container, Head, Body, Text } from '@react-email/components';
+import {
+  Html,
+  Preview,
+  Tailwind,
+  Container,
+  Head,
+  Body,
+  Text,
+} from '@react-email/components';
 import React from 'react';
 
 interface EmailProps {
   username?: string;
 }
 
-export const RegisterEmail = ({
-  username,
-}: EmailProps) => {
+export const RegisterEmail = ({ username }: EmailProps) => {
   const previewText = `Bienvenido a Metricas`;
 
   return (

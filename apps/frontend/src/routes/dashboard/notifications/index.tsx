@@ -28,7 +28,11 @@ function RouteComponent() {
             header: 'Goal completed',
             cell: ({ row }) => {
                 const goalId = row.original.goalId;
-                return <Link to="/dashboard/objectives/$id" params={{ id: String(goalId) }}>Objetivo {goalId}</Link>;
+                return (
+                    <Link to="/dashboard/objectives/$id" params={{ id: String(goalId) }}>
+                        Objetivo {goalId}
+                    </Link>
+                );
             },
         },
     ];

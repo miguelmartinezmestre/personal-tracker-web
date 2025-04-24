@@ -1,12 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
-import { loginUser } from "../http/login";
-import { formSchema } from "../../schemas/login";
-import { z } from "zod";
-import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { registerUser } from "../http/register";
-import { formSchema as registerFormSchema } from "../../schemas/register";
-import { logout } from "../http/users";
+import { useMutation } from '@tanstack/react-query';
+import { loginUser } from '../http/login';
+import { formSchema } from '../../schemas/login';
+import { z } from 'zod';
+import { useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { registerUser } from '../http/register';
+import { formSchema as registerFormSchema } from '../../schemas/register';
+import { logout } from '../http/users';
 
 export const useLoginMutation = () => {
     const navigate = useNavigate();
@@ -43,11 +43,11 @@ export const useRegisterMutation = () => {
     const mutation = useMutation({
         mutationFn: (values: z.infer<typeof registerFormSchema>) => {
             const { email, password, username } = values;
-    
+
             if (!email || !password || !username) {
                 throw new Error('Todos los campos son obligatorios');
             }
-    
+
             return registerUser({
                 email,
                 password,

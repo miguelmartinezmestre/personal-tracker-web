@@ -1,5 +1,3 @@
-
-
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';

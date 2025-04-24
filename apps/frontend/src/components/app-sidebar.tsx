@@ -1,8 +1,4 @@
-import {
-    Bell,
-    Frame,
-    Home,
-} from 'lucide-react';
+import { Bell, Frame, Home } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from './ui/sidebar';
 import { NavProjects } from './nav-projects';
 import { NavUser } from './nav-user';
@@ -43,18 +39,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         return <div>Loading...</div>;
     }
 
-
-
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
-                <LanguageSwitcher languages={[{
-                    name: t('english'),
-                    code: 'en',
-                }, {
-                    name: t('spanish'),
-                    code: 'es',
-                }]} />
+                <LanguageSwitcher
+                    languages={[
+                        {
+                            name: t('english'),
+                            code: 'en',
+                        },
+                        {
+                            name: t('spanish'),
+                            code: 'es',
+                        },
+                    ]}
+                />
             </SidebarHeader>
             <SidebarContent>
                 <NavProjects projects={data.projects} />

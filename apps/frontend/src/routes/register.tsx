@@ -22,7 +22,7 @@ import { useRegisterMutation } from '../services/mutations/user';
 
 export const Route = createFileRoute('/register')({
     component: RouteComponent,
-})
+});
 
 function RouteComponent() {
     const navigate = useNavigate();
@@ -47,7 +47,9 @@ function RouteComponent() {
             <Header />
             <div className="flex-grow flex items-center justify-center p-6">
                 <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-                    <h1 className="text-2xl font-bold text-center mb-6 text-primary">Crear una Cuenta</h1>
+                    <h1 className="text-2xl font-bold text-center mb-6 text-primary">
+                        Crear una Cuenta
+                    </h1>
 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -64,7 +66,9 @@ function RouteComponent() {
                                 name="username"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">Nombre de Usuario</FormLabel>
+                                        <FormLabel className="text-gray-700">
+                                            Nombre de Usuario
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
@@ -82,7 +86,9 @@ function RouteComponent() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">Correo Electrónico</FormLabel>
+                                        <FormLabel className="text-gray-700">
+                                            Correo Electrónico
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
@@ -120,7 +126,7 @@ function RouteComponent() {
                                 className="w-full py-6 text-lg font-medium"
                                 disabled={mutation.isPending}
                             >
-                                {mutation.isPending ? "Registrando..." : "Registrarse"}
+                                {mutation.isPending ? 'Registrando...' : 'Registrarse'}
                             </Button>
 
                             <div className="text-center mt-4">
@@ -129,7 +135,7 @@ function RouteComponent() {
                                     <a
                                         href="/login"
                                         className="font-medium text-primary hover:text-primary/80 transition-colors"
-                                        onClick={(e) => {
+                                        onClick={e => {
                                             e.preventDefault();
                                             navigate({ to: '/login' });
                                         }}

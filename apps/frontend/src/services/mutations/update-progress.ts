@@ -1,11 +1,15 @@
-import { UpdateProgress } from "../../models/update-progress";
+import { UpdateProgress } from '../../models/update-progress';
 
-import { useMutation } from "@tanstack/react-query";
-import { createUpdateProgress } from "../http/update-progress";
-import { schema } from "../../schemas/update-progress";
-import { z } from "zod";
+import { useMutation } from '@tanstack/react-query';
+import { createUpdateProgress } from '../http/update-progress';
+import { schema } from '../../schemas/update-progress';
+import { z } from 'zod';
 
-export const useUpdateProgressMutation = (setError: (error: string) => void, setOpen: (open: boolean) => void, refetch: () => void) => {
+export const useUpdateProgressMutation = (
+    setError: (error: string) => void,
+    setOpen: (open: boolean) => void,
+    refetch: () => void
+) => {
     const mutation = useMutation({
         mutationFn: (values: z.infer<typeof schema>) => {
             return createUpdateProgress({
@@ -13,14 +17,14 @@ export const useUpdateProgressMutation = (setError: (error: string) => void, set
                 updatedValue: values.updatedValue,
                 updateDate: values.updateDate,
                 comment: values.comment,
-        } as UpdateProgress);
-    },
-    onError: (error: Error) => {
-        setError(error.message);
-    },
-    onSuccess: () => {
-        setOpen(false);
-        refetch();
+            } as UpdateProgress);
+        },
+        onError: (error: Error) => {
+            setError(error.message);
+        },
+        onSuccess: () => {
+            setOpen(false);
+            refetch();
         },
     });
 

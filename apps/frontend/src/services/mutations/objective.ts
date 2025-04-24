@@ -1,11 +1,16 @@
-import { Objetive } from "../../models/objetive";
-import { createObjective } from "../http/objectives";
+import { Objetive } from '../../models/objetive';
+import { createObjective } from '../http/objectives';
 
-import { useMutation } from "@tanstack/react-query";
-import { schema } from "../../schemas/objective";
-import { z } from "zod";
+import { useMutation } from '@tanstack/react-query';
+import { schema } from '../../schemas/objective';
+import { z } from 'zod';
 
-export const useObjectiveMutation = (userId: number, setError: (error: string) => void, setOpen: (open: boolean) => void, refetch: () => void) => {
+export const useObjectiveMutation = (
+    userId: number,
+    setError: (error: string) => void,
+    setOpen: (open: boolean) => void,
+    refetch: () => void
+) => {
     const mutation = useMutation({
         mutationFn: (values: z.infer<typeof schema>) => {
             return createObjective({
@@ -32,7 +37,12 @@ export const useObjectiveMutation = (userId: number, setError: (error: string) =
     return { mutation };
 };
 
-export const useUpdateObjectiveMutation = (userId: number, setError: (error: string) => void, setUpdateOpen: (open: boolean) => void, refetch: () => void) => {
+export const useUpdateObjectiveMutation = (
+    userId: number,
+    setError: (error: string) => void,
+    setUpdateOpen: (open: boolean) => void,
+    refetch: () => void
+) => {
     const updateMutation = useMutation({
         mutationFn: (values: z.infer<typeof schema>) => {
             if (!values.id) {
@@ -61,4 +71,4 @@ export const useUpdateObjectiveMutation = (userId: number, setError: (error: str
     });
 
     return { updateMutation };
-}
+};

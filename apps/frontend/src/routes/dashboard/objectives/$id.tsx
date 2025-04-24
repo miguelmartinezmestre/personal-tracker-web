@@ -33,7 +33,10 @@ function RouteComponent() {
 
     const { data, refetch, isLoading } = useUpdateProgressQuery(user?.id ?? 0, Number(id));
 
-    const { data: objetiveData, isLoading: isLoadingObjetive } = useObjectiveQuery(user?.id ?? 0, Number(id));
+    const { data: objetiveData, isLoading: isLoadingObjetive } = useObjectiveQuery(
+        user?.id ?? 0,
+        Number(id)
+    );
 
     const { mutation } = useUpdateProgressMutation(setError, setOpen, refetch);
 

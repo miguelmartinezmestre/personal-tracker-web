@@ -11,7 +11,10 @@ import { useAuthContext } from '../../../providers/auth-provider';
 import { useTranslation } from 'react-i18next';
 import { useObjectivesQuery } from '../../../services/queries/objectives';
 import { schema } from '../../../schemas/objective';
-import { useObjectiveMutation, useUpdateObjectiveMutation } from '../../../services/mutations/objective';
+import {
+    useObjectiveMutation,
+    useUpdateObjectiveMutation,
+} from '../../../services/mutations/objective';
 
 export const Route = createFileRoute('/dashboard/objectives/')({
     component: RouteComponent,
@@ -28,8 +31,6 @@ const defaultValues = {
     unit: 'a',
 };
 
-
-
 function RouteComponent() {
     const { t } = useTranslation();
     const { user, isLoading: isLoadingAuth } = useAuthContext();
@@ -43,7 +44,12 @@ function RouteComponent() {
 
     const { mutation } = useObjectiveMutation(user?.id ?? 0, setError, setOpen, refetch);
 
-    const { updateMutation } = useUpdateObjectiveMutation(user?.id ?? 0, setError, setUpdateOpen, refetch);
+    const { updateMutation } = useUpdateObjectiveMutation(
+        user?.id ?? 0,
+        setError,
+        setUpdateOpen,
+        refetch
+    );
 
     const columns: ColumnDef<Objetive>[] = [
         {
