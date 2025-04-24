@@ -1,35 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { baseUrl } from '../main';
+import { useAuthQuery } from '../services/queries/auth';
 
-async function fetchAuth(): Promise<{
-    email: string;
-    name: string;
-    id: number;
-}> {
-    const response = await fetch(baseUrl + '/users/auth', {
-        method: 'GET',
-        credentials: 'include',
-    });
 
-    if (!response.ok) {
-        throw new Error('Authentication failed');
-    }
-
-    return response.json();
-}
 
 export default function useAuth(): { email: string; name: string; id: number; isLoading: boolean } {
     const navigate = useNavigate();
 
-    const { data, isError, isLoading } = useQuery<{
-        email: string;
-        name: string;
-        id: number;
-    }>({
-        queryKey: ['auth'],
-        queryFn: fetchAuth,
-    });
+    const { data, isError, isLoading } = useAuthQuery();
 
     if (isError) {
         navigate({ to: '/' });

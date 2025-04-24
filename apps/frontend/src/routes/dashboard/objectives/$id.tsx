@@ -1,35 +1,17 @@
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { DataTable } from '../../../components/table';
 import { ColumnDef } from '@tanstack/react-table';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuthContext } from '../../../providers/auth-provider';
 import { Graph3, Progress } from '../../../components/graph3';
 import { Modal } from '../../../components/modal';
 import { GenericForm } from '../../../components/generic-form';
 import { useState } from 'react';
-import {
-    createUpdateProgress,
-    getUpdateProgress,
-    updateUpdateProgress,
-} from '../../../services/update-progress';
 import { UpdateProgress } from '../../../models/update-progress';
 import { z } from 'zod';
-import { getObjective } from '../../../services/objectives';
-
-const defaultValues = {
-    goalId: 0,
-    updatedValue: 0,
-    updateDate: new Date(),
-    comment: '',
-};
-
-const schema = z.object({
-    id: z.number().optional(),
-    goalId: z.number().optional(),
-    updatedValue: z.number().min(1, { message: 'Updated value is required' }),
-    updateDate: z.date(),
-    comment: z.string().min(1, { message: 'Comment is required' }),
-});
+import { useObjectiveQuery } from '../../../services/queries/objective';
+import { useUpdateProgressQuery } from '../../../services/queries/update-progress';
+import { schema } from '../../../schemas/update-progress';
+import { useUpdateProgressMutation } from '../../../services/mutations/update-progress';
 
 export const Route = createFileRoute('/dashboard/objectives/$id')({
     component: RouteComponent,
@@ -46,63 +28,14 @@ function RouteComponent() {
     };
 
     const { user, isLoading: isLoadingAuth } = useAuthContext();
-    const [updateOpen, setUpdateOpen] = useState(false);
     const [open, setOpen] = useState(false);
-    const [updateValues, setUpdateValues] = useState<z.infer<typeof schema>>(defaultValues);
     const [error, setError] = useState<string>('');
-    if (isLoadingAuth) {
-        return <div>Loading...</div>;
-    }
 
-    const { data, refetch, isLoading } = useQuery({
-        queryKey: ['update-progress', { userId: user?.id, goalId: Number(id) }],
-        queryFn: () => getUpdateProgress(Number(id)),
-    });
+    const { data, refetch, isLoading } = useUpdateProgressQuery(user?.id ?? 0, Number(id));
 
-    const { data: objetiveData, isLoading: isLoadingObjetive } = useQuery({
-        queryKey: ['objetive', { userId: user?.id, goalId: Number(id) }],
-        queryFn: () => getObjective(Number(id)),
-    });
+    const { data: objetiveData, isLoading: isLoadingObjetive } = useObjectiveQuery(user?.id ?? 0, Number(id));
 
-    const mutation = useMutation({
-        mutationFn: (values: z.infer<typeof schema>) => {
-            return createUpdateProgress({
-                goalId: values.goalId,
-                updatedValue: values.updatedValue,
-                updateDate: values.updateDate,
-                comment: values.comment,
-            } as UpdateProgress);
-        },
-        onError: (error: Error) => {
-            setError(error.message);
-        },
-        onSuccess: () => {
-            setOpen(false);
-            refetch();
-        },
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: (values: z.infer<typeof schema>) => {
-            if (!values.id) {
-                throw new Error('ID is required for updating an objective');
-            }
-            return updateUpdateProgress({
-                id: values.id,
-                goalId: Number(values.goalId),
-                updatedValue: values.updatedValue,
-                updateDate: values.updateDate,
-                comment: values.comment,
-            });
-        },
-        onError: (error: Error) => {
-            setError(error.message);
-        },
-        onSuccess: () => {
-            setUpdateOpen(false);
-            refetch();
-        },
-    });
+    const { mutation } = useUpdateProgressMutation(setError, setOpen, refetch);
 
     const columns: ColumnDef<UpdateProgress>[] = [
         {
@@ -184,7 +117,7 @@ function RouteComponent() {
         // },
     ];
 
-    if (isLoading || isLoadingObjetive) {
+    if (isLoading || isLoadingObjetive || isLoadingAuth) {
         return <div>Loading...</div>;
     }
 
@@ -194,10 +127,6 @@ function RouteComponent() {
 
     function onSubmit(values: z.infer<typeof schema>) {
         mutation.mutate(values);
-    }
-
-    function onUpdateSubmit(values: z.infer<typeof schema>) {
-        updateMutation.mutate(values);
     }
 
     const progressData: Progress[] = data.map(item => ({

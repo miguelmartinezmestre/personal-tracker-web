@@ -1,13 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import { Objetive } from '../../../models/objetive';
-import { getObjectives } from '../../../services/objectives';
 import { Graph1 } from '../../../components/graph1';
 import { Graph2 } from '../../../components/graph2';
 import { Graph3 } from '../../../components/graph3';
 import { DataTable } from '../../../components/table';
 import { useAuthContext } from '../../../providers/auth-provider';
+import { useObjectivesQuery } from '../../../services/queries/objectives';
 
 export const Route = createFileRoute('/dashboard/home/')({
     component: RouteComponent,
@@ -26,90 +25,10 @@ export type Goal = {
     unit: string;
 };
 
-export const columns: ColumnDef<Goal>[] = [
-    {
-        accessorKey: 'title',
-        header: 'Title',
-    },
-    {
-        accessorKey: 'description',
-        header: 'Description',
-    },
-    {
-        accessorKey: 'category',
-        header: 'Category',
-    },
-    {
-        accessorKey: 'targetValue',
-        header: 'Target Value',
-    },
-    {
-        accessorKey: 'currentValue',
-        header: 'Current Value',
-    },
-    {
-        accessorKey: 'deadline',
-        header: 'Deadline',
-    },
-    {
-        accessorKey: 'status',
-        header: 'Status',
-    },
-    {
-        accessorKey: 'unit',
-        header: 'Unit',
-    },
-];
-
-const data: Goal[] = [
-    {
-        id: 1,
-        userId: 101,
-        title: 'Run a Marathon',
-        description: 'Complete a full marathon in 6 months.',
-        category: 'Fitness',
-        targetValue: 42.195,
-        currentValue: 10,
-        deadline: new Date('2025-06-01'),
-        status: 'In Progress',
-        unit: 'km',
-    },
-    {
-        id: 2,
-        userId: 102,
-        title: 'Save for a Vacation',
-        description: 'Save money for a trip to Europe.',
-        category: 'Finance',
-        targetValue: 5000,
-        currentValue: 1200,
-        deadline: new Date('2025-12-31'),
-        status: 'In Progress',
-        unit: 'USD',
-    },
-    {
-        id: 3,
-        userId: 103,
-        title: 'Learn TypeScript',
-        description: 'Complete an advanced TypeScript course.',
-        category: 'Education',
-        targetValue: 10,
-        currentValue: 4,
-        deadline: new Date('2024-03-15'),
-        status: 'In Progress',
-        unit: 'lessons',
-    },
-];
 function RouteComponent() {
     const { user, isLoading: isLoadingAuth } = useAuthContext();
 
-    if (isLoadingAuth) {
-        return <div>Loading...</div>;
-    }
-
-    const { data, isLoading } = useQuery({
-        queryKey: ['objectives', { userId: user?.id }],
-        queryFn: () => getObjectives(user?.id ?? 0),
-    });
+    const { data, isLoading } = useObjectivesQuery(user?.id ?? 0);
 
     const columns: ColumnDef<Objetive>[] = [
         {
@@ -138,7 +57,7 @@ function RouteComponent() {
         },
     ];
 
-    if (isLoading) {
+    if (isLoading || isLoadingAuth) {
         return <div>Loading...</div>;
     }
 
@@ -148,20 +67,12 @@ function RouteComponent() {
 
     return (
         <>
-            <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                <div className="aspect-video rounded-xl bg-muted/50">
-                    <Graph1 />
-                </div>
-                <div className="aspect-video rounded-xl bg-muted/50">
-                    <Graph2 />
-                </div>
-                <div className="aspect-video rounded-xl bg-muted/50">
-                    <Graph3 />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Graph1 />
+            <Graph2 />
+            <Graph3 />
             </div>
-            <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min">
-                <DataTable columns={columns} data={data} />
-            </div>
+            <DataTable columns={columns} data={data} />
         </>
     );
 }

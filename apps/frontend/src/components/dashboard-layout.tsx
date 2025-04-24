@@ -1,12 +1,9 @@
-import { ArrowLeft } from 'lucide-react';
 import { AppSidebar } from './app-sidebar';
-import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from './ui/sidebar';
-import { useRouter } from '@tanstack/react-router';
 import { TanstackBreadcrumb } from './breadcrump';
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const router = useRouter();
 
     return (
         <SidebarProvider>
@@ -22,7 +19,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <TanstackBreadcrumb />
                     </div>
                 </header>
-                <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+                <div className="grid grid-cols-1 gap-4 p-4 pt-0">
+                    {children}
+                </div>
             </SidebarInset>
         </SidebarProvider>
     );

@@ -1,4 +1,4 @@
-import { baseUrl } from '../main';
+import { baseUrl } from '../../main';
 
 export type User = { username: string; email: string; password: string };
 

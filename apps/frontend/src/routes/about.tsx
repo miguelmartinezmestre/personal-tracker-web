@@ -8,10 +8,10 @@ export const Route = createFileRoute('/about')({
 
 function RouteComponent() {
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-slate-50">
             <Header />
 
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-grow container mx-auto px-4 py-8 text-black bg-slate-50">
                 <p>Metricas tiene como objetivos:</p>
                 <ul>
                     <li>1º Que los usuarios puedan añadir sus objetivos personales</li>

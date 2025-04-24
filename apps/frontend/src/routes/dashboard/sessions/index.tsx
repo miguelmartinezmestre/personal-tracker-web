@@ -1,11 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../../components/table';
-import { getSessions } from '../../../services/sessions';
 import { Session } from '../../../models/session';
 import { useAuthContext } from '../../../providers/auth-provider';
 import { UserAgentIcon } from '../../../components/user-agent';
+import { useSessionsQuery } from '../../../services/queries/sessions';
 export const Route = createFileRoute('/dashboard/sessions/')({
     component: RouteComponent,
 });
@@ -13,14 +12,7 @@ export const Route = createFileRoute('/dashboard/sessions/')({
 function RouteComponent() {
     const { user, isLoading: isLoadingAuth } = useAuthContext();
 
-    if (isLoadingAuth) {
-        return <div>Loading...</div>;
-    }
-
-    const { data, isLoading } = useQuery({
-        queryKey: ['sessions', { userId: user?.id }],
-        queryFn: getSessions,
-    });
+    const { data, isLoading } = useSessionsQuery(user?.id ?? 0);
 
     const columns: ColumnDef<Session>[] = [
         {
@@ -36,7 +28,7 @@ function RouteComponent() {
         },
     ];
 
-    if (isLoading) {
+    if (isLoading || isLoadingAuth) {
         return <div>Loading...</div>;
     }
 

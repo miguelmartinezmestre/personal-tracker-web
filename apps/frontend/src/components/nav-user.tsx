@@ -1,12 +1,11 @@
-'use client';
 
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from 'lucide-react';
+
+import { ChevronsUpDown, LogOut } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -18,10 +17,8 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '../components/ui/sidebar';
-import { Button } from './ui/button';
-import { useMutation } from '@tanstack/react-query';
-import { logout } from '../services/users';
 import { useNavigate } from '@tanstack/react-router';
+import { useLogoutMutation } from '../services/mutations/user';
 
 export function NavUser({
     user,
@@ -34,9 +31,8 @@ export function NavUser({
 }) {
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
-    const logoutMutation = useMutation({
-        mutationFn: logout,
-    });
+    
+    const { logoutMutation } = useLogoutMutation();
 
     const handleLogout = () => {
         logoutMutation.mutate();

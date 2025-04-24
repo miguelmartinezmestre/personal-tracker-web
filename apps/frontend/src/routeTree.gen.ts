@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
 import { Route as DashboardImport } from './routes/dashboard'
@@ -24,6 +25,12 @@ import { Route as DashboardHomeIndexImport } from './routes/dashboard/home/index
 import { Route as DashboardObjectivesIdImport } from './routes/dashboard/objectives/$id'
 
 // Create/Update Routes
+
+const ResetPasswordRoute = ResetPasswordImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const RegisterRoute = RegisterImport.update({
   id: '/register',
@@ -131,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordImport
+      parentRoute: typeof rootRoute
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -206,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
@@ -219,6 +234,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
@@ -234,6 +250,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home/': typeof DashboardHomeIndexRoute
@@ -250,6 +267,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/dashboard/'
     | '/dashboard/objectives/$id'
     | '/dashboard/home'
@@ -262,6 +280,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/dashboard'
     | '/dashboard/objectives/$id'
     | '/dashboard/home'
@@ -275,6 +294,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/dashboard/'
     | '/dashboard/objectives/$id'
     | '/dashboard/home/'
@@ -290,6 +310,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -298,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 
 export const routeTree = rootRoute
@@ -314,7 +336,8 @@ export const routeTree = rootRoute
         "/about",
         "/dashboard",
         "/login",
-        "/register"
+        "/register",
+        "/reset-password"
       ]
     },
     "/": {
@@ -339,6 +362,9 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/reset-password": {
+      "filePath": "reset-password.tsx"
     },
     "/dashboard/": {
       "filePath": "dashboard/index.tsx",
