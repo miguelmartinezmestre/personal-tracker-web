@@ -1,5 +1,5 @@
-import { UpdateProgress } from '../models/update-progress';
-import { baseUrl } from '../main';
+import { UpdateProgress } from '../../models/update-progress';
+import { baseUrl } from '../../main';
 
 export async function createUpdateProgress(
     updateProgress: UpdateProgress

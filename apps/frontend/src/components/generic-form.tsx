@@ -197,9 +197,7 @@ export function GenericForm<T extends z.ZodType<any, any>>({
                         <div className="space-y-4">
                             {leftFields.map(({ key, name, field }) => (
                                 <div key={key}>
-                                    <Label htmlFor={key}>
-                                        {name.replace(/([A-Z])/g, ' $1').trim()}
-                                    </Label>
+                                    <Label htmlFor={key}>{getFieldLabel(field, name)}</Label>
                                     {renderField(key as Path<FormValues>, field)}
                                     {form.formState.errors[name] && (
                                         <p className="text-sm text-red-500">
@@ -213,9 +211,7 @@ export function GenericForm<T extends z.ZodType<any, any>>({
                         <div className="space-y-4">
                             {rightFields.map(({ key, name, field }) => (
                                 <div key={key}>
-                                    <Label htmlFor={key}>
-                                        {name.replace(/([A-Z])/g, ' $1').trim()}
-                                    </Label>
+                                    <Label htmlFor={key}>{getFieldLabel(field, name)}</Label>
                                     {renderField(key as Path<FormValues>, field)}
                                     {form.formState.errors[name] && (
                                         <p className="text-sm text-red-500">
@@ -238,6 +234,18 @@ export function GenericForm<T extends z.ZodType<any, any>>({
                 </div>
             );
         }
+    };
+
+    const getFieldLabel = (field: z.ZodTypeAny, name: string): string => {
+        // Check if there's a label in the description (format: "label:My Custom Label")
+        if (field.description && typeof field.description === 'string') {
+            const labelMatch = field.description.match(/^label:(.+)/);
+            if (labelMatch && labelMatch[1]) {
+                return labelMatch[1].trim();
+            }
+        }
+        // Fall back to the default formatting
+        return name.replace(/([A-Z])/g, ' $1').trim();
     };
 
     const onSubmitHandler = (values: FormValues) => {

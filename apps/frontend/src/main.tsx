@@ -6,6 +6,7 @@ import { createRouter, RouterProvider } from '@tanstack/react-router';
 import NotFound from './components/not-found.tsx';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './providers/theme-provider.tsx';
+import './i18n';
 
 export const baseUrl = 'http://localhost:3000';
 
@@ -21,6 +22,7 @@ const queryClient = new QueryClient({
 const router = createRouter({
     routeTree,
     defaultNotFoundComponent: () => <NotFound />,
+    defaultPreload: 'intent',
 });
 
 declare module '@tanstack/react-router' {

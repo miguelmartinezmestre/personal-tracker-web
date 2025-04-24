@@ -7,11 +7,11 @@ export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
-        <header className="bg-white shadow-sm sticky top-0 z-10">
+        <header className="bg-gray-800 shadow-sm sticky top-0 z-10">
             <nav className="container mx-auto px-4 py-3">
                 <div className="flex justify-between items-center">
                     <h1>
-                        <Link to="/" className="text-xl font-bold text-gray-800">
+                        <Link to="/" className="text-xl font-bold text-white">
                             Metricas
                         </Link>
                     </h1>

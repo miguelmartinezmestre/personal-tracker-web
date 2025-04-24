@@ -1,14 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import Footer from '../components/footer';
-import Header from '../components/header';
-import { useMutation } from '@tanstack/react-query';
-import { loginUser } from '../services/login';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -16,107 +13,132 @@ import {
 } from '../components/ui/form';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import Header from '../components/header';
+import Footer from '../components/footer';
+import { formSchema } from '../schemas/login';
+import { useLoginMutation } from '../services/mutations/user';
 
 export const Route = createFileRoute('/login')({
     component: RouteComponent,
 });
 
-const formSchema = z.object({
-    email: z.string().email(),
-    password: z.string(),
-    // .min(8, {
-    //     message: "Password must be at least 8 characters.",
-    // }),
-});
-
 function RouteComponent() {
     const navigate = useNavigate();
-    const mutation = useMutation({
-        mutationFn: (values: z.infer<typeof formSchema>) => {
-            const email = values.email;
-            const password = values.password;
 
-            if (!email || !password) {
-                throw new Error('Some required fields are empty');
-            }
+    const { mutation, loginError } = useLoginMutation();
 
-            return loginUser({
-                email,
-                password,
-            });
-        },
-        onSuccess: () => navigate({ to: '/dashboard/home' }),
-        onError: (error: Error) => {
-            setLoginError(error.message);
-        },
-    });
-
-    // 1. Define your form.
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            email: 'a@a.com',
-            password: 'a@a@134545',
+            email: '',
+            password: '',
         },
     });
 
-    // 2. Define a submit handler.
     function onSubmit(values: z.infer<typeof formSchema>) {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
         mutation.mutate(values);
     }
 
-    const [loginError, setLoginError] = useState<string | null>(null);
-
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-slate-50">
             <Header />
-            <div className="flex items-center justify-center h-screen">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                        {loginError && (
-                            <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Error</AlertTitle>
-                                <AlertDescription>{loginError}</AlertDescription>
-                            </Alert>
-                        )}
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormDescription>This is your email.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
+            <div className="flex-grow flex items-center justify-center p-6">
+                <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+                    <h1 className="text-2xl font-bold text-center mb-6 text-primary">
+                        Iniciar Sesión
+                    </h1>
+
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            {loginError && (
+                                <Alert variant="destructive" className="mb-6">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>Error</AlertTitle>
+                                    <AlertDescription>{loginError}</AlertDescription>
+                                </Alert>
                             )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" {...field} />
-                                    </FormControl>
-                                    <FormDescription>This is your password.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit">Iniciar sesión</Button>
-                    </form>
-                </Form>
+
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">
+                                            Correo Electrónico
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="email"
+                                                placeholder="nombre@correo.com"
+                                                className="focus:ring-2 focus:ring-primary/20"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">Contraseña</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="Ingresa tu contraseña"
+                                                className="focus:ring-2 focus:ring-primary/20"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex justify-end">
+                                <a
+                                    href="/reset-password"
+                                    className="text-sm text-primary hover:text-primary/80 transition-colors"
+                                    onClick={e => {
+                                        e.preventDefault();
+                                        navigate({ to: '/reset-password' });
+                                    }}
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </a>
+                            </div>
+
+                            <Button
+                                type="submit"
+                                className="w-full py-6 text-lg font-medium"
+                                disabled={mutation.isPending}
+                            >
+                                {mutation.isPending ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                            </Button>
+
+                            <div className="text-center mt-4">
+                                <p className="text-sm text-gray-600">
+                                    ¿No tienes una cuenta?{' '}
+                                    <a
+                                        href="/register"
+                                        className="font-medium text-primary hover:text-primary/80 transition-colors"
+                                        onClick={e => {
+                                            e.preventDefault();
+                                            navigate({ to: '/register' });
+                                        }}
+                                    >
+                                        Registrarse
+                                    </a>
+                                </p>
+                            </div>
+                        </form>
+                    </Form>
+                </div>
             </div>
             <Footer />
         </div>

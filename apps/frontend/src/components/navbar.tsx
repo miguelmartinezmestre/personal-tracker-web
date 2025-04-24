@@ -14,7 +14,7 @@ export default function NavBar() {
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0">
             {links.map(link => (
-                <Link key={link.name} to={link.href} className="text-gray-600 hover:text-gray-800">
+                <Link key={link.name} to={link.href} className="text-white hover:text-gray-800 ">
                     {link.name}
                 </Link>
             ))}

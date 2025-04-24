@@ -1,8 +1,8 @@
-import { Session } from '../models/session';
-import { baseUrl } from '../main';
+import { Notification } from '../../models/notification';
+import { baseUrl } from '../../main';
 
-export async function getSessions(): Promise<Session[]> {
-    const response = await fetch(baseUrl + '/sessions', {
+export async function getNotifications(userId: number): Promise<Notification[]> {
+    const response = await fetch(baseUrl + '/notifications/user/' + userId, {
         method: 'GET',
         credentials: 'include',
         headers: {

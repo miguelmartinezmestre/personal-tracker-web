@@ -1,5 +1,5 @@
-import { Objetive } from '../models/objetive';
-import { baseUrl } from '../main';
+import { Objetive } from '../../models/objetive';
+import { baseUrl } from '../../main';
 
 export async function createObjective(objective: Objetive): Promise<Objetive> {
     const response = await fetch(baseUrl + '/goals', {

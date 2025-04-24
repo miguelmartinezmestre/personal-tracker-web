@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import {
     Smartphone,
@@ -138,7 +136,7 @@ export function UserAgentIcon({
             browserName,
             fullDescription,
         });
-    }, []);
+    }, [userAgent]);
 
     const Icon = deviceInfo.icon;
 

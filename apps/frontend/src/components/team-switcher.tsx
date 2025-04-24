@@ -1,15 +1,10 @@
-'use client';
-
-import * as React from 'react';
-import { ChevronsUpDown, Plus } from 'lucide-react';
+import { ChevronsUpDown } from 'lucide-react';
 
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import {
@@ -18,18 +13,33 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '../components/ui/sidebar';
+import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
 
-export function TeamSwitcher({
-    teams,
+export function LanguageSwitcher({
+    languages,
 }: {
-    teams: {
+    languages: {
         name: string;
-        logo: React.ElementType;
-        plan: string;
+        code: string;
     }[];
 }) {
     const { isMobile } = useSidebar();
-    const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+    const [activeLanguage, setActiveLanguage] = useState(
+        languages.find(language => language.code === localStorage.getItem('i18nextLng')) ||
+            languages[0]
+    );
+    const { t, i18n } = useTranslation();
+
+    useEffect(() => {
+        async function changeLanguage() {
+            const language = localStorage.getItem('i18nextLng');
+            if (language) {
+                await i18n.changeLanguage(language);
+            }
+        }
+        changeLanguage();
+    }, [i18n]);
 
     return (
         <SidebarMenu>
@@ -40,12 +50,11 @@ export function TeamSwitcher({
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                <activeTeam.logo className="size-4" />
-                            </div>
+                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"></div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-semibold">{activeTeam.name}</span>
-                                <span className="truncate text-xs">{activeTeam.plan}</span>
+                                <span className="truncate font-semibold">
+                                    {t(activeLanguage.name)}
+                                </span>
                             </div>
                             <ChevronsUpDown className="ml-auto" />
                         </SidebarMenuButton>
@@ -57,28 +66,23 @@ export function TeamSwitcher({
                         sideOffset={4}
                     >
                         <DropdownMenuLabel className="text-xs text-muted-foreground">
-                            Teams
+                            {t('language')}
                         </DropdownMenuLabel>
-                        {teams.map((team, index) => (
+                        {languages.map(language => (
                             <DropdownMenuItem
-                                key={team.name}
-                                onClick={() => setActiveTeam(team)}
+                                key={language.name}
+                                onClick={async () => {
+                                    console.log('language', language);
+                                    setActiveLanguage(language);
+                                    await i18n.changeLanguage(language.code);
+                                    localStorage.setItem('i18nextLng', language.code);
+                                }}
                                 className="gap-2 p-2"
                             >
-                                <div className="flex size-6 items-center justify-center rounded-sm border">
-                                    <team.logo className="size-4 shrink-0" />
-                                </div>
-                                {team.name}
-                                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                                <div className="flex size-6 items-center justify-center rounded-sm border"></div>
+                                {t(language.name)}
                             </DropdownMenuItem>
                         ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="gap-2 p-2">
-                            <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                                <Plus className="size-4" />
-                            </div>
-                            <div className="font-medium text-muted-foreground">Add team</div>
-                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
