@@ -13,13 +13,25 @@ export class SessionsService {
     });
   }
 
+  async findAllByUserId(userId: number) {
+    return this.prisma.session.findMany({
+      where: { userId },
+    });
+  }
+
   async findAll() {
     return this.prisma.session.findMany();
   }
 
-  async findOne(id: number) {
+  async findById(id: number) {
     return this.prisma.session.findUnique({
       where: { id },
+    });
+  }
+
+  async findBySessionId(sessionId: string) {
+    return this.prisma.session.findFirst({
+      where: { value: sessionId },
     });
   }
 

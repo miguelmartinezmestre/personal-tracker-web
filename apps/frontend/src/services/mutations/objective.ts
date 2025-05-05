@@ -1,5 +1,5 @@
 import { Objetive } from '../../models/objetive';
-import { createObjective } from '../http/objectives';
+import { createObjective, deleteObjective, updateObjective } from '../http/objectives';
 
 import { useMutation } from '@tanstack/react-query';
 import { schema } from '../../schemas/objective';
@@ -51,14 +51,14 @@ export const useUpdateObjectiveMutation = (
             return updateObjective({
                 id: values.id,
                 title: values.title,
-                description: values.description,
-                category: values.category,
+                description: values.description ?? '',
+                category: values.category ?? '',
                 targetValue: values.targetValue,
                 currentValue: values.currentValue,
-                deadline: values.deadline,
-                status: values.status,
-                unit: values.unit,
-                userId: user ? Number(user.id) : -1,
+                deadline: values.deadline ?? new Date(9999999999999),
+                status: values.status ?? '',
+                unit: values.unit ?? '',
+                userId: userId,
             });
         },
         onError: (error: Error) => {
@@ -71,4 +71,25 @@ export const useUpdateObjectiveMutation = (
     });
 
     return { updateMutation };
+};
+
+export const useDeleteObjectiveMutation = (
+    setError: (error: string) => void,
+    setOpen: (open: boolean) => void,
+    refetch: () => void
+) => {
+    const mutation = useMutation({
+        mutationFn: (id: number) => {
+            return deleteObjective(id);
+        },
+        onError: (error: Error) => {
+            setError(error.message);
+        },
+        onSuccess: () => {
+            setOpen(false);
+            refetch();
+        },
+    });
+
+    return { mutation };
 };

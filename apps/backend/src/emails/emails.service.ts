@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { render } from '@react-email/components';
 import { RegisterEmail } from './emails/register-email';
+import RecoverPasswordEmail from './emails/recover-password';
 
 @Injectable()
 export class EmailsService {
@@ -19,25 +20,39 @@ export class EmailsService {
     });
   }
 
-  async send() {
+  async sendWelcomeEmail(username: string, email: string) {
     const emailHtml = await render(
       RegisterEmail({
-        username: 'alanturing',
-        userImage: 'https://localhost:3000',
-        invitedByUsername: 'Alan',
-        invitedByEmail: 'alan.turing@example.com',
-        teamName: 'Enigma',
-        teamImage: 'https://localhost:3000',
-        inviteLink: 'https://vercel.com/teams/invite/foo',
-        inviteFromIp: '204.13.186.218',
-        inviteFromLocation: 'São Paulo, Brazil',
+        username,
       }),
     );
 
     const options = {
       from: 'you@example.com',
-      to: 'user@gmail.com',
-      subject: 'hello world',
+      to: email,
+      subject: `Welcome ${username}`,
+      html: emailHtml,
+    };
+
+    await this.transporter.sendMail(options);
+  }
+
+  async sendRecoverPasswordEmail(
+    username: string,
+    email: string,
+    link: string,
+  ) {
+    const emailHtml = await render(
+      RecoverPasswordEmail({
+        username,
+        link,
+      }),
+    );
+
+    const options = {
+      from: 'you@example.com',
+      to: email,
+      subject: `Recuperar contraseña en Metricas`,
       html: emailHtml,
     };
 

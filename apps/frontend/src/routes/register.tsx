@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+/* eslint-disable @typescript-eslint/no-misused-promises */
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,14 +20,11 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import { formSchema } from '../schemas/register';
 import { useRegisterMutation } from '../services/mutations/user';
-
 export const Route = createFileRoute('/register')({
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const navigate = useNavigate();
-
     const { mutation, registerError } = useRegisterMutation();
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -34,19 +32,28 @@ function RouteComponent() {
         defaultValues: {
             email: '',
             password: '',
+            confirmPassword: '',
             username: '',
         },
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
+        if (values.password !== values.confirmPassword) {
+            form.setError('confirmPassword', {
+                type: 'manual',
+                message: 'Las contraseñas no coinciden',
+            });
+            return;
+        }
+
         mutation.mutate(values);
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50">
+        <div className="flex flex-col min-h-screen ">
             <Header />
             <div className="flex-grow flex items-center justify-center p-6">
-                <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+                <div className="w-full max-w-md rounded-xl shadow-lg p-8 border ">
                     <h1 className="text-2xl font-bold text-center mb-6 text-primary">
                         Crear una Cuenta
                     </h1>
@@ -93,7 +100,7 @@ function RouteComponent() {
                                             <Input
                                                 {...field}
                                                 type="email"
-                                                placeholder="nombre@correo.com"
+                                                placeholder="email@domain.com"
                                                 className="focus:ring-2 focus:ring-primary/20"
                                             />
                                         </FormControl>
@@ -121,6 +128,27 @@ function RouteComponent() {
                                 )}
                             />
 
+                            <FormField
+                                control={form.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">
+                                            Confirmar Contraseña
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="Confirmar contraseña"
+                                                className="focus:ring-2 focus:ring-primary/20"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
                             <Button
                                 type="submit"
                                 className="w-full py-6 text-lg font-medium"
@@ -131,17 +159,7 @@ function RouteComponent() {
 
                             <div className="text-center mt-4">
                                 <p className="text-sm text-gray-600">
-                                    ¿Ya tienes una cuenta?{' '}
-                                    <a
-                                        href="/login"
-                                        className="font-medium text-primary hover:text-primary/80 transition-colors"
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            navigate({ to: '/login' });
-                                        }}
-                                    >
-                                        Iniciar sesión
-                                    </a>
+                                    <Link to="/login">¿Ya tienes una cuenta? Iniciar sesión</Link>
                                 </p>
                             </div>
                         </form>

@@ -4,15 +4,19 @@ type AuthUser = {
     email: string;
     name: string;
     id: number;
-} | null;
+};
 
 type AuthContextType = {
     user: AuthUser;
     isLoading: boolean;
 };
 
-export const AuthContext = createContext<AuthContextType>({
-    user: null,
+const AuthContext = createContext<AuthContextType>({
+    user: {
+        email: '',
+        name: '',
+        id: 0,
+    },
     isLoading: false,
 });
 

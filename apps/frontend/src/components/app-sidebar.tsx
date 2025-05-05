@@ -1,4 +1,4 @@
-import { Bell, Frame, Home } from 'lucide-react';
+import { Bell, Frame, Home, Settings } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from './ui/sidebar';
 import { NavProjects } from './nav-projects';
 import { NavUser } from './nav-user';
@@ -27,6 +27,11 @@ const data = {
             name: 'Sessions',
             url: '/dashboard/sessions',
             icon: Frame,
+        },
+        {
+            name: 'Settings',
+            url: '/dashboard/settings',
+            icon: Settings,
         },
     ],
 };

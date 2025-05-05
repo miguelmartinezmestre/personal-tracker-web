@@ -25,9 +25,11 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
-    "src"
+    "src",
+    "**/*.test.ts",
+    "__tests__/objective.test.tsx",
+    "__tests__/objectives.test.tsx"
   ],
-
   "baseUrl": ".",
   "paths": {
     "@/*": [

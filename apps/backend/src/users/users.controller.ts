@@ -19,6 +19,8 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { Request, Response } from 'express';
 import { CookieGuard } from '../session.guard';
 import { PrismaService } from '../prisma.service';
+import { RecoverPasswordDto } from './dto/recover-password.dto';
+import { FinishRecoverPasswordDto } from './dto/finish-recover-password.dto';
 
 @Controller('users')
 export class UsersController {
@@ -31,19 +33,29 @@ export class UsersController {
   @HttpCode(200)
   register(
     @Body() createUserDto: CreateUserDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.usersService.create(createUserDto, response);
+    return this.usersService.create(createUserDto, request, response);
   }
 
   @Post('/login')
   @HttpCode(200)
-  login(
+  async login(
     @Body() loginUserDto: LoginUserDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.usersService.login(loginUserDto, request, response);
+    const result = await this.usersService.login(
+      loginUserDto,
+      request,
+      response,
+    );
+    return response.cookie('session_id', result.sessionId, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+    });
   }
 
   @Get('/auth')
@@ -52,10 +64,17 @@ export class UsersController {
     return this.usersService.auth(request);
   }
 
-  // @Post()
-  // create(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
+  @Post('/recover-password')
+  @HttpCode(200)
+  recoverPassword(@Body() body: RecoverPasswordDto) {
+    return this.usersService.recoverPassword(body);
+  }
+
+  @Post('/finish-recover-password')
+  @HttpCode(200)
+  finishRecoverPassword(@Body() body: FinishRecoverPasswordDto) {
+    return this.usersService.finishRecoverPassword(body);
+  }
 
   @Post('/logout')
   @HttpCode(200)
@@ -72,8 +91,8 @@ export class UsersController {
 
   @Get(':id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  findById(@Param('id') id: string) {
+    return this.usersService.findById(+id);
   }
 
   @Patch(':id')
@@ -84,7 +103,25 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(CookieGuard)
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  async remove(@Param('id') id: string) {
+    const user = this.prisma.user.findUnique({
+      where: {
+        id: +id,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.user.delete({
+      where: {
+        id: +id,
+      },
+    });
+
+    return {
+      message: 'User deleted successfully',
+    };
   }
 }

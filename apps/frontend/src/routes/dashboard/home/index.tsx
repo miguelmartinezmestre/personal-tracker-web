@@ -28,7 +28,7 @@ export type Goal = {
 function RouteComponent() {
     const { user, isLoading: isLoadingAuth } = useAuthContext();
 
-    const { data, isLoading } = useObjectivesQuery(user?.id ?? 0);
+    const { data, isLoading } = useObjectivesQuery(user.id);
 
     const columns: ColumnDef<Objetive>[] = [
         {

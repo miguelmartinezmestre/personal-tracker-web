@@ -1,7 +1,15 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
+import { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { Fragment } from 'react';
+import { AppRouter } from '../../../backend/src/routers/app.router';
+import { QueryClient } from '@tanstack/react-query';
 
-export const Route = createRootRoute({
+export interface RouterAppContext {
+    trpc: TRPCOptionsProxy<AppRouter>;
+    queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<RouterAppContext>()({
     component: RootComponent,
 });
 

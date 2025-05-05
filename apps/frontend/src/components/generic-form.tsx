@@ -181,7 +181,7 @@ export function GenericForm<T extends z.ZodType<any, any>>({
             });
 
             // Handle id field separately - it should be hidden
-            const idField = fields.find(field => field.name === 'id');
+            // const idField = fields.find(field => field.name === 'id');
             const visibleFields = fields.filter(
                 field => field.name !== 'id' && field.name !== 'goalId'
             );

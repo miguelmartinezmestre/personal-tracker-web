@@ -11,7 +11,7 @@ import {
 import { ProgressUpdatesService } from './progress-updates.service';
 import { CreateProgressUpdateDto } from './dto/create-progress-update.dto';
 import { UpdateProgressUpdateDto } from './dto/update-progress-update.dto';
-import { CookieGuard } from 'src/session.guard';
+import { CookieGuard } from '../session.guard';
 
 @Controller('progress-updates')
 export class ProgressUpdatesController {
@@ -33,8 +33,8 @@ export class ProgressUpdatesController {
 
   @Get(':id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: string) {
-    return this.progressUpdatesService.findOne(+id);
+  findById(@Param('id') id: string) {
+    return this.progressUpdatesService.findById(+id);
   }
 
   @Patch(':id')

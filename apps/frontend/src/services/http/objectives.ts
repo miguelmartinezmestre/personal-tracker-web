@@ -70,3 +70,21 @@ export async function getObjective(id: number): Promise<Objetive> {
 
     return body;
 }
+
+export async function deleteObjective(id: number): Promise<Objetive> {
+    const response = await fetch(baseUrl + '/goals/' + id, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+        throw new Error(body.message);
+    }
+
+    return body;
+}

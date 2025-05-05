@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 export const formSchema = z.object({
     email: z.string().email({
-        message: 'Por favor ingresa un correo electrónico válido.',
+        message: 'email is required',
     }),
     password: z.string().min(1, {
-        message: 'La contraseña es obligatoria.',
+        message: 'password is required',
     }),
 });

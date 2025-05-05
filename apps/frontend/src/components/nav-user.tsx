@@ -32,9 +32,9 @@ export function NavUser({
 
     const { logoutMutation } = useLogoutMutation();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         logoutMutation.mutate();
-        navigate({ to: '/' });
+        await navigate({ to: '/' });
     };
 
     return (

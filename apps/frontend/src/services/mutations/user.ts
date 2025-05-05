@@ -6,7 +6,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { registerUser } from '../http/register';
 import { formSchema as registerFormSchema } from '../../schemas/register';
-import { logout } from '../http/users';
+import { deleteUser, logout, recoverPassword } from '../http/users';
+import { formSchema as recoverPasswordFormSchema } from '../../schemas/recover-password';
+import { formSchema as deleteAccountSchema } from '../../schemas/delete-account';
 
 export const useLoginMutation = () => {
     const navigate = useNavigate();
@@ -25,8 +27,8 @@ export const useLoginMutation = () => {
                 password,
             });
         },
-        onSuccess: () => {
-            navigate({ to: '/dashboard/home' });
+        onSuccess: async () => {
+            await navigate({ to: '/dashboard/home' });
         },
         onError: (error: Error) => {
             setLoginError(error.message);
@@ -54,8 +56,8 @@ export const useRegisterMutation = () => {
                 username,
             });
         },
-        onSuccess: () => {
-            navigate({ to: '/login' });
+        onSuccess: async () => {
+            await navigate({ to: '/login' });
         },
         onError: (error: Error) => {
             setRegisterError(error.message);
@@ -71,4 +73,54 @@ export const useLogoutMutation = () => {
     });
 
     return { logoutMutation };
+};
+
+export const useRecoverPasswordMutation = () => {
+    const navigate = useNavigate();
+    const [loginError, setLoginError] = useState<string | null>(null);
+
+    const mutation = useMutation({
+        mutationFn: (values: z.infer<typeof recoverPasswordFormSchema>) => {
+            const { email } = values;
+
+            if (!email) {
+                throw new Error('Todos los campos son obligatorios');
+            }
+
+            return recoverPassword(email);
+        },
+        onSuccess: async () => {
+            await navigate({ to: '/login' });
+        },
+        onError: (error: Error) => {
+            setLoginError(error.message);
+        },
+    });
+
+    return { mutation, loginError };
+};
+
+export const useDeleteUserMutation = () => {
+    const navigate = useNavigate();
+    const [loginError, setLoginError] = useState<string | null>(null);
+
+    const mutation = useMutation({
+        mutationFn: (values: z.infer<typeof deleteAccountSchema>) => {
+            const { id } = values;
+
+            if (!id) {
+                throw new Error('Todos los campos son obligatorios');
+            }
+
+            return deleteUser(id);
+        },
+        onSuccess: async () => {
+            await navigate({ to: '/' });
+        },
+        onError: (error: Error) => {
+            setLoginError(error.message);
+        },
+    });
+
+    return { mutation, loginError };
 };

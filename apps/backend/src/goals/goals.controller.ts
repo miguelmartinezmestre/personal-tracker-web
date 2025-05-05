@@ -12,7 +12,7 @@ import {
 import { GoalsService } from './goals.service';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
-import { CookieGuard } from 'src/session.guard';
+import { CookieGuard } from '../session.guard';
 import { UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 @Controller('goals')
@@ -33,8 +33,8 @@ export class GoalsController {
 
   @Get(':id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: number) {
-    return this.goalsService.findOne(+id);
+  findById(@Param('id') id: number) {
+    return this.goalsService.findById(+id);
   }
 
   @Get('user/:id')

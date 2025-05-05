@@ -25,7 +25,7 @@ export class NotificationsService {
     });
   }
 
-  async findOne(id: number) {
+  async findById(id: number) {
     return this.prisma.notification.findUnique({
       where: { id },
     });

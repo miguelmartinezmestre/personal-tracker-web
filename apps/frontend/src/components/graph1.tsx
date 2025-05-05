@@ -1,6 +1,6 @@
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
     ChartConfig,
     ChartContainer,
@@ -31,8 +31,8 @@ export function Graph1() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Bar Chart - Multiple</CardTitle>
-                <CardDescription>January - June 2024</CardDescription>
+                <CardTitle>Objetivos Completados en la ultima semana</CardTitle>
+                {/* <CardDescription>January - June 2024</CardDescription> */}
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig}>

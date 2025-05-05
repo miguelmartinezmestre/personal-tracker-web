@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ResetPasswordFinishImport } from './routes/reset-password-finish'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
@@ -18,6 +19,7 @@ import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as DashboardIndexImport } from './routes/dashboard/index'
+import { Route as DashboardSettingsIndexImport } from './routes/dashboard/settings/index'
 import { Route as DashboardSessionsIndexImport } from './routes/dashboard/sessions/index'
 import { Route as DashboardObjectivesIndexImport } from './routes/dashboard/objectives/index'
 import { Route as DashboardNotificationsIndexImport } from './routes/dashboard/notifications/index'
@@ -25,6 +27,12 @@ import { Route as DashboardHomeIndexImport } from './routes/dashboard/home/index
 import { Route as DashboardObjectivesIdImport } from './routes/dashboard/objectives/$id'
 
 // Create/Update Routes
+
+const ResetPasswordFinishRoute = ResetPasswordFinishImport.update({
+  id: '/reset-password-finish',
+  path: '/reset-password-finish',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const ResetPasswordRoute = ResetPasswordImport.update({
   id: '/reset-password',
@@ -65,6 +73,12 @@ const IndexRoute = IndexImport.update({
 const DashboardIndexRoute = DashboardIndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+
+const DashboardSettingsIndexRoute = DashboardSettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => DashboardRoute,
 } as any)
 
@@ -145,6 +159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordImport
       parentRoute: typeof rootRoute
     }
+    '/reset-password-finish': {
+      id: '/reset-password-finish'
+      path: '/reset-password-finish'
+      fullPath: '/reset-password-finish'
+      preLoaderRoute: typeof ResetPasswordFinishImport
+      parentRoute: typeof rootRoute
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -187,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSessionsIndexImport
       parentRoute: typeof DashboardImport
     }
+    '/dashboard/settings/': {
+      id: '/dashboard/settings/'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsIndexImport
+      parentRoute: typeof DashboardImport
+    }
   }
 }
 
@@ -199,6 +227,7 @@ interface DashboardRouteChildren {
   DashboardNotificationsIndexRoute: typeof DashboardNotificationsIndexRoute
   DashboardObjectivesIndexRoute: typeof DashboardObjectivesIndexRoute
   DashboardSessionsIndexRoute: typeof DashboardSessionsIndexRoute
+  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -208,6 +237,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardNotificationsIndexRoute: DashboardNotificationsIndexRoute,
   DashboardObjectivesIndexRoute: DashboardObjectivesIndexRoute,
   DashboardSessionsIndexRoute: DashboardSessionsIndexRoute,
+  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -221,12 +251,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reset-password-finish': typeof ResetPasswordFinishRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
   '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
   '/dashboard/objectives': typeof DashboardObjectivesIndexRoute
   '/dashboard/sessions': typeof DashboardSessionsIndexRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -235,12 +267,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reset-password-finish': typeof ResetPasswordFinishRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
   '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
   '/dashboard/objectives': typeof DashboardObjectivesIndexRoute
   '/dashboard/sessions': typeof DashboardSessionsIndexRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 
 export interface FileRoutesById {
@@ -251,12 +285,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reset-password-finish': typeof ResetPasswordFinishRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home/': typeof DashboardHomeIndexRoute
   '/dashboard/notifications/': typeof DashboardNotificationsIndexRoute
   '/dashboard/objectives/': typeof DashboardObjectivesIndexRoute
   '/dashboard/sessions/': typeof DashboardSessionsIndexRoute
+  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -268,12 +304,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/reset-password-finish'
     | '/dashboard/'
     | '/dashboard/objectives/$id'
     | '/dashboard/home'
     | '/dashboard/notifications'
     | '/dashboard/objectives'
     | '/dashboard/sessions'
+    | '/dashboard/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -281,12 +319,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/reset-password-finish'
     | '/dashboard'
     | '/dashboard/objectives/$id'
     | '/dashboard/home'
     | '/dashboard/notifications'
     | '/dashboard/objectives'
     | '/dashboard/sessions'
+    | '/dashboard/settings'
   id:
     | '__root__'
     | '/'
@@ -295,12 +335,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/reset-password-finish'
     | '/dashboard/'
     | '/dashboard/objectives/$id'
     | '/dashboard/home/'
     | '/dashboard/notifications/'
     | '/dashboard/objectives/'
     | '/dashboard/sessions/'
+    | '/dashboard/settings/'
   fileRoutesById: FileRoutesById
 }
 
@@ -311,6 +353,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ResetPasswordFinishRoute: typeof ResetPasswordFinishRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -320,6 +363,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ResetPasswordFinishRoute: ResetPasswordFinishRoute,
 }
 
 export const routeTree = rootRoute
@@ -337,7 +381,8 @@ export const routeTree = rootRoute
         "/dashboard",
         "/login",
         "/register",
-        "/reset-password"
+        "/reset-password",
+        "/reset-password-finish"
       ]
     },
     "/": {
@@ -354,7 +399,8 @@ export const routeTree = rootRoute
         "/dashboard/home/",
         "/dashboard/notifications/",
         "/dashboard/objectives/",
-        "/dashboard/sessions/"
+        "/dashboard/sessions/",
+        "/dashboard/settings/"
       ]
     },
     "/login": {
@@ -365,6 +411,9 @@ export const routeTree = rootRoute
     },
     "/reset-password": {
       "filePath": "reset-password.tsx"
+    },
+    "/reset-password-finish": {
+      "filePath": "reset-password-finish.tsx"
     },
     "/dashboard/": {
       "filePath": "dashboard/index.tsx",
@@ -388,6 +437,10 @@ export const routeTree = rootRoute
     },
     "/dashboard/sessions/": {
       "filePath": "dashboard/sessions/index.tsx",
+      "parent": "/dashboard"
+    },
+    "/dashboard/settings/": {
+      "filePath": "dashboard/settings/index.tsx",
       "parent": "/dashboard"
     }
   }

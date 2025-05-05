@@ -1,14 +1,6 @@
-import { TrendingUp } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
     ChartConfig,
     ChartContainer,
@@ -53,8 +45,8 @@ export function Graph2() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Bar Chart - Mixed</CardTitle>
-                <CardDescription>January - June 2024</CardDescription>
+                <CardTitle>Objetivos Completados en el ultimo mes</CardTitle>
+                {/* <CardDescription>January - June 2024</CardDescription> */}
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig}>
@@ -82,14 +74,14 @@ export function Graph2() {
                     </BarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
+            {/* <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 font-medium leading-none">
                     Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
                 </div>
                 <div className="leading-none text-muted-foreground">
                     Showing total visitors for the last 6 months
                 </div>
-            </CardFooter>
+            </CardFooter> */}
         </Card>
     );
 }

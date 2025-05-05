@@ -1,5 +1,5 @@
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
 import { useEffect, useRef, useState } from 'react';
 
@@ -24,7 +24,6 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-// Datos de ejemplo en caso de que no se proporcionen
 const fallbackData = [
     { date: new Date('2024-01-01'), currentValue: 5, objetive: 90 },
     { date: new Date('2024-02-01'), currentValue: 23, objetive: 90 },
@@ -72,8 +71,8 @@ export function Graph3({ data = fallbackData }: ProgressProps) {
     return (
         <Card className="w-full">
             <CardHeader>
-                <CardTitle>Line Chart - Multiple</CardTitle>
-                <CardDescription>January - June 2024</CardDescription>
+                <CardTitle>Progreso de los ultimos 5 objetivos</CardTitle>
+                {/* <CardDescription>January - June 2024</CardDescription> */}
             </CardHeader>
             <CardContent>
                 <div ref={containerRef} className="w-full h-[300px] sm:h-[350px] md:h-[400px]">
