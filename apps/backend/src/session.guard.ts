@@ -13,9 +13,7 @@ export class CookieGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest() as Request;
-    // Obtener cookies del cliente
     const cookies = request.cookies;
-    // Comprobar si la cookie existe
     if (!cookies || !cookies['session_id']) {
       throw new UnauthorizedException('Incorrect credentials');
     }

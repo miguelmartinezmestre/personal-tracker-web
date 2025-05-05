@@ -10,7 +10,6 @@ export default function useAuth(): { email: string; name: string; id: number; is
         navigate({ to: '/' });
     }
 
-    //@ts-ignore
     return {
         email: data ? data.email : '',
         name: data ? data.name : '',

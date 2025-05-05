@@ -19,25 +19,17 @@ export class EmailsService {
     });
   }
 
-  async send() {
+  async sendWelcomeEmail(username: string, email: string) {
     const emailHtml = await render(
       RegisterEmail({
-        username: 'alanturing',
-        userImage: 'https://localhost:3000',
-        invitedByUsername: 'Alan',
-        invitedByEmail: 'alan.turing@example.com',
-        teamName: 'Enigma',
-        teamImage: 'https://localhost:3000',
-        inviteLink: 'https://vercel.com/teams/invite/foo',
-        inviteFromIp: '204.13.186.218',
-        inviteFromLocation: 'São Paulo, Brazil',
+        username,
       }),
     );
 
     const options = {
       from: 'you@example.com',
-      to: 'user@gmail.com',
-      subject: 'hello world',
+      to: email,
+      subject: `Welcome ${username}`,
       html: emailHtml,
     };
 

@@ -27,6 +27,10 @@ export class UsersService {
       },
     });
 
+    if (!user) {
+      throw new UnauthorizedException('Incorrect credentials');
+    }
+
     const hashedPassword = createHash('sha512')
       .update(loginUserDto.password)
       .digest('hex');
@@ -43,10 +47,9 @@ export class UsersService {
         userId: user.id,
         value: sessionId,
         userAgent: userAgent,
+        status: 'active',
       },
     });
-
-    await this.emailsService.send();
 
     response
       .cookie('session_id', sessionId, {
@@ -83,8 +86,11 @@ export class UsersService {
       data: {
         userId: user.id,
         value: sessionId,
+        status: 'active',
       },
     });
+
+    await this.emailsService.sendWelcomeEmail(user.username, user.email);
 
     response
       .cookie('session_id', sessionId, {

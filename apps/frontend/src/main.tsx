@@ -13,8 +13,8 @@ export const baseUrl = 'http://localhost:3000';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60,
-            gcTime: 1000 * 60,
+            // staleTime: 1000 * 60,
+            // gcTime: 1000 * 60,
         },
     },
 });
@@ -31,7 +31,7 @@ declare module '@tanstack/react-router' {
     }
 }
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root') || document.createElement('div')).render(
     // <StrictMode>
     <ThemeProvider>
         <QueryClientProvider client={queryClient}>

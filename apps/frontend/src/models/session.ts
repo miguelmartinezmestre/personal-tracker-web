@@ -3,4 +3,5 @@ export type Session = {
     userId: number;
     value: string;
     userAgent: string;
+    status: 'active' | 'invalidated';
 };

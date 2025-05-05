@@ -24,14 +24,13 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-// Datos de ejemplo en caso de que no se proporcionen
 const fallbackData = [
-    { date: new Date('2024-01-01'), currentValue: 5, objetive: 90 },
-    { date: new Date('2024-02-01'), currentValue: 23, objetive: 90 },
-    { date: new Date('2024-03-01'), currentValue: 32, objetive: 90 },
-    { date: new Date('2024-04-01'), currentValue: 37, objetive: 90 },
-    { date: new Date('2024-05-01'), currentValue: 45, objetive: 90 },
-    { date: new Date('2024-06-01'), currentValue: 52, objetive: 90 },
+    // { date: new Date('2024-01-01'), currentValue: 5, objetive: 90 },
+    // { date: new Date('2024-02-01'), currentValue: 23, objetive: 90 },
+    // { date: new Date('2024-03-01'), currentValue: 32, objetive: 90 },
+    // { date: new Date('2024-04-01'), currentValue: 37, objetive: 90 },
+    // { date: new Date('2024-05-01'), currentValue: 45, objetive: 90 },
+    // { date: new Date('2024-06-01'), currentValue: 52, objetive: 90 },
 ];
 
 export function Graph3({ data = fallbackData }: ProgressProps) {

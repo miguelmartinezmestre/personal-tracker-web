@@ -1,5 +1,5 @@
 import { Objetive } from '../../models/objetive';
-import { createObjective } from '../http/objectives';
+import { createObjective, deleteObjective } from '../http/objectives';
 
 import { useMutation } from '@tanstack/react-query';
 import { schema } from '../../schemas/objective';
@@ -71,4 +71,25 @@ export const useUpdateObjectiveMutation = (
     });
 
     return { updateMutation };
+};
+
+export const useDeleteObjectiveMutation = (
+    setError: (error: string) => void,
+    setOpen: (open: boolean) => void,
+    refetch: () => void
+) => {
+    const mutation = useMutation({
+        mutationFn: (id: number) => {
+            return deleteObjective(id);
+        },
+        onError: (error: Error) => {
+            setError(error.message);
+        },
+        onSuccess: () => {
+            setOpen(false);
+            refetch();
+        },
+    });
+
+    return { mutation };
 };

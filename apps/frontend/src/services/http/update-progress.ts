@@ -56,3 +56,18 @@ export async function updateUpdateProgress(
 
     return body;
 }
+
+export async function deleteUpdateProgress(id: number): Promise<UpdateProgress> {
+    const response = await fetch(baseUrl + '/progress-updates/' + id, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
+
+    const body = await response.json();
+
+    return body;
+}
+

@@ -1,3 +1,9 @@
 {
-    "npm.exclude": ["**/apps/**", "**/packages/**"]
+    "npm.exclude": [
+        "**/apps/**",
+        "**/packages/**"
+    ],
+    "typescript.preferences.autoImportSpecifierExcludeRegexes": [
+        "@radix-ui",
+    ]
 }

@@ -13,11 +13,6 @@ async function getEmails() {
             const body = email.Content.Body;
 
             const decodedBody = Buffer.from(body, 'base64').toString('utf-8');
-
-            console.log('De:', from);
-            console.log('Asunto:', subject);
-            console.log('Contenido:', decodedBody);
-            console.log('----------------------------------');
         });
     } catch (error) {
         console.error('Error al obtener correos:', error.message);

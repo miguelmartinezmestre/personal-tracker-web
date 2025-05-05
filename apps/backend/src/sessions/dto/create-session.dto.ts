@@ -9,4 +9,10 @@ export class CreateSessionDto {
 
   @ApiProperty()
   value: string;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  userAgent: string;
 }

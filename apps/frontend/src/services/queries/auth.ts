@@ -9,6 +9,7 @@ export const useAuthQuery = () => {
     }>({
         queryKey: ['auth'],
         queryFn: fetchAuth,
+        retry: false,
     });
 
     return { data, isError, isLoading };

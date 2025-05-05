@@ -5,11 +5,17 @@ import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createSessionDto: CreateSessionDto) {
     return this.prisma.session.create({
       data: createSessionDto,
+    });
+  }
+
+  async findAllByUserId(userId: number) {
+    return this.prisma.session.findMany({
+      where: { userId },
     });
   }
 

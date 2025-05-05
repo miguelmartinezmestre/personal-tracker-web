@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -131,17 +131,9 @@ function RouteComponent() {
 
                             <div className="text-center mt-4">
                                 <p className="text-sm text-gray-600">
-                                    ¿Ya tienes una cuenta?{' '}
-                                    <a
-                                        href="/login"
-                                        className="font-medium text-primary hover:text-primary/80 transition-colors"
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            navigate({ to: '/login' });
-                                        }}
-                                    >
-                                        Iniciar sesión
-                                    </a>
+                                    <Link to="/login">
+                                        ¿Ya tienes una cuenta? Iniciar sesión
+                                    </Link>
                                 </p>
                             </div>
                         </form>
