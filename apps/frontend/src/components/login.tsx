@@ -21,7 +21,6 @@ import { useLoginMutation } from '../services/mutations/user';
 import { Link } from '@tanstack/react-router';
 
 export default function Login() {
-
     const { mutation, loginError } = useLoginMutation();
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -51,7 +50,9 @@ export default function Login() {
                                 <Alert variant="destructive" className="mb-6">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error</AlertTitle>
-                                    <AlertDescription>No ha sido posible iniciar sesión</AlertDescription>
+                                    <AlertDescription>
+                                        No ha sido posible iniciar sesión
+                                    </AlertDescription>
                                 </Alert>
                             )}
 
@@ -60,9 +61,7 @@ export default function Login() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">
-                                            email
-                                        </FormLabel>
+                                        <FormLabel className="text-gray-700">email</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
@@ -98,7 +97,10 @@ export default function Login() {
                             />
 
                             <div className="flex justify-end">
-                                <Link to="/reset-password" className="text-sm text-primary hover:text-primary/80 transition-colors">
+                                <Link
+                                    to="/reset-password"
+                                    className="text-sm text-primary hover:text-primary/80 transition-colors"
+                                >
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
@@ -114,9 +116,7 @@ export default function Login() {
 
                             <div className="text-center mt-4">
                                 <p className="text-sm text-gray-600">
-                                    <Link to="/register">
-                                        ¿No tienes una cuenta? Registrarse
-                                    </Link>
+                                    <Link to="/register">¿No tienes una cuenta? Registrarse</Link>
                                 </p>
                             </div>
                         </form>

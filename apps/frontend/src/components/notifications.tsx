@@ -1,9 +1,9 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { Link } from "@tanstack/react-router";
-import { useAuthContext } from "../providers/auth-provider";
-import { useNotificationsQuery } from "../services/queries/notifications";
-import { DataTable } from "./table";
-import { Notification } from "../models/notification";
+import { ColumnDef } from '@tanstack/react-table';
+import { Link } from '@tanstack/react-router';
+import { useAuthContext } from '../providers/auth-provider';
+import { useNotificationsQuery } from '../services/queries/notifications';
+import { DataTable } from './table';
+import { Notification } from '../models/notification';
 
 export default function Notifications() {
     const { user, isLoading: isLoadingAuth } = useAuthContext();

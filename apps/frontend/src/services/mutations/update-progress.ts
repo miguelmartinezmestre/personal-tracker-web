@@ -1,6 +1,10 @@
 import { UpdateProgress } from '../../models/update-progress';
 import { useMutation } from '@tanstack/react-query';
-import { createUpdateProgress, deleteUpdateProgress, updateUpdateProgress } from '../http/update-progress';
+import {
+    createUpdateProgress,
+    deleteUpdateProgress,
+    updateUpdateProgress,
+} from '../http/update-progress';
 import { schema } from '../../schemas/update-progress';
 import { z } from 'zod';
 

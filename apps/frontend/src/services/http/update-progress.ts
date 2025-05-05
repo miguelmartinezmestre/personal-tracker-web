@@ -63,11 +63,10 @@ export async function deleteUpdateProgress(id: number): Promise<UpdateProgress> 
         credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
-        }
+        },
     });
 
     const body = await response.json();
 
     return body;
 }
-

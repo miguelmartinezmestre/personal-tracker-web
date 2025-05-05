@@ -16,7 +16,7 @@ import { useAuthContext } from '../src/providers/auth-provider';
 
 // --- Mocks ---
 // Mock TanStack Router useParams directly
-vi.mock('@tanstack/react-router', async (importOriginal) => {
+vi.mock('@tanstack/react-router', async importOriginal => {
     const actual = await importOriginal<typeof import('@tanstack/react-router')>();
     return {
         ...actual,
@@ -37,11 +37,32 @@ vi.mock('../src/components/graph3', () => ({
 // --- Mock Data ---
 const mockUser = { id: 1, email: 'test@test.com', name: 'Test User' };
 const mockObjectiveData = {
-    id: 1, title: 'Objective Detail', description: 'Detail Desc', category: 'Test', targetValue: 150, currentValue: 75, deadline: new Date(), status: 'Active', unit: 'tasks', userId: 1
+    id: 1,
+    title: 'Objective Detail',
+    description: 'Detail Desc',
+    category: 'Test',
+    targetValue: 150,
+    currentValue: 75,
+    deadline: new Date(),
+    status: 'Active',
+    unit: 'tasks',
+    userId: 1,
 };
 const mockProgressData: UpdateProgress[] = [
-    { id: 1, goalId: 1, updatedValue: 25, updateDate: new Date('2023-01-15'), comment: 'Initial progress' },
-    { id: 2, goalId: 1, updatedValue: 75, updateDate: new Date('2023-02-20'), comment: 'Reached milestone' },
+    {
+        id: 1,
+        goalId: 1,
+        updatedValue: 25,
+        updateDate: new Date('2023-01-15'),
+        comment: 'Initial progress',
+    },
+    {
+        id: 2,
+        goalId: 1,
+        updatedValue: 75,
+        updateDate: new Date('2023-02-20'),
+        comment: 'Reached milestone',
+    },
 ];
 
 // --- Test Setup ---
@@ -74,8 +95,12 @@ describe('Objective Component', () => {
         queryClient.clear();
 
         // Assign spies and let TypeScript infer the type
-        getObjectiveSpy = vi.spyOn(objectiveService, 'getObjective').mockResolvedValue(mockObjectiveData);
-        getUpdateProgressSpy = vi.spyOn(updateProgressService, 'getUpdateProgress').mockResolvedValue(mockProgressData);
+        getObjectiveSpy = vi
+            .spyOn(objectiveService, 'getObjective')
+            .mockResolvedValue(mockObjectiveData);
+        getUpdateProgressSpy = vi
+            .spyOn(updateProgressService, 'getUpdateProgress')
+            .mockResolvedValue(mockProgressData);
     });
 
     it('should render the objective details, graph, and progress table', async () => {
@@ -107,13 +132,15 @@ describe('Objective Component', () => {
     // Example test for form submission
     it('should call mutation when update progress form is submitted', async () => {
         // Ensure the spy is active for this test
-        const createUpdateProgressSpy = vi.spyOn(updateProgressService, 'createUpdateProgress').mockResolvedValue({
-            id: 2,
-            comment: 'New progress update',
-            updatedValue: 75,
-            goalId: 1,
-            updateDate: new Date()
-        });
+        const createUpdateProgressSpy = vi
+            .spyOn(updateProgressService, 'createUpdateProgress')
+            .mockResolvedValue({
+                id: 2,
+                comment: 'New progress update',
+                updatedValue: 75,
+                goalId: 1,
+                updateDate: new Date(),
+            });
 
         renderComponent();
         await screen.findByRole('button', { name: /update progress/i });
@@ -129,7 +156,7 @@ describe('Objective Component', () => {
 
         const newProgress = {
             comment: 'New progress update',
-            updatedValue: 75
+            updatedValue: 75,
         };
 
         fireEvent.change(commentInput, { target: { value: newProgress.comment } });
@@ -138,11 +165,13 @@ describe('Objective Component', () => {
 
         await waitFor(() => {
             expect(createUpdateProgressSpy).toHaveBeenCalledTimes(1);
-            expect(createUpdateProgressSpy).toHaveBeenCalledWith(expect.objectContaining({
-                comment: newProgress.comment,
-                updatedValue: newProgress.updatedValue,
-                goalId: 1,
-            }));
+            expect(createUpdateProgressSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    comment: newProgress.comment,
+                    updatedValue: newProgress.updatedValue,
+                    goalId: 1,
+                })
+            );
         });
     });
-}); 
+});

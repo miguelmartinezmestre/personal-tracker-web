@@ -2,7 +2,14 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 // Use TanStack Router testing utils
-import { RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter, useParams } from '@tanstack/react-router';
+import {
+    RouterProvider,
+    createMemoryHistory,
+    createRootRoute,
+    createRoute,
+    createRouter,
+    useParams,
+} from '@tanstack/react-router';
 import Objectives from '../src/components/objectives';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -19,7 +26,7 @@ vi.mock('../src/providers/auth-provider', () => ({
 }));
 
 // Mock react-i18next preserving other exports
-vi.mock('react-i18next', async (importOriginal) => {
+vi.mock('react-i18next', async importOriginal => {
     const actual = await importOriginal<typeof import('react-i18next')>();
     return {
         ...actual, // Include original exports like initReactI18next
@@ -30,8 +37,30 @@ vi.mock('react-i18next', async (importOriginal) => {
 // --- Mock Data ---
 const mockUser = { id: 1, email: 'test@test.com', name: 'Test User' };
 const mockObjectives: Objetive[] = [
-    { id: 1, title: 'Objective 1', description: 'Desc 1', category: 'Cat A', targetValue: 100, currentValue: 50, deadline: new Date(), status: 'In Progress', unit: '%', userId: 1 },
-    { id: 2, title: 'Objective 2', description: 'Desc 2', category: 'Cat B', targetValue: 200, currentValue: 100, deadline: new Date(), status: 'Done', unit: 'items', userId: 1 },
+    {
+        id: 1,
+        title: 'Objective 1',
+        description: 'Desc 1',
+        category: 'Cat A',
+        targetValue: 100,
+        currentValue: 50,
+        deadline: new Date(),
+        status: 'In Progress',
+        unit: '%',
+        userId: 1,
+    },
+    {
+        id: 2,
+        title: 'Objective 2',
+        description: 'Desc 2',
+        category: 'Cat B',
+        targetValue: 200,
+        currentValue: 100,
+        deadline: new Date(),
+        status: 'Done',
+        unit: 'items',
+        userId: 1,
+    },
 ];
 
 // --- Test Setup ---
@@ -49,8 +78,16 @@ function ObjectiveDetailComponent() {
 }
 
 // Create routes
-const objectiveDetailRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dashboard/objectives/$id', component: ObjectiveDetailComponent });
-const objectivesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dashboard/objectives', component: Objectives });
+const objectiveDetailRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/dashboard/objectives/$id',
+    component: ObjectiveDetailComponent,
+});
+const objectivesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/dashboard/objectives',
+    component: Objectives,
+});
 const routeTree = rootRoute.addChildren([objectivesRoute, objectiveDetailRoute]);
 
 const renderWithRouter = (initialPath = '/dashboard/objectives') => {
@@ -67,7 +104,7 @@ const renderWithRouter = (initialPath = '/dashboard/objectives') => {
             <RouterProvider router={router} />
         </QueryClientProvider>
     );
-}
+};
 
 // --- Test Suite ---
 describe('Objectives Component', () => {
@@ -77,7 +114,9 @@ describe('Objectives Component', () => {
         vi.clearAllMocks();
         queryClient.clear();
 
-        getObjectivesSpy = vi.spyOn(objectivesService, 'getObjectives').mockResolvedValue(mockObjectives);
+        getObjectivesSpy = vi
+            .spyOn(objectivesService, 'getObjectives')
+            .mockResolvedValue(mockObjectives);
     });
 
     it('should render the objectives table', async () => {
@@ -94,7 +133,9 @@ describe('Objectives Component', () => {
 
     it('should open the create objective modal when create button is clicked', async () => {
         renderWithRouter();
-        await waitFor(() => { expect(getObjectivesSpy).toHaveBeenCalled(); });
+        await waitFor(() => {
+            expect(getObjectivesSpy).toHaveBeenCalled();
+        });
 
         const createButton = screen.getByRole('button', { name: /crear objetivo/i });
         fireEvent.click(createButton);
@@ -107,7 +148,9 @@ describe('Objectives Component', () => {
 
     it('should open the update objective modal when edit button is clicked', async () => {
         renderWithRouter();
-        await waitFor(() => { expect(getObjectivesSpy).toHaveBeenCalled(); });
+        await waitFor(() => {
+            expect(getObjectivesSpy).toHaveBeenCalled();
+        });
 
         const editButtons = screen.getAllByRole('button', { name: /editar objetivo/i });
         fireEvent.click(editButtons[0]);
@@ -115,13 +158,19 @@ describe('Objectives Component', () => {
         await waitFor(() => {
             expect(screen.getByRole('dialog', { name: /update progress/i })).toBeInTheDocument();
         });
-        expect(within(screen.getByRole('dialog')).getByDisplayValue(mockObjectives[0].title)).toBeInTheDocument();
-        expect(within(screen.getByRole('dialog')).getByDisplayValue(mockObjectives[0].description)).toBeInTheDocument();
+        expect(
+            within(screen.getByRole('dialog')).getByDisplayValue(mockObjectives[0].title)
+        ).toBeInTheDocument();
+        expect(
+            within(screen.getByRole('dialog')).getByDisplayValue(mockObjectives[0].description)
+        ).toBeInTheDocument();
     });
 
     it('should navigate to the objective detail page when link is clicked', async () => {
         renderWithRouter();
-        await waitFor(() => { expect(getObjectivesSpy).toHaveBeenCalled(); });
+        await waitFor(() => {
+            expect(getObjectivesSpy).toHaveBeenCalled();
+        });
 
         const detailLinks = screen.getAllByRole('link', { name: /ir actividad/i });
         fireEvent.click(detailLinks[0]);
@@ -133,4 +182,4 @@ describe('Objectives Component', () => {
     });
 
     // Add tests for form submission (create/update) if needed
-}); 
+});

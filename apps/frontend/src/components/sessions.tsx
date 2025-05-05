@@ -16,11 +16,7 @@ export default function Sessions() {
     const [error, setError] = useState('');
     const [open, setOpen] = useState(false);
 
-    const { mutation } = useInvalidateSessionMutation(
-        setError,
-        setOpen,
-        refetch
-    );
+    const { mutation } = useInvalidateSessionMutation(setError, setOpen, refetch);
 
     const columns: ColumnDef<Session>[] = [
         {

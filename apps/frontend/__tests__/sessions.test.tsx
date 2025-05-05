@@ -63,12 +63,14 @@ const renderSessionsComponentDirectly = (
     );
 };
 
-
 describe('Sessions Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default mocks for happy path
-        mockUseAuthContext.mockReturnValue({ user: { id: 1, name: 'Test User', email: 'test@example.com' }, isLoading: false });
+        mockUseAuthContext.mockReturnValue({
+            user: { id: 1, name: 'Test User', email: 'test@example.com' },
+            isLoading: false,
+        });
         // --- Adjust hook name if needed ---
         mockUseSessionsQuery.mockReturnValue({ data: [], isLoading: false, refetch: vi.fn() });
     });
@@ -100,7 +102,14 @@ describe('Sessions Component', () => {
 
     it('should render session data when loaded successfully', async () => {
         const mockData: Session[] = [
-            { id: 1, userId: 1, userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36', status: 'active', value: '192.168.1.1' },
+            {
+                id: 1,
+                userId: 1,
+                userAgent:
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                status: 'active',
+                value: '192.168.1.1',
+            },
             // { id: 2, userId: 1, userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36', status: 'active', value: '10.0.0.1' },
         ];
         renderSessionsComponentDirectly({}, { data: mockData, isLoading: false });

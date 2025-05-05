@@ -1,16 +1,20 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { Objetive } from "../models/objetive";
-import { useAuthContext } from "../providers/auth-provider";
-import { schema } from "../schemas/objective";
-import { useDeleteObjectiveMutation, useObjectiveMutation, useUpdateObjectiveMutation } from "../services/mutations/objective";
-import { useObjectivesQuery } from "../services/queries/objectives";
-import { GenericForm } from "./generic-form";
-import { Modal } from "./modal";
-import { DataTable } from "./table";
-import { Button } from "./ui/button";
+import { ColumnDef } from '@tanstack/react-table';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod';
+import { Objetive } from '../models/objetive';
+import { useAuthContext } from '../providers/auth-provider';
+import { schema } from '../schemas/objective';
+import {
+    useDeleteObjectiveMutation,
+    useObjectiveMutation,
+    useUpdateObjectiveMutation,
+} from '../services/mutations/objective';
+import { useObjectivesQuery } from '../services/queries/objectives';
+import { GenericForm } from './generic-form';
+import { Modal } from './modal';
+import { DataTable } from './table';
+import { Button } from './ui/button';
 import { Link } from '@tanstack/react-router';
 
 const defaultValues = {
@@ -122,7 +126,7 @@ export default function Objectives() {
 
                 return null;
             },
-        }
+        },
     ];
 
     if (isLoading || isLoadingAuth) {

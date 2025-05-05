@@ -1,19 +1,22 @@
-import { useParams } from "@tanstack/react-router";
-import { ColumnDef } from "@tanstack/react-table";
-import { useState } from "react";
-import { z } from "zod";
-import { UpdateProgress } from "../models/update-progress";
-import { useAuthContext } from "../providers/auth-provider";
-import { schema } from "../schemas/update-progress";
-import { useDeleteUpdateProgressMutation, useUpdateProgressMutation, useUpdateUpdateProgressMutation } from "../services/mutations/update-progress";
-import { useObjectiveQuery } from "../services/queries/objective";
-import { useUpdateProgressQuery } from "../services/queries/update-progress";
-import { GenericForm } from "./generic-form";
-import { Progress, Graph3 } from "./graph3";
-import { Modal } from "./modal";
-import { DataTable } from "./table";
-import { Button } from "./ui/button";
-
+import { useParams } from '@tanstack/react-router';
+import { ColumnDef } from '@tanstack/react-table';
+import { useState } from 'react';
+import { z } from 'zod';
+import { UpdateProgress } from '../models/update-progress';
+import { useAuthContext } from '../providers/auth-provider';
+import { schema } from '../schemas/update-progress';
+import {
+    useDeleteUpdateProgressMutation,
+    useUpdateProgressMutation,
+    useUpdateUpdateProgressMutation,
+} from '../services/mutations/update-progress';
+import { useObjectiveQuery } from '../services/queries/objective';
+import { useUpdateProgressQuery } from '../services/queries/update-progress';
+import { GenericForm } from './generic-form';
+import { Progress, Graph3 } from './graph3';
+import { Modal } from './modal';
+import { DataTable } from './table';
+import { Button } from './ui/button';
 
 export default function Objective() {
     const { id } = useParams({ strict: false });
@@ -40,8 +43,16 @@ export default function Objective() {
 
     const { mutation } = useUpdateProgressMutation(setError, setOpen, refetch);
 
-    const { mutation: deleteMutation } = useDeleteUpdateProgressMutation(setError, setOpen, refetch);
-    const { mutation: updateMutation } = useUpdateUpdateProgressMutation(setError, setUpdateOpen, refetch);
+    const { mutation: deleteMutation } = useDeleteUpdateProgressMutation(
+        setError,
+        setOpen,
+        refetch
+    );
+    const { mutation: updateMutation } = useUpdateUpdateProgressMutation(
+        setError,
+        setUpdateOpen,
+        refetch
+    );
 
     const columns: ColumnDef<UpdateProgress>[] = [
         {

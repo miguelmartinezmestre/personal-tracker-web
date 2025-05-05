@@ -131,9 +131,7 @@ function RouteComponent() {
 
                             <div className="text-center mt-4">
                                 <p className="text-sm text-gray-600">
-                                    <Link to="/login">
-                                        ¿Ya tienes una cuenta? Iniciar sesión
-                                    </Link>
+                                    <Link to="/login">¿Ya tienes una cuenta? Iniciar sesión</Link>
                                 </p>
                             </div>
                         </form>

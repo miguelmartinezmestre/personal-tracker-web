@@ -1,10 +1,9 @@
 /// <reference types="@testing-library/jest-dom" />
 
-import { describe, it } from "vitest";
-import { Button } from "../src/components/ui/button";
-import { render } from "@testing-library/react";
-import React from "react";
-
+import { describe, it } from 'vitest';
+import { Button } from '../src/components/ui/button';
+import { render } from '@testing-library/react';
+import React from 'react';
 
 describe('Dashboard Home Page Component', () => {
     it('should render the component', () => {
@@ -38,7 +37,6 @@ describe('Dashboard Home Page Component', () => {
 
 // // Get the component directly
 // const ComponentToTest = DashboardHomeContent;
-
 
 // // Mock Child Components
 // vi.mock('../src/components/graph1', () => ({ Graph1: () => <div data-testid="graph1-mock">Graph1 Mock</div> }));
@@ -91,7 +89,6 @@ describe('Dashboard Home Page Component', () => {
 //     );
 // };
 
-
 // describe('Dashboard Home Page Component', () => {
 //     beforeEach(() => {
 //         vi.clearAllMocks();
@@ -134,4 +131,4 @@ describe('Dashboard Home Page Component', () => {
 //         expect(screen.getByTestId('data-table-mock')).toBeInTheDocument();
 //         expect(screen.getByText(/Table Mock - Rows: 1/i)).toBeInTheDocument();
 //     });
-// }); 
+// });
