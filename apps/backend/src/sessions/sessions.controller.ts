@@ -17,7 +17,7 @@ export class SessionsController {
 
   @Get('/user/:id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: string) {
+  findById(@Param('id') id: string) {
     return this.sessionsService.findAllByUserId(+id);
   }
 

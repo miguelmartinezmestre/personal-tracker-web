@@ -33,8 +33,8 @@ export class ProgressUpdatesController {
 
   @Get(':id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: string) {
-    return this.progressUpdatesService.findOne(+id);
+  findById(@Param('id') id: string) {
+    return this.progressUpdatesService.findById(+id);
   }
 
   @Patch(':id')

@@ -54,7 +54,7 @@ describe('GoalsController', () => {
   });
 
   it('should find a goal by id', async () => {
-    const result = await controller.findOne(goalId);
+    const result = await controller.findById(goalId);
     expect(result.id).toEqual(goalId);
   });
 

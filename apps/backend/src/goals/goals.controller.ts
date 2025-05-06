@@ -33,8 +33,8 @@ export class GoalsController {
 
   @Get(':id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: number) {
-    return this.goalsService.findOne(+id);
+  findById(@Param('id') id: number) {
+    return this.goalsService.findById(+id);
   }
 
   @Get('user/:id')

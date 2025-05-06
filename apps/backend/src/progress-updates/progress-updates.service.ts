@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { CreateProgressUpdateDto } from './dto/create-progress-update.dto';
 import { UpdateProgressUpdateDto } from './dto/update-progress-update.dto';
 import { PrismaService } from 'src/prisma.service';
+import { GoalsService } from 'src/goals/goals.service';
 
 @Injectable()
 export class ProgressUpdatesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly goalsService: GoalsService,
+  ) {}
 
   async create(createProgressUpdateDto: CreateProgressUpdateDto) {
     const progressUpdate = await this.prisma.progressUpdate.create({
@@ -49,7 +53,7 @@ export class ProgressUpdatesService {
     return this.prisma.progressUpdate.findMany();
   }
 
-  async findOne(goalId: number) {
+  async findById(goalId: number) {
     return this.prisma.progressUpdate.findMany({
       where: { goalId },
     });

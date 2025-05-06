@@ -52,7 +52,7 @@ describe('GoalsService', () => {
   });
 
   it('should find a goal by id', async () => {
-    const result = await service.findOne(goalId);
+    const result = await service.findById(goalId);
     expect(result.id).toEqual(goalId);
   });
 

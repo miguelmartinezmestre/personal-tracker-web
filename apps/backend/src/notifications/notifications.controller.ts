@@ -31,8 +31,8 @@ export class NotificationsController {
 
   @Get(':id')
   @UseGuards(CookieGuard)
-  findOne(@Param('id') id: number) {
-    return this.notificationsService.findOne(+id);
+  findById(@Param('id') id: number) {
+    return this.notificationsService.findById(+id);
   }
 
   @Get('user/:id')

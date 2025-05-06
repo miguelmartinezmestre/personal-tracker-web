@@ -82,7 +82,7 @@ describe('NotificationsController', () => {
   });
 
   it('should find one notification', async () => {
-    const result = await controller.findOne(notificationId);
+    const result = await controller.findById(notificationId);
     expect(result).toBeDefined();
   });
 

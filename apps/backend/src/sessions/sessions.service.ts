@@ -23,7 +23,7 @@ export class SessionsService {
     return this.prisma.session.findMany();
   }
 
-  async findOne(id: number) {
+  async findById(id: number) {
     return this.prisma.session.findUnique({
       where: { id },
     });

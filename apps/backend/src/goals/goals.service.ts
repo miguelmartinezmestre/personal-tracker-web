@@ -18,7 +18,7 @@ export class GoalsService {
     return goals;
   }
 
-  async findOne(id: number) {
+  async findById(id: number) {
     const goal = await this.prisma.goal.findUnique({
       where: { id },
     });
