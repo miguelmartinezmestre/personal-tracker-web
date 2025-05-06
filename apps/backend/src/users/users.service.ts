@@ -54,8 +54,8 @@ export class UsersService {
     response
       .cookie('session_id', sessionId, {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       })
       .json({});
   }
@@ -133,7 +133,7 @@ export class UsersService {
     return this.prisma.user.findMany();
   }
 
-  findOne(id: number) {
+  findById(id: number) {
     return this.prisma.user.findUnique({
       where: {
         id,
