@@ -12,7 +12,7 @@ export class CookieGuard implements CanActivate {
   constructor(@Inject(PrismaService) private prisma?: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest() as Request;
+    const request = context.switchToHttp().getRequest();
     const cookies = request.cookies;
     if (!cookies || !cookies['session_id']) {
       throw new UnauthorizedException('Incorrect credentials');
