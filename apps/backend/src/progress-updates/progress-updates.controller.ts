@@ -11,13 +11,13 @@ import {
 import { ProgressUpdatesService } from './progress-updates.service';
 import { CreateProgressUpdateDto } from './dto/create-progress-update.dto';
 import { UpdateProgressUpdateDto } from './dto/update-progress-update.dto';
-import { CookieGuard } from 'src/session.guard';
+import { CookieGuard } from '../session.guard';
 
 @Controller('progress-updates')
 export class ProgressUpdatesController {
   constructor(
     private readonly progressUpdatesService: ProgressUpdatesService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(CookieGuard)

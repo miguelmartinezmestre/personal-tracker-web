@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:playwright": "playwright test"
+    "test:playwright": "playwright test",
+    "test-install": "npx playwright install --with-deps"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

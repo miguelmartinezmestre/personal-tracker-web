@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { CreateProgressUpdateDto } from './dto/create-progress-update.dto';
 import { UpdateProgressUpdateDto } from './dto/update-progress-update.dto';
-import { PrismaService } from 'src/prisma.service';
-import { GoalsService } from 'src/goals/goals.service';
+import { PrismaService } from '../prisma.service';
+import { GoalsService } from '../goals/goals.service';
 
 @Injectable()
 export class ProgressUpdatesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly goalsService: GoalsService,
-  ) {}
+  ) { }
 
   async create(createProgressUpdateDto: CreateProgressUpdateDto) {
     const progressUpdate = await this.prisma.progressUpdate.create({

@@ -11,7 +11,7 @@ import {
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { CookieGuard } from 'src/session.guard';
+import { CookieGuard } from '../session.guard';
 
 @Controller('notifications')
 export class NotificationsController {

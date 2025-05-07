@@ -5,14 +5,14 @@ import { PrismaService } from '../prisma.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { Response, Request } from 'express';
 import { createHash, randomBytes } from 'crypto';
-import { EmailsService } from 'src/emails/emails.service';
+import { EmailsService } from '../emails/emails.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private emailsService: EmailsService,
-  ) {}
+  ) { }
 
   async login(
     loginUserDto: LoginUserDto,
