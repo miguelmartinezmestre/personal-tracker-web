@@ -12,7 +12,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private emailsService: EmailsService,
-  ) { }
+  ) {}
 
   async login(
     loginUserDto: LoginUserDto,

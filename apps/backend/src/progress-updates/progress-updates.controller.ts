@@ -17,7 +17,7 @@ import { CookieGuard } from '../session.guard';
 export class ProgressUpdatesController {
   constructor(
     private readonly progressUpdatesService: ProgressUpdatesService,
-  ) { }
+  ) {}
 
   @Post()
   @UseGuards(CookieGuard)

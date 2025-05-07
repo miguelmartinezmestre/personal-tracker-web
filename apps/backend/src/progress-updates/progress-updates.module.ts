@@ -8,4 +8,4 @@ import { GoalsService } from '../goals/goals.service';
   controllers: [ProgressUpdatesController],
   providers: [PrismaService, ProgressUpdatesService, GoalsService],
 })
-export class ProgressUpdatesModule { }
+export class ProgressUpdatesModule {}

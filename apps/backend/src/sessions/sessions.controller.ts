@@ -13,7 +13,7 @@ import { CookieGuard } from '../session.guard';
 
 @Controller('sessions')
 export class SessionsController {
-  constructor(private readonly sessionsService: SessionsService) { }
+  constructor(private readonly sessionsService: SessionsService) {}
 
   @Get('/user/:id')
   @UseGuards(CookieGuard)

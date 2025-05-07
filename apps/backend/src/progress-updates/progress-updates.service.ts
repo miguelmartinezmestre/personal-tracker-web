@@ -9,7 +9,7 @@ export class ProgressUpdatesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly goalsService: GoalsService,
-  ) { }
+  ) {}
 
   async create(createProgressUpdateDto: CreateProgressUpdateDto) {
     const progressUpdate = await this.prisma.progressUpdate.create({
