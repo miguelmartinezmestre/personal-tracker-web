@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ResetPasswordFinishImport } from './routes/reset-password-finish'
 import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
@@ -25,6 +26,12 @@ import { Route as DashboardHomeIndexImport } from './routes/dashboard/home/index
 import { Route as DashboardObjectivesIdImport } from './routes/dashboard/objectives/$id'
 
 // Create/Update Routes
+
+const ResetPasswordFinishRoute = ResetPasswordFinishImport.update({
+  id: '/reset-password-finish',
+  path: '/reset-password-finish',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const ResetPasswordRoute = ResetPasswordImport.update({
   id: '/reset-password',
@@ -145,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordImport
       parentRoute: typeof rootRoute
     }
+    '/reset-password-finish': {
+      id: '/reset-password-finish'
+      path: '/reset-password-finish'
+      fullPath: '/reset-password-finish'
+      preLoaderRoute: typeof ResetPasswordFinishImport
+      parentRoute: typeof rootRoute
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -221,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reset-password-finish': typeof ResetPasswordFinishRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
@@ -235,6 +250,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reset-password-finish': typeof ResetPasswordFinishRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home': typeof DashboardHomeIndexRoute
@@ -251,6 +267,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reset-password-finish': typeof ResetPasswordFinishRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/objectives/$id': typeof DashboardObjectivesIdRoute
   '/dashboard/home/': typeof DashboardHomeIndexRoute
@@ -268,6 +285,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/reset-password-finish'
     | '/dashboard/'
     | '/dashboard/objectives/$id'
     | '/dashboard/home'
@@ -281,6 +299,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/reset-password-finish'
     | '/dashboard'
     | '/dashboard/objectives/$id'
     | '/dashboard/home'
@@ -295,6 +314,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/reset-password-finish'
     | '/dashboard/'
     | '/dashboard/objectives/$id'
     | '/dashboard/home/'
@@ -311,6 +331,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ResetPasswordFinishRoute: typeof ResetPasswordFinishRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -320,6 +341,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ResetPasswordFinishRoute: ResetPasswordFinishRoute,
 }
 
 export const routeTree = rootRoute
@@ -337,7 +359,8 @@ export const routeTree = rootRoute
         "/dashboard",
         "/login",
         "/register",
-        "/reset-password"
+        "/reset-password",
+        "/reset-password-finish"
       ]
     },
     "/": {
@@ -365,6 +388,9 @@ export const routeTree = rootRoute
     },
     "/reset-password": {
       "filePath": "reset-password.tsx"
+    },
+    "/reset-password-finish": {
+      "filePath": "reset-password-finish.tsx"
     },
     "/dashboard/": {
       "filePath": "dashboard/index.tsx",

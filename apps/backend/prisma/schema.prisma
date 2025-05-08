@@ -18,6 +18,7 @@ model User {
   email         String         @unique
   password      String
   username      String?
+  resetPasswordKey String?
   goals         Goal[]
   notifications Notification[]
   sessions      Session[]

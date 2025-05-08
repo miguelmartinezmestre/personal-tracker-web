@@ -29,6 +29,12 @@ export class SessionsService {
     });
   }
 
+  async findBySessionId(sessionId: string) {
+    return this.prisma.session.findFirst({
+      where: { value: sessionId },
+    });
+  }
+
   async update(id: number, updateSessionDto: UpdateSessionDto) {
     return this.prisma.session.update({
       where: { id },

@@ -7,6 +7,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { EmailsModule } from './emails/emails.module';
 import { ProgressUpdatesModule } from './progress-updates/progress-updates.module';
+import { CryptoService } from './crypto.service';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { ProgressUpdatesModule } from './progress-updates/progress-updates.modul
     ProgressUpdatesModule,
   ],
   controllers: [],
-  providers: [PrismaService, CookieGuard],
+  providers: [PrismaService, CookieGuard, CryptoService],
 })
 export class AppModule {}

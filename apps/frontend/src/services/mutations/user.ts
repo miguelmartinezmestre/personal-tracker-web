@@ -6,8 +6,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { registerUser } from '../http/register';
 import { formSchema as registerFormSchema } from '../../schemas/register';
-import { logout } from '../http/users';
-
+import { logout, recoverPassword } from '../http/users';
+import { formSchema as recoverPasswordFormSchema } from '../../schemas/recover-password';
 export const useLoginMutation = () => {
     const navigate = useNavigate();
     const [loginError, setLoginError] = useState<string | null>(null);
@@ -71,4 +71,29 @@ export const useLogoutMutation = () => {
     });
 
     return { logoutMutation };
+};
+
+export const useRecoverPasswordMutation = () => {
+    const navigate = useNavigate();
+    const [loginError, setLoginError] = useState<string | null>(null);
+
+    const mutation = useMutation({
+        mutationFn: (values: z.infer<typeof recoverPasswordFormSchema>) => {
+            const { email } = values;
+
+            if (!email) {
+                throw new Error('Todos los campos son obligatorios');
+            }
+
+            return recoverPassword(email);
+        },
+        onSuccess: async () => {
+            await navigate({ to: '/login' });
+        },
+        onError: (error: Error) => {
+            setLoginError(error.message);
+        },
+    });
+
+    return { mutation, loginError };
 };

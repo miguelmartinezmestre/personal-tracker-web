@@ -4,15 +4,20 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { Response, Request } from 'express';
-import { createHash, randomBytes } from 'crypto';
 import { EmailsService } from '../emails/emails.service';
+import { RecoverPasswordDto } from './dto/recover-password.dto';
+import { FinishRecoverPasswordDto } from './dto/finish-recover-password.dto';
+import { CryptoService } from 'src/crypto.service';
+import { SessionsService } from 'src/sessions/sessions.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private emailsService: EmailsService,
-  ) {}
+    private cryptoService: CryptoService,
+    private sessionsService: SessionsService,
+  ) { }
 
   async login(
     loginUserDto: LoginUserDto,
@@ -31,24 +36,21 @@ export class UsersService {
       throw new UnauthorizedException('Incorrect credentials');
     }
 
-    const hashedPassword = createHash('sha512')
-      .update(loginUserDto.password)
-      .digest('hex');
+    const hashedPassword = await this.cryptoService.hashPassword(loginUserDto.password);
 
-    if (user.password !== hashedPassword) {
+    const isPasswordCorrect = await this.cryptoService.verifyPassword(loginUserDto.password, user.password);
+
+    if (!isPasswordCorrect) {
       throw new UnauthorizedException('Incorrect credentials');
     }
 
-    const bytes = randomBytes(64);
-    const sessionId = bytes.toString('hex');
+    const sessionId = await this.cryptoService.generateSessionId();
 
-    await this.prisma.session.create({
-      data: {
+    await this.sessionsService.create({
         userId: user.id,
         value: sessionId,
         userAgent: userAgent,
         status: 'active',
-      },
     });
 
     response
@@ -60,7 +62,10 @@ export class UsersService {
       .json({});
   }
 
-  async create(createUserDto: CreateUserDto, response: Response) {
+  async create(createUserDto: CreateUserDto, request: Request, response: Response) {
+
+    const userAgent = request.headers['user-agent'];
+
     const foundUser = await this.prisma.user.findFirst({
       where: {
         email: createUserDto.email,
@@ -71,23 +76,19 @@ export class UsersService {
       throw new UnauthorizedException('User already exists');
     }
 
-    createUserDto.password = createHash('sha512')
-      .update(createUserDto.password)
-      .digest('hex');
+    createUserDto.password = await this.cryptoService.hashPassword(createUserDto.password);
 
     const user = await this.prisma.user.create({
       data: createUserDto,
     });
 
-    const bytes = randomBytes(64);
-    const sessionId = bytes.toString('hex');
+    const sessionId = await this.cryptoService.generateSessionId();
 
-    await this.prisma.session.create({
-      data: {
+    await this.sessionsService.create({
         userId: user.id,
         value: sessionId,
         status: 'active',
-      },
+        userAgent: userAgent,
     });
 
     await this.emailsService.sendWelcomeEmail(user.username, user.email);
@@ -108,11 +109,7 @@ export class UsersService {
   async auth(request: Request) {
     const session_id = request.cookies['session_id'];
 
-    const session = await this.prisma.session.findFirst({
-      where: {
-        value: session_id,
-      },
-    });
+    const session = await this.sessionsService.findBySessionId(session_id);
 
     if (!session_id || !session) {
       throw new UnauthorizedException('Incorrect credentials');
@@ -152,5 +149,54 @@ export class UsersService {
 
   remove(id: number) {
     return this.prisma.user.delete({ where: { id } });
+  }
+
+  async recoverPassword(body: RecoverPasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Unexpected error');
+    }
+
+    const resetPasswordKey = await this.cryptoService.generateResetPasswordKey();
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordKey },
+    });
+
+    await this.emailsService.sendRecoverPasswordEmail(
+      user.username,
+      user.email,
+      `${process.env.FRONTEND_URL}/reset-password-finish?key=${resetPasswordKey}`
+    );
+  }
+
+  async finishRecoverPassword(body: FinishRecoverPasswordDto) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetPasswordKey: body.resetPasswordKey,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Unexpected error');
+    }
+
+    const hashedPassword = await this.cryptoService.hashPassword(body.password);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetPasswordKey: null },
+    });
   }
 }

@@ -19,6 +19,8 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { Request, Response } from 'express';
 import { CookieGuard } from '../session.guard';
 import { PrismaService } from '../prisma.service';
+import { RecoverPasswordDto } from './dto/recover-password.dto';
+import { FinishRecoverPasswordDto } from './dto/finish-recover-password.dto';
 
 @Controller('users')
 export class UsersController {
@@ -31,9 +33,10 @@ export class UsersController {
   @HttpCode(200)
   register(
     @Body() createUserDto: CreateUserDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.usersService.create(createUserDto, response);
+    return this.usersService.create(createUserDto, request, response);
   }
 
   @Post('/login')
@@ -52,10 +55,17 @@ export class UsersController {
     return this.usersService.auth(request);
   }
 
-  // @Post()
-  // create(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
+  @Post('/recover-password')
+  @HttpCode(200)
+  recoverPassword(@Body() body: RecoverPasswordDto) {
+    return this.usersService.recoverPassword(body);
+  }
+
+  @Post('/finish-recover-password')
+  @HttpCode(200)
+  finishRecoverPassword(@Body() body: FinishRecoverPasswordDto) {
+    return this.usersService.finishRecoverPassword(body);
+  }
 
   @Post('/logout')
   @HttpCode(200)
