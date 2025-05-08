@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+/* eslint-disable @typescript-eslint/no-misused-promises */
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,13 +20,11 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import { formSchema } from '../schemas/register';
 import { useRegisterMutation } from '../services/mutations/user';
-
 export const Route = createFileRoute('/register')({
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const navigate = useNavigate();
 
     const { mutation, registerError } = useRegisterMutation();
 
@@ -34,11 +33,21 @@ function RouteComponent() {
         defaultValues: {
             email: '',
             password: '',
+            confirmPassword: '',
             username: '',
         },
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
+
+        if (values.password !== values.confirmPassword) {
+            form.setError("confirmPassword", {
+                type: "manual",
+                message: "Las contraseñas no coinciden",
+            })
+            return;
+        }
+
         mutation.mutate(values);
     }
 
@@ -93,7 +102,7 @@ function RouteComponent() {
                                             <Input
                                                 {...field}
                                                 type="email"
-                                                placeholder="nombre@correo.com"
+                                                placeholder="email@domain.com"
                                                 className="focus:ring-2 focus:ring-primary/20"
                                             />
                                         </FormControl>
@@ -113,6 +122,25 @@ function RouteComponent() {
                                                 {...field}
                                                 type="password"
                                                 placeholder="Mínimo 8 caracteres"
+                                                className="focus:ring-2 focus:ring-primary/20"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">Confirmar Contraseña</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="Confirmar contraseña"
                                                 className="focus:ring-2 focus:ring-primary/20"
                                             />
                                         </FormControl>
