@@ -4,15 +4,13 @@ import { createHash, randomBytes, randomUUID } from 'crypto';
 @Injectable()
 export class CryptoService {
   async hashPassword(password: string) {
-    return createHash('sha512')
-      .update(password)
-      .digest('hex');
+    return createHash('sha512').update(password).digest('hex');
   }
 
   async verifyPassword(password: string, hashedPassword: string) {
-    return createHash('sha512')
-      .update(password)
-      .digest('hex') === hashedPassword;
+    return (
+      createHash('sha512').update(password).digest('hex') === hashedPassword
+    );
   }
 
   async generateResetPasswordKey() {

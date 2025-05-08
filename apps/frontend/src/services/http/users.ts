@@ -1,4 +1,4 @@
-import { baseUrl } from "../../main";
+import { baseUrl } from '../../main';
 
 export async function logout() {
     const response = await fetch(baseUrl + '/users/logout', {
@@ -32,7 +32,6 @@ export async function recoverPassword(email: string) {
 }
 
 export async function finishRecoverPassword(resetPasswordKey: string, password: string) {
-
     const response = await fetch(baseUrl + '/users/finish-recover-password', {
         method: 'POST',
         headers: {

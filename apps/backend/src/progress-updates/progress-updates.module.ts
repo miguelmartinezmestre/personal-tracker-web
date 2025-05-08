@@ -7,6 +7,11 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Module({
   controllers: [ProgressUpdatesController],
-  providers: [PrismaService, ProgressUpdatesService, GoalsService, NotificationsService],
+  providers: [
+    PrismaService,
+    ProgressUpdatesService,
+    GoalsService,
+    NotificationsService,
+  ],
 })
 export class ProgressUpdatesModule {}

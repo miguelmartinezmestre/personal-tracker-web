@@ -37,7 +37,11 @@ export class EmailsService {
     await this.transporter.sendMail(options);
   }
 
-  async sendRecoverPasswordEmail(username: string, email: string, link: string) {
+  async sendRecoverPasswordEmail(
+    username: string,
+    email: string,
+    link: string,
+  ) {
     const emailHtml = await render(
       RecoverPasswordEmail({
         username,

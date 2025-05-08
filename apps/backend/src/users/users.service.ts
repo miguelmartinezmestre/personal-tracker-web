@@ -17,7 +17,7 @@ export class UsersService {
     private emailsService: EmailsService,
     private cryptoService: CryptoService,
     private sessionsService: SessionsService,
-  ) { }
+  ) {}
 
   async login(
     loginUserDto: LoginUserDto,
@@ -36,9 +36,14 @@ export class UsersService {
       throw new UnauthorizedException('Incorrect credentials');
     }
 
-    const hashedPassword = await this.cryptoService.hashPassword(loginUserDto.password);
+    const hashedPassword = await this.cryptoService.hashPassword(
+      loginUserDto.password,
+    );
 
-    const isPasswordCorrect = await this.cryptoService.verifyPassword(loginUserDto.password, user.password);
+    const isPasswordCorrect = await this.cryptoService.verifyPassword(
+      loginUserDto.password,
+      user.password,
+    );
 
     if (!isPasswordCorrect) {
       throw new UnauthorizedException('Incorrect credentials');
@@ -47,10 +52,10 @@ export class UsersService {
     const sessionId = await this.cryptoService.generateSessionId();
 
     await this.sessionsService.create({
-        userId: user.id,
-        value: sessionId,
-        userAgent: userAgent,
-        status: 'active',
+      userId: user.id,
+      value: sessionId,
+      userAgent: userAgent,
+      status: 'active',
     });
 
     response
@@ -62,8 +67,11 @@ export class UsersService {
       .json({});
   }
 
-  async create(createUserDto: CreateUserDto, request: Request, response: Response) {
-
+  async create(
+    createUserDto: CreateUserDto,
+    request: Request,
+    response: Response,
+  ) {
     const userAgent = request.headers['user-agent'];
 
     const foundUser = await this.prisma.user.findFirst({
@@ -76,7 +84,9 @@ export class UsersService {
       throw new UnauthorizedException('User already exists');
     }
 
-    createUserDto.password = await this.cryptoService.hashPassword(createUserDto.password);
+    createUserDto.password = await this.cryptoService.hashPassword(
+      createUserDto.password,
+    );
 
     const user = await this.prisma.user.create({
       data: createUserDto,
@@ -85,10 +95,10 @@ export class UsersService {
     const sessionId = await this.cryptoService.generateSessionId();
 
     await this.sessionsService.create({
-        userId: user.id,
-        value: sessionId,
-        status: 'active',
-        userAgent: userAgent,
+      userId: user.id,
+      value: sessionId,
+      status: 'active',
+      userAgent: userAgent,
     });
 
     await this.emailsService.sendWelcomeEmail(user.username, user.email);
@@ -162,7 +172,8 @@ export class UsersService {
       throw new UnauthorizedException('Unexpected error');
     }
 
-    const resetPasswordKey = await this.cryptoService.generateResetPasswordKey();
+    const resetPasswordKey =
+      await this.cryptoService.generateResetPasswordKey();
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -172,7 +183,7 @@ export class UsersService {
     await this.emailsService.sendRecoverPasswordEmail(
       user.username,
       user.email,
-      `${process.env.FRONTEND_URL}/reset-password-finish?key=${resetPasswordKey}`
+      `${process.env.FRONTEND_URL}/reset-password-finish?key=${resetPasswordKey}`,
     );
   }
 

@@ -26,19 +26,19 @@ export class ProgressUpdatesService {
 
     if (percentage === 100) {
       await this.notificationsService.create({
-          userId: goal.userId,
-          message: 'Goal completed',
-          goalId: progressUpdate.goalId,
-          notificationDate: new Date(),
-          notificationType: 'Goal Completed',
+        userId: goal.userId,
+        message: 'Goal completed',
+        goalId: progressUpdate.goalId,
+        notificationDate: new Date(),
+        notificationType: 'Goal Completed',
       });
     } else {
       await this.notificationsService.create({
-          userId: goal.userId,
-          message: `Goal ${goal.title} is ${percentage}% completed`,
-          goalId: progressUpdate.goalId,
-          notificationDate: new Date(),
-          notificationType: 'Goal Progress',
+        userId: goal.userId,
+        message: `Goal ${goal.title} is ${percentage}% completed`,
+        goalId: progressUpdate.goalId,
+        notificationDate: new Date(),
+        notificationType: 'Goal Progress',
       });
     }
 

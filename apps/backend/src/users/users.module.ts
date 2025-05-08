@@ -8,6 +8,12 @@ import { SessionsService } from 'src/sessions/sessions.service';
 
 @Module({
   controllers: [UsersController],
-  providers: [PrismaService, UsersService, EmailsService, CryptoService, SessionsService],
+  providers: [
+    PrismaService,
+    UsersService,
+    EmailsService,
+    CryptoService,
+    SessionsService,
+  ],
 })
 export class UsersModule {}

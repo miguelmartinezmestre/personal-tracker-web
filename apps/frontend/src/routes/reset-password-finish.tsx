@@ -21,10 +21,9 @@ import Footer from '../components/footer';
 import { formSchema } from '../schemas/register';
 import { useRegisterMutation } from '../services/mutations/user';
 
-
 export const Route = createFileRoute('/reset-password-finish')({
-  component: RouteComponent,
-})
+    component: RouteComponent,
+});
 
 function RouteComponent() {
     const { mutation, registerError } = useRegisterMutation();
@@ -69,7 +68,6 @@ function RouteComponent() {
                                     <AlertDescription>{registerError}</AlertDescription>
                                 </Alert>
                             )}
-                            
 
                             <FormField
                                 control={form.control}

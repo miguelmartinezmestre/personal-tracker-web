@@ -25,8 +25,8 @@ export const useLoginMutation = () => {
                 password,
             });
         },
-        onSuccess: () => {
-            navigate({ to: '/dashboard/home' });
+        onSuccess: async () => {
+            await navigate({ to: '/dashboard/home' });
         },
         onError: (error: Error) => {
             setLoginError(error.message);
@@ -54,8 +54,8 @@ export const useRegisterMutation = () => {
                 username,
             });
         },
-        onSuccess: () => {
-            navigate({ to: '/login' });
+        onSuccess: async () => {
+            await navigate({ to: '/login' });
         },
         onError: (error: Error) => {
             setRegisterError(error.message);

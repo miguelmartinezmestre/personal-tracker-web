@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSessionDto {
-
   @ApiProperty()
   userId: number;
 
