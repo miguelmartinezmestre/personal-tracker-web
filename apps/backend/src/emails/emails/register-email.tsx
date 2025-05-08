@@ -26,11 +26,10 @@ export const RegisterEmail = ({ username }: EmailProps) => {
           <Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
             <Text>Bienvenido a Metricas {username}</Text>
             <Text>
-              Ahora puedes empezar a usar la app <Link href={`${process.env.FRONTEND_URL}/login`}>aqui</Link>
+              Ahora puedes empezar a usar la app{' '}
+              <Link href={`${process.env.FRONTEND_URL}/login`}>aqui</Link>
             </Text>
-            <Text>
-              Gracias por registrarte en Metricas.
-            </Text>
+            <Text>Gracias por registrarte en Metricas.</Text>
           </Container>
         </Body>
       </Tailwind>

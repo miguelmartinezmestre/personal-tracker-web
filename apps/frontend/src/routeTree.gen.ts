@@ -19,6 +19,7 @@ import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AboutImport } from './routes/about'
 import { Route as IndexImport } from './routes/index'
 import { Route as DashboardIndexImport } from './routes/dashboard/index'
+import { Route as DashboardSettingsIndexImport } from './routes/dashboard/settings/index'
 import { Route as DashboardSessionsIndexImport } from './routes/dashboard/sessions/index'
 import { Route as DashboardObjectivesIndexImport } from './routes/dashboard/objectives/index'
 import { Route as DashboardNotificationsIndexImport } from './routes/dashboard/notifications/index'
@@ -72,6 +73,12 @@ const IndexRoute = IndexImport.update({
 const DashboardIndexRoute = DashboardIndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+
+const DashboardSettingsIndexRoute = DashboardSettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => DashboardRoute,
 } as any)
 
@@ -201,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSessionsIndexImport
       parentRoute: typeof DashboardImport
     }
+    '/dashboard/settings/': {
+      id: '/dashboard/settings/'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsIndexImport
+      parentRoute: typeof DashboardImport
+    }
   }
 }
 
@@ -213,6 +227,7 @@ interface DashboardRouteChildren {
   DashboardNotificationsIndexRoute: typeof DashboardNotificationsIndexRoute
   DashboardObjectivesIndexRoute: typeof DashboardObjectivesIndexRoute
   DashboardSessionsIndexRoute: typeof DashboardSessionsIndexRoute
+  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -222,6 +237,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardNotificationsIndexRoute: DashboardNotificationsIndexRoute,
   DashboardObjectivesIndexRoute: DashboardObjectivesIndexRoute,
   DashboardSessionsIndexRoute: DashboardSessionsIndexRoute,
+  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -242,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
   '/dashboard/objectives': typeof DashboardObjectivesIndexRoute
   '/dashboard/sessions': typeof DashboardSessionsIndexRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -257,6 +274,7 @@ export interface FileRoutesByTo {
   '/dashboard/notifications': typeof DashboardNotificationsIndexRoute
   '/dashboard/objectives': typeof DashboardObjectivesIndexRoute
   '/dashboard/sessions': typeof DashboardSessionsIndexRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 
 export interface FileRoutesById {
@@ -274,6 +292,7 @@ export interface FileRoutesById {
   '/dashboard/notifications/': typeof DashboardNotificationsIndexRoute
   '/dashboard/objectives/': typeof DashboardObjectivesIndexRoute
   '/dashboard/sessions/': typeof DashboardSessionsIndexRoute
+  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -292,6 +311,7 @@ export interface FileRouteTypes {
     | '/dashboard/notifications'
     | '/dashboard/objectives'
     | '/dashboard/sessions'
+    | '/dashboard/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -306,6 +326,7 @@ export interface FileRouteTypes {
     | '/dashboard/notifications'
     | '/dashboard/objectives'
     | '/dashboard/sessions'
+    | '/dashboard/settings'
   id:
     | '__root__'
     | '/'
@@ -321,6 +342,7 @@ export interface FileRouteTypes {
     | '/dashboard/notifications/'
     | '/dashboard/objectives/'
     | '/dashboard/sessions/'
+    | '/dashboard/settings/'
   fileRoutesById: FileRoutesById
 }
 
@@ -377,7 +399,8 @@ export const routeTree = rootRoute
         "/dashboard/home/",
         "/dashboard/notifications/",
         "/dashboard/objectives/",
-        "/dashboard/sessions/"
+        "/dashboard/sessions/",
+        "/dashboard/settings/"
       ]
     },
     "/login": {
@@ -414,6 +437,10 @@ export const routeTree = rootRoute
     },
     "/dashboard/sessions/": {
       "filePath": "dashboard/sessions/index.tsx",
+      "parent": "/dashboard"
+    },
+    "/dashboard/settings/": {
+      "filePath": "dashboard/settings/index.tsx",
       "parent": "/dashboard"
     }
   }

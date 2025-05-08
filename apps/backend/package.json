@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --watch --config ./test/jest-e2e.json",
-    "email": "npx react-email dev -p 3001 --dir ./src/emails/emails"
+    "email": "npx react-email dev -p 3001 --dir ./src/emails/emails",
+    "migration":"npx prisma migrate dev --name add cascade deletes "
   },
   "dependencies": {
     "@nestjs/common": "^11.0.7",

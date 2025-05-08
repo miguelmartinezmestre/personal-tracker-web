@@ -94,7 +94,23 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(CookieGuard)
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  async remove(@Param('id') id: string) {
+
+    const user = this.prisma.user.findUnique({
+      where: {
+        id: +id,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.user.delete({
+      where: {
+        id: +id,
+      },
+    });
+    
   }
 }

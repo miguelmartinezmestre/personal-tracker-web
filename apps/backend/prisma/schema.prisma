@@ -26,7 +26,7 @@ model User {
 
 model Session {
   id     Int    @id @default(autoincrement())
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
   value  String
   status String
@@ -36,7 +36,7 @@ model Session {
 
 model Goal {
   id              Int              @id @default(autoincrement())
-  user            User             @relation(fields: [userId], references: [id])
+  user            User             @relation(fields: [userId], references: [id],  onDelete: Cascade)
   userId          Int
   title           String
   description     String?
@@ -52,7 +52,7 @@ model Goal {
 
 model ProgressUpdate {
   id           Int      @id @default(autoincrement())
-  goal         Goal     @relation(fields: [goalId], references: [id])
+  goal         Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   goalId       Int
   updatedValue Float
   updateDate   DateTime
@@ -61,9 +61,9 @@ model ProgressUpdate {
 
 model Notification {
   id               Int      @id @default(autoincrement())
-  user             User     @relation(fields: [userId], references: [id])
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           Int
-  goal             Goal     @relation(fields: [goalId], references: [id])
+  goal             Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   goalId           Int
   notificationType String
   notificationDate DateTime
