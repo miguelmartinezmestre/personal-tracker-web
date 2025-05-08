@@ -25,7 +25,6 @@ export const Route = createFileRoute('/register')({
 });
 
 function RouteComponent() {
-
     const { mutation, registerError } = useRegisterMutation();
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -39,12 +38,11 @@ function RouteComponent() {
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-
         if (values.password !== values.confirmPassword) {
-            form.setError("confirmPassword", {
-                type: "manual",
-                message: "Las contraseñas no coinciden",
-            })
+            form.setError('confirmPassword', {
+                type: 'manual',
+                message: 'Las contraseñas no coinciden',
+            });
             return;
         }
 
@@ -135,7 +133,9 @@ function RouteComponent() {
                                 name="confirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">Confirmar Contraseña</FormLabel>
+                                        <FormLabel className="text-gray-700">
+                                            Confirmar Contraseña
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
