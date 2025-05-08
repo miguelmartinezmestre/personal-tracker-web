@@ -7,7 +7,7 @@ import NotFound from './components/not-found.tsx';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './providers/theme-provider.tsx';
 import './i18n';
-
+import { Toaster } from './components/ui/sonner';
 export const baseUrl = 'http://localhost:3000';
 
 const queryClient = new QueryClient({
@@ -37,6 +37,7 @@ createRoot(document.getElementById('root') || document.createElement('div')).ren
         <QueryClientProvider client={queryClient}>
             <RouterProvider router={router} />
         </QueryClientProvider>
+        <Toaster />
     </ThemeProvider>
     // </StrictMode>
 );
