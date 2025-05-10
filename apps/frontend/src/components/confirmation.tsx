@@ -10,8 +10,15 @@ import {
     AlertDialogTrigger,
   } from "./ui/alert-dialog"
   import { Button } from "./ui/button"
+  import { useAuthContext } from "../providers/auth-provider"
+  import { useDeleteUserMutation } from "../services/mutations/user"
+
   
   export function ConfirmationDeleteAccount() {
+
+  const { user, isLoading: isLoadingAuth } = useAuthContext();
+  const {mutation} = useDeleteUserMutation();
+
     return (
       <AlertDialog>
         <AlertDialogTrigger asChild>
@@ -26,7 +33,9 @@ import {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction>Eliminar cuenta</AlertDialogAction>
+            <AlertDialogAction onClick={() => {
+              mutation.mutate({ id: user.id });
+            }}>Eliminar cuenta</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

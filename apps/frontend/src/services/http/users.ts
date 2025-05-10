@@ -47,3 +47,19 @@ export async function finishRecoverPassword(resetPasswordKey: string, password: 
 
     return response.json();
 }
+
+export async function deleteUser(id: number) {
+    const response = await fetch(baseUrl + '/users/' + id, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete user');
+    }
+
+    return response.json();
+}

@@ -112,5 +112,8 @@ export class UsersController {
       },
     });
     
+    return {
+      message: 'User deleted successfully',
+    };
   }
 }
