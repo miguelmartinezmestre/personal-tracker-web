@@ -95,7 +95,6 @@ export class UsersController {
   @Delete(':id')
   @UseGuards(CookieGuard)
   async remove(@Param('id') id: string) {
-
     const user = this.prisma.user.findUnique({
       where: {
         id: +id,
@@ -111,7 +110,7 @@ export class UsersController {
         id: +id,
       },
     });
-    
+
     return {
       message: 'User deleted successfully',
     };

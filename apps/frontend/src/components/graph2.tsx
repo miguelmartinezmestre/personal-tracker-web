@@ -16,11 +16,11 @@ import {
     ChartTooltipContent,
 } from '../components/ui/chart';
 const chartData = [
-    { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
-    { browser: 'safari', visitors: 200, fill: 'var(--color-safari)' },
-    { browser: 'firefox', visitors: 187, fill: 'var(--color-firefox)' },
-    { browser: 'edge', visitors: 173, fill: 'var(--color-edge)' },
-    { browser: 'other', visitors: 90, fill: 'var(--color-other)' },
+    // { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
+    // { browser: 'safari', visitors: 200, fill: 'var(--color-safari)' },
+    // { browser: 'firefox', visitors: 187, fill: 'var(--color-firefox)' },
+    // { browser: 'edge', visitors: 173, fill: 'var(--color-edge)' },
+    // { browser: 'other', visitors: 90, fill: 'var(--color-other)' },
 ];
 
 const chartConfig = {
@@ -53,8 +53,8 @@ export function Graph2() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Bar Chart - Mixed</CardTitle>
-                <CardDescription>January - June 2024</CardDescription>
+                <CardTitle>Objetivos Completados en el ultimo mes</CardTitle>
+                {/* <CardDescription>January - June 2024</CardDescription> */}
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig}>
@@ -82,14 +82,14 @@ export function Graph2() {
                     </BarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
+            {/* <CardFooter className="flex-col items-start gap-2 text-sm">
                 <div className="flex gap-2 font-medium leading-none">
                     Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
                 </div>
                 <div className="leading-none text-muted-foreground">
                     Showing total visitors for the last 6 months
                 </div>
-            </CardFooter>
+            </CardFooter> */}
         </Card>
     );
 }

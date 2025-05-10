@@ -18,14 +18,14 @@ import { Button } from './ui/button';
 import { Link } from '@tanstack/react-router';
 
 const defaultValues = {
-    title: 'a',
-    description: 'a',
-    category: 'a',
+    title: '',
+    description: '',
+    category: '',
     targetValue: 0,
     currentValue: 0,
     deadline: new Date(),
-    status: 'aa',
-    unit: 'a',
+    status: '',
+    unit: '',
 };
 
 export default function Objectives() {
@@ -53,27 +53,27 @@ export default function Objectives() {
     const columns: ColumnDef<Objetive>[] = [
         {
             accessorKey: 'title',
-            header: 'Titulo',
+            header: t('title'),
         },
         {
             accessorKey: 'description',
-            header: 'Descripción',
+            header: t('description'),
         },
         {
             accessorKey: 'targetValue',
-            header: 'Valor Objetivo',
+            header: t('targetValue'),
         },
         {
             accessorKey: 'currentValue',
-            header: 'Valor Actual',
+            header: t('currentValue'),
         },
         {
             accessorKey: 'deadline',
-            header: 'Fecha Limite',
+            header: t('deadline'),
         },
         {
             accessorKey: 'status',
-            header: 'Estado',
+            header: t('status'),
         },
         {
             header: '',

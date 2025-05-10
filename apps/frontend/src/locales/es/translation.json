@@ -7,5 +7,13 @@
     "sessions": "Sesiones",
     "language": "Idioma",
     "english": "English",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "comment": "Comentario",
+    "updatedDate": "Fecha de actualización",
+    "description": "Descripción",
+    "deadline": "Fecha límite",
+    "targetValue": "Valor objetivo",
+    "currentValue": "Valor actual",
+    "progress": "Progreso",
+    "status": "Estado"
 }

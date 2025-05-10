@@ -8,37 +8,39 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-  } from "./ui/alert-dialog"
-  import { Button } from "./ui/button"
-  import { useAuthContext } from "../providers/auth-provider"
-  import { useDeleteUserMutation } from "../services/mutations/user"
+} from './ui/alert-dialog';
+import { Button } from './ui/button';
+import { useAuthContext } from '../providers/auth-provider';
+import { useDeleteUserMutation } from '../services/mutations/user';
 
-  
-  export function ConfirmationDeleteAccount() {
-
-  const { user, isLoading: isLoadingAuth } = useAuthContext();
-  const {mutation} = useDeleteUserMutation();
+export function ConfirmationDeleteAccount() {
+    const { user, isLoading: isLoadingAuth } = useAuthContext();
+    const { mutation } = useDeleteUserMutation();
 
     return (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline">Borrar cuenta</Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta y eliminará tus datos de nuestros servidores.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              mutation.mutate({ id: user.id });
-            }}>Eliminar cuenta</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    )
-  }
-  
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="outline">Borrar cuenta</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta y
+                        eliminará tus datos de nuestros servidores.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={() => {
+                            mutation.mutate({ id: user.id });
+                        }}
+                    >
+                        Eliminar cuenta
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}

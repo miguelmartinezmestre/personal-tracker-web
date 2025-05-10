@@ -71,8 +71,8 @@ export function Graph3({ data = fallbackData }: ProgressProps) {
     return (
         <Card className="w-full">
             <CardHeader>
-                <CardTitle>Line Chart - Multiple</CardTitle>
-                <CardDescription>January - June 2024</CardDescription>
+                <CardTitle>Progreso de los ultimos 5 objetivos</CardTitle>
+                {/* <CardDescription>January - June 2024</CardDescription> */}
             </CardHeader>
             <CardContent>
                 <div ref={containerRef} className="w-full h-[300px] sm:h-[350px] md:h-[400px]">
