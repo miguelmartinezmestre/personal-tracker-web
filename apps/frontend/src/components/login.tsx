@@ -23,13 +23,10 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { trpc } from '../main';
 
-
 export default function Login() {
-   
-
     const login = useMutation(trpc.login.mutationOptions());
 
-    const [loginError] = useState("");
+    const [loginError] = useState('');
 
     // const { mutation, loginError } = useLoginMutation();
 

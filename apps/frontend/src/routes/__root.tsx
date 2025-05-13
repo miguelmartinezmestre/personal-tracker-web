@@ -5,13 +5,13 @@ import { AppRouter } from '../../../backend/src/routers/app.router';
 import { QueryClient } from '@tanstack/react-query';
 
 export interface RouterAppContext {
-    trpc: TRPCOptionsProxy<AppRouter>
-    queryClient: QueryClient
+    trpc: TRPCOptionsProxy<AppRouter>;
+    queryClient: QueryClient;
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
     component: RootComponent,
-})
+});
 
 function RootComponent() {
     return (

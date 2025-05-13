@@ -12,10 +12,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { AppRouter } from '../../backend/src/routers/app.router.ts';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 
-
 export const baseUrl = 'http://localhost:3000';
-
-
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -52,67 +49,63 @@ const queryClient = new QueryClient({
 //     }
 //   }
 
-  export const trpc = createTRPCOptionsProxy<AppRouter>({
+export const trpc = createTRPCOptionsProxy<AppRouter>({
     client: createTRPCClient({
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:3000/trpc',
-        }),
-      ],
+        links: [
+            httpBatchLink({
+                url: 'http://localhost:3000/trpc',
+            }),
+        ],
     }),
     queryClient,
-  })
+});
 
 const router = createRouter({
     routeTree,
     defaultNotFoundComponent: () => <NotFound />,
     defaultPreload: 'intent',
     context: {
-      trpc: trpc,
-      queryClient: queryClient,
+        trpc: trpc,
+        queryClient: queryClient,
     },
     Wrap: function WrapComponent({ children }) {
-      return (
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      )
+        return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
     },
-})
+});
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
-  interface Register {
-    router: ReturnType<typeof createRouter>
-  }
+    interface Register {
+        router: ReturnType<typeof createRouter>;
+    }
 }
 
 function App() {
-  // const queryClient = getQueryClient();
-  // const [trpcClient] = useState(() =>
-  //   createTRPCClient<AppRouter>({
-  //     links: [
-  //       httpBatchLink({
-  //         url: 'http://localhost:3000/trpc',
-  //       }),
-  //     ],
-  //   }),
-  // );
+    // const queryClient = getQueryClient();
+    // const [trpcClient] = useState(() =>
+    //   createTRPCClient<AppRouter>({
+    //     links: [
+    //       httpBatchLink({
+    //         url: 'http://localhost:3000/trpc',
+    //       }),
+    //     ],
+    //   }),
+    // );
 
-  // const trpc = useTRPC();
+    // const trpc = useTRPC();
 
-  return (
-      // <StrictMode>
-      // <QueryClientProvider client={queryClient}>
-      //     <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-              <ThemeProvider>
-                  <RouterProvider router={router} context={{ trpc }}/>
-                  <Toaster />
-              </ThemeProvider>
-      //     </TRPCProvider>
-      // </QueryClientProvider>
-      // </StrictMode>
-  );
+    return (
+        // <StrictMode>
+        // <QueryClientProvider client={queryClient}>
+        //     <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <ThemeProvider>
+            <RouterProvider router={router} context={{ trpc }} />
+            <Toaster />
+        </ThemeProvider>
+        //     </TRPCProvider>
+        // </QueryClientProvider>
+        // </StrictMode>
+    );
 }
 
 createRoot(document.getElementById('root') || document.createElement('div')).render(<App />);

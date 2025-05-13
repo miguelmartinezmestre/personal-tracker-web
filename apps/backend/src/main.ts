@@ -33,8 +33,8 @@ async function bootstrap() {
           emailsService: ctx.emailsService,
           sessionsService: ctx.sessionsService,
           progressUpdatesService: ctx.progressUpdatesService,
-        }
-      }
+        };
+      },
     }),
   );
 

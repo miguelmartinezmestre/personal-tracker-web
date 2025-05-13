@@ -25,48 +25,45 @@ export class UsersService {
     response: Response,
   ) {
     try {
+      const userAgent = request.headers['user-agent'];
 
-    const userAgent = request.headers['user-agent'];
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: loginUserDto.email,
+        },
+      });
 
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email: loginUserDto.email,
-      },
-    });
+      if (!user) {
+        throw new UnauthorizedException('Incorrect credentials');
+      }
 
-    if (!user) {
-      throw new UnauthorizedException('Incorrect credentials');
-    }
+      const hashedPassword = await this.cryptoService.hashPassword(
+        loginUserDto.password,
+      );
 
-    const hashedPassword = await this.cryptoService.hashPassword(
-      loginUserDto.password,
-    );
+      const isPasswordCorrect = await this.cryptoService.verifyPassword(
+        loginUserDto.password,
+        user.password,
+      );
 
+      if (!isPasswordCorrect) {
+        throw new UnauthorizedException('Incorrect credentials');
+      }
 
-    const isPasswordCorrect = await this.cryptoService.verifyPassword(
-      loginUserDto.password,
-      user.password,
-    );
+      const sessionId = await this.cryptoService.generateSessionId();
 
-    if (!isPasswordCorrect) {
-      throw new UnauthorizedException('Incorrect credentials');
-    }
+      await this.sessionsService.create({
+        userId: user.id,
+        value: sessionId,
+        userAgent: userAgent,
+        status: 'active',
+      });
 
-    const sessionId = await this.cryptoService.generateSessionId();
-
-    await this.sessionsService.create({
-      userId: user.id,
-      value: sessionId,
-      userAgent: userAgent,
-      status: 'active',
-    });
-
-    return { sessionId: sessionId };
+      return { sessionId: sessionId };
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new UnauthorizedException('Incorrect credentials');
     }
-    
   }
 
   async create(

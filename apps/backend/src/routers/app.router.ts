@@ -29,37 +29,37 @@ export const appRouter = t.router({
     .input(z.object({ email: z.string().email(), password: z.string().min(8) }))
     .mutation(async ({ input, ctx }) => {
       try {
-        
-      const response = await ctx.usersService.login({email: input.email, password: input.password}, ctx.req, ctx.res)
+        const response = await ctx.usersService.login(
+          { email: input.email, password: input.password },
+          ctx.req,
+          ctx.res,
+        );
 
+        ctx.res.cookie('session_id', response.sessionId, {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax',
+          // maxAge: 1000 * 60 * 60 * 24 * 30,
+          // domain: 'localhost',
+          // expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+          // signed: false,
+        });
+        ctx.res.json({
+          success: true,
+        });
+        ctx.res.end();
 
-      ctx.res.cookie('session_id', response.sessionId, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        // maxAge: 1000 * 60 * 60 * 24 * 30,
-        // domain: 'localhost',
-        // expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
-        // signed: false,
-      })
-      ctx.res.json({
-        success: true,
-      })
-      ctx.res.end()
-
-      // return {
-      //   success: true,
-      // }
+        // return {
+        //   success: true,
+        // }
       } catch (error) {
-        console.error(error)
+        console.error(error);
         ctx.res.status(500).json({
           success: false,
           message: 'Error al iniciar sesión',
-        })
-        ctx.res.end()
+        });
+        ctx.res.end();
       }
-
-
     }),
 });
 

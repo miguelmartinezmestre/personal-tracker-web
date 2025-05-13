@@ -46,7 +46,11 @@ export class UsersController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.usersService.login(loginUserDto, request, response);
+    const result = await this.usersService.login(
+      loginUserDto,
+      request,
+      response,
+    );
     return response.cookie('session_id', result.sessionId, {
       httpOnly: true,
       secure: false,
