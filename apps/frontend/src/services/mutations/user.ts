@@ -115,7 +115,6 @@ export const useDeleteUserMutation = () => {
             return deleteUser(id);
         },
         onSuccess: async () => {
-            console.log('User deleted');
             await navigate({ to: '/' });
         },
         onError: (error: Error) => {

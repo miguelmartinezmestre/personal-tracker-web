@@ -14,7 +14,6 @@ export async function logout() {
 }
 
 export async function recoverPassword(email: string) {
-    console.log(email);
     const response = await fetch(baseUrl + '/users/recover-password', {
         method: 'POST',
         headers: {

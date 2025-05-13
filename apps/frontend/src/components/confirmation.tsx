@@ -14,7 +14,7 @@ import { useAuthContext } from '../providers/auth-provider';
 import { useDeleteUserMutation } from '../services/mutations/user';
 
 export function ConfirmationDeleteAccount() {
-    const { user, isLoading: isLoadingAuth } = useAuthContext();
+    const { user } = useAuthContext();
     const { mutation } = useDeleteUserMutation();
 
     return (

@@ -35,7 +35,6 @@ export default function RouteComponent() {
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values);
         mutation.mutate(values);
     }
 

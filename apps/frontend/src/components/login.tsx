@@ -18,11 +18,20 @@ import { AlertCircle } from 'lucide-react';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import { formSchema } from '../schemas/login';
-import { useLoginMutation } from '../services/mutations/user';
 import { Link } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { trpc } from '../main';
+
 
 export default function Login() {
-    const { mutation, loginError } = useLoginMutation();
+   
+
+    const login = useMutation(trpc.login.mutationOptions());
+
+    const [loginError] = useState("");
+
+    // const { mutation, loginError } = useLoginMutation();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -33,7 +42,8 @@ export default function Login() {
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        mutation.mutate(values);
+        // mutation.mutate(values);
+        login.mutate(values);
     }
 
     return (
@@ -109,10 +119,10 @@ export default function Login() {
                             <Button
                                 type="submit"
                                 className="w-full py-6 text-lg font-medium"
-                                disabled={mutation.isPending}
+                                // disabled={mutation.isPending}
                                 data-testid="login-button"
                             >
-                                {mutation.isPending ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                                {/* {mutation.isPending ? 'Iniciando sesión...' : 'Iniciar Sesión'} */}
                             </Button>
 
                             <div className="text-center mt-4">

@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { ConsoleLogger } from '@nestjs/common';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './routers/app.router';
 
 async function bootstrap() {
   const app = await NestFactory.create(
@@ -15,6 +17,26 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+
+  app.use(
+    '/trpc',
+    createExpressMiddleware({
+      router: appRouter,
+      createContext: (ctx) => {
+        return {
+          req: ctx.req,
+          res: ctx.res,
+          prisma: ctx.prisma,
+          cookieGuard: ctx.cookieGuard,
+          cryptoService: ctx.cryptoService,
+          usersService: ctx.usersService,
+          emailsService: ctx.emailsService,
+          sessionsService: ctx.sessionsService,
+          progressUpdatesService: ctx.progressUpdatesService,
+        }
+      }
+    }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('Cats example')

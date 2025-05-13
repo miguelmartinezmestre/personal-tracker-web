@@ -13,8 +13,8 @@ export default function Sessions() {
 
     const { data, isLoading, refetch } = useSessionsQuery(user.id);
 
-    const [error, setError] = useState('');
-    const [open, setOpen] = useState(false);
+    const [, setError] = useState('');
+    const [, setOpen] = useState(false);
 
     const { mutation } = useInvalidateSessionMutation(setError, setOpen, refetch);
 

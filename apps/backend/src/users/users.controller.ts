@@ -41,12 +41,17 @@ export class UsersController {
 
   @Post('/login')
   @HttpCode(200)
-  login(
+  async login(
     @Body() loginUserDto: LoginUserDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.usersService.login(loginUserDto, request, response);
+    const result = await this.usersService.login(loginUserDto, request, response);
+    return response.cookie('session_id', result.sessionId, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+    });
   }
 
   @Get('/auth')

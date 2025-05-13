@@ -22,8 +22,6 @@ export class ProgressUpdatesService {
 
     const percentage = (progressUpdate.updatedValue / goal.targetValue) * 100;
 
-    console.log(progressUpdate.updatedValue, goal.targetValue);
-
     if (percentage === 100) {
       await this.notificationsService.create({
         userId: goal.userId,

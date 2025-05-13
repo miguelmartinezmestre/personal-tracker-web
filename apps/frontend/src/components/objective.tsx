@@ -30,7 +30,7 @@ export default function Objective() {
 
     const { user, isLoading: isLoadingAuth } = useAuthContext();
     const [open, setOpen] = useState(false);
-    const [error, setError] = useState<string>('');
+    const [, setError] = useState<string>('');
     const [updateOpen, setUpdateOpen] = useState(false);
     const [updateValues, setUpdateValues] = useState<UpdateProgress>(defaultValues);
 

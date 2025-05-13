@@ -24,6 +24,8 @@ export class UsersService {
     request: Request,
     response: Response,
   ) {
+    try {
+
     const userAgent = request.headers['user-agent'];
 
     const user = await this.prisma.user.findUnique({
@@ -39,6 +41,7 @@ export class UsersService {
     const hashedPassword = await this.cryptoService.hashPassword(
       loginUserDto.password,
     );
+
 
     const isPasswordCorrect = await this.cryptoService.verifyPassword(
       loginUserDto.password,
@@ -58,13 +61,12 @@ export class UsersService {
       status: 'active',
     });
 
-    response
-      .cookie('session_id', sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      })
-      .json({});
+    return { sessionId: sessionId };
+    } catch (error) {
+      console.error(error)
+      throw new UnauthorizedException('Incorrect credentials');
+    }
+    
   }
 
   async create(
@@ -102,6 +104,8 @@ export class UsersService {
     });
 
     await this.emailsService.sendWelcomeEmail(user.username, user.email);
+
+    return { sessionId: sessionId };
 
     response
       .cookie('session_id', sessionId, {
