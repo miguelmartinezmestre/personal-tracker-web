@@ -1,0 +1,67 @@
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  username      String?
+  resetPasswordKey String?
+  objectives         Objective[]
+  notifications Notification[]
+  sessions      Session[]
+}
+
+model Session {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  value  String
+  status String
+  userAgent String @default("")
+  createdAt DateTime @default(now())
+}
+
+model Objective {
+  id              Int              @id @default(autoincrement())
+  user            User             @relation(fields: [userId], references: [id],  onDelete: Cascade)
+  userId          Int
+  title           String
+  description     String?
+  category        String?
+  targetValue     Float
+  currentValue    Float
+  deadline        DateTime?
+  status          String
+  unit           String?
+  progressUpdates ProgressUpdate[]
+  notifications   Notification[]
+}
+
+model ProgressUpdate {
+  id           Int      @id @default(autoincrement())
+  objective         Objective     @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  objectiveId       Int
+  updatedValue Float
+  updateDate   DateTime
+  comment      String?
+}
+
+model Notification {
+  id               Int      @id @default(autoincrement())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int
+  objective             Objective     @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  objectiveId           Int
+  notificationType String
+  notificationDate DateTime
+  message          String
+}
