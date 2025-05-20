@@ -37,6 +37,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Objective, savedObjectiveSchema } from '@/schemas/objective';
+import { browserQueryClient, useTRPC } from '@/trpc/client';
+import { useMutation } from '@tanstack/react-query';
 
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -52,25 +54,36 @@ const categoryOptions = [
     { value: 'education', label: 'Education' },
 ];
 
-export default function EditObjectiveFormModal({
-    onSubmitFn,
-    defaultValues
-}: {
-    onSubmitFn: (values: Objective) => void;
-    defaultValues: Objective;
-}) {
+export default function EditObjectiveFormModal({defaultValues}: {defaultValues: Objective}) {
+
+    const trpc = useTRPC()
+    const updateObjective = useMutation(trpc.objectives.updateObjective.mutationOptions());
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedObjectiveSchema>>({
         resolver: zodResolver(savedObjectiveSchema),
         defaultValues: defaultValues,
     });
 
-    function onSubmit(values: Objective) {
-        console.log(values);
-        onSubmitFn(values);
+    const onSubmit = async (values: Objective) => {
+        const updateData = {
+            id: values.id,
+            title: values.title,
+            description: values.description ?? undefined,
+            category: values.category ?? undefined,
+            targetValue: values.targetValue,
+            currentValue: values.currentValue,
+            deadline: values.deadline ?? undefined,
+        };
+
+        console.log(updateData);
+
+        await updateObjective.mutateAsync(updateData);
+
+        browserQueryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
+
         setOpen(false);
         form.reset();
-    }
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

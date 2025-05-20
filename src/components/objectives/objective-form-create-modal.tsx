@@ -37,6 +37,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { CreateObjective, objectiveSchema } from '@/schemas/objective';
+import { browserQueryClient, useTRPC } from '@/trpc/client';
+import { useMutation } from '@tanstack/react-query';
 
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -52,25 +54,34 @@ const categoryOptions = [
     { value: 'education', label: 'Education' },
 ];
 
-export default function CreateObjectiveFormModal({
-    onSubmitFn,
-    defaultValues
-}: {
-    onSubmitFn: (values: CreateObjective) => void;
-    defaultValues: CreateObjective;
-}) {
+const defaultValues: CreateObjective = {
+    title: '',
+    description: '',
+    category: null,
+    targetValue: 0,
+    currentValue: 0,
+    deadline: null,
+    status: 'not_started',
+    unit: '',
+};
+
+export default function CreateObjectiveFormModal() {
+    const trpc = useTRPC();
+    const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions());
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof objectiveSchema>>({
         resolver: zodResolver(objectiveSchema),
         defaultValues: defaultValues,
     });
 
-    function onSubmit(values: CreateObjective) {
+    const onSubmit = async (values: CreateObjective) => {
         console.log(values);
-        onSubmitFn(values);
+        await createObjective.mutateAsync(values);
+
+        browserQueryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
         setOpen(false);
         form.reset();
-    }
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

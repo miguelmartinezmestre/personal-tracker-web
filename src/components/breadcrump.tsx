@@ -1,108 +1,77 @@
-// "use client"
+"use client"
 
-// // import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-// import { useEffect, useState } from 'react';
-// import {
-//     Breadcrumb,
-//     BreadcrumbItem,
-//     BreadcrumbLink,
-//     BreadcrumbList,
-//     BreadcrumbPage,
-//     BreadcrumbSeparator,
-// } from './ui/breadcrumb';
-// import { ChevronRight, Home } from 'lucide-react';
+import type React from "react"
 
-// export interface BreadcrumbItemType {
-//     label: string;
-//     path: string;
-//     isCurrentPage?: boolean;
-// }
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useSelectedLayoutSegments } from "next/navigation"
+import { ChevronRight, Home } from "lucide-react"
 
-// export function TanstackBreadcrumb() {
-//     // const router = useRouter();
-//     // const routerState = useRouterState();
-//     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItemType[]>([]);
+import { cn } from "@/lib/utils"
 
-//     useEffect(() => {
-//         // Safety check to ensure router state is available
-//         // if (!routerState || !router) {
-//         //     setBreadcrumbs([{ label: 'Home', path: '/dashboard/home', isCurrentPage: true }]);
-//         //     return;
-//         // }
+export function BreadcrumbNav({
+  className,
+  homeLabel = "Inicio",
+  ...props
+}: React.HTMLAttributes<HTMLElement> & {
+  homeLabel?: string
+}) {
+  const pathname = usePathname()
+  const segments = useSelectedLayoutSegments() // Get route segments [^1]
 
-//         try {
-//             // Get the current route
-//             const currentRoute = routerState.location.pathname;
+  // Don't render breadcrumbs on home page
+  if (pathname === "/dashboard/home") {
+    return null
+  }
 
-//             // Split the path into segments
-//             const pathSegments = currentRoute.split('/').filter(Boolean);
+  return (
+    <nav
+      aria-label="Breadcrumbs"
+      className={cn("flex items-center space-x-1 text-sm text-muted-foreground", className)}
+      {...props}
+    >
+      <ol className="flex items-center space-x-1">
+        <li>
+          <Link href="/dashboard/home" className="flex items-center hover:text-foreground" aria-label={homeLabel}>
+            <Home className="h-4 w-4" />
+          </Link>
+        </li>
+        <li>
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </li>
 
-//             // Create breadcrumb items
-//             const breadcrumbItems: BreadcrumbItemType[] = [
-//                 { label: 'Home', path: '/dashboard/home' },
-//             ];
+        {segments.map((segment, index) => {
+          // Skip route groups (segments that start with parentheses)
+          if (segment.startsWith("(")) {
+            return null
+          }
 
-//             // Build up the breadcrumb paths
-//             let currentPath = '';
-//             pathSegments.forEach((segment, index) => {
-//                 currentPath += `/${segment}`;
-//                 const isLastSegment = index === pathSegments.length - 1;
+          // Build up the path for this segment
+          const segmentPath = `/${segments.slice(0, index + 1).join("/")}`
 
-//                 // Format the label (capitalize first letter and replace hyphens with spaces)
-//                 const label = segment
-//                     .replace(/-/g, ' ')
-//                     .replace(/\b\w/g, char => char.toUpperCase());
+          // Format the segment for display (replace hyphens with spaces, capitalize)
+          const displayName = segment.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
 
-//                 if (currentPath !== '/dashboard' && currentPath !== '/dashboard/home') {
-//                     breadcrumbItems.push({
-//                         label,
-//                         path: currentPath,
-//                         isCurrentPage: isLastSegment,
-//                     });
-//                 }
-//             });
+          const isLast = index === segments.filter((s) => !s.startsWith("(")).length - 1
 
-//             setBreadcrumbs(breadcrumbItems);
-//         } catch (error) {
-//             console.error('Error generating breadcrumbs:', error);
-//             setBreadcrumbs([{ label: 'Home', path: '/dashboard', isCurrentPage: true }]);
-//         }
-//     }, [router, routerState]);
-
-//     if (breadcrumbs.length <= 1) {
-//         return null;
-//     }
-
-//     return (
-//         <Breadcrumb>
-//             <BreadcrumbList>
-//                 {breadcrumbs.map((item, index) => (
-//                     <BreadcrumbItem key={item.path}>
-//                         {item.isCurrentPage ? (
-//                             <BreadcrumbPage>{item.label}</BreadcrumbPage>
-//                         ) : (
-//                             <BreadcrumbLink asChild>
-//                                 <Link href={item.path}>
-//                                     {index === 0 ? (
-//                                         <span className="flex items-center gap-1">
-//                                             <Home className="h-3.5 w-3.5" />
-//                                             <span className="sr-only">Home</span>
-//                                         </span>
-//                                     ) : (
-//                                         item.label
-//                                     )}
-//                                 </Link>
-//                             </BreadcrumbLink>
-//                         )}
-
-//                         {index < breadcrumbs.length - 1 && (
-//                             <BreadcrumbSeparator>
-//                                 <ChevronRight className="h-4 w-4" />
-//                             </BreadcrumbSeparator>
-//                         )}
-//                     </BreadcrumbItem>
-//                 ))}
-//             </BreadcrumbList>
-//         </Breadcrumb>
-//     );
-// }
+          return (
+            <li key={segment} className="flex items-center">
+              {isLast ? (
+                <span className="font-medium text-foreground" aria-current="page">
+                  {displayName}
+                </span>
+              ) : (
+                <>
+                  <Link href={segmentPath} className="hover:text-foreground">
+                    {displayName}
+                  </Link>
+                  <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
+                </>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}

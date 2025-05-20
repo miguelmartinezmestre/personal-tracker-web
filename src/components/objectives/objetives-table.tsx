@@ -5,7 +5,6 @@ import { browserQueryClient, useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
-    CreateObjective,
     Objective,
 } from '@/schemas/objective';
 import { Button } from '@/components/ui/button';
@@ -17,23 +16,10 @@ function t(key: string) {
     return key;
 }
 
-const defaultValues: CreateObjective = {
-    title: '',
-    description: '',
-    category: null,
-    targetValue: 0,
-    currentValue: 0,
-    deadline: null,
-    status: 'not_started',
-    unit: '',
-};
-
 export default function ObjetivesTable() {
     const trpc = useTRPC();
 
     const objectives = useQuery(trpc.objectives.getObjectivesByUser.queryOptions({}));
-    const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions());
-    const updateObjective = useMutation(trpc.objectives.updateObjective.mutationOptions());
     const deleteObjective = useMutation(trpc.objectives.deleteObjective.mutationOptions());
 
     const columns: ColumnDef<Objective>[] = [
@@ -71,7 +57,7 @@ export default function ObjetivesTable() {
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 return (
-                    <EditObjectiveFormModal onSubmitFn={onUpdateSubmit} defaultValues={objetiveRow} />
+                    <EditObjectiveFormModal defaultValues={objetiveRow} />
                 );
             },
         },
@@ -110,31 +96,12 @@ export default function ObjetivesTable() {
         },
     ];
 
-    const onSubmit = async (values: CreateObjective) => {
-        await createObjective.mutateAsync(values);
+    
 
-        browserQueryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
-    };
-
-    const onUpdateSubmit = async (values: Objective) => {
-        const updateData = {
-            id: values.id,
-            title: values.title,
-            description: values.description ?? undefined,
-            category: values.category ?? undefined,
-            targetValue: values.targetValue,
-            currentValue: values.currentValue,
-            deadline: values.deadline ?? undefined,
-        };
-
-        await updateObjective.mutateAsync(updateData);
-
-        browserQueryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
-    };
+    
 
     return (
         <div>
-            <CreateObjectiveFormModal onSubmitFn={onSubmit} defaultValues={defaultValues} />
             <DataTable columns={columns} data={objectives.data!} isLoading={objectives.isLoading} />
         </div>
     );
