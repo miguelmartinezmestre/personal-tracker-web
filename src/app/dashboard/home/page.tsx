@@ -10,7 +10,7 @@ function t(key: string) {
 export default function Dashboard() {
     return (
         <div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <Graph1 />
                 <Graph2 />
                 <Graph3 />

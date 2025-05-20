@@ -1,38 +1,35 @@
-"use server"
-import prisma from "@/lib/client";
-import { actionClient } from "@/lib/safe-action";
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation"
-import { z } from "zod";
-import { generateSessionId, hashPassword, verifyPassword } from "./crypto.service";
-import { loginSchema } from "@/schemas/login";
-import { registerSchema } from "@/schemas/register";
-
+'use server';
+import prisma from '@/lib/client';
+import { actionClient } from '@/lib/safe-action';
+import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+import { generateSessionId, hashPassword, verifyPassword } from './crypto.service';
+import { loginSchema } from '@/schemas/login';
+import { registerSchema } from '@/schemas/register';
 
 export async function redirectToUrl(url: string) {
     redirect(url);
 }
 
-export const logoutAction = actionClient
-    .action(async () => {
-        const cookieStore = await cookies();
-        cookieStore.delete('session_id');
-        redirect('/');
-    });
-
-
+export const logoutAction = actionClient.action(async () => {
+    const cookieStore = await cookies();
+    cookieStore.delete('session_id');
+    redirect('/');
+});
 
 export const loginAction = actionClient
     .schema(loginSchema)
-    .outputSchema(z.object({
-        message: z.string(),
-        error: z.boolean()
-    }))
+    .outputSchema(
+        z.object({
+            message: z.string(),
+            error: z.boolean(),
+        })
+    )
     .action(async ({ parsedInput: { email, password } }) => {
-
         const headersList = await headers();
 
-        const userAgent = headersList.get("user-agent");
+        const userAgent = headersList.get('user-agent');
 
         const user = await prisma.user.findUnique({
             where: {
@@ -42,21 +39,18 @@ export const loginAction = actionClient
 
         if (!user) {
             return {
-                message: "Incorrect credentials1",
-                error: true
-            }
+                message: 'Incorrect credentials1',
+                error: true,
+            };
         }
 
-        const isPasswordCorrect = await verifyPassword(
-            password,
-            user.password,
-        );
+        const isPasswordCorrect = await verifyPassword(password, user.password);
 
         if (!isPasswordCorrect) {
             return {
-                message: "Incorrect credentials2",
-                error: true
-            }
+                message: 'Incorrect credentials2',
+                error: true,
+            };
         }
 
         const sessionId = await generateSessionId();
@@ -67,7 +61,7 @@ export const loginAction = actionClient
                 value: sessionId,
                 userAgent: String(userAgent),
                 status: 'active',
-            }
+            },
         });
 
         const cookieStore = await cookies();
@@ -78,26 +72,28 @@ export const loginAction = actionClient
             sameSite: 'lax',
         });
 
-        redirect("/dashboard");
+        redirect('/dashboard');
     });
 
 export const registerAction = actionClient
     .schema(registerSchema)
-    .outputSchema(z.object({
-        message: z.string(),
-        error: z.boolean()
-    }))
+    .outputSchema(
+        z.object({
+            message: z.string(),
+            error: z.boolean(),
+        })
+    )
     .action(async ({ parsedInput: { username, password, email } }) => {
         const userFound = await prisma.user.findUnique({
             where: {
-                email: email
-            }
+                email: email,
+            },
         });
         if (userFound) {
             return {
-                message: "Unexpected error",
-                error: true
-            }
+                message: 'Unexpected error',
+                error: true,
+            };
         }
 
         const passwordHashed = await hashPassword(password);
@@ -106,13 +102,13 @@ export const registerAction = actionClient
             data: {
                 username: username,
                 password: passwordHashed,
-                email: email
-            }
+                email: email,
+            },
         });
 
         const headersList = await headers();
 
-        const userAgent = headersList.get("user-agent");
+        const userAgent = headersList.get('user-agent');
 
         const sessionId = await generateSessionId();
 
@@ -122,7 +118,7 @@ export const registerAction = actionClient
                 value: sessionId,
                 userAgent: String(userAgent),
                 status: 'active',
-            }
+            },
         });
 
         const cookieStore = await cookies();
@@ -133,6 +129,21 @@ export const registerAction = actionClient
             sameSite: 'lax',
         });
 
-        redirect("/dashboard");
+        redirect('/dashboard');
     });
 
+export const isLoggedInAction = actionClient
+    .outputSchema(z.boolean())
+    .action(async () => {
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('session_id');
+        if (!sessionId) {
+            return false;
+        }
+        const session = await prisma.session.findFirst({
+            where: {
+                value: sessionId.value,
+            },
+        });
+        return !!session;
+    });
