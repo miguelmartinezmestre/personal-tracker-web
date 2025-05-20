@@ -1,15 +1,7 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, jwtSecret } from "./init";
-import { database } from "./database";
-import { TRPCError } from "@trpc/server";
-import { randomUUID } from "crypto";
-import jwt from 'jsonwebtoken';
-import { redirect } from "next/navigation";
-import { RedirectError } from "./redirect-error";
-import { cookies } from "next/headers";
+import { createTRPCRouter, publicProcedure } from "./init";
 import prisma from "@/lib/client";
-import { generateSessionId, hashPassword, verifyPassword } from "./crypto.service";
-import { objectiveSchema, savedObjectiveSchema, updateObjectiveSchema } from "@/schemas/objective";
+import { objectiveSchema, savedObjectiveSchema } from "@/schemas/objective";
 
 export const objectivesRouter = createTRPCRouter({
     createObjective: publicProcedure
@@ -71,6 +63,9 @@ export const objectivesRouter = createTRPCRouter({
                     userId: ctx.userId,
                 },
             });
+
+            
+
             return objectives;
         }),
     updateObjective: publicProcedure
@@ -83,20 +78,28 @@ export const objectivesRouter = createTRPCRouter({
             },
         })
         .input(
-            z.object({
-                id: z.number(),
-                ...updateObjectiveSchema.shape
-            })
+            savedObjectiveSchema
         )
         .output(
             savedObjectiveSchema
         )
         .mutation(async ({ input, ctx }) => {
+
+            const { id, ...rest } = input;
+
             const updatedObjective = await prisma.objective.update({
                 where: {
-                    id: input.id,
+                    id: id,
                 },
-                data: input,
+                data: {
+                    title: rest.title,
+                    description: rest.description,
+                    category: rest.category,
+                    targetValue: rest.targetValue,
+                    currentValue: rest.currentValue,
+                    deadline: rest.deadline,
+                    unit: rest.unit,
+                },
             });
             return updatedObjective;
         }),
@@ -118,6 +121,9 @@ export const objectivesRouter = createTRPCRouter({
             z.string()
         )
         .mutation(async ({ input, ctx }) => {
+
+            console.log(input.id);
+
             const deletedObjective = await prisma.objective.delete({
                 where: {
                     id: input.id,

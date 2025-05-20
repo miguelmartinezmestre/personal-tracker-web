@@ -1,4 +1,6 @@
 import { AppSidebar } from './app-sidebar';
+import { ModeToggle } from './change-theme';
+import { ThemeToggle } from './theme-switcher';
 import { Separator } from './ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from './ui/sidebar';
 // import { TanstackBreadcrumb } from './breadcrump';
@@ -16,6 +18,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                             <ArrowLeft className="h-4 w-4" />
                         </Button> */}
                         {/* <TanstackBreadcrumb /> */}
+                        <ThemeToggle />
                     </div>
                 </header>
                 <div className="grid grid-cols-1 gap-4 p-4 pt-0">{children}</div>

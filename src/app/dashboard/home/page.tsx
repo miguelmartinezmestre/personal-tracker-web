@@ -1,56 +1,21 @@
-// import { DashboardLayout } from "@/components/dashboard-layout"
-// import { cookies } from "next/headers"
-"use client"
+import { Graph1 } from '@/components/graph1';
+import { Graph2 } from '@/components/graph2';
+import { Graph3 } from '@/components/graph3';
+import ObjetivesTable from '@/components/objectives/objetives-table';
 
-import { browserQueryClient, useTRPC } from "@/trpc/client"
-import { useMutation, useQuery } from "@tanstack/react-query"
+function t(key: string) {
+    return key;
+}
 
 export default function Dashboard() {
-
-    const trpc = useTRPC()
-
-    const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions())
-
-    const handleCreateObjective = () => {
-        createObjective.mutate({
-            title: "Test",
-            description: "Test",
-            targetValue: 100,
-            currentValue: 0,
-        })
-
-        browserQueryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}))
-    }
-
-    const objectives = useQuery(trpc.objectives.getObjectivesByUser.queryOptions({}))
-
     return (
         <div>
-            {/* <h1>Dashboard</h1> */}
-            
-            <button onClick={handleCreateObjective}>Create Objective</button>
-            <div>
-                {objectives.data?.map((objective) => (
-                    <table key={objective.id}>
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Description</th>
-                                <th>Target Value</th>
-                                <th>Current Value</th>
-                                <th>Deadline</th>
-                            </tr>
-                        </thead>
-                        <tr>
-                            <td>{objective.title}</td>
-                            <td>{objective.description}</td>
-                            <td>{objective.targetValue}</td>
-                            <td>{objective.currentValue}</td>
-                            <td>{objective.deadline}</td>
-                        </tr>
-                    </table>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Graph1 />
+                <Graph2 />
+                <Graph3 />
             </div>
+            <ObjetivesTable />
         </div>
-    )
+    );
 }
