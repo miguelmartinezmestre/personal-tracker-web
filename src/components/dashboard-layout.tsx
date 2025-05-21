@@ -1,11 +1,11 @@
 import { AppSidebar } from './app-sidebar';
 import { BreadcrumbNav } from './breadcrump';
-import { ModeToggle } from './change-theme';
 import { ThemeToggle } from './theme-switcher';
 import { Separator } from './ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from './ui/sidebar';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+
     return (
         <SidebarProvider>
             <AppSidebar />

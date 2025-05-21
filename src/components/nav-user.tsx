@@ -1,5 +1,5 @@
-"use client"
-import { ChevronsUpDown, LogOut } from 'lucide-react';
+'use client';
+import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -10,13 +10,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from './ui/sidebar';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 import { logoutAction } from '@/server/actions';
+import EditObjectiveFormModal from './objectives/objective-form-edit-modal';
+import EditSettingsFormModal from './settings/account-settings-modal';
 // import { useLogoutMutation } from '../services/mutations/user';
 
 export function NavUser({
@@ -91,7 +88,11 @@ export function NavUser({
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator /> */}
-                        <DropdownMenuItem onClick={logoutAction}>
+                        <DropdownMenuItem>
+                            {/* <Settings /> */}
+                            <EditSettingsFormModal />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => logoutAction}>
                             <LogOut />
                             Log out
                         </DropdownMenuItem>

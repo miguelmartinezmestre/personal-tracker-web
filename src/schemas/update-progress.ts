@@ -1,9 +1,16 @@
 import { z } from 'zod';
 
-export const schema = z.object({
+export const updateProgressSchema = z.object({
     id: z.number().optional(),
-    goalId: z.number().optional(),
+    objectiveId: z.number().optional(),
     updatedValue: z.number().min(1, { message: 'Updated value is required' }),
     updateDate: z.date().describe('label:updateDate'),
-    comment: z.string().optional().describe('label:comment'),
+    comment: z.string().nullable().describe('label:comment'),
 });
+
+export const savedUpdateProgressSchema = updateProgressSchema.extend({
+    id: z.number()
+});
+
+export type UpdateProgress = z.infer<typeof savedUpdateProgressSchema>;
+export type CreateUpdateProgress = z.infer<typeof updateProgressSchema>;

@@ -1,18 +1,17 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter } from '@/server/router';
-import { createContext } from '@/server/init';
+import { appRouter } from '@/trpc/routers/router';
+import { createContext } from '@/trpc/init';
 import { RedirectError } from '@/server/redirect-error';
 import { redirect } from 'next/navigation';
 
 const handler = (req: Request) => {
-  return fetchRequestHandler({
-    req,
-    endpoint: '/api/trpc',
-    router: appRouter,
-    createContext,
-  });
+    return fetchRequestHandler({
+        req,
+        endpoint: '/api/trpc',
+        router: appRouter,
+        createContext,
+    });
 };
-
 
 // const handler = async (req: Request) => {
 //   try {

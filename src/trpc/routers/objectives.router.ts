@@ -1,7 +1,7 @@
-import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "./init";
-import prisma from "@/lib/client";
-import { objectiveSchema, savedObjectiveSchema } from "@/schemas/objective";
+import { z } from 'zod';
+import prisma from '@/lib/client';
+import { objectiveSchema, savedObjectiveSchema } from '@/schemas/objective';
+import { createTRPCRouter, publicProcedure } from '../init';
 
 export const objectivesRouter = createTRPCRouter({
     createObjective: publicProcedure
@@ -13,14 +13,9 @@ export const objectivesRouter = createTRPCRouter({
                 summary: 'Create a new objective',
             },
         })
-        .input(
-            objectiveSchema
-        )
-        .output(
-            savedObjectiveSchema
-        )
+        .input(objectiveSchema)
+        .output(savedObjectiveSchema)
         .mutation(async ({ input, ctx }) => {
-
             const newObjective = await prisma.objective.create({
                 data: {
                     currentValue: input.currentValue,
@@ -54,17 +49,13 @@ export const objectivesRouter = createTRPCRouter({
                 // userId: z.number(),
             })
         )
-        .output(
-            z.array(savedObjectiveSchema)
-        )
+        .output(z.array(savedObjectiveSchema))
         .query(async ({ ctx }) => {
             const objectives = await prisma.objective.findMany({
                 where: {
                     userId: ctx.userId,
                 },
             });
-
-            
 
             return objectives;
         }),
@@ -77,14 +68,9 @@ export const objectivesRouter = createTRPCRouter({
                 summary: 'Update an objective',
             },
         })
-        .input(
-            savedObjectiveSchema
-        )
-        .output(
-            savedObjectiveSchema
-        )
+        .input(savedObjectiveSchema)
+        .output(savedObjectiveSchema)
         .mutation(async ({ input, ctx }) => {
-
             const { id, ...rest } = input;
 
             const updatedObjective = await prisma.objective.update({
@@ -117,11 +103,8 @@ export const objectivesRouter = createTRPCRouter({
                 id: z.number(),
             })
         )
-        .output(
-            z.string()
-        )
+        .output(z.string())
         .mutation(async ({ input, ctx }) => {
-
             console.log(input.id);
 
             const deletedObjective = await prisma.objective.delete({
@@ -129,6 +112,6 @@ export const objectivesRouter = createTRPCRouter({
                     id: input.id,
                 },
             });
-            return "Objective deleted successfully";
-        })
+            return 'Objective deleted successfully';
+        }),
 });

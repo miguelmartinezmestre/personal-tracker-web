@@ -37,8 +37,9 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { CreateObjective, objectiveSchema } from '@/schemas/objective';
-import { browserQueryClient, useTRPC } from '@/trpc/client';
+import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
+import { getQueryClient } from '@/trpc/client';
 
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -67,6 +68,7 @@ const defaultValues: CreateObjective = {
 
 export default function CreateObjectiveFormModal() {
     const trpc = useTRPC();
+    const queryClient = getQueryClient();
     const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions());
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof objectiveSchema>>({
@@ -78,7 +80,7 @@ export default function CreateObjectiveFormModal() {
         console.log(values);
         await createObjective.mutateAsync(values);
 
-        browserQueryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
+        queryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
         setOpen(false);
         form.reset();
     };

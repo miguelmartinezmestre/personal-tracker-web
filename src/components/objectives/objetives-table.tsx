@@ -1,8 +1,8 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { browserQueryClient, useTRPC } from '@/trpc/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTRPC } from '@/trpc/client';
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
     Objective,
@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditObjectiveFormModal from './objective-form-edit-modal';
-import CreateObjectiveFormModal from './objective-form-create-modal';
+import { getQueryClient } from '@/trpc/client';
 
 function t(key: string) {
     return key;
@@ -18,8 +18,8 @@ function t(key: string) {
 
 export default function ObjetivesTable() {
     const trpc = useTRPC();
-
-    const objectives = useQuery(trpc.objectives.getObjectivesByUser.queryOptions({}));
+    const queryClient = getQueryClient();
+    const objectives = useSuspenseQuery(trpc.objectives.getObjectivesByUser.queryOptions({}));
     const deleteObjective = useMutation(trpc.objectives.deleteObjective.mutationOptions());
 
     const columns: ColumnDef<Objective>[] = [
@@ -70,7 +70,7 @@ export default function ObjetivesTable() {
                     <Button
                         onClick={async () => {
                             await deleteObjective.mutateAsync({ id: objetiveRow.id });
-                            await browserQueryClient.invalidateQueries(
+                            await queryClient.invalidateQueries(
                                 trpc.objectives.getObjectivesByUser.queryOptions({})
                             );
                         }}
