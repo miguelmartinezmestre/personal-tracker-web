@@ -19,7 +19,7 @@ export default function NavBar() {
     useEffect(() => {
         async function getIsLoggedIn() {
             const isLoggedIn = await isLoggedInAction();
-            if (isLoggedIn) {
+            if (isLoggedIn?.data) {
                 setLinks([...links, { name: 'Go to dashboard', href: '/dashboard' }]);
             }
         }
