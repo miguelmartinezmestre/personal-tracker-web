@@ -87,7 +87,7 @@ export default function ObjetivesTable() {
                 const objetiveRow = row.original;
                 if (objetiveRow.id) {
                     return (
-                        <Link href={`/dashboard/objectives/${objetiveRow.id}`}>Ir actividad</Link>
+                        <Link href={`/dashboard/objectives/${objetiveRow.id}`} prefetch={true}>Ir actividad</Link>
                     );
                 }
 

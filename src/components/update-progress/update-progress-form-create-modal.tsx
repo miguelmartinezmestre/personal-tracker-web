@@ -40,47 +40,32 @@ import { CreateObjective, objectiveSchema } from '@/schemas/objective';
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
+import { CreateUpdateProgress, CreateUpdateProgressBeforeCreate, updateProgressSchema } from '@/schemas/update-progress';
+import { useParams } from 'next/navigation';
 
-const statusOptions = [
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-];
+export default function CreateUpdateProgressFormModal() {
 
-const categoryOptions = [
-    { value: 'personal', label: 'Personal' },
-    { value: 'work', label: 'Work' },
-    { value: 'health', label: 'Health' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'education', label: 'Education' },
-];
+    const { id: objectiveId } = useParams();
 
-const defaultValues: CreateObjective = {
-    title: '',
-    description: '',
-    category: null,
-    targetValue: 0,
-    currentValue: 0,
-    deadline: null,
-    status: 'not_started',
-    unit: '',
-};
-
-export default function CreateObjectiveFormModal() {
     const trpc = useTRPC();
     const queryClient = getQueryClient();
-    const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions());
+    const createUpdateProgress = useMutation(trpc.updateProgress.createUpdateProgress.mutationOptions());
     const [open, setOpen] = useState(false);
-    const form = useForm<z.infer<typeof objectiveSchema>>({
-        resolver: zodResolver(objectiveSchema),
-        defaultValues: defaultValues,
+    const form = useForm<CreateUpdateProgress>({
+        resolver: zodResolver(updateProgressSchema),
+        defaultValues: {
+            comment: '',
+            updatedValue: 0,
+            updateDate: new Date(),
+            objectiveId: Number(objectiveId),
+        },
     });
 
-    const onSubmit = async (values: CreateObjective) => {
+    const onSubmit = async (values: CreateUpdateProgress) => {
         console.log(values);
-        await createObjective.mutateAsync(values);
+        const updateProgress = await createUpdateProgress.mutateAsync(values);
 
-        queryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
+        queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: updateProgress.objectiveId! }));
         setOpen(false);
         form.reset();
     };
@@ -90,14 +75,14 @@ export default function CreateObjectiveFormModal() {
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Create New Objective
+                    Create New Update Progress
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create New Objective</DialogTitle>
+                    <DialogTitle>Create New Update Progress</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to create a new objective. Click save when you're
+                        Fill out the form below to create a new update progress. Click save when you're
                         done.
                     </DialogDescription>
                 </DialogHeader>
@@ -106,15 +91,20 @@ export default function CreateObjectiveFormModal() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
                         <FormField
                             control={form.control}
-                            name="title"
+                            name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Title</FormLabel>
+                                    <FormLabel>Updated Value</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter objective title" {...field} />
+                                        <Input placeholder="Enter updated value"
+                                            type="number"
+                                            {...field}
+                                            value={Number.isNaN(field.value) ? '' : field.value}
+                                            onChange={e => field.onChange(Number.parseFloat(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your objective a clear, concise title.
+                                        Give your update progress a clear, concise title.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -123,132 +113,31 @@ export default function CreateObjectiveFormModal() {
 
                         <FormField
                             control={form.control}
-                            name="description"
+                            name="comment"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>Comment</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your objective in detail"
+                                            placeholder="Describe your update progress in detail"
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your objective.
+                                        Optional: Add details about your update progress.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="category"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Category</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || ''}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {categoryOptions.map(category => (
-                                                <SelectItem
-                                                    key={category.value}
-                                                    value={category.value}
-                                                >
-                                                    {category.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        Optional: Categorize your objective.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="targetValue"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Target Value</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                {...field}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        Number.parseFloat(e.target.value)
-                                                    )
-                                                }
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            The goal you want to achieve.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="unit"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Unit</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="e.g., kg, miles, hours"
-                                                {...field}
-                                                value={field.value || ''}
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            Optional: Unit of measurement.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
 
                         <FormField
                             control={form.control}
-                            name="currentValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Current Value</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            {...field}
-                                            onChange={e =>
-                                                field.onChange(Number.parseFloat(e.target.value))
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormDescription>Your current progress.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="deadline"
+                            name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
                                     <FormLabel>Deadline</FormLabel>
@@ -280,50 +169,18 @@ export default function CreateObjectiveFormModal() {
                                             />
                                         </PopoverContent>
                                     </Popover>
-                                    <FormDescription>
-                                        Optional: When do you want to achieve this objective?
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || 'not_started'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a status" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {statusOptions.map(status => (
-                                                <SelectItem key={status.value} value={status.value}>
-                                                    {status.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        Current status of your objective.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">Save Objective</Button>
+                            <Button type="submit">Save Progress</Button>
                         </DialogFooter>
                     </form>
                 </Form>

@@ -16,18 +16,19 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useTRPC } from '@/trpc/client';
+import { getQueryClient, useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { accountDetailsSchema } from '@/schemas/account-details';
 import { DialogFooter } from '@/components/ui/dialog';
 
 export default function AccountSettingsForm() {
     const trpc = useTRPC();
-    const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions());
+    const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
     const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const queryClient = getQueryClient();
     const form = useForm<z.infer<typeof accountDetailsSchema>>({
         resolver: zodResolver(accountDetailsSchema),
         defaultValues: {
@@ -50,7 +51,13 @@ export default function AccountSettingsForm() {
             setError(result.message);
         } else {
             setMessage(result.message);
+            form.reset({
+                email: values.email,
+                username: values.username,
+            });
         }
+
+        queryClient.invalidateQueries(trpc.user.getAccountDetails.queryOptions({}));
 
         setOpen(false);
         form.reset();
@@ -81,13 +88,10 @@ export default function AccountSettingsForm() {
                     name="username"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Title</FormLabel>
+                            <FormLabel>Username</FormLabel>
                             <FormControl>
-                                <Input placeholder="Enter objective title" {...field} />
+                                <Input placeholder="Enter username" {...field} />
                             </FormControl>
-                            <FormDescription>
-                                Give your objective a clear, concise title.
-                            </FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -98,13 +102,10 @@ export default function AccountSettingsForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Title</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
-                                <Input placeholder="Enter objective title" {...field} />
+                                <Input placeholder="Enter email" {...field} />
                             </FormControl>
-                            <FormDescription>
-                                Give your objective a clear, concise title.
-                            </FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}

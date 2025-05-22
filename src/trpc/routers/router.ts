@@ -3,10 +3,12 @@ import { createTRPCRouter } from '../init';
 import { objectivesRouter } from './objectives.router';
 import { userRouter } from './user.router';
 import { getUserId } from '@/server/getUserId';
+import { updateProgressRouter } from './update-progress.router';
 
 export const appRouter = createTRPCRouter({
     objectives: objectivesRouter,
     user: userRouter,
+    updateProgress: updateProgressRouter,
 });
 
 // export type definition of API

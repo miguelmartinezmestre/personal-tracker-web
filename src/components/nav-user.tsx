@@ -1,6 +1,5 @@
 'use client';
-import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
-
+import { ChevronsUpDown, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
     DropdownMenu,
@@ -12,9 +11,6 @@ import {
 } from './ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from './ui/sidebar';
 import { logoutAction } from '@/server/actions';
-import EditObjectiveFormModal from './objectives/objective-form-edit-modal';
-import EditSettingsFormModal from './settings/account-settings-modal';
-// import { useLogoutMutation } from '../services/mutations/user';
 
 export function NavUser({
     user,
@@ -66,33 +62,7 @@ export function NavUser({
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {/* <DropdownMenuGroup>
-                            <DropdownMenuItem>
-                                <Sparkles />
-                                Upgrade to Pro
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem>
-                                <BadgeCheck />
-                                Account
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <CreditCard />
-                                Billing
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Bell />
-                                Notifications
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator /> */}
-                        <DropdownMenuItem>
-                            {/* <Settings /> */}
-                            <EditSettingsFormModal />
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => logoutAction}>
+                        <DropdownMenuItem onClick={async () => await logoutAction()}>
                             <LogOut />
                             Log out
                         </DropdownMenuItem>

@@ -40,6 +40,7 @@ import { Objective, savedObjectiveSchema } from '@/schemas/objective';
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
+import { UpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
     { value: 'in_progress', label: 'In Progress' },
@@ -54,34 +55,34 @@ const categoryOptions = [
     { value: 'education', label: 'Education' },
 ];
 
-export default function EditObjectiveFormModal({defaultValues}: {defaultValues: Objective}) {
+export default function UpdateProgressFormModal({defaultValues}: {defaultValues: UpdateProgress}) {
 
     const trpc = useTRPC()
-    const updateObjective = useMutation(trpc.objectives.updateObjective.mutationOptions());
+    const updateUpdateProgress = useMutation(trpc.updateProgress.updateUpdateProgress.mutationOptions());
     const [open, setOpen] = useState(false);
-    const form = useForm<z.infer<typeof savedObjectiveSchema>>({
-        resolver: zodResolver(savedObjectiveSchema),
+    const form = useForm<z.infer<typeof updateProgressSchema>>({
+        resolver: zodResolver(updateProgressSchema),
         defaultValues: defaultValues,
     });
 
     const queryClient = getQueryClient();
 
-    const onSubmit = async (values: Objective) => {
+    const onSubmit = async (values: UpdateProgress) => {
         const updateData = {
             id: values.id,
-            title: values.title,
-            description: values.description ?? undefined,
-            category: values.category ?? undefined,
-            targetValue: values.targetValue,
-            currentValue: values.currentValue,
-            deadline: values.deadline ?? undefined,
+            updatedValue: values.updatedValue,
+            updateDate: values.updateDate,
+            comment: values.comment ?? null,
+            objectiveId: values.objectiveId,
+            createdAt: values.createdAt,
+            updatedAt: values.updatedAt,
         };
 
         console.log(updateData);
 
-        await updateObjective.mutateAsync(updateData);
+        await updateUpdateProgress.mutateAsync(updateData);
 
-        queryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
+        queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: updateData.objectiveId! }));
 
         setOpen(false);
         form.reset();
@@ -108,10 +109,10 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
                         <FormField
                             control={form.control}
-                            name="title"
+                            name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Title</FormLabel>
+                                    <FormLabel>Updated Value</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Enter objective title" {...field} />
                                     </FormControl>

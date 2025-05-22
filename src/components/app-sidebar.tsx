@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Home, Settings } from 'lucide-react';
+import { Bell, Frame, Home, Loader2, Settings } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -14,6 +14,8 @@ import {
 import { NavUser } from './nav-user';
 import EditSettingsFormModal from '@/components/settings/account-settings-modal';
 import Link from 'next/link';
+import { useTRPC } from '@/trpc/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 // import { useAuthContext } from '@/providers/auth-provider';
 // import { LanguageSwitcher } from './team-switcher';
 // import { useTranslation } from 'react-i18next';
@@ -42,12 +44,15 @@ const projects = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+    const trpc = useTRPC();
+    const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
     // const { user, isLoading } = useAuthContext();
     // const { t } = useTranslation();
 
-    // if (isLoading) {
-    //     return <div>Loading...</div>;
-    // }
+    if (accountDetails.isLoading) {
+        return <Loader2 className="animate-spin"/>;
+    }
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -73,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {projects.map(item => (
                             <SidebarMenuItem key={item.name}>
                                 <SidebarMenuButton asChild>
-                                    <Link href={item.url}>
+                                    <Link href={item.url} prefetch={true}>
                                         <item.icon />
                                         {/* <span>{t(String(item.name).toLowerCase())}</span> */}
                                         {item.name}
@@ -92,10 +97,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarFooter>
                 <NavUser
                     user={{
-                        // name: user ? user.name : '',
-                        name: 'John Doe',
-                        // email: user ? user.email : '',
-                        email: 'john.doe@example.com',
+                        email: accountDetails.data?.email,
+                        name: accountDetails.data?.username,
                         avatar: '',
                     }}
                 />

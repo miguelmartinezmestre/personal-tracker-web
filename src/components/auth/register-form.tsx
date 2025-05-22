@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Link } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { registerAction } from '@/server/actions';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function RegisterForm() {
     const [registerError, setRegisterError] = useState('');
@@ -138,7 +139,7 @@ export default function RegisterForm() {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/login">¿Ya tienes una cuenta? Iniciar sesión</Link>
+                        <Link href="/login" prefetch={true} >¿Ya tienes una cuenta? Iniciar sesión</Link>
                     </p>
                 </div>
             </form>

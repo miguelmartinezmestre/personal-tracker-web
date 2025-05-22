@@ -2,7 +2,7 @@
 // ^-- to make sure we can mount the Provider from a server component
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
 import { makeQueryClient } from './query-client';
@@ -26,13 +26,13 @@ export function getQueryClient() {
 }
 
 function getUrl() {
-  const base = (() => {
-    if (typeof window !== 'undefined') return '';
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/trpc`;
-    return 'http://localhost:3000/api/trpc';
-  })();
-
-  return `${base}/api/trpc`;
+  if (typeof window !== 'undefined') {
+    return '/api/trpc';
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/trpc`;
+  }
+  return 'http://localhost:3000/api/trpc';
 }
 
 export function TRPCReactProvider(
@@ -55,7 +55,7 @@ export function TRPCReactProvider(
       ],
     }),
   );
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>

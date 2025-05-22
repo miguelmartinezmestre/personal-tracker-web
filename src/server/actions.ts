@@ -8,10 +8,6 @@ import { generateSessionId, hashPassword, verifyPassword } from './crypto.servic
 import { loginSchema } from '@/schemas/login';
 import { registerSchema } from '@/schemas/register';
 
-export async function redirectToUrl(url: string) {
-    redirect(url);
-}
-
 export const logoutAction = actionClient.action(async () => {
     const cookieStore = await cookies();
     cookieStore.delete('session_id');
@@ -31,7 +27,7 @@ export const loginAction = actionClient
 
         const userAgent = headersList.get('user-agent');
 
-        const user = await prisma.user.findUnique({
+        const user = await prisma.user.findFirst({
             where: {
                 email: email,
             },
@@ -72,7 +68,7 @@ export const loginAction = actionClient
             sameSite: 'lax',
         });
 
-        redirect('/dashboard');
+        redirect('/dashboard/home');
     });
 
 export const registerAction = actionClient
@@ -84,7 +80,7 @@ export const registerAction = actionClient
         })
     )
     .action(async ({ parsedInput: { username, password, email } }) => {
-        const userFound = await prisma.user.findUnique({
+        const userFound = await prisma.user.findFirst({
             where: {
                 email: email,
             },
@@ -129,7 +125,7 @@ export const registerAction = actionClient
             sameSite: 'lax',
         });
 
-        redirect('/dashboard');
+        redirect('/dashboard/home');
     });
 
 export const isLoggedInAction = actionClient

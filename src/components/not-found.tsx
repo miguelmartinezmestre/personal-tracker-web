@@ -10,7 +10,7 @@ export default function NotFound() {
             </p>
             <div className="flex flex-col gap-4 items-center">
                 <p className="text-lg mb-2">¿Qué te gustaría hacer?</p>
-                <Link href="/">
+                <Link href="/" prefetch={true}>
                     <button className="w-full md:w-auto">
                         <Home className="mr-2 h-4 w-4" /> Ir al inicio
                     </button>

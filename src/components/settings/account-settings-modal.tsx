@@ -13,6 +13,7 @@ import { SidebarMenuButton } from "@/components/ui/sidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AccountSettingsForm from "./account-settings-form-edit"
 import { Settings } from "lucide-react"
+import PasswordFormEdit from "./password-form-edit"
 
 export default function EditSettingsFormModal() {
   const [open, setOpen] = useState(false)
@@ -42,14 +43,13 @@ export default function EditSettingsFormModal() {
               <TabsTrigger value="password" className="flex-1">
                 Password
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex-1">
-                Notifications
-              </TabsTrigger>
             </TabsList>
             <TabsContent value="account">
               <AccountSettingsForm />
             </TabsContent>
-            <TabsContent value="password">Change your password here.</TabsContent>
+            <TabsContent value="password">
+              <PasswordFormEdit />
+            </TabsContent>
             <TabsContent value="notifications">Change your notifications here.</TabsContent>
           </Tabs>
         </div>

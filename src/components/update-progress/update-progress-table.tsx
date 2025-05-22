@@ -11,68 +11,55 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditObjectiveFormModal from './update-progress-form-edit-modal';
 import { getQueryClient } from '@/trpc/client';
+import { UpdateProgress } from '@/schemas/update-progress';
+import { Graph3, Progress } from '../graph3';
+import UpdateProgressFormModal from './update-progress-form-edit-modal';
+import { useParams } from 'next/navigation';
 
 function t(key: string) {
     return key;
 }
 
-export default function ObjetivesTable() {
+export default function UpdateProgressTable() {
+    const {id: objectiveId} = useParams();
     const trpc = useTRPC();
     const queryClient = getQueryClient();
-    const objectives = useSuspenseQuery(trpc.objectives.getObjectivesByUser.queryOptions({}));
-    const deleteObjective = useMutation(trpc.objectives.deleteObjective.mutationOptions());
+    const updateProgress = useSuspenseQuery(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: Number(objectiveId) }));
+    const objective = useSuspenseQuery(trpc.objectives.getObjectiveById.queryOptions({ id: Number(objectiveId) }));
+    const deleteUpdateProgress = useMutation(trpc.updateProgress.deleteUpdateProgress.mutationOptions());
 
-    const columns: ColumnDef<Objective>[] = [
+    const columns: ColumnDef<UpdateProgress>[] = [
         {
-            accessorKey: 'title',
-            header: t('title'),
+            accessorKey: 'updatedValue',
+            header: 'Valor Actual',
         },
         {
-            accessorKey: 'description',
-            header: t('description'),
+            accessorKey: 'updateDate',
+            header: 'Fecha',
         },
         {
-            accessorKey: 'targetValue',
-            header: t('targetValue'),
+            accessorKey: 'comment',
+            header: 'Comentario',
         },
         {
-            accessorKey: 'currentValue',
-            header: t('currentValue'),
-        },
-        {
-            accessorKey: 'deadline',
-            header: t('deadline'),
-            cell: ({ row }) => {
-                const objective = row.original;
-                return objective.deadline ? new Date(objective.deadline).toLocaleDateString() : '';
-            },
-        },
-        {
-            accessorKey: 'status',
-            header: t('status'),
-        },
-        {
-            header: '',
-            id: 'update-objective',
+            header: 'Edit',
+            id: 'edit',
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 return (
-                    <EditObjectiveFormModal defaultValues={objetiveRow} />
+                    <UpdateProgressFormModal defaultValues={objetiveRow} />
                 );
             },
         },
         {
-            header: '',
+            header: 'Delete',
             id: 'delete',
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteObjective.mutateAsync({ id: objetiveRow.id });
-                            await queryClient.invalidateQueries(
-                                trpc.objectives.getObjectivesByUser.queryOptions({})
-                            );
+                            await deleteUpdateProgress.mutateAsync({ id: objetiveRow.id });
                         }}
                     >
                         Delete
@@ -80,29 +67,19 @@ export default function ObjetivesTable() {
                 );
             },
         },
-        {
-            header: '',
-            id: 'go-to-activity',
-            cell: ({ row }) => {
-                const objetiveRow = row.original;
-                if (objetiveRow.id) {
-                    return (
-                        <Link href={`/dashboard/objectives/${objetiveRow.id}`}>Ir actividad</Link>
-                    );
-                }
-
-                return null;
-            },
-        },
     ];
 
-    
+    const progressData: Progress[] = updateProgress.data!.map(item => ({
+        date: new Date(item.updateDate),
+        currentValue: item.updatedValue,
+        objetive: objective.data!.targetValue,
+    }));
 
-    
 
     return (
         <div>
-            <DataTable columns={columns} data={objectives.data!} isLoading={objectives.isLoading} />
+            <Graph3 data={progressData} />
+            <DataTable columns={columns} data={updateProgress.data!} isLoading={updateProgress.isLoading} />
         </div>
     );
 }

@@ -80,6 +80,7 @@ export const t = initTRPC
                 return { ...shape, message: 'Internal server error' };
             }
             console.log('error', error);
+            console.log('shape', shape);
             return shape;
         },
 

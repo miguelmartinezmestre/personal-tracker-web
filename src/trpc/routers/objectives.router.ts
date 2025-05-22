@@ -2,6 +2,7 @@ import { z } from 'zod';
 import prisma from '@/lib/client';
 import { objectiveSchema, savedObjectiveSchema } from '@/schemas/objective';
 import { createTRPCRouter, publicProcedure } from '../init';
+import { TRPCError } from '@trpc/server';
 
 export const objectivesRouter = createTRPCRouter({
     createObjective: publicProcedure
@@ -58,6 +59,45 @@ export const objectivesRouter = createTRPCRouter({
             });
 
             return objectives;
+        }),
+    getObjectiveById: publicProcedure
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/objectives/{id}',
+                tags: ['objectives'],
+                summary: 'Get all objectives by user',
+            },
+        })
+        .input(
+            z.object({
+                id: z.number(),
+            })
+        )
+        .output(savedObjectiveSchema)
+        .query(async ({ input }) => {
+            const objective = await prisma.objective.findFirst({
+                where: {
+                    id: input.id,
+                },
+            });
+
+            if (!objective) {
+                return {
+                    title: '',
+                    description: '',
+                    targetValue: 0,
+                    currentValue: 0,
+                    deadline: null,
+                    unit: '',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    id: input.id,
+                    categoryId: null,
+                };
+            }
+
+            return objective;
         }),
     updateObjective: publicProcedure
         .meta({

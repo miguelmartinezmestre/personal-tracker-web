@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import prisma from '@/lib/client';
 import { createTRPCRouter, publicProcedure } from '../init';
+import { updatePasswordSchema } from '@/schemas/update-password';
+import { verifyPassword } from '@/server/crypto.service';
+import { TRPCError } from '@trpc/server';
 export const userRouter = createTRPCRouter({
     getAccountDetails: publicProcedure
         .meta({
@@ -11,6 +14,7 @@ export const userRouter = createTRPCRouter({
                 summary: 'Get account details',
             },
         })
+        .input(z.object({}))
         .output(
             z.object({
                 email: z.string(),
@@ -18,20 +22,31 @@ export const userRouter = createTRPCRouter({
             })
         )
         .query(async ({ ctx }) => {
-            const user = await prisma.user.findUnique({
-                where: {
-                    id: ctx.userId,
-                },
-            });
-
-            if (!user) {
-                throw new Error('User not found');
+            try {
+                const user = await prisma.user.findFirst({
+                    where: {
+                        id: ctx.userId,
+                    },
+                });
+    
+                if (!user) {
+                    return {
+                        email: '',
+                        username: '',
+                    };
+                }
+    
+                return {
+                    email: user.email,
+                    username: user.username ?? '',
+                };
+            } catch (error) {
+                console.error(error);
+                return {
+                    email: '',
+                    username: '',
+                };
             }
-
-            return {
-                email: user.email,
-                username: user.username ?? '',
-            };
         }),
 
     updateAccountDetails: publicProcedure
@@ -70,6 +85,56 @@ export const userRouter = createTRPCRouter({
 
             return {
                 message: 'Account details updated',
+                error: false,
+            };
+        }),
+    updatePassword: publicProcedure
+        .meta({
+            openapi: {
+                method: 'PUT',
+                path: '/user/password',
+                tags: ['user'],
+                summary: 'Update password',
+            },
+        })
+        .input(updatePasswordSchema)
+        .output(z.object({ message: z.string(), error: z.boolean() }))
+        .mutation(async ({ ctx, input }) => {
+
+            const user = await prisma.user.findFirst({
+                where: { id: ctx.userId },
+            });
+
+            if (!user) {
+                return {
+                    message: 'User not found',
+                    error: true,
+                };
+            }
+
+            const isPasswordCorrect = await verifyPassword(input.password, user.password);
+
+            if (!isPasswordCorrect) {
+                return {
+                    message: 'Incorrect password',
+                    error: true,
+                };
+            }
+
+            const updatedUser = await prisma.user.update({
+                where: { id: ctx.userId },
+                data: { password: input.newPassword },
+            });
+
+            if (!updatedUser) {
+                return {
+                    message: 'Failed to update password',
+                    error: true,
+                };
+            }
+
+            return {
+                message: 'Password updated',
                 error: false,
             };
         }),

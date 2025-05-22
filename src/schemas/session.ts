@@ -6,8 +6,8 @@ export const sessionSchema = z.object({
     value: z.string(),
     status: z.string(),
     userAgent: z.string().optional().nullable(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+    // createdAt: z.date().nullable(),
+    // updatedAt: z.date().nullable(),
 });
 
 export const savedSessionSchema = sessionSchema.extend({

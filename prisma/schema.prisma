@@ -17,7 +17,6 @@ model User {
   objectives       Objective[]
   notifications    Notification[]
   sessions         Session[]
-  teams            TeamMember[]
   auditLogs        AuditLog[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -40,8 +39,7 @@ model Objective {
   userId          Int
   title           String
   description     String?
-  category        Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  categoryId      Int?
+  category        String?
   targetValue     Float
   currentValue    Float
   deadline        DateTime?
@@ -76,34 +74,6 @@ model Notification {
   message          String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-model Team {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String
-  members     TeamMember[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model TeamMember {
-  id        Int      @id @default(autoincrement())
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  role      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Category {
-  id        Int      @id @default(autoincrement())
-  name      String
-  objectives Objective[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model AuditLog {

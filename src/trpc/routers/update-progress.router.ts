@@ -5,13 +5,13 @@ import { savedUpdateProgressSchema } from '@/schemas/update-progress';
 import { updateProgressSchema } from '@/schemas/update-progress';
 
 export const updateProgressRouter = createTRPCRouter({
-    createObjective: publicProcedure
+    createUpdateProgress: publicProcedure
         .meta({
             openapi: {
                 method: 'POST',
                 path: '/update-progress',
                 tags: ['update-progress'],
-                summary: 'Update progress',
+                summary: 'Create an update progress',
             },
         })
         .input(updateProgressSchema)
@@ -32,7 +32,7 @@ export const updateProgressRouter = createTRPCRouter({
 
             return newUpdateProgress;
         }),
-    getObjectivesByObjectiveId: publicProcedure
+    getUpdateProgressByObjectiveId: publicProcedure
         .meta({
             openapi: {
                 method: 'GET',
@@ -48,19 +48,24 @@ export const updateProgressRouter = createTRPCRouter({
         )
         .output(z.array(savedUpdateProgressSchema))
         .query(async ({ input }) => {
-            const updateProgress = await prisma.progressUpdate.findMany({
-                where: {
-                    objectiveId: input.id,
-                },
-            });
-
-            return updateProgress;
+            try {
+                const updateProgress = await prisma.progressUpdate.findMany({
+                    where: {
+                        objectiveId: input.id,
+                    },
+                });
+    
+                return updateProgress;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
         }),
     updateUpdateProgress: publicProcedure
         .meta({
             openapi: {
                 method: 'PATCH',
-                path: '/objectives/{id}',
+                path: '/update-progress/{id}',
                 tags: ['update-progress'],
                 summary: 'Update an update progress',
             },
@@ -86,7 +91,7 @@ export const updateProgressRouter = createTRPCRouter({
         .meta({
             openapi: {
                 method: 'DELETE',
-                path: '/objectives/{id}',
+                path: '/update-progress/{id}',
                 tags: ['update-progress'],
                 summary: 'Delete an update progress',
             },
