@@ -9,7 +9,9 @@
     "lint": "next lint",
     "build:email": "email build",
     "dev:email": "email dev --dir ./src/emails --port 3005",
-    "export:email": "email export"
+    "export:email": "email export",
+    "generate:prisma": "prisma generate",
+    "push:prisma": "prisma db push"
   },
   "dependencies": {
     "@react-email/components": "0.0.41",
