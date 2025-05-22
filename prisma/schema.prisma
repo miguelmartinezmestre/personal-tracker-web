@@ -70,6 +70,7 @@ model Notification {
   userId           Int
   objective        Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
   objectiveId      Int
+  read             Boolean   @default(false)
   notificationType String
   notificationDate DateTime
   message          String
