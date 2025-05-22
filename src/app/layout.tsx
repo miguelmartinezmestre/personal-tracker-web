@@ -2,6 +2,11 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/providers/theme";
 import { TRPCReactProvider } from "@/trpc/client";
 
+export const metadata = {
+  title: "Metricas",
+  description: "Metricas",
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
