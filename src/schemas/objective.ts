@@ -9,6 +9,8 @@ export const objectiveSchema = z.object({
     deadline: z.date().optional().nullable(),
     status: z.string().optional().nullable(),
     unit: z.string().optional().nullable(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
 });
 
 export const savedObjectiveSchema = objectiveSchema.extend({

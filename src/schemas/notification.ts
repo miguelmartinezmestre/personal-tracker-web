@@ -8,6 +8,8 @@ export const notificationSchema = z.object({
     notificationDate: z.date(),
     message: z.string(),
     read: z.boolean(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
 });
 
 export const savedNotificationSchema = notificationSchema.extend({
