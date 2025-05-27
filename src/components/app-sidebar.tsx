@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Home, Loader2, Settings } from 'lucide-react';
+import { Bell, Frame, Home, Loader2, Settings, Users } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -16,6 +16,8 @@ import EditSettingsFormModal from '@/components/settings/account-settings-modal'
 import Link from 'next/link';
 import { useTRPC } from '@/trpc/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import getUser from '@/server/getUser';
+import { useEffect, useState } from 'react';
 // import { useAuthContext } from '@/providers/auth-provider';
 // import { LanguageSwitcher } from './team-switcher';
 // import { useTranslation } from 'react-i18next';
@@ -49,10 +51,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
     // const { user, isLoading } = useAuthContext();
     // const { t } = useTranslation();
+    const [projectsState, setProjectsState] = useState<typeof projects>(projects);
 
     if (accountDetails.isLoading) {
         return <Loader2 className="animate-spin"/>;
     }
+
+    useEffect(() => {
+        console.log(accountDetails.data?.role);
+        if (accountDetails.data?.role === 'ADMIN') {
+            setProjectsState([...projects, {
+                name: 'Admin Panel',
+                url: '/dashboard/admin-panel',
+                icon: Users,
+            }]);
+        }
+    }, [accountDetails.data?.role]);
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -75,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <SidebarMenu>
-                        {projects.map(item => (
+                        {projectsState.map(item => (
                             <SidebarMenuItem key={item.name}>
                                 <SidebarMenuButton asChild>
                                     <Link href={item.url} prefetch={true}>
