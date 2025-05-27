@@ -8,8 +8,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from './ui/alert-dialog';
-import { Button } from './ui/button';
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 // import { useAuthContext } from '../src/providers/auth-provider';
 // import { useDeleteUserMutation } from '../services/mutations/user';
 

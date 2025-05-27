@@ -1,13 +1,13 @@
 "use client"
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-} from './ui/chart';
+} from '@/components/ui/chart';
 const chartData = [
     { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
     { browser: 'safari', visitors: 200, fill: 'var(--color-safari)' },

@@ -7,7 +7,7 @@
 // import { useInvalidateSessionMutation } from '../services/mutations/sessions';
 // import { useSessionsQuery } from '../services/queries/sessions';
 // import { DataTable } from './table';
-// import { Button } from './ui/button';
+// import { Button } from '@/components/ui/button';
 // import { UserAgentIcon } from './user-agent';
 
 // export default function Sessions() {

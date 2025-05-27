@@ -1,8 +1,8 @@
 "use client"
 
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useEffect, useRef, useState } from 'react';
 
 export interface Progress {

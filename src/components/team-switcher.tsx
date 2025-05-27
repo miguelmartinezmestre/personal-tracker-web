@@ -8,13 +8,13 @@
 //     DropdownMenuItem,
 //     DropdownMenuLabel,
 //     DropdownMenuTrigger,
-// } from './ui/dropdown-menu';
+// } from '@/components/ui/dropdown-menu';
 // import {
 //     SidebarMenu,
 //     SidebarMenuButton,
 //     SidebarMenuItem,
 //     useSidebar,
-// } from './ui/sidebar';
+// } from '@/components/ui/sidebar';
 // import { useTranslation } from 'react-i18next';
 // import { useEffect, useState } from 'react';
 
