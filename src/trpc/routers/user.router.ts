@@ -19,6 +19,7 @@ export const userRouter = createTRPCRouter({
             z.object({
                 email: z.string(),
                 username: z.string(),
+                role: z.string(),
             })
         )
         .query(async ({ ctx }) => {
@@ -33,18 +34,21 @@ export const userRouter = createTRPCRouter({
                     return {
                         email: '',
                         username: '',
+                        role: '',
                     };
                 }
     
                 return {
                     email: user.email,
                     username: user.username ?? '',
+                    role: user.role,
                 };
             } catch (error) {
                 console.error(error);
                 return {
                     email: '',
                     username: '',
+                    role: '',
                 };
             }
         }),

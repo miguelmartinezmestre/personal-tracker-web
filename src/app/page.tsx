@@ -1,7 +1,6 @@
 import Section from '@/components/section';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { cookies } from 'next/headers';
 
 export default async function RouteComponent() {
 
