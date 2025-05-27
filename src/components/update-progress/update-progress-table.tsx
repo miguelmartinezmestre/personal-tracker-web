@@ -60,6 +60,7 @@ export default function UpdateProgressTable() {
                     <Button
                         onClick={async () => {
                             await deleteUpdateProgress.mutateAsync({ id: objetiveRow.id });
+                            queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: Number(objectiveId) }));
                         }}
                     >
                         Delete
@@ -78,7 +79,7 @@ export default function UpdateProgressTable() {
 
     return (
         <div>
-            <Graph3 data={progressData} />
+            {progressData.length > 0 && <Graph3 data={progressData} />}
             <DataTable columns={columns} data={updateProgress.data!} isLoading={updateProgress.isLoading} />
         </div>
     );

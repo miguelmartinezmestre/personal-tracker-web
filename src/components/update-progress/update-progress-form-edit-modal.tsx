@@ -19,13 +19,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
     Dialog,
@@ -36,26 +29,12 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Objective, savedObjectiveSchema } from '@/schemas/objective';
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
 import { UpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
-const statusOptions = [
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-];
 
-const categoryOptions = [
-    { value: 'personal', label: 'Personal' },
-    { value: 'work', label: 'Work' },
-    { value: 'health', label: 'Health' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'education', label: 'Education' },
-];
-
-export default function UpdateProgressFormModal({defaultValues}: {defaultValues: UpdateProgress}) {
+export default function UpdateProgressFormModal({ defaultValues }: { defaultValues: UpdateProgress }) {
 
     const trpc = useTRPC()
     const updateUpdateProgress = useMutation(trpc.updateProgress.updateUpdateProgress.mutationOptions());
@@ -74,8 +53,6 @@ export default function UpdateProgressFormModal({defaultValues}: {defaultValues:
             updateDate: values.updateDate,
             comment: values.comment ?? null,
             objectiveId: values.objectiveId,
-            createdAt: values.createdAt,
-            updatedAt: values.updatedAt,
         };
 
         console.log(updateData);
@@ -93,14 +70,14 @@ export default function UpdateProgressFormModal({defaultValues}: {defaultValues:
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Edit Objective
+                    Edit Progress
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Objective</DialogTitle>
+                    <DialogTitle>Edit Progress</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your objective. Click save when you're
+                        Fill out the form below to edit your progress. Click save when you're
                         done.
                     </DialogDescription>
                 </DialogHeader>
@@ -114,10 +91,15 @@ export default function UpdateProgressFormModal({defaultValues}: {defaultValues:
                                 <FormItem>
                                     <FormLabel>Updated Value</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter objective title" {...field} />
+                                        <Input placeholder="Enter updated value"
+                                            type="number"
+                                            {...field}
+                                            value={Number.isNaN(field.value) ? '' : field.value}
+                                            onChange={e => field.onChange(Number.parseFloat(e.target.value))}
+                                        />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your objective a clear, concise title.
+                                        Give your update progress a clear, concise title.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -126,132 +108,31 @@ export default function UpdateProgressFormModal({defaultValues}: {defaultValues:
 
                         <FormField
                             control={form.control}
-                            name="description"
+                            name="comment"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>Comment</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your objective in detail"
+                                            placeholder="Describe your update progress in detail"
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your objective.
+                                        Optional: Add details about your update progress.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="category"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Category</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || ''}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {categoryOptions.map(category => (
-                                                <SelectItem
-                                                    key={category.value}
-                                                    value={category.value}
-                                                >
-                                                    {category.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        Optional: Categorize your objective.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="targetValue"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Target Value</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                {...field}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        Number.parseFloat(e.target.value)
-                                                    )
-                                                }
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            The goal you want to achieve.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="unit"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Unit</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="e.g., kg, miles, hours"
-                                                {...field}
-                                                value={field.value || ''}
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            Optional: Unit of measurement.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
 
                         <FormField
                             control={form.control}
-                            name="currentValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Current Value</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            {...field}
-                                            onChange={e =>
-                                                field.onChange(Number.parseFloat(e.target.value))
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormDescription>Your current progress.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="deadline"
+                            name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
                                     <FormLabel>Deadline</FormLabel>
@@ -283,50 +164,18 @@ export default function UpdateProgressFormModal({defaultValues}: {defaultValues:
                                             />
                                         </PopoverContent>
                                     </Popover>
-                                    <FormDescription>
-                                        Optional: When do you want to achieve this objective?
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || 'not_started'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a status" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {statusOptions.map(status => (
-                                                <SelectItem key={status.value} value={status.value}>
-                                                    {status.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        Current status of your objective.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">Save Objective</Button>
+                            <Button type="submit">Save Progress</Button>
                         </DialogFooter>
                     </form>
                 </Form>

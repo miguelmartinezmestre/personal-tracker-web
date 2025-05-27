@@ -26,24 +26,16 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-const fallbackData = [
-    { date: new Date('2024-01-01'), currentValue: 5, objetive: 90 },
-    { date: new Date('2024-02-01'), currentValue: 23, objetive: 90 },
-    { date: new Date('2024-03-01'), currentValue: 32, objetive: 90 },
-    { date: new Date('2024-04-01'), currentValue: 37, objetive: 90 },
-    { date: new Date('2024-05-01'), currentValue: 45, objetive: 90 },
-    { date: new Date('2024-06-01'), currentValue: 52, objetive: 90 },
-];
-
-export function Graph3({ data = fallbackData }: ProgressProps) {
+export function Graph3({ data = [] }: ProgressProps) {
     // Asegurarse de que hay datos para mostrar
-    const chartData = data && data.length > 0 ? data : fallbackData;
+    const chartData = data;
     const [chartWidth, setChartWidth] = useState(0);
     const [chartHeight, setChartHeight] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Medir las dimensiones del contenedor al montar y cuando cambie el tamaño
     useEffect(() => {
+        console.log('chartData', chartData);
         const updateDimensions = () => {
             if (containerRef.current) {
                 const { clientWidth, clientHeight } = containerRef.current;
@@ -73,7 +65,7 @@ export function Graph3({ data = fallbackData }: ProgressProps) {
     return (
         <Card className="w-full">
             <CardHeader>
-                <CardTitle>Progreso de los ultimos 5 objetivos</CardTitle>
+                <CardTitle>Progreso del objetivo</CardTitle>
                 {/* <CardDescription>January - June 2024</CardDescription> */}
             </CardHeader>
             <CardContent>
