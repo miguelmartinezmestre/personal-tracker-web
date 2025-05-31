@@ -11,7 +11,8 @@
     "dev:email": "email dev --dir ./src/emails --port 3005",
     "export:email": "email export",
     "generate:prisma": "prisma generate",
-    "push:prisma": "prisma db push"
+    "push:prisma": "prisma db push",
+    "test": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -67,6 +68,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "latest",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
