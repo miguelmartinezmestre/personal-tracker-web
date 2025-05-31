@@ -14,7 +14,7 @@ model User {
   password         String
   username         String?
   resetPasswordKey String?
-  role             Role           @default(MEMBER)
+  role             Role           @default(USER)
   objectives       Objective[]
   notifications    Notification[]
   sessions         Session[]
@@ -102,7 +102,7 @@ model TeamMember {
   teamId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  role      String
+  role      TeamRole
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -117,6 +117,10 @@ model TeamMember {
 
 enum Role {
   ADMIN
+  USER
+}
+
+enum TeamRole {
   MANAGER
   MEMBER
 }
