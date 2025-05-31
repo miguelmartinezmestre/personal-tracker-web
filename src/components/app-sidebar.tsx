@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Home, Loader2, Settings, Users } from 'lucide-react';
+import { Bell, Frame, Goal, Home, Loader2, Settings, Users } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -27,7 +27,7 @@ const projects = [
     {
         name: 'Objectives',
         url: '/dashboard/objectives',
-        icon: Frame,
+        icon: Goal,
     },
     {
         name: 'Notifications',

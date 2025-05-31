@@ -44,6 +44,7 @@
     "@types/swagger-ui-react": "^5.18.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.2",

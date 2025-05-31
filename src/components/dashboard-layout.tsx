@@ -1,8 +1,9 @@
-import { AppSidebar } from './app-sidebar';
-import { BreadcrumbNav } from './breadcrump';
-import { ThemeToggle } from './theme-switcher';
+import { AppSidebar } from '@/components/app-sidebar';
+import { BreadcrumbNav } from '@/components/breadcrump';
+import { ThemeToggle } from '@/components/theme-switcher';
 import { Separator } from '@/components/ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import CommandMenu from '@/components/command';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
@@ -18,7 +19,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </div>
                     <ThemeToggle />
                 </header>
-                <div className="grid grid-cols-1 gap-4 p-4 pt-0">{children}</div>
+                <CommandMenu />
+                <div className="grid grid-cols-1 gap-4 p-4 pt-0">
+                    {children}
+                </div>
             </SidebarInset>
         </SidebarProvider>
     );
