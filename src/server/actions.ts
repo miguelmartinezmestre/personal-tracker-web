@@ -4,7 +4,7 @@ import { actionClient } from '@/lib/safe-action';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { generateSessionId, hashPassword, verifyPassword } from './crypto.service';
+import { generateSessionId, hashPassword, verifyPassword } from '@/server/crypto.service';
 import { loginSchema } from '@/schemas/login';
 import { registerSchema } from '@/schemas/register';
 

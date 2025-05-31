@@ -1,7 +1,7 @@
 "use client"
 
 import { X, Menu } from 'lucide-react';
-import NavBar from './navbar';
+import NavBar from '@/components/navbar';
 import { useState } from 'react';
 import Link from 'next/link';
 

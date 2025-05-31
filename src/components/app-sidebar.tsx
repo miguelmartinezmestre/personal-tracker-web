@@ -11,16 +11,12 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { NavUser } from './nav-user';
+import { NavUser } from '@/components/nav-user';
 import EditSettingsFormModal from '@/components/settings/account-settings-modal';
 import Link from 'next/link';
 import { useTRPC } from '@/trpc/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import getUser from '@/server/getUser';
 import { useEffect, useState } from 'react';
-// import { useAuthContext } from '@/providers/auth-provider';
-// import { LanguageSwitcher } from './team-switcher';
-// import { useTranslation } from 'react-i18next';
 
 const projects = [
     {

@@ -27,7 +27,7 @@ export function NavUser({
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild data-testid="dropdown-menu-trigger">
                         <SidebarMenuButton
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -62,8 +62,8 @@ export function NavUser({
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={async () => await logoutAction()}>
-                            <LogOut />
+                        <DropdownMenuItem onClick={async () => await logoutAction()} data-testid="logout-button">
+                            <LogOut/>
                             Log out
                         </DropdownMenuItem>
                     </DropdownMenuContent>
