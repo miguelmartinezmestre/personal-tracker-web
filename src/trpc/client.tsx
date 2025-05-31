@@ -5,8 +5,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
-import { makeQueryClient } from './query-client';
-import type { AppRouter } from './routers/router';
+import { makeQueryClient } from '@/trpc/query-client';
+import type { AppRouter } from '@/trpc/routers/router';
 import superjson from 'superjson';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && next dev --turbopack",
+    "dev": "prisma generate && next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,7 +11,8 @@
     "dev:email": "email dev --dir ./src/emails --port 3005",
     "export:email": "email export",
     "generate:prisma": "prisma generate",
-    "push:prisma": "prisma db push"
+    "push:prisma": "prisma db push",
+    "test": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -43,6 +44,7 @@
     "@types/swagger-ui-react": "^5.18.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "jsonwebtoken": "^9.0.2",
@@ -56,6 +58,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",
     "recharts": "^2.15.3",
+    "sonner": "^2.0.3",
     "superjson": "^2.2.2",
     "swagger-ui-react": "^5.21.0",
     "tailwind-merge": "^3.3.0",
@@ -66,6 +69,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "latest",
+    "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

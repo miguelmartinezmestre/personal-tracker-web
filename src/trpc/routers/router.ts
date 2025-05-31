@@ -1,14 +1,18 @@
 import { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
 import { createTRPCRouter } from '../init';
-import { objectivesRouter } from './objectives.router';
-import { userRouter } from './user.router';
+import { objectivesRouter } from '@/trpc/routers/objectives.router';
+import { userRouter } from '@/trpc/routers/user.router';
 import { getUserId } from '@/server/getUserId';
-import { updateProgressRouter } from './update-progress.router';
+import { updateProgressRouter } from '@/trpc/routers/update-progress.router';
+import { teamsRouter } from '@/trpc/routers/teams.router';
+import { teamMembersRouter } from '@/trpc/routers/team-member.router';
 
 export const appRouter = createTRPCRouter({
     objectives: objectivesRouter,
     user: userRouter,
     updateProgress: updateProgressRouter,
+    teams: teamsRouter,
+    teamMembers: teamMembersRouter,
 });
 
 // export type definition of API

@@ -26,7 +26,7 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-export function Graph3({ data = [] }: ProgressProps) {
+export function ObjectiveProgressOverTimeGraph({ data = [] }: ProgressProps) {
     // Asegurarse de que hay datos para mostrar
     const chartData = data;
     const [chartWidth, setChartWidth] = useState(0);
@@ -35,7 +35,7 @@ export function Graph3({ data = [] }: ProgressProps) {
 
     // Medir las dimensiones del contenedor al montar y cuando cambie el tamaño
     useEffect(() => {
-        console.log('chartData', chartData);
+        // console.log('chartData', chartData);
         const updateDimensions = () => {
             if (containerRef.current) {
                 const { clientWidth, clientHeight } = containerRef.current;
@@ -70,7 +70,7 @@ export function Graph3({ data = [] }: ProgressProps) {
             </CardHeader>
             <CardContent>
                 <div ref={containerRef} className="w-full h-[300px] sm:h-[350px] md:h-[400px]">
-                    <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ChartContainer config={{} satisfies ChartConfig} className="w-full h-full">
                         {chartWidth > 0 && chartHeight > 0 ? (
                             <LineChart
                                 width={chartWidth}

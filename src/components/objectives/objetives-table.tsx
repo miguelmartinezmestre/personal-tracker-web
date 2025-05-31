@@ -9,7 +9,7 @@ import {
 } from '@/schemas/objective';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import EditObjectiveFormModal from './objective-form-edit-modal';
+import EditObjectiveFormModal from '@/components/objectives/objective-form-edit-modal';
 import { getQueryClient } from '@/trpc/client';
 
 function t(key: string) {
