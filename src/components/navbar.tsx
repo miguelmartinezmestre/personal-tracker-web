@@ -10,7 +10,6 @@ type LinkArray = LinkItem[];
 const defaultLinks: LinkArray = [
     { name: 'Registrase', href: '/register' },
     { name: 'Iniciar sesión', href: '/login' },
-    { name: 'Mas Información', href: '/about' },
 ];
 
 export default function NavBar() {
