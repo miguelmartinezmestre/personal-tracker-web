@@ -81,10 +81,10 @@ export default function CreateTeamFormModal() {
                                 <FormItem>
                                     <FormLabel>Title</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter objective title" {...field} />
+                                        <Input placeholder="Enter team title" {...field} />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your objective a clear, concise title.
+                                        Give your team a clear, concise title.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -99,14 +99,14 @@ export default function CreateTeamFormModal() {
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your objective in detail"
+                                            placeholder="Describe your team in detail"
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your objective.
+                                        Optional: Add details about your team.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -117,7 +117,7 @@ export default function CreateTeamFormModal() {
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">Save Objective</Button>
+                            <Button type="submit">Save Team</Button>
                         </DialogFooter>
                     </form>
                 </Form>

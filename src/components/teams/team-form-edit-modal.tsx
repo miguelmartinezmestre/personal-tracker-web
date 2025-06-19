@@ -71,9 +71,9 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Objective</DialogTitle>
+                    <DialogTitle>Edit team</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your objective. Click save when you're
+                        Fill out the form below to edit your team. Click save when you're
                         done.
                     </DialogDescription>
                 </DialogHeader>
@@ -105,14 +105,14 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your objective in detail"
+                                            placeholder="Describe your team in detail"
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your objective.
+                                        Optional: Add details about your team.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -123,7 +123,7 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">Save Objective</Button>
+                            <Button type="submit">Save team</Button>
                         </DialogFooter>
                     </form>
                 </Form>

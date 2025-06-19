@@ -2,7 +2,7 @@
 
 import { DataTable } from '@/components/table';
 import { useTRPC } from '@/trpc/client';
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { getQueryClient } from '@/trpc/client';
