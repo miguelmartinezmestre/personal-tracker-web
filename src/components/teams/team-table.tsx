@@ -65,7 +65,7 @@ export default function TeamsTable() {
                 const teamRow = row.original;
                 if (teamRow.id) {
                     return (
-                        <Link href={`/dashboard/teams/${teamRow.id}`} prefetch={true}>Go to team</Link>
+                        <Link href={`/dashboard/teams/${teamRow.id}`} prefetch={false}>Go to team</Link>
                     );
                 }
 
@@ -74,9 +74,9 @@ export default function TeamsTable() {
         },
     ];
 
-    
 
-    
+
+
 
     return (
         <div>

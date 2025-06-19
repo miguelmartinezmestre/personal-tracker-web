@@ -50,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const [projectsState, setProjectsState] = useState<typeof projects>(projects);
 
     if (accountDetails.isLoading) {
-        return <Loader2 className="animate-spin"/>;
+        return <Loader2 className="animate-spin" />;
     }
 
     useEffect(() => {
@@ -88,7 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {projectsState.map(item => (
                             <SidebarMenuItem key={item.name}>
                                 <SidebarMenuButton asChild>
-                                    <Link href={item.url} prefetch={true}>
+                                    <Link href={item.url} prefetch={false}>
                                         <item.icon />
                                         {/* <span>{t(String(item.name).toLowerCase())}</span> */}
                                         {item.name}

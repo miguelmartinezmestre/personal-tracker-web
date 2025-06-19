@@ -4,6 +4,7 @@ import { ThemeToggle } from '@/components/theme-switcher';
 import { Separator } from '@/components/ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import CommandMenu from '@/components/command';
+import { LanguageSwitcher } from './language-switcher';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
@@ -18,6 +19,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         <BreadcrumbNav />
                     </div>
                     <ThemeToggle />
+                    <LanguageSwitcher />
                 </header>
                 <CommandMenu />
                 <div className="grid grid-cols-1 gap-4 p-4 pt-0">

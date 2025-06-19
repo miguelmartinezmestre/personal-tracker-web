@@ -195,6 +195,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                                         Number.parseFloat(e.target.value)
                                                     )
                                                 }
+                                                disabled={true}
                                             />
                                         </FormControl>
                                         <FormDescription>
@@ -240,6 +241,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                             onChange={e =>
                                                 field.onChange(Number.parseFloat(e.target.value))
                                             }
+                                            disabled={true}
                                         />
                                     </FormControl>
                                     <FormDescription>Your current progress.</FormDescription>

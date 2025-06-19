@@ -32,7 +32,7 @@ export function BreadcrumbNav({
     >
       <ol className="flex items-center space-x-1">
         <li>
-          <Link href="/dashboard/home" className="flex items-center hover:text-foreground" aria-label={homeLabel} prefetch={true}>
+          <Link href="/dashboard/home" className="flex items-center hover:text-foreground" aria-label={homeLabel} prefetch={false}>
             <Home className="h-4 w-4" />
           </Link>
         </li>
