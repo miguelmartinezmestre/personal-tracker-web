@@ -17,7 +17,7 @@ const chartData = [
     { objective: 'other', visitors: 90, fill: 'var(--color-other)' },
 ];
 
-export function RemainDaysToDeadlineGraph() {
+export function RemainDaysToDeadlineGraph({ data }: { data: { objective: string; days: number; fill: string }[] }) {
     return (
         <Card className='h-full'>
             <CardHeader>
@@ -27,7 +27,7 @@ export function RemainDaysToDeadlineGraph() {
                 <ChartContainer config={{} satisfies ChartConfig}>
                     <BarChart
                         accessibilityLayer
-                        data={chartData}
+                        data={data}
                         layout="vertical"
                         margin={{
                             left: 0,

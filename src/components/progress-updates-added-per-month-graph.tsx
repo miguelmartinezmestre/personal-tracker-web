@@ -24,7 +24,7 @@ const chartData = [
     { month: 'December', count: 214 },
 ];
 
-export function ProgressUpdatesAddedPerMonthGraph() {
+export function ProgressUpdatesAddedPerMonthGraph({ data }: { data: { month: string; count: number }[] }) {
     return (
         <Card>
             <CardHeader>
@@ -32,7 +32,7 @@ export function ProgressUpdatesAddedPerMonthGraph() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{} satisfies ChartConfig}>
-                    <BarChart accessibilityLayer data={chartData}>
+                    <BarChart accessibilityLayer data={data}>
                         <CartesianGrid vertical={false} />
                         <XAxis
                             dataKey="month"
