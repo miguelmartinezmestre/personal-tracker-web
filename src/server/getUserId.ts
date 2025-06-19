@@ -10,6 +10,7 @@ export async function getUserId() {
     const sessionFound = await prisma.session.findFirst({
         where: {
             value: session?.value,
+            status: 'active',
         },
         include: {
             user: true,

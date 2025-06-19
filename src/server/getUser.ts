@@ -14,6 +14,7 @@ export async function getUser() {
     const session = await prisma.session.findFirst({
         where: {
             value: sessionId.value,
+            status: 'active',
         },
         include: {
             user: true,
