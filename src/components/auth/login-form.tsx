@@ -86,7 +86,7 @@ export default function LoginForm() {
 
                 <div className="flex justify-end">
                     <Link
-                        href="/reset-password"
+                        href="/forget-password"
                         className="text-sm text-primary hover:text-primary/80 transition-colors"
                     >
                         ¿Olvidaste tu contraseña?
@@ -105,7 +105,7 @@ export default function LoginForm() {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/register" prefetch={true}>¿No tienes una cuenta? Registrarse</Link>
+                        <Link href="/register" prefetch={false}>¿No tienes una cuenta? Registrarse</Link>
                     </p>
                 </div>
             </form>

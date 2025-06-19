@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import prisma from '@/lib/client';
-import { objectiveSchema, savedObjectiveSchema } from '@/schemas/objective';
 import { createTRPCRouter, publicProcedure } from '../init';
-import { TRPCError } from '@trpc/server';
-import { savedSessionSchema, sessionSchema } from '@/schemas/session';
+import { savedSessionSchema } from '@/schemas/session';
 
 export const sessionsRouter = createTRPCRouter({
     getSessionsByUser: publicProcedure

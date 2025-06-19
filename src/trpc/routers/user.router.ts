@@ -175,7 +175,7 @@ export const userRouter = createTRPCRouter({
 
             const objectivesWithMostProgressResult = await prisma.$queryRawTyped(getObjectivesWithMostProgress(ctx.userId));
 
-            console.log(objectiveCountsResult)
+            // console.log(objectiveCountsResult)
 
             return {
                 mostRecentObjectivesDeadlines: mostRecentObjectivesDeadlines.map((obj, index) => {

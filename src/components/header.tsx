@@ -13,7 +13,7 @@ export default function Header() {
             <nav className="container mx-auto px-4 py-3">
                 <div className="flex justify-between items-center">
                     <h1>
-                        <Link href="/" className="text-xl font-bold text-primary" prefetch={true}>
+                        <Link href="/" className="text-xl font-bold text-primary" prefetch={false}>
                             Metricas
                         </Link>
                     </h1>

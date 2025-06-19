@@ -19,7 +19,7 @@ function t(key: string) {
 
 export default async function Dashboard() {
 
-    const { name, email, id, role } = await getUser();
+    const { name, id } = await getUser();
 
     const queryClient = getQueryClient();
 
@@ -38,7 +38,6 @@ export default async function Dashboard() {
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
             <h1 className="text-2xl font-bold" data-testid="welcome-message">Welcome {name}</h1>
-            {JSON.stringify(results)}
             <Stats />
             <div>
                 <ObjetivesTable />

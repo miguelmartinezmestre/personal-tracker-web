@@ -131,7 +131,7 @@ export default function RegisterForm() {
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
-                    // disabled={register.isPending}
+                // disabled={register.isPending}
                 >
                     {/* {register.isPending ? 'Registrando...' : 'Registrarse'} */}
                     Registrarse
@@ -139,7 +139,7 @@ export default function RegisterForm() {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/login" prefetch={true} >¿Ya tienes una cuenta? Iniciar sesión</Link>
+                        <Link href="/login" prefetch={false} >¿Ya tienes una cuenta? Iniciar sesión</Link>
                     </p>
                 </div>
             </form>
