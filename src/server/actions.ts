@@ -238,7 +238,7 @@ export const forgetPasswordAction = actionClient
             },
         });
 
-        sendRecoverPasswordEmail(userFound.username ?? '', userFound.email, resetPasswordKey);
+        sendRecoverPasswordEmail(userFound.username ?? '', userFound.email, process.env.APP_URL + '/reset-password?key=' + resetPasswordKey);
 
         return {
             message: 'Recovery email sent successfully',

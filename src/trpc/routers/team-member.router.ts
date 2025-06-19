@@ -5,6 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { teamMemberSchema, savedTeamMemberSchema } from '@/schemas/team-member';
 import { randomBytes } from 'crypto';
 import { Role, TeamRole } from '@prisma/client';
+import { generateResetPasswordKey } from '@/server/crypto.service';
+import { sendRecoverPasswordEmail } from '@/lib/email';
 
 export const teamMembersRouter = createTRPCRouter({
     createTeamMember: publicProcedure
@@ -49,8 +51,6 @@ export const teamMembersRouter = createTRPCRouter({
                 },
             });
 
-            // send email invite user to team
-
             const newTeamMember = await prisma.teamMember.create({
                 data: {
                     userId: user.id,
@@ -58,6 +58,19 @@ export const teamMembersRouter = createTRPCRouter({
                     role: input.role as TeamRole,
                 }
             });
+            
+            const resetPasswordKey = await generateResetPasswordKey();
+
+            await prisma.user.update({
+                where: {
+                    id: user.id,
+                },
+                data: {
+                    resetPasswordKey: resetPasswordKey,
+                },
+            });
+
+            sendRecoverPasswordEmail(user.username ?? '', user.email, process.env.APP_URL + '/reset-password?key=' + resetPasswordKey);
 
             return { ...newTeamMember, email: user.email };
         }),
@@ -138,7 +151,7 @@ export const teamMembersRouter = createTRPCRouter({
             })
         )
         .output(z.string())
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             console.log(input.id);
 
             await prisma.teamMember.delete({
@@ -146,6 +159,13 @@ export const teamMembersRouter = createTRPCRouter({
                     id: input.id,
                 },
             });
+
+            await prisma.user.delete({
+                where: {
+                    id: input.id,
+                },
+            });
+
             return 'Team member deleted successfully';
         }),
 });
