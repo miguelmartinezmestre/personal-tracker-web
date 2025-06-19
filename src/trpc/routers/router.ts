@@ -6,6 +6,7 @@ import { getUserId } from '@/server/getUserId';
 import { updateProgressRouter } from '@/trpc/routers/update-progress.router';
 import { teamsRouter } from '@/trpc/routers/teams.router';
 import { teamMembersRouter } from '@/trpc/routers/team-member.router';
+import { sessionsRouter } from './sessions.route';
 
 export const appRouter = createTRPCRouter({
     objectives: objectivesRouter,
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
     updateProgress: updateProgressRouter,
     teams: teamsRouter,
     teamMembers: teamMembersRouter,
+    sessions: sessionsRouter,
 });
 
 // export type definition of API
