@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { getQueryClient } from '@/trpc/client';
 import { Session } from '@/schemas/session';
 import { UserAgentIcon } from '../user-agent';
+import { useRouter } from 'next/navigation';
 
 export default function SessionsTable() {
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const sessions = useSuspenseQuery(trpc.sessions.getSessionsByUser.queryOptions({}));
     const invalidateSession = useMutation(trpc.sessions.invalidateSession.mutationOptions());
+    const router = useRouter();
 
     const columns: ColumnDef<Session>[] = [
         {
@@ -42,6 +44,7 @@ export default function SessionsTable() {
                             onClick={async () => {
                                 await invalidateSession.mutateAsync({ id: objetiveRow.id });
                                 await queryClient.invalidateQueries(trpc.sessions.getSessionsByUser.queryOptions({}));
+                                router.refresh();
                             }}
                         >
                             Cerrar sesion
