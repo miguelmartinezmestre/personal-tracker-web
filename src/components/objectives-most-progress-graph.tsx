@@ -17,7 +17,7 @@ const chartData = [
     { objective: 'other', visitors: 90, fill: 'var(--color-other)' },
 ];
 
-export function ObjetivesMostProgressGraph() {
+export function ObjetivesMostProgressGraph({ data }: { data: { objective: string; progress: number }[] }) {
     return (
         <Card className='h-full'>
             <CardHeader>
@@ -27,7 +27,7 @@ export function ObjetivesMostProgressGraph() {
                 <ChartContainer config={{} satisfies ChartConfig}>
                     <BarChart
                         accessibilityLayer
-                        data={chartData}
+                        data={data}
                         layout="vertical"
                         margin={{
                             left: 0,
@@ -40,9 +40,9 @@ export function ObjetivesMostProgressGraph() {
                             tickMargin={10}
                             axisLine={false}
                         />
-                        <XAxis dataKey="visitors" type="number"  />
+                        <XAxis dataKey="progress" type="number"  />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                        <Bar dataKey="visitors" layout="vertical" radius={5} />
+                        <Bar dataKey="progress" layout="vertical" radius={5} />
                     </BarChart>
                 </ChartContainer>
             </CardContent>
