@@ -4,6 +4,9 @@ import { createTRPCRouter, publicProcedure } from '../init';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { verifyPassword } from '@/server/crypto.service';
 import { TRPCError } from '@trpc/server';
+import { dashboardGraphsDataSchema } from '@/schemas/dashboard-graphs-data';
+import { getDashboardObjectivesCounts, getUpdateProgressPerMonth, getObjectivesWithMostProgress } from '@prisma/client/sql';
+
 export const userRouter = createTRPCRouter({
     getAccountDetails: publicProcedure
         .meta({
@@ -29,7 +32,7 @@ export const userRouter = createTRPCRouter({
                         id: ctx.userId,
                     },
                 });
-    
+
                 if (!user) {
                     return {
                         email: '',
@@ -37,7 +40,7 @@ export const userRouter = createTRPCRouter({
                         role: '',
                     };
                 }
-    
+
                 return {
                     email: user.email,
                     username: user.username ?? '',
@@ -141,5 +144,61 @@ export const userRouter = createTRPCRouter({
                 message: 'Password updated',
                 error: false,
             };
+        }),
+    getDashboardGraphsData: publicProcedure
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/user/dashboard-graphs-data',
+                tags: ['user'],
+                summary: 'Get dashboard graphs data',
+            },
+        })
+        .input(z.object({}))
+        .output(dashboardGraphsDataSchema)
+        .query(async ({ ctx }) => {
+
+            const mostRecentObjectivesDeadlines = await prisma.objective.findMany({
+                where: {
+                    userId: ctx.userId,
+                },
+                orderBy: {
+                    createdAt: 'desc',
+                },
+                take: 5,
+            });
+
+            const objectiveCountsResult = await prisma.$queryRawTyped(getDashboardObjectivesCounts(ctx.userId));
+            const objectiveCounts = objectiveCountsResult[0];
+
+            const progressAddedPerMonthResult = await prisma.$queryRawTyped(getUpdateProgressPerMonth(ctx.userId));
+
+            const objectivesWithMostProgressResult = await prisma.$queryRawTyped(getObjectivesWithMostProgress(ctx.userId));
+
+            console.log(objectiveCountsResult)
+
+            return {
+                mostRecentObjectivesDeadlines: mostRecentObjectivesDeadlines.map((obj, index) => {
+                    const daysToDeadline = obj.deadline ? Math.ceil((obj.deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    const colors = ['var(--color-chrome)', 'var(--color-safari)', 'var(--color-firefox)', 'var(--color-edge)', 'var(--color-other)'];
+                    return {
+                        objective: obj.title,
+                        days: daysToDeadline,
+                        fill: colors[index % colors.length],
+                    };
+                }),
+                totalObjectives: Number(objectiveCounts.total_objectives),
+                pendingObjectives: Number(objectiveCounts.pending_objectives),
+                completedObjectives: Number(objectiveCounts.completed_objectives),
+                progressAddedPerMonth: progressAddedPerMonthResult.map(item => ({
+                    month: item.month || '',
+                    count: Number(item.progress),
+                })),
+                objectivesWithMostProgress: objectivesWithMostProgressResult.map(item => ({
+                    objective: item.title,
+                    progress: Number(item.progress),
+                })),
+            };
+
         }),
 });
