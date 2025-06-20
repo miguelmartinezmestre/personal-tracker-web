@@ -3,8 +3,11 @@ import Footer from '@/components/footer';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Target, LineChart, CheckCircle, Users, Calendar, Lightbulb } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 export default async function RouteComponent() {
+
+    const t = await getTranslations('HomePage');
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -17,6 +20,7 @@ export default async function RouteComponent() {
                             <div className="space-y-2">
                                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                                     Cumple tus objetivos. Controla tu progreso.
+                                    {t('title')}
                                 </h1>
                                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                                     Define, controlar y visualiza tu objetivos personales de forma sencilla. Mantente motivo para alcazar tus objetivos.

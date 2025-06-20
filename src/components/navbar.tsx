@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-switcher';
 import { useEffect, useState } from 'react';
 import { isLoggedInAction } from '@/server/actions';
+import { LanguageSwitcher } from './language-switcher';
 
 type LinkItem = { name: string; href: string };
 
@@ -23,7 +24,8 @@ export default function NavBar() {
             }
         }
         getIsLoggedIn();
-    }, [links]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
@@ -34,6 +36,9 @@ export default function NavBar() {
             ))}
             <div className="text-primary hover:text-gray-700">
                 <ThemeToggle />
+            </div>
+            <div className="text-primary hover:text-gray-700">
+                <LanguageSwitcher />
             </div>
         </div>
     );
