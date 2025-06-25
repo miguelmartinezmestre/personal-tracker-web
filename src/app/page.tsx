@@ -19,11 +19,10 @@ export default async function RouteComponent() {
                         <div className="flex flex-col items-center space-y-4 text-center">
                             <div className="space-y-2">
                                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                                    Cumple tus objetivos. Controla tu progreso.
                                     {t('title')}
                                 </h1>
                                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                                    Define, controlar y visualiza tu objetivos personales de forma sencilla. Mantente motivo para alcazar tus objetivos.
+                                    {t('subtitle')}
                                 </p>
                             </div>
                             <div className="space-x-4">
@@ -31,13 +30,13 @@ export default async function RouteComponent() {
                                     href="/register"
                                     className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                                 >
-                                    Empezar
+                                    {t('getStarted')}
                                 </Link>
                                 <Link
                                     href="/login"
                                     className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                                 >
-                                    Iniciar sesión
+                                    {t('login')}
                                 </Link>
                             </div>
                         </div>
@@ -48,11 +47,11 @@ export default async function RouteComponent() {
                         <div className="flex flex-col items-center justify-center space-y-4 text-center">
                             <div className="space-y-2">
                                 <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
-                                    Principales funcionalidades
+                                    {t('mainFeatures')}
                                 </div>
-                                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Logra tus objetivos con nuestro sistema</h2>
+                                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">{t('achieveGoals')}</h2>
                                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                                    Nuestra plataforma está diseñada para ayudarte a establecer, controlar y alcanzar tus objetivos personales y profesionales con herramientas intuitivas y visualizaciones informativas.
+                                    {t('ourPlatform')}
                                 </p>
                             </div>
                         </div>
@@ -60,55 +59,55 @@ export default async function RouteComponent() {
                             <Card>
                                 <CardHeader>
                                     <Target className="h-8 w-8 text-primary" />
-                                    <CardTitle>Objetivos personalizables</CardTitle>
+                                    <CardTitle>{t('customizableGoals')}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    Define cualquier objetivo, grande o pequeño, con métricas personalizadas, valores de objetivo y fechas límite. Ajusta a tus necesidades únicas.
+                                    {t('defineGoals')}
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <LineChart className="h-8 w-8 text-primary" />
-                                    <CardTitle>Panel de progreso visual</CardTitle>
+                                    <CardTitle>{t('visualProgressPanel')}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    Ve tu progreso a la vista con gráficas y gráficos intuitivos. Entiende tu viaje y mantente motivado.
+                                    {t('visualProgressPanelDescription')}
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <CheckCircle className="h-8 w-8 text-primary" />
-                                    <CardTitle>Actualizaciones periódicas</CardTitle>
+                                    <CardTitle>{t('periodicUpdates')}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    Registra actualizaciones a tus objetivos, rastrea hitos y ajusta tu estrategia según sea necesario para mantenerte en la senda.
+                                    {t('periodicUpdatesDescription')}
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <Users className="h-8 w-8 text-primary" />
-                                    <CardTitle>Rastreo colaborativo</CardTitle>
+                                    <CardTitle></CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    Comparte tus objetivos con amigos, familiares o compañeros para obtener apoyo y responsabilidad.
+                                    {t('collaborativeTrackingDescription')}
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <Calendar className="h-8 w-8 text-primary" />
-                                    <CardTitle>Recordatorios y notificaciones</CardTitle>
+                                    <CardTitle>{t('notifications')}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    Configura notificaciones automáticas para mantenerte enfocado.
+                                    {t('notificationsDescription')}
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <Lightbulb className="h-8 w-8 text-primary" />
-                                    <CardTitle>Análisis y reportes</CardTitle>
+                                    <CardTitle>{t('reports')}</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    Obtén profundas perspectivas sobre tus hábitos y rendimiento con análisis detallados y reportes.
+                                    {t('reportsDescription')}
                                 </CardContent>
                             </Card>
                         </div>

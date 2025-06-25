@@ -8,6 +8,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from '@/components/ui/chart';
+import { useTranslations } from 'next-intl';
 
 const chartData = [
     { month: 'January', count: 186 },
@@ -25,10 +26,11 @@ const chartData = [
 ];
 
 export function ProgressUpdatesAddedPerMonthGraph({ data }: { data: { month: string; count: number }[] }) {
+    const t = useTranslations('Stats');
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Progresos añadidos por mes</CardTitle>
+                <CardTitle>{t('progressUpdatesAddedPerMonth')}</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{} satisfies ChartConfig}>

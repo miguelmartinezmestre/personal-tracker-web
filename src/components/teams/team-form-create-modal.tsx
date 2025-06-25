@@ -30,6 +30,7 @@ import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
 import { CreateTeam, teamSchema } from '@/schemas/team';
+import { useTranslations } from 'next-intl';
 
 const defaultValues: CreateTeam = {
     name: '',
@@ -37,6 +38,7 @@ const defaultValues: CreateTeam = {
 };
 
 export default function CreateTeamFormModal() {
+    const t = useTranslations('Teams');
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const createTeam = useMutation(trpc.teams.createTeam.mutationOptions());
@@ -60,15 +62,14 @@ export default function CreateTeamFormModal() {
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Create New Team
+                    {t('createTeam')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create New Team</DialogTitle>
+                    <DialogTitle>{t('createTeam')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to create a new team. Click save when you're
-                        done.
+                        {t('createTeamDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -79,12 +80,12 @@ export default function CreateTeamFormModal() {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Title</FormLabel>
+                                    <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter team title" {...field} />
+                                        <Input placeholder={t('enterTeamName')} {...field} />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your team a clear, concise title.
+                                        {t('giveYourTeamAClearConciseTitle')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -96,7 +97,7 @@ export default function CreateTeamFormModal() {
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>{t('tableDescription')}</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Describe your team in detail"
@@ -106,7 +107,7 @@ export default function CreateTeamFormModal() {
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your team.
+                                        {t('optionalAddDetailsAboutYourTeam')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -115,9 +116,9 @@ export default function CreateTeamFormModal() {
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Team</Button>
+                            <Button type="submit">{t('saveTeam')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

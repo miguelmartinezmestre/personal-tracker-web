@@ -11,12 +11,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditObjectiveFormModal from '@/components/objectives/objective-form-edit-modal';
 import { getQueryClient } from '@/trpc/client';
+import { useTranslations } from 'next-intl';
 
 function t(key: string) {
     return key;
 }
 
 export default function ObjetivesTable() {
+    const t = useTranslations('Objectives');
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const objectives = useSuspenseQuery(trpc.objectives.getObjectivesByUser.queryOptions({}));
@@ -29,7 +31,7 @@ export default function ObjetivesTable() {
         },
         {
             accessorKey: 'description',
-            header: t('description'),
+            header: t('tableDescription'),
         },
         {
             accessorKey: 'targetValue',
@@ -75,7 +77,7 @@ export default function ObjetivesTable() {
                             );
                         }}
                     >
-                        Delete
+                        {t('deleteObjective')}
                     </Button>
                 );
             },
@@ -87,7 +89,7 @@ export default function ObjetivesTable() {
                 const objetiveRow = row.original;
                 if (objetiveRow.id) {
                     return (
-                        <Link href={`/dashboard/objectives/${objetiveRow.id}`} prefetch={false}>Ir actividad</Link>
+                        <Link href={`/dashboard/objectives/${objetiveRow.id}`} prefetch={false}>{t('goToProgress')}</Link>
                     );
                 }
 

@@ -4,11 +4,38 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Cookies from 'js-cookie';
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export function LanguageSwitcher() {
-
     const router = useRouter();
-    const locale = Cookies.get('locale');
+    const [locale, setLocale] = useState<string | undefined>(undefined);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+        const cookieLocale = Cookies.get('locale');
+        setLocale(cookieLocale || 'en');
+    }, []);
+
+    if (!isClient) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                        <span>Language</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                        <span>Español</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                        <span>English</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    }
 
     return (
         <DropdownMenu>
@@ -20,6 +47,7 @@ export function LanguageSwitcher() {
             <DropdownMenuContent align="end" >
                 <DropdownMenuItem onClick={() => {
                     Cookies.set('locale', "es");
+                    setLocale("es");
                     router.refresh();
                 }}>
                     <span>Español</span>
@@ -27,6 +55,7 @@ export function LanguageSwitcher() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
                     Cookies.set('locale', "en");
+                    setLocale("en");
                     router.refresh();
                 }}>
                     <span>English</span>

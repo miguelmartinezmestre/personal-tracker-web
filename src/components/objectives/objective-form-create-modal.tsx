@@ -40,6 +40,7 @@ import { CreateObjective, objectiveSchema } from '@/schemas/objective';
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
+import { useTranslations } from 'next-intl';
 
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -69,6 +70,7 @@ const defaultValues: CreateObjective = {
 };
 
 export default function CreateObjectiveFormModal() {
+    const t = useTranslations('Objectives');
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions());
@@ -92,15 +94,14 @@ export default function CreateObjectiveFormModal() {
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Create New Objective
+                    {t('createObjective')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create New Objective</DialogTitle>
+                    <DialogTitle>{t('createObjective')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to create a new objective. Click save when you're
-                        done.
+                        {t('createObjectiveDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -116,7 +117,7 @@ export default function CreateObjectiveFormModal() {
                                         <Input placeholder="Enter objective title" {...field} />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your objective a clear, concise title.
+                                        {t('giveYourObjectiveAClearConciseTitle')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -138,7 +139,7 @@ export default function CreateObjectiveFormModal() {
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your objective.
+                                        {t('optionalAddDetailsAboutYourObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -172,7 +173,7 @@ export default function CreateObjectiveFormModal() {
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Optional: Categorize your objective.
+                                        {t('optionalCategorizeYourObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -198,7 +199,7 @@ export default function CreateObjectiveFormModal() {
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            The goal you want to achieve.
+                                            {t('theGoalYouWantToAchieve')}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -242,7 +243,7 @@ export default function CreateObjectiveFormModal() {
                                             }
                                         />
                                     </FormControl>
-                                    <FormDescription>Your current progress.</FormDescription>
+                                    <FormDescription>{t('yourCurrentProgress')}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -267,7 +268,7 @@ export default function CreateObjectiveFormModal() {
                                                     {field.value ? (
                                                         new Date(field.value).toLocaleDateString()
                                                     ) : (
-                                                        <span>Pick a date</span>
+                                                        <span>{t('pickADate')}</span>
                                                     )}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
@@ -283,7 +284,7 @@ export default function CreateObjectiveFormModal() {
                                         </PopoverContent>
                                     </Popover>
                                     <FormDescription>
-                                        Optional: When do you want to achieve this objective?
+                                        {t('optionalWhenDoYouWantToAchieveThisObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -295,7 +296,7 @@ export default function CreateObjectiveFormModal() {
                             name="status"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Status</FormLabel>
+                                    <FormLabel>{t('status')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || 'not_started'}
@@ -314,7 +315,7 @@ export default function CreateObjectiveFormModal() {
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Current status of your objective.
+                                        {t('currentStatusOfYourObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -323,9 +324,9 @@ export default function CreateObjectiveFormModal() {
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Objective</Button>
+                            <Button type="submit">{t('saveObjective')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
