@@ -9,12 +9,14 @@ import { getQueryClient } from '@/trpc/client';
 import { TeamMember } from '@/schemas/team-member';
 import { useParams } from 'next/navigation';
 import TeamMemberEditFormModal from '@/components/team-members/team-members-form-edit-modal';
+import { useTranslations } from 'next-intl';
 
 function t(key: string) {
     return key;
 }
 
 export default function TeamMembersTable() {
+    const t = useTranslations('TeamMembers');
     const {id: teamId} = useParams();
     const trpc = useTRPC();
     const queryClient = getQueryClient();
@@ -24,14 +26,14 @@ export default function TeamMembersTable() {
     const columns: ColumnDef<TeamMember>[] = [
         {
             accessorKey: 'email',
-            header: 'Email',
+            header: t('email'),
         },
         {
             accessorKey: 'role',
-            header: 'Role',
+            header: t('role'),
         },
         {
-            header: 'Edit',
+            header: t('edit'),
             id: 'edit',
             cell: ({ row }) => {
                 const objetiveRow = row.original;
@@ -41,7 +43,7 @@ export default function TeamMembersTable() {
             },
         },
         {
-            header: 'Delete',
+            header: t('delete'),
             id: 'delete',
             cell: ({ row }) => {
                 const objetiveRow = row.original;
@@ -52,7 +54,7 @@ export default function TeamMembersTable() {
                             queryClient.invalidateQueries(trpc.teamMembers.getTeamMembersByTeamId.queryOptions({ teamId: Number(teamId) }));
                         }}
                     >
-                        Delete
+                        {t('delete')}
                     </Button>
                 );
             },

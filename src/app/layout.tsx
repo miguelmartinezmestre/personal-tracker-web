@@ -1,6 +1,7 @@
 import "@/app/globals.css"
 import { ThemeProvider } from "@/providers/theme";
 import { TRPCReactProvider } from "@/trpc/client";
+import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { Toaster } from "sonner";
 
@@ -16,11 +17,15 @@ export default async function Layout({ children }: { children: React.ReactNode }
   console.log(locale);
 
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <main>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
+            <TRPCReactProvider>
+              <NextIntlClientProvider>
+                {children}
+              </NextIntlClientProvider>
+            </TRPCReactProvider>
           </main>
           <Toaster />
         </ThemeProvider>

@@ -36,6 +36,7 @@ import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
+import { useTranslations } from 'next-intl';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -45,6 +46,7 @@ const roleOptions = [
 
 export default function CreateTeamMemberFormModal() {
 
+    const t = useTranslations('TeamMembers');
     const { id: teamId } = useParams();
 
     const trpc = useTRPC();
@@ -74,15 +76,14 @@ export default function CreateTeamMemberFormModal() {
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Create New Team Member
+                    {t('createNewTeamMember')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create New Team Member</DialogTitle>
+                    <DialogTitle>{t('createNewTeamMember')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to create a new team member. Click save when you're
-                        done.
+                        {t('createNewTeamMemberDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -93,9 +94,9 @@ export default function CreateTeamMemberFormModal() {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter email"
+                                        <Input placeholder={t('enterEmail')}
                                             type="email"
                                             {...field}
                                             value={field.value || ''}
@@ -103,7 +104,7 @@ export default function CreateTeamMemberFormModal() {
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your team member a clear, concise email.
+                                        {t('giveYourTeamMemberAClearConciseEmail')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -115,7 +116,7 @@ export default function CreateTeamMemberFormModal() {
                             name="role"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Role</FormLabel>
+                                    <FormLabel>{t('role')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || TeamRole.MEMBER}
@@ -134,7 +135,7 @@ export default function CreateTeamMemberFormModal() {
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Current role of your team member.
+                                        {t('currentRoleOfYourTeamMember')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -142,9 +143,9 @@ export default function CreateTeamMemberFormModal() {
                         />
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Team Member</Button>
+                            <Button type="submit">{t('saveTeamMember')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

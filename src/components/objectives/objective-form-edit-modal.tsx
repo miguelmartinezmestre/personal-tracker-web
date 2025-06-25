@@ -40,6 +40,7 @@ import { Objective, savedObjectiveSchema } from '@/schemas/objective';
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
+import { useTranslations } from 'next-intl';
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
     { value: 'in_progress', label: 'In Progress' },
@@ -56,6 +57,7 @@ const categoryOptions = [
 
 export default function EditObjectiveFormModal({defaultValues}: {defaultValues: Objective}) {
 
+    const t = useTranslations('Objectives');
     const trpc = useTRPC()
     const updateObjective = useMutation(trpc.objectives.updateObjective.mutationOptions());
     const [open, setOpen] = useState(false);
@@ -92,15 +94,14 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Edit Objective
+                    {t('editObjective')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Objective</DialogTitle>
+                    <DialogTitle>{t('editObjective')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your objective. Click save when you're
-                        done.
+                        {t('editObjectiveDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -111,12 +112,12 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Title</FormLabel>
+                                    <FormLabel>{t('title')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter objective title" {...field} />
+                                        <Input placeholder={t('enterObjectiveTitle')} {...field} />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your objective a clear, concise title.
+                                        {t('giveYourObjectiveAClearConciseTitle')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -128,17 +129,17 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>{t('description')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your objective in detail"
+                                            placeholder={t('describeObjectiveInDetail')}
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your objective.
+                                        {t('optionalAddDetailsAboutYourObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -150,14 +151,14 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                             name="category"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Category</FormLabel>
+                                    <FormLabel>{t('category')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || ''}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a category" />
+                                                <SelectValue placeholder={t('selectACategory')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -172,7 +173,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Optional: Categorize your objective.
+                                        {t('optionalCategorizeYourObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -185,7 +186,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                 name="targetValue"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Target Value</FormLabel>
+                                        <FormLabel>{t('targetValue')}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -199,7 +200,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            The goal you want to achieve.
+                                            {t('theGoalYouWantToAchieve')}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -211,16 +212,16 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                 name="unit"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Unit</FormLabel>
+                                        <FormLabel>{t('unit')}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="e.g., kg, miles, hours"
+                                                placeholder={t('enterUnit')}
                                                 {...field}
                                                 value={field.value || ''}
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            Optional: Unit of measurement.
+                                            {t('optionalUnitOfMeasurement')}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -233,7 +234,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                             name="currentValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Current Value</FormLabel>
+                                    <FormLabel>{t('currentValue')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
@@ -244,7 +245,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                             disabled={true}
                                         />
                                     </FormControl>
-                                    <FormDescription>Your current progress.</FormDescription>
+                                    <FormDescription>{t('yourCurrentProgress')}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -255,7 +256,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                             name="deadline"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>Deadline</FormLabel>
+                                    <FormLabel>{t('deadline')}</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
@@ -269,7 +270,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                                     {field.value ? (
                                                         new Date(field.value).toLocaleDateString()
                                                     ) : (
-                                                        <span>Pick a date</span>
+                                                        <span>{t('pickADate')}</span>
                                                     )}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
@@ -285,7 +286,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                         </PopoverContent>
                                     </Popover>
                                     <FormDescription>
-                                        Optional: When do you want to achieve this objective?
+                                        {t('optionalWhenDoYouWantToAchieveThisObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -297,7 +298,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                             name="status"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Status</FormLabel>
+                                    <FormLabel>{t('status')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || 'not_started'}
@@ -316,7 +317,7 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Current status of your objective.
+                                        {t('currentStatusOfYourObjective')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -325,9 +326,9 @@ export default function EditObjectiveFormModal({defaultValues}: {defaultValues: 
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Objective</Button>
+                            <Button type="submit">{t('saveObjective')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

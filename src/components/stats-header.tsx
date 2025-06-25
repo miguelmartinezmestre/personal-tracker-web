@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from 'next-intl';
 
 interface StatsHeaderProps {
     totalObjectives: number;
@@ -9,36 +10,37 @@ interface StatsHeaderProps {
 
 
 export default function StatsHeader({ totalObjectives, completedObjectives, pendingObjectives }: StatsHeaderProps) {
+    const t = useTranslations('Stats');
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className='text-center'>
                 <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Objetivos</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('totalObjectives')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold mb-2">{totalObjectives}</div>
-                    <p className="text-xs text-muted-foreground">Objetivos activos</p>
+                    <p className="text-xs text-muted-foreground">{t('activeObjectives')}</p>
                 </CardContent>
             </Card>
 
             <Card className='text-center'>
                 <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('pendingObjectives')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold mb-2">{pendingObjectives}</div>
-                    <p className="text-xs text-muted-foreground">Objetivos logrados</p>
+                    <p className="text-xs text-muted-foreground">{t('completedObjectives')}</p>
                 </CardContent>
             </Card>
 
 
             <Card className='text-center'>
                 <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Completados</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('completedObjectives')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold mb-2">{completedObjectives}</div>
-                    <p className="text-xs text-muted-foreground">Objetivos logrados</p>
+                    <p className="text-xs text-muted-foreground">{t('completedObjectives')}</p>
                 </CardContent>
             </Card>
 

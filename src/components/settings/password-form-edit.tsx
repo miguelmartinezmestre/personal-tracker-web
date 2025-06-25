@@ -20,8 +20,10 @@ import { useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { DialogFooter } from '@/components/ui/dialog';
+import { useTranslations } from 'next-intl';
 
 export default function PasswordFormEdit() {
+    const t = useTranslations('Settings');
     const trpc = useTRPC();
     const updatePassword = useMutation(trpc.user.updatePassword.mutationOptions());
     const [open, setOpen] = useState(false);
@@ -76,7 +78,7 @@ export default function PasswordFormEdit() {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>{t('password')}</FormLabel>
                             <FormControl>
                                 <Input {...field} type="password"/>
                             </FormControl>
@@ -90,7 +92,7 @@ export default function PasswordFormEdit() {
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Confirm Password</FormLabel>
+                            <FormLabel>{t('confirmPassword')}</FormLabel>
                             <FormControl>
                                 <Input {...field} type="password"/>
                             </FormControl>
@@ -104,7 +106,7 @@ export default function PasswordFormEdit() {
                     name="newPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>New Password</FormLabel>
+                            <FormLabel>{t('newPassword')}</FormLabel>
                             <FormControl>
                                 <Input {...field} type="password"/>
                             </FormControl>
@@ -115,9 +117,9 @@ export default function PasswordFormEdit() {
 
                 <DialogFooter className="pt-4">
                     <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                        Cancel
+                        {t('cancel')}
                     </Button>
-                    <Button type="submit">Save Objective</Button>
+                    <Button type="submit">{t('savePassword')}</Button>
                 </DialogFooter>
                 {error && <p className="text-red-500">{error}</p>}
                 {message && <p className="text-green-500">{message}</p>}

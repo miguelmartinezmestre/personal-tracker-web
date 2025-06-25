@@ -9,6 +9,7 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import { TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 const chartData = [
     { objective: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
     { objective: 'safari', visitors: 200, fill: 'var(--color-safari)' },
@@ -18,10 +19,13 @@ const chartData = [
 ];
 
 export function RemainDaysToDeadlineGraph({ data }: { data: { objective: string; days: number; fill: string }[] }) {
+
+    const t = useTranslations('Stats');
+
     return (
         <Card className='h-full'>
             <CardHeader>
-                <CardTitle>Cantidad de días para la deadline</CardTitle>
+                <CardTitle>{t('remainDaysToDeadline')}</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{} satisfies ChartConfig}>

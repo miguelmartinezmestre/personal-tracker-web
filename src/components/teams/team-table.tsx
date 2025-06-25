@@ -9,12 +9,14 @@ import Link from 'next/link';
 import EditTeamFormModal from '@/components/teams/team-form-edit-modal';
 import { getQueryClient } from '@/trpc/client';
 import { Team } from '@/schemas/team';
+import { useTranslations } from 'next-intl';
 
 function t(key: string) {
     return key;
 }
 
 export default function TeamsTable() {
+    const t = useTranslations('Teams');
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const teams = useSuspenseQuery(trpc.teams.getTeams.queryOptions({}));
@@ -27,7 +29,7 @@ export default function TeamsTable() {
         },
         {
             accessorKey: 'description',
-            header: t('description'),
+            header: t('tableDescription'),
         },
         {
             header: '',
@@ -53,7 +55,7 @@ export default function TeamsTable() {
                             );
                         }}
                     >
-                        Delete
+                        {t('deleteTeam')}
                     </Button>
                 );
             },

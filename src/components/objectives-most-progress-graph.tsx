@@ -9,6 +9,7 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import { TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 const chartData = [
     { objective: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
     { objective: 'safari', visitors: 200, fill: 'var(--color-safari)' },
@@ -18,10 +19,13 @@ const chartData = [
 ];
 
 export function ObjetivesMostProgressGraph({ data }: { data: { objective: string; progress: number }[] }) {
+
+    const t = useTranslations('Stats');
+
     return (
         <Card className='h-full'>
             <CardHeader>
-                <CardTitle>Objetivos con mayor progreso (Sin completar)</CardTitle>
+                <CardTitle>{t('objectivesWithMostProgress')}</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{} satisfies ChartConfig}>

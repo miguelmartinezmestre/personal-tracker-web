@@ -9,8 +9,10 @@ import { getQueryClient } from '@/trpc/client';
 import { Session } from '@/schemas/session';
 import { UserAgentIcon } from '../user-agent';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function SessionsTable() {
+    const t = useTranslations('Sessions');
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const sessions = useSuspenseQuery(trpc.sessions.getSessionsByUser.queryOptions({}));
@@ -20,18 +22,18 @@ export default function SessionsTable() {
     const columns: ColumnDef<Session>[] = [
         {
             accessorKey: 'userAgent',
-            header: 'Dispositivo',
+            header: t('device'),
             cell: ({ row }) => {
                 return <UserAgentIcon userAgent={row.original.userAgent ?? ''} />;
             },
         },
         {
             accessorKey: 'createdAt',
-            header: 'Fecha',
+            header: t('date'),
         },
         {
             accessorKey: 'status',
-            header: 'Estado',
+            header: t('status'),
         },
         {
             header: '',
@@ -47,7 +49,7 @@ export default function SessionsTable() {
                                 router.refresh();
                             }}
                         >
-                            Cerrar sesion
+                            {t('closeSession')}
                         </Button>
                     );
                 }

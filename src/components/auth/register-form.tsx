@@ -12,8 +12,10 @@ import { useState } from 'react';
 import { registerAction } from '@/server/actions';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function RegisterForm() {
+    const t = useTranslations('HomePage');
     const [registerError, setRegisterError] = useState('');
 
     const form = useForm<z.infer<typeof registerSchema>>({
@@ -131,15 +133,13 @@ export default function RegisterForm() {
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
-                // disabled={register.isPending}
                 >
-                    {/* {register.isPending ? 'Registrando...' : 'Registrarse'} */}
-                    Registrarse
+                    {t('register')}
                 </Button>
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/login" prefetch={false} >¿Ya tienes una cuenta? Iniciar sesión</Link>
+                        <Link href="/login" prefetch={false} >{t('alreadyHaveAccount')} {t('login')}</Link>
                     </p>
                 </div>
             </form>

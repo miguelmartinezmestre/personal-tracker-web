@@ -36,6 +36,7 @@ import { UpdateProgress, updateProgressSchema } from '@/schemas/update-progress'
 import { TeamMember, savedTeamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
+import { useTranslations } from 'next-intl';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -44,6 +45,7 @@ const roleOptions = [
 
 export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
 
+    const t = useTranslations('TeamMembers');
     const trpc = useTRPC()
     const updateTeamMember = useMutation(trpc.teamMembers.updateTeamMember.mutationOptions());
     const [open, setOpen] = useState(false);
@@ -77,15 +79,14 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Edit Team Member
+                    {t('edit')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Progress</DialogTitle>
+                    <DialogTitle>{t('edit')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your team member. Click save when you're
-                        done.
+                        {t('editTeamMemberDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -96,9 +97,9 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter email"
+                                        <Input placeholder={t('enterEmail')}
                                             type="email"
                                             {...field}
                                             value={field.value || ''}
@@ -106,7 +107,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your team member a clear, concise email.
+                                        {t('giveYourTeamMemberAClearConciseEmail')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -118,7 +119,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                             name="role"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Role</FormLabel>
+                                    <FormLabel>{t('role')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || TeamRole.MEMBER}
@@ -137,7 +138,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Current role of your team member.
+                                        {t('currentRoleOfYourTeamMember')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -145,9 +146,9 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                         />
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Team Member</Button>
+                            <Button type="submit">{t('saveTeamMember')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

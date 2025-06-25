@@ -20,8 +20,10 @@ import { getQueryClient, useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { accountDetailsSchema } from '@/schemas/account-details';
 import { DialogFooter } from '@/components/ui/dialog';
+import { useTranslations } from 'next-intl';
 
 export default function AccountSettingsForm() {
+    const t = useTranslations('Settings');
     const trpc = useTRPC();
     const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
     const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
@@ -88,7 +90,7 @@ export default function AccountSettingsForm() {
                     name="username"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>{t('username')}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Enter username" {...field} />
                             </FormControl>
@@ -102,7 +104,7 @@ export default function AccountSettingsForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>{t('email')}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Enter email" {...field} />
                             </FormControl>
@@ -115,7 +117,7 @@ export default function AccountSettingsForm() {
                     <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                         Cancel
                     </Button>
-                    <Button type="submit">Save Objective</Button>
+                    <Button type="submit">{t('saveAccount')}</Button>
                 </DialogFooter>
                 {error && <p className="text-red-500">{error}</p>}
                 {message && <p className="text-green-500">{message}</p>}

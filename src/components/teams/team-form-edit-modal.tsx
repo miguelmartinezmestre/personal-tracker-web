@@ -30,10 +30,11 @@ import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
 import { Team, savedTeamSchema } from '@/schemas/team';
+import { useTranslations } from 'next-intl';
 
 
 export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}) {
-
+    const t = useTranslations('Teams');
     const trpc = useTRPC()
     const updateTeam = useMutation(trpc.teams.updateTeam.mutationOptions());
     const [open, setOpen] = useState(false);
@@ -66,15 +67,14 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Edit Team
+                    {t('editTeam')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit team</DialogTitle>
+                    <DialogTitle>{t('editTeam')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your team. Click save when you're
-                        done.
+                        {t('editTeamDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -85,12 +85,12 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter team name" {...field} />
+                                        <Input placeholder={t('enterTeamName')} {...field} />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your team a clear, concise name.
+                                        {t('giveYourTeamAClearConciseName')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -102,17 +102,17 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>{t('tableDescription')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your team in detail"
+                                            placeholder={t('describeTeamInDetail')}
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your team.
+                                        {t('optionalAddDetailsAboutYourTeam')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -121,9 +121,9 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save team</Button>
+                            <Button type="submit">{t('saveTeam')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
