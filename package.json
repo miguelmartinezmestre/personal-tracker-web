@@ -12,6 +12,7 @@
     "export:email": "email export",
     "generate:prisma": "prisma generate",
     "push:prisma": "prisma db push",
+    "studio": "prisma studio",
     "test": "playwright test"
   },
   "dependencies": {
@@ -79,6 +80,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.1",

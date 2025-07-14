@@ -1,7 +1,5 @@
 import CreateTeamMemberFormModal from "@/components/team-members/team-members-form-create-modal";
 import TeamMembersTable from "@/components/team-members/team-members-table";
-import CreateUpdateProgressFormModal from "@/components/update-progress/update-progress-form-create-modal";
-import UpdateProgressTable from "@/components/update-progress/update-progress-table";
 import { getQueryClient, prefetch, trpc } from "@/trpc/server";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getTranslations } from "next-intl/server";

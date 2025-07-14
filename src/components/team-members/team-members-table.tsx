@@ -11,10 +11,6 @@ import { useParams } from 'next/navigation';
 import TeamMemberEditFormModal from '@/components/team-members/team-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
 
-function t(key: string) {
-    return key;
-}
-
 export default function TeamMembersTable() {
     const t = useTranslations('TeamMembers');
     const {id: teamId} = useParams();

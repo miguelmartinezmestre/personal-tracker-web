@@ -1,7 +1,6 @@
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 import { createTRPCOptionsProxy, TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { cache } from 'react';
-import { createContext } from '@/trpc/init';
 import { makeQueryClient } from '@/trpc/query-client';
 import { appRouter } from '@/trpc/routers/router';
 import { HydrationBoundary } from '@tanstack/react-query';

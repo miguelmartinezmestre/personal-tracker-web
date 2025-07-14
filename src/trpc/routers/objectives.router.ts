@@ -2,7 +2,6 @@ import { z } from 'zod';
 import prisma from '@/lib/client';
 import { objectiveSchema, savedObjectiveSchema } from '@/schemas/objective';
 import { createTRPCRouter, publicProcedure } from '../init';
-import { TRPCError } from '@trpc/server';
 
 export const objectivesRouter = createTRPCRouter({
     createObjective: publicProcedure
@@ -110,7 +109,7 @@ export const objectivesRouter = createTRPCRouter({
         })
         .input(savedObjectiveSchema)
         .output(savedObjectiveSchema)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             const { id, ...rest } = input;
 
             const updatedObjective = await prisma.objective.update({
@@ -144,10 +143,10 @@ export const objectivesRouter = createTRPCRouter({
             })
         )
         .output(z.string())
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             console.log(input.id);
 
-            const deletedObjective = await prisma.objective.delete({
+            await prisma.objective.delete({
                 where: {
                     id: input.id,
                 },

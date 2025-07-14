@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -17,7 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useTRPC } from '@/trpc/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
@@ -26,7 +24,7 @@ export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
     const trpc = useTRPC();
     const updatePassword = useMutation(trpc.user.updatePassword.mutationOptions());
-    const [open, setOpen] = useState(false);
+    const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const form = useForm<z.infer<typeof updatePasswordSchema>>({

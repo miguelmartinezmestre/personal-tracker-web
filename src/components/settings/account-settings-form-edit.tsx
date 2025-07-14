@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -27,7 +26,7 @@ export default function AccountSettingsForm() {
     const trpc = useTRPC();
     const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
     const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
-    const [open, setOpen] = useState(false);
+    const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const queryClient = getQueryClient();

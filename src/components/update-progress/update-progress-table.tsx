@@ -2,7 +2,7 @@
 
 import { DataTable } from '@/components/table';
 import { useTRPC } from '@/trpc/client';
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { getQueryClient } from '@/trpc/client';
@@ -10,10 +10,6 @@ import { UpdateProgress } from '@/schemas/update-progress';
 import { ObjectiveProgressOverTimeGraph, Progress } from '@/components/objective-progress-over-time-graph';
 import UpdateProgressFormModal from '@/components/update-progress/update-progress-form-edit-modal';
 import { useParams } from 'next/navigation';
-
-function t(key: string) {
-    return key;
-}
 
 export default function UpdateProgressTable() {
     const {id: objectiveId} = useParams();

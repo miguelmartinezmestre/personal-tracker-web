@@ -1,8 +1,7 @@
-import { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
+// import { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
 import { createTRPCRouter } from '../init';
 import { objectivesRouter } from '@/trpc/routers/objectives.router';
 import { userRouter } from '@/trpc/routers/user.router';
-import { getUserId } from '@/server/getUserId';
 import { updateProgressRouter } from '@/trpc/routers/update-progress.router';
 import { teamsRouter } from '@/trpc/routers/teams.router';
 import { teamMembersRouter } from '@/trpc/routers/team-member.router';

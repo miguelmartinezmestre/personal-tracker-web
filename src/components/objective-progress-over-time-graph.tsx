@@ -15,17 +15,6 @@ interface ProgressProps {
     data?: Progress[];
 }
 
-const chartConfig = {
-    currentValue: {
-        label: 'Valor Actual',
-        color: 'hsl(var(--chart-1))',
-    },
-    objetive: {
-        label: 'Objetivo',
-        color: 'hsl(var(--chart-2))',
-    },
-} satisfies ChartConfig;
-
 export function ObjectiveProgressOverTimeGraph({ data = [] }: ProgressProps) {
     // Asegurarse de que hay datos para mostrar
     const chartData = data;
