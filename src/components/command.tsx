@@ -9,16 +9,12 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command"
-import { useTheme } from "next-themes"
-import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Home, User, Bell, Goal } from "lucide-react"
 
 export default function CommandMenu() {
   const [open, setOpen] = useState(false)
-  const { setTheme, theme } = useTheme()
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

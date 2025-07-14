@@ -3,7 +3,7 @@ import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import { randomUUID } from 'node:crypto';
 import superjson from 'superjson';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import prisma from '@/lib/client';
 import { cache } from 'react';
 
@@ -14,12 +14,12 @@ export type Context = {
 };
 
 export const createContext = cache(async ({
-    req,
-    resHeaders,
+    // req,
+    // resHeaders,
 }: FetchCreateContextFnOptions): Promise<Context> => {
     // const isTrpcRequest = req.url?.includes("/api/trpc")
 
-    const headersList = await headers();
+    // const headersList = await headers();
     // const requestId = randomUUID();
     // headersList.set('x-request-id', requestId);
     // set CORS

@@ -3,7 +3,6 @@ import prisma from '@/lib/client';
 import { createTRPCRouter, publicProcedure } from '../init';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { verifyPassword } from '@/server/crypto.service';
-import { TRPCError } from '@trpc/server';
 import { dashboardGraphsDataSchema } from '@/schemas/dashboard-graphs-data';
 import { getDashboardObjectivesCounts, getUpdateProgressPerMonth, getObjectivesWithMostProgress } from '@prisma/client/sql';
 

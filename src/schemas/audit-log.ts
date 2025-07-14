@@ -1,7 +1,4 @@
 import { z } from "zod";
-import { teamSchema } from "./team";
-import { savedTeamSchema } from "./team";
-
 
 export const auditLogSchema = z.object({
     id: z.number(),

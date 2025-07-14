@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -15,10 +15,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 import {
     Dialog,
     DialogContent,
@@ -31,7 +27,6 @@ import {
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
-import { CreateUpdateProgress, CreateUpdateProgressBeforeCreate, updateProgressSchema } from '@/schemas/update-progress';
 import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';

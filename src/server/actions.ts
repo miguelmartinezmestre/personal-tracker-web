@@ -155,7 +155,7 @@ export const resetPasswordAction = actionClient
             error: z.boolean(),
         })
     )
-    .action(async ({ parsedInput: { password, confirmPassword, resetPasswordKey } }) => {
+    .action(async ({ parsedInput: { password, resetPasswordKey } }) => {
         const userFound = await prisma.user.findFirst({
             where: {
                 resetPasswordKey: resetPasswordKey,

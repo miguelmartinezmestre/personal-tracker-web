@@ -2,7 +2,7 @@
 
 import { DataTable } from '@/components/table';
 import { useTRPC } from '@/trpc/client';
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
     Objective,
@@ -12,10 +12,6 @@ import Link from 'next/link';
 import EditObjectiveFormModal from '@/components/objectives/objective-form-edit-modal';
 import { getQueryClient } from '@/trpc/client';
 import { useTranslations } from 'next-intl';
-
-function t(key: string) {
-    return key;
-}
 
 export default function ObjetivesTable() {
     const t = useTranslations('Objectives');

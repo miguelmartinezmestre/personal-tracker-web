@@ -5,7 +5,7 @@ import prisma from "@/lib/client";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
-export default async function ResetPasswordPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+export default async function ResetPasswordPage({searchParams}: {searchParams: Promise<{ [key: string]: string | string[] | undefined }>}) {
 
     const params = await searchParams;
 

@@ -105,7 +105,7 @@ export const updateProgressRouter = createTRPCRouter({
         .mutation(async ({ input }) => {
             console.log(input.id);
 
-            const deletedUpdateProgress = await prisma.progressUpdate.delete({
+            await prisma.progressUpdate.delete({
                 where: {
                     id: input.id,
                 },

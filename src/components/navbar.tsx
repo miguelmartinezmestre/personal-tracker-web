@@ -23,13 +23,13 @@ export default function NavBar() {
             const isLoggedIn = await isLoggedInAction();
             if (isLoggedIn?.data) {
                 setLinks([
-                    { name: t('register'), href: `/${locale}/register` },
-                    { name: t('login'), href: `/${locale}/login` },
+                    { name: t('register'), href: `/register` },
+                    { name: t('login'), href: `/login` },
                     { name: t('goToDashboard'), href: '/dashboard' }]);
             } else {
                 setLinks([
-                    { name: t('register'), href: `/${locale}/register` },
-                    { name: t('login'), href: `/${locale}/login` },
+                    { name: t('register'), href: `/register` },
+                    { name: t('login'), href: `/login` },
                 ]);
             }
         }

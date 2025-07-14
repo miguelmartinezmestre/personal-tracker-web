@@ -40,7 +40,7 @@ export const sessionRouter = createTRPCRouter({
         .input(savedSessionSchema)
         .output(savedSessionSchema)
         .mutation(async ({ input }) => {
-            const { id, ...rest } = input;
+            const { id } = input;
 
             const updatedSession = await prisma.session.update({
                 where: {

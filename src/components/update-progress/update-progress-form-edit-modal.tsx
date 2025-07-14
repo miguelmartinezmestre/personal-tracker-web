@@ -32,15 +32,15 @@ import {
 import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { getQueryClient } from '@/trpc/client';
-import { UpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
+import { UpdateProgress, savedUpdateProgressSchema } from '@/schemas/update-progress';
 
 export default function UpdateProgressFormModal({ defaultValues }: { defaultValues: UpdateProgress }) {
 
     const trpc = useTRPC()
     const updateUpdateProgress = useMutation(trpc.updateProgress.updateUpdateProgress.mutationOptions());
     const [open, setOpen] = useState(false);
-    const form = useForm<z.infer<typeof updateProgressSchema>>({
-        resolver: zodResolver(updateProgressSchema),
+    const form = useForm<z.infer<typeof savedUpdateProgressSchema>>({
+        resolver: zodResolver(savedUpdateProgressSchema),
         defaultValues: defaultValues,
     });
 
@@ -77,7 +77,7 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                 <DialogHeader>
                     <DialogTitle>Edit Progress</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your progress. Click save when you're
+                        Fill out the form below to edit your progress. Click save when you&apos;re
                         done.
                     </DialogDescription>
                 </DialogHeader>

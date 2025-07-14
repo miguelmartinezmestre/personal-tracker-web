@@ -2,7 +2,6 @@ import { z } from 'zod';
 import prisma from '@/lib/client';
 import { teamSchema, savedTeamSchema } from '@/schemas/team';
 import { createTRPCRouter, publicProcedure } from '../init';
-import { TRPCError } from '@trpc/server';
 
 export const teamsRouter = createTRPCRouter({
     createTeam: publicProcedure
@@ -16,7 +15,7 @@ export const teamsRouter = createTRPCRouter({
         })
         .input(teamSchema)
         .output(savedTeamSchema)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             const newTeam = await prisma.team.create({
                 data: {
                     name: input.name,
@@ -89,7 +88,7 @@ export const teamsRouter = createTRPCRouter({
         })
         .input(savedTeamSchema)
         .output(savedTeamSchema)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             const { id, ...rest } = input;
 
             const updatedTeam = await prisma.team.update({
@@ -118,10 +117,10 @@ export const teamsRouter = createTRPCRouter({
             })
         )
         .output(z.string())
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             console.log(input.id);
 
-            const deletedTeam = await prisma.team.delete({
+            await prisma.team.delete({
                 where: {
                     id: input.id,
                 },

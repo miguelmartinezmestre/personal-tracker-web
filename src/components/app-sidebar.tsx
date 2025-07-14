@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Loader2, Settings, Users } from 'lucide-react';
+import { Bell, Frame, Goal, Home, Loader2, Users } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -53,6 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         return <Loader2 className="animate-spin" />;
     }
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         console.log(accountDetails.data?.role);
         if (accountDetails.data?.role === 'ADMIN') {

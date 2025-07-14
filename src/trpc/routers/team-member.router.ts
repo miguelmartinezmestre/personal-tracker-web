@@ -20,7 +20,7 @@ export const teamMembersRouter = createTRPCRouter({
         })
         .input(teamMemberSchema)
         .output(savedTeamMemberSchema)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
 
             if (!input.email) {
                 throw new TRPCError({
@@ -119,7 +119,7 @@ export const teamMembersRouter = createTRPCRouter({
         })
         .input(savedTeamMemberSchema)
         .output(savedTeamMemberSchema)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async ({ input }) => {
             const { id, ...rest } = input;
 
             const updatedTeamMember = await prisma.teamMember.update({

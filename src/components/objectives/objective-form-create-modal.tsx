@@ -65,8 +65,8 @@ const defaultValues: CreateObjective = {
     deadline: null,
     status: 'not_started',
     unit: '',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    // createdAt: new Date().toISOString(),
+    // updatedAt: new Date().toISOString(),
 };
 
 export default function CreateObjectiveFormModal() {
