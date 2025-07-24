@@ -7,12 +7,12 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { getQueryClient } from '@/trpc/client';
 import { UpdateProgress } from '@/schemas/update-progress';
-import { ObjectiveProgressOverTimeGraph, Progress } from '@/components/objective-progress-over-time-graph';
+import ObjectiveProgressOverTimeChart from '@/components/objective-progress-over-time-graph';
 import UpdateProgressFormModal from '@/components/update-progress/update-progress-form-edit-modal';
 import { useParams } from 'next/navigation';
 
 export default function UpdateProgressTable() {
-    const {id: objectiveId} = useParams();
+    const { id: objectiveId } = useParams();
     const trpc = useTRPC();
     const queryClient = getQueryClient();
     const updateProgress = useSuspenseQuery(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: Number(objectiveId) }));
@@ -70,7 +70,10 @@ export default function UpdateProgressTable() {
 
     return (
         <div>
-            {progressData.length > 0 && <ObjectiveProgressOverTimeGraph data={progressData} />}
+            {progressData.length > 0 && <div className="p-4 border rounded-lg bg-background">
+                <ObjectiveProgressOverTimeChart data={progressData} />
+            </div>}
+
             <DataTable columns={columns} data={updateProgress.data!} isLoading={updateProgress.isLoading} />
         </div>
     );

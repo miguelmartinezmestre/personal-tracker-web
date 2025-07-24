@@ -26,9 +26,9 @@ export default async function Dashboard() {
         <HydrationBoundary state={dehydrate(queryClient)}>
             <h1 className="text-2xl font-bold" data-testid="welcome-message">Welcome {name}</h1>
             <Stats />
-            <div>
+            {/* <div>
                 <ObjetivesTable />
-            </div>
+            </div> */}
         </HydrationBoundary>
     );
 }

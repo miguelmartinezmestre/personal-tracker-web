@@ -55,8 +55,8 @@ export default async function RouteComponent() {
                                 </p>
                             </div>
                         </div>
-                        <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-                            <Card>
+                        <div className="mx-auto grid max-w-5xl gap-6 py-12 md:grid-cols-2 lg:grid-cols-3 lg:gap-12">
+                            <Card className="h-full">
                                 <CardHeader>
                                     <Target className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('customizableGoals')}</CardTitle>
@@ -65,7 +65,7 @@ export default async function RouteComponent() {
                                     {t('defineGoals')}
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="h-full">
                                 <CardHeader>
                                     <LineChart className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('visualProgressPanel')}</CardTitle>
@@ -74,7 +74,7 @@ export default async function RouteComponent() {
                                     {t('visualProgressPanelDescription')}
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="h-full">
                                 <CardHeader>
                                     <CheckCircle className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('periodicUpdates')}</CardTitle>
@@ -83,7 +83,7 @@ export default async function RouteComponent() {
                                     {t('periodicUpdatesDescription')}
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="h-full">
                                 <CardHeader>
                                     <Users className="h-8 w-8 text-primary" />
                                     <CardTitle></CardTitle>
@@ -92,7 +92,7 @@ export default async function RouteComponent() {
                                     {t('collaborativeTrackingDescription')}
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="h-full">
                                 <CardHeader>
                                     <Calendar className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('notifications')}</CardTitle>
@@ -101,7 +101,7 @@ export default async function RouteComponent() {
                                     {t('notificationsDescription')}
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="h-full">
                                 <CardHeader>
                                     <Lightbulb className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('reports')}</CardTitle>
