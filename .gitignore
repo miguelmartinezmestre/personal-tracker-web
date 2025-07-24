@@ -31,7 +31,8 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
 
 # vercel
 .vercel
@@ -42,6 +43,7 @@ next-env.d.ts
 
 # mysql
 mysql-data
+data
 
 # Playwright
 node_modules/

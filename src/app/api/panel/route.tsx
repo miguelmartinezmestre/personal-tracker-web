@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server';
-import { appRouter } from '@/trpc/routers/router';
+// import { NextResponse } from 'next/server';
+// import { appRouter } from '@/trpc/routers/router';
 
-export async function GET() {
-    if (process.env.NODE_ENV !== 'development') {
-        return new NextResponse('Not Found', { status: 404 });
-    }
+// export async function GET() {
+//     if (process.env.NODE_ENV !== 'development') {
+//         return new NextResponse('Not Found', { status: 404 });
+//     }
 
-    const { renderTrpcPanel } = await import('trpc-ui');
+//     const { renderTrpcPanel } = await import('trpc-ui');
 
-    return new NextResponse(
-        renderTrpcPanel(appRouter, {
-            url: '/api/trpc',
-        }),
-        {
-            status: 200,
-            headers: [['Content-Type', 'text/html'] as [string, string]],
-        }
-    );
-}
+//     return new NextResponse(
+//         renderTrpcPanel(appRouter, {
+//             url: '/api/trpc',
+//         }),
+//         {
+//             status: 200,
+//             headers: [['Content-Type', 'text/html'] as [string, string]],
+//         }
+//     );
+// }

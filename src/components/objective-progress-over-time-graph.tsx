@@ -1,113 +1,87 @@
 "use client"
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { useEffect, useRef, useState } from 'react';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
-export interface Progress {
-    date: Date;
-    currentValue: number;
-    objetive: number;
+import {
+    ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
+} from "@/components/ui/chart"
+import type { ChartConfig } from "@/components/ui/chart"
+
+type Progress = {
+    date: string
+    currentValue: number
+    objective: number
 }
 
 interface ProgressProps {
-    data?: Progress[];
+    data: Progress[]
 }
 
-export function ObjectiveProgressOverTimeGraph({ data = [] }: ProgressProps) {
-    // Asegurarse de que hay datos para mostrar
-    const chartData = data;
-    const [chartWidth, setChartWidth] = useState(0);
-    const [chartHeight, setChartHeight] = useState(0);
-    const containerRef = useRef<HTMLDivElement>(null);
+const progressData = [
+  { date: "2024-01-01", currentValue: 10, objective: 80 },
+  { date: "2024-02-01", currentValue: 25, objective: 80 },
+  { date: "2024-03-01", currentValue: 40, objective: 80 },
+  { date: "2024-04-01", currentValue: 55, objective: 80 },
+  { date: "2024-05-01", currentValue: 65, objective: 80 },
+  { date: "2024-06-01", currentValue: 75, objective: 80 },
+]
 
-    // Medir las dimensiones del contenedor al montar y cuando cambie el tamaño
-    useEffect(() => {
-        // console.log('chartData', chartData);
-        const updateDimensions = () => {
-            if (containerRef.current) {
-                const { clientWidth, clientHeight } = containerRef.current;
-                // Solo actualizar si realmente cambian las dimensiones
-                if (clientWidth !== chartWidth || clientHeight !== chartHeight) {
-                    setChartWidth(clientWidth);
-                    setChartHeight(clientHeight);
-                }
-            }
-        };
+const chartConfig = {
+    currentValue: {
+        label: "Progreso Actual",
+        color: "hsl(var(--chart-1))",
+    },
+    objective: {
+        label: "Objetivo",
+        color: "hsl(var(--chart-2))",
+    },
+} satisfies ChartConfig
 
-        // Configurar observer para cambios de tamaño
-        const resizeObserver = new ResizeObserver(() => {
-            // Usar un pequeño retraso para evitar demasiadas actualizaciones
-            setTimeout(updateDimensions, 100);
-        });
-
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current);
-            // Inicial
-            updateDimensions();
-        }
-
-        return () => resizeObserver.disconnect();
-    }, [chartWidth, chartHeight]);
-
+export default function ObjectiveProgressOverTimeChart({ data = [] }: ProgressProps) {
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <CardTitle>Progreso del objetivo</CardTitle>
-                {/* <CardDescription>January - June 2024</CardDescription> */}
-            </CardHeader>
-            <CardContent>
-                <div ref={containerRef} className="w-full h-[300px] sm:h-[350px] md:h-[400px]">
-                    <ChartContainer config={{} satisfies ChartConfig} className="w-full h-full">
-                        {chartWidth > 0 && chartHeight > 0 ? (
-                            <LineChart
-                                width={chartWidth}
-                                height={chartHeight}
-                                data={chartData}
-                                margin={{
-                                    top: 20,
-                                    right: 30,
-                                    left: 20,
-                                    bottom: 30,
-                                }}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="date"
-                                    tickFormatter={value =>
-                                        new Date(value).toLocaleDateString('es-ES', {
-                                            month: 'short',
-                                        })
-                                    }
-                                    className="text-xs sm:text-sm"
-                                />
-                                <YAxis className="text-xs sm:text-sm" />
-                                <ChartTooltip
-                                    content={<ChartTooltipContent />}
-                                    wrapperClassName="z-50"
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="currentValue"
-                                    stroke="var(--color-currentValue)"
-                                    strokeWidth={2}
-                                    activeDot={{ r: 8 }}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="objetive"
-                                    stroke="var(--color-objetive)"
-                                    strokeWidth={2}
-                                    activeDot={{ r: 8 }}
-                                />
-                            </LineChart>
-                        ) : (
-                            <div />
-                        )}
-                    </ChartContainer>
-                </div>
-            </CardContent>
-        </Card>
-    );
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+            <LineChart
+                accessibilityLayer
+                data={progressData}
+                margin={{
+                    top: 20,
+                    left: 12,
+                    right: 12,
+                    bottom: 20,
+                }}
+            >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(value) => {
+                        const date = new Date(value)
+                        return date
+                            .toLocaleDateString("es-ES", {
+                                month: "short",
+                            })
+                            .replace(".", "")
+                    }}
+                />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} domain={[0, 100]} />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Line dataKey="currentValue" type="monotone" stroke="var(--color-currentValue)" strokeWidth={2} dot={true} />
+                <Line
+                    dataKey="objective"
+                    type="monotone"
+                    stroke="var(--color-objective)"
+                    strokeWidth={2}
+                    strokeDasharray="3 3"
+                    dot={false}
+                />
+            </LineChart>
+        </ChartContainer>
+    )
 }

@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+// import { NextResponse } from 'next/server';
 
-import { openApiDocument } from '@/server/openapi';
+// import { openApiDocument } from '@/server/openapi';
 
-// Respond with our OpenAPI schema
-export const GET = () => {
-  return NextResponse.json(openApiDocument);
-};
+// // Respond with our OpenAPI schema
+// export const GET = () => {
+//   return NextResponse.json(openApiDocument);
+// };

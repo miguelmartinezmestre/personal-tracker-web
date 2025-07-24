@@ -1,47 +1,58 @@
 "use client"
-import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from '@/components/ui/chart';
-import { useTranslations } from 'next-intl';
+import { Bar, BarChart, XAxis, YAxis, LabelList } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import type { ChartConfig } from "@/components/ui/chart"
 
-export function ObjetivesMostProgressGraph({ data }: { data: { objective: string; progress: number }[] }) {
+interface ObjetivesMostProgressGraphProps {
+  data: {
+    objective: string
+    progress: number
+  }[]
+}
 
-    const t = useTranslations('Stats');
+const chartConfig = {
+  progress: {
+    label: "Progress",
+    color: "oklch(var(--chart-2))",
+  },
+} satisfies ChartConfig
 
-    return (
-        <Card className='h-full'>
-            <CardHeader>
-                <CardTitle>{t('objectivesWithMostProgress')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ChartContainer config={{} satisfies ChartConfig}>
-                    <BarChart
-                        accessibilityLayer
-                        data={data}
-                        layout="vertical"
-                        margin={{
-                            left: 0,
-                        }}
-                    >
-                        <YAxis
-                            dataKey="objective"
-                            type="category"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                        />
-                        <XAxis dataKey="progress" type="number"  />
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                        <Bar dataKey="progress" layout="vertical" radius={5} />
-                    </BarChart>
-                </ChartContainer>
-            </CardContent>
-        </Card>
-    );
+export function ObjetivesMostProgressGraph({ data }: ObjetivesMostProgressGraphProps) {
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle>Objectives with Most Progress</CardTitle>
+        <CardDescription>Top 5 objectives by progress completion</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[350px] w-full">
+          <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 10, right: 40 }}>
+            <YAxis
+              dataKey="objective"
+              type="category"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => (value.length > 25 ? `${value.substring(0, 25)}...` : value)}
+              width={150}
+            />
+            <XAxis dataKey="progress" type="number" hide />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            <Bar dataKey="progress" layout="vertical" fill="var(--color-progress)" radius={4}>
+              <LabelList
+                dataKey="progress"
+                position="right"
+                offset={8}
+                className="fill-foreground"
+                fontSize={12}
+                formatter={(value: number) => `${value}%`}
+              />
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  )
 }

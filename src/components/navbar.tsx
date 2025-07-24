@@ -25,7 +25,7 @@ export default function NavBar() {
                 setLinks([
                     { name: t('register'), href: `/register` },
                     { name: t('login'), href: `/login` },
-                    { name: t('goToDashboard'), href: '/dashboard' }]);
+                    { name: t('goToDashboard'), href: '/dashboard/home' }]);
             } else {
                 setLinks([
                     { name: t('register'), href: `/register` },
