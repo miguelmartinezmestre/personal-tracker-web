@@ -13,8 +13,11 @@ import { useState } from 'react';
 import { loginAction } from '@/server/actions';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
+    const router = useRouter();
     const t = useTranslations('HomePage');
     const [loginError, setLoginError] = useState('');
 
@@ -26,12 +29,21 @@ export default function LoginForm() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof loginSchema>) {
-        const login = await loginAction(values);
+    const { signIn } = useAuthActions();
+    
 
-        if (login?.data?.error) {
-            setLoginError(login?.data?.message);
-        }
+    async function onSubmit(values: z.infer<typeof loginSchema>) {
+        const formData = new FormData();
+        formData.set("email", values.email);
+        formData.set("password", values.password);
+        formData.set("flow", "signIn");
+        signIn("password", formData)
+            .catch((error) => {
+                console.log(error.message);
+            })
+            .then(() => {
+                router.push("/dashboard/home");
+            });
     }
 
     return (

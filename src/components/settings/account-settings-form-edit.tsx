@@ -23,13 +23,13 @@ import { useTranslations } from 'next-intl';
 
 export default function AccountSettingsForm() {
     const t = useTranslations('Settings');
-    const trpc = useTRPC();
-    const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
-    const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
+    // const trpc = useTRPC();
+    // const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
+    // const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const queryClient = getQueryClient();
+    
     const form = useForm<z.infer<typeof accountDetailsSchema>>({
         resolver: zodResolver(accountDetailsSchema),
         defaultValues: {

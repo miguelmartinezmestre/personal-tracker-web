@@ -2,8 +2,9 @@
   "name": "metricas-refactor",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "prisma generate && prisma generate --sql && next dev --turbopack --port 3000",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,9 +14,12 @@
     "generate:prisma": "prisma generate",
     "push:prisma": "prisma db push",
     "studio": "prisma studio",
-    "test": "playwright test"
+    "test": "playwright test",
+    "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh"
   },
   "dependencies": {
+    "@convex-dev/auth": "^0.0.87",
+    "@convex-dev/react-query": "0.0.0-alpha.11",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "6.3.0",
     "@radix-ui/react-alert-dialog": "^1.1.13",
@@ -46,9 +50,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "convex": "^1.25.4",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.44.2",
+    "jose": "^6.0.12",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.510.0",

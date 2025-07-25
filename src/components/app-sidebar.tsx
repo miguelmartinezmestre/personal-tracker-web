@@ -14,8 +14,6 @@ import {
 import { NavUser } from '@/components/nav-user';
 import EditSettingsFormModal from '@/components/settings/account-settings-modal';
 import Link from 'next/link';
-import { useTRPC } from '@/trpc/client';
-import { useSuspenseQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -45,25 +43,25 @@ const projects = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const t = useTranslations('Sidebar');
-    const trpc = useTRPC();
-    const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
+    // const trpc = useTRPC();
+    // const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
     const [projectsState, setProjectsState] = useState<typeof projects>(projects);
 
-    if (accountDetails.isLoading) {
-        return <Loader2 className="animate-spin" />;
-    }
+    // if (accountDetails.isLoading) {
+    //     return <Loader2 className="animate-spin" />;
+    // }
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-        console.log(accountDetails.data?.role);
-        if (accountDetails.data?.role === 'ADMIN') {
-            setProjectsState([...projects, {
-                name: 'admin',
-                url: '/dashboard/admin-panel',
-                icon: Users,
-            }]);
-        }
-    }, [accountDetails.data?.role]);
+    // // eslint-disable-next-line react-hooks/rules-of-hooks
+    // useEffect(() => {
+    //     console.log(accountDetails.data?.role);
+    //     if (accountDetails.data?.role === 'ADMIN') {
+    //         setProjectsState([...projects, {
+    //             name: 'admin',
+    //             url: '/dashboard/admin-panel',
+    //             icon: Users,
+    //         }]);
+    //     }
+    // }, [accountDetails.data?.role]);
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -84,20 +82,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         ))}
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild key="settings">
-                                <EditSettingsFormModal />
+                                {/* <EditSettingsFormModal /> */}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
-                <NavUser
+                {/* <NavUser
                     user={{
                         email: accountDetails.data?.email,
                         name: accountDetails.data?.username,
                         avatar: '',
                     }}
-                />
+                /> */}
             </SidebarFooter>
         </Sidebar>
     );

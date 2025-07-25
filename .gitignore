@@ -42,6 +42,7 @@ next-env.d.ts
 
 # mysql
 mysql-data
+data
 
 # Playwright
 node_modules/

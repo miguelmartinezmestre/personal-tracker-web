@@ -1,0 +1,33 @@
+services:
+    db:
+        image: mysql:8.0
+        container_name: mysql_db
+        environment:
+            MYSQL_ROOT_PASSWORD: passwordmetricas1234
+        ports:
+            - '13306:3306'
+        volumes:
+            - ./mysql-data:/var/lib/mysql
+        networks:
+            - mysql_network
+    mailhog:
+        image: mailhog/mailhog
+        container_name: mailhog
+        ports:
+            - '1025:1025'
+            - '8025:8025'
+    chartdb:
+        image: ghcr.io/chartdb/chartdb:latest
+        container_name: chartdb
+        environment:
+            OPENAI_API_KEY: ""
+        ports:
+            - '8080:80'
+
+volumes:
+    mysql-data:
+        driver: local
+
+networks:
+    mysql_network:
+        driver: bridge
