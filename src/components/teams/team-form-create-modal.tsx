@@ -26,11 +26,11 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
 import { CreateTeam, teamSchema } from '@/schemas/team';
 import { useTranslations } from 'next-intl';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 const defaultValues: CreateTeam = {
     name: '',
@@ -39,9 +39,7 @@ const defaultValues: CreateTeam = {
 
 export default function CreateTeamFormModal() {
     const t = useTranslations('Teams');
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const createTeam = useMutation(trpc.teams.createTeam.mutationOptions());
+    const createTeam = useMutation({ mutationFn: useConvexMutation(api.teams.createTeam) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof teamSchema>>({
         resolver: zodResolver(teamSchema),
@@ -51,8 +49,6 @@ export default function CreateTeamFormModal() {
     const onSubmit = async (values: CreateTeam) => {
         console.log(values);
         await createTeam.mutateAsync(values);
-
-        queryClient.invalidateQueries(trpc.teams.getTeams.queryOptions({}));
         setOpen(false);
         form.reset();
     };

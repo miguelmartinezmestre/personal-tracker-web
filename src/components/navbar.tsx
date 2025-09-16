@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-switcher';
 import { useEffect, useState } from 'react';
-import { isLoggedInAction } from '@/server/actions';
+// import { isLoggedInAction } from '@/server/actions';
 import { LanguageSwitcher } from './language-switcher';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -17,26 +17,26 @@ export default function NavBar() {
         { name: t('login'), href: '/login' },
     ]);
 
-    useEffect(() => {
+    // useEffect(() => {
 
-        async function getIsLoggedIn() {
-            const isLoggedIn = await isLoggedInAction();
-            if (isLoggedIn?.data) {
-                setLinks([
-                    { name: t('register'), href: `/register` },
-                    { name: t('login'), href: `/login` },
-                    { name: t('goToDashboard'), href: '/dashboard/home' }]);
-            } else {
-                setLinks([
-                    { name: t('register'), href: `/register` },
-                    { name: t('login'), href: `/login` },
-                ]);
-            }
-        }
-        getIsLoggedIn();
+    //     async function getIsLoggedIn() {
+    //         const isLoggedIn = await isLoggedInAction();
+    //         if (isLoggedIn?.data) {
+    //             setLinks([
+    //                 { name: t('register'), href: `/register` },
+    //                 { name: t('login'), href: `/login` },
+    //                 { name: t('goToDashboard'), href: '/dashboard/home' }]);
+    //         } else {
+    //             setLinks([
+    //                 { name: t('register'), href: `/register` },
+    //                 { name: t('login'), href: `/login` },
+    //             ]);
+    //         }
+    //     }
+    //     getIsLoggedIn();
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [locale]);
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [locale]);
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">

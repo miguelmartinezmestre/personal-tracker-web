@@ -10,11 +10,10 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { loginAction } from '@/server/actions';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useAuthActions } from '@convex-dev/auth/react';
 import { useRouter } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
 
 export default function LoginForm() {
     const router = useRouter();
@@ -29,21 +28,22 @@ export default function LoginForm() {
         },
     });
 
-    const { signIn } = useAuthActions();
-    
-
     async function onSubmit(values: z.infer<typeof loginSchema>) {
-        const formData = new FormData();
-        formData.set("email", values.email);
-        formData.set("password", values.password);
-        formData.set("flow", "signIn");
-        signIn("password", formData)
-            .catch((error) => {
-                console.log(error.message);
-            })
-            .then(() => {
-                router.push("/dashboard/home");
-            });
+
+        await authClient.signIn.email(
+            {
+                email: values.email,
+                password: values.password,
+            },
+            {
+                onSuccess: () => {
+                    router.push("/dashboard/home");
+                },
+                onError: (ctx) => {
+                    window.alert(ctx.error.message);
+                },
+            }
+        );
     }
 
     return (

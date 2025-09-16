@@ -24,14 +24,14 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
 import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -44,9 +44,7 @@ export default function CreateTeamMemberFormModal() {
     const t = useTranslations('TeamMembers');
     const { id: teamId } = useParams();
 
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const createTeamMember = useMutation(trpc.teamMembers.createTeamMember.mutationOptions());
+    const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateTeamMember>({
         resolver: zodResolver(teamMemberSchema),
@@ -59,9 +57,9 @@ export default function CreateTeamMemberFormModal() {
 
     const onSubmit = async (values: CreateTeamMember) => {
         console.log(values);
-        const teamMember = await createTeamMember.mutateAsync(values);
-
-        queryClient.invalidateQueries(trpc.teamMembers.getTeamMembersByTeamId.queryOptions({ teamId: teamMember.teamId! }));
+        // NOTE: In Convex, you need a user id to create a team member. This UI previously created a user implicitly.
+        // Hook up a flow to select an existing user id, then call:
+        // await createTeamMember.mutateAsync({ team: teamId as any, user: selectedUserId as any, role: values.role });
         setOpen(false);
         form.reset();
     };

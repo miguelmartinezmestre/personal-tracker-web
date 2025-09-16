@@ -37,9 +37,9 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Objective, savedObjectiveSchema } from '@/schemas/objective';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -55,35 +55,32 @@ const categoryOptions = [
     { value: 'education', label: 'Education' },
 ];
 
-export default function EditObjectiveFormModal({defaultValues}: {defaultValues: Objective}) {
+export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
 
     const t = useTranslations('Objectives');
-    const trpc = useTRPC()
-    const updateObjective = useMutation(trpc.objectives.updateObjective.mutationOptions());
+    const updateObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.updateObjective) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedObjectiveSchema>>({
         resolver: zodResolver(savedObjectiveSchema),
         defaultValues: defaultValues,
     });
 
-    const queryClient = getQueryClient();
-
     const onSubmit = async (values: Objective) => {
         const updateData = {
-            id: values.id,
+            id: values.id as any,
             title: values.title,
             description: values.description ?? undefined,
             category: values.category ?? undefined,
             targetValue: values.targetValue,
             currentValue: values.currentValue,
-            deadline: values.deadline ?? undefined,
+            deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
+            status: values.status ?? undefined,
+            unit: values.unit ?? undefined,
         };
 
         console.log(updateData);
 
         await updateObjective.mutateAsync(updateData);
-
-        queryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
 
         setOpen(false);
         form.reset();

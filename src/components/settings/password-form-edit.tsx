@@ -14,7 +14,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { DialogFooter } from '@/components/ui/dialog';
@@ -22,8 +21,8 @@ import { useTranslations } from 'next-intl';
 
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
-    const trpc = useTRPC();
-    const updatePassword = useMutation(trpc.user.updatePassword.mutationOptions());
+    // TODO: Implement password update via Convex Auth if needed
+    const updatePassword = useMutation({ mutationFn: async () => ({ message: 'Not implemented', error: true }) });
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -78,7 +77,7 @@ export default function PasswordFormEdit() {
                         <FormItem>
                             <FormLabel>{t('password')}</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password"/>
+                                <Input {...field} type="password" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -92,7 +91,7 @@ export default function PasswordFormEdit() {
                         <FormItem>
                             <FormLabel>{t('confirmPassword')}</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password"/>
+                                <Input {...field} type="password" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -106,7 +105,7 @@ export default function PasswordFormEdit() {
                         <FormItem>
                             <FormLabel>{t('newPassword')}</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password"/>
+                                <Input {...field} type="password" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

@@ -1,22 +1,20 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useTRPC } from '@/trpc/client';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { getQueryClient } from '@/trpc/client';
 import { Session } from '@/schemas/session';
 import { UserAgentIcon } from '../user-agent';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function SessionsTable() {
     const t = useTranslations('Sessions');
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const sessions = useSuspenseQuery(trpc.sessions.getSessionsByUser.queryOptions({}));
-    const invalidateSession = useMutation(trpc.sessions.invalidateSession.mutationOptions());
+    const sessions = useSuspenseQuery(convexQuery(api.sessions.getSessionsByUser, {}));
+    const invalidateSession = useMutation({ mutationFn: useConvexMutation(api.sessions.invalidateSession) });
     const router = useRouter();
 
     const columns: ColumnDef<Session>[] = [
@@ -44,8 +42,7 @@ export default function SessionsTable() {
                     return (
                         <Button
                             onClick={async () => {
-                                await invalidateSession.mutateAsync({ id: objetiveRow.id });
-                                await queryClient.invalidateQueries(trpc.sessions.getSessionsByUser.queryOptions({}));
+                                await invalidateSession.mutateAsync({ id: objetiveRow.id as any });
                                 router.refresh();
                             }}
                         >

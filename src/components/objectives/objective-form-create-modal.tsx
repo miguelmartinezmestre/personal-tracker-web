@@ -37,9 +37,9 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { CreateObjective, objectiveSchema } from '@/schemas/objective';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
 
 const statusOptions = [
@@ -71,9 +71,7 @@ const defaultValues: CreateObjective = {
 
 export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const createObjective = useMutation(trpc.objectives.createObjective.mutationOptions());
+    const createObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.createObjective) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof objectiveSchema>>({
         resolver: zodResolver(objectiveSchema),
@@ -82,9 +80,16 @@ export default function CreateObjectiveFormModal() {
 
     const onSubmit = async (values: CreateObjective) => {
         console.log(values);
-        await createObjective.mutateAsync(values);
-
-        queryClient.invalidateQueries(trpc.objectives.getObjectivesByUser.queryOptions({}));
+        await createObjective.mutateAsync({
+            title: values.title,
+            description: values.description ?? undefined,
+            category: values.category ?? undefined,
+            targetValue: values.targetValue,
+            currentValue: values.currentValue,
+            deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
+            status: values.status ?? 'not_started',
+            unit: values.unit ?? undefined,
+        });
         setOpen(false);
         form.reset();
     };

@@ -1,23 +1,21 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useTRPC } from '@/trpc/client';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { getQueryClient } from '@/trpc/client';
 import { UpdateProgress } from '@/schemas/update-progress';
 import ObjectiveProgressOverTimeChart from '@/components/objective-progress-over-time-graph';
 import UpdateProgressFormModal from '@/components/update-progress/update-progress-form-edit-modal';
 import { useParams } from 'next/navigation';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function UpdateProgressTable() {
     const { id: objectiveId } = useParams();
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const updateProgress = useSuspenseQuery(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: Number(objectiveId) }));
-    const objective = useSuspenseQuery(trpc.objectives.getObjectiveById.queryOptions({ id: Number(objectiveId) }));
-    const deleteUpdateProgress = useMutation(trpc.updateProgress.deleteUpdateProgress.mutationOptions());
+    const updateProgress = useSuspenseQuery(convexQuery(api.update_progress.getUpdateProgressByObjectiveId, { objective: objectiveId as any }));
+    const objective = useSuspenseQuery(convexQuery(api.objectives.getObjectiveById, { id: objectiveId as any }));
+    const deleteUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.deleteUpdateProgress) });
 
     const columns: ColumnDef<UpdateProgress>[] = [
         {
@@ -50,8 +48,7 @@ export default function UpdateProgressTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteUpdateProgress.mutateAsync({ id: objetiveRow.id });
-                            queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: Number(objectiveId) }));
+                            await deleteUpdateProgress.mutateAsync({ id: objetiveRow.id as any });
                         }}
                     >
                         Delete
@@ -61,10 +58,10 @@ export default function UpdateProgressTable() {
         },
     ];
 
-    const progressData: Progress[] = updateProgress.data!.map(item => ({
+    const progressData: Progress[] = (updateProgress.data ?? []).map((item: any) => ({
         date: new Date(item.updateDate),
         currentValue: item.updatedValue,
-        objetive: objective.data!.targetValue,
+        objetive: (objective.data as any)?.targetValue,
     }));
 
 
