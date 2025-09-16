@@ -1,13 +1,11 @@
 "use client";
-import ObjetivesTable from '@/components/objectives/objetives-table';
-import Stats from '@/components/stats';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
+import { useConvexQuery } from '@convex-dev/react-query';
 import { api } from '../../../../../convex/_generated/api';
+
 
 export default function Dashboard() {
 
-    const { data: user } = useQuery(convexQuery(api.users.getUser, {}));
+    const user = useConvexQuery(api.auth.getCurrentUser);
 
     return (
         <div>

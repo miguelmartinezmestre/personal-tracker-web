@@ -26,28 +26,25 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
 import { Team, savedTeamSchema } from '@/schemas/team';
 import { useTranslations } from 'next-intl';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 
-export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}) {
+export default function EditTeamFormModal({ defaultValues }: { defaultValues: Team }) {
     const t = useTranslations('Teams');
-    const trpc = useTRPC()
-    const updateTeam = useMutation(trpc.teams.updateTeam.mutationOptions());
+    const updateTeam = useMutation({ mutationFn: useConvexMutation(api.teams.updateTeam) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedTeamSchema>>({
         resolver: zodResolver(savedTeamSchema),
         defaultValues: defaultValues,
     });
 
-    const queryClient = getQueryClient();
-
     const onSubmit = async (values: Team) => {
         const updateData = {
-            id: values.id,
+            id: values.id as any,
             name: values.name,
             description: values.description ?? undefined,
         };
@@ -55,8 +52,6 @@ export default function EditTeamFormModal({defaultValues}: {defaultValues: Team}
         console.log(updateData);
 
         await updateTeam.mutateAsync(updateData);
-
-        queryClient.invalidateQueries(trpc.teams.getTeams.queryOptions({}));
 
         setOpen(false);
         form.reset();

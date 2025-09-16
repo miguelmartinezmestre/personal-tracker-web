@@ -1,8 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useTRPC } from '@/trpc/client';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
     Objective,
@@ -10,15 +9,14 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditObjectiveFormModal from '@/components/objectives/objective-form-edit-modal';
-import { getQueryClient } from '@/trpc/client';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
 
 export default function ObjetivesTable() {
     const t = useTranslations('Objectives');
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const objectives = useSuspenseQuery(trpc.objectives.getObjectivesByUser.queryOptions({}));
-    const deleteObjective = useMutation(trpc.objectives.deleteObjective.mutationOptions());
+    const { data: objectives, isLoading } = useQuery(convexQuery(api.objectives.getObjectivesByUser, {}));
+    const deleteObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.deleteObjective) });
 
     const columns: ColumnDef<Objective>[] = [
         {
@@ -67,10 +65,7 @@ export default function ObjetivesTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteObjective.mutateAsync({ id: objetiveRow.id });
-                            await queryClient.invalidateQueries(
-                                trpc.objectives.getObjectivesByUser.queryOptions({})
-                            );
+                            await deleteObjective.mutateAsync({ id: objetiveRow.id as any });
                         }}
                     >
                         {t('deleteObjective')}
@@ -100,7 +95,7 @@ export default function ObjetivesTable() {
 
     return (
         <div>
-            <DataTable columns={columns} data={objectives.data!} isLoading={objectives.isLoading} />
+            <DataTable columns={columns} data={objectives ?? []} isLoading={isLoading} />
         </div>
     );
 }

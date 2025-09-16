@@ -28,21 +28,19 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
 import { CreateUpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
 
     const { id: objectiveId } = useParams();
 
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const createUpdateProgress = useMutation(trpc.updateProgress.createUpdateProgress.mutationOptions());
+    const createUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.createUpdateProgress) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateUpdateProgress>({
         resolver: zodResolver(updateProgressSchema),
@@ -56,9 +54,12 @@ export default function CreateUpdateProgressFormModal() {
 
     const onSubmit = async (values: CreateUpdateProgress) => {
         console.log(values);
-        const updateProgress = await createUpdateProgress.mutateAsync(values);
-
-        queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: updateProgress.objectiveId! }));
+        await createUpdateProgress.mutateAsync({
+            objective: (objectiveId as string) as any,
+            updatedValue: values.updatedValue,
+            updateDate: new Date(values.updateDate).getTime(),
+            comment: values.comment ?? undefined,
+        });
         setOpen(false);
         form.reset();
     };

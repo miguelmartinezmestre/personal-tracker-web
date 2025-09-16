@@ -15,21 +15,21 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { getQueryClient, useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { accountDetailsSchema } from '@/schemas/account-details';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function AccountSettingsForm() {
     const t = useTranslations('Settings');
-    // const trpc = useTRPC();
-    // const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
-    // const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
+    const accountDetails = useQuery(convexQuery(api.users.getAccountDetails, {}));
+    const updateAccountDetails = useMutation({ mutationFn: useConvexMutation(api.users.updateAccountDetails) });
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    
+
     const form = useForm<z.infer<typeof accountDetailsSchema>>({
         resolver: zodResolver(accountDetailsSchema),
         defaultValues: {
@@ -58,7 +58,7 @@ export default function AccountSettingsForm() {
             });
         }
 
-        queryClient.invalidateQueries(trpc.user.getAccountDetails.queryOptions({}));
+        // Convex react-query client handles cache; explicit invalidation not required here.
 
         setOpen(false);
         form.reset();
