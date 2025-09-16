@@ -1,25 +1,9 @@
-import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-
-  ...authTables,
-  numbers: defineTable({
-    value: v.number(),
+  users: defineTable({
   }),
-
-  // users: defineTable({
-  //   email: v.string(),
-  //   password: v.string(),
-  //   username: v.optional(v.string()),
-  //   resetPasswordKey: v.optional(v.string()),
-  //   role: v.union(
-  //     v.literal("ADMIN"),
-  //     v.literal("USER")
-  //   ),
-  // })
-  // .index("by_email", ["email"]),
 
   sessions: defineTable({
     user: v.id("users"),
@@ -29,7 +13,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-  .index("by_user", ["user"]),
+    .index("by_user", ["user"]),
 
   objectives: defineTable({
     user: v.id("users"),
@@ -44,7 +28,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-  .index("by_user", ["user"]),
+    .index("by_user", ["user"]),
 
   progressUpdates: defineTable({
     objective: v.id("objectives"),
@@ -54,7 +38,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-  .index("by_objective", ["objective"]),
+    .index("by_objective", ["objective"]),
 
   notifications: defineTable({
     user: v.id("users"),
@@ -66,8 +50,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-  .index("by_user", ["user"])
-  .index("by_objective", ["objective"]),
+    .index("by_user", ["user"])
+    .index("by_objective", ["objective"]),
 
   auditLogs: defineTable({
     user: v.id("users"),
@@ -75,7 +59,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-  .index("by_user", ["user"]),
+    .index("by_user", ["user"]),
 
   teams: defineTable({
     name: v.string(),
@@ -94,6 +78,6 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-  .index("by_team", ["team"])
-  .index("by_user", ["user"]),
+    .index("by_team", ["team"])
+    .index("by_user", ["user"]),
 });
