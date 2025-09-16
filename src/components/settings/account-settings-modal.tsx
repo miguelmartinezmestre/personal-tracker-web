@@ -14,8 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AccountSettingsForm from "./account-settings-form-edit"
 import { Settings } from "lucide-react"
 import PasswordFormEdit from "./password-form-edit"
+import { useTranslations } from "next-intl"
 
 export default function EditSettingsFormModal() {
+  const t = useTranslations('Settings');
   const [open, setOpen] = useState(false)
 
   return (
@@ -23,14 +25,14 @@ export default function EditSettingsFormModal() {
       <DialogTrigger asChild>
         <SidebarMenuButton className="gap-2">
           <Settings className="h-4 w-4" />
-          Settings
+          {t('title')}
         </SidebarMenuButton>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Account Settings</DialogTitle>
+          <DialogTitle>{t('accountSettings')}</DialogTitle>
           <DialogDescription>
-            Edit your account settings here.
+            {t('accountSettingsDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -38,10 +40,10 @@ export default function EditSettingsFormModal() {
           <Tabs defaultValue="account" className="w-full max-w-[400px]">
             <TabsList className="w-full">
               <TabsTrigger value="account" className="flex-1">
-                Account Details
+                {t('accountDetails')}
               </TabsTrigger>
               <TabsTrigger value="password" className="flex-1">
-                Password
+                {t('password')}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="account">

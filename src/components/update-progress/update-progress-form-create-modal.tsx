@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,13 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
     Dialog,
@@ -36,20 +28,19 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { CreateObjective, objectiveSchema } from '@/schemas/objective';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
-import { CreateUpdateProgress, CreateUpdateProgressBeforeCreate, updateProgressSchema } from '@/schemas/update-progress';
+import { CreateUpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function CreateUpdateProgressFormModal() {
+    const t = useTranslations('UpdateProgress');
 
     const { id: objectiveId } = useParams();
 
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const createUpdateProgress = useMutation(trpc.updateProgress.createUpdateProgress.mutationOptions());
+    const createUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.createUpdateProgress) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateUpdateProgress>({
         resolver: zodResolver(updateProgressSchema),
@@ -63,9 +54,12 @@ export default function CreateUpdateProgressFormModal() {
 
     const onSubmit = async (values: CreateUpdateProgress) => {
         console.log(values);
-        const updateProgress = await createUpdateProgress.mutateAsync(values);
-
-        queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: updateProgress.objectiveId! }));
+        await createUpdateProgress.mutateAsync({
+            objective: (objectiveId as string) as any,
+            updatedValue: values.updatedValue,
+            updateDate: new Date(values.updateDate).getTime(),
+            comment: values.comment ?? undefined,
+        });
         setOpen(false);
         form.reset();
     };
@@ -75,15 +69,14 @@ export default function CreateUpdateProgressFormModal() {
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Create New Update Progress
+                    {t('createNewUpdateProgress')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Create New Update Progress</DialogTitle>
+                    <DialogTitle>{t('createNewUpdateProgress')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to create a new update progress. Click save when you're
-                        done.
+                        {t('createNewUpdateProgressDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -94,9 +87,9 @@ export default function CreateUpdateProgressFormModal() {
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Updated Value</FormLabel>
+                                    <FormLabel>{t('updatedValue')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter updated value"
+                                        <Input placeholder={t('enterUpdatedValue')}
                                             type="number"
                                             {...field}
                                             value={Number.isNaN(field.value) ? '' : field.value}
@@ -104,7 +97,7 @@ export default function CreateUpdateProgressFormModal() {
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your update progress a clear, concise title.
+                                        {t('giveYourUpdateProgressAClearConciseTitle')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -116,17 +109,17 @@ export default function CreateUpdateProgressFormModal() {
                             name="comment"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Comment</FormLabel>
+                                    <FormLabel>{t('comment')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your update progress in detail"
+                                            placeholder={t('describeYourUpdateProgressInDetail')}
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your update progress.
+                                        {t('optionalAddDetailsAboutYourUpdateProgress')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -140,7 +133,7 @@ export default function CreateUpdateProgressFormModal() {
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>Deadline</FormLabel>
+                                    <FormLabel>{t('deadline')}</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
@@ -154,7 +147,7 @@ export default function CreateUpdateProgressFormModal() {
                                                     {field.value ? (
                                                         new Date(field.value).toLocaleDateString()
                                                     ) : (
-                                                        <span>Pick a date</span>
+                                                        <span>{t('pickADate')}</span>
                                                     )}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
@@ -178,9 +171,9 @@ export default function CreateUpdateProgressFormModal() {
 
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Progress</Button>
+                            <Button type="submit">{t('saveProgress')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

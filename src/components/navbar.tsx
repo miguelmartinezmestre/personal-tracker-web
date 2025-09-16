@@ -1,29 +1,42 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-switcher';
 import { useEffect, useState } from 'react';
-import { isLoggedInAction } from '@/server/actions';
+// import { isLoggedInAction } from '@/server/actions';
+import { LanguageSwitcher } from './language-switcher';
+import { useLocale, useTranslations } from 'next-intl';
 
 type LinkItem = { name: string; href: string };
 
 type LinkArray = LinkItem[];
 
-const defaultLinks: LinkArray = [
-    { name: 'Registrase', href: '/register' },
-    { name: 'Iniciar sesión', href: '/login' },
-];
-
 export default function NavBar() {
-    const [links, setLinks] = useState<LinkArray>(defaultLinks);
+    const t = useTranslations('HomePage');
+    const locale = useLocale();
+    const [links, setLinks] = useState<LinkArray>([
+        { name: t('register'), href: '/register' },
+        { name: t('login'), href: '/login' },
+    ]);
 
-    useEffect(() => {
-        async function getIsLoggedIn() {
-            const isLoggedIn = await isLoggedInAction();
-            if (isLoggedIn?.data) {
-                setLinks([...links, { name: 'Go to dashboard', href: '/dashboard' }]);
-            }
-        }
-        getIsLoggedIn();
-    }, [links]);
+    // useEffect(() => {
+
+    //     async function getIsLoggedIn() {
+    //         const isLoggedIn = await isLoggedInAction();
+    //         if (isLoggedIn?.data) {
+    //             setLinks([
+    //                 { name: t('register'), href: `/register` },
+    //                 { name: t('login'), href: `/login` },
+    //                 { name: t('goToDashboard'), href: '/dashboard/home' }]);
+    //         } else {
+    //             setLinks([
+    //                 { name: t('register'), href: `/register` },
+    //                 { name: t('login'), href: `/login` },
+    //             ]);
+    //         }
+    //     }
+    //     getIsLoggedIn();
+
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [locale]);
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
@@ -34,6 +47,9 @@ export default function NavBar() {
             ))}
             <div className="text-primary hover:text-gray-700">
                 <ThemeToggle />
+            </div>
+            <div className="text-primary hover:text-gray-700">
+                <LanguageSwitcher />
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Loader2, Settings, Users } from 'lucide-react';
+import { Bell, Frame, Goal, Home, Loader2, Users } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -14,28 +14,27 @@ import {
 import { NavUser } from '@/components/nav-user';
 import EditSettingsFormModal from '@/components/settings/account-settings-modal';
 import Link from 'next/link';
-import { useTRPC } from '@/trpc/client';
-import { useSuspenseQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 const projects = [
     {
-        name: 'Home',
+        name: 'home',
         url: '/dashboard/home',
         icon: Home,
     },
     {
-        name: 'Objectives',
+        name: 'objectives',
         url: '/dashboard/objectives',
         icon: Goal,
     },
     {
-        name: 'Notifications',
+        name: 'notifications',
         url: '/dashboard/notifications',
         icon: Bell,
     },
     {
-        name: 'Sessions',
+        name: 'sessions',
         url: '/dashboard/sessions',
         icon: Frame,
     },
@@ -43,44 +42,30 @@ const projects = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
-    const trpc = useTRPC();
-    const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
-    // const { user, isLoading } = useAuthContext();
-    // const { t } = useTranslation();
+    const t = useTranslations('Sidebar');
+    // const trpc = useTRPC();
+    // const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
     const [projectsState, setProjectsState] = useState<typeof projects>(projects);
 
-    if (accountDetails.isLoading) {
-        return <Loader2 className="animate-spin" />;
-    }
+    // if (accountDetails.isLoading) {
+    //     return <Loader2 className="animate-spin" />;
+    // }
 
-    useEffect(() => {
-        console.log(accountDetails.data?.role);
-        if (accountDetails.data?.role === 'ADMIN') {
-            setProjectsState([...projects, {
-                name: 'Admin Panel',
-                url: '/dashboard/admin-panel',
-                icon: Users,
-            }]);
-        }
-    }, [accountDetails.data?.role]);
+    // // eslint-disable-next-line react-hooks/rules-of-hooks
+    // useEffect(() => {
+    //     console.log(accountDetails.data?.role);
+    //     if (accountDetails.data?.role === 'ADMIN') {
+    //         setProjectsState([...projects, {
+    //             name: 'admin',
+    //             url: '/dashboard/admin-panel',
+    //             icon: Users,
+    //         }]);
+    //     }
+    // }, [accountDetails.data?.role]);
 
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
-                {/* <LanguageSwitcher
-                    languages={[
-                        {
-                            // name: t('english'),
-                            name: 'English',
-                            code: 'en',
-                        },
-                        {
-                            // name: t('spanish'),
-                            name: 'Spanish',
-                            code: 'es',
-                        },
-                    ]}
-                /> */}
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -90,28 +75,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 <SidebarMenuButton asChild>
                                     <Link href={item.url} prefetch={false}>
                                         <item.icon />
-                                        {/* <span>{t(String(item.name).toLowerCase())}</span> */}
-                                        {item.name}
+                                        {t(item.name)}
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         ))}
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild key="settings">
-                                <EditSettingsFormModal />
+                                {/* <EditSettingsFormModal /> */}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
-                <NavUser
+                {/* <NavUser
                     user={{
                         email: accountDetails.data?.email,
                         name: accountDetails.data?.username,
                         avatar: '',
                     }}
-                />
+                /> */}
             </SidebarFooter>
         </Sidebar>
     );

@@ -1,22 +1,35 @@
+"use client";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import getUser from "@/server/getUser";
-import { getQueryClient, prefetch, trpc } from "@/trpc/server";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { authClient } from "@/lib/auth-client";
+import { Authenticated, AuthLoading, Unauthenticated, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
-export default async function Layout({ children }: { children: React.ReactNode }) {
 
-    await getUser()
+export default function Layout({ children }: { children: React.ReactNode }) {
 
-    const queryClient = getQueryClient();
+    // await getUser()
 
-    prefetch(trpc.user.getAccountDetails.queryOptions({}));
+    // const queryClient = getQueryClient();
+
+    // prefetch(trpc.user.getAccountDetails.queryOptions({}));
 
     return (
-        <HydrationBoundary state={dehydrate(queryClient)}>
+        <div>
             <DashboardLayout>
                 {/* <h1>Dashboard</h1> */}
-                {children}
+                <>
+                    <AuthLoading>
+                        <div>Loading...</div>
+                    </AuthLoading>
+                    <Unauthenticated>
+                        Not Authenticated
+                    </Unauthenticated>
+                    <Authenticated>
+                        {children}
+                    </Authenticated>
+                </>
+
             </DashboardLayout>
-        </HydrationBoundary>
+        </div>
     )
 }

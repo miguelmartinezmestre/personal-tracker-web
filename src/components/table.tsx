@@ -1,6 +1,6 @@
 import { ColumnDef, useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+// import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataTableProps<TData, TValue> {

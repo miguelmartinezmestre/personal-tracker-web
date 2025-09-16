@@ -9,26 +9,27 @@ import { Button } from '@/components/ui/button';
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { getQueryClient, useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { accountDetailsSchema } from '@/schemas/account-details';
 import { DialogFooter } from '@/components/ui/dialog';
+import { useTranslations } from 'next-intl';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function AccountSettingsForm() {
-    const trpc = useTRPC();
-    const accountDetails = useQuery(trpc.user.getAccountDetails.queryOptions({}));
-    const updateAccountDetails = useMutation(trpc.user.updateAccountDetails.mutationOptions());
-    const [open, setOpen] = useState(false);
+    const t = useTranslations('Settings');
+    const accountDetails = useQuery(convexQuery(api.users.getAccountDetails, {}));
+    const updateAccountDetails = useMutation({ mutationFn: useConvexMutation(api.users.updateAccountDetails) });
+    const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const queryClient = getQueryClient();
+
     const form = useForm<z.infer<typeof accountDetailsSchema>>({
         resolver: zodResolver(accountDetailsSchema),
         defaultValues: {
@@ -57,7 +58,7 @@ export default function AccountSettingsForm() {
             });
         }
 
-        queryClient.invalidateQueries(trpc.user.getAccountDetails.queryOptions({}));
+        // Convex react-query client handles cache; explicit invalidation not required here.
 
         setOpen(false);
         form.reset();
@@ -88,7 +89,7 @@ export default function AccountSettingsForm() {
                     name="username"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>{t('username')}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Enter username" {...field} />
                             </FormControl>
@@ -102,7 +103,7 @@ export default function AccountSettingsForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>{t('email')}</FormLabel>
                             <FormControl>
                                 <Input placeholder="Enter email" {...field} />
                             </FormControl>
@@ -115,7 +116,7 @@ export default function AccountSettingsForm() {
                     <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                         Cancel
                     </Button>
-                    <Button type="submit">Save Objective</Button>
+                    <Button type="submit">{t('saveAccount')}</Button>
                 </DialogFooter>
                 {error && <p className="text-red-500">{error}</p>}
                 {message && <p className="text-green-500">{message}</p>}

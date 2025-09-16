@@ -1,9 +1,8 @@
 import { AppSidebar } from '@/components/app-sidebar';
-import { BreadcrumbNav } from '@/components/breadcrump';
 import { ThemeToggle } from '@/components/theme-switcher';
-import { Separator } from '@/components/ui/separator';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import CommandMenu from '@/components/command';
+import { LanguageSwitcher } from './language-switcher';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
@@ -14,10 +13,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <header className="flex h-16 shrink-0 items-center px-4 justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <BreadcrumbNav />
                     </div>
-                    <ThemeToggle />
+                    <div className="flex items-center gap-2">
+                        <ThemeToggle />
+                        <LanguageSwitcher />
+                    </div>
                 </header>
                 <CommandMenu />
                 <div className="grid grid-cols-1 gap-4 p-4 pt-0">

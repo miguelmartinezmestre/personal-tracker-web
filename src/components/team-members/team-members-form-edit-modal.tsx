@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -16,10 +15,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 import {
     Dialog,
     DialogContent,
@@ -29,13 +24,13 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
-import { UpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
 import { TeamMember, savedTeamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
+import { useTranslations } from 'next-intl';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -44,29 +39,23 @@ const roleOptions = [
 
 export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
 
-    const trpc = useTRPC()
-    const updateTeamMember = useMutation(trpc.teamMembers.updateTeamMember.mutationOptions());
+    const t = useTranslations('TeamMembers');
+    const updateTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.updateTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<TeamMember>({
         resolver: zodResolver(savedTeamMemberSchema),
         defaultValues: defaultValues,
     });
 
-    const queryClient = getQueryClient();
-
     const onSubmit = async (values: TeamMember) => {
         const updateData = {
-            id: values.id,
-            email: values.email,
+            id: values.id as any,
             role: values.role,
-            teamId: values.teamId,
         };
 
         console.log(updateData);
 
         await updateTeamMember.mutateAsync(updateData);
-
-        queryClient.invalidateQueries(trpc.teamMembers.getTeamMembersByTeamId.queryOptions({ teamId: updateData.teamId! }));
 
         setOpen(false);
         form.reset();
@@ -77,15 +66,14 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    Edit Team Member
+                    {t('edit')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Progress</DialogTitle>
+                    <DialogTitle>{t('edit')}</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your team member. Click save when you're
-                        done.
+                        {t('editTeamMemberDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -96,9 +84,9 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter email"
+                                        <Input placeholder={t('enterEmail')}
                                             type="email"
                                             {...field}
                                             value={field.value || ''}
@@ -106,7 +94,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your team member a clear, concise email.
+                                        {t('giveYourTeamMemberAClearConciseEmail')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -118,7 +106,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                             name="role"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Role</FormLabel>
+                                    <FormLabel>{t('role')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || TeamRole.MEMBER}
@@ -137,7 +125,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        Current role of your team member.
+                                        {t('currentRoleOfYourTeamMember')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -145,9 +133,9 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                         />
                         <DialogFooter className="pt-4">
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('cancel')}
                             </Button>
-                            <Button type="submit">Save Team Member</Button>
+                            <Button type="submit">{t('saveTeamMember')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

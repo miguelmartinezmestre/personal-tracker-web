@@ -2,8 +2,9 @@
   "name": "metricas-refactor",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "prisma generate && prisma generate --sql && next dev --turbopack --port 3000",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,9 +13,13 @@
     "export:email": "email export",
     "generate:prisma": "prisma generate",
     "push:prisma": "prisma db push",
-    "test": "playwright test"
+    "studio": "prisma studio",
+    "test": "playwright test",
+    "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh"
   },
   "dependencies": {
+    "@convex-dev/better-auth": "^0.7.18",
+    "@convex-dev/react-query": "0.0.0-alpha.11",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "6.3.0",
     "@radix-ui/react-alert-dialog": "^1.1.13",
@@ -42,16 +47,21 @@
     "@trpc/tanstack-react-query": "^11.1.2",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/swagger-ui-react": "^5.18.0",
+    "better-auth": "1.3.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "convex": "^1.26.2",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.44.2",
+    "jose": "^6.0.12",
+    "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.510.0",
     "mysql2": "^3.14.1",
     "next": "15.3.3",
+    "next-intl": "^4.1.0",
     "next-rspack": "^15.3.3",
     "next-safe-action": "^7.10.8",
     "next-themes": "^0.4.6",
@@ -75,7 +85,9 @@
     "@eslint/eslintrc": "latest",
     "@playwright/test": "^1.52.0",
     "@tailwindcss/postcss": "^4",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.1",
@@ -86,5 +98,5 @@
     "tw-animate-css": "^1.2.9",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@10.16.1"
 }

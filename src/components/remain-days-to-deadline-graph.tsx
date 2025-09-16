@@ -1,27 +1,23 @@
 "use client"
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
 } from '@/components/ui/chart';
-import { TrendingUp } from 'lucide-react';
-const chartData = [
-    { objective: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
-    { objective: 'safari', visitors: 200, fill: 'var(--color-safari)' },
-    { objective: 'firefox', visitors: 187, fill: 'var(--color-firefox)' },
-    { objective: 'edge', visitors: 173, fill: 'var(--color-edge)' },
-    { objective: 'other', visitors: 90, fill: 'var(--color-other)' },
-];
+import { useTranslations } from 'next-intl';
 
 export function RemainDaysToDeadlineGraph({ data }: { data: { objective: string; days: number; fill: string }[] }) {
+
+    const t = useTranslations('Stats');
+
     return (
         <Card className='h-full'>
             <CardHeader>
-                <CardTitle>Cantidad de días para la deadline</CardTitle>
+                <CardTitle>{t('remainDaysToDeadline')}</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={{} satisfies ChartConfig}>

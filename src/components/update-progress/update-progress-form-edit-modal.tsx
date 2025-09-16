@@ -29,28 +29,25 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useTRPC } from '@/trpc/client';
 import { useMutation } from '@tanstack/react-query';
-import { getQueryClient } from '@/trpc/client';
-import { UpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
+import { UpdateProgress, savedUpdateProgressSchema } from '@/schemas/update-progress';
 
 export default function UpdateProgressFormModal({ defaultValues }: { defaultValues: UpdateProgress }) {
 
-    const trpc = useTRPC()
-    const updateUpdateProgress = useMutation(trpc.updateProgress.updateUpdateProgress.mutationOptions());
+    const updateUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress) });
     const [open, setOpen] = useState(false);
-    const form = useForm<z.infer<typeof updateProgressSchema>>({
-        resolver: zodResolver(updateProgressSchema),
+    const form = useForm<z.infer<typeof savedUpdateProgressSchema>>({
+        resolver: zodResolver(savedUpdateProgressSchema),
         defaultValues: defaultValues,
     });
 
-    const queryClient = getQueryClient();
-
     const onSubmit = async (values: UpdateProgress) => {
         const updateData = {
-            id: values.id,
+            id: values.id as any,
             updatedValue: values.updatedValue,
-            updateDate: values.updateDate,
+            updateDate: new Date(values.updateDate).getTime(),
             comment: values.comment ?? null,
             objectiveId: values.objectiveId,
         };
@@ -58,8 +55,6 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
         console.log(updateData);
 
         await updateUpdateProgress.mutateAsync(updateData);
-
-        queryClient.invalidateQueries(trpc.updateProgress.getUpdateProgressByObjectiveId.queryOptions({ id: updateData.objectiveId! }));
 
         setOpen(false);
         form.reset();
@@ -77,7 +72,7 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                 <DialogHeader>
                     <DialogTitle>Edit Progress</DialogTitle>
                     <DialogDescription>
-                        Fill out the form below to edit your progress. Click save when you're
+                        Fill out the form below to edit your progress. Click save when you&apos;re
                         done.
                     </DialogDescription>
                 </DialogHeader>

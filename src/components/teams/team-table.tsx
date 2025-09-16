@@ -1,24 +1,20 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useTRPC } from '@/trpc/client';
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditTeamFormModal from '@/components/teams/team-form-edit-modal';
-import { getQueryClient } from '@/trpc/client';
 import { Team } from '@/schemas/team';
-
-function t(key: string) {
-    return key;
-}
+import { useTranslations } from 'next-intl';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 export default function TeamsTable() {
-    const trpc = useTRPC();
-    const queryClient = getQueryClient();
-    const teams = useSuspenseQuery(trpc.teams.getTeams.queryOptions({}));
-    const deleteTeam = useMutation(trpc.teams.deleteTeam.mutationOptions());
+    const t = useTranslations('Teams');
+    const teams = useSuspenseQuery(convexQuery(api.teams.getTeams, {}));
+    const deleteTeam = useMutation({ mutationFn: useConvexMutation(api.teams.deleteTeam) });
 
     const columns: ColumnDef<Team>[] = [
         {
@@ -27,7 +23,7 @@ export default function TeamsTable() {
         },
         {
             accessorKey: 'description',
-            header: t('description'),
+            header: t('tableDescription'),
         },
         {
             header: '',
@@ -47,13 +43,10 @@ export default function TeamsTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteTeam.mutateAsync({ id: teamRow.id });
-                            await queryClient.invalidateQueries(
-                                trpc.teams.getTeams.queryOptions({})
-                            );
+                            await deleteTeam.mutateAsync({ id: teamRow.id as any });
                         }}
                     >
-                        Delete
+                        {t('deleteTeam')}
                     </Button>
                 );
             },

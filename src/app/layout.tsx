@@ -1,21 +1,27 @@
 import "@/app/globals.css"
 import { ThemeProvider } from "@/providers/theme";
-import { TRPCReactProvider } from "@/trpc/client";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import { Toaster } from "sonner";
+import ConvexClientProvider from "@/providers/convex-provider";
 
 export const metadata = {
   title: "Metricas",
   description: "Metricas",
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
+
+  const locale = await getLocale();
 
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <main>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
+            <NextIntlClientProvider>
+              <ConvexClientProvider>{children}</ConvexClientProvider>
+            </NextIntlClientProvider>
           </main>
           <Toaster />
         </ThemeProvider>

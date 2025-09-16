@@ -10,10 +10,14 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { loginAction } from '@/server/actions';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
 
 export default function LoginForm() {
+    const router = useRouter();
+    const t = useTranslations('HomePage');
     const [loginError, setLoginError] = useState('');
 
     const form = useForm<z.infer<typeof loginSchema>>({
@@ -25,12 +29,21 @@ export default function LoginForm() {
     });
 
     async function onSubmit(values: z.infer<typeof loginSchema>) {
-        // mutation.mutate(values);
-        const login = await loginAction(values);
 
-        if (login?.data?.error) {
-            setLoginError(login?.data?.message);
-        }
+        await authClient.signIn.email(
+            {
+                email: values.email,
+                password: values.password,
+            },
+            {
+                onSuccess: () => {
+                    router.push("/dashboard/home");
+                },
+                onError: (ctx) => {
+                    window.alert(ctx.error.message);
+                },
+            }
+        );
     }
 
     return (
@@ -89,7 +102,7 @@ export default function LoginForm() {
                         href="/forget-password"
                         className="text-sm text-primary hover:text-primary/80 transition-colors"
                     >
-                        ¿Olvidaste tu contraseña?
+                        {t('forgotPassword')}
                     </Link>
                 </div>
 
@@ -99,13 +112,12 @@ export default function LoginForm() {
                     disabled={false}
                     data-testid="login-button"
                 >
-                    {/* {login.isPending ? 'Iniciando sesión...' : 'Iniciar Sesión'} */}
-                    Iniciar Sesión
+                    {t('login')}
                 </Button>
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/register" prefetch={false}>¿No tienes una cuenta? Registrarse</Link>
+                        <Link href="/register" prefetch={false}>{t('noAccount')} {t('register')}</Link>
                     </p>
                 </div>
             </form>
