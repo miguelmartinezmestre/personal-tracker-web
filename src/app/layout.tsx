@@ -3,7 +3,6 @@ import { ThemeProvider } from "@/providers/theme";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { Toaster } from "sonner";
-import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "@/providers/convex-provider";
 
 export const metadata = {
@@ -20,11 +19,9 @@ export default async function Layout({ children }: { children: React.ReactNode }
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <main>
-            <ConvexAuthNextjsServerProvider>
-              <NextIntlClientProvider>
-                <ConvexClientProvider>{children}</ConvexClientProvider>
-              </NextIntlClientProvider>
-            </ConvexAuthNextjsServerProvider>
+            <NextIntlClientProvider>
+              <ConvexClientProvider>{children}</ConvexClientProvider>
+            </NextIntlClientProvider>
           </main>
           <Toaster />
         </ThemeProvider>
