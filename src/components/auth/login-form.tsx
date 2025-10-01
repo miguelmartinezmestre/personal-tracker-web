@@ -40,7 +40,8 @@ export default function LoginForm() {
                     router.push("/dashboard/home");
                 },
                 onError: (ctx) => {
-                    window.alert(ctx.error.message);
+                    // window.alert(ctx.error.message);
+                    console.log(3,ctx.error.message);
                 },
             }
         );

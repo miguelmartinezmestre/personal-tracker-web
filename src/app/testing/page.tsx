@@ -55,7 +55,8 @@ function SignIn() {
             router.push("/dashboard/home");
           },
           onError: (ctx) => {
-            window.alert(ctx.error.message);
+            // window.alert(ctx.error.message);
+            console.log(1,ctx.error.message);
           },
         }
       );
@@ -71,7 +72,8 @@ function SignIn() {
             router.push("/dashboard/home");
           },
           onError: (ctx) => {
-            window.alert(ctx.error.message);
+            // window.alert(ctx.error.message);
+            console.log(2,ctx.error.message);
           },
         }
       );

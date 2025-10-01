@@ -51,7 +51,8 @@ export default function RegisterForm() {
                     router.push("/dashboard/home");
                 },
                 onError: (ctx) => {
-                    window.alert(ctx.error.message);
+                    // window.alert(ctx.error.message);
+                    console.log(4,ctx.error.message);
                 },
             }
         );
