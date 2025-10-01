@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { CreateObjective, objectiveSchema } from '@/schemas/objective';
 import { useMutation } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
 
@@ -282,7 +282,7 @@ export default function CreateObjectiveFormModal() {
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value || undefined}
+                                                selected={field.value ? new Date(field.value) : undefined}
                                                 onSelect={field.onChange}
                                                 initialFocus
                                             />

@@ -6,7 +6,7 @@ export const objectiveSchema = z.object({
     category: z.string().optional().nullable(),
     targetValue: z.number(),
     currentValue: z.number(),
-    deadline: z.date().optional().nullable(),
+    deadline: z.number().optional().nullable(),
     status: z.string().optional().nullable(),
     unit: z.string().optional().nullable(),
     // createdAt: z.date().nullable(),
@@ -14,7 +14,7 @@ export const objectiveSchema = z.object({
 });
 
 export const savedObjectiveSchema = objectiveSchema.extend({
-    id: z.number()
+    _id: z.string()
 });
 
 export type Objective = z.infer<typeof savedObjectiveSchema>;

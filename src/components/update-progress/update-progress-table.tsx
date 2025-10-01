@@ -10,6 +10,7 @@ import UpdateProgressFormModal from '@/components/update-progress/update-progres
 import { useParams } from 'next/navigation';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
+import { Doc, Id } from '../../../convex/_generated/dataModel';
 
 export default function UpdateProgressTable() {
     const { id: objectiveId } = useParams();
@@ -17,7 +18,7 @@ export default function UpdateProgressTable() {
     const objective = useSuspenseQuery(convexQuery(api.objectives.getObjectiveById, { id: objectiveId as any }));
     const deleteUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.deleteUpdateProgress) });
 
-    const columns: ColumnDef<UpdateProgress>[] = [
+    const columns: ColumnDef<Doc<"progressUpdates">>[] = [
         {
             accessorKey: 'updatedValue',
             header: 'Valor Actual',
@@ -35,8 +36,14 @@ export default function UpdateProgressTable() {
             id: 'edit',
             cell: ({ row }) => {
                 const objetiveRow = row.original;
+                const defaultValues = {
+                    _id: String(objetiveRow._id),
+                    updatedValue: objetiveRow.updatedValue,
+                    updateDate: new Date(objetiveRow.updateDate),
+                    comment: objetiveRow.comment ?? null,
+                } as unknown as UpdateProgress;
                 return (
-                    <UpdateProgressFormModal defaultValues={objetiveRow} />
+                    <UpdateProgressFormModal defaultValues={defaultValues} />
                 );
             },
         },
@@ -48,7 +55,7 @@ export default function UpdateProgressTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteUpdateProgress.mutateAsync({ id: objetiveRow.id as any });
+                            await deleteUpdateProgress.mutateAsync({ id: objetiveRow._id as Id<"progressUpdates"> });
                         }}
                     >
                         Delete
@@ -58,10 +65,11 @@ export default function UpdateProgressTable() {
         },
     ];
 
-    const progressData: Progress[] = (updateProgress.data ?? []).map((item: any) => ({
-        date: new Date(item.updateDate),
+    type ProgressPoint = { date: string; currentValue: number; objective: number };
+    const progressData: ProgressPoint[] = (updateProgress.data ?? []).map((item: Doc<"progressUpdates">) => ({
+        date: new Date(item.updateDate).toISOString(),
         currentValue: item.updatedValue,
-        objetive: (objective.data as any)?.targetValue,
+        objective: (objective.data as Doc<"objectives"> | undefined)?.targetValue ?? 0,
     }));
 
 

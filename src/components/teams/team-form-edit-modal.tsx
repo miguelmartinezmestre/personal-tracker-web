@@ -31,9 +31,10 @@ import { Team, savedTeamSchema } from '@/schemas/team';
 import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
+import { Doc } from '../../../convex/_generated/dataModel';
 
 
-export default function EditTeamFormModal({ defaultValues }: { defaultValues: Team }) {
+export default function EditTeamFormModal({ defaultValues }: { defaultValues: Doc<"teams"> }) {
     const t = useTranslations('Teams');
     const updateTeam = useMutation({ mutationFn: useConvexMutation(api.teams.updateTeam) });
     const [open, setOpen] = useState(false);

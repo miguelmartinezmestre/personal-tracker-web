@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { resetPasswordAction } from '@/server/actions';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/schemas/reset-password';
@@ -16,7 +15,7 @@ import { useSearchParams } from 'next/navigation';
 
 export default function ResetPassword() {
 
-    const [registerError, setRegisterError] = useState('');
+    const [registerError] = useState('');
 
     const searchParams = useSearchParams();
 
@@ -40,11 +39,11 @@ export default function ResetPassword() {
             return;
         }
 
-        const register = await resetPasswordAction(values);
+        // const register = await resetPasswordAction(values);
 
-        if (register?.data?.error) {
-            setRegisterError(register?.data?.message);
-        }
+        // if (register?.data?.error) {
+        //     setRegisterError(register?.data?.message);
+        // }
     }
 
     return (

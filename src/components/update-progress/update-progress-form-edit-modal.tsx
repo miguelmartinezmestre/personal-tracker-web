@@ -33,6 +33,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import { UpdateProgress, savedUpdateProgressSchema } from '@/schemas/update-progress';
+import { Id } from '../../../convex/_generated/dataModel';
 
 export default function UpdateProgressFormModal({ defaultValues }: { defaultValues: UpdateProgress }) {
 
@@ -45,11 +46,10 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
 
     const onSubmit = async (values: UpdateProgress) => {
         const updateData = {
-            id: values.id as any,
+            id: values._id as Id<"progressUpdates">,
             updatedValue: values.updatedValue,
             updateDate: new Date(values.updateDate).getTime(),
-            comment: values.comment ?? null,
-            objectiveId: values.objectiveId,
+            comment: values.comment ?? undefined,
         };
 
         console.log(updateData);

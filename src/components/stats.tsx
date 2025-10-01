@@ -1,7 +1,4 @@
 'use client'
-
-import { useTRPC } from "@/trpc/client";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { ObjectivesStatusChart } from "@/components/objectives-status-chart";
 import { MonthlyProgressChart } from "@/components/monthly-progress-chart";
 import { ObjetivesMostProgressGraph } from "@/components/objectives-most-progress-graph";
@@ -29,8 +26,6 @@ const sampleData = {
 
 
 export default function Stats() {
-
-    // const trpc = useTRPC();
     // const objectives = useSuspenseQuery(trpc.user.getDashboardGraphsData.queryOptions({}));
 
     return (

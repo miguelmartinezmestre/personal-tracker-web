@@ -24,12 +24,9 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useMutation } from '@tanstack/react-query';
 import { TeamMember, savedTeamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
 
 const roleOptions = [
@@ -40,7 +37,7 @@ const roleOptions = [
 export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
 
     const t = useTranslations('TeamMembers');
-    const updateTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.updateTeamMember) });
+    // const updateTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.updateTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<TeamMember>({
         resolver: zodResolver(savedTeamMemberSchema),
@@ -55,7 +52,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
 
         console.log(updateData);
 
-        await updateTeamMember.mutateAsync(updateData);
+        // await updateTeamMember.mutateAsync(updateData);
 
         setOpen(false);
         form.reset();

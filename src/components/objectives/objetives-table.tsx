@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
     Objective,
@@ -12,6 +12,7 @@ import EditObjectiveFormModal from '@/components/objectives/objective-form-edit-
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
+import { Id } from '../../../convex/_generated/dataModel';
 
 export default function ObjetivesTable() {
     const t = useTranslations('Objectives');
@@ -65,7 +66,8 @@ export default function ObjetivesTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteObjective.mutateAsync({ id: objetiveRow.id as any });
+                            console.log(objetiveRow);
+                            await deleteObjective.mutateAsync({ id: objetiveRow._id as Id<"objectives"> });
                         }}
                     >
                         {t('deleteObjective')}
@@ -78,9 +80,9 @@ export default function ObjetivesTable() {
             id: 'go-to-activity',
             cell: ({ row }) => {
                 const objetiveRow = row.original;
-                if (objetiveRow.id) {
+                if (objetiveRow._id) {
                     return (
-                        <Link href={`/dashboard/objectives/${objetiveRow.id}`} prefetch={false}>{t('goToProgress')}</Link>
+                        <Link href={`/dashboard/objectives/${objetiveRow._id}`} prefetch={false}>{t('goToProgress')}</Link>
                     );
                 }
 

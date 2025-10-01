@@ -67,7 +67,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
     const onSubmit = async (values: Objective) => {
         const updateData = {
-            id: values.id as any,
+            id: values._id as any,
             title: values.title,
             description: values.description ?? undefined,
             category: values.category ?? undefined,
@@ -276,7 +276,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value || undefined}
+                                                selected={field.value ? new Date(field.value) : undefined}
                                                 onSelect={field.onChange}
                                                 initialFocus
                                             />

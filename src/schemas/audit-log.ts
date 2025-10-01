@@ -9,7 +9,7 @@ export const auditLogSchema = z.object({
 });
 
 export const savedAuditLogSchema = auditLogSchema.extend({
-    id: z.number(),
+    _id: z.string(),
 });
 
 export type AuditLog = z.infer<typeof savedAuditLogSchema>;

@@ -1,17 +1,9 @@
 "use client";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { authClient } from "@/lib/auth-client";
-import { Authenticated, AuthLoading, Unauthenticated, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-
-    // await getUser()
-
-    // const queryClient = getQueryClient();
-
-    // prefetch(trpc.user.getAccountDetails.queryOptions({}));
 
     return (
         <div>

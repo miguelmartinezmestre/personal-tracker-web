@@ -14,7 +14,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useMutation } from '@tanstack/react-query';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
@@ -22,7 +21,7 @@ import { useTranslations } from 'next-intl';
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
     // TODO: Implement password update via Convex Auth if needed
-    const updatePassword = useMutation({ mutationFn: async () => ({ message: 'Not implemented', error: true }) });
+    // const updatePassword = useMutation({ mutationFn: async () => ({ message: 'Not implemented', error: true }) });
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -53,13 +52,13 @@ export default function PasswordFormEdit() {
 
         console.log(updateData);
 
-        const result = await updatePassword.mutateAsync(updateData);
+        // const result = await updatePassword.mutateAsync(updateData);
 
-        if (result.error) {
-            setError(result.message);
-        } else {
-            setMessage(result.message);
-        }
+        // if (result.error) {
+        //     setError(result.message);
+        // } else {
+        //     setMessage(result.message);
+        // }
 
         setOpen(false);
         form.reset();
