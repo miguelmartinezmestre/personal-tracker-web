@@ -11,7 +11,7 @@ export const sessionSchema = z.object({
 });
 
 export const savedSessionSchema = sessionSchema.extend({
-    id: z.number(),
+    _id: z.string(),
 });
 
 export type Session = z.infer<typeof savedSessionSchema>;

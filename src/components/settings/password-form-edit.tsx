@@ -53,13 +53,13 @@ export default function PasswordFormEdit() {
 
         console.log(updateData);
 
-        const result = await updatePassword.mutateAsync(updateData);
+        // const result = await updatePassword.mutateAsync(updateData);
 
-        if (result.error) {
-            setError(result.message);
-        } else {
-            setMessage(result.message);
-        }
+        // if (result.error) {
+        //     setError(result.message);
+        // } else {
+        //     setMessage(result.message);
+        // }
 
         setOpen(false);
         form.reset();

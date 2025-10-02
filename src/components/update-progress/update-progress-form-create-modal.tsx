@@ -34,6 +34,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
@@ -48,15 +49,14 @@ export default function CreateUpdateProgressFormModal() {
             comment: '',
             updatedValue: 0,
             updateDate: new Date(),
-            objectiveId: Number(objectiveId),
         },
     });
 
     const onSubmit = async (values: CreateUpdateProgress) => {
         console.log(values);
         await createUpdateProgress.mutateAsync({
-            objective: (objectiveId as string) as any,
-            updatedValue: values.updatedValue,
+            objective: objectiveId as Id<'objectives'>,
+            updatedValue: Number(values.updatedValue),
             updateDate: new Date(values.updateDate).getTime(),
             comment: values.comment ?? undefined,
         });
@@ -173,7 +173,7 @@ export default function CreateUpdateProgressFormModal() {
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveProgress')}</Button>
+                            <Button type="submit" disabled={createUpdateProgress.isPending}>{t('saveProgress')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

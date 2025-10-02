@@ -141,7 +141,9 @@
         "saveProgress": "Save Progress",
         "goToProgress": "Go to progress",
         "progressUpdates": "Progress Updates",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "deadline": "Deadline",
+        "giveYourUpdateProgressAClearConciseTitle": "Give your update progress a clear, concise title."
     },
     "TeamMembers": {
         "createNewTeamMember": "Create New Team Member",

@@ -17,7 +17,7 @@ export const updateProgressSchema = z.object({
 });
 
 export const savedUpdateProgressSchema = updateProgressSchema.extend({
-    id: z.number()
+    _id: z.string()
 });
 
 export type UpdateProgress = z.infer<typeof savedUpdateProgressSchema>;

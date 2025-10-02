@@ -55,7 +55,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
 
         console.log(updateData);
 
-        await updateTeamMember.mutateAsync(updateData);
+        // await updateTeamMember.mutateAsync(updateData);
 
         setOpen(false);
         form.reset();

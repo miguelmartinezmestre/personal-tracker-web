@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE `Goal` ADD COLUMN `unit` VARCHAR(191) NULL;

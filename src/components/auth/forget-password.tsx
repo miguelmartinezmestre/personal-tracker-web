@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { forgetPasswordAction } from '@/server/actions';
 import { forgetPasswordSchema } from '@/schemas/forget-password';
 
 export default function ForgetPasswordForm() {
@@ -26,13 +25,13 @@ export default function ForgetPasswordForm() {
     async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
         console.log(values);
         // mutation.mutate(values);
-        const login = await forgetPasswordAction(values);
+        // const login = await forgetPasswordAction(values);
 
-        if (login?.data?.error) {
-            setLoginError(login?.data?.message);
-        }else{
-            setSuccessMessage('Email enviado correctamente');
-        }
+        // if (login?.data?.error) {
+        //     setLoginError(login?.data?.message);
+        // }else{
+        //     setSuccessMessage('Email enviado correctamente');
+        // }
     }
 
     return (

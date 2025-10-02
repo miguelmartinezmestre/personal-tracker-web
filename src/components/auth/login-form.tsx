@@ -41,7 +41,8 @@ export default function LoginForm() {
                 },
                 onError: (ctx) => {
                     // window.alert(ctx.error.message);
-                    console.log(3,ctx.error.message);
+                    // console.log(3,ctx.error.message);
+                    setLoginError(ctx.error.message);
                 },
             }
         );

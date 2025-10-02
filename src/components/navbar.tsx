@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-switcher';
 import { useEffect, useState } from 'react';
-// import { isLoggedInAction } from '@/server/actions';
 import { LanguageSwitcher } from './language-switcher';
 import { useLocale, useTranslations } from 'next-intl';
+import { api } from '../../convex/_generated/api';
+import { convexQuery, useConvexQuery } from '@convex-dev/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { Authenticated } from 'convex/react';
 
 type LinkItem = { name: string; href: string };
 
@@ -17,26 +20,9 @@ export default function NavBar() {
         { name: t('login'), href: '/login' },
     ]);
 
-    // useEffect(() => {
+    const { data: isAuthenticated } = useQuery(convexQuery(api.auth.isAuthenticated, {}));
 
-    //     async function getIsLoggedIn() {
-    //         const isLoggedIn = await isLoggedInAction();
-    //         if (isLoggedIn?.data) {
-    //             setLinks([
-    //                 { name: t('register'), href: `/register` },
-    //                 { name: t('login'), href: `/login` },
-    //                 { name: t('goToDashboard'), href: '/dashboard/home' }]);
-    //         } else {
-    //             setLinks([
-    //                 { name: t('register'), href: `/register` },
-    //                 { name: t('login'), href: `/login` },
-    //             ]);
-    //         }
-    //     }
-    //     getIsLoggedIn();
-
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [locale]);
+    console.log(isAuthenticated);
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
@@ -45,6 +31,11 @@ export default function NavBar() {
                     {link.name}
                 </Link>
             ))}
+            <Authenticated>
+                <Link href="/dashboard/home" className="text-primary hover:text-gray-700" prefetch={false}>
+                    {t('goToDashboard')}
+                </Link>
+            </Authenticated>
             <div className="text-primary hover:text-gray-700">
                 <ThemeToggle />
             </div>

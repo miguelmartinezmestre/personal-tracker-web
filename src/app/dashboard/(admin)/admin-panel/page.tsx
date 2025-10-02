@@ -3,10 +3,12 @@ import TeamsTable from "@/components/teams/team-table";
 
 export default function AdminPanel() {
     return (
+        <>
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Teams </h1>
                 <CreateTeamFormModal />
             </div>
             <TeamsTable />
+        </>
     );
 }

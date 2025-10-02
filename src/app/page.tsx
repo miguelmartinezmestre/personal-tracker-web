@@ -9,6 +9,8 @@ export default async function RouteComponent() {
 
     const t = await getTranslations('HomePage');
 
+    
+
     return (
         <div className="flex flex-col min-h-screen">
             <Header />

@@ -15,7 +15,8 @@
     "push:prisma": "prisma db push",
     "studio": "prisma studio",
     "test": "playwright test",
-    "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh"
+    "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
+    "dev-convex":"npx convex dev"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.7.18",
