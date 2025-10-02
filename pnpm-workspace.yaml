@@ -1,4 +1,4 @@
-minimumReleaseAge: 1440
+minimumReleaseAge: 1
 
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
