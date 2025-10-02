@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-switcher';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { api } from '../../convex/_generated/api';
-import { convexQuery, useConvexQuery } from '@convex-dev/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { Authenticated } from 'convex/react';
 
@@ -14,8 +14,8 @@ type LinkArray = LinkItem[];
 
 export default function NavBar() {
     const t = useTranslations('HomePage');
-    const locale = useLocale();
-    const [links, setLinks] = useState<LinkArray>([
+
+    const [links] = useState<LinkArray>([
         { name: t('register'), href: '/register' },
         { name: t('login'), href: '/login' },
     ]);

@@ -18,7 +18,7 @@ import { authClient } from '@/lib/auth-client';
 export default function RegisterForm() {
     const router = useRouter();
     const t = useTranslations('HomePage');
-    const [registerError, setRegisterError] = useState('');
+    const [registerError] = useState('');
 
     const form = useForm<z.infer<typeof registerSchema>>({
         resolver: zodResolver(registerSchema),
@@ -51,7 +51,6 @@ export default function RegisterForm() {
                     router.push("/dashboard/home");
                 },
                 onError: (ctx) => {
-                    // window.alert(ctx.error.message);
                     console.log(4,ctx.error.message);
                 },
             }

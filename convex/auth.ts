@@ -30,7 +30,7 @@ import {
   } =
     betterAuthComponent.createAuthFunctions<DataModel>({
       // Must create a user and return the user id
-      onCreateUser: async (ctx, user) => {
+      onCreateUser: async (ctx) => {
         return ctx.db.insert("users", {});
       },
   

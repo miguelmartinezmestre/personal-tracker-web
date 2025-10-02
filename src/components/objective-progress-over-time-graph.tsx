@@ -21,14 +21,14 @@ interface ProgressProps {
     data: Progress[]
 }
 
-const progressData = [
-    { date: "2024-01-01", currentValue: 10, objective: 80 },
-    { date: "2024-02-01", currentValue: 25, objective: 80 },
-    { date: "2024-03-01", currentValue: 40, objective: 80 },
-    { date: "2024-04-01", currentValue: 55, objective: 80 },
-    { date: "2024-05-01", currentValue: 65, objective: 80 },
-    { date: "2024-06-01", currentValue: 75, objective: 80 },
-]
+// const progressData = [
+//     { date: "2024-01-01", currentValue: 10, objective: 80 },
+//     { date: "2024-02-01", currentValue: 25, objective: 80 },
+//     { date: "2024-03-01", currentValue: 40, objective: 80 },
+//     { date: "2024-04-01", currentValue: 55, objective: 80 },
+//     { date: "2024-05-01", currentValue: 65, objective: 80 },
+//     { date: "2024-06-01", currentValue: 75, objective: 80 },
+// ]
 
 const chartConfig = {
     currentValue: {

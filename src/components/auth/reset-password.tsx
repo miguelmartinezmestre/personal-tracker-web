@@ -15,7 +15,7 @@ import { useSearchParams } from 'next/navigation';
 
 export default function ResetPassword() {
 
-    const [registerError, setRegisterError] = useState('');
+    const [registerError] = useState('');
 
     const searchParams = useSearchParams();
 

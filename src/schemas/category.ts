@@ -8,7 +8,7 @@ export const categorySchema = z.object({
 });
 
 export const savedCategorySchema = categorySchema.extend({
-    id: z.number(),
+    _id: z.string(),
 });
 
 export type Category = z.infer<typeof savedCategorySchema>;

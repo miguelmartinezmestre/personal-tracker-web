@@ -6,7 +6,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditTeamFormModal from '@/components/teams/team-form-edit-modal';
-import { Team } from '@/schemas/team';
 import { useTranslations } from 'next-intl';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';

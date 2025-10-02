@@ -26,8 +26,6 @@ const sampleData = {
 
 
 export default function Stats() {
-
-    // const trpc = useTRPC();
     // const objectives = useSuspenseQuery(trpc.user.getDashboardGraphsData.queryOptions({}));
 
     return (

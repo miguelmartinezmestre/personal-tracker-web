@@ -24,14 +24,11 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useMutation } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '../../../convex/_generated/api';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -44,7 +41,7 @@ export default function CreateTeamMemberFormModal() {
     const t = useTranslations('TeamMembers');
     const { id: teamId } = useParams();
 
-    const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
+    // const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateTeamMember>({
         resolver: zodResolver(teamMemberSchema),

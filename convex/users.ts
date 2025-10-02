@@ -13,7 +13,7 @@ export const getUser = query({
       return null;
     }
     // For now the id type requires an assertion
-    const userIdFromCtx = identity.subject as Id<"users">;
+    // const userIdFromCtx = identity.subject as Id<"users">;
 
     // The component provides a convenience method to get the user id
     const userId = await betterAuthComponent.getAuthUserId(ctx);
@@ -52,7 +52,7 @@ export const updateAccountDetails = mutation({
         email: v.string(),
         username: v.string(),
     },
-    handler: async (ctx, args) => {
+    handler: async (ctx) => {
         const userId = await betterAuthComponent.getAuthUserId(ctx);
         if (!userId) throw new ConvexError("Unauthorized");
         await ctx.db.patch(userId as Id<"users">, { });
@@ -75,7 +75,7 @@ export const setRole = mutation({
     // userId: v.id("users"),
     // role: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
 
     const userId = await betterAuthComponent.getAuthUserId(ctx);
 

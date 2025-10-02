@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Loader2, Users } from 'lucide-react';
+import { Bell, Frame, Goal, Home } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -11,10 +11,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { NavUser } from '@/components/nav-user';
-import EditSettingsFormModal from '@/components/settings/account-settings-modal';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 const projects = [
@@ -43,9 +41,8 @@ const projects = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const t = useTranslations('Sidebar');
-    // const trpc = useTRPC();
     // const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
-    const [projectsState, setProjectsState] = useState<typeof projects>(projects);
+    const [projectsState] = useState<typeof projects>(projects);
 
     // if (accountDetails.isLoading) {
     //     return <Loader2 className="animate-spin" />;
@@ -70,7 +67,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <SidebarMenu>
-                        {projectsState.map(item => (
+                        {projectsState.map((item: typeof projects[number]) => (
                             <SidebarMenuItem key={item.name}>
                                 <SidebarMenuButton asChild>
                                     <Link href={item.url} prefetch={false}>

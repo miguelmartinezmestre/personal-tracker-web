@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
     Objective,

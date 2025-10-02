@@ -13,7 +13,7 @@ export const notificationSchema = z.object({
 });
 
 export const savedNotificationSchema = notificationSchema.extend({
-    id: z.number(),
+    _id: z.string(),
 });
 
 export type Notification = z.infer<typeof savedNotificationSchema>;
