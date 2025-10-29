@@ -82,7 +82,9 @@ export default function ObjetivesTable() {
                 const objetiveRow = row.original;
                 if (objetiveRow._id) {
                     return (
-                        <Link href={`/dashboard/objectives/${objetiveRow._id}`} prefetch={false}>{t('goToProgress')}</Link>
+                        <Link href={`/dashboard/objectives/${String(objetiveRow._id)}`} prefetch={false}>
+                            {t('goToProgress')}
+                        </Link>
                     );
                 }
 

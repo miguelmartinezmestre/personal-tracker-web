@@ -3,6 +3,7 @@
 import type React from "react"
 
 import Link from "next/link"
+import type { Route } from "next"
 import { usePathname } from "next/navigation"
 import { useSelectedLayoutSegments } from "next/navigation"
 import { ChevronRight, Home } from "lucide-react"
@@ -32,7 +33,7 @@ export function BreadcrumbNav({
     >
       <ol className="flex items-center space-x-1">
         <li>
-          <Link href="/dashboard/home" className="flex items-center hover:text-foreground" aria-label={homeLabel} prefetch={false}>
+          <Link href={{ pathname: '/dashboard/home' }} className="flex items-center hover:text-foreground" aria-label={homeLabel} prefetch={false}>
             <Home className="h-4 w-4" />
           </Link>
         </li>
@@ -62,7 +63,7 @@ export function BreadcrumbNav({
                 </span>
               ) : (
                 <>
-                  <Link href={segmentPath} className="hover:text-foreground">
+                  <Link href={segmentPath as Route} className="hover:text-foreground">
                     {displayName}
                   </Link>
                   <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />

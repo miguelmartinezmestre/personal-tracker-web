@@ -43,7 +43,7 @@ export default function TeamsTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteTeam.mutateAsync({ id: teamRow._id });
+                            await deleteTeam.mutateAsync({ _id: teamRow._id });
                         }}
                     >
                         {t('deleteTeam')}
@@ -58,7 +58,9 @@ export default function TeamsTable() {
                 const teamRow = row.original;
                 if (teamRow._id) {
                     return (
-                        <Link href={`/dashboard/teams/${teamRow._id}`} prefetch={false}>Go to team</Link>
+                        <Link href={`/dashboard/teams/${String(teamRow._id)}`} prefetch={false}>
+                            Go to team
+                        </Link>
                     );
                 }
 
