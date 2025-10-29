@@ -1,7 +1,7 @@
 import "@/app/globals.css"
 import { ThemeProvider } from "@/providers/theme";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale } from "next-intl/server";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 import ConvexClientProvider from "@/providers/convex-provider";
 
@@ -10,18 +10,17 @@ export const metadata = {
   description: "Metricas",
 }
 
-export default async function Layout({ children }: { children: React.ReactNode }) {
-
-  const locale = await getLocale();
-
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <main>
-            <NextIntlClientProvider>
-              <ConvexClientProvider>{children}</ConvexClientProvider>
-            </NextIntlClientProvider>
+            <Suspense fallback={null}>
+              <NextIntlClientProvider>
+                <ConvexClientProvider>{children}</ConvexClientProvider>
+              </NextIntlClientProvider>
+            </Suspense>
           </main>
           <Toaster />
         </ThemeProvider>
