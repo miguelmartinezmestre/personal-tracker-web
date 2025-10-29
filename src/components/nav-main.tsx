@@ -12,17 +12,19 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 
+import type { Route } from 'next';
+
 export function NavMain({
     items,
 }: {
     items: {
         title: string;
-        url: string;
+        url: Route;
         icon?: LucideIcon;
         isActive?: boolean;
         items?: {
             title: string;
-            url: string;
+            url: Route;
         }[];
     }[];
 }) {

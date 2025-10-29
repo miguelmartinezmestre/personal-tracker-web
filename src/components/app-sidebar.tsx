@@ -1,6 +1,7 @@
 'use client';
 
 import { Bell, Frame, Goal, Home } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
@@ -12,10 +13,17 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
-const projects = [
+type ProjectNavItem = {
+    name: string;
+    url: Route;
+    icon: LucideIcon;
+};
+
+const projects: ProjectNavItem[] = [
     {
         name: 'home',
         url: '/dashboard/home',

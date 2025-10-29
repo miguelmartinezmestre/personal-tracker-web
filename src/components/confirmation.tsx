@@ -34,7 +34,7 @@ export function ConfirmationDeleteAccount() {
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => {
-                            // mutation.mutate({ id: user.id });
+                            // mutation.mutate({ _id: user.id });
                         }}
                     >
                         Eliminar cuenta

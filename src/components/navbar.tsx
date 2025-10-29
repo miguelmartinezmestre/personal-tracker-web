@@ -7,8 +7,9 @@ import { api } from '../../convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { Authenticated } from 'convex/react';
+import type { Route } from 'next';
 
-type LinkItem = { name: string; href: string };
+type LinkItem = { name: string; href: Route };
 
 type LinkArray = LinkItem[];
 

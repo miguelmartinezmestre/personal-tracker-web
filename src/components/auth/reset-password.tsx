@@ -5,8 +5,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -22,20 +21,22 @@ export default function ResetPassword() {
     const resetPasswordKey = searchParams.get('key');
 
     const form = useForm<z.infer<typeof resetPasswordSchema>>({
-        resolver: zodResolver(resetPasswordSchema),
         defaultValues: {
             password: '',
             confirmPassword: '',
             resetPasswordKey: resetPasswordKey ?? '',
         },
+        validators: {
+            onChange: resetPasswordSchema,
+            onSubmit: resetPasswordSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof resetPasswordSchema> }) => {
+            await onSubmit(value);
+        },
     });
 
     async function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
         if (values.password !== values.confirmPassword) {
-            form.setError('confirmPassword', {
-                type: 'manual',
-                message: 'Las contraseñas no coinciden',
-            });
             return;
         }
 
@@ -48,7 +49,7 @@ export default function ResetPassword() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-6">
                 {registerError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
@@ -58,7 +59,6 @@ export default function ResetPassword() {
                 )}
 
                 <FormField
-                    control={form.control}
                     name="password"
                     render={({ field }) => (
                         <FormItem>
@@ -77,7 +77,6 @@ export default function ResetPassword() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>

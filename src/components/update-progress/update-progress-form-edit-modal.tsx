@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,8 +39,14 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
     const updateUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedUpdateProgressSchema>>({
-        resolver: zodResolver(savedUpdateProgressSchema),
         defaultValues: defaultValues,
+        validators: {
+            onChange: savedUpdateProgressSchema,
+            onSubmit: savedUpdateProgressSchema,
+        },
+        onSubmit: async ({ value }: { value: UpdateProgress }) => {
+            await onSubmit(value);
+        },
     });
 
     const onSubmit = async (values: UpdateProgress) => {
@@ -78,9 +83,8 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
@@ -102,7 +106,6 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                         />
 
                         <FormField
-                            control={form.control}
                             name="comment"
                             render={({ field }) => (
                                 <FormItem>
@@ -126,7 +129,6 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
 
 
                         <FormField
-                            control={form.control}
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">

@@ -7,7 +7,7 @@ export const teamMemberSchema = z.object({
 });
 
 export const savedTeamMemberSchema = teamMemberSchema.extend({
-    id: z.number()
+    _id: z.number()
 });
 
 export type TeamMember = z.infer<typeof savedTeamMemberSchema>;

@@ -7,8 +7,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '
 import { Input } from '@/components/ui/input';
 import { loginSchema } from '@/schemas/login';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -21,10 +20,16 @@ export default function LoginForm() {
     const [loginError, setLoginError] = useState('');
 
     const form = useForm<z.infer<typeof loginSchema>>({
-        resolver: zodResolver(loginSchema),
         defaultValues: {
             email: 'lily@example.com',
             password: 'lily@example.com',
+        },
+        validators: {
+            onChange: loginSchema,
+            onSubmit: loginSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof loginSchema> }) => {
+            await onSubmit(value);
         },
     });
 
@@ -50,7 +55,13 @@ export default function LoginForm() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+                className="space-y-6"
+            >
                 {loginError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
@@ -60,7 +71,6 @@ export default function LoginForm() {
                 )}
 
                 <FormField
-                    control={form.control}
                     name="email"
                     render={({ field }) => (
                         <FormItem>
@@ -80,7 +90,6 @@ export default function LoginForm() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="password"
                     render={({ field }) => (
                         <FormItem>
