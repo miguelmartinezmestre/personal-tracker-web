@@ -1,12 +1,15 @@
+import { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
-// import withRspack from "next-rspack";
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  /* config options here */
+const nextConfig: NextConfig = {
+  reactCompiler: true,
+  cacheComponents: true,
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+  },
+  typedRoutes: true,
 };
 
-// export default withRspack(withNextIntl(nextConfig));
 export default withNextIntl(nextConfig);
