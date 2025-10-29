@@ -6,38 +6,42 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
-import { forgetPasswordAction } from '@/server/actions';
 import { forgetPasswordSchema } from '@/schemas/forget-password';
 
 export default function ForgetPasswordForm() {
-    const [loginError, setLoginError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+    const [loginError] = useState('');
+    const [successMessage] = useState('');
 
     const form = useForm<z.infer<typeof forgetPasswordSchema>>({
-        resolver: zodResolver(forgetPasswordSchema),
         defaultValues: {
             email: '',
+        },
+        validators: {
+            onChange: forgetPasswordSchema,
+            onSubmit: forgetPasswordSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof forgetPasswordSchema> }) => {
+            await onSubmit(value);
         },
     });
 
     async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
         console.log(values);
         // mutation.mutate(values);
-        const login = await forgetPasswordAction(values);
+        // const login = await forgetPasswordAction(values);
 
-        if (login?.data?.error) {
-            setLoginError(login?.data?.message);
-        }else{
-            setSuccessMessage('Email enviado correctamente');
-        }
+        // if (login?.data?.error) {
+        //     setLoginError(login?.data?.message);
+        // }else{
+        //     setSuccessMessage('Email enviado correctamente');
+        // }
     }
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-6">
                 {loginError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
@@ -55,7 +59,6 @@ export default function ForgetPasswordForm() {
                 )}
 
                 <FormField
-                    control={form.control}
                     name="email"
                     render={({ field }) => (
                         <FormItem>

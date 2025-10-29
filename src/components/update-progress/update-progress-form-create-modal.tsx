@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +33,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
@@ -43,20 +43,25 @@ export default function CreateUpdateProgressFormModal() {
     const createUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.createUpdateProgress) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateUpdateProgress>({
-        resolver: zodResolver(updateProgressSchema),
         defaultValues: {
             comment: '',
             updatedValue: 0,
             updateDate: new Date(),
-            objectiveId: Number(objectiveId),
+        },
+        validators: {
+            onChange: updateProgressSchema,
+            onSubmit: updateProgressSchema,
+        },
+        onSubmit: async ({ value }: { value: CreateUpdateProgress }) => {
+            await onSubmit(value);
         },
     });
 
     const onSubmit = async (values: CreateUpdateProgress) => {
         console.log(values);
         await createUpdateProgress.mutateAsync({
-            objective: (objectiveId as string) as any,
-            updatedValue: values.updatedValue,
+            objective: objectiveId as Id<'objectives'>,
+            updatedValue: Number(values.updatedValue),
             updateDate: new Date(values.updateDate).getTime(),
             comment: values.comment ?? undefined,
         });
@@ -81,9 +86,8 @@ export default function CreateUpdateProgressFormModal() {
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
@@ -105,7 +109,6 @@ export default function CreateUpdateProgressFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="comment"
                             render={({ field }) => (
                                 <FormItem>
@@ -129,7 +132,6 @@ export default function CreateUpdateProgressFormModal() {
 
 
                         <FormField
-                            control={form.control}
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
@@ -173,7 +175,7 @@ export default function CreateUpdateProgressFormModal() {
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveProgress')}</Button>
+                            <Button type="submit" disabled={createUpdateProgress.isPending}>{t('saveProgress')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

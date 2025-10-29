@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,14 +23,11 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useMutation } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '../../../convex/_generated/api';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -44,14 +40,20 @@ export default function CreateTeamMemberFormModal() {
     const t = useTranslations('TeamMembers');
     const { id: teamId } = useParams();
 
-    const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
+    // const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateTeamMember>({
-        resolver: zodResolver(teamMemberSchema),
         defaultValues: {
             email: '',
             role: TeamRole.MEMBER,
             teamId: Number(teamId),
+        },
+        validators: {
+            onChange: teamMemberSchema,
+            onSubmit: teamMemberSchema,
+        },
+        onSubmit: async ({ value }: { value: CreateTeamMember }) => {
+            await onSubmit(value);
         },
     });
 
@@ -81,9 +83,8 @@ export default function CreateTeamMemberFormModal() {
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
@@ -105,7 +106,6 @@ export default function CreateTeamMemberFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="role"
                             render={({ field }) => (
                                 <FormItem>

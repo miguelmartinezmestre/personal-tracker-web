@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,13 +60,19 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     const updateObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.updateObjective) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedObjectiveSchema>>({
-        resolver: zodResolver(savedObjectiveSchema),
         defaultValues: defaultValues,
+        validators: {
+            onChange: savedObjectiveSchema,
+            onSubmit: savedObjectiveSchema,
+        },
+        onSubmit: async ({ value }: { value: Objective }) => {
+            await onSubmit(value);
+        },
     });
 
     const onSubmit = async (values: Objective) => {
         const updateData = {
-            id: values.id as any,
+            id: values._id as any,
             title: values.title,
             description: values.description ?? undefined,
             category: values.category ?? undefined,
@@ -103,9 +108,8 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
@@ -122,7 +126,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                         />
 
                         <FormField
-                            control={form.control}
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
@@ -144,7 +147,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                         />
 
                         <FormField
-                            control={form.control}
                             name="category"
                             render={({ field }) => (
                                 <FormItem>
@@ -179,7 +181,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
-                                control={form.control}
                                 name="targetValue"
                                 render={({ field }) => (
                                     <FormItem>
@@ -205,7 +206,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                             />
 
                             <FormField
-                                control={form.control}
                                 name="unit"
                                 render={({ field }) => (
                                     <FormItem>
@@ -227,7 +227,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                         </div>
 
                         <FormField
-                            control={form.control}
                             name="currentValue"
                             render={({ field }) => (
                                 <FormItem>
@@ -249,7 +248,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                         />
 
                         <FormField
-                            control={form.control}
                             name="deadline"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
@@ -276,7 +274,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value || undefined}
+                                                selected={field.value ? new Date(field.value) : undefined}
                                                 onSelect={field.onChange}
                                                 initialFocus
                                             />
@@ -291,7 +289,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                         />
 
                         <FormField
-                            control={form.control}
                             name="status"
                             render={({ field }) => (
                                 <FormItem>

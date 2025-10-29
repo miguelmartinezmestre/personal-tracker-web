@@ -4,7 +4,7 @@ import { DataTable } from '@/components/table';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { Session } from '@/schemas/session';
+import type { Doc } from '../../../convex/_generated/dataModel';
 import { UserAgentIcon } from '../user-agent';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -17,7 +17,7 @@ export default function SessionsTable() {
     const invalidateSession = useMutation({ mutationFn: useConvexMutation(api.sessions.invalidateSession) });
     const router = useRouter();
 
-    const columns: ColumnDef<Session>[] = [
+    const columns: ColumnDef<Doc<"sessions">>[] = [
         {
             accessorKey: 'userAgent',
             header: t('device'),
@@ -28,6 +28,9 @@ export default function SessionsTable() {
         {
             accessorKey: 'createdAt',
             header: t('date'),
+            cell: ({ row }) => {
+                return new Date(row.original.createdAt).toLocaleDateString();
+            },
         },
         {
             accessorKey: 'status',
@@ -42,7 +45,7 @@ export default function SessionsTable() {
                     return (
                         <Button
                             onClick={async () => {
-                                await invalidateSession.mutateAsync({ id: objetiveRow.id as any });
+                                await invalidateSession.mutateAsync({ _id: objetiveRow._id });
                                 router.refresh();
                             }}
                         >
@@ -61,7 +64,7 @@ export default function SessionsTable() {
 
     return (
         <div>
-            <DataTable columns={columns} data={sessions.data!} isLoading={sessions.isLoading} />
+            <DataTable columns={columns} data={sessions.data ?? []} isLoading={sessions.isLoading} />
         </div>
     );
 }

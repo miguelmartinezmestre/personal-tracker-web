@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { CreateObjective, objectiveSchema } from '@/schemas/objective';
 import { useMutation } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
 
@@ -74,8 +73,14 @@ export default function CreateObjectiveFormModal() {
     const createObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.createObjective) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof objectiveSchema>>({
-        resolver: zodResolver(objectiveSchema),
         defaultValues: defaultValues,
+        validators: {
+            onChange: objectiveSchema,
+            onSubmit: objectiveSchema,
+        },
+        onSubmit: async ({ value }: { value: CreateObjective }) => {
+            await onSubmit(value);
+        },
     });
 
     const onSubmit = async (values: CreateObjective) => {
@@ -111,9 +116,8 @@ export default function CreateObjectiveFormModal() {
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
@@ -130,7 +134,6 @@ export default function CreateObjectiveFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
@@ -152,7 +155,6 @@ export default function CreateObjectiveFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="category"
                             render={({ field }) => (
                                 <FormItem>
@@ -187,7 +189,6 @@ export default function CreateObjectiveFormModal() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
-                                control={form.control}
                                 name="targetValue"
                                 render={({ field }) => (
                                     <FormItem>
@@ -212,7 +213,6 @@ export default function CreateObjectiveFormModal() {
                             />
 
                             <FormField
-                                control={form.control}
                                 name="unit"
                                 render={({ field }) => (
                                     <FormItem>
@@ -234,7 +234,6 @@ export default function CreateObjectiveFormModal() {
                         </div>
 
                         <FormField
-                            control={form.control}
                             name="currentValue"
                             render={({ field }) => (
                                 <FormItem>
@@ -255,7 +254,6 @@ export default function CreateObjectiveFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="deadline"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
@@ -282,7 +280,7 @@ export default function CreateObjectiveFormModal() {
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value || undefined}
+                                                selected={field.value ? new Date(field.value) : undefined}
                                                 onSelect={field.onChange}
                                                 initialFocus
                                             />
@@ -297,7 +295,6 @@ export default function CreateObjectiveFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="status"
                             render={({ field }) => (
                                 <FormItem>

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,8 +41,14 @@ export default function CreateTeamFormModal() {
     const createTeam = useMutation({ mutationFn: useConvexMutation(api.teams.createTeam) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof teamSchema>>({
-        resolver: zodResolver(teamSchema),
         defaultValues: defaultValues,
+        validators: {
+            onChange: teamSchema,
+            onSubmit: teamSchema,
+        },
+        onSubmit: async ({ value }: { value: CreateTeam }) => {
+            await onSubmit(value);
+        },
     });
 
     const onSubmit = async (values: CreateTeam) => {
@@ -70,9 +75,8 @@ export default function CreateTeamFormModal() {
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
@@ -89,7 +93,6 @@ export default function CreateTeamFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="description"
                             render={({ field }) => (
                                 <FormItem>

@@ -1,7 +1,6 @@
 import ResetPassword from "@/components/auth/reset-password";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
-import prisma from "@/lib/client";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 

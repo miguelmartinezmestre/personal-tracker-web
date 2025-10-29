@@ -27,11 +27,11 @@ export const createUpdateProgress = mutation({
 });
 
 export const getUpdateProgressByObjectiveId = query({
-  args: { objective: v.id("objectives") },
+  args: { objectiveId: v.id("objectives") },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("progressUpdates")
-      .withIndex("by_objective", (q) => q.eq("objective", args.objective))
+      .withIndex("by_objective", (q) => q.eq("objective", args.objectiveId))
       .collect();
   },
 });
@@ -51,9 +51,9 @@ export const updateUpdateProgress = mutation({
 });
 
 export const deleteUpdateProgress = mutation({
-  args: { id: v.id("progressUpdates") },
+  args: { _id: v.id("progressUpdates") },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
+    await ctx.db.delete(args._id);
     return "Update progress deleted successfully" as const;
   },
 });

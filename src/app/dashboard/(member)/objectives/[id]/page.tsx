@@ -1,8 +1,7 @@
 import UpdateProgressTable from '@/components/update-progress/update-progress-table';
 import CreateUpdateProgressFormModal from '@/components/update-progress/update-progress-form-create-modal';
 
-export default async function Objective({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function Objective() {
 
     return (
         <>

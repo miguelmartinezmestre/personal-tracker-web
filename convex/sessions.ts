@@ -16,9 +16,9 @@ export const getSessionsByUser = query({
 });
 
 export const invalidateSession = mutation({
-    args: { id: v.id("sessions") },
+    args: { _id: v.id("sessions") },
     handler: async (ctx, args) => {
-        await ctx.db.patch(args.id, { status: "inactive", updatedAt: Date.now() });
+        await ctx.db.patch(args._id, { status: "inactive", updatedAt: Date.now() });
         return { message: "Session invalidated" } as const;
     },
 });

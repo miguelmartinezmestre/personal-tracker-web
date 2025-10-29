@@ -44,7 +44,7 @@ export default function TeamMembersTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            await deleteTeamMember.mutateAsync({ id: objetiveRow.id as any });
+                            await deleteTeamMember.mutateAsync({ _id: objetiveRow._id as any });
                         }}
                     >
                         {t('delete')}

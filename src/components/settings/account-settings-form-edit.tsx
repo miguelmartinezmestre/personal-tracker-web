@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,10 +30,16 @@ export default function AccountSettingsForm() {
     const [error, setError] = useState('');
 
     const form = useForm<z.infer<typeof accountDetailsSchema>>({
-        resolver: zodResolver(accountDetailsSchema),
         defaultValues: {
             email: '',
             username: '',
+        },
+        validators: {
+            onChange: accountDetailsSchema,
+            onSubmit: accountDetailsSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof accountDetailsSchema> }) => {
+            await onSubmit(value);
         },
     });
 
@@ -83,9 +88,8 @@ export default function AccountSettingsForm() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                 <FormField
-                    control={form.control}
                     name="username"
                     render={({ field }) => (
                         <FormItem>
@@ -99,7 +103,6 @@ export default function AccountSettingsForm() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="email"
                     render={({ field }) => (
                         <FormItem>
