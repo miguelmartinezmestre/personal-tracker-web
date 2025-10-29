@@ -6,7 +6,7 @@ export const teamSchema = z.object({
 });
 
 export const savedTeamSchema = teamSchema.extend({
-    id: z.string()
+    _id: z.string()
 });
 
 export type Team = z.infer<typeof savedTeamSchema>;

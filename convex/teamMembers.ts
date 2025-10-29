@@ -50,9 +50,9 @@ export const updateTeamMember = mutation({
 });
 
 export const deleteTeamMember = mutation({
-    args: { id: v.id("teamMembers") },
+    args: { _id: v.id("teamMembers") },
     handler: async (ctx, args) => {
-        await ctx.db.delete(args.id);
+        await ctx.db.delete(args._id);
         return "Team member deleted successfully" as const;
     },
 });

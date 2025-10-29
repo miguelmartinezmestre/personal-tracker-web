@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,13 +38,19 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
     const updateTeam = useMutation({ mutationFn: useConvexMutation(api.teams.updateTeam) });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedTeamSchema>>({
-        resolver: zodResolver(savedTeamSchema),
         defaultValues: defaultValues,
+        validators: {
+            onChange: savedTeamSchema,
+            onSubmit: savedTeamSchema,
+        },
+        onSubmit: async ({ value }: { value: Team }) => {
+            await onSubmit(value);
+        },
     });
 
     const onSubmit = async (values: Team) => {
         const updateData = {
-            id: values.id as any,
+            _id: values._id as any,
             name: values.name,
             description: values.description ?? undefined,
         };
@@ -75,9 +80,8 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
@@ -94,7 +98,6 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
                         />
 
                         <FormField
-                            control={form.control}
                             name="description"
                             render={({ field }) => (
                                 <FormItem>

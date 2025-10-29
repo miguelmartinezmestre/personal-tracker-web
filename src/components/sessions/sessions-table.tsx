@@ -45,7 +45,7 @@ export default function SessionsTable() {
                     return (
                         <Button
                             onClick={async () => {
-                                await invalidateSession.mutateAsync({ id: objetiveRow._id });
+                                await invalidateSession.mutateAsync({ _id: objetiveRow._id });
                                 router.refresh();
                             }}
                         >

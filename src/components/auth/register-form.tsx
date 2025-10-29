@@ -6,8 +6,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '
 import { Input } from '@/components/ui/input';
 import { registerSchema } from '@/schemas/register';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -21,22 +20,24 @@ export default function RegisterForm() {
     const [registerError] = useState('');
 
     const form = useForm<z.infer<typeof registerSchema>>({
-        resolver: zodResolver(registerSchema),
         defaultValues: {
             email: '',
             password: '',
             confirmPassword: '',
             username: '',
         },
+        validators: {
+            onChange: registerSchema,
+            onSubmit: registerSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof registerSchema> }) => {
+            await onSubmit(value);
+        },
     });
 
 
     async function onSubmit(values: z.infer<typeof registerSchema>) {
         if (values.password !== values.confirmPassword) {
-            form.setError('confirmPassword', {
-                type: 'manual',
-                message: 'Las contraseñas no coinciden',
-            });
             return;
         }
 
@@ -51,7 +52,7 @@ export default function RegisterForm() {
                     router.push("/dashboard/home");
                 },
                 onError: (ctx) => {
-                    console.log(4,ctx.error.message);
+                    console.log(4, ctx.error.message);
                 },
             }
         );
@@ -60,7 +61,10 @@ export default function RegisterForm() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+                onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+                className="space-y-6"
+            >
                 {registerError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
@@ -70,7 +74,6 @@ export default function RegisterForm() {
                 )}
 
                 <FormField
-                    control={form.control}
                     name="username"
                     render={({ field }) => (
                         <FormItem>
@@ -88,7 +91,6 @@ export default function RegisterForm() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="email"
                     render={({ field }) => (
                         <FormItem>
@@ -107,7 +109,6 @@ export default function RegisterForm() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="password"
                     render={({ field }) => (
                         <FormItem>
@@ -126,7 +127,6 @@ export default function RegisterForm() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>

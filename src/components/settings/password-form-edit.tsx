@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,23 +25,23 @@ export default function PasswordFormEdit() {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const form = useForm<z.infer<typeof updatePasswordSchema>>({
-        resolver: zodResolver(updatePasswordSchema),
         defaultValues: {
             password: '',
             confirmPassword: '',
             newPassword: '',
         },
+        validators: {
+            onChange: updatePasswordSchema,
+            onSubmit: updatePasswordSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof updatePasswordSchema> }) => {
+            await onSubmit(value);
+        },
     });
 
     const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
 
-        if (values.password !== values.confirmPassword) {
-            form.setError('confirmPassword', {
-                type: 'manual',
-                message: 'Las contraseñas no coinciden',
-            });
-            return;
-        }
+        if (values.password !== values.confirmPassword) return;
 
         const updateData = {
             password: values.password,
@@ -68,9 +67,8 @@ export default function PasswordFormEdit() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                 <FormField
-                    control={form.control}
                     name="password"
                     render={({ field }) => (
                         <FormItem>
@@ -84,7 +82,6 @@ export default function PasswordFormEdit() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>
@@ -98,7 +95,6 @@ export default function PasswordFormEdit() {
                 />
 
                 <FormField
-                    control={form.control}
                     name="newPassword"
                     render={({ field }) => (
                         <FormItem>

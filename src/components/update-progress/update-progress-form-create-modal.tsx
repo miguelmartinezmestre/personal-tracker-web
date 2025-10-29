@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,11 +43,17 @@ export default function CreateUpdateProgressFormModal() {
     const createUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.createUpdateProgress) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateUpdateProgress>({
-        resolver: zodResolver(updateProgressSchema),
         defaultValues: {
             comment: '',
             updatedValue: 0,
             updateDate: new Date(),
+        },
+        validators: {
+            onChange: updateProgressSchema,
+            onSubmit: updateProgressSchema,
+        },
+        onSubmit: async ({ value }: { value: CreateUpdateProgress }) => {
+            await onSubmit(value);
         },
     });
 
@@ -81,9 +86,8 @@ export default function CreateUpdateProgressFormModal() {
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
+                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
                         <FormField
-                            control={form.control}
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
@@ -105,7 +109,6 @@ export default function CreateUpdateProgressFormModal() {
                         />
 
                         <FormField
-                            control={form.control}
                             name="comment"
                             render={({ field }) => (
                                 <FormItem>
@@ -129,7 +132,6 @@ export default function CreateUpdateProgressFormModal() {
 
 
                         <FormField
-                            control={form.control}
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
