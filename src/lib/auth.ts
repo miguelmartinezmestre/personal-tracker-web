@@ -15,6 +15,13 @@ export const createAuth = (ctx: GenericCtx) =>
     baseURL: siteUrl,
     database: convexAdapter(ctx, betterAuthComponent),
 
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60, // Cache duration in seconds
+      },
+    },
+
     // Simple non-verified email/password to get started
     emailAndPassword: {
       enabled: true,
