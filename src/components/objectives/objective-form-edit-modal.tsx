@@ -94,7 +94,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="objective-edit-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('editObjective')}
                 </Button>
@@ -115,7 +115,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                 <FormItem>
                                     <FormLabel>{t('title')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterObjectiveTitle')} {...field} />
+                                        <Input placeholder={t('enterObjectiveTitle')} {...field} data-testid="objective-edit-title-input" />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourObjectiveAClearConciseTitle')}
@@ -322,7 +322,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveObjective')}</Button>
+                            <Button type="submit" data-testid="objective-edit-save-button">{t('saveObjective')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

@@ -69,6 +69,7 @@ export default function ObjetivesTable() {
                             console.log(objetiveRow);
                             await deleteObjective.mutateAsync({ id: objetiveRow._id as Id<"objectives"> });
                         }}
+                        data-testid="objective-delete-button"
                     >
                         {t('deleteObjective')}
                     </Button>
@@ -82,7 +83,7 @@ export default function ObjetivesTable() {
                 const objetiveRow = row.original;
                 if (objetiveRow._id) {
                     return (
-                        <Link href={`/dashboard/objectives/${String(objetiveRow._id)}`} prefetch={false}>
+                        <Link href={`/dashboard/objectives/${String(objetiveRow._id)}`} prefetch={false} data-testid="objective-progress-link">
                             {t('goToProgress')}
                         </Link>
                     );
