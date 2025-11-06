@@ -102,7 +102,7 @@ export default function CreateObjectiveFormModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="objective-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>
@@ -123,7 +123,7 @@ export default function CreateObjectiveFormModal() {
                                 <FormItem>
                                     <FormLabel>Title</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter objective title" {...field} />
+                                        <Input placeholder="Enter objective title" {...field} data-testid="objective-title-input" />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourObjectiveAClearConciseTitle')}
@@ -144,6 +144,7 @@ export default function CreateObjectiveFormModal() {
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
+                                            data-testid="objective-description-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -164,7 +165,7 @@ export default function CreateObjectiveFormModal() {
                                         value={field.value || ''}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger data-testid="objective-category-select">
                                                 <SelectValue placeholder="Select a category" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -202,6 +203,7 @@ export default function CreateObjectiveFormModal() {
                                                         Number.parseFloat(e.target.value)
                                                     )
                                                 }
+                                                data-testid="objective-target-input"
                                             />
                                         </FormControl>
                                         <FormDescription>
@@ -222,6 +224,7 @@ export default function CreateObjectiveFormModal() {
                                                 placeholder="e.g., kg, miles, hours"
                                                 {...field}
                                                 value={field.value || ''}
+                                                data-testid="objective-unit-input"
                                             />
                                         </FormControl>
                                         <FormDescription>
@@ -245,6 +248,7 @@ export default function CreateObjectiveFormModal() {
                                             onChange={e =>
                                                 field.onChange(Number.parseFloat(e.target.value))
                                             }
+                                            data-testid="objective-current-input"
                                         />
                                     </FormControl>
                                     <FormDescription>{t('yourCurrentProgress')}</FormDescription>
@@ -267,6 +271,7 @@ export default function CreateObjectiveFormModal() {
                                                         'w-full pl-3 text-left font-normal',
                                                         !field.value && 'text-muted-foreground'
                                                     )}
+                                                    data-testid="objective-deadline-button"
                                                 >
                                                     {field.value ? (
                                                         new Date(field.value).toLocaleDateString()
@@ -304,7 +309,7 @@ export default function CreateObjectiveFormModal() {
                                         value={field.value || 'not_started'}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger data-testid="objective-status-select">
                                                 <SelectValue placeholder="Select a status" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -325,10 +330,10 @@ export default function CreateObjectiveFormModal() {
                         />
 
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button variant="outline" type="button" onClick={() => setOpen(false)} data-testid="objective-cancel-button">
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveObjective')}</Button>
+                            <Button type="submit" data-testid="objective-save-button">{t('saveObjective')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

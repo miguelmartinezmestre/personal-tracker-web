@@ -83,6 +83,7 @@ export default function RegisterForm() {
                                     {...field}
                                     placeholder="username"
                                     className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="register-username-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -101,6 +102,7 @@ export default function RegisterForm() {
                                     type="email"
                                     placeholder="email@domain.com"
                                     className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="register-email-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -119,6 +121,7 @@ export default function RegisterForm() {
                                     type="password"
                                     placeholder="Mínimo 8 caracteres"
                                     className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="register-password-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -137,6 +140,7 @@ export default function RegisterForm() {
                                     type="password"
                                     placeholder="Confirmar contraseña"
                                     className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="register-confirm-password-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -147,6 +151,7 @@ export default function RegisterForm() {
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
+                    data-testid="register-button"
                 >
                     {t('register')}
                 </Button>
