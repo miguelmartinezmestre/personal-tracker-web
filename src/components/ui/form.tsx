@@ -59,7 +59,11 @@ function FormField({ name, render }: FormFieldProps) {
     <form.Field
       name={name as any}
       children={(field: any) => {
-        const firstError: string | undefined = field.state?.meta?.errors?.[0]
+        const isTouched = field.state?.meta?.isTouched
+        const hasSubmitted = Boolean((form as any)?.state?.submitCount > 0 || (form as any)?.state?.isSubmitted)
+        const firstError: string | undefined = (isTouched || hasSubmitted)
+          ? field.state?.meta?.errors?.[0]
+          : undefined
         const adaptedField: RHFCompatibleField = {
           name: field.name,
           value: field.state.value,
