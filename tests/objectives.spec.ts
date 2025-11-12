@@ -1,70 +1,64 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 
-
-
 const uuid = randomUUID();
 
-test('create objective', async ({ page }) => {
+test('objectives end-to-end: register, validate, create, progress, edit, delete', async ({ page }) => {
+    // Register a new user directly via route
+    await page.goto('/register');
+    await page.getByTestId('register-username-input').fill('usernametest1' + uuid);
+    await page.getByTestId('register-email-input').fill(`useremail1${uuid}@useremail.com`);
+    await page.getByTestId('register-password-input').fill('12345678');
+    await page.getByTestId('register-confirm-password-input').fill('12345678');
+    await page.getByTestId('register-button').click();
 
-    await page.goto('http://localhost:3000/');
-    await page.getByRole('link', { name: 'Registrase' }).click();
-    await page.getByRole('textbox', { name: 'Nombre de Usuario' }).click();
-    await page.getByRole('textbox', { name: 'Nombre de Usuario' }).fill('usernametest1' + uuid);
-    await page.getByRole('textbox', { name: 'Correo Electrónico' }).click();
-    await page.getByRole('textbox', { name: 'Correo Electrónico' }).fill(`useremail1${uuid}@useremail.com`);
-    await page.getByRole('textbox', { name: 'Contraseña', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Contraseña', exact: true }).fill('12345678');
-    await page.getByRole('textbox', { name: 'Confirmar Contraseña' }).click();
-    await page.getByRole('textbox', { name: 'Confirmar Contraseña' }).fill('12345678');
-    await page.getByRole('button', { name: 'Registrarse' }).click();
-    await page.waitForURL('http://localhost:3000/dashboard/home', { timeout: 10000 });
-    const cookies = await page.context().cookies();
-    expect(cookies.some(cookie => cookie.name === 'session_id')).toBe(true);
+    await expect(page).toHaveURL(/\/dashboard\/home$/);
     const welcomeMessage = await page.getByTestId('welcome-message').textContent();
     expect(welcomeMessage).toBe(`Welcome usernametest1${uuid}`);
 
-    await page.getByRole('link', { name: 'Objectives' }).click();
-    await page.getByRole('button', { name: 'Create New Objective' }).click();
-    await page.getByRole('textbox', { name: 'Title' }).fill('testobjectivename');
-    await page.getByRole('textbox', { name: 'Description' }).click();
-    await page.getByRole('textbox', { name: 'Description' }).fill('testobjectivedescription');
-    await page.getByRole('combobox', { name: 'Category' }).click();
-    await page.getByLabel('Personal').getByText('Personal').click();
-    await page.getByRole('spinbutton', { name: 'Target Value' }).click();
-    await page.getByRole('spinbutton', { name: 'Target Value' }).fill('10');
-    await page.getByRole('textbox', { name: 'Unit' }).click();
-    await page.getByRole('textbox', { name: 'Unit' }).fill('eur');
-    await page.getByRole('spinbutton', { name: 'Current Value' }).click();
-    await page.getByRole('spinbutton', { name: 'Current Value' }).fill('1');
-    await page.getByRole('button', { name: 'Deadline' }).click();
-    await page.getByRole('gridcell', { name: '26' }).click();
-    await page.getByRole('button', { name: 'Deadline' }).click();
-    await page.getByRole('combobox', { name: 'Status' }).click();
-    await page.getByLabel('In Progress').getByText('In Progress').click();
-    await page.getByRole('button', { name: 'Save Objective' }).click();
-    await page.getByRole('cell', { name: 'testobjectivename' }).click();
+    // Go to Objectives
+    await page.goto('/dashboard/objectives');
+
+    // Open create modal and validate required fields
+    await page.getByTestId('objective-create-open').click();
+    await page.getByTestId('objective-save-button').click();
+    await expect(page.getByText('Title is required')).toBeVisible();
+
+    // Fill form and create objective
+    const originalTitle = `testobjectivename-${uuid}`;
+    await page.getByTestId('objective-title-input').fill(originalTitle);
+    await page.getByTestId('objective-description-input').fill('testobjectivedescription');
+    await page.getByTestId('objective-category-select').click();
+    await page.getByRole('option', { name: 'Personal' }).click();
+    await page.getByTestId('objective-target-input').fill('10');
+    await page.getByTestId('objective-unit-input').fill('eur');
+    await page.getByTestId('objective-current-input').fill('1');
+    // Leave deadline and status as default to reduce flakiness
+    await page.getByTestId('objective-save-button').click();
+
+    // Verify the new objective appears in the list
+    await expect(page.getByText(originalTitle)).toBeVisible();
+
+    // Verify go to progress link works (scoped to the created row)
+    let row = page.locator('tr', { hasText: originalTitle }).first();
+    await row.getByTestId('objective-progress-link').click();
+    await expect(page).toHaveURL(/\/dashboard\/objectives\//);
+    await page.goBack();
+
+    // Edit the objective (scoped to the created row)
+    row = page.locator('tr', { hasText: originalTitle }).first();
+    await row.getByTestId('objective-edit-open').click();
+    const editedTitle = `edited-${uuid}`;
+    await page.getByTestId('objective-edit-title-input').fill(editedTitle);
+    await page.getByTestId('objective-edit-save-button').click();
+    await expect(page.getByText(editedTitle)).toBeVisible();
+
+    // Delete the objective (scoped to the edited row)
+    row = page.locator('tr', { hasText: editedTitle }).first();
+    await row.getByTestId('objective-delete-button').click();
+    await expect(page.getByText(editedTitle)).not.toBeVisible();
+
     await page.close();
 });
 
-// test('edit objective', async ({ page }) => {
-    
 
-//     await page.goto('http://localhost:3000/');
-//   await page.getByRole('link', { name: 'Iniciar sesión' }).click();
-//   await page.getByTestId('email-input').click();
-//   await page.getByTestId('email-input').press('ControlOrMeta+a');
-//   await page.getByTestId('email-input').fill('aaa@aaa.com');
-//   await page.getByTestId('password-input').click();
-//   await page.getByTestId('password-input').press('ControlOrMeta+a');
-//   await page.getByTestId('password-input').fill('aaa@aaa.com');
-//   await page.getByTestId('login-button').click();
-//   await page.getByRole('link', { name: 'Objectives' }).click();
-//   await page.getByRole('button', { name: 'Create New Objective' }).click();
-//   await page.locator('.data-\\[state\\=open\\]\\:animate-in').first().click();
-//   await page.getByRole('textbox', { name: 'Title' }).press('ArrowRight');
-//   await page.getByRole('textbox', { name: 'Title' }).fill('testobjectivename2');
-//   await page.getByRole('button', { name: 'Save Objective' }).click();
-//   await page.getByRole('cell', { name: 'testobjectivename2' }).click();
-//   await page.getByRole('cell', { name: 'testobjectivename2' }).click();
-// });
