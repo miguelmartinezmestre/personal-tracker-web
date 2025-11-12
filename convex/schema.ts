@@ -1,19 +1,21 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { tables as betterAuthTables } from "./betterAuth/schema";
 
 export default defineSchema({
+  ...betterAuthTables,
   users: defineTable({
   }),
 
-  sessions: defineTable({
-    user: v.id("users"),
-    value: v.string(),
-    status: v.string(),
-    userAgent: v.string(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_user", ["user"]),
+  // sessions: defineTable({
+  //   user: v.id("users"),
+  //   value: v.string(),
+  //   status: v.string(),
+  //   userAgent: v.string(),
+  //   createdAt: v.number(),
+  //   updatedAt: v.number(),
+  // })
+  //   .index("by_user", ["user"]),
 
   objectives: defineTable({
     user: v.id("users"),
