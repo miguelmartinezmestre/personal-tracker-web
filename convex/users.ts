@@ -1,8 +1,9 @@
 import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
-import { betterAuthComponent } from "./auth";
+import { authComponent } from "./auth";
 import { Id } from "./_generated/dataModel";
-import { createAuth } from "../src/lib/auth";
+import { createAuth } from "./auth";
+import { create } from "./betterAuth/adapter";
 
 export const getUser = query({
   args: {},
@@ -12,52 +13,42 @@ export const getUser = query({
     if (!identity) {
       return null;
     }
+
     // For now the id type requires an assertion
     // const userIdFromCtx = identity.subject as Id<"users">;
 
     // The component provides a convenience method to get the user id
-    const userId = await betterAuthComponent.getAuthUserId(ctx);
-    if (!userId) {
-      return null
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) {
+      return null;
     }
-
-    const user = await ctx.db.get(userId as Id<"users">);
-
-
-    // Get user email and other metadata from the Better Auth component
-    const userMetadata = await betterAuthComponent.getAuthUser(ctx);
-
-    // You can combine them if you want
-    return { ...userMetadata, ...user };
+    return user.userId;
   }
 });
 
 export const getAccountDetails = query({
-    args: {},
-    handler: async (ctx) => {
-        const userId = await betterAuthComponent.getAuthUserId(ctx);
-        if (!userId) throw new ConvexError("Unauthorized");
-        const user = await ctx.db.get(userId as Id<"users">);
-        if (!user) return { email: "", username: "", role: "" };
-        return {
-            email: (user as any).email ?? "",
-            username: (user as any).username ?? "",
-            role: (user as any).role ?? "",
-        };
-    },
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new ConvexError("Unauthorized");
+    return {
+      email: user.email ?? "",
+      username: user.name ?? "",
+    };
+  },
 });
 
 export const updateAccountDetails = mutation({
-    args: {
-        email: v.string(),
-        username: v.string(),
-    },
-    handler: async (ctx) => {
-        const userId = await betterAuthComponent.getAuthUserId(ctx);
-        if (!userId) throw new ConvexError("Unauthorized");
-        await ctx.db.patch(userId as Id<"users">, { });
-        return { message: "Account details updated", error: false } as const;
-    },
+  args: {
+    email: v.string(),
+    username: v.string(),
+  },
+  handler: async (ctx) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) throw new ConvexError("Unauthorized");
+    await ctx.db.patch(user.userId as Id<"users">, {});
+    return { message: "Account details updated", error: false } as const;
+  },
 });
 
 export const getUsers = query({
@@ -65,30 +56,30 @@ export const getUsers = query({
   handler: async (ctx) => {
     return await createAuth(ctx).api.listUserAccounts({
       query: {},
-      headers: await betterAuthComponent.getHeaders(ctx),
+      headers: await authComponent.getHeaders(ctx),
     });
   }
 });
 
-export const setRole = mutation({
-  args: {
-    // userId: v.id("users"),
-    // role: v.string(),
-  },
-  handler: async (ctx) => {
+// export const setRole = mutation({
+//   args: {
+//     // userId: v.id("users"),
+//     // role: v.string(),
+//   },
+//   handler: async (ctx) => {
 
-    const userId = await betterAuthComponent.getAuthUserId(ctx);
+//     const userId = await authComponent.getAuthUserId(ctx);
 
-    if (!userId) {
-      throw new ConvexError("User not authenticated");
-    }
+//     if (!userId) {
+//       throw new ConvexError("User not authenticated");
+//     }
 
-    return await createAuth(ctx).api.setRole({
-      body: {
-        userId: userId,
-        role: "admin", // required
-      },
-      headers: await betterAuthComponent.getHeaders(ctx),
-    });
-  }
-});
+//     return await createAuth(ctx).api.setRole({
+//       body: {
+//         userId: userId,
+//         role: "admin", // required
+//       },
+//       headers: await authComponent.getHeaders(ctx),
+//     });
+//   }
+// });
