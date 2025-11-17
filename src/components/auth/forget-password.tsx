@@ -28,7 +28,6 @@ export default function ForgetPasswordForm() {
     });
 
     async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
-        console.log(values);
         // mutation.mutate(values);
         // const login = await forgetPasswordAction(values);
 

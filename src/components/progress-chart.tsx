@@ -22,8 +22,6 @@ export default function ProgressChart({ data, title = "Progreso", description }:
     objective: item.objective,
   }))
 
-  console.log("[v0] Chart data:", chartData)
-
   return (
     <Card>
       <CardHeader>

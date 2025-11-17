@@ -83,8 +83,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             unit: values.unit ?? undefined,
         };
 
-        console.log(updateData);
-
         await updateObjective.mutateAsync(updateData);
 
         setOpen(false);

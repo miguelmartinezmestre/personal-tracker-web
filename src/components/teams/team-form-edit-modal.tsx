@@ -55,8 +55,6 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
             description: values.description ?? undefined,
         };
 
-        console.log(updateData);
-
         await updateTeam.mutateAsync(updateData);
 
         setOpen(false);

@@ -84,7 +84,6 @@ export default function CreateObjectiveFormModal() {
     });
 
     const onSubmit = async (values: CreateObjective) => {
-        console.log(values);
         await createObjective.mutateAsync({
             title: values.title,
             description: values.description ?? undefined,
