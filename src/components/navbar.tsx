@@ -23,8 +23,6 @@ export default function NavBar() {
 
     const { data: isAuthenticated } = useQuery(convexQuery(api.auth.isAuthenticated, {}));
 
-    console.log(isAuthenticated);
-
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
             {links.map(link => (

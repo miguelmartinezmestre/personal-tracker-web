@@ -57,8 +57,6 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
             comment: values.comment ?? undefined,
         };
 
-        console.log(updateData);
-
         await updateUpdateProgress.mutateAsync(updateData);
 
         setOpen(false);

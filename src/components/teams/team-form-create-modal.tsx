@@ -52,7 +52,6 @@ export default function CreateTeamFormModal() {
     });
 
     const onSubmit = async (values: CreateTeam) => {
-        console.log(values);
         await createTeam.mutateAsync(values);
         setOpen(false);
         form.reset();

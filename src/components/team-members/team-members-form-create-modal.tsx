@@ -58,7 +58,6 @@ export default function CreateTeamMemberFormModal() {
     });
 
     const onSubmit = async (values: CreateTeamMember) => {
-        console.log(values);
         // NOTE: In Convex, you need a user id to create a team member. This UI previously created a user implicitly.
         // Hook up a flow to select an existing user id, then call:
         // await createTeamMember.mutateAsync({ team: teamId as any, user: selectedUserId as any, role: values.role });

@@ -58,7 +58,6 @@ export default function CreateUpdateProgressFormModal() {
     });
 
     const onSubmit = async (values: CreateUpdateProgress) => {
-        console.log(values);
         await createUpdateProgress.mutateAsync({
             objective: objectiveId as Id<'objectives'>,
             updatedValue: Number(values.updatedValue),

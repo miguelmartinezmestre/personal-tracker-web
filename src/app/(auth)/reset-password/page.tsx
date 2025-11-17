@@ -4,15 +4,11 @@ import Header from "@/components/header";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
-export default async function ResetPasswordPage({searchParams}: {searchParams: Promise<{ [key: string]: string | string[] | undefined }>}) {
+export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
 
     const params = await searchParams;
 
-    console.log(params);
-
     const resetPasswordKey = params.key;
-
-    console.log(resetPasswordKey);
 
     if (!resetPasswordKey) {
         redirect('/');
