@@ -4,21 +4,9 @@ import { tables as betterAuthTables } from "./betterAuth/schema";
 
 export default defineSchema({
   ...betterAuthTables,
-  users: defineTable({
-  }),
-
-  // sessions: defineTable({
-  //   user: v.id("users"),
-  //   value: v.string(),
-  //   status: v.string(),
-  //   userAgent: v.string(),
-  //   createdAt: v.number(),
-  //   updatedAt: v.number(),
-  // })
-  //   .index("by_user", ["user"]),
 
   objectives: defineTable({
-    user: v.id("users"),
+    user: v.string(),
     title: v.string(),
     description: v.optional(v.string()),
     category: v.optional(v.string()),
@@ -43,7 +31,7 @@ export default defineSchema({
     .index("by_objective", ["objective"]),
 
   notifications: defineTable({
-    user: v.id("users"),
+    user: v.string(),
     objective: v.id("objectives"),
     read: v.boolean(),
     notificationType: v.string(),
@@ -56,7 +44,7 @@ export default defineSchema({
     .index("by_objective", ["objective"]),
 
   auditLogs: defineTable({
-    user: v.id("users"),
+    user: v.string(),
     action: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -72,7 +60,7 @@ export default defineSchema({
 
   teamMembers: defineTable({
     team: v.id("teams"),
-    user: v.id("users"),
+    user: v.string(),
     role: v.union(
       v.literal("MANAGER"),
       v.literal("MEMBER")

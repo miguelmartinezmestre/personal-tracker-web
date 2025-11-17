@@ -6,10 +6,6 @@ import { query } from "./_generated/server";
 import { betterAuth } from "better-auth";
 import schema from "./betterAuth/schema";
 
-if (!process.env.SITE_URL) {
-  throw new Error('SITE_URL is not set');
-}
-
 const siteUrl = process.env.SITE_URL;
 
 // The component client has methods needed for integrating Convex with Better Auth,
