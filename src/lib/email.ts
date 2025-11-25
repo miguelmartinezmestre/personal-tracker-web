@@ -27,7 +27,16 @@ export async function sendWelcomeEmail(username: string, email: string) {
         html: emailHtml,
     };
 
-    await transporter.sendMail(options);
+    // Log email instead of sending in development
+    console.log('='.repeat(80));
+    console.log('📧 EMAIL WOULD BE SENT:');
+    console.log('To:', email);
+    console.log('Subject:', options.subject);
+    console.log('HTML Content:', emailHtml);
+    console.log('='.repeat(80));
+
+    // Uncomment to actually send email:
+    // await transporter.sendMail(options);
 }
 
 export async function sendRecoverPasswordEmail(
@@ -49,5 +58,15 @@ export async function sendRecoverPasswordEmail(
         html: emailHtml,
     };
 
-    await transporter.sendMail(options);
+    // Log email instead of sending in development
+    console.log('='.repeat(80));
+    console.log('📧 EMAIL WOULD BE SENT:');
+    console.log('To:', email);
+    console.log('Subject:', options.subject);
+    console.log('Reset Link:', link);
+    console.log('HTML Content:', emailHtml);
+    console.log('='.repeat(80));
+
+    // Uncomment to actually send email:
+    // await transporter.sendMail(options);
 }
