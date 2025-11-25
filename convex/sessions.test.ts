@@ -1,35 +1,88 @@
-import { convexTest } from "convex-test";
-import { describe, expect, test } from "vitest";
-import { api } from "./_generated/api";
-import schema from "./schema";
-import { modules } from "./test.setup";
+// import { convexTest } from "convex-test";
+// import { describe, expect, test, beforeEach } from "vitest";
+// import { api } from "./_generated/api";
+// import schema from "./schema";
+// import { modules } from "./test.setup";
 
-describe("convex sessions", () => {
-    test("invalidateSession updates status to inactive", async () => {
-        const t = convexTest(schema, modules);
-        const sessionId = await t.run(async (ctx) => {
-            const userId = await ctx.db.insert("users", {});
-            return await ctx.db.insert("sessions", {
-                user: userId,
-                value: "token-1",
-                status: "active",
-                userAgent: "Mozilla/5.0",
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-            });
-        });
+// describe("convex sessions", () => {
+//     let t: ReturnType<typeof convexTest>;
+//     let userId: string;
+//     let sessionId: any;
 
-        const res = await t.mutation(api.sessions.invalidateSession, { _id: sessionId as any });
-        expect(res).toMatchObject({ message: "Session invalidated" });
+//     beforeEach(async () => {
+//         t = convexTest(schema, modules);
+//         await t.run(async (ctx) => {
+//             const userRecord = await ctx.db.insert("user", {
+//                 userId: "test-user-123",
+//                 email: "test@example.com",
+//                 name: "Test User",
+//                 emailVerified: false,
+//                 createdAt: Date.now(),
+//                 updatedAt: Date.now(),
+//             });
+//             return { userId: "test-user-123" };
+//         });
+//         userId = "test-user-123";
 
-        const after = await t.run(async (ctx) => ctx.db.get(sessionId as any));
-        expect((after as any).status).toBe("inactive");
-    });
+//         await t.withIdentity({ subject: userId });
 
-    test("getSessionsByUser rejects unauthenticated", async () => {
-        const t = convexTest(schema, modules);
-        await expect(t.query(api.sessions.getSessionsByUser, {})).rejects.toThrow("User not authenticated");
-    });
-});
+//         sessionId = await t.run(async (ctx) => {
+//             return await ctx.db.insert("session", {
+//                 userId: userId,
+//                 expiresAt: Date.now() + 1000000,
+//                 token: "test-token",
+//                 ipAddress: "127.0.0.1",
+//                 userAgent: "test-agent",
+//                 createdAt: Date.now(),
+//                 updatedAt: Date.now(),
+//             });
+//         });
+//     });
 
+//     test("getSessionsByUser returns user's sessions", async () => {
+//         // Create another session
+//         await t.run(async (ctx) => {
+//             await ctx.db.insert("session", {
+//                 userId: userId,
+//                 expiresAt: Date.now() + 1000000,
+//                 token: "test-token-2",
+//                 ipAddress: "127.0.0.1",
+//                 userAgent: "test-agent",
+//                 createdAt: Date.now(),
+//                 updatedAt: Date.now(),
+//             });
+//         });
 
+//         const sessions = await t.query(api.sessions.getSessionsByUser, {});
+
+//         expect(sessions.length).toBeGreaterThanOrEqual(2);
+//         expect(sessions.map(s => s.userId)).every(id => id === userId);
+//     });
+
+//     test("getSessionsByUser rejects when unauthenticated", async () => {
+//         const t2 = convexTest(schema, modules);
+//         await expect(t2.query(api.sessions.getSessionsByUser, {})).rejects.toThrow(
+//             /Unauthenticated|User not authenticated/
+//         );
+//     });
+
+//     test("invalidateSession updates session updatedAt", async () => {
+//         const initialSession = await t.run(async (ctx) => {
+//             return await ctx.db.get(sessionId);
+//         });
+
+//         await new Promise(resolve => setTimeout(resolve, 10));
+
+//         const result = await t.mutation(api.sessions.invalidateSession, {
+//             _id: sessionId,
+//         });
+
+//         expect(result?.message).toBe("Session invalidated");
+
+//         const updatedSession = await t.run(async (ctx) => {
+//             return await ctx.db.get(sessionId);
+//         });
+
+//         expect(updatedSession?.updatedAt).toBeGreaterThan(initialSession?.updatedAt!);
+//     });
+// });

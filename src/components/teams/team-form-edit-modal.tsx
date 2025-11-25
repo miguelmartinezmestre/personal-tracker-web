@@ -33,7 +33,7 @@ import { api } from '../../../convex/_generated/api';
 import { Doc } from '../../../convex/_generated/dataModel';
 
 
-export default function EditTeamFormModal({ defaultValues }: { defaultValues: Doc<"teams"> }) {
+export default function EditTeamFormModal({ defaultValues }: { defaultValues: Doc<"organization"> }) {
     const t = useTranslations('Teams');
     const updateTeam = useMutation({ mutationFn: useConvexMutation(api.teams.updateTeam) });
     const [open, setOpen] = useState(false);
@@ -64,7 +64,7 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="team-edit-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('editTeam')}
                 </Button>
@@ -85,7 +85,7 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
                                 <FormItem>
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterTeamName')} {...field} />
+                                        <Input placeholder={t('enterTeamName')} {...field} data-testid="team-edit-name-input" />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourTeamAClearConciseName')}
@@ -106,6 +106,7 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
+                                            data-testid="team-edit-description-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -117,10 +118,10 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
                         />
 
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button variant="outline" type="button" onClick={() => setOpen(false)} data-testid="team-edit-cancel-button">
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveTeam')}</Button>
+                            <Button type="submit" data-testid="team-edit-save-button">{t('saveTeam')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

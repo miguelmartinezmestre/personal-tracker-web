@@ -50,24 +50,4 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user", ["user"]),
-
-  teams: defineTable({
-    name: v.string(),
-    description: v.string(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }),
-
-  teamMembers: defineTable({
-    team: v.id("teams"),
-    user: v.string(),
-    role: v.union(
-      v.literal("MANAGER"),
-      v.literal("MEMBER")
-    ),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_team", ["team"])
-    .index("by_user", ["user"]),
 });
