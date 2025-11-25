@@ -1,26 +1,26 @@
-// import { v } from "convex/values";
-// import { mutation, query } from "./_generated/server";
-// import { betterAuthComponent } from "./auth";
-// import { Id } from "./_generated/dataModel";
+import { v } from "convex/values";
+import { queryWithRLS, mutationWithRLS } from "./rls";
+import { getAuthenticatedUser } from "./auth";
 
-// export const getSessionsByUser = query({
-//     args: {},
-//     handler: async (ctx) => {
-//         const userId = await authComponent.getAuthUserId(ctx) as Id<"users">;
-//         if (!userId) throw new Error("User not authenticated");
-//         return await ctx.db
-//             .query("sessions")
-//             .withIndex("by_user", (q) => q.eq("user", userId))
-//             .collect();
-//     },
-// });
+export const getSessionsByUser = queryWithRLS({
+    args: {},
+    handler: async (ctx) => {
+        const user = await getAuthenticatedUser(ctx);
+        if (!user || !user._id) throw new Error("User not authenticated");
+        const userId = user.userId || String(user._id);
+        return await ctx.db
+            .query("session")
+            .withIndex("userId", (q) => q.eq("userId", userId))
+            .collect();
+    },
+});
 
-// export const invalidateSession = mutation({
-//     args: { _id: v.id("sessions") },
-//     handler: async (ctx, args) => {
-//         await ctx.db.patch(args._id, { status: "inactive", updatedAt: Date.now() });
-//         return { message: "Session invalidated" } as const;
-//     },
-// });
+export const invalidateSession = mutationWithRLS({
+    args: { _id: v.id("session") },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args._id, { updatedAt: Date.now() });
+        return { message: "Session invalidated" } as const;
+    },
+});
 
 

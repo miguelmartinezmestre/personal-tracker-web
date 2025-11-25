@@ -1,10 +1,20 @@
 "use client";
+
+import { useQuery } from "convex/react";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertCircleIcon } from "lucide-react";
+import { api } from "../../convex/_generated/api";
+import { UserProvider } from "@/contexts/user-context";
 
-export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
+export default function AuthenticatedView({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+
+    const user = useQuery(api.auth.getCurrentUser, {});
 
     return (
         <>
@@ -50,7 +60,15 @@ export default function AuthenticatedView({ children }: { children: React.ReactN
 
             </Unauthenticated>
             <Authenticated>
-                {children}
+                {user ? (
+                    <UserProvider user={user}>
+                        {children}
+                    </UserProvider>
+                ) : (
+                    <div className="flex justify-center items-center h-screen">
+                        <div>Loading user...</div>
+                    </div>
+                )}
             </Authenticated>
         </>
     )

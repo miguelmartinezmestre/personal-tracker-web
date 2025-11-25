@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home } from 'lucide-react';
+import { Bell, Frame, Goal, Home, Shield } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -14,8 +14,11 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { authClient } from '@/lib/auth-client';
 
 type ProjectNavItem = {
     name: string;
@@ -23,7 +26,7 @@ type ProjectNavItem = {
     icon: LucideIcon;
 };
 
-const projects: ProjectNavItem[] = [
+const baseProjects: ProjectNavItem[] = [
     {
         name: 'home',
         url: '/dashboard/home',
@@ -47,26 +50,50 @@ const projects: ProjectNavItem[] = [
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-
     const t = useTranslations('Sidebar');
-    // const accountDetails = useSuspenseQuery(trpc.user.getAccountDetails.queryOptions({}));
-    const [projectsState] = useState<typeof projects>(projects);
+    const authUser = useQuery(api.auth.getCurrentUser, {});
+    const userRole = useQuery(api.users.getUserRole, {}, { enabled: !!authUser?._id });
+    const { data: session } = authClient.useSession();
 
-    // if (accountDetails.isLoading) {
-    //     return <Loader2 className="animate-spin" />;
-    // }
+    // Determinar si el usuario es admin
+    const isAdmin = useMemo(() => {
+        if (!authUser?._id) return false;
+        
+        // 1. Intentar obtener el rol desde la sesión de better-auth
+        const sessionRole = session?.user?.role;
+        if (sessionRole === 'admin' || sessionRole === 'ADMIN' || 
+            (Array.isArray(sessionRole) && (sessionRole.includes('admin') || sessionRole.includes('ADMIN')))) {
+            return true;
+        }
+        
+        // 2. Intentar obtener el rol desde el usuario de auth
+        const authRole = (authUser as any)?.role;
+        if (authRole === 'admin' || authRole === 'ADMIN' || 
+            (Array.isArray(authRole) && (authRole.includes('admin') || authRole.includes('ADMIN')))) {
+            return true;
+        }
 
-    // // eslint-disable-next-line react-hooks/rules-of-hooks
-    // useEffect(() => {
-    //     console.log(accountDetails.data?.role);
-    //     if (accountDetails.data?.role === 'ADMIN') {
-    //         setProjectsState([...projects, {
-    //             name: 'admin',
-    //             url: '/dashboard/admin-panel',
-    //             icon: Users,
-    //         }]);
-    //     }
-    // }, [accountDetails.data?.role]);
+        // 3. Verificar el rol desde la query getUserRole
+        const role = userRole?.role;
+        if (role === 'admin' || role === 'ADMIN') {
+            return true;
+        }
+
+        return false;
+    }, [authUser, userRole, session]);
+
+    // Construir la lista de proyectos incluyendo admin si es necesario
+    const projects = useMemo(() => {
+        const items = [...baseProjects];
+        if (isAdmin) {
+            items.push({
+                name: 'admin',
+                url: '/dashboard/admin-panel' as Route,
+                icon: Shield,
+            });
+        }
+        return items;
+    }, [isAdmin]);
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -75,7 +102,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <SidebarMenu>
-                        {projectsState.map((item: typeof projects[number]) => (
+                        {projects.map((item) => (
                             <SidebarMenuItem key={item.name}>
                                 <SidebarMenuButton asChild>
                                     <Link href={item.url} prefetch={false}>

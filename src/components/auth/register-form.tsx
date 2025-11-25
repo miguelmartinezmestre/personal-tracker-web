@@ -17,7 +17,7 @@ import { authClient } from '@/lib/auth-client';
 export default function RegisterForm() {
     const router = useRouter();
     const t = useTranslations('HomePage');
-    const [registerError] = useState('');
+    const [registerError, setRegisterError] = useState('');
 
     const form = useForm<z.infer<typeof registerSchema>>({
         defaultValues: {
@@ -38,6 +38,7 @@ export default function RegisterForm() {
 
     async function onSubmit(values: z.infer<typeof registerSchema>) {
         if (values.password !== values.confirmPassword) {
+            setRegisterError('Las contraseñas no coinciden');
             return;
         }
 
@@ -52,7 +53,7 @@ export default function RegisterForm() {
                     router.push("/dashboard/home");
                 },
                 onError: (ctx) => {
-                    console.log(4, ctx.error.message);
+                    setRegisterError(ctx.error.message || 'Error al registrar usuario. Por favor, intenta de nuevo.');
                 },
             }
         );

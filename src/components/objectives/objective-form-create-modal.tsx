@@ -40,6 +40,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import { useTranslations } from 'next-intl';
+import { useUser } from '@/contexts/user-context';
 
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -70,8 +71,15 @@ const defaultValues: CreateObjective = {
 
 export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
+    const user = useUser(); // Ejemplo: obtener el usuario del context
     const createObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.createObjective) });
     const [open, setOpen] = useState(false);
+
+    // Ejemplo: puedes usar el usuario aquí
+    console.log('Current user:', user);
+    console.log('User ID:', user._id);
+    console.log('User email:', user.email);
+    console.log('User name:', user.name);
     const form = useForm<z.infer<typeof objectiveSchema>>({
         defaultValues: defaultValues,
         validators: {
@@ -84,7 +92,6 @@ export default function CreateObjectiveFormModal() {
     });
 
     const onSubmit = async (values: CreateObjective) => {
-        console.log(values);
         await createObjective.mutateAsync({
             title: values.title,
             description: values.description ?? undefined,
@@ -112,6 +119,10 @@ export default function CreateObjectiveFormModal() {
                     <DialogTitle>{t('createObjective')}</DialogTitle>
                     <DialogDescription>
                         {t('createObjectiveDescription')}
+                        {/* Ejemplo: mostrar información del usuario */}
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            Creating as: {user.email || user.name || 'User'}
+                        </div>
                     </DialogDescription>
                 </DialogHeader>
 

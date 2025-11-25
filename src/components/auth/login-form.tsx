@@ -21,8 +21,8 @@ export default function LoginForm() {
 
     const form = useForm<z.infer<typeof loginSchema>>({
         defaultValues: {
-            email: 'lily@example.com',
-            password: 'lily@example.com',
+            email: '',
+            password: '',
         },
         validators: {
             onChange: loginSchema,
@@ -45,8 +45,6 @@ export default function LoginForm() {
                     router.push("/dashboard/home");
                 },
                 onError: (ctx) => {
-                    // window.alert(ctx.error.message);
-                    // console.log(3,ctx.error.message);
                     setLoginError(ctx.error.message);
                 },
             }

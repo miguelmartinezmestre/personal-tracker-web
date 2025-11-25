@@ -49,8 +49,6 @@ export default function PasswordFormEdit() {
             confirmPassword: values.confirmPassword,
         };
 
-        console.log(updateData);
-
         // const result = await updatePassword.mutateAsync(updateData);
 
         // if (result.error) {

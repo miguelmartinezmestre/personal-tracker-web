@@ -52,7 +52,6 @@ export default function CreateTeamFormModal() {
     });
 
     const onSubmit = async (values: CreateTeam) => {
-        console.log(values);
         await createTeam.mutateAsync(values);
         setOpen(false);
         form.reset();
@@ -61,7 +60,7 @@ export default function CreateTeamFormModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="team-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createTeam')}
                 </Button>
@@ -82,7 +81,7 @@ export default function CreateTeamFormModal() {
                                 <FormItem>
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterTeamName')} {...field} />
+                                        <Input placeholder={t('enterTeamName')} {...field} data-testid="team-name-input" />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourTeamAClearConciseTitle')}
@@ -103,6 +102,7 @@ export default function CreateTeamFormModal() {
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
+                                            data-testid="team-description-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -114,10 +114,10 @@ export default function CreateTeamFormModal() {
                         />
 
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button variant="outline" type="button" onClick={() => setOpen(false)} data-testid="team-cancel-button">
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveTeam')}</Button>
+                            <Button type="submit" data-testid="team-save-button">{t('saveTeam')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

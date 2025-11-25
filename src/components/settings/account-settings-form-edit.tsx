@@ -49,8 +49,6 @@ export default function AccountSettingsForm() {
             username: values.username,
         };
 
-        console.log(updateData);
-
         const result = await updateAccountDetails.mutateAsync(updateData);
 
         if (result.error) {

@@ -66,7 +66,6 @@ export default function ObjetivesTable() {
                 return (
                     <Button
                         onClick={async () => {
-                            console.log(objetiveRow);
                             await deleteObjective.mutateAsync({ id: objetiveRow._id as Id<"objectives"> });
                         }}
                         data-testid="objective-delete-button"
