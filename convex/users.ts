@@ -1,85 +1,75 @@
-// import { mutation, query } from "./_generated/server";
-// import { ConvexError, v } from "convex/values";
-// import { authComponent } from "./auth";
-// import { Id } from "./_generated/dataModel";
-// import { createAuth } from "./auth";
-// import { create } from "./betterAuth/adapter";
+import { queryWithRLS, mutationWithRLS } from "./rls";
+import { ConvexError, v } from "convex/values";
+import { getAuthenticatedUser } from "./auth";
 
-// export const getUser = query({
-//   args: {},
-//   handler: async (ctx) => {
-//     // You can get the user id directly from Convex via ctx.auth
-//     const identity = await ctx.auth.getUserIdentity();
-//     if (!identity) {
-//       return null;
-//     }
+export const getUser = queryWithRLS({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) {
+      return null;
+    }
+    return user.userId || String(user._id);
+  }
+});
 
-//     // For now the id type requires an assertion
-//     // const userIdFromCtx = identity.subject as Id<"users">;
+export const getAccountDetails = queryWithRLS({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) throw new ConvexError("Unauthorized");
+    return {
+      email: user.email ?? "",
+      username: user.name ?? "",
+    };
+  },
+});
 
-//     // The component provides a convenience method to get the user id
-//     const user = await authComponent.getAuthUser(ctx);
-//     if (!user) {
-//       return null;
-//     }
-//     return user.userId;
-//   }
-// });
+export const getUserRole = queryWithRLS({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user || !user._id) return null;
+    
+    // Buscar el usuario en la tabla user de betterAuth para obtener el rol
+    const userId = user.userId || String(user._id);
+    const userRecord = await ctx.db
+      .query("user")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .first();
+    
+    if (!userRecord) return null;
+    
+    return {
+      role: (userRecord as any)?.role || null,
+      userId: userId,
+    };
+  },
+});
 
-// export const getAccountDetails = query({
-//   args: {},
-//   handler: async (ctx) => {
-//     const user = await authComponent.getAuthUser(ctx);
-//     if (!user) throw new ConvexError("Unauthorized");
-//     return {
-//       email: user.email ?? "",
-//       username: user.name ?? "",
-//     };
-//   },
-// });
-
-// export const updateAccountDetails = mutation({
-//   args: {
-//     email: v.string(),
-//     username: v.string(),
-//   },
-//   handler: async (ctx) => {
-//     const user = await authComponent.getAuthUser(ctx);
-//     if (!user) throw new ConvexError("Unauthorized");
-//     await ctx.db.patch(user.userId as Id<"users">, {});
-//     return { message: "Account details updated", error: false } as const;
-//   },
-// });
-
-// export const getUsers = query({
-//   args: {},
-//   handler: async (ctx) => {
-//     return await createAuth(ctx).api.listUserAccounts({
-//       query: {},
-//       headers: await authComponent.getHeaders(ctx),
-//     });
-//   }
-// });
-
-// // export const setRole = mutation({
-// //   args: {
-// //     // userId: v.id("users"),
-// //     // role: v.string(),
-// //   },
-// //   handler: async (ctx) => {
-
-// //     const userId = await authComponent.getAuthUserId(ctx);
-
-// //     if (!userId) {
-// //       throw new ConvexError("User not authenticated");
-// //     }
-
-// //     return await createAuth(ctx).api.setRole({
-// //       body: {
-// //         userId: userId,
-// //         role: "admin", // required
-// //       },
-// //       headers: await authComponent.getHeaders(ctx),
-// //     });
-// //   }
-// // });
+export const updateAccountDetails = mutationWithRLS({
+  args: {
+    email: v.string(),
+    username: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user || !user._id) throw new ConvexError("Unauthorized");
+    
+    // Buscar el usuario por userId
+    const userId = user.userId || String(user._id);
+    const userRecord = await ctx.db
+      .query("user")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .first();
+    
+    if (!userRecord) throw new ConvexError("User not found");
+    
+    await ctx.db.patch(userRecord._id, {
+      email: args.email,
+      name: args.username,
+      updatedAt: Date.now(),
+    });
+    return { message: "Account details updated", error: false } as const;
+  },
+});

@@ -16,7 +16,7 @@ export default function TeamsTable() {
     const teams = useSuspenseQuery(convexQuery(api.teams.getTeams, {}));
     const deleteTeam = useMutation({ mutationFn: useConvexMutation(api.teams.deleteTeam) });
 
-    const columns: ColumnDef<Doc<"teams">>[] = [
+    const columns: ColumnDef<Doc<"organization">>[] = [
         {
             accessorKey: 'name',
             header: t('name'),
@@ -45,6 +45,7 @@ export default function TeamsTable() {
                         onClick={async () => {
                             await deleteTeam.mutateAsync({ _id: teamRow._id });
                         }}
+                        data-testid="team-delete-button"
                     >
                         {t('deleteTeam')}
                     </Button>
@@ -58,7 +59,7 @@ export default function TeamsTable() {
                 const teamRow = row.original;
                 if (teamRow._id) {
                     return (
-                        <Link href={`/dashboard/teams/${String(teamRow._id)}`} prefetch={false}>
+                        <Link href={`/dashboard/teams/${String(teamRow._id)}`} prefetch={false} data-testid="team-detail-link">
                             Go to team
                         </Link>
                     );

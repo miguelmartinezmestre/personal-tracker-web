@@ -27,6 +27,9 @@ import { TeamMember, savedTeamMemberSchema } from '@/schemas/team-member';
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
+import { useMutation } from '@tanstack/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
+import { api } from '../../../convex/_generated/api';
 
 const roleOptions = [
     { value: TeamRole.MANAGER, label: 'Manager' },
@@ -36,7 +39,7 @@ const roleOptions = [
 export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
 
     const t = useTranslations('TeamMembers');
-    // const updateTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.updateTeamMember) });
+    const updateTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.updateTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<TeamMember>({
         defaultValues: defaultValues,
@@ -51,11 +54,11 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
 
     const onSubmit = async (values: TeamMember) => {
         const updateData = {
-            _id: values._id as any,
-            role: values.role,
+            id: values._id as any,
+            role: values.role as "MANAGER" | "MEMBER",
         };
 
-        // await updateTeamMember.mutateAsync(updateData);
+        await updateTeamMember.mutateAsync(updateData);
 
         setOpen(false);
         form.reset();

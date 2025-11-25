@@ -1,73 +1,15 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx } from "./_generated/server";
-import { authComponent } from "./auth";
-import { Id } from "./_generated/dataModel";
-import {
-    customCtx,
-    customMutation,
-    customQuery,
-} from "convex-helpers/server/customFunctions";
-import {
-    Rules,
-    RLSConfig,
-    wrapDatabaseReader,
-    wrapDatabaseWriter,
-} from "convex-helpers/server/rowLevelSecurity";
-import { DataModel } from "./_generated/dataModel";
+import { queryWithRLS, mutationWithRLS } from "./rls";
 
-async function rlsRules(ctx: QueryCtx) {
-    const user = await authComponent.getAuthUser(ctx);
-    const userId = user?._id ? String(user._id) : null;
 
-    return {
-        objectives: {
-            read: async (_, objective) => {
-                // Solo usuarios autenticados pueden leer objetivos
-                if (!userId) return false;
-                // Solo pueden leer sus propios objetivos
-                return objective.user === userId;
-            },
-            insert: async (_, objective) => {
-                // Solo usuarios autenticados pueden crear objetivos
-                if (!userId) return false;
-                // Solo pueden crear objetivos con su propio user ID
-                return objective.user === userId;
-            },
-            modify: async (_, objective) => {
-                // Solo usuarios autenticados pueden modificar objetivos
-                if (!userId) return false;
-                // Solo pueden modificar sus propios objetivos
-                return objective.user === userId;
-            },
-        },
-    } satisfies Rules<QueryCtx, DataModel>;
-}
-
-// Por defecto, las tablas sin regla tienen `defaultPolicy` configurado como "deny"
-const config: RLSConfig = { defaultPolicy: "deny" };
-
-const queryWithRLS = customQuery(
-    query,
-    customCtx(async (ctx) => ({
-        db: wrapDatabaseReader(ctx, ctx.db, await rlsRules(ctx), config),
-    })),
-);
-
-const mutationWithRLS = customMutation(
-    mutation,
-    customCtx(async (ctx) => ({
-        db: wrapDatabaseWriter(ctx, ctx.db, await rlsRules(ctx), config),
-    })),
-);
 
 export const getObjectivesByUser = queryWithRLS({
     args: {},
     handler: async (ctx) => {
-        const user = await authComponent.getAuthUser(ctx);
-        if (!user || !user._id) throw new Error("User not authenticated");
+        console.log("getObjectivesByUser", );
         return await ctx.db
             .query("objectives")
-            .withIndex("by_user", (q) => q.eq("user", user._id))
+            .withIndex("by_user", (q) => q.eq("user", String(ctx.identity?.subject)))
             .collect();
     },
 });
@@ -93,14 +35,10 @@ export const createObjective = mutationWithRLS({
         unit: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const user = await authComponent.getAuthUser(ctx);
-        console.log(user);
-        if (!user || !user._id) {
-            throw new Error("User not authenticated");
-        }
+        
         const now = Date.now();
         return await ctx.db.insert("objectives", {
-            user: user._id,
+            user: String(ctx.identity?.subject),
             title: args.title,
             description: args.description,
             category: args.category,

@@ -3,96 +3,51 @@
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
+import {
+  Controller,
+  FormProvider,
+  useFormContext,
+  useFormState,
+  type ControllerProps,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form"
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
-// Provide TanStack form instance to descendants
-const TanstackFormContext = React.createContext<any>(null)
+const Form = FormProvider
 
-type TanstackFormProviderProps = {
-  form?: any
-  children?: React.ReactNode
-} & Record<string, any>
+type FormFieldContextValue<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> = {
+  name: TName
+}
 
-function Form({ form, children, ...rest }: TanstackFormProviderProps) {
-  const providedForm = form ?? (rest as any)
+const FormFieldContext = React.createContext<FormFieldContextValue>(
+  {} as FormFieldContextValue
+)
+
+const FormField = <
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+  ...props
+}: ControllerProps<TFieldValues, TName>) => {
   return (
-    <TanstackFormContext.Provider value={providedForm}>
-      {children}
-    </TanstackFormContext.Provider>
+    <FormFieldContext.Provider value={{ name: props.name }}>
+      <Controller {...props} />
+    </FormFieldContext.Provider>
   )
 }
 
-function useTanstackForm() {
-  const form = React.useContext(TanstackFormContext)
-  if (!form) {
-    throw new Error("useTanstackForm must be used within <Form>")
-  }
-  return form
-}
-
-type FormFieldContextValue = {
-  name: string
-  error?: string
-}
-
-const FormFieldContext = React.createContext<FormFieldContextValue>({} as any)
-
-type RHFCompatibleField = {
-  name: string
-  value: any
-  onChange: (value: any) => void
-  onBlur: () => void
-}
-
-type FormFieldProps = {
-  name: string
-  control?: unknown // Ignored; kept for compatibility with existing usage
-  render: (args: { field: RHFCompatibleField }) => React.ReactNode
-}
-
-function FormField({ name, render }: FormFieldProps) {
-  const form = useTanstackForm()
-
-  return (
-    <form.Field
-      name={name as any}
-      children={(field: any) => {
-        const isTouched = field.state?.meta?.isTouched
-        const hasSubmitted = Boolean((form as any)?.state?.submitCount > 0 || (form as any)?.state?.isSubmitted)
-        const firstError: string | undefined = (isTouched || hasSubmitted)
-          ? field.state?.meta?.errors?.[0]
-          : undefined
-        const adaptedField: RHFCompatibleField = {
-          name: field.name,
-          value: field.state.value,
-          onBlur: field.handleBlur,
-          onChange: (arg: any) => {
-            const nextValue = arg?.target !== undefined ? arg.target.value : arg
-            field.handleChange(nextValue)
-          },
-        }
-
-        return (
-          <FormFieldContext.Provider value={{ name, error: firstError }}>
-            {render({ field: adaptedField })}
-          </FormFieldContext.Provider>
-        )
-      }}
-    />
-  )
-}
-
-type FormItemContextValue = {
-  id: string
-}
-
-const FormItemContext = React.createContext<FormItemContextValue>({} as any)
-
-function useFormField() {
+const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
+  const { getFieldState } = useFormContext()
+  const formState = useFormState({ name: fieldContext.name })
+  const fieldState = getFieldState(fieldContext.name, formState)
 
   if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>")
@@ -103,12 +58,20 @@ function useFormField() {
   return {
     id,
     name: fieldContext.name,
-    error: fieldContext.error,
     formItemId: `${id}-form-item`,
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
+    ...fieldState,
   }
 }
+
+type FormItemContextValue = {
+  id: string
+}
+
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue
+)
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   const id = React.useId()
@@ -124,7 +87,10 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+function FormLabel({
+  className,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField()
 
   return (
@@ -145,7 +111,11 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
     <Slot
       data-slot="form-control"
       id={formItemId}
-      aria-describedby={!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`}
+      aria-describedby={
+        !error
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`
+      }
       aria-invalid={!!error}
       {...props}
     />
@@ -167,7 +137,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error ?? "") : props.children
+  const body = error ? String(error?.message ?? "") : props.children
 
   if (!body) {
     return null
@@ -195,5 +165,3 @@ export {
   FormMessage,
   FormField,
 }
-
-
