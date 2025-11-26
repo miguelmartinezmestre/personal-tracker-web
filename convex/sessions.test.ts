@@ -1,88 +1,92 @@
-// import { convexTest } from "convex-test";
-// import { describe, expect, test, beforeEach } from "vitest";
-// import { api } from "./_generated/api";
-// import schema from "./schema";
-// import { modules } from "./test.setup";
+import { convexTest } from "convex-test";
+import { describe, expect, test, beforeEach } from "vitest";
+import { api } from "./_generated/api";
+import schema from "./schema";
+import { modules } from "../test.setup";
+import { createTestUser } from "./test-helpers";
 
-// describe("convex sessions", () => {
-//     let t: ReturnType<typeof convexTest>;
-//     let userId: string;
-//     let sessionId: any;
+describe("convex sessions", () => {
+    let t: ReturnType<typeof convexTest>;
+    let userId: string;
+    let sessionId: any;
 
-//     beforeEach(async () => {
-//         t = convexTest(schema, modules);
-//         await t.run(async (ctx) => {
-//             const userRecord = await ctx.db.insert("user", {
-//                 userId: "test-user-123",
-//                 email: "test@example.com",
-//                 name: "Test User",
-//                 emailVerified: false,
-//                 createdAt: Date.now(),
-//                 updatedAt: Date.now(),
-//             });
-//             return { userId: "test-user-123" };
-//         });
-//         userId = "test-user-123";
+    t = convexTest(schema, modules);
 
-//         await t.withIdentity({ subject: userId });
+    const userIdentity = t.withIdentity({
+        subject: "test-user-123",
+        role: "admin",
+    });
 
-//         sessionId = await t.run(async (ctx) => {
-//             return await ctx.db.insert("session", {
-//                 userId: userId,
-//                 expiresAt: Date.now() + 1000000,
-//                 token: "test-token",
-//                 ipAddress: "127.0.0.1",
-//                 userAgent: "test-agent",
-//                 createdAt: Date.now(),
-//                 updatedAt: Date.now(),
-//             });
-//         });
-//     });
+    beforeEach(async () => {
+        // Create a complete test user with account (similar to better-auth sign-up)
+        const result = await userIdentity.run(async (ctx) => {
+            return await createTestUser(ctx, {
+                userId: "test-user-123",
+                email: "test@example.com",
+                name: "Test User",
+                password: "test-password",
+                role: "admin",
+                emailVerified: false,
+            });
+        });
+        userId = result.userId;
 
-//     test("getSessionsByUser returns user's sessions", async () => {
-//         // Create another session
-//         await t.run(async (ctx) => {
-//             await ctx.db.insert("session", {
-//                 userId: userId,
-//                 expiresAt: Date.now() + 1000000,
-//                 token: "test-token-2",
-//                 ipAddress: "127.0.0.1",
-//                 userAgent: "test-agent",
-//                 createdAt: Date.now(),
-//                 updatedAt: Date.now(),
-//             });
-//         });
+        sessionId = await userIdentity.run(async (ctx) => {
+            return await ctx.db.insert("session", {
+                userId: userId,
+                expiresAt: Date.now() + 1000000,
+                token: "test-token",
+                ipAddress: "127.0.0.1",
+                userAgent: "test-agent",
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        });
+    });
 
-//         const sessions = await t.query(api.sessions.getSessionsByUser, {});
+    test("getSessionsByUser returns user's sessions", async () => {
+        // Create another session
+        await userIdentity.run(async (ctx) => {
+            await ctx.db.insert("session", {
+                userId: userId,
+                expiresAt: Date.now() + 1000000,
+                token: "test-token-2",
+                ipAddress: "127.0.0.1",
+                userAgent: "test-agent",
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        });
 
-//         expect(sessions.length).toBeGreaterThanOrEqual(2);
-//         expect(sessions.map(s => s.userId)).every(id => id === userId);
-//     });
+        const sessions = await userIdentity.query(api.sessions.getSessionsByUser, {});
 
-//     test("getSessionsByUser rejects when unauthenticated", async () => {
-//         const t2 = convexTest(schema, modules);
-//         await expect(t2.query(api.sessions.getSessionsByUser, {})).rejects.toThrow(
-//             /Unauthenticated|User not authenticated/
-//         );
-//     });
+        expect(sessions.length).toBeGreaterThanOrEqual(2);
+        expect(sessions.every(s => s.userId === userId)).toBe(true);
+    });
 
-//     test("invalidateSession updates session updatedAt", async () => {
-//         const initialSession = await t.run(async (ctx) => {
-//             return await ctx.db.get(sessionId);
-//         });
+    test("getSessionsByUser rejects when unauthenticated", async () => {
+        await expect(t.query(api.sessions.getSessionsByUser, {})).rejects.toThrow(
+            /Unauthenticated|User not authenticated/
+        );
+    });
 
-//         await new Promise(resolve => setTimeout(resolve, 10));
+    test("invalidateSession updates session updatedAt", async () => {
+        const initialSession = await userIdentity.run(async (ctx) => {
+            return await ctx.db.get(sessionId);
+        });
 
-//         const result = await t.mutation(api.sessions.invalidateSession, {
-//             _id: sessionId,
-//         });
+        await new Promise(resolve => setTimeout(resolve, 10));
 
-//         expect(result?.message).toBe("Session invalidated");
+        const result = await userIdentity.mutation(api.sessions.invalidateSession, {
+            _id: sessionId,
+        });
 
-//         const updatedSession = await t.run(async (ctx) => {
-//             return await ctx.db.get(sessionId);
-//         });
+        expect(result?.message).toBe("Session invalidated");
 
-//         expect(updatedSession?.updatedAt).toBeGreaterThan(initialSession?.updatedAt!);
-//     });
-// });
+        const updatedSession = await userIdentity.run(async (ctx) => {
+            return await ctx.db.get(sessionId);
+        });
+
+        expect(updatedSession?.updatedAt).toBeGreaterThan(initialSession?.updatedAt!);
+    });
+});

@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     server: { deps: { inline: ["convex-test"] } },
     include: [
-      //"convex/**/*.test.ts",
+      "convex/**/*.test.ts",
       "src/**/*.test.{ts,tsx}",
       "src/**/*.spec.{ts,tsx}",
     ],
