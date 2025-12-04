@@ -42,9 +42,10 @@ export async function getAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
       }
     } catch (e) {
       // Ignore errors in fallback
+      console.error(e);
+      console.log('No user found');
+      return null;
     }
-    console.log('No user found');
-    return null;
   }
 }
 

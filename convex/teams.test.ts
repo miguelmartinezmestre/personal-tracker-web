@@ -3,7 +3,7 @@ import { describe, expect, test, beforeEach } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
 import { modules } from "../test.setup";
-import { createTestUser } from "./test-helpers";
+import { createTestUser } from "./test_helpers";
 
 describe("convex teams", () => {
     let t: ReturnType<typeof convexTest>;
