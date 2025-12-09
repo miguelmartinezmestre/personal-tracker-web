@@ -1,7 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+  - turbo/generators
 minimumReleaseAge: 1
-
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
+  - core-js-pure
   - esbuild
   - sharp
   - unrs-resolver
