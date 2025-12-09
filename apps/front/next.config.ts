@@ -5,11 +5,14 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  cacheComponents: true,
   experimental: {
     turbopackFileSystemCacheForDev: true,
   },
   typedRoutes: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
+  },
 };
 
 export default withNextIntl(nextConfig);

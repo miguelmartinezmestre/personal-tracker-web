@@ -1,4 +1,4 @@
-import "@/app/globals.css"
+import "@repo/ui/globals.css"
 import { ThemeProvider } from "@/providers/theme";
 import { NextIntlClientProvider } from "next-intl";
 import { Suspense } from "react";
