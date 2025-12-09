@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import { getAuthenticatedUser } from "./auth";
 import { queryWithRLS, mutationWithRLS } from "./rls";
 
 
@@ -7,12 +6,10 @@ import { queryWithRLS, mutationWithRLS } from "./rls";
 export const getObjectivesByUser = queryWithRLS({
     args: {},
     handler: async (ctx) => {
-        const user = await getAuthenticatedUser(ctx);
-        if (!user || !user._id) throw new Error("User not authenticated");
-        const userId = user.userId || String(user._id);
+        console.log("getObjectivesByUser", );
         return await ctx.db
             .query("objectives")
-            .withIndex("by_user", (q) => q.eq("user", userId))
+            .withIndex("by_user", (q) => q.eq("user", String(ctx.identity?.subject)))
             .collect();
     },
 });
@@ -38,14 +35,10 @@ export const createObjective = mutationWithRLS({
         unit: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const user = await getAuthenticatedUser(ctx);
-        if (!user || !user._id) {
-            throw new Error("User not authenticated");
-        }
-        const userId = user.userId || String(user._id);
+        
         const now = Date.now();
         return await ctx.db.insert("objectives", {
-            user: userId,
+            user: String(ctx.identity?.subject),
             title: args.title,
             description: args.description,
             category: args.category,

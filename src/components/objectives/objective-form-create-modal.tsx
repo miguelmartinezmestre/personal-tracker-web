@@ -119,11 +119,11 @@ export default function CreateObjectiveFormModal() {
                     <DialogTitle>{t('createObjective')}</DialogTitle>
                     <DialogDescription>
                         {t('createObjectiveDescription')}
-                        {/* Ejemplo: mostrar información del usuario */}
-                        <div className="mt-2 text-xs text-muted-foreground">
-                            Creating as: {user.email || user.name || 'User'}
-                        </div>
                     </DialogDescription>
+                    {/* Ejemplo: mostrar información del usuario */}
+                    <div className="mt-2 text-xs text-muted-foreground">
+                        Creating as: {user.email || user.name || 'User'}
+                    </div>
                 </DialogHeader>
 
                 <Form {...form}>

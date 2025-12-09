@@ -12,37 +12,15 @@ import {
     wrapDatabaseWriter,
 } from "convex-helpers/server/rowLevelSecurity";
 import { DataModel } from "./_generated/dataModel";
+import { ConvexError } from "convex/values";
 
-async function rlsRules(ctx: QueryCtx) {
-    const user = await getAuthenticatedUser(ctx);
-    const userId = user ? (user.userId || String(user._id)) : null;
-
+async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
     // Helper para verificar si un usuario es admin global
     const isGlobalAdmin = async () => {
-        if (!userId) return false;
+        if (role !== "admin") return false;
         try {
-            // Try to find user by userId field first, then by _id
-            let userRecord = await ctx.db
-                .query("user")
-                .withIndex("userId", (q) => q.eq("userId", userId))
-                .first();
-
             // If not found, try to find by _id
-            if (!userRecord && userId) {
-                try {
-                    const potentialRecord = await ctx.db.get(userId as any);
-                    // Only use if it's actually a user record
-                    if (potentialRecord && "email" in potentialRecord && "name" in potentialRecord) {
-                        userRecord = potentialRecord as any;
-                    }
-                } catch {
-                    // Ignore if _id is not a valid ID
-                }
-            }
-
-            if (!userRecord) return false;
-            const userRole = (userRecord as any)?.role;
-            return userRole === "admin" || userRole === "ADMIN";
+            return true;
         } catch {
             return false;
         }
@@ -50,7 +28,7 @@ async function rlsRules(ctx: QueryCtx) {
 
     // Helper para verificar si un usuario es miembro de una organización
     const isOrganizationMember = async (organizationId: string) => {
-        if (!userId) return false;
+        if (role !== "admin") return false;
         const member = await ctx.db
             .query("member")
             .withIndex("organizationId", (q) => q.eq("organizationId", organizationId))
@@ -330,107 +308,46 @@ const config: RLSConfig = { defaultPolicy: "deny" };
 export const queryWithRLS = customQuery(
     query,
     customCtx(async (ctx) => {
-        // Store original database for auth lookups (bypasses RLS)
-        const originalDb = ctx.db;
 
-        // Capture identity during setup (works in test environments)
-        // This must be done BEFORE calling rlsRules, so that getAuthenticatedUser
-        // can use the captured identity when called from within rlsRules
-        // In test environments, ctx.auth.getUserIdentity() might return null
-        // even when t.withIdentity() is called, so we try multiple approaches
-        let capturedIdentity = null;
-        try {
-            capturedIdentity = await ctx.auth.getUserIdentity();
-        } catch {
-            // Identity might not be available yet
-        }
-        
-        // Fallback for test environments: try to access identity directly
-        // convex-test might store it in a different location
-        if (!capturedIdentity) {
-            const authObj = (ctx as any).auth;
-            if (authObj) {
-                // Try to access identity from various possible locations
-                capturedIdentity = 
-                    authObj._identity ||
-                    authObj.identity ||
-                    (authObj as any)._testIdentity ||
-                    (ctx as any)._testIdentity ||
-                    (ctx as any).identity;
-            }
+        const identity = await ctx.auth.getUserIdentity();
+
+        if (!identity) {
+            throw new ConvexError("User not authenticated");
         }
 
-        // Create a context with captured identity for rlsRules to use
-        const ctxWithIdentity = {
-            ...ctx,
-            _originalDb: originalDb,
-            _capturedIdentity: capturedIdentity,
-        };
+        const role = String(identity?.role) ?? 'user';
+        const userId = String(identity?.subject);
 
-        // Build the wrapped context, preserving all original context properties
-        const wrappedCtx = {
-            ...ctx, // Spread all original context properties (including auth, scheduler, etc.)
-            db: wrapDatabaseReader(ctx, ctx.db, await rlsRules(ctxWithIdentity), config),
-            // Expose original database for authentication lookups (bypasses RLS)
-            _originalDb: originalDb,
-            // Store captured identity for use in handlers
-            _capturedIdentity: capturedIdentity,
-        };
+        if (!userId || userId === '') {
+            throw new ConvexError("User not authenticated");
+        }
 
-        return wrappedCtx;
+        return {
+            db: wrapDatabaseReader(ctx, ctx.db, await rlsRules(userId, role, ctx), config),
+            identity: identity,
+        };
     }),
 );
 
 export const mutationWithRLS = customMutation(
     mutation,
     customCtx(async (ctx) => {
-        // Store original database for auth lookups (bypasses RLS)
-        const originalDb = ctx.db;
+        const identity = await ctx.auth.getUserIdentity();
 
-        // Capture identity during setup (works in test environments)
-        // This must be done BEFORE calling rlsRules, so that getAuthenticatedUser
-        // can use the captured identity when called from within rlsRules
-        // In test environments, ctx.auth.getUserIdentity() might return null
-        // even when t.withIdentity() is called, so we try multiple approaches
-        let capturedIdentity = null;
-        try {
-            capturedIdentity = await ctx.auth.getUserIdentity();
-        } catch {
-            // Identity might not be available yet
-        }
-        
-        // Fallback for test environments: try to access identity directly
-        // convex-test might store it in a different location
-        if (!capturedIdentity) {
-            const authObj = (ctx as any).auth;
-            if (authObj) {
-                // Try to access identity from various possible locations
-                capturedIdentity = 
-                    authObj._identity ||
-                    authObj.identity ||
-                    (authObj as any)._testIdentity ||
-                    (ctx as any)._testIdentity ||
-                    (ctx as any).identity;
-            }
+        if (!identity) {
+            throw new ConvexError("User not authenticated");
         }
 
-        // Create a context with captured identity for rlsRules to use
-        const ctxWithIdentity = {
-            ...ctx,
-            _originalDb: originalDb,
-            _capturedIdentity: capturedIdentity,
-        };
+        const role = String(identity?.role) ?? 'user';
+        const userId = String(identity?.subject);
 
-        // Build the wrapped context, preserving all original context properties
-        const wrappedCtx = {
-            ...ctx, // Spread all original context properties (including auth, scheduler, etc.)
-            db: wrapDatabaseWriter(ctx, ctx.db, await rlsRules(ctxWithIdentity), config),
-            // Expose original database for authentication lookups (bypasses RLS)
-            _originalDb: originalDb,
-            // Store captured identity for use in handlers
-            _capturedIdentity: capturedIdentity,
-        };
+        if (!userId || userId === '') {
+            throw new ConvexError("User not authenticated");
+        }
 
-        return wrappedCtx;
+        return {
+            db: wrapDatabaseWriter(ctx, ctx.db, await rlsRules(userId, role, ctx), config),
+            identity: identity,
+        };
     }),
 );

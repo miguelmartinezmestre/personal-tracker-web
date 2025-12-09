@@ -26,8 +26,26 @@ export async function getAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
     const user = await authComponent.getAuthUser(ctx);
     if (user) return user;
   } catch {
-    console.log('No user found');
-    return null;
+    // Fallback: try to find user by identity subject (for test environments)
+    try {
+      const identity = await ctx.auth.getUserIdentity();
+      if (identity && identity.subject) {
+        const userId = identity.subject;
+        // Search for user by userId
+        const userRecord = await ctx.db
+          .query("user")
+          .withIndex("userId", (q) => q.eq("userId", userId))
+          .first();
+        if (userRecord) {
+          return userRecord;
+        }
+      }
+    } catch (e) {
+      // Ignore errors in fallback
+      console.error(e);
+      console.log('No user found');
+      return null;
+    }
   }
 }
 

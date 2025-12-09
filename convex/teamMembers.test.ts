@@ -1,170 +1,175 @@
-// import { convexTest } from "convex-test";
-// import { describe, expect, test, beforeEach } from "vitest";
-// import { api } from "./_generated/api";
-// import schema from "./schema";
-// import { modules } from "./test.setup";
+import { convexTest } from "convex-test";
+import { describe, expect, test, beforeEach } from "vitest";
+import { api } from "./_generated/api";
+import schema from "./schema";
+import { modules } from "../test.setup";
+import { createTestUsers } from "./test_helpers";
 
-// describe("convex teamMembers", () => {
-//     let t: ReturnType<typeof convexTest>;
-//     let userId: string;
-//     let teamId: any;
-//     let otherUserId: string;
+describe("convex teamMembers", () => {
+    let t: ReturnType<typeof convexTest>;
+    let userId: string;
+    let teamId: any;
+    let otherUserId: string;
 
-//     beforeEach(async () => {
-//         t = convexTest(schema, modules);
-//         await t.run(async (ctx) => {
-//             const userRecord = await ctx.db.insert("user", {
-//                 userId: "test-user-123",
-//                 email: "test@example.com",
-//                 name: "Test User",
-//                 emailVerified: false,
-//                 createdAt: Date.now(),
-//                 updatedAt: Date.now(),
-//             });
-//             const otherUserRecord = await ctx.db.insert("user", {
-//                 userId: "other-user-456",
-//                 email: "other@example.com",
-//                 name: "Other User",
-//                 emailVerified: false,
-//                 createdAt: Date.now(),
-//                 updatedAt: Date.now(),
-//             });
-//             return { userId: "test-user-123", otherUserId: "other-user-456" };
-//         });
-//         userId = "test-user-123";
-//         otherUserId = "other-user-456";
+    t = convexTest(schema, modules);
 
-//         await t.withIdentity({ subject: userId });
+    const userIdentity = t.withIdentity({
+        subject: "test-user-123",
+        role: "admin",
+    });
 
-//         teamId = await t.run(async (ctx) => {
-//             const orgId = await ctx.db.insert("organization", {
-//                 name: "Test Team",
-//                 slug: "test-team",
-//                 description: "Test Description",
-//                 createdAt: Date.now(),
-//             });
-//             await ctx.db.insert("member", {
-//                 organizationId: String(orgId),
-//                 userId: userId,
-//                 role: "owner",
-//                 createdAt: Date.now(),
-//             });
-//             return orgId;
-//         });
-//     });
+    beforeEach(async () => {
+        // Create complete test users with accounts (similar to better-auth sign-up)
+        const results = await userIdentity.run(async (ctx) => {
+            return await createTestUsers(ctx, [
+                {
+                    userId: "test-user-123",
+                    email: "test@example.com",
+                    name: "Test User",
+                    password: "test-password",
+                    role: "admin",
+                    emailVerified: false,
+                },
+                {
+                    userId: "other-user-456",
+                    email: "other@example.com",
+                    name: "Other User",
+                    password: "test-password",
+                    emailVerified: false,
+                },
+            ]);
+        });
+        userId = results[0]!.userId;
+        otherUserId = results[1]!.userId;
 
-//     test("createTeamMember adds a new member", async () => {
-//         const member = await t.mutation(api.teamMembers.createTeamMember, {
-//             team: teamId,
-//             user: otherUserId,
-//             role: "MEMBER",
-//         });
+        teamId = await userIdentity.run(async (ctx) => {
+            const orgId = await ctx.db.insert("organization", {
+                name: "Test Team",
+                slug: "test-team",
+                description: "Test Description",
+                createdAt: Date.now(),
+            });
+            await ctx.db.insert("member", {
+                organizationId: String(orgId),
+                userId: userId,
+                role: "owner",
+                createdAt: Date.now(),
+            });
+            return orgId;
+        });
+    });
 
-//         expect(member).toBeDefined();
-//         expect(member?.userId).toBe(otherUserId);
-//         expect(member?.role).toBe("member"); // Better-auth role
-//     });
+    test("createTeamMember adds a new member", async () => {
+        const member = await userIdentity.mutation(api.teamMembers.createTeamMember, {
+            team: teamId,
+            user: otherUserId,
+            role: "MEMBER",
+        });
 
-//     test("createTeamMember maps MANAGER role to admin", async () => {
-//         const member = await t.mutation(api.teamMembers.createTeamMember, {
-//             team: teamId,
-//             user: otherUserId,
-//             role: "MANAGER",
-//         });
+        expect(member).toBeDefined();
+        expect(member?.userId).toBe(otherUserId);
+        expect(member?.role).toBe("member"); // Better-auth role
+    });
 
-//         expect(member?.role).toBe("admin");
-//     });
+    test("createTeamMember maps MANAGER role to admin", async () => {
+        const member = await userIdentity.mutation(api.teamMembers.createTeamMember, {
+            team: teamId,
+            user: otherUserId,
+            role: "MANAGER",
+        });
 
-//     test("createTeamMember rejects duplicate members", async () => {
-//         await t.mutation(api.teamMembers.createTeamMember, {
-//             team: teamId,
-//             user: otherUserId,
-//             role: "MEMBER",
-//         });
+        expect(member?.role).toBe("admin");
+    });
 
-//         await expect(
-//             t.mutation(api.teamMembers.createTeamMember, {
-//                 team: teamId,
-//                 user: otherUserId,
-//                 role: "MEMBER",
-//             })
-//         ).rejects.toThrow("Member already exists in this organization");
-//     });
+    test("createTeamMember rejects duplicate members", async () => {
+        await userIdentity.mutation(api.teamMembers.createTeamMember, {
+            team: teamId,
+            user: otherUserId,
+            role: "MEMBER",
+        });
 
-//     test("getTeamMembersByTeamId returns all members with user info", async () => {
-//         await t.mutation(api.teamMembers.createTeamMember, {
-//             team: teamId,
-//             user: otherUserId,
-//             role: "MEMBER",
-//         });
+        await expect(
+            userIdentity.mutation(api.teamMembers.createTeamMember, {
+                team: teamId,
+                user: otherUserId,
+                role: "MEMBER",
+            })
+        ).rejects.toThrow("Member already exists in this organization");
+    });
 
-//         const members = await t.query(api.teamMembers.getTeamMembersByTeamId, {
-//             team: teamId,
-//         });
+    test("getTeamMembersByTeamId returns all members with user info", async () => {
+        await userIdentity.mutation(api.teamMembers.createTeamMember, {
+            team: teamId,
+            user: otherUserId,
+            role: "MEMBER",
+        });
 
-//         expect(members.length).toBeGreaterThanOrEqual(2);
-//         const otherMember = members.find(m => m.userId === otherUserId);
-//         expect(otherMember).toBeDefined();
-//         expect(otherMember?.email).toBe("other@example.com");
-//         expect(otherMember?.role).toBe("MEMBER"); // Mapped back to frontend role
-//     });
+        const members = await userIdentity.query(api.teamMembers.getTeamMembersByTeamId, {
+            team: teamId,
+        });
 
-//     test("updateTeamMember changes member role", async () => {
-//         const memberId = await t.run(async (ctx) => {
-//             const id = await ctx.db.insert("member", {
-//                 organizationId: String(teamId),
-//                 userId: otherUserId,
-//                 role: "member",
-//                 createdAt: Date.now(),
-//             });
-//             return id;
-//         });
+        expect(members.length).toBeGreaterThanOrEqual(2);
+        const otherMember = members.find(m => m.userId === otherUserId);
+        expect(otherMember).toBeDefined();
+        expect(otherMember?.email).toBe("other@example.com");
+        expect(otherMember?.role).toBe("MEMBER"); // Mapped back to frontend role
+    });
 
-//         const updated = await t.mutation(api.teamMembers.updateTeamMember, {
-//             id: memberId,
-//             role: "MANAGER",
-//         });
+    test("updateTeamMember changes member role", async () => {
+        const memberId = await userIdentity.run(async (ctx) => {
+            const id = await ctx.db.insert("member", {
+                organizationId: String(teamId),
+                userId: otherUserId,
+                role: "member",
+                createdAt: Date.now(),
+            });
+            return id;
+        });
 
-//         expect(updated?.role).toBe("admin");
-//     });
+        const updated = await userIdentity.mutation(api.teamMembers.updateTeamMember, {
+            id: memberId,
+            role: "MANAGER",
+        });
 
-//     test("deleteTeamMember removes a member", async () => {
-//         const memberId = await t.run(async (ctx) => {
-//             return await ctx.db.insert("member", {
-//                 organizationId: String(teamId),
-//                 userId: otherUserId,
-//                 role: "member",
-//                 createdAt: Date.now(),
-//             });
-//         });
+        expect(updated?.role).toBe("admin");
+    });
 
-//         const result = await t.mutation(api.teamMembers.deleteTeamMember, {
-//             _id: memberId,
-//         });
+    test("deleteTeamMember removes a member", async () => {
+        const memberId = await userIdentity.run(async (ctx) => {
+            return await ctx.db.insert("member", {
+                organizationId: String(teamId),
+                userId: otherUserId,
+                role: "member",
+                createdAt: Date.now(),
+            });
+        });
 
-//         expect(result).toBe("Team member deleted successfully");
+        const result = await userIdentity.mutation(api.teamMembers.deleteTeamMember, {
+            _id: memberId,
+        });
 
-//         const deleted = await t.run(async (ctx) => ctx.db.get(memberId));
-//         expect(deleted).toBeNull();
-//     });
+        expect(result).toBe("Team member deleted successfully");
 
-//     test("createTeamMember rejects when unauthenticated", async () => {
-//         const t2 = convexTest(schema, modules);
-//         await expect(
-//             t2.mutation(api.teamMembers.createTeamMember, {
-//                 team: teamId,
-//                 user: otherUserId,
-//                 role: "MEMBER",
-//             })
-//         ).rejects.toThrow(/Unauthenticated|User not authenticated/);
-//     });
+        const deleted = await userIdentity.run(async (ctx) => ctx.db.get(memberId));
+        expect(deleted).toBeNull();
+    });
 
-//     test("getTeamMembersByTeamId maps owner role to MANAGER", async () => {
-//         const members = await t.query(api.teamMembers.getTeamMembersByTeamId, {
-//             team: teamId,
-//         });
+    test("createTeamMember rejects when unauthenticated", async () => {
+        await expect(
+            t.mutation(api.teamMembers.createTeamMember, {
+                team: teamId,
+                user: otherUserId,
+                role: "MEMBER",
+            })
+        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+    });
 
-//         const ownerMember = members.find(m => m.userId === userId);
-//         expect(ownerMember?.role).toBe("MANAGER");
-//     });
-// });
+    test("getTeamMembersByTeamId maps owner role to MANAGER", async () => {
+        const members = await userIdentity.query(api.teamMembers.getTeamMembersByTeamId, {
+            team: teamId,
+        });
+
+        const ownerMember = members.find(m => m.userId === userId);
+        expect(ownerMember?.role).toBe("MANAGER");
+    });
+});
