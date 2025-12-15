@@ -33,9 +33,10 @@
         "notifications": "Notifications",
         "sessions": "Sessions",
         "settings": "Settings",
-        "admin": "Admin"
+        "admin": "Admin",
+        "settings": "Settings"
     },
-    "Objectives":{
+    "Objectives": {
         "title": "Objectives",
         "description": "Define your personal and professional goals to achieve your goals.",
         "createObjective": "Create Objective",
@@ -50,6 +51,8 @@
         "currentValue": "Current Value",
         "deadline": "Deadline",
         "status": "Status",
+        "progress": "Progress",
+        "quickActions": "Quick Actions",
         "enterObjectiveTitle": "Enter objective title",
         "describeObjectiveInDetail": "Describe objective in detail",
         "optionalAddDetailsAboutYourObjective": "Optional: Add details about your objective.",
@@ -120,6 +123,21 @@
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
         "newPassword": "New Password"
+    },
+    "Admin": {
+        "title": "Admin Panel",
+        "description": "Administrative tools for managing users and system settings.",
+        "users": "Users",
+        "sessions": "Sessions",
+        "auditLogs": "Audit Logs",
+        "userManagement": "User Management",
+        "userManagementDescription": "Manage user accounts, roles, and permissions.",
+        "sessionManagement": "Session Management",
+        "sessionManagementDescription": "View and manage user sessions.",
+        "auditLogManagement": "Audit Log Management",
+        "auditLogManagementDescription": "View system activity logs.",
+        "dashboard": "Dashboard",
+        "adminPanel": "Admin Panel"
     },
     "Stats": {
         "totalObjectives": "Total Objectives",

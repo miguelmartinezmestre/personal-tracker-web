@@ -40,7 +40,9 @@ export default function CreateUpdateProgressFormModal() {
 
     const { id: objectiveId } = useParams();
 
-    const createUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.createUpdateProgress) });
+    const createUpdateProgress = useMutation({
+        mutationFn: useConvexMutation(api.update_progress.createUpdateProgress),
+    });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateUpdateProgress>({
         defaultValues: {
@@ -71,7 +73,7 @@ export default function CreateUpdateProgressFormModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="progress-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createNewUpdateProgress')}
                 </Button>
@@ -79,24 +81,32 @@ export default function CreateUpdateProgressFormModal() {
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('createNewUpdateProgress')}</DialogTitle>
-                    <DialogDescription>
-                        {t('createNewUpdateProgressDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('createNewUpdateProgressDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('updatedValue')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterUpdatedValue')}
+                                        <Input
+                                            placeholder={t('enterUpdatedValue')}
                                             type="number"
+                                            data-testid="progress-value-input"
                                             {...field}
                                             value={Number.isNaN(field.value) ? '' : field.value}
-                                            onChange={e => field.onChange(Number.parseFloat(e.target.value))}
+                                            onChange={e =>
+                                                field.onChange(Number.parseFloat(e.target.value))
+                                            }
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -116,6 +126,7 @@ export default function CreateUpdateProgressFormModal() {
                                         <Textarea
                                             placeholder={t('describeYourUpdateProgressInDetail')}
                                             className="resize-none min-h-[80px]"
+                                            data-testid="progress-comment-input"
                                             {...field}
                                             value={field.value || ''}
                                         />
@@ -127,8 +138,6 @@ export default function CreateUpdateProgressFormModal() {
                                 </FormItem>
                             )}
                         />
-
-
 
                         <FormField
                             name="updateDate"
@@ -168,13 +177,22 @@ export default function CreateUpdateProgressFormModal() {
                             )}
                         />
 
-
-
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                data-testid="progress-cancel-button"
+                                onClick={() => setOpen(false)}
+                            >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit" disabled={createUpdateProgress.isPending}>{t('saveProgress')}</Button>
+                            <Button
+                                type="submit"
+                                data-testid="progress-save-button"
+                                disabled={createUpdateProgress.isPending}
+                            >
+                                {t('saveProgress')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

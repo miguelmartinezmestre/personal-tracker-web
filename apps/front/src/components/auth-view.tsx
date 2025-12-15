@@ -1,75 +1,66 @@
-"use client";
+'use client';
 
-import { useQuery } from "convex/react";
-import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
-import Link from "next/link";
-import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/alert";
-import { AlertCircleIcon } from "lucide-react";
-import { api } from "@repo/backend/convex/_generated/api";
-import { UserProvider } from "@/contexts/user-context";
+import { useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery } from 'convex/react';
+import { api } from '@repo/backend/convex/_generated/api';
+import { authClient } from '@/lib/auth-client';
+import { UserProvider } from '@/contexts/user-context';
 
-export default function AuthenticatedView({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
 
-    const user = useQuery(api.auth.getCurrentUser, {});
+    // `better-auth` exposes a `useSession()` hook via the client.
+    // Its return shape may differ slightly by version, so we read the common fields.
+    const sessionQuery = authClient.useSession() as any;
+    const session = sessionQuery?.data;
+    const isSessionLoading = Boolean(sessionQuery?.isPending ?? sessionQuery?.isLoading);
 
-    return (
-        <>
-            <AuthLoading>
-                <div className="flex justify-center items-center h-screen">
-                    <div>Loading...</div>
-                </div>
-            </AuthLoading>
-            <Unauthenticated>
+    // Only query Convex for the current user once we have a session.
+    const user = useQuery(api.auth.getCurrentUser, session?.user ? {} : ('skip' as any));
 
-                {/* <div className="flex justify-center items-center h-screen">
-                    
-                </div>  */}
+    useEffect(() => {
+        if (isSessionLoading) return;
+        if (!session?.user) {
+            router.replace('/login');
+        }
+    }, [isSessionLoading, session, router]);
 
+    const fallbackUser = useMemo(() => {
+        if (!session?.user) return null;
+        return {
+            _id: session.user.id,
+            _creationTime: Date.now(),
+            email: session.user.email,
+            name: session.user.name ?? session.user.email,
+            role: session.user.role,
+        } as any;
+    }, [session]);
 
-                <div className="flex flex-col min-h-screen">
-                    {/* <Header /> */}
-                    <div className="flex-grow flex items-center justify-center p-6">
-                        <div className="w-full max-w-md rounded-xl shadow-lg p-8">
-                            {/* <h1 className="text-2xl font-bold text-center mb-6 text-primary">
-                                {t('login')}
-                            </h1> */}
-                            {/* <LoginForm /> */}
-                            <Link href="/login" className="font-bold">
-                                <Alert variant="destructive">
-                                    <AlertCircleIcon />
-                                    <AlertTitle>Not Authenticated</AlertTitle>
-                                    <AlertDescription>
-                                        {/* <p>Error while verify your auth</p>
-                                    <ul className="list-inside list-disc text-sm">
-                                        <li>Check your card details</li>
-                                        <li>Ensure sufficient funds</li>
-                                        <li>Verify billing address</li>
-                                    </ul> */}
-                                        Please click to go back to login page
-                                    </AlertDescription>
-                                </Alert>
-                            </Link>
-                        </div>
-                    </div>
-                    {/* <Footer /> */}
-                </div>
+    if (isSessionLoading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div>Loading...</div>
+            </div>
+        );
+    }
 
-            </Unauthenticated>
-            <Authenticated>
-                {user ? (
-                    <UserProvider user={user}>
-                        {children}
-                    </UserProvider>
-                ) : (
-                    <div className="flex justify-center items-center h-screen">
-                        <div>Loading user...</div>
-                    </div>
-                )}
-            </Authenticated>
-        </>
-    )
+    if (!session?.user) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div>Redirecting to login...</div>
+            </div>
+        );
+    }
+
+    const userForProvider = (user as any) ?? fallbackUser;
+    if (!userForProvider) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div>Loading user...</div>
+            </div>
+        );
+    }
+
+    return <UserProvider user={userForProvider}>{children}</UserProvider>;
 }

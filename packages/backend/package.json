@@ -4,17 +4,24 @@
   "scripts": {
     "dev": "npx convex dev",
     "dashboard": "npx convex dashboard",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --fix"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@convex-dev/eslint-plugin": "^1.1.0",
+    "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.2",
-    "typescript": "^5.9.2"
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jiti": "^2.6.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.49.0"
   },
   "dependencies": {
-    "convex": "^1.29.3",
+    "convex": "^1.31.0",
     "convex-helpers": "^0.1.104",
     "convex-test": "^0.0.38",
     "@convex-dev/better-auth": "0.9.7",

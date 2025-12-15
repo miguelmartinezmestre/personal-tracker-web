@@ -1,0 +1,87 @@
+import { v } from 'convex/values';
+import { queryWithRLS, mutationWithRLS } from './rls';
+
+export const getCategoriesByUser = queryWithRLS({
+    args: {},
+    handler: async ctx => {
+        return await ctx.db
+            .query('categories')
+            .withIndex('by_user', q => q.eq('user', String(ctx.identity?.subject)))
+            .collect();
+    },
+});
+
+export const createCategory = mutationWithRLS({
+    args: {
+        name: v.string(),
+        color: v.string(),
+        icon: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const now = Date.now();
+        return await ctx.db.insert('categories', {
+            user: String(ctx.identity?.subject),
+            name: args.name,
+            color: args.color,
+            icon: args.icon,
+            createdAt: now,
+            updatedAt: now,
+        });
+    },
+});
+
+export const updateCategory = mutationWithRLS({
+    args: {
+        id: v.id('categories'),
+        name: v.optional(v.string()),
+        color: v.optional(v.string()),
+        icon: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const { id, ...rest } = args;
+        return await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+    },
+});
+
+export const deleteCategory = mutationWithRLS({
+    args: {
+        id: v.id('categories'),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.delete(args.id);
+    },
+});
+
+// Default categories for new users
+export const createDefaultCategories = mutationWithRLS({
+    args: {},
+    handler: async ctx => {
+        const user = String(ctx.identity?.subject);
+        const now = Date.now();
+        const defaultCategories = [
+            { name: 'Health & Fitness', color: '#10b981', icon: 'heart' },
+            { name: 'Career & Business', color: '#3b82f6', icon: 'briefcase' },
+            { name: 'Learning & Education', color: '#8b5cf6', icon: 'book' },
+            { name: 'Personal Development', color: '#f59e0b', icon: 'user' },
+            { name: 'Finance & Savings', color: '#22c55e', icon: 'dollar-sign' },
+            { name: 'Relationships', color: '#ec4899', icon: 'users' },
+            { name: 'Creative Projects', color: '#a855f7', icon: 'palette' },
+            { name: 'Home & Organization', color: '#06b6d4', icon: 'home' },
+            { name: 'Travel & Adventure', color: '#f97316', icon: 'map' },
+        ];
+
+        const results = [];
+        for (const category of defaultCategories) {
+            const id = await ctx.db.insert('categories', {
+                user,
+                name: category.name,
+                color: category.color,
+                icon: category.icon,
+                createdAt: now,
+                updatedAt: now,
+            });
+            results.push(await ctx.db.get(id));
+        }
+        return results;
+    },
+});

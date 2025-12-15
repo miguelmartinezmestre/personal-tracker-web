@@ -16,9 +16,8 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery } from 'convex/react';
-import { api } from '@repo/backend/convex/_generated/api';
-import { authClient } from '@/lib/auth-client';
+import { useUserRole } from '@/hooks/use-user-role';
+import AccountSettingsFormModal from '@/components/settings/account-settings-modal';
 
 type ProjectNavItem = {
     name: string;
@@ -51,36 +50,7 @@ const baseProjects: ProjectNavItem[] = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const t = useTranslations('Sidebar');
-    const authUser = useQuery(api.auth.getCurrentUser, {});
-    const userRole = useQuery(api.users.getUserRole, {});
-    const { data: session } = authClient.useSession();
-
-    // Determinar si el usuario es admin
-    const isAdmin = useMemo(() => {
-        if (!authUser?._id) return false;
-        
-        // 1. Intentar obtener el rol desde la sesión de better-auth
-        const sessionRole = session?.user?.role;
-        if (sessionRole === 'admin' || sessionRole === 'ADMIN' || 
-            (Array.isArray(sessionRole) && (sessionRole.includes('admin') || sessionRole.includes('ADMIN')))) {
-            return true;
-        }
-        
-        // 2. Intentar obtener el rol desde el usuario de auth
-        const authRole = (authUser as any)?.role;
-        if (authRole === 'admin' || authRole === 'ADMIN' || 
-            (Array.isArray(authRole) && (authRole.includes('admin') || authRole.includes('ADMIN')))) {
-            return true;
-        }
-
-        // 3. Verificar el rol desde la query getUserRole
-        const role = userRole?.role;
-        if (role === 'admin' || role === 'ADMIN') {
-            return true;
-        }
-
-        return false;
-    }, [authUser, userRole, session]);
+    const { isAdmin, isAuthenticated } = useUserRole();
 
     // Construir la lista de proyectos incluyendo admin si es necesario
     const projects = useMemo(() => {
@@ -97,12 +67,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     return (
         <Sidebar collapsible="icon" {...props}>
-            <SidebarHeader>
-            </SidebarHeader>
+            <SidebarHeader></SidebarHeader>
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <SidebarMenu>
-                        {projects.map((item) => (
+                        {projects.map(item => (
                             <SidebarMenuItem key={item.name}>
                                 <SidebarMenuButton asChild>
                                     <Link href={item.url} prefetch={false}>
@@ -112,11 +81,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         ))}
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild key="settings">
-                                {/* <EditSettingsFormModal /> */}
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        {isAuthenticated && (
+                            <SidebarMenuItem key="settings">
+                                <AccountSettingsFormModal />
+                            </SidebarMenuItem>
+                        )}
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>

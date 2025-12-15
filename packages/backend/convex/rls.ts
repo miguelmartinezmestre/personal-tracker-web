@@ -1,5 +1,4 @@
 import { mutation, query, QueryCtx } from "./_generated/server";
-import { getAuthenticatedUser } from "./auth";
 import {
     customCtx,
     customMutation,
@@ -315,8 +314,8 @@ export const queryWithRLS = customQuery(
             throw new ConvexError("User not authenticated");
         }
 
-        const role = String(identity?.role) ?? 'user';
-        const userId = String(identity?.subject);
+        const role = String(identity.role ?? 'user');
+        const userId = String(identity.subject);
 
         if (!userId || userId === '') {
             throw new ConvexError("User not authenticated");
@@ -338,8 +337,8 @@ export const mutationWithRLS = customMutation(
             throw new ConvexError("User not authenticated");
         }
 
-        const role = String(identity?.role) ?? 'user';
-        const userId = String(identity?.subject);
+        const role = String(identity.role ?? 'user');
+        const userId = String(identity.subject);
 
         if (!userId || userId === '') {
             throw new ConvexError("User not authenticated");

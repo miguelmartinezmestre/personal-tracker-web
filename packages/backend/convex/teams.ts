@@ -22,7 +22,7 @@ export const createTeam = mutationWithRLS({
         
         // Ensure slug is unique
         let counter = 1;
-        let baseSlug = slug;
+        const baseSlug = slug;
         while (await ctx.db.query("organization").withIndex("slug", (q) => q.eq("slug", slug)).first()) {
             slug = `${baseSlug}-${counter}`;
             counter++;

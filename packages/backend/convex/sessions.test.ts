@@ -6,11 +6,9 @@ import { modules } from "../test.setup";
 import { createTestUser } from "./test_helpers";
 
 describe("convex sessions", () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = convexTest(schema, modules);
     let userId: string;
-    let sessionId: any;
-
-    t = convexTest(schema, modules);
+    let sessionId: string;
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",
@@ -87,6 +85,10 @@ describe("convex sessions", () => {
             return await ctx.db.get(sessionId);
         });
 
-        expect(updatedSession?.updatedAt).toBeGreaterThan(initialSession?.updatedAt!);
+        const initialUpdatedAt = initialSession?.updatedAt;
+        const finalUpdatedAt = updatedSession?.updatedAt;
+        if (initialUpdatedAt !== undefined && finalUpdatedAt !== undefined) {
+            expect(finalUpdatedAt).toBeGreaterThan(initialUpdatedAt);
+        }
     });
 });

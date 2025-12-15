@@ -21,10 +21,12 @@ import { useTranslations } from 'next-intl';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 
-export default function AccountSettingsForm() {
+export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
     const accountDetails = useQuery(convexQuery(api.users.getAccountDetails, {}));
-    const updateAccountDetails = useMutation({ mutationFn: useConvexMutation(api.users.updateAccountDetails) });
+    const updateAccountDetails = useMutation({
+        mutationFn: useConvexMutation(api.users.updateAccountDetails),
+    });
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -86,7 +88,13 @@ export default function AccountSettingsForm() {
 
     return (
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+            <form
+                onSubmit={e => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+                className="space-y-5 py-4"
+            >
                 <FormField
                     name="username"
                     render={({ field }) => (

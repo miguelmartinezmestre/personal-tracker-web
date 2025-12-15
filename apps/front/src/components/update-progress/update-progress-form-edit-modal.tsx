@@ -34,9 +34,14 @@ import { api } from '@repo/backend/convex/_generated/api';
 import { UpdateProgress, savedUpdateProgressSchema } from '@/schemas/update-progress';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 
-export default function UpdateProgressFormModal({ defaultValues }: { defaultValues: UpdateProgress }) {
-
-    const updateUpdateProgress = useMutation({ mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress) });
+export default function UpdateProgressFormModal({
+    defaultValues,
+}: {
+    defaultValues: UpdateProgress;
+}) {
+    const updateUpdateProgress = useMutation({
+        mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress),
+    });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedUpdateProgressSchema>>({
         defaultValues: defaultValues,
@@ -51,7 +56,7 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
 
     const onSubmit = async (values: UpdateProgress) => {
         const updateData = {
-            id: values._id as Id<"progressUpdates">,
+            id: values._id as Id<'progressUpdates'>,
             updatedValue: values.updatedValue,
             updateDate: new Date(values.updateDate).getTime(),
             comment: values.comment ?? undefined,
@@ -66,7 +71,7 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="progress-edit-open">
                     <PlusCircle className="h-4 w-4" />
                     Edit Progress
                 </Button>
@@ -81,18 +86,28 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Updated Value</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter updated value"
+                                        <Input
+                                            placeholder="Enter updated value"
                                             type="number"
+                                            data-testid="progress-edit-value-input"
                                             {...field}
                                             value={Number.isNaN(field.value) ? '' : field.value}
-                                            onChange={e => field.onChange(Number.parseFloat(e.target.value))}
+                                            onChange={e =>
+                                                field.onChange(Number.parseFloat(e.target.value))
+                                            }
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -112,6 +127,7 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                                         <Textarea
                                             placeholder="Describe your update progress in detail"
                                             className="resize-none min-h-[80px]"
+                                            data-testid="progress-edit-comment-input"
                                             {...field}
                                             value={field.value || ''}
                                         />
@@ -123,8 +139,6 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                                 </FormItem>
                             )}
                         />
-
-
 
                         <FormField
                             name="updateDate"
@@ -164,13 +178,18 @@ export default function UpdateProgressFormModal({ defaultValues }: { defaultValu
                             )}
                         />
 
-
-
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                data-testid="progress-edit-cancel-button"
+                                onClick={() => setOpen(false)}
+                            >
                                 Cancel
                             </Button>
-                            <Button type="submit">Save Progress</Button>
+                            <Button type="submit" data-testid="progress-edit-save-button">
+                                Save Progress
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

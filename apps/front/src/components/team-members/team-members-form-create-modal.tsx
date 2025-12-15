@@ -46,7 +46,8 @@ export default function CreateTeamMemberFormModal() {
         defaultValues: {
             email: '',
             role: TeamRole.MEMBER,
-            teamId: Number(teamId),
+            userId: '',
+            organizationId: teamId as string,
         },
         validators: {
             onChange: teamMemberSchema,
@@ -98,6 +99,26 @@ export default function CreateTeamMemberFormModal() {
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourTeamMemberAClearConciseEmail')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            name="userId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>User ID</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Enter user ID"
+                                            {...field}
+                                            value={field.value || ''}
+                                            onChange={e => field.onChange(e.target.value)}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Enter the ID of the user to add to the team
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

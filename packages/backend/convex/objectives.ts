@@ -1,22 +1,20 @@
-import { v } from "convex/values";
-import { queryWithRLS, mutationWithRLS } from "./rls";
-
-
+import { v } from 'convex/values';
+import { queryWithRLS, mutationWithRLS } from './rls';
 
 export const getObjectivesByUser = queryWithRLS({
     args: {},
-    handler: async (ctx) => {
-        console.log("getObjectivesByUser", );
+    handler: async ctx => {
+        console.log('getObjectivesByUser');
         return await ctx.db
-            .query("objectives")
-            .withIndex("by_user", (q) => q.eq("user", String(ctx.identity?.subject)))
+            .query('objectives')
+            .withIndex('by_user', q => q.eq('user', String(ctx.identity?.subject)))
             .collect();
     },
 });
 
 export const getObjectiveById = queryWithRLS({
     args: {
-        id: v.id("objectives"),
+        id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
         return await ctx.db.get(args.id);
@@ -35,9 +33,8 @@ export const createObjective = mutationWithRLS({
         unit: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        
         const now = Date.now();
-        return await ctx.db.insert("objectives", {
+        return await ctx.db.insert('objectives', {
             user: String(ctx.identity?.subject),
             title: args.title,
             description: args.description,
@@ -55,7 +52,7 @@ export const createObjective = mutationWithRLS({
 
 export const updateObjective = mutationWithRLS({
     args: {
-        id: v.id("objectives"),
+        id: v.id('objectives'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
         category: v.optional(v.string()),
@@ -73,9 +70,65 @@ export const updateObjective = mutationWithRLS({
 
 export const deleteObjective = mutationWithRLS({
     args: {
-        id: v.id("objectives"),
+        id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
         return await ctx.db.delete(args.id);
+    },
+});
+
+export const updateObjectiveStatus = mutationWithRLS({
+    args: {
+        id: v.id('objectives'),
+        status: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const { id, status } = args;
+        return await ctx.db.patch(id, {
+            status,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+export const completeObjective = mutationWithRLS({
+    args: {
+        id: v.id('objectives'),
+    },
+    handler: async (ctx, args) => {
+        const objective = await ctx.db.get(args.id);
+        if (!objective) {
+            throw new Error('Objective not found');
+        }
+
+        return await ctx.db.patch(args.id, {
+            status: 'completed',
+            currentValue: objective.targetValue,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+export const archiveObjective = mutationWithRLS({
+    args: {
+        id: v.id('objectives'),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.patch(args.id, {
+            status: 'archived',
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+export const pauseObjective = mutationWithRLS({
+    args: {
+        id: v.id('objectives'),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.patch(args.id, {
+            status: 'paused',
+            updatedAt: Date.now(),
+        });
     },
 });
