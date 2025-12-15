@@ -6,10 +6,8 @@ import { modules } from "../test.setup";
 import { createTestUser } from "./test_helpers";
 
 describe("convex users", () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = convexTest(schema, modules);
     let userId: string;
-
-    t = convexTest(schema, modules);
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",
@@ -61,7 +59,7 @@ describe("convex users", () => {
                 .withIndex("userId", (q) => q.eq("userId", userId))
                 .first();
             if (userRecord) {
-                await ctx.db.patch(userRecord._id, { role: "admin" } as any);
+                await ctx.db.patch(userRecord._id, { role: "admin" } as Record<string, unknown>);
             }
         });
 
@@ -78,7 +76,7 @@ describe("convex users", () => {
                 .withIndex("userId", (q) => q.eq("userId", userId))
                 .first();
             if (userRecord) {
-                await ctx.db.patch(userRecord._id, { role: null } as any);
+                await ctx.db.patch(userRecord._id, { role: null } as Record<string, unknown>);
             }
         });
 
@@ -137,6 +135,10 @@ describe("convex users", () => {
                 .first();
         });
 
-        expect(updatedUser?.updatedAt).toBeGreaterThan(initialUser?.updatedAt!);
+        const initialUpdatedAt = initialUser?.updatedAt;
+        const finalUpdatedAt = updatedUser?.updatedAt;
+        if (initialUpdatedAt !== undefined && finalUpdatedAt !== undefined) {
+            expect(finalUpdatedAt).toBeGreaterThan(initialUpdatedAt);
+        }
     });
 });

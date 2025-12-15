@@ -6,12 +6,10 @@ import { modules } from "../test.setup";
 import { createTestUsers } from "./test_helpers";
 
 describe("convex teamMembers", () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = convexTest(schema, modules);
     let userId: string;
-    let teamId: any;
+    let teamId: string;
     let otherUserId: string;
-
-    t = convexTest(schema, modules);
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",

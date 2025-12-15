@@ -66,7 +66,8 @@ export const createAuth = (
       enabled: true,
       requireEmailVerification: false,
       // Log password reset emails instead of sending
-      sendResetPassword: async ({ user, url, token }, request) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      sendResetPassword: async ({ user, url, token }, _request) => {
         console.log('='.repeat(80));
         console.log('📧 PASSWORD RESET EMAIL WOULD BE SENT:');
         console.log('To:', user.email);
@@ -81,7 +82,8 @@ export const createAuth = (
     // Email verification configuration
     emailVerification: {
       // Log verification emails instead of sending
-      sendVerificationEmail: async ({ user, url, token }, request) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      sendVerificationEmail: async ({ user, url, token }, _request) => {
         console.log('='.repeat(80));
         console.log('📧 EMAIL VERIFICATION WOULD BE SENT:');
         console.log('To:', user.email);
@@ -98,7 +100,8 @@ export const createAuth = (
       changeEmail: {
         enabled: true,
         // Log email change verification emails instead of sending
-        sendChangeEmailVerification: async ({ user, newEmail, url, token }, request) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        sendChangeEmailVerification: async ({ user, newEmail, url, token }, _request) => {
           console.log('='.repeat(80));
           console.log('📧 EMAIL CHANGE VERIFICATION WOULD BE SENT:');
           console.log('To:', user.email);

@@ -60,7 +60,7 @@ export const getTeamMembersByTeamId = queryWithRLS({
                     email: user?.email ?? "",
                     // Map better-auth roles to old role names for compatibility
                     role: m.role === "owner" ? "MANAGER" : m.role === "admin" ? "MANAGER" : "MEMBER",
-                } as any;
+                } as typeof m & { email: string; role: "MANAGER" | "MEMBER" };
             })
         );
         return withUser;

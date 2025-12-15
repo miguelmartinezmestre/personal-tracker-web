@@ -1,19 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { randomUUID } from 'crypto';
+import { createTestUser } from './test-helpers';
 
 test('navigation: sidebar links work correctly', async ({ page }) => {
     // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
+    await createTestUser(page);
 
     // Navigate to Objectives via sidebar
     await page.getByRole('link', { name: /objectives/i }).click();
@@ -34,17 +24,7 @@ test('navigation: sidebar links work correctly', async ({ page }) => {
 
 test('navigation: logo link redirects to home', async ({ page }) => {
     // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
+    await createTestUser(page);
 
     // Navigate to another page
     await page.goto('/dashboard/objectives');
@@ -57,17 +37,7 @@ test('navigation: logo link redirects to home', async ({ page }) => {
 
 test('navigation: direct URL navigation works for authenticated users', async ({ page }) => {
     // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
+    await createTestUser(page);
 
     // Direct navigation to different pages
     await page.goto('/dashboard/objectives');
@@ -82,4 +52,3 @@ test('navigation: direct URL navigation works for authenticated users', async ({
     await page.goto('/dashboard/notifications');
     await expect(page).toHaveURL(/\/dashboard\/notifications$/);
 });
-

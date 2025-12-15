@@ -6,10 +6,7 @@ import { modules } from "../test.setup";
 import { createTestUser } from "./test_helpers";
 
 describe("convex auth", () => {
-    let t: ReturnType<typeof convexTest>;
-    let userId: string;
-
-    t = convexTest(schema, modules);
+    const t = convexTest(schema, modules);
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",
@@ -18,7 +15,7 @@ describe("convex auth", () => {
 
     beforeEach(async () => {
         // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async (ctx) => {
+        await userIdentity.run(async (ctx) => {
             return await createTestUser(ctx, {
                 userId: "test-user-123",
                 email: "test@example.com",
@@ -28,7 +25,6 @@ describe("convex auth", () => {
                 emailVerified: false,
             });
         });
-        userId = result.userId;
     });
 
     test("getCurrentUser returns null when unauthenticated", async () => {

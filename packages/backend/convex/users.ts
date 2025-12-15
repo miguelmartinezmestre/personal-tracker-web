@@ -41,7 +41,7 @@ export const getUserRole = queryWithRLS({
     if (!userRecord) return null;
     
     return {
-      role: (userRecord as any)?.role || null,
+      role: (userRecord as Record<string, unknown>)?.role as string | null || null,
       userId: userId,
     };
   },

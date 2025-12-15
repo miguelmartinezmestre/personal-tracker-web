@@ -6,11 +6,9 @@ import { modules } from "../test.setup";
 import { createTestUser } from "./test_helpers";
 
 describe("convex update_progress", () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = convexTest(schema, modules);
     let userId: string;
-    let objectiveId: any;
-
-    t = convexTest(schema, modules);
+    let objectiveId: string;
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",

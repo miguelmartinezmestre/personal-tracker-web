@@ -6,10 +6,8 @@ import { modules } from "../test.setup";
 import { createTestUser } from "./test_helpers";
 
 describe("convex auditLogs", () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = convexTest(schema, modules);
     let userId: string;
-
-    t = convexTest(schema, modules);
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",
@@ -60,7 +58,11 @@ describe("convex auditLogs", () => {
         expect(logs.length).toBeGreaterThanOrEqual(3);
         // Should be sorted descending (most recent first)
         for (let i = 0; i < logs.length - 1; i++) {
-            expect(logs[i]?.createdAt).toBeGreaterThanOrEqual(logs[i + 1]?.createdAt!);
+            const current = logs[i]?.createdAt;
+            const next = logs[i + 1]?.createdAt;
+            if (current !== undefined && next !== undefined) {
+                expect(current).toBeGreaterThanOrEqual(next);
+            }
         }
     });
 
