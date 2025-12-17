@@ -1,6 +1,6 @@
-import "@testing-library/jest-dom";
-import { cleanup } from "@testing-library/react";
-import { afterEach, vi } from "vitest";
+import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
 
 // Cleanup after each test
 afterEach(() => {
@@ -8,28 +8,28 @@ afterEach(() => {
 });
 
 // Mock next/navigation
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
     useRouter: () => ({
         push: vi.fn(),
         replace: vi.fn(),
         prefetch: vi.fn(),
         back: vi.fn(),
     }),
-    usePathname: () => "/",
+    usePathname: () => '/',
     useSearchParams: () => new URLSearchParams(),
 }));
 
 // Mock next-intl
-vi.mock("next-intl", () => ({
+vi.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
-    useLocale: () => "en",
+    useLocale: () => 'en',
     NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock window.matchMedia
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: vi.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation(query => ({
         matches: false,
         media: query,
         onchange: null,
@@ -43,20 +43,19 @@ Object.defineProperty(window, "matchMedia", {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-    constructor() { }
-    disconnect() { }
-    observe() { }
+    constructor() {}
+    disconnect() {}
+    observe() {}
     takeRecords() {
         return [];
     }
-    unobserve() { }
-} as any;
+    unobserve() {}
+} as unknown;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-    constructor() { }
-    disconnect() { }
-    observe() { }
-    unobserve() { }
-} as any;
-
+    constructor() {}
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+} as unknown;

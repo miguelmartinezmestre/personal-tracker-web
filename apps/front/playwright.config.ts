@@ -12,6 +12,8 @@ export default defineConfig({
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
         trace: 'on-first-retry',
+        // Screenshots always for documentation purposes
+        screenshot: 'on',
         // Increase timeout for authentication flows
         actionTimeout: 10000,
         navigationTimeout: 10000,
