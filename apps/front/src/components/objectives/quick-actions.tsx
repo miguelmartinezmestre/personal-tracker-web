@@ -14,6 +14,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 interface QuickActionsProps {
     objectiveId: Id<'objectives'>;
@@ -23,13 +24,15 @@ interface QuickActionsProps {
 
 const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
     ({ objectiveId, currentStatus, className }, ref) => {
+        const t = useTranslations('Objectives');
+
         const completeObjective = useMutation({
             mutationFn: useConvexMutation(api.objectives.completeObjective),
             onSuccess: () => {
-                toast.success('Objective completed! 🎉');
+                toast.success(t('toast.completedSuccess'));
             },
-            onError: (error: any) => {
-                toast.error('Failed to complete objective');
+            onError: (error: Error) => {
+                toast.error(t('toast.completeFailed'));
                 console.error(error);
             },
         });
@@ -37,10 +40,10 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         const pauseObjective = useMutation({
             mutationFn: useConvexMutation(api.objectives.pauseObjective),
             onSuccess: () => {
-                toast.success('Objective paused');
+                toast.success(t('toast.pausedSuccess'));
             },
-            onError: (error: any) => {
-                toast.error('Failed to pause objective');
+            onError: (error: Error) => {
+                toast.error(t('toast.pauseFailed'));
                 console.error(error);
             },
         });
@@ -48,10 +51,10 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         const archiveObjective = useMutation({
             mutationFn: useConvexMutation(api.objectives.archiveObjective),
             onSuccess: () => {
-                toast.success('Objective archived');
+                toast.success(t('toast.archivedSuccess'));
             },
-            onError: (error: any) => {
-                toast.error('Failed to archive objective');
+            onError: (error: Error) => {
+                toast.error(t('toast.archiveFailed'));
                 console.error(error);
             },
         });
@@ -59,10 +62,10 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         const resumeObjective = useMutation({
             mutationFn: useConvexMutation(api.objectives.updateObjectiveStatus),
             onSuccess: () => {
-                toast.success('Objective resumed');
+                toast.success(t('toast.resumedSuccess'));
             },
-            onError: (error: any) => {
-                toast.error('Failed to resume objective');
+            onError: (error: Error) => {
+                toast.error(t('toast.resumeFailed'));
                 console.error(error);
             },
         });
@@ -96,7 +99,7 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         onClick={handleComplete}
                         disabled={completeObjective.isPending}
                         className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        title="Complete objective"
+                        title={t('tooltips.complete')}
                     >
                         <CheckCircle className="h-4 w-4" />
                     </Button>
@@ -109,7 +112,7 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         onClick={handlePause}
                         disabled={pauseObjective.isPending}
                         className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                        title="Pause objective"
+                        title={t('tooltips.pause')}
                     >
                         <PauseCircle className="h-4 w-4" />
                     </Button>
@@ -122,7 +125,7 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         onClick={handleResume}
                         disabled={resumeObjective.isPending}
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        title="Resume objective"
+                        title={t('tooltips.resume')}
                     >
                         <PlayCircle className="h-4 w-4" />
                     </Button>
@@ -135,7 +138,7 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         onClick={handleArchive}
                         disabled={archiveObjective.isPending}
                         className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
-                        title="Archive objective"
+                        title={t('tooltips.archive')}
                     >
                         <Archive className="h-4 w-4" />
                     </Button>
@@ -143,7 +146,12 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title={t('tooltips.more')}
+                        >
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -151,28 +159,28 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         {!isCompleted && !isArchived && (
                             <DropdownMenuItem onClick={handleComplete}>
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                                Complete
+                                {t('menu.complete')}
                             </DropdownMenuItem>
                         )}
 
                         {!isPaused && !isCompleted && !isArchived && (
                             <DropdownMenuItem onClick={handlePause}>
                                 <PauseCircle className="mr-2 h-4 w-4 text-yellow-600" />
-                                Pause
+                                {t('menu.pause')}
                             </DropdownMenuItem>
                         )}
 
                         {isPaused && !isArchived && (
                             <DropdownMenuItem onClick={handleResume}>
                                 <PlayCircle className="mr-2 h-4 w-4 text-blue-600" />
-                                Resume
+                                {t('menu.resume')}
                             </DropdownMenuItem>
                         )}
 
                         {!isArchived && (
                             <DropdownMenuItem onClick={handleArchive}>
                                 <Archive className="mr-2 h-4 w-4 text-gray-600" />
-                                Archive
+                                {t('menu.archive')}
                             </DropdownMenuItem>
                         )}
                     </DropdownMenuContent>

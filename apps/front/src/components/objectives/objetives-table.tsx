@@ -16,7 +16,7 @@ import { useTranslations } from 'next-intl';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 interface ObjetivesTableProps {
-    objectives?: any[];
+    objectives?: Objective[];
     isLoading?: boolean;
 }
 

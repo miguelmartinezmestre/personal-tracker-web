@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { Ban, UserCheck, Trash2, ShieldAlert } from 'lucide-react';
 import { EditUserModal } from './edit-user-modal';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { useRequireAdmin } from '@/hooks/use-user-role';
 
 type User = {
@@ -24,36 +25,19 @@ type User = {
 };
 
 export function UsersTable() {
-    const [searchValue, setSearchValue] = useState('');
-    const [page, setPage] = useState(0);
+    const t = useTranslations('Admin');
+    const tCommon = useTranslations('Common');
+
+    const [searchValue, _setSearchValue] = useState('');
+    const [page, _setPage] = useState(0);
     const limit = 10;
     const queryClient = useQueryClient();
-
-    // Verify admin role
-    try {
-        useRequireAdmin();
-    } catch (error) {
-        return (
-            <div className="rounded-md border border-red-200 bg-red-50 p-6">
-                <div className="flex items-center gap-3">
-                    <ShieldAlert className="h-5 w-5 text-red-600" />
-                    <div>
-                        <h3 className="font-semibold text-red-800">Acceso Denegado</h3>
-                        <p className="text-sm text-red-600">
-                            No tienes permisos de administrador para acceder a esta función.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     // Listar usuarios
     const {
         data: userData,
         isLoading: isLoadingUsers,
         refetch,
-        error,
     } = useQuery({
         queryKey: ['admin-users', searchValue, page, limit],
         queryFn: async () => {
@@ -69,9 +53,9 @@ export function UsersTable() {
                     },
                 });
                 // El resultado puede estar envuelto en un tipo Data, extraer los datos reales
-                const data = (result as any)?.data || result;
+                const data = (result as { data?: unknown })?.data || result;
                 return data || { users: [], total: 0 };
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Error fetching users:', err);
                 // Si hay un error de permisos, retornar estructura vacía
                 return { users: [], total: 0 };
@@ -84,15 +68,15 @@ export function UsersTable() {
         mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
             return await authClient.admin.banUser({
                 userId,
-                banReason: reason || 'Banned by administrator',
+                banReason: reason || t('usersTable.defaults.banReason'),
             });
         },
         onSuccess: () => {
-            toast.success('Usuario baneado exitosamente');
+            toast.success(t('usersTable.toast.bannedSuccess'));
             queryClient.invalidateQueries({ queryKey: ['admin-users'] });
         },
-        onError: (error: any) => {
-            toast.error(`Error al banear usuario: ${error.message}`);
+        onError: (error: Error) => {
+            toast.error(t('usersTable.toast.banFailed', { message: error.message }));
         },
     });
 
@@ -102,94 +86,99 @@ export function UsersTable() {
             return await authClient.admin.unbanUser({ userId });
         },
         onSuccess: () => {
-            toast.success('Usuario desbaneado exitosamente');
+            toast.success(t('usersTable.toast.unbannedSuccess'));
             queryClient.invalidateQueries({ queryKey: ['admin-users'] });
         },
-        onError: (error: any) => {
-            toast.error(`Error al desbanear usuario: ${error.message}`);
+        onError: (error: Error) => {
+            toast.error(t('usersTable.toast.unbanFailed', { message: error.message }));
         },
     });
 
     // Eliminar usuario
     const deleteUser = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
-            if (
-                !confirm(
-                    '¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer.'
-                )
-            ) {
+            if (!confirm(t('usersTable.confirm.deleteUser'))) {
                 return;
             }
             return await authClient.admin.removeUser({ userId });
         },
         onSuccess: () => {
-            toast.success('Usuario eliminado exitosamente');
+            toast.success(t('usersTable.toast.deletedSuccess'));
             queryClient.invalidateQueries({ queryKey: ['admin-users'] });
         },
-        onError: (error: any) => {
-            toast.error(`Error al eliminar usuario: ${error.message}`);
+        onError: (error: Error) => {
+            toast.error(t('usersTable.toast.deleteFailed', { message: error.message }));
         },
     });
+
+    // Verify admin role
+    try {
+        useRequireAdmin();
+    } catch {
+        return (
+            <div className="rounded-md border border-red-200 bg-red-50 p-6">
+                <div className="flex items-center gap-3">
+                    <ShieldAlert className="h-5 w-5 text-red-600" />
+                    <div>
+                        <h3 className="font-semibold text-red-800">{t('accessDeniedTitle')}</h3>
+                        <p className="text-sm text-red-600">{t('accessDeniedDescription')}</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const columns: ColumnDef<User>[] = [
         {
             accessorKey: 'email',
-            header: 'Email',
+            header: t('usersTable.columns.email'),
         },
         {
             accessorKey: 'name',
-            header: 'Nombre',
+            header: t('usersTable.columns.name'),
         },
         {
             accessorKey: 'role',
-            header: 'Rol',
+            header: t('usersTable.columns.role'),
             cell: ({ row }) => {
                 const role = row.original.role;
-                if (!role) return <Badge variant="secondary">user</Badge>;
-                const roles = Array.isArray(role) ? role : [role];
-                return (
-                    <div className="flex gap-1">
-                        {roles.map((r, i) => (
-                            <Badge
-                                key={i}
-                                variant={r === 'admin' || r === 'ADMIN' ? 'default' : 'secondary'}
-                            >
-                                {r}
-                            </Badge>
-                        ))}
-                    </div>
-                );
+                if (Array.isArray(role)) {
+                    return (
+                        <div className="flex gap-1">
+                            {role.map((r, index) => (
+                                <Badge key={index} variant="secondary">
+                                    {r}
+                                </Badge>
+                            ))}
+                        </div>
+                    );
+                }
+                return <Badge variant="secondary">{role || 'user'}</Badge>;
             },
         },
         {
             accessorKey: 'banned',
-            header: 'Estado',
+            header: t('usersTable.columns.status'),
             cell: ({ row }) => {
-                const banned = row.original.banned;
-                if (banned) {
-                    return (
-                        <Badge variant="destructive">
-                            <Ban className="h-3 w-3 mr-1" />
-                            Baneado
-                        </Badge>
-                    );
+                const user = row.original;
+                if (user.banned) {
+                    return <Badge variant="destructive">{tCommon('status.banned')}</Badge>;
                 }
                 return (
-                    <Badge variant="outline" className="text-green-600">
-                        <UserCheck className="h-3 w-3 mr-1" />
-                        Activo
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                        {tCommon('status.active')}
                     </Badge>
                 );
             },
         },
         {
-            header: 'Acciones',
+            header: t('usersTable.columns.actions'),
             id: 'actions',
             cell: ({ row }) => {
                 const user = row.original;
                 return (
                     <div className="flex gap-2">
-                        <EditUserModal user={user} onSuccess={() => refetch()} />
+                        <EditUserModal user={user} onSuccessAction={() => refetch()} />
                         {user.banned ? (
                             <Button
                                 size="sm"
@@ -203,13 +192,7 @@ export function UsersTable() {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                    const reason = prompt('Razón del ban (opcional):');
-                                    banUser.mutate({
-                                        userId: user.id,
-                                        reason: reason || undefined,
-                                    });
-                                }}
+                                onClick={() => banUser.mutate({ userId: user.id })}
                                 disabled={banUser.isPending}
                             >
                                 <Ban className="h-4 w-4" />
@@ -229,68 +212,16 @@ export function UsersTable() {
         },
     ];
 
-    if (isLoadingUsers) {
-        return <div>Cargando usuarios...</div>;
-    }
-
-    if (error) {
-        return (
-            <div>
-                Error al cargar usuarios:{' '}
-                {error instanceof Error ? error.message : 'Error desconocido'}
-            </div>
-        );
-    }
+    const users = (userData as { users?: User[]; total?: number })?.users || [];
+    const _total = (userData as { users?: User[]; total?: number })?.total || 0;
 
     return (
         <div className="space-y-4">
-            <div className="flex gap-2">
-                <input
-                    type="text"
-                    placeholder="Buscar por email..."
-                    value={searchValue}
-                    onChange={e => {
-                        setSearchValue(e.target.value);
-                        setPage(0);
-                    }}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
-            </div>
-            {error && (
-                <div className="rounded-md border border-destructive bg-destructive/10 p-4">
-                    <p className="text-sm text-destructive">
-                        Error al cargar usuarios: {(error as Error)?.message || 'Error desconocido'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                        Asegúrate de tener permisos de administrador para acceder a esta sección.
-                    </p>
-                </div>
-            )}
-            <DataTable columns={columns} data={userData?.users || []} isLoading={isLoadingUsers} />
-            {userData && userData?.users && (
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                        Mostrando {userData.users.length} de {userData.total || 0} usuarios
-                    </p>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage(p => Math.max(0, p - 1))}
-                            disabled={page === 0}
-                        >
-                            Anterior
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage(p => p + 1)}
-                            disabled={(page + 1) * limit >= (userData.total || 0)}
-                        >
-                            Siguiente
-                        </Button>
-                    </div>
-                </div>
+            <DataTable columns={columns} data={users} isLoading={isLoadingUsers} />
+            {users.length === 0 && !isLoadingUsers && (
+                <p className="text-center text-muted-foreground py-8">
+                    {searchValue ? t('usersTable.emptyWithSearch') : t('usersTable.empty')}
+                </p>
             )}
         </div>
     );

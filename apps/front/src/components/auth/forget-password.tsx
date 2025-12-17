@@ -1,9 +1,17 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@repo/ui/components/button';
 import { Alert, AlertTitle, AlertDescription } from '@repo/ui/components/alert';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@repo/ui/components/form-tanstack';
+import {
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+    Form,
+} from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
@@ -11,6 +19,9 @@ import { useState } from 'react';
 import { forgetPasswordSchema } from '@/schemas/forget-password';
 
 export default function ForgetPasswordForm() {
+    const tCommon = useTranslations('Common');
+    const t = useTranslations('ForgotPassword');
+
     const [loginError] = useState('');
     const [successMessage] = useState('');
 
@@ -27,24 +38,29 @@ export default function ForgetPasswordForm() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
+    async function onSubmit(_values: z.infer<typeof forgetPasswordSchema>) {
         // mutation.mutate(values);
         // const login = await forgetPasswordAction(values);
-
         // if (login?.data?.error) {
         //     setLoginError(login?.data?.message);
-        // }else{
+        // } else {
         //     setSuccessMessage('Email enviado correctamente');
         // }
     }
 
     return (
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-6">
+            <form
+                onSubmit={e => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+                className="space-y-6"
+            >
                 {loginError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{loginError}</AlertDescription>
                     </Alert>
                 )}
@@ -52,7 +68,7 @@ export default function ForgetPasswordForm() {
                 {successMessage && (
                     <Alert variant="default" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Success</AlertTitle>
+                        <AlertTitle>{tCommon('success')}</AlertTitle>
                         <AlertDescription>{successMessage}</AlertDescription>
                     </Alert>
                 )}
@@ -61,12 +77,14 @@ export default function ForgetPasswordForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">email</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.email')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="email"
-                                    placeholder="nombre@correo.com"
+                                    placeholder={tCommon('placeholders.email')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="email-input"
                                 />
@@ -76,11 +94,8 @@ export default function ForgetPasswordForm() {
                     )}
                 />
 
-                <Button
-                    type="submit"
-                    className="w-full py-6 text-lg font-medium"
-                >
-                    Enviar
+                <Button type="submit" className="w-full py-6 text-lg font-medium">
+                    {t('submit')}
                 </Button>
             </form>
         </Form>

@@ -68,20 +68,28 @@ export default function CreateTeamFormModal() {
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('createTeam')}</DialogTitle>
-                    <DialogDescription>
-                        {t('createTeamDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('createTeamDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterTeamName')} {...field} data-testid="team-name-input" />
+                                        <Input
+                                            placeholder={t('enterTeamName')}
+                                            {...field}
+                                            data-testid="team-name-input"
+                                        />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourTeamAClearConciseTitle')}
@@ -98,7 +106,7 @@ export default function CreateTeamFormModal() {
                                     <FormLabel>{t('tableDescription')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your team in detail"
+                                            placeholder={t('describeTeamInDetail')}
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
@@ -114,10 +122,17 @@ export default function CreateTeamFormModal() {
                         />
 
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)} data-testid="team-cancel-button">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                data-testid="team-cancel-button"
+                            >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit" data-testid="team-save-button">{t('saveTeam')}</Button>
+                            <Button type="submit" data-testid="team-save-button">
+                                {t('saveTeam')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

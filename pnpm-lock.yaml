@@ -138,6 +138,9 @@ importers:
       '@playwright/test':
         specifier: 1.55.1
         version: 1.55.1
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
       '@tailwindcss/postcss':
         specifier: 4.1.14
         version: 4.1.14

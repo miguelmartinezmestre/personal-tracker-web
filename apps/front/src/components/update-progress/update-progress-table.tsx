@@ -11,8 +11,10 @@ import { useParams } from 'next/navigation';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
+import { useTranslations } from 'next-intl';
 
 export default function UpdateProgressTable() {
+    const t = useTranslations('UpdateProgress');
     const { id: objectiveId } = useParams();
     const updateProgress = useSuspenseQuery(
         convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
@@ -20,7 +22,7 @@ export default function UpdateProgressTable() {
         })
     );
     const objective = useSuspenseQuery(
-        convexQuery(api.objectives.getObjectiveById, { id: objectiveId as any })
+        convexQuery(api.objectives.getObjectiveById, { id: objectiveId })
     );
     const deleteUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.deleteUpdateProgress),
@@ -29,45 +31,45 @@ export default function UpdateProgressTable() {
     const columns: ColumnDef<Doc<'progressUpdates'>>[] = [
         {
             accessorKey: 'updatedValue',
-            header: 'Valor Actual',
+            header: t('table.columns.currentValue'),
         },
         {
             accessorKey: 'updateDate',
-            header: 'Fecha',
+            header: t('table.columns.date'),
         },
         {
             accessorKey: 'comment',
-            header: 'Comentario',
+            header: t('table.columns.comment'),
         },
         {
-            header: 'Edit',
+            header: t('table.columns.edit'),
             id: 'edit',
             cell: ({ row }) => {
-                const objetiveRow = row.original;
+                const progressRow = row.original;
                 const defaultValues = {
-                    _id: String(objetiveRow._id),
-                    updatedValue: objetiveRow.updatedValue,
-                    updateDate: new Date(objetiveRow.updateDate),
-                    comment: objetiveRow.comment ?? null,
+                    _id: String(progressRow._id),
+                    updatedValue: progressRow.updatedValue,
+                    updateDate: new Date(progressRow.updateDate),
+                    comment: progressRow.comment ?? null,
                 } as unknown as UpdateProgress;
                 return <UpdateProgressFormModal defaultValues={defaultValues} />;
             },
         },
         {
-            header: 'Delete',
+            header: t('table.columns.delete'),
             id: 'delete',
             cell: ({ row }) => {
-                const objetiveRow = row.original;
+                const progressRow = row.original;
                 return (
                     <Button
                         data-testid="progress-delete-button"
                         onClick={async () => {
                             await deleteUpdateProgress.mutateAsync({
-                                _id: objetiveRow._id as Id<'progressUpdates'>,
+                                _id: progressRow._id as Id<'progressUpdates'>,
                             });
                         }}
                     >
-                        Delete
+                        {t('table.columns.delete')}
                     </Button>
                 );
             },

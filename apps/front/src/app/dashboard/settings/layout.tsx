@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { SettingsLayout as SettingsLayoutComponent } from '@/components/settings-layout';
 import { authClient } from '@/lib/auth-client';
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+    const tCommon = useTranslations('Common');
     const router = useRouter();
 
-    const sessionQuery = authClient.useSession() as any;
+    const sessionQuery = authClient.useSession();
     const session = sessionQuery?.data;
-    const isSessionLoading = Boolean(sessionQuery?.isPending ?? sessionQuery?.isLoading);
+    const isSessionLoading = sessionQuery?.isPending;
 
     useEffect(() => {
         if (isSessionLoading) return;
@@ -22,7 +24,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     if (isSessionLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
-                <div>Loading...</div>
+                <div>{tCommon('loading')}</div>
             </div>
         );
     }
@@ -30,7 +32,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     if (!session?.user) {
         return (
             <div className="flex justify-center items-center h-screen">
-                <div>Redirecting to login...</div>
+                <div>{tCommon('redirectingToLogin')}</div>
             </div>
         );
     }

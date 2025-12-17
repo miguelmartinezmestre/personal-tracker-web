@@ -1,17 +1,27 @@
 import { getRequestConfig } from 'next-intl/server';
+import { cookies } from 'next/headers';
+import { routing } from './routing';
 
-export default getRequestConfig(async ({ requestLocale }) => {
-  let detectedLocale: string | undefined;
+export default getRequestConfig(async () => {
+  // Priority: Cookie > Default locale (English)
+  // We only use cookies for locale detection, no URL prefixes
+  let locale: string | undefined;
+
   try {
-    detectedLocale = await requestLocale;
-  } catch {
-    detectedLocale = undefined;
+    const cookieStore = await cookies();
+    locale = cookieStore.get('locale')?.value;
+  } catch (error) {
+    // Fallback if cookie reading fails
+    console.error('Error reading locale cookie:', error);
   }
 
-  const locale = detectedLocale ?? 'en';
+  // Validate locale and default to English if not found or invalid
+  const validLocale = locale && routing.locales.includes(locale)
+    ? locale
+    : routing.defaultLocale;
 
   return {
-    locale,
-    messages: (await import(`../../translations/${locale}.json`)).default
+    locale: validLocale,
+    messages: (await import(`../../translations/${validLocale}.json`)).default
   };
 });

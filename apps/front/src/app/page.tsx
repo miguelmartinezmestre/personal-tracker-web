@@ -6,10 +6,7 @@ import { Target, LineChart, CheckCircle, Users, Calendar, Lightbulb } from 'luci
 import { getTranslations } from 'next-intl/server';
 
 export default async function RouteComponent() {
-
     const t = await getTranslations('HomePage');
-
-    
 
     return (
         <div className="flex flex-col min-h-screen">
@@ -51,7 +48,9 @@ export default async function RouteComponent() {
                                 <div className="inline-block rounded-lg bg-primary px-3 py-1 text-sm text-primary-foreground">
                                     {t('mainFeatures')}
                                 </div>
-                                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">{t('achieveGoals')}</h2>
+                                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                                    {t('achieveGoals')}
+                                </h2>
                                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                                     {t('ourPlatform')}
                                 </p>
@@ -63,54 +62,42 @@ export default async function RouteComponent() {
                                     <Target className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('customizableGoals')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {t('defineGoals')}
-                                </CardContent>
+                                <CardContent>{t('defineGoals')}</CardContent>
                             </Card>
                             <Card className="h-full">
                                 <CardHeader>
                                     <LineChart className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('visualProgressPanel')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {t('visualProgressPanelDescription')}
-                                </CardContent>
+                                <CardContent>{t('visualProgressPanelDescription')}</CardContent>
                             </Card>
                             <Card className="h-full">
                                 <CardHeader>
                                     <CheckCircle className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('periodicUpdates')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {t('periodicUpdatesDescription')}
-                                </CardContent>
+                                <CardContent>{t('periodicUpdatesDescription')}</CardContent>
                             </Card>
                             <Card className="h-full">
                                 <CardHeader>
                                     <Users className="h-8 w-8 text-primary" />
-                                    <CardTitle></CardTitle>
+                                    <CardTitle>{t('collaborativeTracking')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {t('collaborativeTrackingDescription')}
-                                </CardContent>
+                                <CardContent>{t('collaborativeTrackingDescription')}</CardContent>
                             </Card>
                             <Card className="h-full">
                                 <CardHeader>
                                     <Calendar className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('notifications')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {t('notificationsDescription')}
-                                </CardContent>
+                                <CardContent>{t('notificationsDescription')}</CardContent>
                             </Card>
                             <Card className="h-full">
                                 <CardHeader>
                                     <Lightbulb className="h-8 w-8 text-primary" />
                                     <CardTitle>{t('reports')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {t('reportsDescription')}
-                                </CardContent>
+                                <CardContent>{t('reportsDescription')}</CardContent>
                             </Card>
                         </div>
                     </div>

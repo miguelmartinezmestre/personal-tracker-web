@@ -1,11 +1,123 @@
 {
+    "App": {
+        "title": "Métricas",
+        "description": "Métricas"
+    },
+    "Emails": {
+        "register": {
+            "preview": "Bienvenido a {app}",
+            "welcome": "Bienvenido a {app} {username}",
+            "ctaText": "Ahora puedes empezar a usar la app",
+            "ctaLink": "aquí",
+            "thanks": "Gracias por registrarte en {app}."
+        },
+        "confirm": {
+            "preview": "Bienvenido a {app}",
+            "welcome": "Bienvenido a {app} {username}"
+        },
+        "recoverPassword": {
+            "preview": "Recuperar contraseña en {app}",
+            "instruction": "Se ha solicitado un cambio de contraseña para el usuario {username}. Para continuar, haz clic en el siguiente enlace:",
+            "link": "Haz clic aquí"
+        }
+    },
+    "Common": {
+        "error": "Error",
+        "success": "Éxito",
+        "unknownError": "Error desconocido",
+        "search": "Buscar",
+        "user": "Usuario",
+        "actions": {
+            "save": "Guardar",
+            "saving": "Guardando...",
+            "cancel": "Cancelar",
+            "delete": "Eliminar",
+            "edit": "Editar",
+            "close": "Cerrar",
+            "goToLogin": "Ir a iniciar sesión",
+            "revokeAll": "Revocar todas"
+        },
+        "fields": {
+            "email": "Correo electrónico",
+            "name": "Nombre",
+            "username": "Nombre de usuario",
+            "password": "Contraseña",
+            "confirmPassword": "Confirmar contraseña",
+            "role": "Rol",
+            "userId": "ID de usuario"
+        },
+        "placeholders": {
+            "email": "nombre@correo.com",
+            "password": "Ingresa tu contraseña",
+            "username": "username",
+            "min8Chars": "Mínimo 8 caracteres",
+            "confirmPassword": "Confirmar contraseña",
+            "searchByEmail": "Buscar por email...",
+            "userIdForSessions": "ID del usuario para ver sus sesiones...",
+            "searchDocs": "Buscar en la documentación...",
+            "searchCommands": "Buscar comandos..."
+        },
+        "colors": {
+            "red": "Rojo",
+            "orange": "Naranja",
+            "yellow": "Amarillo",
+            "green": "Verde",
+            "teal": "Turquesa",
+            "blue": "Azul",
+            "purple": "Morado",
+            "pink": "Rosa",
+            "gray": "Gris"
+        },
+        "icons": {
+            "tag": "Etiqueta",
+            "heart": "Corazón",
+            "briefcase": "Maletín",
+            "book": "Libro",
+            "user": "Usuario",
+            "dollar-sign": "Dinero",
+            "users": "Usuarios",
+            "palette": "Paleta",
+            "home": "Casa",
+            "map": "Mapa",
+            "target": "Objetivo",
+            "trending-up": "Tendencia",
+            "star": "Estrella",
+            "award": "Premio",
+            "zap": "Energía",
+            "coffee": "Café",
+            "music": "Música",
+            "camera": "Cámara",
+            "plane": "Avión"
+        },
+        "status": {
+            "active": "Activo",
+            "banned": "Baneado",
+            "expired": "Expirada",
+            "na": "N/A"
+        },
+        "loading": "Cargando...",
+        "loadingUser": "Cargando usuario...",
+        "redirecting": "Redirigiendo...",
+        "redirectingToLogin": "Redirigiendo a iniciar sesión...",
+        "aria": {
+            "breadcrumbs": "Migas de pan"
+        }
+    },
+    "DashboardHome": {
+        "accessDeniedTitle": "Acceso denegado",
+        "accessDeniedDescription": "No tienes permisos para acceder a esta página.",
+        "genericErrorTitle": "Error",
+        "genericErrorDescription": "Ocurrió un error al acceder a esta página.",
+        "dashboardTitle": "Dashboard",
+        "welcome": "Bienvenido {name}"
+    },
     "HomePage": {
         "title": "Cumple tus objetivos. Controla tu progreso.",
         "subtitle": "Define, controla y visualiza tus objetivos personales de forma sencilla. Mantente motivado para alcanzar tus objetivos.",
         "getStarted": "Empezar ahora",
         "login": "Iniciar sesión",
         "register": "Registrarse",
-        "mainFeatures": "Main Features",
+        "mainFeatures": "Características principales",
         "goToDashboard": "Ir al Dashboard",
         "achieveGoals": "Logra tus objetivos con nuestro sistema",
         "ourPlatform": "Nuestra plataforma está diseñada para ayudarte a establecer, controlar y alcanzar tus objetivos personales y profesionales con herramientas intuitivas y visualizaciones informativas.",
@@ -22,10 +134,14 @@
         "reports": "Informes",
         "reportsDescription": "Obtén profundas perspectivas sobre tus hábitos y rendimiento con análisis detallados y reportes.",
         "forgotPassword": "¿Olvidaste tu contraseña?",
+        "resetPassword": "Restablecer contraseña",
         "noAccount": "¿No tienes una cuenta?",
         "alreadyHaveAccount": "¿Ya tienes una cuenta?",
         "createAccount": "Crear cuenta",
-        "dashboard": "panel"
+        "errors": {
+            "passwordsDontMatch": "Las contraseñas no coinciden",
+            "registerFallback": "Error al registrar usuario. Por favor, intenta de nuevo."
+        }
     },
     "Sidebar": {
         "home": "Inicio",
@@ -36,9 +152,51 @@
         "settings": "Configuración",
         "admin": "Administrar"
     },
+    "Notifications": {
+        "title": "Notificaciones",
+        "description": "Ver tus notificaciones y actualizaciones.",
+        "loading": "Cargando notificaciones...",
+        "empty": "Aún no hay notificaciones."
+    },
+    "CommandMenu": {
+        "placeholder": "Buscar comandos...",
+        "empty": "No se encontraron resultados.",
+        "navigation": "Navegación"
+    },
+    "LanguageSwitcher": {
+        "label": "Idioma",
+        "spanish": "Español",
+        "english": "English"
+    },
+    "ThemeSwitcher": {
+        "toggle": "Cambiar tema",
+        "light": "Claro",
+        "dark": "Oscuro",
+        "system": "Sistema"
+    },
+    "NotFound": {
+        "title": "Página no encontrada",
+        "subtitle": "¡Ups! Parece que te has perdido en el ciberespacio.",
+        "whatToDo": "¿Qué te gustaría hacer?",
+        "goHome": "Ir al inicio"
+    },
+    "DeleteAccount": {
+        "trigger": "Borrar cuenta",
+        "title": "¿Estás seguro?",
+        "description": "Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta y eliminará tus datos de nuestros servidores.",
+        "confirm": "Eliminar cuenta"
+    },
+    "ForgotPassword": {
+        "submit": "Enviar"
+    },
+    "NavMain": {
+        "platform": "Plataforma"
+    },
     "Objectives": {
         "title": "Objetivos",
         "description": "Define tus objetivos personales y profesionales para alcanzar tus metas.",
+        "pageDescription": "Gestiona tus objetivos personales y profesionales.",
+        "loadingObjectives": "Cargando objetivos...",
         "createObjective": "Crear objetivo",
         "editObjective": "Editar objetivo",
         "deleteObjective": "Eliminar objetivo",
@@ -46,6 +204,7 @@
         "objectiveDetails": "Detalles del objetivo",
         "objectiveProgress": "Progreso del objetivo",
         "createObjectiveDescription": "Llena el formulario a continuación para crear un nuevo objetivo. Haz clic en guardar cuando hayas terminado.",
+        "creatingAs": "Creando como: {name}",
         "tableDescription": "Descripción",
         "targetValue": "Valor objetivo",
         "currentValue": "Valor actual",
@@ -71,11 +230,187 @@
         "editObjectiveDescription": "Llena el formulario a continuación para editar tu objetivo. Haz clic en guardar cuando hayas terminado.",
         "cancel": "Cancelar",
         "giveYourObjectiveAClearConciseTitle": "Dale a tu objetivo un título claro y conciso.",
-        "goToProgress": "Ir al progreso"
+        "giveYourUpdateProgressAClearConciseTitle": "Dale a tu progreso actualizado un título claro y conciso.",
+        "goToProgress": "Ir al progreso",
+        "statusOptions": {
+            "all": "Todos los estados",
+            "notStarted": "No iniciado",
+            "inProgress": "En progreso",
+            "completed": "Completado",
+            "paused": "Pausado",
+            "archived": "Archivado"
+        },
+        "categoryOptions": {
+            "all": "Todas las categorías",
+            "personal": "Personal",
+            "work": "Trabajo",
+            "health": "Salud",
+            "finance": "Finanzas",
+            "education": "Educación"
+        },
+        "deadlineRangeOptions": {
+            "all": "Todo el tiempo",
+            "today": "Vence hoy",
+            "week": "Vence esta semana",
+            "month": "Vence este mes",
+            "overdue": "Atrasado"
+        },
+        "sortOptions": {
+            "newestFirst": "Más recientes",
+            "oldestFirst": "Más antiguos",
+            "deadlineSoonest": "Fecha límite más próxima",
+            "deadlineLatest": "Fecha límite más lejana",
+            "titleAsc": "Título A-Z",
+            "titleDesc": "Título Z-A",
+            "mostProgress": "Más progreso",
+            "leastProgress": "Menos progreso"
+        },
+        "filtersUi": {
+            "button": "Filtros",
+            "activeTitle": "Filtros activos",
+            "clearAll": "Limpiar todo",
+            "noActive": "Sin filtros activos"
+        },
+        "filters": {
+            "search": "Buscar objetivos...",
+            "status": "Estado",
+            "category": "Categoría",
+            "deadline": "Fecha límite",
+            "sortBy": "Ordenar por"
+        },
+        "unitExample": "p. ej., kg, millas, horas",
+        "selectStatus": "Selecciona un estado",
+        "empty": {
+            "noObjectivesFound": "No se encontraron objetivos"
+        },
+        "confirm": {
+            "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?"
+        },
+        "toast": {
+            "deletedSuccess": "Objetivo eliminado exitosamente",
+            "deleteFailed": "Error al eliminar objetivo",
+            "createSuccess": "Objetivo creado exitosamente",
+            "createFailed": "Error al crear objetivo",
+            "updateSuccess": "Objetivo actualizado exitosamente",
+            "updateFailed": "Error al actualizar objetivo",
+            "completedSuccess": "Objetivo completado",
+            "completeFailed": "Error al completar objetivo",
+            "pausedSuccess": "Objetivo pausado",
+            "pauseFailed": "Error al pausar objetivo",
+            "archivedSuccess": "Objetivo archivado",
+            "archiveFailed": "Error al archivar objetivo",
+            "resumedSuccess": "Objetivo reanudado",
+            "resumeFailed": "Error al reanudar objetivo"
+        },
+        "tooltips": {
+            "complete": "Completar objetivo",
+            "pause": "Pausar objetivo",
+            "resume": "Reanudar objetivo",
+            "archive": "Archivar objetivo",
+            "more": "Más acciones"
+        },
+        "menu": {
+            "complete": "Completar",
+            "pause": "Pausar",
+            "resume": "Reanudar",
+            "archive": "Archivar"
+        },
+        "categories": {
+            "title": "Categorías",
+            "addDefault": "Agregar categorías predeterminadas",
+            "new": "Nueva categoría",
+            "createTitle": "Crear nueva categoría",
+            "editTitle": "Editar categoría",
+            "emptyTitle": "Aún no hay categorías",
+            "emptyDescription": "Crea categorías para organizar mejor tus objetivos.",
+            "fields": {
+                "name": "Nombre",
+                "color": "Color",
+                "icon": "Icono"
+            },
+            "buttons": {
+                "cancel": "Cancelar",
+                "create": "Crear",
+                "creating": "Creando...",
+                "update": "Actualizar",
+                "updating": "Actualizando..."
+            },
+            "confirmDelete": "¿Estás seguro de que quieres eliminar esta categoría?",
+            "toast": {
+                "createSuccess": "Categoría creada exitosamente",
+                "createFailed": "Error al crear categoría",
+                "updateSuccess": "Categoría actualizada exitosamente",
+                "updateFailed": "Error al actualizar categoría",
+                "deleteSuccess": "Categoría eliminada exitosamente",
+                "deleteFailed": "Error al eliminar categoría",
+                "createDefaultsSuccess": "Categorías predeterminadas creadas",
+                "createDefaultsFailed": "Error al crear categorías predeterminadas"
+            },
+            "placeholders": {
+                "name": "Ingresa el nombre de la categoría...",
+                "selectIcon": "Selecciona un icono"
+            }
+        },
+        "smartForm": {
+            "autoSaving": "Guardando automáticamente...",
+            "draftSaved": "Borrador guardado",
+            "fields": {
+                "titleRequired": "Título *",
+                "description": "Descripción",
+                "category": "Categoría",
+                "unit": "Unidad",
+                "targetValueRequired": "Valor objetivo *",
+                "currentValue": "Valor actual",
+                "deadline": "Fecha límite"
+            },
+            "placeholders": {
+                "title": "Ingresa el título de tu objetivo...",
+                "description": "Describe tu objetivo...",
+                "category": "Selecciona una categoría",
+                "unit": "Selecciona una unidad",
+                "targetValue": "Valor objetivo...",
+                "currentValue": "Valor actual...",
+                "pickDate": "Selecciona una fecha"
+            },
+            "buttons": {
+                "create": "Crear objetivo",
+                "update": "Actualizar objetivo"
+            },
+            "categories": {
+                "healthFitness": "Salud y fitness",
+                "careerBusiness": "Carrera y negocios",
+                "learningEducation": "Aprendizaje y educación",
+                "personalDevelopment": "Desarrollo personal",
+                "financeSavings": "Finanzas y ahorros",
+                "relationships": "Relaciones",
+                "creativeProjects": "Proyectos creativos",
+                "homeOrganization": "Hogar y organización",
+                "travelAdventure": "Viajes y aventura",
+                "other": "Otro"
+            },
+            "units": {
+                "kg": "Kilogramos",
+                "lbs": "Libras",
+                "km": "Kilómetros",
+                "miles": "Millas",
+                "hours": "Horas",
+                "minutes": "Minutos",
+                "days": "Días",
+                "weeks": "Semanas",
+                "dollars": "Dólares",
+                "euros": "Euros",
+                "gbp": "Libras",
+                "pages": "Páginas",
+                "words": "Palabras",
+                "count": "Cantidad",
+                "percentage": "Porcentaje"
+            }
+        }
     },
     "Sessions": {
         "title": "Sesiones",
         "description": "Gestiona tus sesiones para mantener un seguimiento de tu progreso.",
+        "loading": "Cargando sesiones...",
         "createSession": "Crear sesión",
         "editSession": "Editar sesión",
         "deleteSession": "Eliminar sesión",
@@ -105,6 +440,7 @@
         "optionalAddDetailsAboutYourTeam": "Opcional: Agrega detalles sobre tu equipo.",
         "cancel": "Cancelar",
         "giveYourTeamAClearConciseName": "Dale a tu equipo un nombre claro y conciso.",
+        "giveYourTeamMemberAClearConciseEmail": "Dale a tu miembro del equipo un correo electrónico claro y conciso.",
         "goToTeam": "Ir al equipo"
     },
     "Settings": {
@@ -118,6 +454,10 @@
         "saveAccount": "Guardar cuenta",
         "username": "Nombre de usuario",
         "email": "Correo electrónico",
+        "placeholders": {
+            "enterUsername": "Ingresa el nombre de usuario",
+            "enterEmail": "Ingresa el correo electrónico"
+        },
         "cancel": "Cancelar",
         "savePassword": "Guardar contraseña",
         "confirmPassword": "Confirmar contraseña",
@@ -136,7 +476,93 @@
         "auditLogManagement": "Gestión de Logs de Auditoría",
         "auditLogManagementDescription": "Visualiza los registros de actividad del sistema.",
         "dashboard": "Dashboard",
-        "adminPanel": "Panel de Administración"
+        "adminPanel": "Panel de Administración",
+        "accessDeniedTitle": "Acceso denegado",
+        "accessDeniedDescription": "No tienes permisos de administrador para acceder a esta función.",
+        "usersTable": {
+            "defaults": {
+                "banReason": "Banned by administrator"
+            },
+            "loading": "Cargando usuarios...",
+            "errors": {
+                "loadFailed": "Error al cargar usuarios: {message}",
+                "permissionsHint": "Asegúrate de tener permisos de administrador para acceder a esta sección."
+            },
+            "pagination": {
+                "showing": "Mostrando {count} de {total} usuarios",
+                "previous": "Anterior",
+                "next": "Siguiente"
+            },
+            "columns": {
+                "email": "Email",
+                "name": "Nombre",
+                "role": "Rol",
+                "status": "Estado",
+                "actions": "Acciones"
+            },
+            "status": {
+                "banned": "Baneado",
+                "active": "Activo"
+            },
+            "confirm": {
+                "deleteUser": "¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer.",
+                "banReasonPrompt": "Razón del ban (opcional):"
+            },
+            "placeholders": {
+                "searchByEmail": "Buscar por email..."
+            },
+            "toast": {
+                "bannedSuccess": "Usuario baneado exitosamente",
+                "unbannedSuccess": "Usuario desbaneado exitosamente",
+                "deletedSuccess": "Usuario eliminado exitosamente",
+                "updatedSuccess": "Usuario actualizado exitosamente",
+                "banFailed": "Error al banear usuario: {message}",
+                "unbanFailed": "Error al desbanear usuario: {message}",
+                "deleteFailed": "Error al eliminar usuario: {message}",
+                "updateFailed": "Error al actualizar usuario: {message}"
+            }
+        },
+        "editUserModal": {
+            "title": "Editar usuario",
+            "description": "Modifica la información del usuario",
+            "roles": {
+                "user": "Usuario",
+                "admin": "Administrador"
+            }
+        },
+        "userSessions": {
+            "columns": {
+                "id": "ID",
+                "expires": "Expira",
+                "ip": "IP",
+                "userAgent": "User Agent",
+                "actions": "Acciones"
+            },
+            "emptyWithUser": "No se encontraron sesiones para este usuario",
+            "emptyNoUser": "Ingresa un ID de usuario para ver sus sesiones",
+            "buttons": {
+                "revokeAll": "Revocar todas"
+            },
+            "confirm": {
+                "revokeAll": "¿Estás seguro de que quieres revocar todas las sesiones de este usuario?"
+            },
+            "toast": {
+                "revokeSuccess": "Sesión revocada exitosamente",
+                "revokeAllSuccess": "Todas las sesiones revocadas exitosamente",
+                "revokeFailed": "Error al revocar sesión: {message}",
+                "revokeAllFailed": "Error al revocar sesiones: {message}"
+            }
+        },
+        "auditLogsTable": {
+            "title": "Logs de Auditoría",
+            "description": "Registro de acciones realizadas en el sistema",
+            "empty": "No hay logs de auditoría registrados",
+            "columns": {
+                "userId": "Usuario ID",
+                "action": "Acción",
+                "date": "Fecha"
+            }
+        }
     },
     "Stats": {
         "totalObjectives": "Total de objetivos",
@@ -147,8 +573,32 @@
         "remainDaysToDeadline": "Días restantes para la deadline",
         "objectivesWithMostProgress": "Objetivos con mayor progreso (Sin completar)"
     },
+    "Charts": {
+        "labels": {
+            "progress": "Progreso",
+            "completed": "Completado",
+            "pending": "Pendiente"
+        },
+        "objectivesStatus": {
+            "title": "Estado de objetivos",
+            "description": "Completados vs. Pendientes"
+        },
+        "objectivesMostProgress": {
+            "title": "Objetivos con mayor progreso",
+            "description": "Top 5 objetivos por avance completado"
+        },
+        "monthlyProgress": {
+            "title": "Progreso mensual",
+            "description": "Unidades de progreso añadidas por mes"
+        }
+    },
     "UpdateProgress": {
+        "pageDescription": "Registra actualizaciones de progreso para este objetivo.",
+        "loadingProgress": "Cargando progreso...",
         "createNewUpdateProgress": "Crear nuevo progreso",
+        "editProgress": "Editar progreso",
+        "editProgressDescription": "Llena el formulario a continuación para editar tu progreso. Haz clic en guardar cuando hayas terminado.",
+        "pickADate": "Selecciona una fecha",
         "createNewUpdateProgressDescription": "Llena el formulario a continuación para crear un nuevo progreso. Haz clic en guardar cuando hayas terminado.",
         "updatedValue": "Valor actualizado",
         "enterUpdatedValue": "Ingresa el valor actualizado",
@@ -158,10 +608,28 @@
         "saveProgress": "Guardar progreso",
         "goToProgress": "Ir al progreso",
         "progressUpdates": "Progresos",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "deadline": "Fecha límite",
+        "giveYourUpdateProgressAClearConciseTitle": "Dale a tu progreso actualizado un título claro y conciso.",
+        "table": {
+            "columns": {
+                "currentValue": "Valor actual",
+                "date": "Fecha",
+                "comment": "Comentario",
+                "edit": "Editar",
+                "delete": "Eliminar"
+            }
+        }
     },
     "TeamMembers": {
         "createNewTeamMember": "Crear nuevo miembro del equipo",
+        "enterUserId": "Ingresa el ID del usuario",
+        "userIdDescription": "Ingresa el ID del usuario para agregarlo al equipo",
+        "selectRole": "Selecciona un rol",
+        "roles": {
+            "manager": "Administrador",
+            "member": "Miembro"
+        },
         "createNewTeamMemberDescription": "Llena el formulario a continuación para crear un nuevo miembro del equipo. Haz clic en guardar cuando hayas terminado.",
         "email": "Correo electrónico",
         "enterEmail": "Ingresa el correo electrónico",

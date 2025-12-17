@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/alert';
 import { useUserRole } from '@/hooks/use-user-role';
@@ -10,6 +11,7 @@ interface AdminAccessGuardProps {
 }
 
 export function AdminAccessGuard({ children, fallback }: AdminAccessGuardProps) {
+    const t = useTranslations('Admin');
     const { isAdmin } = useUserRole();
 
     // Note: isLoading is not available in current useUserRole hook
@@ -23,10 +25,8 @@ export function AdminAccessGuard({ children, fallback }: AdminAccessGuardProps) 
         return (
             <Alert variant="destructive" className="my-4">
                 <ShieldAlert className="h-4 w-4" />
-                <AlertTitle>Access Denied</AlertTitle>
-                <AlertDescription>
-                    You don't have administrator permissions to access this feature.
-                </AlertDescription>
+                <AlertTitle>{t('accessDeniedTitle')}</AlertTitle>
+                <AlertDescription>{t('accessDeniedDescription')}</AlertDescription>
             </Alert>
         );
     }

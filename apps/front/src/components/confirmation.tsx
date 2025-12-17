@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -14,30 +17,30 @@ import { Button } from '@repo/ui/components/button';
 // import { useDeleteUserMutation } from '../services/mutations/user';
 
 export function ConfirmationDeleteAccount() {
+    const t = useTranslations('DeleteAccount');
+    const tCommon = useTranslations('Common');
+
     // const { user } = useAuthContext();
     // const { mutation } = useDeleteUserMutation();
 
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="outline">Borrar cuenta</Button>
+                <Button variant="outline">{t('trigger')}</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta y
-                        eliminará tus datos de nuestros servidores.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>{t('title')}</AlertDialogTitle>
+                    <AlertDialogDescription>{t('description')}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{tCommon('actions.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => {
                             // mutation.mutate({ _id: user.id });
                         }}
                     >
-                        Eliminar cuenta
+                        {t('confirm')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

@@ -25,7 +25,7 @@ export function useUserRole() {
         }
 
         // 2. Check auth user role
-        const authRole = (authUser as any)?.role;
+        const authRole = (authUser as { role?: string | string[] })?.role;
         if (
             authRole === 'admin' ||
             authRole === 'ADMIN' ||
@@ -55,7 +55,10 @@ export function useUserRole() {
         user,
         isAdmin,
         isAuthenticated,
-        role: userRole?.role || (authUser as any)?.role || session?.user?.role,
+        role:
+            userRole?.role ||
+            (authUser as { role?: string | string[] })?.role ||
+            session?.user?.role,
     };
 }
 

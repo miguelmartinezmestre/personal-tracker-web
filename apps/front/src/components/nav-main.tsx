@@ -1,6 +1,13 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@repo/ui/components/collapsible';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@repo/ui/components/collapsible';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -28,9 +35,11 @@ export function NavMain({
         }[];
     }[];
 }) {
+    const t = useTranslations('NavMain');
+
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('platform')}</SidebarGroupLabel>
             <SidebarMenu>
                 {items.map(item => (
                     <Collapsible

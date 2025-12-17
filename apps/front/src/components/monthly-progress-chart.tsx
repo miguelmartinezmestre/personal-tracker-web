@@ -1,48 +1,57 @@
-"use client"
+'use client';
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@repo/ui/components/chart"
-import type { ChartConfig } from "@repo/ui/components/chart"
+import { useTranslations } from 'next-intl';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@repo/ui/components/card';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@repo/ui/components/chart';
+import type { ChartConfig } from '@repo/ui/components/chart';
 
 interface MonthlyProgressChartProps {
-  data: {
-    month: string
-    count: number
-  }[]
+    data: {
+        month: string;
+        count: number;
+    }[];
 }
 
-const chartConfig = {
-  count: {
-    label: "Progress",
-    color: "oklch(var(--chart-1))",
-  },
-} satisfies ChartConfig
-
 export function MonthlyProgressChart({ data }: MonthlyProgressChartProps) {
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Monthly Progress</CardTitle>
-        <CardDescription>Progress units added per month</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[350px] w-full">
-          <BarChart accessibilityLayer data={data}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
-            />
-            <YAxis />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={4} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  )
+    const tCharts = useTranslations('Charts');
+
+    const chartConfig = {
+        count: {
+            label: tCharts('labels.progress'),
+            color: 'oklch(var(--chart-1))',
+        },
+    } satisfies ChartConfig;
+
+    return (
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>{tCharts('monthlyProgress.title')}</CardTitle>
+                <CardDescription>{tCharts('monthlyProgress.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[350px] w-full">
+                    <BarChart accessibilityLayer data={data}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                            dataKey="month"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                            tickFormatter={value => value.slice(0, 3)}
+                        />
+                        <YAxis />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                        <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
 }

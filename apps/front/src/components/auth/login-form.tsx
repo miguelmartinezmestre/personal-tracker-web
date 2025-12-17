@@ -3,7 +3,14 @@
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@repo/ui/components/button';
 import { Alert, AlertTitle, AlertDescription } from '@repo/ui/components/alert';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@repo/ui/components/form-tanstack';
+import {
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+    Form,
+} from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
 import { loginSchema } from '@/schemas/login';
 import { z } from 'zod';
@@ -17,6 +24,7 @@ import { authClient } from '@/lib/auth-client';
 export default function LoginForm() {
     const router = useRouter();
     const t = useTranslations('HomePage');
+    const tCommon = useTranslations('Common');
     const [loginError, setLoginError] = useState('');
 
     const form = useForm<z.infer<typeof loginSchema>>({
@@ -34,7 +42,6 @@ export default function LoginForm() {
     });
 
     async function onSubmit(values: z.infer<typeof loginSchema>) {
-
         await authClient.signIn.email(
             {
                 email: values.email,
@@ -42,9 +49,9 @@ export default function LoginForm() {
             },
             {
                 onSuccess: () => {
-                    router.push("/dashboard/home");
+                    router.push('/dashboard/home');
                 },
-                onError: (ctx) => {
+                onError: ctx => {
                     setLoginError(ctx.error.message);
                 },
             }
@@ -54,7 +61,7 @@ export default function LoginForm() {
     return (
         <Form {...form}>
             <form
-                onSubmit={(e) => {
+                onSubmit={e => {
                     e.preventDefault();
                     form.handleSubmit();
                 }}
@@ -63,7 +70,7 @@ export default function LoginForm() {
                 {loginError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{loginError}</AlertDescription>
                     </Alert>
                 )}
@@ -72,12 +79,14 @@ export default function LoginForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">email</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.email')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="email"
-                                    placeholder="nombre@correo.com"
+                                    placeholder={tCommon('placeholders.email')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="email-input"
                                 />
@@ -91,12 +100,14 @@ export default function LoginForm() {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">password</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.password')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="password"
-                                    placeholder="Ingresa tu contraseña"
+                                    placeholder={tCommon('placeholders.password')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="password-input"
                                 />
@@ -126,7 +137,9 @@ export default function LoginForm() {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/register" prefetch={false}>{t('noAccount')} {t('register')}</Link>
+                        <Link href="/register" prefetch={false}>
+                            {t('noAccount')} {t('register')}
+                        </Link>
                     </p>
                 </div>
             </form>

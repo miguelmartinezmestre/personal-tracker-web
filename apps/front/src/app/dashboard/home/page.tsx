@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/alert';
-import { ShieldAlert, AlertTriangle } from 'lucide-react';
-import { Button } from '@repo/ui/components/button';
-import Link from 'next/link';
 import { useUser } from '@/contexts/user-context';
+import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/alert';
+import { Button } from '@repo/ui/components/button';
+import { ShieldAlert, AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
     const user = useUser();
     const searchParams = useSearchParams();
     const [showAlert, setShowAlert] = useState(false);
+
+    const t = useTranslations('DashboardHome');
+    const tCommon = useTranslations('Common');
 
     useEffect(() => {
         const error = searchParams.get('error');
@@ -28,14 +32,14 @@ export default function HomePage() {
             error === 'unauthorized'
                 ? {
                       icon: ShieldAlert,
-                      title: 'Access Denied',
-                      description: 'You do not have permission to access this page.',
+                      title: t('accessDeniedTitle'),
+                      description: t('accessDeniedDescription'),
                       variant: 'destructive' as const,
                   }
                 : {
                       icon: AlertTriangle,
-                      title: 'Error',
-                      description: 'An error occurred while accessing this page.',
+                      title: t('genericErrorTitle'),
+                      description: t('genericErrorDescription'),
                       variant: 'destructive' as const,
                   };
 
@@ -51,7 +55,7 @@ export default function HomePage() {
                                 <div className="mt-4">
                                     <Link href="/login">
                                         <Button variant="outline" size="sm">
-                                            Go to Login
+                                            {tCommon('actions.goToLogin')}
                                         </Button>
                                     </Link>
                                 </div>
@@ -66,8 +70,8 @@ export default function HomePage() {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-                <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-                <p data-testid="welcome-message">Welcome {user.name}</p>
+                <h1 className="text-2xl font-bold mb-4">{t('dashboardTitle')}</h1>
+                <p data-testid="welcome-message">{t('welcome', { name: user.name })}</p>
             </div>
         </div>
     );

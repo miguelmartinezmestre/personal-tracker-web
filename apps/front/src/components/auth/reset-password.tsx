@@ -2,17 +2,26 @@
 
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@repo/ui/components/alert';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@repo/ui/components/form-tanstack';
+import {
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+    Form,
+} from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Button } from '@repo/ui/components/button';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/schemas/reset-password';
 import { useSearchParams } from 'next/navigation';
-
 export default function ResetPassword() {
+    const t = useTranslations('HomePage');
+    const tCommon = useTranslations('Common');
 
     const [registerError] = useState('');
 
@@ -49,11 +58,17 @@ export default function ResetPassword() {
 
     return (
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-6">
+            <form
+                onSubmit={e => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+                className="space-y-6"
+            >
                 {registerError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{registerError}</AlertDescription>
                     </Alert>
                 )}
@@ -62,12 +77,14 @@ export default function ResetPassword() {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">Contraseña</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.password')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="password"
-                                    placeholder="Mínimo 8 caracteres"
+                                    placeholder={tCommon('placeholders.min8Chars')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                 />
                             </FormControl>
@@ -80,12 +97,14 @@ export default function ResetPassword() {
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">Confirmar Contraseña</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.confirmPassword')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="password"
-                                    placeholder="Confirmar contraseña"
+                                    placeholder={tCommon('placeholders.confirmPassword')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                 />
                             </FormControl>
@@ -94,18 +113,15 @@ export default function ResetPassword() {
                     )}
                 />
 
-                <Button
-                    type="submit"
-                    className="w-full py-6 text-lg font-medium"
-                // disabled={register.isPending}
-                >
-                    {/* {register.isPending ? 'Registrando...' : 'Registrarse'} */}
-                    Registrarse
+                <Button type="submit" className="w-full py-6 text-lg font-medium">
+                    {t('resetPassword')}
                 </Button>
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/login" prefetch={false} >¿Ya tienes una cuenta? Iniciar sesión</Link>
+                        <Link href="/login" prefetch={false}>
+                            {t('alreadyHaveAccount')} {t('login')}
+                        </Link>
                     </p>
                 </div>
             </form>

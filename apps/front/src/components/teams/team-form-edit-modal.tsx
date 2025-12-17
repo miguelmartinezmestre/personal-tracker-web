@@ -32,8 +32,11 @@ import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { Doc } from '@repo/backend/convex/_generated/dataModel';
 
-
-export default function EditTeamFormModal({ defaultValues }: { defaultValues: Doc<"organization"> }) {
+export default function EditTeamFormModal({
+    defaultValues,
+}: {
+    defaultValues: Doc<'organization'>;
+}) {
     const t = useTranslations('Teams');
     const updateTeam = useMutation({ mutationFn: useConvexMutation(api.teams.updateTeam) });
     const [open, setOpen] = useState(false);
@@ -54,7 +57,7 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
 
     const onSubmit = async (values: Team) => {
         const updateData = {
-            _id: values._id as any,
+            _id: values._id,
             name: values.name,
             description: values.description ?? undefined,
         };
@@ -76,20 +79,28 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('editTeam')}</DialogTitle>
-                    <DialogDescription>
-                        {t('editTeamDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('editTeamDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterTeamName')} {...field} data-testid="team-edit-name-input" />
+                                        <Input
+                                            placeholder={t('enterTeamName')}
+                                            {...field}
+                                            data-testid="team-edit-name-input"
+                                        />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourTeamAClearConciseName')}
@@ -122,10 +133,17 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Do
                         />
 
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)} data-testid="team-edit-cancel-button">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                data-testid="team-edit-cancel-button"
+                            >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit" data-testid="team-edit-save-button">{t('saveTeam')}</Button>
+                            <Button type="submit" data-testid="team-edit-save-button">
+                                {t('saveTeam')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

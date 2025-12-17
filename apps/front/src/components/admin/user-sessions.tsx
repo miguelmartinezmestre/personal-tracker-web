@@ -12,6 +12,7 @@ import { Trash2, RefreshCw, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useRequireAdmin } from '@/hooks/use-user-role';
+import { useTranslations } from 'next-intl';
 
 type Session = {
     id: string;
@@ -24,27 +25,11 @@ type Session = {
 };
 
 export function UserSessions() {
+    const t = useTranslations('Admin');
+    const tCommon = useTranslations('Common');
+
     const [userId, setUserId] = useState('');
     const queryClient = useQueryClient();
-
-    // Verify admin role
-    try {
-        useRequireAdmin();
-    } catch (error) {
-        return (
-            <div className="rounded-md border border-red-200 bg-red-50 p-6">
-                <div className="flex items-center gap-3">
-                    <ShieldAlert className="h-5 w-5 text-red-600" />
-                    <div>
-                        <h3 className="font-semibold text-red-800">Acceso Denegado</h3>
-                        <p className="text-sm text-red-600">
-                            No tienes permisos de administrador para acceder a esta función.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     const { data: sessions, isLoading } = useQuery({
         queryKey: ['user-sessions', userId],
@@ -69,43 +54,58 @@ export function UserSessions() {
             return await authClient.admin.revokeUserSession({ sessionToken });
         },
         onSuccess: () => {
-            toast.success('Sesión revocada exitosamente');
+            toast.success(t('userSessions.toast.revokeSuccess'));
             queryClient.invalidateQueries({ queryKey: ['user-sessions'] });
         },
-        onError: (error: any) => {
-            toast.error(`Error al revocar sesión: ${error.message}`);
+        onError: (error: Error) => {
+            toast.error(t('userSessions.toast.revokeFailed', { message: error.message }));
         },
     });
 
     const revokeAllSessions = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
-            if (
-                !confirm('¿Estás seguro de que quieres revocar todas las sesiones de este usuario?')
-            ) {
+            if (!confirm(t('userSessions.confirm.revokeAll'))) {
                 return;
             }
             return await authClient.admin.revokeUserSessions({ userId });
         },
         onSuccess: () => {
-            toast.success('Todas las sesiones revocadas exitosamente');
+            toast.success(t('userSessions.toast.revokeAllSuccess'));
             queryClient.invalidateQueries({ queryKey: ['user-sessions'] });
         },
-        onError: (error: any) => {
-            toast.error(`Error al revocar sesiones: ${error.message}`);
+        onError: (error: Error) => {
+            toast.error(t('userSessions.toast.revokeAllFailed', { message: error.message }));
         },
     });
+
+    // Verify admin role
+    try {
+        useRequireAdmin();
+    } catch {
+        return (
+            <div className="rounded-md border border-red-200 bg-red-50 p-6">
+                <div className="flex items-center gap-3">
+                    <ShieldAlert className="h-5 w-5 text-red-600" />
+                    <div>
+                        <h3 className="font-semibold text-red-800">{t('accessDeniedTitle')}</h3>
+                        <p className="text-sm text-red-600">{t('accessDeniedDescription')}</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const columns: ColumnDef<Session>[] = [
         {
             accessorKey: 'id',
-            header: 'ID',
+            header: t('userSessions.columns.id'),
             cell: ({ row }) => (
                 <span className="font-mono text-xs">{row.original.id.slice(0, 8)}...</span>
             ),
         },
         {
             accessorKey: 'expiresAt',
-            header: 'Expira',
+            header: t('userSessions.columns.expires'),
             cell: ({ row }) => {
                 const expiresAt = row.original.expiresAt;
                 const expiresAtDate = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
@@ -117,7 +117,7 @@ export function UserSessions() {
                         </div>
                         {isExpired && (
                             <Badge variant="destructive" className="mt-1">
-                                Expirada
+                                {tCommon('status.expired')}
                             </Badge>
                         )}
                     </div>
@@ -126,20 +126,20 @@ export function UserSessions() {
         },
         {
             accessorKey: 'ipAddress',
-            header: 'IP',
-            cell: ({ row }) => row.original.ipAddress || 'N/A',
+            header: t('userSessions.columns.ip'),
+            cell: ({ row }) => row.original.ipAddress || tCommon('status.na'),
         },
         {
             accessorKey: 'userAgent',
-            header: 'User Agent',
+            header: t('userSessions.columns.userAgent'),
             cell: ({ row }) => (
                 <span className="text-xs text-muted-foreground max-w-xs truncate block">
-                    {row.original.userAgent || 'N/A'}
+                    {row.original.userAgent || tCommon('status.na')}
                 </span>
             ),
         },
         {
-            header: 'Acciones',
+            header: t('userSessions.columns.actions'),
             id: 'actions',
             cell: ({ row }) => (
                 <Button
@@ -159,7 +159,7 @@ export function UserSessions() {
             <div className="flex gap-2">
                 <Input
                     type="text"
-                    placeholder="ID del usuario para ver sus sesiones..."
+                    placeholder={tCommon('placeholders.userIdForSessions')}
                     value={userId}
                     onChange={e => setUserId(e.target.value)}
                     className="flex-1"
@@ -171,7 +171,7 @@ export function UserSessions() {
                         disabled={revokeAllSessions.isPending}
                     >
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        Revocar Todas
+                        {t('userSessions.buttons.revokeAll')}
                     </Button>
                 )}
             </div>
@@ -180,13 +180,13 @@ export function UserSessions() {
                     <DataTable columns={columns} data={sessionsList} isLoading={isLoading} />
                     {sessionsList.length === 0 && !isLoading && (
                         <p className="text-center text-muted-foreground py-8">
-                            No se encontraron sesiones para este usuario
+                            {t('userSessions.emptyWithUser')}
                         </p>
                     )}
                 </>
             ) : (
                 <p className="text-center text-muted-foreground py-8">
-                    Ingresa un ID de usuario para ver sus sesiones
+                    {t('userSessions.emptyNoUser')}
                 </p>
             )}
         </div>

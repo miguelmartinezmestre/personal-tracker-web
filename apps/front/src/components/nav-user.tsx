@@ -8,7 +8,23 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@repo/ui/components/dropdown-menu';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@repo/ui/components/sidebar';
+import {
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from '@repo/ui/components/sidebar';
+
+function getInitials(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return '?';
+
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0];
+    const last = parts.length > 1 ? parts.at(-1)?.[0] : parts[0]?.[1];
+
+    return [first, last].filter(Boolean).join('').toUpperCase();
+}
 
 export function NavUser({
     user,
@@ -20,6 +36,7 @@ export function NavUser({
     };
 }) {
     const { isMobile } = useSidebar();
+    const initials = getInitials(user.name);
 
     return (
         <SidebarMenu>
@@ -32,7 +49,7 @@ export function NavUser({
                         >
                             <Avatar className="h-8 w-8 rounded-lg">
                                 <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">{user.name}</span>
@@ -51,7 +68,9 @@ export function NavUser({
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="h-8 w-8 rounded-lg">
                                     <AvatarImage src={user.avatar} alt={user.name} />
-                                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                    <AvatarFallback className="rounded-lg">
+                                        {initials}
+                                    </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-semibold">{user.name}</span>

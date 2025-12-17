@@ -12,7 +12,7 @@ import {
 import { SidebarMenuButton } from '@repo/ui/components/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
 import AccountSettingsForm from './account-settings-form-edit';
-import { Settings, ShieldAlert } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import PasswordFormEdit from './password-form-edit';
 import { useTranslations } from 'next-intl';
 import { useRequireAuth } from '@/hooks/use-user-role';
@@ -24,7 +24,7 @@ export default function EditSettingsFormModal() {
     // Verify authentication
     try {
         useRequireAuth();
-    } catch (error) {
+    } catch {
         return (
             <SidebarMenuButton className="gap-2" disabled>
                 <Settings className="h-4 w-4" />

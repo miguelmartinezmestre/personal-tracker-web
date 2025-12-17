@@ -7,16 +7,40 @@ import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@repo/ui/lib/utils"
 import { Label } from "@repo/ui/components/label"
 
+// Define a generic type for the form instance
+type FormInstance = {
+  state?: {
+    submitCount?: number
+    isSubmitted?: boolean
+  }
+  Field: React.ComponentType<{
+    name: string
+    children: (field: {
+      name: string
+      state: {
+        value: unknown
+        meta?: {
+          isTouched?: boolean
+          errors?: string[]
+        }
+      }
+      handleBlur: () => void
+      handleChange: (value: unknown) => void
+    }) => React.ReactNode
+  }>
+  [key: string]: unknown
+}
+
 // Provide TanStack form instance to descendants
-const TanstackFormContext = React.createContext<any>(null)
+const TanstackFormContext = React.createContext<FormInstance | null>(null)
 
 type TanstackFormProviderProps = {
-  form?: any
+  form?: FormInstance
   children?: React.ReactNode
-} & Record<string, any>
+} & Record<string, unknown>
 
 function Form({ form, children, ...rest }: TanstackFormProviderProps) {
-  const providedForm = form ?? (rest as any)
+  const providedForm = form ?? (rest as FormInstance)
   return (
     <TanstackFormContext.Provider value={providedForm}>
       {children}
@@ -37,12 +61,12 @@ type FormFieldContextValue = {
   error?: string
 }
 
-const FormFieldContext = React.createContext<FormFieldContextValue>({} as any)
+const FormFieldContext = React.createContext<FormFieldContextValue>({ name: '', error: undefined })
 
 type RHFCompatibleField = {
   name: string
-  value: any
-  onChange: (value: any) => void
+  value: unknown
+  onChange: (value: unknown) => void
   onBlur: () => void
 }
 
@@ -57,10 +81,11 @@ function FormField({ name, render }: FormFieldProps) {
 
   return (
     <form.Field
-      name={name as any}
-      children={(field: any) => {
+      name={name}
+    >
+      {(field) => {
         const isTouched = field.state?.meta?.isTouched
-        const hasSubmitted = Boolean((form as any)?.state?.submitCount > 0 || (form as any)?.state?.isSubmitted)
+        const hasSubmitted = Boolean(form?.state?.submitCount > 0 || form?.state?.isSubmitted)
         const firstError: string | undefined = (isTouched || hasSubmitted)
           ? field.state?.meta?.errors?.[0]
           : undefined
@@ -68,8 +93,8 @@ function FormField({ name, render }: FormFieldProps) {
           name: field.name,
           value: field.state.value,
           onBlur: field.handleBlur,
-          onChange: (arg: any) => {
-            const nextValue = arg?.target !== undefined ? arg.target.value : arg
+          onChange: (arg) => {
+            const nextValue = arg && typeof arg === 'object' && 'target' in arg ? (arg as { target: { value: unknown } }).target.value : arg
             field.handleChange(nextValue)
           },
         }
@@ -80,7 +105,7 @@ function FormField({ name, render }: FormFieldProps) {
           </FormFieldContext.Provider>
         )
       }}
-    />
+    </form.Field>
   )
 }
 
@@ -88,7 +113,7 @@ type FormItemContextValue = {
   id: string
 }
 
-const FormItemContext = React.createContext<FormItemContextValue>({} as any)
+const FormItemContext = React.createContext<FormItemContextValue>({ id: '' })
 
 function useFormField() {
   const fieldContext = React.useContext(FormFieldContext)

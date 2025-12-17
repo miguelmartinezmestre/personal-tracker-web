@@ -1,26 +1,26 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { UserProvider, useUser } from "./user-context";
-import { Id } from "@repo/backend/convex/_generated/dataModel";
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { UserProvider, useUser } from './user-context';
+import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 // Mock user data - must match the type from api.auth.getCurrentUser
 const mockUser = {
-    _id: "user123" as Id<"user">,
+    _id: 'user123' as Id<'user'>,
     _creationTime: Date.now(),
-    userId: "user123",
-    email: "test@example.com",
-    name: "Test User",
+    userId: 'user123',
+    email: 'test@example.com',
+    name: 'Test User',
     emailVerified: false,
     image: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-} as any;
+};
 
-describe("UserContext", () => {
-    it("should provide user context", () => {
+describe('UserContext', () => {
+    it('should provide user context', () => {
         const TestComponent = () => {
             const user = useUser();
-            return <div>User: {user?.email || "no email"}</div>;
+            return <div>User: {user?.email || 'no email'}</div>;
         };
 
         render(
@@ -29,12 +29,12 @@ describe("UserContext", () => {
             </UserProvider>
         );
 
-        expect(screen.getByText("User: test@example.com")).toBeInTheDocument();
+        expect(screen.getByText('User: test@example.com')).toBeInTheDocument();
     });
 
-    it("should throw error when useUser is used outside provider", () => {
+    it('should throw error when useUser is used outside provider', () => {
         // Suppress console.error for this test
-        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         const TestComponent = () => {
             useUser();
@@ -43,20 +43,20 @@ describe("UserContext", () => {
 
         expect(() => {
             render(<TestComponent />);
-        }).toThrow("useUser must be used within a UserProvider");
+        }).toThrow('useUser must be used within a UserProvider');
 
         consoleSpy.mockRestore();
     });
 
-    it("should provide access to all user properties", () => {
+    it('should provide access to all user properties', () => {
         const TestComponent = () => {
             const user = useUser();
             if (!user) return <div>No user</div>;
             return (
                 <div>
-                    <div data-testid="email">{user.email || ""}</div>
-                    <div data-testid="name">{user.name || ""}</div>
-                    <div data-testid="userId">{user.userId || ""}</div>
+                    <div data-testid="email">{user.email || ''}</div>
+                    <div data-testid="name">{user.name || ''}</div>
+                    <div data-testid="userId">{user.userId || ''}</div>
                 </div>
             );
         };
@@ -67,9 +67,8 @@ describe("UserContext", () => {
             </UserProvider>
         );
 
-        expect(screen.getByTestId("email")).toHaveTextContent("test@example.com");
-        expect(screen.getByTestId("name")).toHaveTextContent("Test User");
-        expect(screen.getByTestId("userId")).toHaveTextContent("user123");
+        expect(screen.getByTestId('email')).toHaveTextContent('test@example.com');
+        expect(screen.getByTestId('name')).toHaveTextContent('Test User');
+        expect(screen.getByTestId('userId')).toHaveTextContent('user123');
     });
 });
-

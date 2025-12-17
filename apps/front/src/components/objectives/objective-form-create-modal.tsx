@@ -42,20 +42,6 @@ import { api } from '@repo/backend/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/contexts/user-context';
 
-const statusOptions = [
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-];
-
-const categoryOptions = [
-    { value: 'personal', label: 'Personal' },
-    { value: 'work', label: 'Work' },
-    { value: 'health', label: 'Health' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'education', label: 'Education' },
-];
-
 const defaultValues: CreateObjective = {
     title: '',
     description: '',
@@ -71,8 +57,26 @@ const defaultValues: CreateObjective = {
 
 export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
+    const tCommon = useTranslations('Common');
     const user = useUser(); // Ejemplo: obtener el usuario del context
-    const createObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.createObjective) });
+
+    const statusOptions = [
+        { value: 'not_started', label: t('statusOptions.notStarted') },
+        { value: 'in_progress', label: t('statusOptions.inProgress') },
+        { value: 'completed', label: t('statusOptions.completed') },
+    ];
+
+    const categoryOptions = [
+        { value: 'personal', label: t('categoryOptions.personal') },
+        { value: 'work', label: t('categoryOptions.work') },
+        { value: 'health', label: t('categoryOptions.health') },
+        { value: 'finance', label: t('categoryOptions.finance') },
+        { value: 'education', label: t('categoryOptions.education') },
+    ];
+
+    const createObjective = useMutation({
+        mutationFn: useConvexMutation(api.objectives.createObjective),
+    });
     const [open, setOpen] = useState(false);
 
     // Ejemplo: puedes usar el usuario aquí
@@ -117,24 +121,32 @@ export default function CreateObjectiveFormModal() {
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('createObjective')}</DialogTitle>
-                    <DialogDescription>
-                        {t('createObjectiveDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('createObjectiveDescription')}</DialogDescription>
                     {/* Ejemplo: mostrar información del usuario */}
                     <div className="mt-2 text-xs text-muted-foreground">
-                        Creating as: {user.email || user.name || 'User'}
+                        {t('creatingAs', { name: user.email || user.name || tCommon('user') })}
                     </div>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Title</FormLabel>
+                                    <FormLabel>{t('smartForm.fields.titleRequired')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter objective title" {...field} data-testid="objective-title-input" />
+                                        <Input
+                                            placeholder={t('enterObjectiveTitle')}
+                                            {...field}
+                                            data-testid="objective-title-input"
+                                        />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourObjectiveAClearConciseTitle')}
@@ -148,10 +160,10 @@ export default function CreateObjectiveFormModal() {
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>{t('smartForm.fields.description')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your objective in detail"
+                                            placeholder={t('describeObjectiveInDetail')}
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
@@ -170,14 +182,14 @@ export default function CreateObjectiveFormModal() {
                             name="category"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Category</FormLabel>
+                                    <FormLabel>{t('smartForm.fields.category')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value || ''}
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="objective-category-select">
-                                                <SelectValue placeholder="Select a category" />
+                                                <SelectValue placeholder={t('selectACategory')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -204,7 +216,9 @@ export default function CreateObjectiveFormModal() {
                                 name="targetValue"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Target Value</FormLabel>
+                                        <FormLabel>
+                                            {t('smartForm.fields.targetValueRequired')}
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -229,17 +243,17 @@ export default function CreateObjectiveFormModal() {
                                 name="unit"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Unit</FormLabel>
+                                        <FormLabel>{t('smartForm.fields.unit')}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="e.g., kg, miles, hours"
+                                                placeholder={t('unitExample')}
                                                 {...field}
                                                 value={field.value || ''}
                                                 data-testid="objective-unit-input"
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            Optional: Unit of measurement.
+                                            {t('optionalUnitOfMeasurement')}
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -251,7 +265,7 @@ export default function CreateObjectiveFormModal() {
                             name="currentValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Current Value</FormLabel>
+                                    <FormLabel>{t('smartForm.fields.currentValue')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
@@ -272,7 +286,7 @@ export default function CreateObjectiveFormModal() {
                             name="deadline"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>Deadline</FormLabel>
+                                    <FormLabel>{t('smartForm.fields.deadline')}</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
@@ -296,7 +310,9 @@ export default function CreateObjectiveFormModal() {
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value ? new Date(field.value) : undefined}
+                                                selected={
+                                                    field.value ? new Date(field.value) : undefined
+                                                }
                                                 onSelect={field.onChange}
                                                 initialFocus
                                             />
@@ -321,7 +337,7 @@ export default function CreateObjectiveFormModal() {
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="objective-status-select">
-                                                <SelectValue placeholder="Select a status" />
+                                                <SelectValue placeholder={t('selectStatus')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -341,10 +357,17 @@ export default function CreateObjectiveFormModal() {
                         />
 
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)} data-testid="objective-cancel-button">
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                data-testid="objective-cancel-button"
+                            >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit" data-testid="objective-save-button">{t('saveObjective')}</Button>
+                            <Button type="submit" data-testid="objective-save-button">
+                                {t('saveObjective')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

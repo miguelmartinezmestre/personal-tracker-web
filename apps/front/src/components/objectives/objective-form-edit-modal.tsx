@@ -55,9 +55,10 @@ const categoryOptions = [
 ];
 
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
-
     const t = useTranslations('Objectives');
-    const updateObjective = useMutation({ mutationFn: useConvexMutation(api.objectives.updateObjective) });
+    const updateObjective = useMutation({
+        mutationFn: useConvexMutation(api.objectives.updateObjective),
+    });
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedObjectiveSchema>>({
         defaultValues: defaultValues,
@@ -72,7 +73,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
     const onSubmit = async (values: Objective) => {
         const updateData = {
-            id: values._id as any,
+            id: values._id,
             title: values.title,
             description: values.description ?? undefined,
             category: values.category ?? undefined,
@@ -100,20 +101,28 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('editObjective')}</DialogTitle>
-                    <DialogDescription>
-                        {t('editObjectiveDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('editObjectiveDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('title')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterObjectiveTitle')} {...field} data-testid="objective-edit-title-input" />
+                                        <Input
+                                            placeholder={t('enterObjectiveTitle')}
+                                            {...field}
+                                            data-testid="objective-edit-title-input"
+                                        />
                                     </FormControl>
                                     <FormDescription>
                                         {t('giveYourObjectiveAClearConciseTitle')}
@@ -272,7 +281,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value ? new Date(field.value) : undefined}
+                                                selected={
+                                                    field.value ? new Date(field.value) : undefined
+                                                }
                                                 onSelect={field.onChange}
                                                 initialFocus
                                             />
@@ -297,7 +308,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a status" />
+                                                <SelectValue placeholder={t('selectStatus')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -320,7 +331,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit" data-testid="objective-edit-save-button">{t('saveObjective')}</Button>
+                            <Button type="submit" data-testid="objective-edit-save-button">
+                                {t('saveObjective')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>
