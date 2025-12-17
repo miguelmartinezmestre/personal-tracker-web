@@ -17,11 +17,25 @@ interface ObjectiveCardProps {
     onDelete?: (id: Id<'objectives'>) => void;
 }
 
+const getPeriodLabel = (period?: string | null) => {
+    switch (period) {
+        case 'weekly':
+            return 'per week';
+        case 'monthly':
+            return 'per month';
+        case 'custom':
+            return 'per period';
+        default:
+            return '';
+    }
+};
+
 const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
     ({ objective, onEdit, onDelete }, ref) => {
         const progress =
             objective.targetValue > 0 ? (objective.currentValue / objective.targetValue) * 100 : 0;
         const isOverdue = objective.deadline && objective.deadline < Date.now();
+        const periodLabel = getPeriodLabel(objective.period);
 
         return (
             <Card ref={ref} className="mb-4 hover:shadow-md transition-shadow duration-200">
@@ -69,7 +83,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {objective.currentValue} / {objective.targetValue}{' '}
-                                {objective.unit || ''}
+                                {objective.unit || ''} {periodLabel ? `(${periodLabel})` : ''}
                             </div>
                         </div>
                     </div>

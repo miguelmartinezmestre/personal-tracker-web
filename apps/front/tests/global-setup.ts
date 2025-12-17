@@ -17,7 +17,7 @@ async function globalSetup(config: FullConfig) {
 
         while (attempts < maxAttempts) {
             try {
-                const response = await page.goto(`${baseURL}/api/auth`, {
+                await page.goto(`${baseURL}/api/auth`, {
                     timeout: 2000,
                     waitUntil: 'domcontentloaded',
                 });
@@ -25,7 +25,7 @@ async function globalSetup(config: FullConfig) {
                 // If we get any response (even error), the server is running
                 console.log('✅ Backend server is ready');
                 break;
-            } catch (error) {
+            } catch {
                 attempts++;
                 console.log(`⏳ Waiting for backend... attempt ${attempts}/${maxAttempts}`);
                 await new Promise(resolve => setTimeout(resolve, 1000));

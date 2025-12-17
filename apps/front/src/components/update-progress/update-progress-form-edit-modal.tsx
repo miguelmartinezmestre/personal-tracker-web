@@ -33,12 +33,15 @@ import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { UpdateProgress, savedUpdateProgressSchema } from '@/schemas/update-progress';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
+import { useTranslations } from 'next-intl';
 
 export default function UpdateProgressFormModal({
     defaultValues,
 }: {
     defaultValues: UpdateProgress;
 }) {
+    const t = useTranslations('UpdateProgress');
+    const tCommon = useTranslations('Common');
     const updateUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress),
     });
@@ -78,11 +81,8 @@ export default function UpdateProgressFormModal({
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Edit Progress</DialogTitle>
-                    <DialogDescription>
-                        Fill out the form below to edit your progress. Click save when you&apos;re
-                        done.
-                    </DialogDescription>
+                    <DialogTitle>{t('editProgress')}</DialogTitle>
+                    <DialogDescription>{t('editProgressDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -97,10 +97,10 @@ export default function UpdateProgressFormModal({
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Updated Value</FormLabel>
+                                    <FormLabel>{t('updatedValue')}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder="Enter updated value"
+                                            placeholder={t('enterUpdatedValue')}
                                             type="number"
                                             data-testid="progress-edit-value-input"
                                             {...field}
@@ -111,7 +111,7 @@ export default function UpdateProgressFormModal({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Give your update progress a clear, concise title.
+                                        {t('giveYourUpdateProgressAClearConciseTitle')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -122,10 +122,10 @@ export default function UpdateProgressFormModal({
                             name="comment"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Comment</FormLabel>
+                                    <FormLabel>{t('comment')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe your update progress in detail"
+                                            placeholder={t('describeYourUpdateProgressInDetail')}
                                             className="resize-none min-h-[80px]"
                                             data-testid="progress-edit-comment-input"
                                             {...field}
@@ -133,7 +133,7 @@ export default function UpdateProgressFormModal({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        Optional: Add details about your update progress.
+                                        {t('optionalAddDetailsAboutYourUpdateProgress')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -144,7 +144,7 @@ export default function UpdateProgressFormModal({
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>Deadline</FormLabel>
+                                    <FormLabel>{t('deadline')}</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
@@ -158,7 +158,7 @@ export default function UpdateProgressFormModal({
                                                     {field.value ? (
                                                         new Date(field.value).toLocaleDateString()
                                                     ) : (
-                                                        <span>Pick a date</span>
+                                                        <span>{t('pickADate')}</span>
                                                     )}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
@@ -185,10 +185,10 @@ export default function UpdateProgressFormModal({
                                 data-testid="progress-edit-cancel-button"
                                 onClick={() => setOpen(false)}
                             >
-                                Cancel
+                                {tCommon('actions.cancel')}
                             </Button>
                             <Button type="submit" data-testid="progress-edit-save-button">
-                                Save Progress
+                                {t('saveProgress')}
                             </Button>
                         </DialogFooter>
                     </form>

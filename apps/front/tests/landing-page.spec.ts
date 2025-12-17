@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { takeScreenshot } from './test-helpers';
 
 test('landing page: displays main content and navigation links', async ({ page }) => {
     await page.goto('/');
+    await takeScreenshot(page, 'landing-page-main-content', 'full-page');
 
     // Verify main heading (h1)
     await expect(page.getByRole('heading', { name: /achieve your goals\. control your progress/i })).toBeVisible();
@@ -20,15 +22,19 @@ test('landing page: displays main content and navigation links', async ({ page }
 
 test('landing page: Get Started link navigates to register', async ({ page }) => {
     await page.goto('/');
+    await takeScreenshot(page, 'landing-page-get-started', 'landing-page');
     await page.getByRole('link', { name: /get started/i }).click();
     await expect(page).toHaveURL(/\/register$/);
+    await takeScreenshot(page, 'landing-page-get-started', 'register-page');
 });
 
 test('landing page: Login link navigates to login', async ({ page }) => {
     await page.goto('/');
+    await takeScreenshot(page, 'landing-page-login', 'landing-page');
     // Use first() to avoid strict mode violation (there are 2 Login links)
     await page.getByRole('link', { name: /login/i }).first().click();
     await expect(page).toHaveURL(/\/login$/);
+    await takeScreenshot(page, 'landing-page-login', 'login-page');
 });
 
 test('landing page: displays features section', async ({ page }) => {
@@ -40,5 +46,8 @@ test('landing page: displays features section', async ({ page }) => {
     // Verify some feature items are visible
     await expect(page.getByText(/customizable goals/i)).toBeVisible();
     await expect(page.getByText(/visual progress panel/i)).toBeVisible();
+    
+    // Screenshot: Features section
+    await takeScreenshot(page, 'landing-page-features', 'features-section');
 });
 

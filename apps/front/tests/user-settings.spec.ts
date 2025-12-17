@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
+import { takeScreenshot } from './test-helpers';
 
 test('user settings: edit profile information', async ({ page }) => {
     // Register and login
@@ -18,6 +19,7 @@ test('user settings: edit profile information', async ({ page }) => {
     // Navigate to settings - check if page exists
     await page.goto('/dashboard/settings');
     await page.waitForTimeout(2000);
+    await takeScreenshot(page, 'user-settings-edit-profile', 'settings-page');
 
     // Check if settings page exists or redirects appropriately
     const currentUrl = page.url();

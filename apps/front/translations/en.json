@@ -1,4 +1,116 @@
 {
+    "App": {
+        "title": "Metricas",
+        "description": "Metricas"
+    },
+    "Emails": {
+        "register": {
+            "preview": "Welcome to {app}",
+            "welcome": "Welcome to {app} {username}",
+            "ctaText": "You can now start using the app",
+            "ctaLink": "here",
+            "thanks": "Thanks for signing up for {app}."
+        },
+        "confirm": {
+            "preview": "Welcome to {app}",
+            "welcome": "Welcome to {app} {username}"
+        },
+        "recoverPassword": {
+            "preview": "Recover password on {app}",
+            "instruction": "A password reset was requested for the user {username}. To continue, click the following link:",
+            "link": "Click here"
+        }
+    },
+    "Common": {
+        "error": "Error",
+        "success": "Success",
+        "unknownError": "Unknown error",
+        "search": "Search",
+        "user": "User",
+        "actions": {
+            "save": "Save",
+            "saving": "Saving...",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "edit": "Edit",
+            "close": "Close",
+            "goToLogin": "Go to Login",
+            "revokeAll": "Revoke all"
+        },
+        "fields": {
+            "email": "Email",
+            "name": "Name",
+            "username": "Username",
+            "password": "Password",
+            "confirmPassword": "Confirm password",
+            "role": "Role",
+            "userId": "User ID"
+        },
+        "placeholders": {
+            "email": "name@email.com",
+            "password": "Enter your password",
+            "username": "username",
+            "min8Chars": "At least 8 characters",
+            "confirmPassword": "Confirm password",
+            "searchByEmail": "Search by email...",
+            "userIdForSessions": "User ID to view sessions...",
+            "searchDocs": "Search the docs...",
+            "searchCommands": "Search commands..."
+        },
+        "colors": {
+            "red": "Red",
+            "orange": "Orange",
+            "yellow": "Yellow",
+            "green": "Green",
+            "teal": "Teal",
+            "blue": "Blue",
+            "purple": "Purple",
+            "pink": "Pink",
+            "gray": "Gray"
+        },
+        "icons": {
+            "tag": "Tag",
+            "heart": "Heart",
+            "briefcase": "Briefcase",
+            "book": "Book",
+            "user": "User",
+            "dollar-sign": "Dollar sign",
+            "users": "Users",
+            "palette": "Palette",
+            "home": "Home",
+            "map": "Map",
+            "target": "Target",
+            "trending-up": "Trending up",
+            "star": "Star",
+            "award": "Award",
+            "zap": "Zap",
+            "coffee": "Coffee",
+            "music": "Music",
+            "camera": "Camera",
+            "plane": "Plane"
+        },
+        "status": {
+            "active": "Active",
+            "banned": "Banned",
+            "expired": "Expired",
+            "na": "N/A"
+        },
+        "loading": "Loading...",
+        "loadingUser": "Loading user...",
+        "redirecting": "Redirecting...",
+        "redirectingToLogin": "Redirecting to login...",
+        "aria": {
+            "breadcrumbs": "Breadcrumbs"
+        }
+    },
+    "DashboardHome": {
+        "accessDeniedTitle": "Access Denied",
+        "accessDeniedDescription": "You do not have permission to access this page.",
+        "genericErrorTitle": "Error",
+        "genericErrorDescription": "An error occurred while accessing this page.",
+        "dashboardTitle": "Dashboard",
+        "welcome": "Welcome {name}"
+    },
     "HomePage": {
         "title": "Achieve your goals. Control your progress.",
         "subtitle": "Define, control and visualize your personal goals in a simple way. Stay motivated to achieve your goals.",
@@ -22,9 +134,14 @@
         "reports": "Reports",
         "reportsDescription": "Get deep insights into your habits and performance with detailed analysis and reports.",
         "forgotPassword": "Forgot your password?",
+        "resetPassword": "Reset password",
         "noAccount": "Don't have an account?",
         "alreadyHaveAccount": "Already have an account?",
-        "createAccount": "Create Account"
+        "createAccount": "Create Account",
+        "errors": {
+            "passwordsDontMatch": "Passwords do not match",
+            "registerFallback": "Error registering user. Please try again."
+        }
     },
     "Sidebar": {
         "home": "Home",
@@ -33,12 +150,53 @@
         "notifications": "Notifications",
         "sessions": "Sessions",
         "settings": "Settings",
-        "admin": "Admin",
-        "settings": "Settings"
+        "admin": "Admin"
+    },
+    "Notifications": {
+        "title": "Notifications",
+        "description": "View your notifications and updates.",
+        "loading": "Loading notifications...",
+        "empty": "No notifications yet."
+    },
+    "CommandMenu": {
+        "placeholder": "Search commands...",
+        "empty": "No results found.",
+        "navigation": "Navigation"
+    },
+    "LanguageSwitcher": {
+        "label": "Language",
+        "spanish": "Español",
+        "english": "English"
+    },
+    "ThemeSwitcher": {
+        "toggle": "Change theme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+    },
+    "NotFound": {
+        "title": "Page not found",
+        "subtitle": "Oops! Looks like you got lost in cyberspace.",
+        "whatToDo": "What would you like to do?",
+        "goHome": "Go to home"
+    },
+    "DeleteAccount": {
+        "trigger": "Delete account",
+        "title": "Are you sure?",
+        "description": "This action cannot be undone. This will permanently delete your account and remove your data from our servers.",
+        "confirm": "Delete account"
+    },
+    "ForgotPassword": {
+        "submit": "Send"
+    },
+    "NavMain": {
+        "platform": "Platform"
     },
     "Objectives": {
         "title": "Objectives",
         "description": "Define your personal and professional goals to achieve your goals.",
+        "pageDescription": "Manage your personal and professional goals.",
+        "loadingObjectives": "Loading objectives...",
         "createObjective": "Create Objective",
         "editObjective": "Edit Objective",
         "deleteObjective": "Delete Objective",
@@ -46,6 +204,7 @@
         "objectiveDetails": "Objective Details",
         "objectiveProgress": "Objective Progress",
         "createObjectiveDescription": "Fill out the form below to create a new objective. Click save when you're done.",
+        "creatingAs": "Creating as: {name}",
         "tableDescription": "Description",
         "targetValue": "Target Value",
         "currentValue": "Current Value",
@@ -68,15 +227,214 @@
         "saveObjective": "Save Objective",
         "category": "Category",
         "unit": "Unit",
+        "objectiveType": "Objective type",
+        "objectiveTypeDescription": "Select how this objective is measured.",
+        "objectiveTypeOptions": {
+            "value": "Value",
+            "count": "Count",
+            "money": "Money",
+            "duration": "Duration"
+        },
+        "period": "Period",
+        "periodDescription": "Choose the period for this objective.",
+        "periodOptions": {
+            "none": "No period",
+            "weekly": "Weekly",
+            "monthly": "Monthly",
+            "custom": "Custom"
+        },
+        "periodStart": "Period start",
+        "periodStartDescription": "Start date for the custom period.",
+        "periodLengthDays": "Period length (days)",
+        "periodLengthDaysDescription": "Length of each period in days.",
         "editObjectiveDescription": "Fill out the form below to edit your objective. Click save when you're done.",
         "cancel": "Cancel",
         "giveYourObjectiveAClearConciseTitle": "Give your objective a clear, concise title.",
         "giveYourUpdateProgressAClearConciseTitle": "Give your update progress a clear, concise title.",
-        "goToProgress": "Go to progress"
+        "goToProgress": "Go to progress",
+        "statusOptions": {
+            "all": "All Status",
+            "notStarted": "Not Started",
+            "inProgress": "In Progress",
+            "completed": "Completed",
+            "paused": "Paused",
+            "archived": "Archived"
+        },
+        "categoryOptions": {
+            "all": "All Categories",
+            "personal": "Personal",
+            "work": "Work",
+            "health": "Health",
+            "finance": "Finance",
+            "education": "Education"
+        },
+        "deadlineRangeOptions": {
+            "all": "All Time",
+            "today": "Due Today",
+            "week": "Due This Week",
+            "month": "Due This Month",
+            "overdue": "Overdue"
+        },
+        "sortOptions": {
+            "newestFirst": "Newest First",
+            "oldestFirst": "Oldest First",
+            "deadlineSoonest": "Deadline Soonest",
+            "deadlineLatest": "Deadline Latest",
+            "titleAsc": "Title A-Z",
+            "titleDesc": "Title Z-A",
+            "mostProgress": "Most Progress",
+            "leastProgress": "Least Progress"
+        },
+        "filtersUi": {
+            "button": "Filters",
+            "activeTitle": "Active Filters",
+            "clearAll": "Clear All",
+            "noActive": "No active filters"
+        },
+        "filters": {
+            "search": "Search objectives...",
+            "status": "Status",
+            "category": "Category",
+            "deadline": "Deadline",
+            "sortBy": "Sort by"
+        },
+        "unitExample": "e.g., kg, miles, hours",
+        "selectStatus": "Select a status",
+        "empty": {
+            "noObjectivesFound": "No objectives found"
+        },
+        "confirm": {
+            "deleteObjective": "Are you sure you want to delete this objective?"
+        },
+        "toast": {
+            "deletedSuccess": "Objective deleted successfully",
+            "deleteFailed": "Failed to delete objective",
+            "createSuccess": "Objective created successfully",
+            "createFailed": "Failed to create objective",
+            "updateSuccess": "Objective updated successfully",
+            "updateFailed": "Failed to update objective",
+            "completedSuccess": "Objective completed",
+            "completeFailed": "Failed to complete objective",
+            "pausedSuccess": "Objective paused",
+            "pauseFailed": "Failed to pause objective",
+            "archivedSuccess": "Objective archived",
+            "archiveFailed": "Failed to archive objective",
+            "resumedSuccess": "Objective resumed",
+            "resumeFailed": "Failed to resume objective"
+        },
+        "tooltips": {
+            "complete": "Complete objective",
+            "pause": "Pause objective",
+            "resume": "Resume objective",
+            "archive": "Archive objective",
+            "more": "More actions"
+        },
+        "menu": {
+            "complete": "Complete",
+            "pause": "Pause",
+            "resume": "Resume",
+            "archive": "Archive"
+        },
+        "categories": {
+            "title": "Categories",
+            "addDefault": "Add default categories",
+            "new": "New category",
+            "createTitle": "Create new category",
+            "editTitle": "Edit category",
+            "emptyTitle": "No categories yet",
+            "emptyDescription": "Create categories to organize your objectives better.",
+            "fields": {
+                "name": "Name",
+                "color": "Color",
+                "icon": "Icon"
+            },
+            "buttons": {
+                "cancel": "Cancel",
+                "create": "Create",
+                "creating": "Creating...",
+                "update": "Update",
+                "updating": "Updating..."
+            },
+            "confirmDelete": "Are you sure you want to delete this category?",
+            "toast": {
+                "createSuccess": "Category created successfully",
+                "createFailed": "Failed to create category",
+                "updateSuccess": "Category updated successfully",
+                "updateFailed": "Failed to update category",
+                "deleteSuccess": "Category deleted successfully",
+                "deleteFailed": "Failed to delete category",
+                "createDefaultsSuccess": "Default categories created",
+                "createDefaultsFailed": "Failed to create default categories"
+            },
+            "placeholders": {
+                "name": "Enter category name...",
+                "selectIcon": "Select icon"
+            }
+        },
+        "smartForm": {
+            "autoSaving": "Auto-saving...",
+            "draftSaved": "Draft saved",
+            "fields": {
+                "titleRequired": "Title *",
+                "description": "Description",
+                "category": "Category",
+                "objectiveType": "Objective type",
+                "unit": "Unit",
+                "targetValueRequired": "Target value *",
+                "currentValue": "Current value",
+                "deadline": "Deadline",
+                "period": "Period"
+            },
+            "placeholders": {
+                "title": "Enter your objective title...",
+                "description": "Describe your objective...",
+                "category": "Select category",
+                "objectiveType": "Select objective type",
+                "unit": "Select unit",
+                "targetValue": "Target value...",
+                "currentValue": "Current value...",
+                "pickDate": "Pick a date",
+                "period": "Select period"
+            },
+            "buttons": {
+                "create": "Create objective",
+                "update": "Update objective"
+            },
+            "categories": {
+                "healthFitness": "Health & Fitness",
+                "careerBusiness": "Career & Business",
+                "learningEducation": "Learning & Education",
+                "personalDevelopment": "Personal Development",
+                "financeSavings": "Finance & Savings",
+                "relationships": "Relationships",
+                "creativeProjects": "Creative Projects",
+                "homeOrganization": "Home & Organization",
+                "travelAdventure": "Travel & Adventure",
+                "other": "Other"
+            },
+            "units": {
+                "kg": "Kilograms",
+                "lbs": "Pounds",
+                "km": "Kilometers",
+                "miles": "Miles",
+                "hours": "Hours",
+                "minutes": "Minutes",
+                "days": "Days",
+                "weeks": "Weeks",
+                "dollars": "Dollars",
+                "euros": "Euros",
+                "gbp": "Pounds",
+                "pages": "Pages",
+                "words": "Words",
+                "count": "Count",
+                "percentage": "Percentage"
+            }
+        }
     },
     "Sessions": {
         "title": "Sessions",
         "description": "Manage your sessions to keep track of your progress.",
+        "loading": "Loading sessions...",
         "createSession": "Create Session",
         "editSession": "Edit Session",
         "deleteSession": "Delete Session",
@@ -103,6 +461,7 @@
         "enterTeamName": "Enter team name",
         "describeTeamInDetail": "Describe your team in detail",
         "giveYourTeamAClearConciseTitle": "Give your team a clear, concise title.",
+        "giveYourTeamAClearConciseName": "Give your team a clear, concise title.",
         "optionalAddDetailsAboutYourTeam": "Optional: Add details about your team.",
         "cancel": "Cancel",
         "goToTeam": "Go to Team",
@@ -119,6 +478,10 @@
         "saveAccount": "Save Account",
         "username": "Username",
         "email": "Email",
+        "placeholders": {
+            "enterUsername": "Enter username",
+            "enterEmail": "Enter email"
+        },
         "cancel": "Cancel",
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
@@ -137,7 +500,93 @@
         "auditLogManagement": "Audit Log Management",
         "auditLogManagementDescription": "View system activity logs.",
         "dashboard": "Dashboard",
-        "adminPanel": "Admin Panel"
+        "adminPanel": "Admin Panel",
+        "accessDeniedTitle": "Access Denied",
+        "accessDeniedDescription": "You do not have admin permissions to access this feature.",
+        "usersTable": {
+            "defaults": {
+                "banReason": "Banned by administrator"
+            },
+            "loading": "Loading users...",
+            "errors": {
+                "loadFailed": "Error loading users: {message}",
+                "permissionsHint": "Make sure you have admin permissions to access this section."
+            },
+            "pagination": {
+                "showing": "Showing {count} of {total} users",
+                "previous": "Previous",
+                "next": "Next"
+            },
+            "columns": {
+                "email": "Email",
+                "name": "Name",
+                "role": "Role",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "status": {
+                "banned": "Banned",
+                "active": "Active"
+            },
+            "confirm": {
+                "deleteUser": "Are you sure you want to delete this user? This action cannot be undone.",
+                "banReasonPrompt": "Ban reason (optional):"
+            },
+            "placeholders": {
+                "searchByEmail": "Search by email..."
+            },
+            "toast": {
+                "bannedSuccess": "User banned successfully",
+                "unbannedSuccess": "User unbanned successfully",
+                "deletedSuccess": "User deleted successfully",
+                "updatedSuccess": "User updated successfully",
+                "banFailed": "Error banning user: {message}",
+                "unbanFailed": "Error unbanning user: {message}",
+                "deleteFailed": "Error deleting user: {message}",
+                "updateFailed": "Error updating user: {message}"
+            }
+        },
+        "editUserModal": {
+            "title": "Edit user",
+            "description": "Update the user's information",
+            "roles": {
+                "user": "User",
+                "admin": "Admin"
+            }
+        },
+        "userSessions": {
+            "columns": {
+                "id": "ID",
+                "expires": "Expires",
+                "ip": "IP",
+                "userAgent": "User Agent",
+                "actions": "Actions"
+            },
+            "emptyWithUser": "No sessions found for this user",
+            "emptyNoUser": "Enter a user ID to view sessions",
+            "buttons": {
+                "revokeAll": "Revoke all"
+            },
+            "confirm": {
+                "revokeAll": "Are you sure you want to revoke all sessions for this user?"
+            },
+            "toast": {
+                "revokeSuccess": "Session revoked successfully",
+                "revokeAllSuccess": "All sessions revoked successfully",
+                "revokeFailed": "Error revoking session: {message}",
+                "revokeAllFailed": "Error revoking sessions: {message}"
+            }
+        },
+        "auditLogsTable": {
+            "title": "Audit logs",
+            "description": "Record of actions performed in the system",
+            "empty": "No audit logs recorded",
+            "columns": {
+                "userId": "User ID",
+                "action": "Action",
+                "date": "Date"
+            }
+        }
     },
     "Stats": {
         "totalObjectives": "Total Objectives",
@@ -148,11 +597,48 @@
         "remainDaysToDeadline": "Remain Days to Deadline",
         "objectivesWithMostProgress": "Objectives With Most Progress"
     },
+    "Charts": {
+        "labels": {
+            "progress": "Progress",
+            "completed": "Completed",
+            "pending": "Pending"
+        },
+        "objectivesStatus": {
+            "title": "Objectives Status",
+            "description": "Completed vs. Pending"
+        },
+        "objectivesMostProgress": {
+            "title": "Objectives with Most Progress",
+            "description": "Top 5 objectives by progress completion"
+        },
+        "monthlyProgress": {
+            "title": "Monthly Progress",
+            "description": "Progress units added per month"
+        }
+    },
     "UpdateProgress": {
+        "pageDescription": "Track progress updates for this objective.",
+        "loadingProgress": "Loading progress...",
         "createNewUpdateProgress": "Create New Update Progress",
+        "editProgress": "Edit progress",
+        "editProgressDescription": "Fill out the form below to edit your progress. Click save when you're done.",
+        "pickADate": "Pick a date",
         "createNewUpdateProgressDescription": "Fill out the form below to create a new update progress. Click save when you're done.",
         "updatedValue": "Updated Value",
         "enterUpdatedValue": "Enter updated value",
+        "valueLabels": {
+            "value": "Updated value",
+            "count": "Times",
+            "money": "Amount",
+            "duration": "Duration"
+        },
+        "valuePlaceholders": {
+            "value": "Enter updated value",
+            "count": "Enter times",
+            "money": "Enter amount",
+            "duration": "Enter duration"
+        },
+        "valueDescription": "Value for this update{unit}",
         "comment": "Comment",
         "describeYourUpdateProgressInDetail": "Describe your update progress in detail",
         "optionalAddDetailsAboutYourUpdateProgress": "Optional: Add details about your update progress.",
@@ -161,10 +647,26 @@
         "progressUpdates": "Progress Updates",
         "cancel": "Cancel",
         "deadline": "Deadline",
-        "giveYourUpdateProgressAClearConciseTitle": "Give your update progress a clear, concise title."
+        "giveYourUpdateProgressAClearConciseTitle": "Give your update progress a clear, concise title.",
+        "table": {
+            "columns": {
+                "currentValue": "Current value",
+                "date": "Date",
+                "comment": "Comment",
+                "edit": "Edit",
+                "delete": "Delete"
+            }
+        }
     },
     "TeamMembers": {
         "createNewTeamMember": "Create New Team Member",
+        "enterUserId": "Enter user ID",
+        "userIdDescription": "Enter the ID of the user to add to the team",
+        "selectRole": "Select a role",
+        "roles": {
+            "manager": "Manager",
+            "member": "Member"
+        },
         "createNewTeamMemberDescription": "Fill out the form below to create a new team member. Click save when you're done.",
         "email": "Email",
         "enterEmail": "Enter email",

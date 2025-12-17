@@ -13,6 +13,7 @@ import {
 } from '@repo/ui/components/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@repo/ui/components/popover';
 import { Search, Filter, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@repo/ui/lib/utils';
 
 interface FilterOptions {
@@ -30,36 +31,38 @@ interface ObjectivesFiltersProps {
     className?: string;
 }
 
-const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'paused', label: 'Paused' },
-    { value: 'archived', label: 'Archived' },
-];
-
-const deadlineRangeOptions = [
-    { value: 'all', label: 'All Time' },
-    { value: 'today', label: 'Due Today' },
-    { value: 'week', label: 'Due This Week' },
-    { value: 'month', label: 'Due This Month' },
-    { value: 'overdue', label: 'Overdue' },
-];
-
-const sortOptions = [
-    { value: 'createdAt_desc', label: 'Newest First' },
-    { value: 'createdAt_asc', label: 'Oldest First' },
-    { value: 'deadline_asc', label: 'Deadline Soonest' },
-    { value: 'deadline_desc', label: 'Deadline Latest' },
-    { value: 'title_asc', label: 'Title A-Z' },
-    { value: 'title_desc', label: 'Title Z-A' },
-    { value: 'progress_desc', label: 'Most Progress' },
-    { value: 'progress_asc', label: 'Least Progress' },
-];
-
 const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProps>(
     ({ filters, onFiltersChange, categories, className }, ref) => {
+        const t = useTranslations('Objectives');
+        const tCommon = useTranslations('Common');
         const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+
+        const statusOptions = [
+            { value: 'all', label: t('statusOptions.all') },
+            { value: 'in_progress', label: t('statusOptions.inProgress') },
+            { value: 'completed', label: t('statusOptions.completed') },
+            { value: 'paused', label: t('statusOptions.paused') },
+            { value: 'archived', label: t('statusOptions.archived') },
+        ];
+
+        const deadlineRangeOptions = [
+            { value: 'all', label: t('deadlineRangeOptions.all') },
+            { value: 'today', label: t('deadlineRangeOptions.today') },
+            { value: 'week', label: t('deadlineRangeOptions.week') },
+            { value: 'month', label: t('deadlineRangeOptions.month') },
+            { value: 'overdue', label: t('deadlineRangeOptions.overdue') },
+        ];
+
+        const sortOptions = [
+            { value: 'createdAt_desc', label: t('sortOptions.newestFirst') },
+            { value: 'createdAt_asc', label: t('sortOptions.oldestFirst') },
+            { value: 'deadline_asc', label: t('sortOptions.deadlineSoonest') },
+            { value: 'deadline_desc', label: t('sortOptions.deadlineLatest') },
+            { value: 'title_asc', label: t('sortOptions.titleAsc') },
+            { value: 'title_desc', label: t('sortOptions.titleDesc') },
+            { value: 'progress_desc', label: t('sortOptions.mostProgress') },
+            { value: 'progress_asc', label: t('sortOptions.leastProgress') },
+        ];
 
         const activeFiltersCount = React.useMemo(() => {
             let count = 0;
@@ -105,7 +108,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
-                        placeholder="Search objectives..."
+                        placeholder={t('filters.search')}
                         value={filters.search}
                         onChange={e => handleFilterChange('search', e.target.value)}
                         className="pl-10"
@@ -120,7 +123,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         onValueChange={value => handleFilterChange('status', value)}
                     >
                         <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Status" />
+                            <SelectValue placeholder={t('filters.status')} />
                         </SelectTrigger>
                         <SelectContent>
                             {statusOptions.map(option => (
@@ -137,10 +140,10 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         onValueChange={value => handleFilterChange('category', value)}
                     >
                         <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Category" />
+                            <SelectValue placeholder={t('filters.category')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
+                            <SelectItem value="all">{t('categoryOptions.all')}</SelectItem>
                             {categories.map(category => (
                                 <SelectItem key={category} value={category}>
                                     {category}
@@ -155,7 +158,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         onValueChange={value => handleFilterChange('deadlineRange', value)}
                     >
                         <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Deadline" />
+                            <SelectValue placeholder={t('filters.deadline')} />
                         </SelectTrigger>
                         <SelectContent>
                             {deadlineRangeOptions.map(option => (
@@ -172,7 +175,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         onValueChange={value => handleFilterChange('sortBy', value)}
                     >
                         <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Sort by" />
+                            <SelectValue placeholder={t('filters.sortBy')} />
                         </SelectTrigger>
                         <SelectContent>
                             {sortOptions.map(option => (
@@ -188,7 +191,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" className="relative">
                                 <Filter className="h-4 w-4 mr-2" />
-                                Filters
+                                {t('filtersUi.button')}
                                 {activeFiltersCount > 0 && (
                                     <Badge
                                         variant="secondary"
@@ -202,24 +205,25 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         <PopoverContent className="w-80" align="start">
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h4 className="font-medium">Active Filters</h4>
+                                    <h4 className="font-medium">{t('filtersUi.activeTitle')}</h4>
                                     {activeFiltersCount > 0 && (
                                         <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                                            Clear All
+                                            {t('filtersUi.clearAll')}
                                         </Button>
                                     )}
                                 </div>
 
                                 {activeFiltersCount === 0 ? (
                                     <p className="text-sm text-muted-foreground">
-                                        No active filters
+                                        {t('filtersUi.noActive')}
                                     </p>
                                 ) : (
                                     <div className="space-y-2">
                                         {filters.search && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm">
-                                                    Search: "{filters.search}"
+                                                    {tCommon('search')}: &quot;{filters.search}
+                                                    &quot;
                                                 </span>
                                                 <Button
                                                     variant="ghost"
@@ -233,7 +237,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                         {filters.status !== 'all' && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm">
-                                                    Status:{' '}
+                                                    {t('filters.status')}:{' '}
                                                     {
                                                         statusOptions.find(
                                                             s => s.value === filters.status
@@ -252,7 +256,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                         {filters.category !== 'all' && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm">
-                                                    Category: {filters.category}
+                                                    {t('filters.category')}: {filters.category}
                                                 </span>
                                                 <Button
                                                     variant="ghost"
@@ -266,7 +270,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                         {filters.deadlineRange !== 'all' && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm">
-                                                    Deadline:{' '}
+                                                    {t('filters.deadline')}:{' '}
                                                     {
                                                         deadlineRangeOptions.find(
                                                             d => d.value === filters.deadlineRange
@@ -285,7 +289,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                         {filters.sortBy !== 'createdAt_desc' && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm">
-                                                    Sort:{' '}
+                                                    {t('filters.sortBy')}:{' '}
                                                     {
                                                         sortOptions.find(
                                                             s => s.value === filters.sortBy

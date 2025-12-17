@@ -40,10 +40,9 @@ export default function PasswordFormEdit() {
     });
 
     const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
-
         if (values.password !== values.confirmPassword) return;
 
-        const updateData = {
+        const _updateData = {
             password: values.password,
             newPassword: values.newPassword,
             confirmPassword: values.confirmPassword,
@@ -65,7 +64,13 @@ export default function PasswordFormEdit() {
 
     return (
         <Form {...form}>
-            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+            <form
+                onSubmit={e => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+                className="space-y-5 py-4"
+            >
                 <FormField
                     name="password"
                     render={({ field }) => (

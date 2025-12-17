@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
+import { takeScreenshot } from './test-helpers';
 
 test('objectives: navigate to objective detail page and verify content', async ({ page }) => {
     // Register a new user
@@ -29,6 +30,9 @@ test('objectives: navigate to objective detail page and verify content', async (
     await page.getByTestId('objective-save-button').click();
     await expect(page.getByText(objectiveTitle)).toBeVisible();
 
+    // Screenshot: Objective created in list
+    await takeScreenshot(page, 'objectives-detail', 'objective-created-in-list', uuid);
+
     // Navigate to objective detail
     const objectiveRow = page.locator('tr', { hasText: objectiveTitle }).first();
     await objectiveRow.getByTestId('objective-progress-link').click();
@@ -37,5 +41,8 @@ test('objectives: navigate to objective detail page and verify content', async (
 
     // Verify the page loaded correctly by checking for the heading
     await expect(page.getByRole('heading', { name: /objectives/i })).toBeVisible({ timeout: 10000 });
+
+    // Screenshot: Objective detail page
+    await takeScreenshot(page, 'objectives-detail', 'detail-page', uuid);
 });
 

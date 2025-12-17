@@ -24,22 +24,29 @@ import {
     DialogFooter,
 } from '@repo/ui/components/dialog';
 import { TeamMember, savedTeamMemberSchema } from '@/schemas/team-member';
-import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@repo/ui/components/select';
+import {
+    Select,
+    SelectItem,
+    SelectContent,
+    SelectTrigger,
+    SelectValue,
+} from '@repo/ui/components/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 
-const roleOptions = [
-    { value: TeamRole.MANAGER, label: 'Manager' },
-    { value: TeamRole.MEMBER, label: 'Member' },
-];
-
 export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
-
     const t = useTranslations('TeamMembers');
-    const updateTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.updateTeamMember) });
+
+    const roleOptions = [
+        { value: TeamRole.MANAGER, label: t('roles.manager') },
+        { value: TeamRole.MEMBER, label: t('roles.member') },
+    ];
+    const updateTeamMember = useMutation({
+        mutationFn: useConvexMutation(api.teamMembers.updateTeamMember),
+    });
     const [open, setOpen] = useState(false);
     const form = useForm<TeamMember>({
         defaultValues: defaultValues,
@@ -54,8 +61,8 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
 
     const onSubmit = async (values: TeamMember) => {
         const updateData = {
-            id: values._id as any,
-            role: values.role as "MANAGER" | "MEMBER",
+            id: values._id,
+            role: values.role as 'MANAGER' | 'MEMBER',
         };
 
         await updateTeamMember.mutateAsync(updateData);
@@ -75,20 +82,25 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('edit')}</DialogTitle>
-                    <DialogDescription>
-                        {t('editTeamMemberDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('editTeamMemberDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterEmail')}
+                                        <Input
+                                            placeholder={t('enterEmail')}
                                             type="email"
                                             {...field}
                                             value={field.value || ''}
@@ -114,7 +126,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a role" />
+                                                <SelectValue placeholder={t('selectRole')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>

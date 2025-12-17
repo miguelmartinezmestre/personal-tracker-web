@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useQuery } from 'convex/react';
 import { api } from '@repo/backend/convex/_generated/api';
@@ -8,16 +9,17 @@ import { authClient } from '@/lib/auth-client';
 import { UserProvider } from '@/contexts/user-context';
 
 export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
+    const tCommon = useTranslations('Common');
     const router = useRouter();
 
     // `better-auth` exposes a `useSession()` hook via the client.
     // Its return shape may differ slightly by version, so we read the common fields.
-    const sessionQuery = authClient.useSession() as any;
+    const sessionQuery = authClient.useSession();
     const session = sessionQuery?.data;
     const isSessionLoading = Boolean(sessionQuery?.isPending ?? sessionQuery?.isLoading);
 
     // Only query Convex for the current user once we have a session.
-    const user = useQuery(api.auth.getCurrentUser, session?.user ? {} : ('skip' as any));
+    const user = useQuery(api.auth.getCurrentUser, session?.user ? {} : 'skip');
 
     useEffect(() => {
         if (isSessionLoading) return;
@@ -34,13 +36,19 @@ export default function AuthenticatedView({ children }: { children: React.ReactN
             email: session.user.email,
             name: session.user.name ?? session.user.email,
             role: session.user.role,
-        } as any;
+        } as {
+            _id: string;
+            _creationTime: number;
+            email: string;
+            name: string;
+            role?: string | string[];
+        };
     }, [session]);
 
     if (isSessionLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
-                <div>Loading...</div>
+                <div>{tCommon('loading')}</div>
             </div>
         );
     }
@@ -48,16 +56,16 @@ export default function AuthenticatedView({ children }: { children: React.ReactN
     if (!session?.user) {
         return (
             <div className="flex justify-center items-center h-screen">
-                <div>Redirecting to login...</div>
+                <div>{tCommon('redirectingToLogin')}</div>
             </div>
         );
     }
 
-    const userForProvider = (user as any) ?? fallbackUser;
+    const userForProvider = user ?? fallbackUser;
     if (!userForProvider) {
         return (
             <div className="flex justify-center items-center h-screen">
-                <div>Loading user...</div>
+                <div>{tCommon('loadingUser')}</div>
             </div>
         );
     }

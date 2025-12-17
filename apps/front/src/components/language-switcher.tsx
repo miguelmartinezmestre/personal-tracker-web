@@ -1,20 +1,25 @@
-"use client"
-import { Check } from "lucide-react"
-import { Button } from "@repo/ui/components/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@repo/ui/components/dropdown-menu"
+'use client';
+import { Check } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import { Button } from '@repo/ui/components/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@repo/ui/components/dropdown-menu';
 import Cookies from 'js-cookie';
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export function LanguageSwitcher() {
+    const t = useTranslations('LanguageSwitcher');
     const router = useRouter();
-    const [locale, setLocale] = useState<string | undefined>(undefined);
+    const currentLocale = useLocale();
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
-        const cookieLocale = Cookies.get('locale');
-        setLocale(cookieLocale || 'en');
     }, []);
 
     if (!isClient) {
@@ -22,46 +27,56 @@ export function LanguageSwitcher() {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline">
-                        <span>Language</span>
+                        <span>{t('label')}</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem>
-                        <span>Español</span>
+                        <span>{t('spanish')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                        <span>English</span>
+                        <span>{t('english')}</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         );
     }
 
+    const handleLanguageChange = (newLocale: string) => {
+        // Set the cookie with proper options
+        // js-cookie uses 'expires' in days, not 'maxAge'
+        Cookies.set('locale', newLocale, {
+            path: '/',
+            sameSite: 'lax',
+            expires: 365 // 1 year in days
+        });
+
+        // Use router.refresh() to update the page without full reload
+        // This will trigger a re-fetch of server components with the new locale
+        router.refresh();
+    };
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                    {locale === "es" ? <span>Español</span> : <span>English</span>}
+                    {currentLocale === 'es' ? <span>{t('spanish')}</span> : <span>{t('english')}</span>}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" >
-                <DropdownMenuItem onClick={() => {
-                    Cookies.set('locale', "es");
-                    setLocale("es");
-                    router.refresh();
-                }}>
-                    <span>Español</span>
-                    {locale === "es" && <Check className="h-4 w-4" />}
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                    onClick={() => handleLanguageChange('es')}
+                >
+                    <span>{t('spanish')}</span>
+                    {currentLocale === 'es' && <Check className="h-4 w-4" />}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                    Cookies.set('locale', "en");
-                    setLocale("en");
-                    router.refresh();
-                }}>
-                    <span>English</span>
-                    {locale === "en" && <Check className="h-4 w-4" />}
+                <DropdownMenuItem
+                    onClick={() => handleLanguageChange('en')}
+                >
+                    <span>{t('english')}</span>
+                    {currentLocale === 'en' && <Check className="h-4 w-4" />}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
-    )
+    );
 }

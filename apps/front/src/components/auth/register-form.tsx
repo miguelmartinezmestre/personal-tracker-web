@@ -2,7 +2,14 @@
 
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@repo/ui/components/alert';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@repo/ui/components/form-tanstack';
+import {
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+    Form,
+} from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
 import { registerSchema } from '@/schemas/register';
 import { z } from 'zod';
@@ -17,6 +24,7 @@ import { authClient } from '@/lib/auth-client';
 export default function RegisterForm() {
     const router = useRouter();
     const t = useTranslations('HomePage');
+    const tCommon = useTranslations('Common');
     const [registerError, setRegisterError] = useState('');
 
     const form = useForm<z.infer<typeof registerSchema>>({
@@ -35,10 +43,9 @@ export default function RegisterForm() {
         },
     });
 
-
     async function onSubmit(values: z.infer<typeof registerSchema>) {
         if (values.password !== values.confirmPassword) {
-            setRegisterError('Las contraseñas no coinciden');
+            setRegisterError(t('errors.passwordsDontMatch'));
             return;
         }
 
@@ -50,26 +57,28 @@ export default function RegisterForm() {
             },
             {
                 onSuccess: () => {
-                    router.push("/dashboard/home");
+                    router.push('/dashboard/home');
                 },
-                onError: (ctx) => {
-                    setRegisterError(ctx.error.message || 'Error al registrar usuario. Por favor, intenta de nuevo.');
+                onError: ctx => {
+                    setRegisterError(ctx.error.message || t('errors.registerFallback'));
                 },
             }
         );
     }
 
-
     return (
         <Form {...form}>
             <form
-                onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+                onSubmit={e => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
                 className="space-y-6"
             >
                 {registerError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{registerError}</AlertDescription>
                     </Alert>
                 )}
@@ -78,11 +87,13 @@ export default function RegisterForm() {
                     name="username"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">Nombre de Usuario</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.username')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="username"
+                                    placeholder={tCommon('placeholders.username')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="register-username-input"
                                 />
@@ -96,12 +107,14 @@ export default function RegisterForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">Correo Electrónico</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.email')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="email"
-                                    placeholder="email@domain.com"
+                                    placeholder={tCommon('placeholders.email')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="register-email-input"
                                 />
@@ -115,12 +128,14 @@ export default function RegisterForm() {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">Contraseña</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.password')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="password"
-                                    placeholder="Mínimo 8 caracteres"
+                                    placeholder={tCommon('placeholders.min8Chars')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="register-password-input"
                                 />
@@ -134,12 +149,14 @@ export default function RegisterForm() {
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">Confirmar Contraseña</FormLabel>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.confirmPassword')}
+                            </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     type="password"
-                                    placeholder="Confirmar contraseña"
+                                    placeholder={tCommon('placeholders.confirmPassword')}
                                     className="focus:ring-2 focus:ring-primary/20"
                                     data-testid="register-confirm-password-input"
                                 />
@@ -159,7 +176,9 @@ export default function RegisterForm() {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
-                        <Link href="/login" prefetch={false} >{t('alreadyHaveAccount')} {t('login')}</Link>
+                        <Link href="/login" prefetch={false}>
+                            {t('alreadyHaveAccount')} {t('login')}
+                        </Link>
                     </p>
                 </div>
             </form>

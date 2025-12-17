@@ -24,6 +24,7 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { useRequireAdmin } from '@/hooks/use-user-role';
 
 type User = {
@@ -34,23 +35,21 @@ type User = {
     banned?: boolean;
 };
 
-export function EditUserModal({ user, onSuccess }: { user: User; onSuccess?: () => void }) {
+export function EditUserModal({
+    user,
+    onSuccessAction,
+}: {
+    user: User;
+    onSuccessAction?: () => void;
+}) {
+    const t = useTranslations('Admin');
+    const tCommon = useTranslations('Common');
+
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState(user.email);
     const [name, setName] = useState(user.name);
     const [role, setRole] = useState(Array.isArray(user.role) ? user.role[0] : user.role || 'user');
     const queryClient = useQueryClient();
-
-    // Verify admin role
-    try {
-        useRequireAdmin();
-    } catch (error) {
-        return (
-            <Button size="sm" variant="outline" disabled>
-                <Edit className="h-4 w-4" />
-            </Button>
-        );
-    }
 
     const updateUser = useMutation({
         mutationFn: async () => {
@@ -64,15 +63,26 @@ export function EditUserModal({ user, onSuccess }: { user: User; onSuccess?: () 
             });
         },
         onSuccess: () => {
-            toast.success('Usuario actualizado exitosamente');
+            toast.success(t('usersTable.toast.updatedSuccess'));
             setOpen(false);
             queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-            onSuccess?.();
+            onSuccessAction?.();
         },
-        onError: (error: any) => {
-            toast.error(`Error al actualizar usuario: ${error.message}`);
+        onError: (error: Error) => {
+            toast.error(t('usersTable.toast.updateFailed', { message: error.message }));
         },
     });
+
+    // Verify admin role
+    try {
+        useRequireAdmin();
+    } catch {
+        return (
+            <Button size="sm" variant="outline" disabled>
+                <Edit className="h-4 w-4" />
+            </Button>
+        );
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -83,38 +93,44 @@ export function EditUserModal({ user, onSuccess }: { user: User; onSuccess?: () 
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Editar Usuario</DialogTitle>
-                    <DialogDescription>Modifica la información del usuario</DialogDescription>
+                    <DialogTitle>{t('editUserModal.title')}</DialogTitle>
+                    <DialogDescription>{t('editUserModal.description')}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{tCommon('fields.email')}</Label>
                         <Input id="email" value={email} onChange={e => setEmail(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="name">Nombre</Label>
+                        <Label htmlFor="name">{tCommon('fields.name')}</Label>
                         <Input id="name" value={name} onChange={e => setName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="role">Rol</Label>
+                        <Label htmlFor="role">{tCommon('fields.role')}</Label>
                         <Select value={role} onValueChange={setRole}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="user">Usuario</SelectItem>
-                                <SelectItem value="admin">Administrador</SelectItem>
-                                <SelectItem value="ADMIN">ADMIN</SelectItem>
+                                <SelectItem value="user">
+                                    {t('editUserModal.roles.user')}
+                                </SelectItem>
+                                <SelectItem value="admin">
+                                    {t('editUserModal.roles.admin')}
+                                </SelectItem>
+                                <SelectItem value="ADMIN">
+                                    {t('editUserModal.roles.admin')}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>
-                        Cancelar
+                        {tCommon('actions.cancel')}
                     </Button>
                     <Button onClick={() => updateUser.mutate()} disabled={updateUser.isPending}>
-                        {updateUser.isPending ? 'Guardando...' : 'Guardar'}
+                        {updateUser.isPending ? tCommon('actions.saving') : tCommon('actions.save')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

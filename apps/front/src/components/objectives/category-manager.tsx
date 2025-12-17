@@ -24,6 +24,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 interface Category {
@@ -37,18 +38,19 @@ interface Category {
 }
 
 const COLORS = [
-    { value: '#ef4444', label: 'Red', className: 'bg-red-500' },
-    { value: '#f97316', label: 'Orange', className: 'bg-orange-500' },
-    { value: '#eab308', label: 'Yellow', className: 'bg-yellow-500' },
-    { value: '#22c55e', label: 'Green', className: 'bg-green-500' },
-    { value: '#06b6d4', label: 'Teal', className: 'bg-teal-500' },
-    { value: '#3b82f6', label: 'Blue', className: 'bg-blue-500' },
-    { value: '#8b5cf6', label: 'Purple', className: 'bg-purple-500' },
-    { value: '#ec4899', label: 'Pink', className: 'bg-pink-500' },
-    { value: '#6b7280', label: 'Gray', className: 'bg-gray-500' },
+    { value: '#ef4444', labelKey: 'colors.red', className: 'bg-red-500' },
+    { value: '#f97316', labelKey: 'colors.orange', className: 'bg-orange-500' },
+    { value: '#eab308', labelKey: 'colors.yellow', className: 'bg-yellow-500' },
+    { value: '#22c55e', labelKey: 'colors.green', className: 'bg-green-500' },
+    { value: '#06b6d4', labelKey: 'colors.teal', className: 'bg-teal-500' },
+    { value: '#3b82f6', labelKey: 'colors.blue', className: 'bg-blue-500' },
+    { value: '#8b5cf6', labelKey: 'colors.purple', className: 'bg-purple-500' },
+    { value: '#ec4899', labelKey: 'colors.pink', className: 'bg-pink-500' },
+    { value: '#6b7280', labelKey: 'colors.gray', className: 'bg-gray-500' },
 ];
 
 const ICONS = [
+    'tag',
     'heart',
     'briefcase',
     'book',
@@ -75,6 +77,9 @@ interface CategoryManagerProps {
 
 const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
     ({ className }, ref) => {
+        const t = useTranslations('Objectives');
+        const tCommon = useTranslations('Common');
+
         const [isCreateOpen, setIsCreateOpen] = React.useState(false);
         const [editingCategory, setEditingCategory] = React.useState<Category | null>(null);
         const [newCategory, setNewCategory] = React.useState({
@@ -92,13 +97,13 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
         const createCategory = useMutation({
             mutationFn: useConvexMutation(api.categories.createCategory),
             onSuccess: () => {
-                toast.success('Category created successfully!');
+                toast.success(t('categories.toast.createSuccess'));
                 queryClient.invalidateQueries({ queryKey: ['categories'] });
                 setNewCategory({ name: '', color: '#3b82f6', icon: 'tag' });
                 setIsCreateOpen(false);
             },
-            onError: (error: any) => {
-                toast.error('Failed to create category');
+            onError: (error: Error) => {
+                toast.error(t('categories.toast.createFailed'));
                 console.error(error);
             },
         });
@@ -106,12 +111,12 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
         const updateCategory = useMutation({
             mutationFn: useConvexMutation(api.categories.updateCategory),
             onSuccess: () => {
-                toast.success('Category updated successfully!');
+                toast.success(t('categories.toast.updateSuccess'));
                 queryClient.invalidateQueries({ queryKey: ['categories'] });
                 setEditingCategory(null);
             },
-            onError: (error: any) => {
-                toast.error('Failed to update category');
+            onError: (error: Error) => {
+                toast.error(t('categories.toast.updateFailed'));
                 console.error(error);
             },
         });
@@ -119,11 +124,11 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
         const deleteCategory = useMutation({
             mutationFn: useConvexMutation(api.categories.deleteCategory),
             onSuccess: () => {
-                toast.success('Category deleted successfully!');
+                toast.success(t('categories.toast.deleteSuccess'));
                 queryClient.invalidateQueries({ queryKey: ['categories'] });
             },
-            onError: (error: any) => {
-                toast.error('Failed to delete category');
+            onError: (error: Error) => {
+                toast.error(t('categories.toast.deleteFailed'));
                 console.error(error);
             },
         });
@@ -131,11 +136,11 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
         const createDefaultCategories = useMutation({
             mutationFn: useConvexMutation(api.categories.createDefaultCategories),
             onSuccess: () => {
-                toast.success('Default categories created!');
+                toast.success(t('categories.toast.createDefaultsSuccess'));
                 queryClient.invalidateQueries({ queryKey: ['categories'] });
             },
-            onError: (error: any) => {
-                toast.error('Failed to create default categories');
+            onError: (error: Error) => {
+                toast.error(t('categories.toast.createDefaultsFailed'));
                 console.error(error);
             },
         });
@@ -156,7 +161,7 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
         };
 
         const handleDeleteCategory = (id: Id<'categories'>) => {
-            if (confirm('Are you sure you want to delete this category?')) {
+            if (confirm(t('categories.confirmDelete'))) {
                 deleteCategory.mutate({ id });
             }
         };
@@ -166,18 +171,18 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                         <Tag className="h-5 w-5" />
-                        <h2 className="text-lg font-semibold">Categories</h2>
+                        <h2 className="text-lg font-semibold">{t('categories.title')}</h2>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                        {(categories as any[]).length === 0 && (
+                        {categories.length === 0 && (
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => createDefaultCategories.mutate({})}
                                 disabled={createDefaultCategories.isPending}
                             >
-                                Add Default Categories
+                                {t('categories.addDefault')}
                             </Button>
                         )}
 
@@ -185,16 +190,18 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                             <DialogTrigger asChild>
                                 <Button size="sm">
                                     <Plus className="h-4 w-4 mr-2" />
-                                    New Category
+                                    {t('categories.new')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Create New Category</DialogTitle>
+                                    <DialogTitle>{t('categories.createTitle')}</DialogTitle>
                                 </DialogHeader>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="text-sm font-medium">Name</label>
+                                        <label className="text-sm font-medium">
+                                            {t('categories.fields.name')}
+                                        </label>
                                         <Input
                                             value={newCategory.name}
                                             onChange={e =>
@@ -203,13 +210,15 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                     name: e.target.value,
                                                 }))
                                             }
-                                            placeholder="Enter category name..."
+                                            placeholder={t('categories.placeholders.name')}
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-sm font-medium">Color</label>
+                                            <label className="text-sm font-medium">
+                                                {t('categories.fields.color')}
+                                            </label>
                                             <Select
                                                 value={newCategory.color}
                                                 onValueChange={color =>
@@ -227,13 +236,16 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                                 }}
                                                             />
                                                             <span>
-                                                                {
-                                                                    COLORS.find(
+                                                                {(() => {
+                                                                    const labelKey = COLORS.find(
                                                                         c =>
                                                                             c.value ===
                                                                             newCategory.color
-                                                                    )?.label
-                                                                }
+                                                                    )?.labelKey;
+                                                                    return labelKey
+                                                                        ? tCommon(labelKey)
+                                                                        : '';
+                                                                })()}
                                                             </span>
                                                         </div>
                                                     </SelectValue>
@@ -248,7 +260,9 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                                 <div
                                                                     className={`w-4 h-4 rounded ${color.className}`}
                                                                 />
-                                                                <span>{color.label}</span>
+                                                                <span>
+                                                                    {tCommon(color.labelKey)}
+                                                                </span>
                                                             </div>
                                                         </SelectItem>
                                                     ))}
@@ -257,7 +271,9 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                         </div>
 
                                         <div>
-                                            <label className="text-sm font-medium">Icon</label>
+                                            <label className="text-sm font-medium">
+                                                {t('categories.fields.icon')}
+                                            </label>
                                             <Select
                                                 value={newCategory.icon}
                                                 onValueChange={icon =>
@@ -265,14 +281,18 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                 }
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select icon" />
+                                                    <SelectValue
+                                                        placeholder={t(
+                                                            'categories.placeholders.selectIcon'
+                                                        )}
+                                                    />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {ICONS.map(icon => (
                                                         <SelectItem key={icon} value={icon}>
                                                             <div className="flex items-center space-x-2">
                                                                 <span className="capitalize">
-                                                                    {icon}
+                                                                    {tCommon(`icons.${icon}`)}
                                                                 </span>
                                                             </div>
                                                         </SelectItem>
@@ -287,7 +307,7 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                             variant="outline"
                                             onClick={() => setIsCreateOpen(false)}
                                         >
-                                            Cancel
+                                            {t('categories.buttons.cancel')}
                                         </Button>
                                         <Button
                                             onClick={handleCreateCategory}
@@ -295,7 +315,9 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                 createCategory.isPending || !newCategory.name.trim()
                                             }
                                         >
-                                            {createCategory.isPending ? 'Creating...' : 'Create'}
+                                            {createCategory.isPending
+                                                ? t('categories.buttons.creating')
+                                                : t('categories.buttons.create')}
                                         </Button>
                                     </div>
                                 </div>
@@ -305,22 +327,24 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                 </div>
 
                 {/* Categories Grid */}
-                {(categories as any[]).length === 0 ? (
+                {categories.length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-8">
                             <Tag className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium mb-2">No categories yet</h3>
+                            <h3 className="text-lg font-medium mb-2">
+                                {t('categories.emptyTitle')}
+                            </h3>
                             <p className="text-muted-foreground text-center mb-4">
-                                Create categories to organize your objectives better.
+                                {t('categories.emptyDescription')}
                             </p>
                             <Button onClick={() => createDefaultCategories.mutate({})}>
-                                Add Default Categories
+                                {t('categories.addDefault')}
                             </Button>
                         </CardContent>
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {(categories as any[]).map((category: any) => (
+                        {categories.map(category => (
                             <Card key={category._id} className="hover:shadow-md transition-shadow">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
@@ -371,12 +395,14 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                 >
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Edit Category</DialogTitle>
+                            <DialogTitle>{t('categories.editTitle')}</DialogTitle>
                         </DialogHeader>
                         {editingCategory && (
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-sm font-medium">Name</label>
+                                    <label className="text-sm font-medium">
+                                        {t('categories.fields.name')}
+                                    </label>
                                     <Input
                                         value={editingCategory.name}
                                         onChange={e =>
@@ -389,7 +415,9 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-sm font-medium">Color</label>
+                                        <label className="text-sm font-medium">
+                                            {t('categories.fields.color')}
+                                        </label>
                                         <Select
                                             value={editingCategory.color}
                                             onValueChange={color =>
@@ -409,13 +437,16 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                             }}
                                                         />
                                                         <span>
-                                                            {
-                                                                COLORS.find(
+                                                            {(() => {
+                                                                const labelKey = COLORS.find(
                                                                     c =>
                                                                         c.value ===
                                                                         editingCategory.color
-                                                                )?.label
-                                                            }
+                                                                )?.labelKey;
+                                                                return labelKey
+                                                                    ? tCommon(labelKey)
+                                                                    : '';
+                                                            })()}
                                                         </span>
                                                     </div>
                                                 </SelectValue>
@@ -430,7 +461,7 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                             <div
                                                                 className={`w-4 h-4 rounded ${color.className}`}
                                                             />
-                                                            <span>{color.label}</span>
+                                                            <span>{tCommon(color.labelKey)}</span>
                                                         </div>
                                                     </SelectItem>
                                                 ))}
@@ -439,7 +470,9 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                     </div>
 
                                     <div>
-                                        <label className="text-sm font-medium">Icon</label>
+                                        <label className="text-sm font-medium">
+                                            {t('categories.fields.icon')}
+                                        </label>
                                         <Select
                                             value={editingCategory.icon || 'tag'}
                                             onValueChange={icon =>
@@ -456,7 +489,7 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                                     <SelectItem key={icon} value={icon}>
                                                         <div className="flex items-center space-x-2">
                                                             <span className="capitalize">
-                                                                {icon}
+                                                                {tCommon(`icons.${icon}`)}
                                                             </span>
                                                         </div>
                                                     </SelectItem>
@@ -471,13 +504,15 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                         variant="outline"
                                         onClick={() => setEditingCategory(null)}
                                     >
-                                        Cancel
+                                        {t('categories.buttons.cancel')}
                                     </Button>
                                     <Button
                                         onClick={handleUpdateCategory}
                                         disabled={updateCategory.isPending}
                                     >
-                                        {updateCategory.isPending ? 'Updating...' : 'Update'}
+                                        {updateCategory.isPending
+                                            ? t('categories.buttons.updating')
+                                            : t('categories.buttons.update')}
                                     </Button>
                                 </div>
                             </div>

@@ -3,7 +3,7 @@
 import { DataTable } from '@/components/table';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@repo/ui/components/button';
+// import { Button } from '@repo/ui/components/button';
 import type { Doc } from '@repo/backend/convex/_generated/dataModel';
 import { UserAgentIcon } from '../user-agent';
 import { useRouter } from 'next/navigation';
@@ -14,10 +14,12 @@ import { api } from '@repo/backend/convex/_generated/api';
 export default function SessionsTable() {
     const t = useTranslations('Sessions');
     const sessions = useSuspenseQuery(convexQuery(api.sessions.getSessionsByUser, {}));
-    const invalidateSession = useMutation({ mutationFn: useConvexMutation(api.sessions.invalidateSession) });
-    const router = useRouter();
+    const _invalidateSession = useMutation({
+        mutationFn: useConvexMutation(api.sessions.invalidateSession),
+    });
+    const _router = useRouter();
 
-    const columns: ColumnDef<Doc<"session">>[] = [
+    const columns: ColumnDef<Doc<'session'>>[] = [
         {
             accessorKey: 'userAgent',
             header: t('device'),
@@ -40,7 +42,7 @@ export default function SessionsTable() {
             header: '',
             id: 'close-session',
             cell: ({ row }) => {
-                const objetiveRow = row.original;
+                const _objetiveRow = row.original;
                 // if (objetiveRow.status === 'active') {
                 //     return (
                 //         <Button
@@ -58,13 +60,13 @@ export default function SessionsTable() {
         },
     ];
 
-
-
-
-
     return (
         <div>
-            <DataTable columns={columns} data={sessions.data ?? []} isLoading={sessions.isLoading} />
+            <DataTable
+                columns={columns}
+                data={sessions.data ?? []}
+                isLoading={sessions.isLoading}
+            />
         </div>
     );
 }

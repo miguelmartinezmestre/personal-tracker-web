@@ -1,9 +1,8 @@
 'use client';
 
-import { Shield, Users, FileText, Settings } from 'lucide-react';
+import { Shield} from 'lucide-react';
 import { SidebarProvider, SidebarInset } from '@repo/ui/components/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { Separator } from '@repo/ui/components/separator';
 import {
     Breadcrumb,
     BreadcrumbItem,

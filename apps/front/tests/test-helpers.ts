@@ -100,3 +100,30 @@ export async function loginUser(page: Page, email: string, password: string = '1
     await page.waitForURL(/\/dashboard\/home$/, { timeout: 10000 });
     await expect(page).toHaveURL(/\/dashboard\/home$/);
 }
+
+/**
+ * Helper function to take organized screenshots for TFG documentation
+ * @param page - Playwright page object
+ * @param testName - Name of the test (will be sanitized for filename)
+ * @param step - Description of the step being captured
+ * @param suffix - Optional suffix for the filename
+ */
+export async function takeScreenshot(
+    page: Page,
+    testName: string,
+    step: string,
+    suffix?: string
+) {
+    // Sanitize test name and step for filename
+    const sanitize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const testNameClean = sanitize(testName);
+    const stepClean = sanitize(step);
+    const suffixClean = suffix ? `-${sanitize(suffix)}` : '';
+    
+    const filename = `test-results/screenshots/${testNameClean}-${stepClean}${suffixClean}.png`;
+    await page.screenshot({ 
+        path: filename, 
+        fullPage: true,
+        animations: 'disabled' // Disable animations for consistent screenshots
+    });
+}

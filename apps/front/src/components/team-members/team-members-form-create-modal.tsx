@@ -25,20 +25,25 @@ import {
 } from '@repo/ui/components/dialog';
 import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
-import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@repo/ui/components/select';
+import {
+    Select,
+    SelectItem,
+    SelectContent,
+    SelectTrigger,
+    SelectValue,
+} from '@repo/ui/components/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
 
-const roleOptions = [
-    { value: TeamRole.MANAGER, label: 'Manager' },
-    { value: TeamRole.MEMBER, label: 'Member' },
-];
-
-
 export default function CreateTeamMemberFormModal() {
-
     const t = useTranslations('TeamMembers');
+    const tCommon = useTranslations('Common');
     const { id: teamId } = useParams();
+
+    const roleOptions = [
+        { value: TeamRole.MANAGER, label: t('roles.manager') },
+        { value: TeamRole.MEMBER, label: t('roles.member') },
+    ];
 
     // const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
     const [open, setOpen] = useState(false);
@@ -58,7 +63,7 @@ export default function CreateTeamMemberFormModal() {
         },
     });
 
-    const onSubmit = async (values: CreateTeamMember) => {
+    const onSubmit = async (_values: CreateTeamMember) => {
         // NOTE: In Convex, you need a user id to create a team member. This UI previously created a user implicitly.
         // Hook up a flow to select an existing user id, then call:
         // await createTeamMember.mutateAsync({ team: teamId as any, user: selectedUserId as any, role: values.role });
@@ -77,20 +82,25 @@ export default function CreateTeamMemberFormModal() {
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('createNewTeamMember')}</DialogTitle>
-                    <DialogDescription>
-                        {t('createNewTeamMemberDescription')}
-                    </DialogDescription>
+                    <DialogDescription>{t('createNewTeamMemberDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="space-y-5 py-4">
+                    <form
+                        onSubmit={e => {
+                            e.preventDefault();
+                            form.handleSubmit();
+                        }}
+                        className="space-y-5 py-4"
+                    >
                         <FormField
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t('enterEmail')}
+                                        <Input
+                                            placeholder={t('enterEmail')}
                                             type="email"
                                             {...field}
                                             value={field.value || ''}
@@ -109,17 +119,16 @@ export default function CreateTeamMemberFormModal() {
                             name="userId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>User ID</FormLabel>
+                                    <FormLabel>{tCommon('fields.userId')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter user ID"
+                                        <Input
+                                            placeholder={t('enterUserId')}
                                             {...field}
                                             value={field.value || ''}
                                             onChange={e => field.onChange(e.target.value)}
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        Enter the ID of the user to add to the team
-                                    </FormDescription>
+                                    <FormDescription>{t('userIdDescription')}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -136,7 +145,7 @@ export default function CreateTeamMemberFormModal() {
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a role" />
+                                                <SelectValue placeholder={t('selectRole')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>

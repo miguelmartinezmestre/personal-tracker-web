@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
+import { takeScreenshot } from './test-helpers';
 
 test('teams end-to-end: register, create, edit, delete team', async ({ page }) => {
     // Register a new user
@@ -18,6 +19,7 @@ test('teams end-to-end: register, create, edit, delete team', async ({ page }) =
     // Go to Teams and check accessibility immediately
     await page.goto('/dashboard/teams');
     await page.waitForTimeout(2000);
+    await takeScreenshot(page, 'teams-end-to-end', 'teams-list-initial');
 
     // Check if teams page is accessible
     const createButton = page.getByTestId('team-create-open');
@@ -29,6 +31,7 @@ test('teams end-to-end: register, create, edit, delete team', async ({ page }) =
         // Teams functionality requires specific permissions - test access control instead
         const currentUrl = page.url();
         expect(currentUrl).toContain('/dashboard'); // Should be redirected within dashboard
+        await takeScreenshot(page, 'teams-end-to-end', 'access-restricted');
         console.log('✅ Teams correctly restricted - requires special permissions');
         test.skip();
         return;
@@ -37,26 +40,32 @@ test('teams end-to-end: register, create, edit, delete team', async ({ page }) =
     // Open create modal and create team
     await createButton.click();
     await expect(page.getByTestId('team-name-input')).toBeVisible();
+    await takeScreenshot(page, 'teams-end-to-end', 'create-modal-opened');
 
     // Fill form and create team
     const originalTeamName = `testteam-${uuid}`;
     await page.getByTestId('team-name-input').fill(originalTeamName);
     await page.getByTestId('team-description-input').fill('Test team description');
     await expect(page.getByTestId('team-save-button')).toBeEnabled();
+    await takeScreenshot(page, 'teams-end-to-end', 'create-form-filled');
     await page.getByTestId('team-save-button').click();
 
     // Verify the new team appears in the list
     await expect(page.getByText(originalTeamName)).toBeVisible({ timeout: 10000 });
+    await takeScreenshot(page, 'teams-end-to-end', 'team-created-in-list');
 
     // Edit the team
     const editedTeamName = `edited-team-${uuid}`;
     // Find the row with the team name and click edit
     const teamRow = page.locator('tr', { hasText: originalTeamName }).first();
     await teamRow.getByTestId('team-edit-open').click();
+    await takeScreenshot(page, 'teams-end-to-end', 'edit-modal-opened');
     await page.getByTestId('team-edit-name-input').clear();
     await page.getByTestId('team-edit-name-input').fill(editedTeamName);
+    await takeScreenshot(page, 'teams-end-to-end', 'edit-form-filled');
     await page.getByTestId('team-edit-save-button').click();
     await expect(page.getByText(editedTeamName)).toBeVisible();
+    await takeScreenshot(page, 'teams-end-to-end', 'team-edited-in-list');
 
     // Delete the team - verify it exists first
     const editedTeamRow = page.locator('tr', { hasText: editedTeamName }).first();
@@ -118,10 +127,12 @@ test('teams: navigate to team detail page', async ({ page }) => {
     await page.waitForTimeout(200);
     await page.getByTestId('team-save-button').click();
     await expect(page.getByText(teamName)).toBeVisible({ timeout: 10000 });
+    await takeScreenshot(page, 'teams-navigate-detail', 'team-created');
 
     // Navigate to team detail
     const teamRow = page.locator('tr', { hasText: teamName }).first();
     await teamRow.getByTestId('team-detail-link').click();
     // Should navigate to team detail page
     await expect(page).toHaveURL(/\/dashboard\/teams\/[^/]+$/);
+    await takeScreenshot(page, 'teams-navigate-detail', 'team-detail-page');
 });

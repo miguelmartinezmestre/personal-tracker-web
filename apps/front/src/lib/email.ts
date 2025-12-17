@@ -3,7 +3,7 @@ import RecoverPasswordEmail from '@/emails/recover-password';
 import { render } from '@react-email/components';
 import * as nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
+const _transporter = nodemailer.createTransport({
     host: 'localhost',
     port: 1025,
     secure: false,
@@ -17,7 +17,7 @@ export async function sendWelcomeEmail(username: string, email: string) {
     const emailHtml = await render(
         RegisterEmail({
             username,
-        }),
+        })
     );
 
     const options = {
@@ -39,16 +39,12 @@ export async function sendWelcomeEmail(username: string, email: string) {
     // await transporter.sendMail(options);
 }
 
-export async function sendRecoverPasswordEmail(
-    username: string,
-    email: string,
-    link: string,
-) {
+export async function sendRecoverPasswordEmail(username: string, email: string, link: string) {
     const emailHtml = await render(
         RecoverPasswordEmail({
             username,
             link,
-        }),
+        })
     );
 
     const options = {

@@ -101,7 +101,7 @@ export default function AccountSettingsFormEdit() {
                         <FormItem>
                             <FormLabel>{t('username')}</FormLabel>
                             <FormControl>
-                                <Input placeholder="Enter username" {...field} />
+                                <Input placeholder={t('placeholders.enterUsername')} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -114,7 +114,7 @@ export default function AccountSettingsFormEdit() {
                         <FormItem>
                             <FormLabel>{t('email')}</FormLabel>
                             <FormControl>
-                                <Input placeholder="Enter email" {...field} />
+                                <Input placeholder={t('placeholders.enterEmail')} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -123,7 +123,7 @@ export default function AccountSettingsFormEdit() {
 
                 <DialogFooter className="pt-4">
                     <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                        Cancel
+                        {t('cancel')}
                     </Button>
                     <Button type="submit">{t('saveAccount')}</Button>
                 </DialogFooter>

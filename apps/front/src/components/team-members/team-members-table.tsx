@@ -10,12 +10,25 @@ import TeamMemberEditFormModal from '@/components/team-members/team-members-form
 import { useTranslations } from 'next-intl';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { toast } from 'sonner';
+import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 export default function TeamMembersTable() {
     const t = useTranslations('TeamMembers');
     const { id: teamId } = useParams();
-    const teamMembers = useSuspenseQuery(convexQuery(api.teamMembers.getTeamMembersByTeamId, { team: teamId as any }));
-    const deleteTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.deleteTeamMember) });
+    const teamMembers = useSuspenseQuery(
+        convexQuery(api.teamMembers.getTeamMembersByTeamId, { team: teamId as Id<'teams'> })
+    );
+    const deleteTeamMember = useMutation({
+        mutationFn: useConvexMutation(api.teamMembers.deleteTeamMember),
+        onSuccess: () => {
+            toast.success(t('toast.deletedSuccess'));
+        },
+        onError: () => {
+            toast.error(t('toast.deleteFailed'));
+        },
+    });
 
     const columns: ColumnDef<TeamMember>[] = [
         {
@@ -30,25 +43,33 @@ export default function TeamMembersTable() {
             header: t('edit'),
             id: 'edit',
             cell: ({ row }) => {
-                const objetiveRow = row.original;
-                return (
-                    <TeamMemberEditFormModal defaultValues={objetiveRow} />
-                );
+                const teamMemberRow = row.original;
+                return <TeamMemberEditFormModal defaultValues={teamMemberRow} />;
             },
         },
         {
             header: t('delete'),
             id: 'delete',
             cell: ({ row }) => {
-                const objetiveRow = row.original;
                 return (
-                    <Button
-                        onClick={async () => {
-                            await deleteTeamMember.mutateAsync({ _id: objetiveRow._id as any });
+                    <DeleteConfirmationDialog
+                        onConfirm={async () => {
+                            await deleteTeamMember.mutateAsync({
+                                _id: row.original._id as Id<'teamMembers'>,
+                            });
                         }}
-                    >
-                        {t('delete')}
-                    </Button>
+                        title={t('confirm.deleteTitle')}
+                        description={t('confirm.deleteDescription')}
+                        triggerLabel={t('delete')}
+                        confirmLabel={t('confirm.deleteConfirm')}
+                        cancelLabel={t('confirm.cancel')}
+                        isLoading={deleteTeamMember.isPending}
+                        trigger={
+                            <Button variant="destructive" size="sm">
+                                {t('delete')}
+                            </Button>
+                        }
+                    />
                 );
             },
         },
@@ -56,7 +77,11 @@ export default function TeamMembersTable() {
 
     return (
         <div>
-            <DataTable columns={columns} data={teamMembers.data!} isLoading={teamMembers.isLoading} />
+            <DataTable
+                columns={columns}
+                data={teamMembers.data!}
+                isLoading={teamMembers.isLoading}
+            />
         </div>
     );
 }

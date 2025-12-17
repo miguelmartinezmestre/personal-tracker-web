@@ -1,31 +1,45 @@
-import "@repo/ui/globals.css"
-import { ThemeProvider } from "@/providers/theme";
-import { NextIntlClientProvider } from "next-intl";
-import { Suspense } from "react";
-import { Toaster } from "sonner";
-import ConvexClientProvider from "@/providers/convex-provider";
+import '@repo/ui/globals.css';
 
-export const metadata = {
-  title: "Metricas",
-  description: "Metricas",
+import ConvexClientProvider from '@/providers/convex-provider';
+import { ThemeProvider } from '@/providers/theme';
+import type { Metadata } from 'next';
+import { NextIntlClientProvider, useLocale, useMessages } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import { Toaster } from 'sonner';
+
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations('App');
+
+    return {
+        title: t('title'),
+        description: t('description'),
+    };
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <html suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <main>
-            <Suspense fallback={null}>
-              <NextIntlClientProvider>
-                <ConvexClientProvider>{children}</ConvexClientProvider>
-              </NextIntlClientProvider>
-            </Suspense>
-          </main>
-          <Toaster />
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
+    const locale = useLocale();
+    const messages = useMessages();
 
+    return (
+        <html lang={locale} suppressHydrationWarning>
+            <body>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                >
+                    <main>
+                        <Suspense fallback={null}>
+                            <NextIntlClientProvider locale={locale} messages={messages}>
+                                <ConvexClientProvider>{children}</ConvexClientProvider>
+                            </NextIntlClientProvider>
+                        </Suspense>
+                    </main>
+                    <Toaster />
+                </ThemeProvider>
+            </body>
+        </html>
+    );
+}
