@@ -27,13 +27,14 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { CreateUpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { Id } from '@repo/backend/convex/_generated/dataModel';
+import { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
@@ -43,11 +44,35 @@ export default function CreateUpdateProgressFormModal() {
     const createUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.createUpdateProgress),
     });
+    const objective = useQuery(
+        convexQuery(api.objectives.getObjectiveById, { id: objectiveId as Id<'objectives'> })
+    );
     const [open, setOpen] = useState(false);
+    const objectiveDoc = objective.data as
+        | (Doc<'objectives'> & { objectiveType?: string; unit?: string })
+        | undefined;
+    const objectiveType = objectiveDoc?.objectiveType ?? 'value';
+    const unitLabel = objectiveDoc?.unit ? ` (${objectiveDoc.unit})` : '';
+    const updatedValueLabel =
+        objectiveType === 'count'
+            ? t('valueLabels.count')
+            : objectiveType === 'money'
+              ? t('valueLabels.money')
+              : objectiveType === 'duration'
+                ? t('valueLabels.duration')
+                : t('valueLabels.value');
+    const updatedValuePlaceholder =
+        objectiveType === 'count'
+            ? t('valuePlaceholders.count')
+            : objectiveType === 'money'
+              ? t('valuePlaceholders.money')
+              : objectiveType === 'duration'
+                ? t('valuePlaceholders.duration')
+                : t('valuePlaceholders.value');
     const form = useForm<CreateUpdateProgress>({
         defaultValues: {
             comment: '',
-            updatedValue: 0,
+            updatedValue: 1,
             updateDate: new Date(),
         },
         validators: {
@@ -96,10 +121,10 @@ export default function CreateUpdateProgressFormModal() {
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('updatedValue')}</FormLabel>
+                                    <FormLabel>{updatedValueLabel}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder={t('enterUpdatedValue')}
+                                            placeholder={updatedValuePlaceholder}
                                             type="number"
                                             data-testid="progress-value-input"
                                             {...field}
@@ -110,7 +135,9 @@ export default function CreateUpdateProgressFormModal() {
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('giveYourUpdateProgressAClearConciseTitle')}
+                                        {t('valueDescription', {
+                                            unit: unitLabel,
+                                        })}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

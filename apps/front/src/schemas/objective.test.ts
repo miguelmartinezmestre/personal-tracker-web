@@ -12,6 +12,8 @@ describe("objectiveSchema", () => {
             deadline: Date.now(),
             status: "in_progress",
             unit: "kg",
+            objectiveType: "value",
+            period: "none",
         };
 
         const result = objectiveSchema.safeParse(validObjective);
@@ -46,6 +48,10 @@ describe("objectiveSchema", () => {
             deadline: null,
             status: null,
             unit: null,
+            objectiveType: null,
+            period: null,
+            periodStart: null,
+            periodLengthDays: null,
         };
 
         const result = objectiveSchema.safeParse(objectiveWithNulls);
@@ -57,6 +63,8 @@ describe("objectiveSchema", () => {
             title: "Test Objective",
             targetValue: 100,
             currentValue: 50,
+            objectiveType: undefined,
+            period: undefined,
         };
 
         const result = objectiveSchema.safeParse(objectiveWithUndefined);

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+export const objectiveTypeSchema = z.enum(['value', 'count', 'money', 'duration']);
+export const periodSchema = z.enum(['none', 'weekly', 'monthly', 'custom']);
+
 export const objectiveSchema = z.object({
     title: z.string().min(1, { message: 'Title is required' }),
     description: z.string().optional().nullable(),
@@ -9,6 +12,10 @@ export const objectiveSchema = z.object({
     deadline: z.number().optional().nullable(),
     status: z.string().optional().nullable(),
     unit: z.string().optional().nullable(),
+    objectiveType: objectiveTypeSchema.optional().nullable(),
+    period: periodSchema.optional().nullable(),
+    periodStart: z.number().optional().nullable(),
+    periodLengthDays: z.number().int().positive().optional().nullable(),
     // createdAt: z.date().nullable(),
     // updatedAt: z.date().nullable(),
 });

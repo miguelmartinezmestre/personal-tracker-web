@@ -8,6 +8,7 @@ import { createTestUser } from "./test_helpers";
 describe("convex objectives", async () => {
     const t = convexTest(schema, modules);
     let userId: string;
+    const DAY_MS = 24 * 60 * 60 * 1000;
 
     const userIdentity = t.withIdentity({
         subject: "test-user-123",
@@ -40,6 +41,8 @@ describe("convex objectives", async () => {
             deadline: Date.now() + 30 * 24 * 60 * 60 * 1000,
             status: "not_started",
             unit: "EUR",
+            objectiveType: "money",
+            period: "monthly",
         });
 
         expect(objectiveId).toBeDefined();
@@ -52,7 +55,46 @@ describe("convex objectives", async () => {
         expect(objective?.currentValue).toBe(250);
         expect(objective?.status).toBe("not_started");
         expect(objective?.unit).toBe("EUR");
+        expect(objective?.objectiveType).toBe("money");
+        expect(objective?.period).toBe("monthly");
         expect(objective?.user).toBe(userId);
+    });
+
+    test("getObjectiveById computes period progress for event-based objectives", async () => {
+        const now = Date.now();
+        const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            title: "Gym visits",
+            targetValue: 3,
+            currentValue: 0,
+            status: "in_progress",
+            objectiveType: "count",
+            period: "custom",
+            periodStart: now - 2 * DAY_MS,
+            periodLengthDays: 7,
+        });
+
+        await userIdentity.run(async (ctx) => {
+            await ctx.db.insert("progressUpdates", {
+                objective: objectiveId,
+                updatedValue: 1,
+                updateDate: now - DAY_MS,
+                createdAt: now,
+                updatedAt: now,
+            });
+            await ctx.db.insert("progressUpdates", {
+                objective: objectiveId,
+                updatedValue: 2,
+                updateDate: now - 10 * DAY_MS,
+                createdAt: now,
+                updatedAt: now,
+            });
+        });
+
+        const objective = await userIdentity.query(api.objectives.getObjectiveById, {
+            id: objectiveId,
+        });
+
+        expect(objective?.currentValue).toBe(1);
     });
 
     test("getObjectivesByUser returns user's objectives", async () => {

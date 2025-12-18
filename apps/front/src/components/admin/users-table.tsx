@@ -12,6 +12,7 @@ import { EditUserModal } from './edit-user-modal';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useRequireAdmin } from '@/hooks/use-user-role';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 
 type User = {
     id: string;
@@ -97,9 +98,6 @@ export function UsersTable() {
     // Eliminar usuario
     const deleteUser = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
-            if (!confirm(t('usersTable.confirm.deleteUser'))) {
-                return;
-            }
             return await authClient.admin.removeUser({ userId });
         },
         onSuccess: () => {
@@ -198,14 +196,25 @@ export function UsersTable() {
                                 <Ban className="h-4 w-4" />
                             </Button>
                         )}
-                        <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteUser.mutate({ userId: user.id })}
-                            disabled={deleteUser.isPending}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <DeleteConfirmationDialog
+                            onConfirm={async () => {
+                                await deleteUser.mutateAsync({ userId: user.id });
+                            }}
+                            title={t('usersTable.confirm.deleteUser')}
+                            description={t('usersTable.confirm.deleteUserDescription')}
+                            confirmLabel={t('usersTable.confirm.deleteConfirm')}
+                            cancelLabel={t('usersTable.confirm.cancel')}
+                            isLoading={deleteUser.isPending}
+                            trigger={
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    disabled={deleteUser.isPending}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            }
+                        />
                     </div>
                 );
             },

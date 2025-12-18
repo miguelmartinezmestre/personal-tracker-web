@@ -15,6 +15,10 @@ export default defineSchema({
         deadline: v.optional(v.number()),
         status: v.string(),
         unit: v.optional(v.string()),
+        objectiveType: v.optional(v.string()),
+        period: v.optional(v.string()),
+        periodStart: v.optional(v.number()),
+        periodLengthDays: v.optional(v.number()),
         createdAt: v.number(),
         updatedAt: v.number(),
     }).index('by_user', ['user']),
@@ -26,7 +30,9 @@ export default defineSchema({
         comment: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index('by_objective', ['objective']),
+    })
+        .index('by_objective', ['objective'])
+        .index('by_objective_date', ['objective', 'updateDate']),
 
     notifications: defineTable({
         user: v.string(),

@@ -51,6 +51,10 @@ const defaultValues: CreateObjective = {
     deadline: null,
     status: 'not_started',
     unit: '',
+    objectiveType: 'value',
+    period: 'none',
+    periodStart: null,
+    periodLengthDays: null,
     // createdAt: new Date().toISOString(),
     // updatedAt: new Date().toISOString(),
 };
@@ -65,6 +69,32 @@ export default function CreateObjectiveFormModal() {
         { value: 'in_progress', label: t('statusOptions.inProgress') },
         { value: 'completed', label: t('statusOptions.completed') },
     ];
+
+    const objectiveTypeOptions = [
+        { value: 'value', label: t('objectiveTypeOptions.value') },
+        { value: 'count', label: t('objectiveTypeOptions.count') },
+        { value: 'money', label: t('objectiveTypeOptions.money') },
+        { value: 'duration', label: t('objectiveTypeOptions.duration') },
+    ];
+
+    const periodOptions = [
+        { value: 'none', label: t('periodOptions.none') },
+        { value: 'weekly', label: t('periodOptions.weekly') },
+        { value: 'monthly', label: t('periodOptions.monthly') },
+        { value: 'custom', label: t('periodOptions.custom') },
+    ];
+
+    const defaultUnitByType: Record<string, string> = {
+        count: 'times',
+        money: 'EUR',
+        duration: 'minutes',
+    };
+
+    const defaultPeriodByType: Record<string, string> = {
+        count: 'weekly',
+        money: 'monthly',
+        duration: 'weekly',
+    };
 
     const categoryOptions = [
         { value: 'personal', label: t('categoryOptions.personal') },
@@ -105,10 +135,17 @@ export default function CreateObjectiveFormModal() {
             deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
             status: values.status ?? 'not_started',
             unit: values.unit ?? undefined,
+            objectiveType: values.objectiveType ?? undefined,
+            period: values.period ?? undefined,
+            periodStart: values.periodStart ?? undefined,
+            periodLengthDays: values.periodLengthDays ?? undefined,
         });
         setOpen(false);
         form.reset();
     };
+
+    const objectiveType = form.state.values.objectiveType ?? 'value';
+    const period = form.state.values.period ?? 'none';
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -213,6 +250,215 @@ export default function CreateObjectiveFormModal() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
+                                name="objectiveType"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('smartForm.fields.objectiveType')}</FormLabel>
+                                        <Select
+                                            onValueChange={value => {
+                                                field.onChange(value);
+                                                if (value === 'value') {
+                                                    form.setFieldValue('period', 'none');
+                                                    form.setFieldValue('periodStart', null);
+                                                    form.setFieldValue('periodLengthDays', null);
+                                                } else if (
+                                                    !form.state.values.period ||
+                                                    form.state.values.period === 'none'
+                                                ) {
+                                                    form.setFieldValue(
+                                                        'period',
+                                                        defaultPeriodByType[value] ?? 'weekly'
+                                                    );
+                                                }
+                                                if (
+                                                    !form.state.values.unit &&
+                                                    defaultUnitByType[value]
+                                                ) {
+                                                    form.setFieldValue(
+                                                        'unit',
+                                                        defaultUnitByType[value]
+                                                    );
+                                                }
+                                            }}
+                                            value={field.value || 'value'}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger
+                                                    data-testid="objective-type-select"
+                                                >
+                                                    <SelectValue
+                                                        placeholder={t(
+                                                            'smartForm.placeholders.objectiveType'
+                                                        )}
+                                                    />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {objectiveTypeOptions.map(option => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormDescription>
+                                            {t('objectiveTypeDescription')}
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                name="period"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('smartForm.fields.period')}</FormLabel>
+                                        <Select
+                                            onValueChange={value => {
+                                                field.onChange(value);
+                                                if (value !== 'custom') {
+                                                    form.setFieldValue('periodStart', null);
+                                                    form.setFieldValue('periodLengthDays', null);
+                                                } else {
+                                                    if (!form.state.values.periodStart) {
+                                                        form.setFieldValue(
+                                                            'periodStart',
+                                                            Date.now()
+                                                        );
+                                                    }
+                                                    if (!form.state.values.periodLengthDays) {
+                                                        form.setFieldValue('periodLengthDays', 7);
+                                                    }
+                                                }
+                                            }}
+                                            value={field.value || 'none'}
+                                            disabled={objectiveType === 'value'}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger
+                                                    data-testid="objective-period-select"
+                                                >
+                                                    <SelectValue
+                                                        placeholder={t(
+                                                            'smartForm.placeholders.period'
+                                                        )}
+                                                    />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {periodOptions.map(option => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormDescription>
+                                            {t('periodDescription')}
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {objectiveType !== 'value' && period === 'custom' && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormField
+                                    name="periodStart"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>{t('periodStart')}</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant={'outline'}
+                                                            className={cn(
+                                                                'w-full pl-3 text-left font-normal',
+                                                                !field.value &&
+                                                                    'text-muted-foreground'
+                                                            )}
+                                                        >
+                                                            {field.value ? (
+                                                                new Date(
+                                                                    field.value
+                                                                ).toLocaleDateString()
+                                                            ) : (
+                                                                <span>
+                                                                    {t('pickADate')}
+                                                                </span>
+                                                            )}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="w-auto p-0"
+                                                    align="start"
+                                                >
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={
+                                                            field.value
+                                                                ? new Date(field.value)
+                                                                : undefined
+                                                        }
+                                                        onSelect={date =>
+                                                            field.onChange(
+                                                                date?.getTime() || null
+                                                            )
+                                                        }
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormDescription>
+                                                {t('periodStartDescription')}
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    name="periodLengthDays"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('periodLengthDays')}</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    {...field}
+                                                    onChange={e =>
+                                                        field.onChange(
+                                                            e.target.value === ''
+                                                                ? null
+                                                                : Number.parseInt(e.target.value, 10)
+                                                        )
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                {t('periodLengthDaysDescription')}
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormField
                                 name="targetValue"
                                 render={({ field }) => (
                                     <FormItem>
@@ -261,26 +507,32 @@ export default function CreateObjectiveFormModal() {
                             />
                         </div>
 
-                        <FormField
-                            name="currentValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('smartForm.fields.currentValue')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            {...field}
-                                            onChange={e =>
-                                                field.onChange(Number.parseFloat(e.target.value))
-                                            }
-                                            data-testid="objective-current-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>{t('yourCurrentProgress')}</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {objectiveType === 'value' && (
+                            <FormField
+                                name="currentValue"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('smartForm.fields.currentValue')}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                {...field}
+                                                onChange={e =>
+                                                    field.onChange(
+                                                        Number.parseFloat(e.target.value)
+                                                    )
+                                                }
+                                                data-testid="objective-current-input"
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            {t('yourCurrentProgress')}
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         <FormField
                             name="deadline"

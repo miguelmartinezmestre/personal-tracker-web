@@ -41,6 +41,8 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, ResponsiveObje
         // Filter objectives based on the current filters
         const filteredObjectives = React.useMemo(() => {
             let filtered = propObjectives ?? fetchedObjectives ?? [];
+            const getProgressRatio = (objective: Objective) =>
+                objective.targetValue > 0 ? objective.currentValue / objective.targetValue : 0;
 
             // Apply search filter
             if (filters.search) {
@@ -108,9 +110,9 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, ResponsiveObje
                     case 'title_desc':
                         return b.title.localeCompare(a.title);
                     case 'progress_asc':
-                        return (a.currentValue / a.targetValue) - (b.currentValue / b.targetValue);
+                        return getProgressRatio(a) - getProgressRatio(b);
                     case 'progress_desc':
-                        return (b.currentValue / b.targetValue) - (a.currentValue / a.targetValue);
+                        return getProgressRatio(b) - getProgressRatio(a);
                     default:
                         return 0;
                 }

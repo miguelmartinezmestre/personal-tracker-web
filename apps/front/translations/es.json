@@ -227,6 +227,26 @@
         "saveObjective": "Guardar objetivo",
         "category": "Categoría",
         "unit": "Unidad",
+        "objectiveType": "Tipo de objetivo",
+        "objectiveTypeDescription": "Selecciona como se mide este objetivo.",
+        "objectiveTypeOptions": {
+            "value": "Valor",
+            "count": "Veces",
+            "money": "Dinero",
+            "duration": "Duracion"
+        },
+        "period": "Periodo",
+        "periodDescription": "Elige el periodo para este objetivo.",
+        "periodOptions": {
+            "none": "Sin periodo",
+            "weekly": "Semanal",
+            "monthly": "Mensual",
+            "custom": "Personalizado"
+        },
+        "periodStart": "Inicio del periodo",
+        "periodStartDescription": "Fecha de inicio para el periodo personalizado.",
+        "periodLengthDays": "Duracion del periodo (dias)",
+        "periodLengthDaysDescription": "Longitud de cada periodo en dias.",
         "editObjectiveDescription": "Llena el formulario a continuación para editar tu objetivo. Haz clic en guardar cuando hayas terminado.",
         "cancel": "Cancelar",
         "giveYourObjectiveAClearConciseTitle": "Dale a tu objetivo un título claro y conciso.",
@@ -284,7 +304,10 @@
             "noObjectivesFound": "No se encontraron objetivos"
         },
         "confirm": {
-            "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?"
+            "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
+            "deleteObjectiveDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el objetivo y todos sus datos asociados.",
+            "deleteConfirm": "Eliminar",
+            "cancel": "Cancelar"
         },
         "toast": {
             "deletedSuccess": "Objetivo eliminado exitosamente",
@@ -358,19 +381,23 @@
                 "titleRequired": "Título *",
                 "description": "Descripción",
                 "category": "Categoría",
+                "objectiveType": "Tipo de objetivo",
                 "unit": "Unidad",
                 "targetValueRequired": "Valor objetivo *",
                 "currentValue": "Valor actual",
-                "deadline": "Fecha límite"
+                "deadline": "Fecha límite",
+                "period": "Periodo"
             },
             "placeholders": {
                 "title": "Ingresa el título de tu objetivo...",
                 "description": "Describe tu objetivo...",
                 "category": "Selecciona una categoría",
+                "objectiveType": "Selecciona el tipo de objetivo",
                 "unit": "Selecciona una unidad",
                 "targetValue": "Valor objetivo...",
                 "currentValue": "Valor actual...",
-                "pickDate": "Selecciona una fecha"
+                "pickDate": "Selecciona una fecha",
+                "period": "Selecciona el periodo"
             },
             "buttons": {
                 "create": "Crear objetivo",
@@ -441,7 +468,17 @@
         "cancel": "Cancelar",
         "giveYourTeamAClearConciseName": "Dale a tu equipo un nombre claro y conciso.",
         "giveYourTeamMemberAClearConciseEmail": "Dale a tu miembro del equipo un correo electrónico claro y conciso.",
-        "goToTeam": "Ir al equipo"
+        "goToTeam": "Ir al equipo",
+        "confirm": {
+            "deleteTeam": "¿Estás seguro de que quieres eliminar este equipo?",
+            "deleteTeamDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el equipo y todos sus miembros.",
+            "deleteConfirm": "Eliminar",
+            "cancel": "Cancelar"
+        },
+        "toast": {
+            "deletedSuccess": "Equipo eliminado exitosamente",
+            "deleteFailed": "Error al eliminar equipo"
+        }
     },
     "Settings": {
         "title": "Configuración",
@@ -505,7 +542,10 @@
                 "active": "Activo"
             },
             "confirm": {
-                "deleteUser": "¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer.",
+                "deleteUser": "¿Estás seguro de que quieres eliminar este usuario?",
+                "deleteUserDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el usuario y todos sus datos asociados.",
+                "deleteConfirm": "Eliminar",
+                "cancel": "Cancelar",
                 "banReasonPrompt": "Razón del ban (opcional):"
             },
             "placeholders": {
@@ -602,6 +642,19 @@
         "createNewUpdateProgressDescription": "Llena el formulario a continuación para crear un nuevo progreso. Haz clic en guardar cuando hayas terminado.",
         "updatedValue": "Valor actualizado",
         "enterUpdatedValue": "Ingresa el valor actualizado",
+        "valueLabels": {
+            "value": "Valor actualizado",
+            "count": "Veces",
+            "money": "Monto",
+            "duration": "Duracion"
+        },
+        "valuePlaceholders": {
+            "value": "Ingresa el valor actualizado",
+            "count": "Ingresa las veces",
+            "money": "Ingresa el monto",
+            "duration": "Ingresa la duracion"
+        },
+        "valueDescription": "Valor de esta actualizacion{unit}",
         "comment": "Comentario",
         "describeYourUpdateProgressInDetail": "Describe tu progreso actualizado en detalle",
         "optionalAddDetailsAboutYourUpdateProgress": "Opcional: Agrega detalles sobre tu progreso actualizado.",
@@ -619,6 +672,16 @@
                 "edit": "Editar",
                 "delete": "Eliminar"
             }
+        },
+        "confirm": {
+            "deleteTitle": "¿Estás seguro de que quieres eliminar esta actualización?",
+            "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente esta actualización de progreso.",
+            "deleteConfirm": "Eliminar",
+            "cancel": "Cancelar"
+        },
+        "toast": {
+            "deletedSuccess": "Actualización eliminada exitosamente",
+            "deleteFailed": "Error al eliminar actualización"
         }
     },
     "TeamMembers": {
@@ -644,6 +707,16 @@
         "editTeamMember": "Editar miembro del equipo",
         "editTeamMemberTitle": "Editar miembro del equipo",
         "editTeamMemberCancel": "Editar miembro del equipo Cancelar",
-        "giveYourTeamMemberAClearConciseEmail": "Dale a tu miembro del equipo un correo electrónico claro y conciso."
+        "giveYourTeamMemberAClearConciseEmail": "Dale a tu miembro del equipo un correo electrónico claro y conciso.",
+        "confirm": {
+            "deleteTitle": "¿Estás seguro de que quieres eliminar este miembro?",
+            "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente este miembro del equipo.",
+            "deleteConfirm": "Eliminar",
+            "cancel": "Cancelar"
+        },
+        "toast": {
+            "deletedSuccess": "Miembro eliminado exitosamente",
+            "deleteFailed": "Error al eliminar miembro"
+        }
     }
 }

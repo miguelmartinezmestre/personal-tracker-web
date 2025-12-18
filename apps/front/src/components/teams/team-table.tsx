@@ -10,11 +10,21 @@ import { useTranslations } from 'next-intl';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { Doc } from '@repo/backend/convex/_generated/dataModel';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { toast } from 'sonner';
 
 export default function TeamsTable() {
     const t = useTranslations('Teams');
     const teams = useSuspenseQuery(convexQuery(api.teams.getTeams, {}));
-    const deleteTeam = useMutation({ mutationFn: useConvexMutation(api.teams.deleteTeam) });
+    const deleteTeam = useMutation({
+        mutationFn: useConvexMutation(api.teams.deleteTeam),
+        onSuccess: () => {
+            toast.success(t('toast.deletedSuccess'));
+        },
+        onError: () => {
+            toast.error(t('toast.deleteFailed'));
+        },
+    });
 
     const columns: ColumnDef<Doc<"organization">>[] = [
         {
@@ -41,14 +51,26 @@ export default function TeamsTable() {
             cell: ({ row }) => {
                 const teamRow = row.original;
                 return (
-                    <Button
-                        onClick={async () => {
+                    <DeleteConfirmationDialog
+                        onConfirm={async () => {
                             await deleteTeam.mutateAsync({ _id: teamRow._id });
                         }}
-                        data-testid="team-delete-button"
-                    >
-                        {t('deleteTeam')}
-                    </Button>
+                        title={t('confirm.deleteTeam')}
+                        description={t('confirm.deleteTeamDescription')}
+                        triggerLabel={t('deleteTeam')}
+                        confirmLabel={t('confirm.deleteConfirm')}
+                        cancelLabel={t('confirm.cancel')}
+                        isLoading={deleteTeam.isPending}
+                        trigger={
+                            <Button
+                                data-testid="team-delete-button"
+                                variant="destructive"
+                                size="sm"
+                            >
+                                {t('deleteTeam')}
+                            </Button>
+                        }
+                    />
                 );
             },
         },

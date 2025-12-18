@@ -227,6 +227,26 @@
         "saveObjective": "Save Objective",
         "category": "Category",
         "unit": "Unit",
+        "objectiveType": "Objective type",
+        "objectiveTypeDescription": "Select how this objective is measured.",
+        "objectiveTypeOptions": {
+            "value": "Value",
+            "count": "Count",
+            "money": "Money",
+            "duration": "Duration"
+        },
+        "period": "Period",
+        "periodDescription": "Choose the period for this objective.",
+        "periodOptions": {
+            "none": "No period",
+            "weekly": "Weekly",
+            "monthly": "Monthly",
+            "custom": "Custom"
+        },
+        "periodStart": "Period start",
+        "periodStartDescription": "Start date for the custom period.",
+        "periodLengthDays": "Period length (days)",
+        "periodLengthDaysDescription": "Length of each period in days.",
         "editObjectiveDescription": "Fill out the form below to edit your objective. Click save when you're done.",
         "cancel": "Cancel",
         "giveYourObjectiveAClearConciseTitle": "Give your objective a clear, concise title.",
@@ -358,19 +378,23 @@
                 "titleRequired": "Title *",
                 "description": "Description",
                 "category": "Category",
+                "objectiveType": "Objective type",
                 "unit": "Unit",
                 "targetValueRequired": "Target value *",
                 "currentValue": "Current value",
-                "deadline": "Deadline"
+                "deadline": "Deadline",
+                "period": "Period"
             },
             "placeholders": {
                 "title": "Enter your objective title...",
                 "description": "Describe your objective...",
                 "category": "Select category",
+                "objectiveType": "Select objective type",
                 "unit": "Select unit",
                 "targetValue": "Target value...",
                 "currentValue": "Current value...",
-                "pickDate": "Pick a date"
+                "pickDate": "Pick a date",
+                "period": "Select period"
             },
             "buttons": {
                 "create": "Create objective",
@@ -602,6 +626,19 @@
         "createNewUpdateProgressDescription": "Fill out the form below to create a new update progress. Click save when you're done.",
         "updatedValue": "Updated Value",
         "enterUpdatedValue": "Enter updated value",
+        "valueLabels": {
+            "value": "Updated value",
+            "count": "Times",
+            "money": "Amount",
+            "duration": "Duration"
+        },
+        "valuePlaceholders": {
+            "value": "Enter updated value",
+            "count": "Enter times",
+            "money": "Enter amount",
+            "duration": "Enter duration"
+        },
+        "valueDescription": "Value for this update{unit}",
         "comment": "Comment",
         "describeYourUpdateProgressInDetail": "Describe your update progress in detail",
         "optionalAddDetailsAboutYourUpdateProgress": "Optional: Add details about your update progress.",
