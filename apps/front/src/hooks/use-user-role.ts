@@ -4,65 +4,95 @@ import { useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@repo/backend/convex/_generated/api';
 import { authClient } from '@/lib/auth-client';
+import { useUser } from '@/contexts/user-context';
+
+// Helper to check if a role is admin
+function isAdminRole(role: string | string[] | undefined): boolean {
+    if (!role) return false;
+    if (role === 'admin' || role === 'ADMIN') return true;
+    if (Array.isArray(role)) {
+        return role.includes('admin') || role.includes('ADMIN');
+    }
+    return false;
+}
 
 export function useUserRole() {
-    const authUser = useQuery(api.auth.getCurrentUser, {});
-    const userRole = useQuery(api.users.getUserRole, {});
+    // Try to use user from context first (available when inside AuthenticatedView)
+    // This avoids redundant queries when user is already available
+    let contextUser: ReturnType<typeof useUser> | null = null;
+    try {
+        contextUser = useUser();
+    } catch {
+        // User context not available, will fall back to queries
+    }
+
+    // Only query if context user is not available
+    const authUser = useQuery(
+        api.auth.getCurrentUser,
+        contextUser ? 'skip' : {}
+    );
+    const userRole = useQuery(
+        api.users.getUserRole,
+        contextUser ? 'skip' : {}
+    );
     const { data: session } = authClient.useSession();
 
+    // Use context user if available, otherwise use queried user
+    const user = contextUser ?? authUser ?? null;
+
     const isAdmin = useMemo(() => {
-        if (!authUser?._id) return false;
+        if (!user?._id) return false;
 
-        // 1. Check session role from better-auth
+        // 1. Check user role from context/query
+        const userRoleValue = (user as { role?: string | string[] })?.role;
+        if (isAdminRole(userRoleValue)) {
+            return true;
+        }
+
+        // 2. Check user role from separate query (fallback)
+        if (userRole?.role && isAdminRole(userRole.role)) {
+            return true;
+        }
+
+        // 3. Check session role from better-auth (fallback)
         const sessionRole = session?.user?.role;
-        if (
-            sessionRole === 'admin' ||
-            sessionRole === 'ADMIN' ||
-            (Array.isArray(sessionRole) &&
-                (sessionRole.includes('admin') || sessionRole.includes('ADMIN')))
-        ) {
-            return true;
-        }
-
-        // 2. Check auth user role
-        const authRole = (authUser as { role?: string | string[] })?.role;
-        if (
-            authRole === 'admin' ||
-            authRole === 'ADMIN' ||
-            (Array.isArray(authRole) && (authRole.includes('admin') || authRole.includes('ADMIN')))
-        ) {
-            return true;
-        }
-
-        // 3. Check user role from query
-        const role = userRole?.role;
-        if (role === 'admin' || role === 'ADMIN') {
+        if (isAdminRole(sessionRole)) {
             return true;
         }
 
         return false;
-    }, [authUser, userRole, session]);
-
-    const user = useMemo(() => {
-        return authUser;
-    }, [authUser]);
+    }, [user, userRole, session]);
 
     const isAuthenticated = useMemo(() => {
-        return !!authUser?._id;
-    }, [authUser]);
+        return !!user?._id;
+    }, [user]);
 
     return {
         user,
         isAdmin,
         isAuthenticated,
         role:
+            (user as { role?: string | string[] })?.role ||
             userRole?.role ||
-            (authUser as { role?: string | string[] })?.role ||
             session?.user?.role,
     };
 }
 
 export function useRequireAuth() {
+    // Try to use user from context first (more efficient)
+    let contextUser: ReturnType<typeof useUser> | null = null;
+    try {
+        contextUser = useUser();
+    } catch {
+        // User context not available, will fall back to useUserRole
+    }
+
+    // If context user is available, use it directly (no queries needed)
+    if (contextUser) {
+        return { user: contextUser, isAuthenticated: true };
+    }
+
+    // Fallback to useUserRole if context is not available
     const { isAuthenticated, user } = useUserRole();
 
     if (!isAuthenticated || !user) {

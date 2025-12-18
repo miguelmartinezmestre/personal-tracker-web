@@ -15,23 +15,15 @@ import AccountSettingsForm from './account-settings-form-edit';
 import { Settings } from 'lucide-react';
 import PasswordFormEdit from './password-form-edit';
 import { useTranslations } from 'next-intl';
-import { useRequireAuth } from '@/hooks/use-user-role';
+import { useUser } from '@/contexts/user-context';
 
 export default function EditSettingsFormModal() {
     const t = useTranslations('Settings');
     const [open, setOpen] = useState(false);
-
-    // Verify authentication
-    try {
-        useRequireAuth();
-    } catch {
-        return (
-            <SidebarMenuButton className="gap-2" disabled>
-                <Settings className="h-4 w-4" />
-                {t('title')}
-            </SidebarMenuButton>
-        );
-    }
+    
+    // User is guaranteed to be available here since this component
+    // is only rendered inside AuthenticatedView (via dashboard/layout.tsx)
+    useUser(); // This will throw if not in context, which shouldn't happen
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
