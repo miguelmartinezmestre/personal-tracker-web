@@ -1,22 +1,18 @@
-import { mutation, query, QueryCtx } from "./_generated/server";
-import {
-    customCtx,
-    customMutation,
-    customQuery,
-} from "convex-helpers/server/customFunctions";
+import { mutation, query, QueryCtx } from './_generated/server';
+import { customCtx, customMutation, customQuery } from 'convex-helpers/server/customFunctions';
 import {
     Rules,
     RLSConfig,
     wrapDatabaseReader,
     wrapDatabaseWriter,
-} from "convex-helpers/server/rowLevelSecurity";
-import { DataModel } from "./_generated/dataModel";
-import { ConvexError } from "convex/values";
+} from 'convex-helpers/server/rowLevelSecurity';
+import { DataModel } from './_generated/dataModel';
+import { ConvexError } from 'convex/values';
 
 async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
     // Helper para verificar si un usuario es admin global
     const isGlobalAdmin = async () => {
-        if (role !== "admin") return false;
+        if (role !== 'admin') return false;
         try {
             // If not found, try to find by _id
             return true;
@@ -29,9 +25,9 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
     const isOrganizationMember = async (organizationId: string) => {
         if (role !== "admin") return false;
         const member = await ctx.db
-            .query("member")
-            .withIndex("organizationId", (q) => q.eq("organizationId", organizationId))
-            .filter((q) => q.eq(q.field("userId"), userId))
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+            .filter(q => q.eq(q.field('userId'), userId))
             .first();
         return !!member;
     };
@@ -43,15 +39,12 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
         if (await isGlobalAdmin()) return true;
 
         const member = await ctx.db
-            .query("member")
-            .withIndex("organizationId", (q) => q.eq("organizationId", organizationId))
-            .filter((q) =>
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+            .filter(q =>
                 q.and(
-                    q.eq(q.field("userId"), userId),
-                    q.or(
-                        q.eq(q.field("role"), "owner"),
-                        q.eq(q.field("role"), "admin")
-                    )
+                    q.eq(q.field('userId'), userId),
+                    q.or(q.eq(q.field('role'), 'owner'), q.eq(q.field('role'), 'admin'))
                 )
             )
             .first();
@@ -190,8 +183,8 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
 
                 // Verificar si la organización tiene miembros
                 const existingMembers = await ctx.db
-                    .query("member")
-                    .withIndex("organizationId", (q) => q.eq("organizationId", member.organizationId))
+                    .query('member')
+                    .withIndex('organizationId', q => q.eq('organizationId', member.organizationId))
                     .collect();
 
                 // Si no hay miembros, permitir que el usuario se agregue a sí mismo
@@ -247,7 +240,11 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 // Los admins pueden modificar cualquier usuario
                 if (isAdmin) return true;
                 // Los usuarios solo pueden modificar su propio perfil
-                return String(userRecord._id) === userId || userRecord.userId === userId || String(userRecord._id) === String(userId);
+                return (
+                    String(userRecord._id) === userId ||
+                    userRecord.userId === userId ||
+                    String(userRecord._id) === String(userId)
+                );
             },
         },
         account: {
@@ -302,51 +299,50 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
 }
 
 // Por defecto, las tablas sin regla tienen `defaultPolicy` configurado como "deny"
-const config: RLSConfig = { defaultPolicy: "deny" };
+const config: RLSConfig = { defaultPolicy: 'deny' };
 
 export const queryWithRLS = customQuery(
     query,
-    customCtx(async (ctx) => {
-
+    customCtx(async ctx => {
         const identity = await ctx.auth.getUserIdentity();
 
         if (!identity) {
-            throw new ConvexError("User not authenticated");
+            throw new ConvexError('User not authenticated');
         }
 
         const role = String(identity.role ?? 'user');
         const userId = String(identity.subject);
 
         if (!userId || userId === '') {
-            throw new ConvexError("User not authenticated");
+            throw new ConvexError('User not authenticated');
         }
 
         return {
             db: wrapDatabaseReader(ctx, ctx.db, await rlsRules(userId, role, ctx), config),
             identity: identity,
         };
-    }),
+    })
 );
 
 export const mutationWithRLS = customMutation(
     mutation,
-    customCtx(async (ctx) => {
+    customCtx(async ctx => {
         const identity = await ctx.auth.getUserIdentity();
 
         if (!identity) {
-            throw new ConvexError("User not authenticated");
+            throw new ConvexError('User not authenticated');
         }
 
         const role = String(identity.role ?? 'user');
         const userId = String(identity.subject);
 
         if (!userId || userId === '') {
-            throw new ConvexError("User not authenticated");
+            throw new ConvexError('User not authenticated');
         }
 
         return {
             db: wrapDatabaseWriter(ctx, ctx.db, await rlsRules(userId, role, ctx), config),
             identity: identity,
         };
-    }),
+    })
 );

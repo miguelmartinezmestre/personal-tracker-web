@@ -13,6 +13,7 @@ import {
 } from '@repo/ui/components/alert-dialog';
 import { Button } from '@repo/ui/components/button';
 import { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface DeleteConfirmationDialogProps {
     onConfirm: () => void | Promise<void>;
@@ -33,12 +34,17 @@ export function DeleteConfirmationDialog({
     description,
     trigger,
     triggerLabel,
-    confirmLabel = 'Eliminar',
-    cancelLabel = 'Cancelar',
+    confirmLabel,
+    cancelLabel,
     variant = 'destructive',
     size = 'sm',
     isLoading = false,
 }: DeleteConfirmationDialogProps) {
+    const t = useTranslations('DeleteConfirmation');
+
+    const resolvedConfirmLabel = confirmLabel ?? t('confirm');
+    const resolvedCancelLabel = cancelLabel ?? t('cancel');
+
     const handleConfirm = async () => {
         await onConfirm();
     };
@@ -48,25 +54,25 @@ export function DeleteConfirmationDialog({
             <AlertDialogTrigger asChild>
                 {trigger || (
                     <Button variant={variant} size={size} disabled={isLoading}>
-                        {triggerLabel || confirmLabel}
+                        {triggerLabel || resolvedConfirmLabel}
                     </Button>
                 )}
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{title || '¿Estás seguro?'}</AlertDialogTitle>
+                    <AlertDialogTitle>{title || t('defaultTitle')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        {description || 'Esta acción no se puede deshacer.'}
+                        {description || t('defaultDescription')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
+                    <AlertDialogCancel disabled={isLoading}>{resolvedCancelLabel}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleConfirm}
                         disabled={isLoading}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        {isLoading ? 'Eliminando...' : confirmLabel}
+                        {isLoading ? t('deleting') : resolvedConfirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

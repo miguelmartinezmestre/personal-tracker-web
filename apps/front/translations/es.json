@@ -481,6 +481,11 @@
         }
     },
     "Settings": {
+        "dashboard": "Dashboard",
+        "settings": "Configuracion",
+        "account": "Cuenta",
+        "passwordSettingsDescription": "Edita tus configuraciones de contrasena aqui.",
+        "notificationsPlaceholder": "Cambia tus notificaciones aqui.",
         "title": "Configuración",
         "description": "Gestiona tus configuraciones para mantener un seguimiento de tu progreso.",
         "accountSettings": "Configuración de cuenta",
@@ -517,6 +522,11 @@
         "accessDeniedTitle": "Acceso denegado",
         "accessDeniedDescription": "No tienes permisos de administrador para acceder a esta función.",
         "usersTable": {
+            "empty": "No se encontraron usuarios.",
+            "emptyWithSearch": "No hay usuarios que coincidan con la busqueda.",
+            "roles": {
+                "user": "Usuario"
+            },
             "defaults": {
                 "banReason": "Banned by administrator"
             },
@@ -611,7 +621,24 @@
         "activeObjectives": "Objetivos activos",
         "progressUpdatesAddedPerMonth": "Progresos añadidos por mes",
         "remainDaysToDeadline": "Días restantes para la deadline",
-        "objectivesWithMostProgress": "Objetivos con mayor progreso (Sin completar)"
+        "objectivesWithMostProgress": "Objetivos con mayor progreso (Sin completar)",
+        "sample": {
+            "months": {
+                "january": "Enero",
+                "february": "Febrero",
+                "march": "Marzo",
+                "april": "Abril",
+                "may": "Mayo",
+                "june": "Junio"
+            },
+            "objectives": {
+                "onboardingFlow": "Desarrollar nuevo flujo de onboarding",
+                "marketingStrategy": "Finalizar estrategia de marketing Q3",
+                "databaseMigration": "Completar migracion de base de datos",
+                "redesignUi": "Redisenar interfaz de usuario",
+                "technicalDocs": "Escribir documentacion tecnica"
+            }
+        }
     },
     "Charts": {
         "labels": {
@@ -683,6 +710,73 @@
             "deletedSuccess": "Actualización eliminada exitosamente",
             "deleteFailed": "Error al eliminar actualización"
         }
+    },
+    "Header": {
+        "appName": "Métricas",
+        "aria": {
+            "closeMenu": "Cerrar menú",
+            "openMenu": "Abrir menú"
+        }
+    },
+    "UserAgent": {
+        "device": "Dispositivo",
+        "iphone": "iPhone",
+        "ipad": "iPad",
+        "androidPhone": "Teléfono Android",
+        "smartphone": "Teléfono",
+        "androidTablet": "Tablet Android",
+        "tablet": "Tablet",
+        "smartTv": "Smart TV",
+        "wearable": "Dispositivo wearable",
+        "embedded": "Dispositivo embebido",
+        "gameConsole": "Consola de juegos",
+        "windowsPc": "Windows PC",
+        "mac": "Mac",
+        "linuxPc": "Linux PC",
+        "chromebook": "Chromebook",
+        "androidDevice": "Dispositivo Android",
+        "iosDevice": "Dispositivo iOS",
+        "botCrawler": "Bot/Crawler",
+        "unknownOs": "Sistema operativo desconocido",
+        "unknownBrowser": "Navegador desconocido",
+        "descriptionTemplate": "{device} con {os} usando {browser}"
+    },
+    "ObjectiveCard": {
+        "perWeek": "por semana",
+        "perMonth": "por mes",
+        "perPeriod": "por periodo",
+        "percentComplete": "% Completado",
+        "onTrack": "En camino",
+        "goodProgress": "Buen progreso",
+        "needsAttention": "Necesita atención",
+        "viewProgress": "Ver progreso",
+        "edit": "Editar",
+        "delete": "Eliminar"
+    },
+    "DeleteConfirmation": {
+        "defaultTitle": "¿Estás seguro?",
+        "defaultDescription": "Esta acción no se puede deshacer.",
+        "confirm": "Eliminar",
+        "cancel": "Cancelar",
+        "deleting": "Eliminando..."
+    },
+    "Table": {
+        "toggleSorting": "Alternar ordenamiento",
+        "noResults": "Sin resultados",
+        "searchPlaceholder": "Buscar en tabla...",
+        "filters": "Filtros",
+        "columnFilters": "Filtros de columna",
+        "noFilterableColumns": "Sin columnas filtrables.",
+        "filterColumn": "Filtrar {column}",
+        "columns": "Columnas",
+        "toggleColumns": "Alternar columnas",
+        "order": "Orden",
+        "columnOrder": "Orden de columnas",
+        "resetOrder": "Restablecer orden",
+        "export": "Exportar",
+        "exportCsv": "Exportar CSV",
+        "exportExcel": "Exportar Excel",
+        "exportSheetName": "Datos"
     },
     "TeamMembers": {
         "createNewTeamMember": "Crear nuevo miembro del equipo",

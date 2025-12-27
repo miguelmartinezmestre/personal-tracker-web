@@ -2,11 +2,8 @@
 
 import * as React from 'react';
 import { useForm } from '@tanstack/react-form';
-// import { zodValidator } from '@tanstack/zod-form-adapter';
-// import { objectiveSchema, type CreateObjective } from '@/schemas/objective';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import type { CreateObjective } from '@/schemas/objective';
+import { useCreateObjective, useUpdateObjective } from '@/hooks/api/use-objectives';
 import { Button } from '@repo/ui/components/button';
 import { Input } from '@repo/ui/components/input';
 import { Textarea } from '@repo/ui/components/textarea';
@@ -19,7 +16,7 @@ import {
 } from '@repo/ui/components/select';
 import { Calendar } from '@repo/ui/components/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@repo/ui/components/popover';
-import { CalendarIcon, Save, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@repo/ui/lib/utils';
 import { toast } from 'sonner';
@@ -70,40 +67,10 @@ const SmartObjectiveForm = React.forwardRef<HTMLFormElement, SmartObjectiveFormP
         const t = useTranslations('Objectives');
         const tCommon = useTranslations('Common');
 
-        const queryClient = useQueryClient();
-        const [showDraftSaved, setShowDraftSaved] = React.useState(false);
-        const [isAutoSaving, setIsAutoSaving] = React.useState(false);
-        const [draftKey, setDraftKey] = React.useState<string>('');
+        const createObjectiveMutation = useCreateObjective();
+        const updateObjectiveMutation = useUpdateObjective();
 
-        const createObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.createObjective),
-            onSuccess: () => {
-                toast.success(t('toast.createSuccess'));
-                queryClient.invalidateQueries({ queryKey: ['objectives'] });
-                clearDraft();
-                onSubmit?.(form.state.values as CreateObjective);
-            },
-            onError: (error: Error) => {
-                toast.error(t('toast.createFailed'));
-                console.error(error);
-            },
-        });
-
-        const updateObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.updateObjective),
-            onSuccess: () => {
-                toast.success(t('toast.updateSuccess'));
-                queryClient.invalidateQueries({ queryKey: ['objectives'] });
-                clearDraft();
-                onSubmit?.(form.state.values as CreateObjective);
-            },
-            onError: (error: Error) => {
-                toast.error(t('toast.updateFailed'));
-                console.error(error);
-            },
-        });
-
-        const form = useForm({
+        const form = useForm<CreateObjective>({
             defaultValues: {
                 title: defaultValues?.title || '',
                 description: defaultValues?.description || '',
@@ -114,97 +81,48 @@ const SmartObjectiveForm = React.forwardRef<HTMLFormElement, SmartObjectiveFormP
                 status: defaultValues?.status || 'in_progress',
                 unit: defaultValues?.unit || '',
             },
-            onSubmit: async ({ value }: { value: unknown }) => {
+            onSubmit: async ({ value }) => {
                 if (mode === 'create') {
-                    createObjective.mutate(value);
+                    createObjectiveMutation.mutate({
+                        ...value,
+                        status: value.status || 'in_progress',
+                    }, {
+                        onSuccess: () => {
+                            toast.success(t('toast.createSuccess'));
+                            onSubmit?.(value);
+                        },
+                        onError: (error: Error) => {
+                            toast.error(t('toast.createFailed'));
+                            console.error(error);
+                        },
+                    });
                 } else if (mode === 'edit' && objectiveId) {
-                    updateObjective.mutate({ id: objectiveId, ...value });
+                    updateObjectiveMutation.mutate(
+                        { id: objectiveId, ...value },
+                        {
+                            onSuccess: () => {
+                                toast.success(t('toast.updateSuccess'));
+                                onSubmit?.(value);
+                            },
+                            onError: (error: Error) => {
+                                toast.error(t('toast.updateFailed'));
+                                console.error(error);
+                            },
+                        }
+                    );
                 }
             },
         });
-
-        // Auto-save functionality
-        const saveDraft = React.useCallback(
-            async (values: typeof form.state.values) => {
-                if (!draftKey) return;
-
-                setIsAutoSaving(true);
-                try {
-                    localStorage.setItem(draftKey, JSON.stringify(values));
-                    setShowDraftSaved(true);
-                    setTimeout(() => setShowDraftSaved(false), 2000);
-                } catch (error) {
-                    console.error('Failed to save draft:', error);
-                } finally {
-                    setIsAutoSaving(false);
-                }
-            },
-            [draftKey, form]
-        );
-
-        const clearDraft = React.useCallback(() => {
-            if (draftKey) {
-                localStorage.removeItem(draftKey);
-            }
-        }, [draftKey]);
-
-        // Set up draft key and load draft
-        React.useEffect(() => {
-            const key =
-                mode === 'create' ? 'objective-draft-new' : `objective-draft-${objectiveId}`;
-            setDraftKey(key);
-
-            try {
-                const savedDraft = localStorage.getItem(key);
-                if (savedDraft && !defaultValues) {
-                    const draft = JSON.parse(savedDraft);
-                    Object.keys(draft).forEach(key => {
-                        if (key in form.state.values) {
-                            form.setFieldValue(key, draft[key]);
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to load draft:', error);
-            }
-        }, [mode, objectiveId, defaultValues, form.state.values, form.setFieldValue, form]);
-
-        // Auto-save on form changes
-        React.useEffect(() => {
-            const timer = setTimeout(() => {
-                if (form.state.isDirty) {
-                    saveDraft(form.state.values);
-                }
-            }, 2000); // 2 second debounce
-
-            return () => clearTimeout(timer);
-        }, [form.state.values, form.state.isDirty, saveDraft]);
 
         const handleSubmit = (e: React.FormEvent) => {
             e.preventDefault();
             form.handleSubmit();
         };
 
-        const isLoading = createObjective.isPending || updateObjective.isPending;
+        const isLoading = createObjectiveMutation.isPending || updateObjectiveMutation.isPending;
 
         return (
             <form ref={ref} onSubmit={handleSubmit} className="space-y-6">
-                {/* Auto-save indicator */}
-                <div className="flex items-center justify-end text-sm text-muted-foreground">
-                    {isAutoSaving && (
-                        <div className="flex items-center">
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            {t('smartForm.autoSaving')}
-                        </div>
-                    )}
-                    {showDraftSaved && (
-                        <div className="flex items-center text-green-600">
-                            <Save className="h-3 w-3 mr-1" />
-                            {t('smartForm.draftSaved')}
-                        </div>
-                    )}
-                </div>
-
                 {/* Title */}
                 <form.Field name="title">
                     {field => (

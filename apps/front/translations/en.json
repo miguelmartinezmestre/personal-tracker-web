@@ -304,7 +304,10 @@
             "noObjectivesFound": "No objectives found"
         },
         "confirm": {
-            "deleteObjective": "Are you sure you want to delete this objective?"
+            "deleteObjective": "Are you sure you want to delete this objective?",
+            "deleteObjectiveDescription": "This action cannot be undone. This will permanently delete the objective and all associated data.",
+            "deleteConfirm": "Delete",
+            "cancel": "Cancel"
         },
         "toast": {
             "deletedSuccess": "Objective deleted successfully",
@@ -465,14 +468,28 @@
         "optionalAddDetailsAboutYourTeam": "Optional: Add details about your team.",
         "cancel": "Cancel",
         "goToTeam": "Go to Team",
-        "giveYourTeamMemberAClearConciseEmail": "Give your team member a clear, concise email."
+        "giveYourTeamMemberAClearConciseEmail": "Give your team member a clear, concise email.",
+        "confirm": {
+            "deleteTeam": "Are you sure you want to delete this team?",
+            "deleteTeamDescription": "This action cannot be undone. This will permanently delete the team and all its members.",
+            "deleteConfirm": "Delete",
+            "cancel": "Cancel"
+        },
+        "toast": {
+            "deletedSuccess": "Team deleted successfully",
+            "deleteFailed": "Failed to delete team"
+        }
     },
     "Settings": {
         "title": "Settings",
         "description": "Manage your settings to keep track of your progress.",
+        "dashboard": "Dashboard",
+        "settings": "Settings",
+        "account": "Account",
         "accountSettings": "Account Settings",
         "passwordSettings": "Password Settings",
         "accountSettingsDescription": "Edit your account settings here.",
+        "passwordSettingsDescription": "Edit your password settings here.",
         "accountDetails": "Account Details",
         "password": "Password",
         "saveAccount": "Save Account",
@@ -482,6 +499,7 @@
             "enterUsername": "Enter username",
             "enterEmail": "Enter email"
         },
+        "notificationsPlaceholder": "Change your notifications here.",
         "cancel": "Cancel",
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
@@ -508,6 +526,8 @@
                 "banReason": "Banned by administrator"
             },
             "loading": "Loading users...",
+            "empty": "No users found.",
+            "emptyWithSearch": "No users match your search.",
             "errors": {
                 "loadFailed": "Error loading users: {message}",
                 "permissionsHint": "Make sure you have admin permissions to access this section."
@@ -524,12 +544,18 @@
                 "status": "Status",
                 "actions": "Actions"
             },
+            "roles": {
+                "user": "User"
+            },
             "status": {
                 "banned": "Banned",
                 "active": "Active"
             },
             "confirm": {
-                "deleteUser": "Are you sure you want to delete this user? This action cannot be undone.",
+                "deleteUser": "Are you sure you want to delete this user?",
+                "deleteUserDescription": "This action cannot be undone. This will permanently delete the user and all associated data.",
+                "deleteConfirm": "Delete",
+                "cancel": "Cancel",
                 "banReasonPrompt": "Ban reason (optional):"
             },
             "placeholders": {
@@ -595,7 +621,24 @@
         "activeObjectives": "Active Objectives",
         "progressUpdatesAddedPerMonth": "Progress Updates Added Per Month",
         "remainDaysToDeadline": "Remain Days to Deadline",
-        "objectivesWithMostProgress": "Objectives With Most Progress"
+        "objectivesWithMostProgress": "Objectives With Most Progress",
+        "sample": {
+            "months": {
+                "january": "January",
+                "february": "February",
+                "march": "March",
+                "april": "April",
+                "may": "May",
+                "june": "June"
+            },
+            "objectives": {
+                "onboardingFlow": "Develop New Onboarding Flow",
+                "marketingStrategy": "Finalize Q3 Marketing Strategy",
+                "databaseMigration": "Complete Database Migration",
+                "redesignUi": "Redesign User Interface",
+                "technicalDocs": "Write Technical Documentation"
+            }
+        }
     },
     "Charts": {
         "labels": {
@@ -656,7 +699,84 @@
                 "edit": "Edit",
                 "delete": "Delete"
             }
+        },
+        "confirm": {
+            "deleteTitle": "Are you sure you want to delete this update?",
+            "deleteDescription": "This action cannot be undone. This will permanently delete this progress update.",
+            "deleteConfirm": "Delete",
+            "cancel": "Cancel"
+        },
+        "toast": {
+            "deletedSuccess": "Update deleted successfully",
+            "deleteFailed": "Failed to delete update"
         }
+    },
+    "Header": {
+        "appName": "Metricas",
+        "aria": {
+            "closeMenu": "Close menu",
+            "openMenu": "Open menu"
+        }
+    },
+    "UserAgent": {
+        "device": "Device",
+        "iphone": "iPhone",
+        "ipad": "iPad",
+        "androidPhone": "Android Phone",
+        "smartphone": "Smartphone",
+        "androidTablet": "Android Tablet",
+        "tablet": "Tablet",
+        "smartTv": "Smart TV",
+        "wearable": "Wearable device",
+        "embedded": "Embedded device",
+        "gameConsole": "Game console",
+        "windowsPc": "Windows PC",
+        "mac": "Mac",
+        "linuxPc": "Linux PC",
+        "chromebook": "Chromebook",
+        "androidDevice": "Android device",
+        "iosDevice": "iOS device",
+        "botCrawler": "Bot/Crawler",
+        "unknownOs": "Unknown OS",
+        "unknownBrowser": "Unknown browser",
+        "descriptionTemplate": "{device} with {os} using {browser}"
+    },
+    "ObjectiveCard": {
+        "perWeek": "per week",
+        "perMonth": "per month",
+        "perPeriod": "per period",
+        "percentComplete": "% Complete",
+        "onTrack": "On Track",
+        "goodProgress": "Good Progress",
+        "needsAttention": "Needs Attention",
+        "viewProgress": "View Progress",
+        "edit": "Edit",
+        "delete": "Delete"
+    },
+    "DeleteConfirmation": {
+        "defaultTitle": "Are you sure?",
+        "defaultDescription": "This action cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel",
+        "deleting": "Deleting..."
+    },
+    "Table": {
+        "toggleSorting": "Toggle sorting",
+        "noResults": "No results",
+        "searchPlaceholder": "Search in table...",
+        "filters": "Filters",
+        "columnFilters": "Column filters",
+        "noFilterableColumns": "No filterable columns.",
+        "filterColumn": "Filter {column}",
+        "columns": "Columns",
+        "toggleColumns": "Toggle columns",
+        "order": "Order",
+        "columnOrder": "Column order",
+        "resetOrder": "Reset order",
+        "export": "Export",
+        "exportCsv": "Export CSV",
+        "exportExcel": "Export Excel",
+        "exportSheetName": "Data"
     },
     "TeamMembers": {
         "createNewTeamMember": "Create New Team Member",
@@ -681,6 +801,16 @@
         "editTeamMember": "Edit Team Member",
         "editTeamMemberTitle": "Edit Team Member",
         "editTeamMemberCancel": "Edit Team Member Cancel",
-        "giveYourTeamMemberAClearConciseEmail": "Give your team member a clear, concise email."
+        "giveYourTeamMemberAClearConciseEmail": "Give your team member a clear, concise email.",
+        "confirm": {
+            "deleteTitle": "Are you sure you want to delete this member?",
+            "deleteDescription": "This action cannot be undone. This will permanently delete this team member.",
+            "deleteConfirm": "Delete",
+            "cancel": "Cancel"
+        },
+        "toast": {
+            "deletedSuccess": "Member deleted successfully",
+            "deleteFailed": "Failed to delete member"
+        }
     }
 }

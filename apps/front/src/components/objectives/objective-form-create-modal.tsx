@@ -36,9 +36,7 @@ import {
     DialogFooter,
 } from '@repo/ui/components/dialog';
 import { CreateObjective, objectiveSchema } from '@/schemas/objective';
-import { useMutation } from '@tanstack/react-query';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { useCreateObjective } from '@/hooks/api/use-objectives';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/contexts/user-context';
 
@@ -104,16 +102,9 @@ export default function CreateObjectiveFormModal() {
         { value: 'education', label: t('categoryOptions.education') },
     ];
 
-    const createObjective = useMutation({
-        mutationFn: useConvexMutation(api.objectives.createObjective),
-    });
+    const createObjective = useCreateObjective();
     const [open, setOpen] = useState(false);
 
-    // Ejemplo: puedes usar el usuario aquí
-    console.log('Current user:', user);
-    console.log('User ID:', user._id);
-    console.log('User email:', user.email);
-    console.log('User name:', user.name);
     const form = useForm<z.infer<typeof objectiveSchema>>({
         defaultValues: defaultValues,
         validators: {
