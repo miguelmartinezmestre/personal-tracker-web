@@ -36,9 +36,7 @@ import {
     DialogFooter,
 } from '@repo/ui/components/dialog';
 import { Objective, savedObjectiveSchema } from '@/schemas/objective';
-import { useMutation } from '@tanstack/react-query';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { useUpdateObjective } from '@/hooks/api/use-objectives';
 import { useTranslations } from 'next-intl';
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
@@ -56,9 +54,7 @@ const categoryOptions = [
 
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
-    const updateObjective = useMutation({
-        mutationFn: useConvexMutation(api.objectives.updateObjective),
-    });
+    const updateObjective = useUpdateObjective();
     const [open, setOpen] = useState(false);
 
     const objectiveTypeOptions = [

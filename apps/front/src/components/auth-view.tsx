@@ -3,10 +3,9 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useQuery } from 'convex/react';
-import { api } from '@repo/backend/convex/_generated/api';
 import { authClient } from '@/lib/auth-client';
 import { UserProvider } from '@/contexts/user-context';
+import { useCurrentUser } from '@/hooks/api/use-auth';
 
 export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
     const tCommon = useTranslations('Common');
@@ -18,8 +17,8 @@ export default function AuthenticatedView({ children }: { children: React.ReactN
     const session = sessionQuery?.data;
     const isSessionLoading = Boolean(sessionQuery?.isPending ?? sessionQuery?.isLoading);
 
-    // Only query Convex for the current user once we have a session.
-    const user = useQuery(api.auth.getCurrentUser, session?.user ? {} : 'skip');
+    // Only query for the current user once we have a session.
+    const user = useCurrentUser(!session?.user);
 
     useEffect(() => {
         if (isSessionLoading) return;

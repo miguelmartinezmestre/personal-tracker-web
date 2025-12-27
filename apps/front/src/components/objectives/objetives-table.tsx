@@ -1,7 +1,6 @@
 'use client';
 
-import { DataTable } from '@/components/table';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { DataTableAdvanced } from '@/components/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Objective } from '@/schemas/objective';
 import { Button } from '@repo/ui/components/button';
@@ -10,48 +9,38 @@ import { StatusIndicator } from '@repo/ui/components/status-indicator';
 import Link from 'next/link';
 import EditObjectiveFormModal from '@/components/objectives/objective-form-edit-modal';
 import { QuickActions } from '@/components/objectives/quick-actions';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
+import { useObjectives, useDeleteObjective } from '@/hooks/api/use-objectives';
 
 interface ObjetivesTableProps {
     objectives?: Objective[];
     isLoading?: boolean;
 }
 
-const getPeriodLabel = (period?: string | null) => {
-    switch (period) {
-        case 'weekly':
-            return 'per week';
-        case 'monthly':
-            return 'per month';
-        case 'custom':
-            return 'per period';
-        default:
-            return '';
-    }
-};
-
 export default function ObjetivesTable({
     objectives: propObjectives,
     isLoading: propIsLoading,
 }: ObjetivesTableProps) {
     const t = useTranslations('Objectives');
-    const { data: fetchedObjectives, isLoading: fetchedIsLoading } = useQuery(
-        convexQuery(api.objectives.getObjectivesByUser, {})
-    );
-    const deleteObjective = useMutation({
-        mutationFn: useConvexMutation(api.objectives.deleteObjective),
-        onSuccess: () => {
-            toast.success(t('toast.deletedSuccess'));
-        },
-        onError: () => {
-            toast.error(t('toast.deleteFailed'));
-        },
-    });
+    const tCard = useTranslations('ObjectiveCard');
+    const { data: fetchedObjectives, isLoading: fetchedIsLoading } = useObjectives();
+    const deleteObjectiveMutation = useDeleteObjective();
+
+    const getPeriodLabel = (period?: string | null) => {
+        switch (period) {
+            case 'weekly':
+                return tCard('perWeek');
+            case 'monthly':
+                return tCard('perMonth');
+            case 'custom':
+                return tCard('perPeriod');
+            default:
+                return '';
+        }
+    };
 
     // Use passed objectives if provided, otherwise use fetched data
     const objectives = propObjectives ?? fetchedObjectives ?? [];
@@ -75,11 +64,12 @@ export default function ObjetivesTable({
             cell: ({ row }) => {
                 const objective = row.original;
                 const periodLabel = getPeriodLabel(objective.period);
+                const maxValue = objective.targetValue > 0 ? objective.targetValue : 100;
                 return (
                     <div className="flex items-center space-x-2">
                         <CircularProgress
                             value={objective.currentValue}
-                            max={objective.targetValue}
+                            max={maxValue}
                             size="sm"
                         />
                         <span className="text-sm text-muted-foreground">
@@ -142,16 +132,24 @@ export default function ObjetivesTable({
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
-                            await deleteObjective.mutateAsync({
-                                id: objetiveRow._id as Id<'objectives'>,
-                            });
+                            await deleteObjectiveMutation.mutateAsync(
+                                { id: objetiveRow._id as Id<'objectives'> },
+                                {
+                                    onSuccess: () => {
+                                        toast.success(t('toast.deletedSuccess'));
+                                    },
+                                    onError: () => {
+                                        toast.error(t('toast.deleteFailed'));
+                                    },
+                                }
+                            );
                         }}
                         title={t('confirm.deleteObjective')}
                         description={t('confirm.deleteObjectiveDescription')}
                         triggerLabel={t('deleteObjective')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
-                        isLoading={deleteObjective.isPending}
+                        isLoading={deleteObjectiveMutation.isPending}
                         trigger={
                             <Button
                                 data-testid="objective-delete-button"
@@ -189,11 +187,11 @@ export default function ObjetivesTable({
 
     return (
         <div>
-            <DataTable
+            <DataTableAdvanced
                 columns={columns}
                 data={objectives ?? []}
                 isLoading={isLoading}
-                enableSorting
+                exportFileName="objectives"
             />
         </div>
     );

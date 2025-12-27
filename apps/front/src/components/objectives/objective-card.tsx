@@ -10,6 +10,7 @@ import { Calendar, Target, TrendingUp, ChevronRight } from 'lucide-react';
 import { Objective } from '@/schemas/objective';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface ObjectiveCardProps {
     objective: Objective;
@@ -17,24 +18,25 @@ interface ObjectiveCardProps {
     onDelete?: (id: Id<'objectives'>) => void;
 }
 
-const getPeriodLabel = (period?: string | null) => {
-    switch (period) {
-        case 'weekly':
-            return 'per week';
-        case 'monthly':
-            return 'per month';
-        case 'custom':
-            return 'per period';
-        default:
-            return '';
-    }
-};
-
 const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
     ({ objective, onEdit, onDelete }, ref) => {
+        const t = useTranslations('ObjectiveCard');
         const progress =
             objective.targetValue > 0 ? (objective.currentValue / objective.targetValue) * 100 : 0;
         const isOverdue = objective.deadline && objective.deadline < Date.now();
+
+        const getPeriodLabel = (period?: string | null) => {
+            switch (period) {
+                case 'weekly':
+                    return t('perWeek');
+                case 'monthly':
+                    return t('perMonth');
+                case 'custom':
+                    return t('perPeriod');
+                default:
+                    return '';
+            }
+        };
         const periodLabel = getPeriodLabel(objective.period);
 
         return (
@@ -72,7 +74,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">
-                                    {Math.round(progress)}% Complete
+                                    {Math.round(progress)}{t('percentComplete')}
                                 </span>
                                 <StatusIndicator
                                     status={objective.status}
@@ -115,10 +117,10 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                             <TrendingUp className="h-4 w-4 text-muted-foreground" />
                             <span className="text-muted-foreground">
                                 {progress >= 75
-                                    ? 'On Track'
+                                    ? t('onTrack')
                                     : progress >= 50
-                                      ? 'Good Progress'
-                                      : 'Needs Attention'}
+                                      ? t('goodProgress')
+                                      : t('needsAttention')}
                             </span>
                         </div>
 
@@ -128,7 +130,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                 href={`/dashboard/objectives/${String(objective._id)}`}
                                 className="flex items-center text-primary hover:text-primary/80 text-sm font-medium"
                             >
-                                View Progress
+                                {t('viewProgress')}
                                 <ChevronRight className="h-3 w-3 ml-1" />
                             </Link>
                         </div>
@@ -142,7 +144,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                             onClick={() => onEdit?.(objective)}
                             className="flex-1"
                         >
-                            Edit
+                            {t('edit')}
                         </Button>
                         <Button
                             variant="destructive"
@@ -150,7 +152,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                             onClick={() => onDelete?.(objective._id as Id<'objectives'>)}
                             className="flex-1"
                         >
-                            Delete
+                            {t('delete')}
                         </Button>
                     </div>
                 </CardContent>

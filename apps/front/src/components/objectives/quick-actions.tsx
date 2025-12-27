@@ -10,11 +10,14 @@ import {
     DropdownMenuTrigger,
 } from '@repo/ui/components/dropdown-menu';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
-import { useMutation } from '@tanstack/react-query';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import {
+    useCompleteObjective,
+    usePauseObjective,
+    useArchiveObjective,
+    useUpdateObjectiveStatus,
+} from '@/hooks/api/use-objectives';
 
 interface QuickActionsProps {
     objectiveId: Id<'objectives'>;
@@ -26,64 +29,69 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
     ({ objectiveId, currentStatus, className }, ref) => {
         const t = useTranslations('Objectives');
 
-        const completeObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.completeObjective),
-            onSuccess: () => {
-                toast.success(t('toast.completedSuccess'));
-            },
-            onError: (error: Error) => {
-                toast.error(t('toast.completeFailed'));
-                console.error(error);
-            },
-        });
-
-        const pauseObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.pauseObjective),
-            onSuccess: () => {
-                toast.success(t('toast.pausedSuccess'));
-            },
-            onError: (error: Error) => {
-                toast.error(t('toast.pauseFailed'));
-                console.error(error);
-            },
-        });
-
-        const archiveObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.archiveObjective),
-            onSuccess: () => {
-                toast.success(t('toast.archivedSuccess'));
-            },
-            onError: (error: Error) => {
-                toast.error(t('toast.archiveFailed'));
-                console.error(error);
-            },
-        });
-
-        const resumeObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.updateObjectiveStatus),
-            onSuccess: () => {
-                toast.success(t('toast.resumedSuccess'));
-            },
-            onError: (error: Error) => {
-                toast.error(t('toast.resumeFailed'));
-                console.error(error);
-            },
-        });
+        const completeObjective = useCompleteObjective();
+        const pauseObjective = usePauseObjective();
+        const archiveObjective = useArchiveObjective();
+        const resumeObjective = useUpdateObjectiveStatus();
 
         const handleComplete = () => {
-            completeObjective.mutate({ id: objectiveId });
+            completeObjective.mutate(
+                { id: objectiveId },
+                {
+                    onSuccess: () => {
+                        toast.success(t('toast.completedSuccess'));
+                    },
+                    onError: (error: Error) => {
+                        toast.error(t('toast.completeFailed'));
+                        console.error(error);
+                    },
+                }
+            );
         };
 
         const handlePause = () => {
-            pauseObjective.mutate({ id: objectiveId });
+            pauseObjective.mutate(
+                { id: objectiveId },
+                {
+                    onSuccess: () => {
+                        toast.success(t('toast.pausedSuccess'));
+                    },
+                    onError: (error: Error) => {
+                        toast.error(t('toast.pauseFailed'));
+                        console.error(error);
+                    },
+                }
+            );
         };
 
         const handleArchive = () => {
-            archiveObjective.mutate({ id: objectiveId });
+            archiveObjective.mutate(
+                { id: objectiveId },
+                {
+                    onSuccess: () => {
+                        toast.success(t('toast.archivedSuccess'));
+                    },
+                    onError: (error: Error) => {
+                        toast.error(t('toast.archiveFailed'));
+                        console.error(error);
+                    },
+                }
+            );
         };
 
         const handleResume = () => {
-            resumeObjective.mutate({ id: objectiveId, status: 'in_progress' });
+            resumeObjective.mutate(
+                { id: objectiveId, status: 'in_progress' },
+                {
+                    onSuccess: () => {
+                        toast.success(t('toast.resumedSuccess'));
+                    },
+                    onError: (error: Error) => {
+                        toast.error(t('toast.resumeFailed'));
+                        console.error(error);
+                    },
+                }
+            );
         };
 
         const isCompleted = currentStatus.toLowerCase() === 'completed';

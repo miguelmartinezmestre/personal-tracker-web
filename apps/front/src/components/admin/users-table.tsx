@@ -151,7 +151,7 @@ export function UsersTable() {
                         </div>
                     );
                 }
-                return <Badge variant="secondary">{role || 'user'}</Badge>;
+                return <Badge variant="secondary">{role || t('usersTable.roles.user')}</Badge>;
             },
         },
         {

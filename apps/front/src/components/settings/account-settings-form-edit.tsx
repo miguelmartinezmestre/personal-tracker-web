@@ -14,19 +14,15 @@ import {
     FormMessage,
 } from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { accountDetailsSchema } from '@/schemas/account-details';
 import { DialogFooter } from '@repo/ui/components/dialog';
 import { useTranslations } from 'next-intl';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { useAccountDetails, useUpdateAccountDetails } from '@/hooks/api/use-users';
 
 export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
-    const accountDetails = useQuery(convexQuery(api.users.getAccountDetails, {}));
-    const updateAccountDetails = useMutation({
-        mutationFn: useConvexMutation(api.users.updateAccountDetails),
-    });
+    const accountDetails = useAccountDetails();
+    const updateAccountDetails = useUpdateAccountDetails();
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');

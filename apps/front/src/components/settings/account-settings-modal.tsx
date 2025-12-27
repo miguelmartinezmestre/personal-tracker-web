@@ -56,7 +56,7 @@ export default function EditSettingsFormModal() {
                             <PasswordFormEdit />
                         </TabsContent>
                         <TabsContent value="notifications">
-                            Change your notifications here.
+                            {t('notificationsPlaceholder')}
                         </TabsContent>
                     </Tabs>
                 </div>

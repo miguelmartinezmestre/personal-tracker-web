@@ -85,3 +85,18 @@ yarn-error.log*
 
 /apps/front/test-results
 /apps/front/playwright-report
+
+/apps/front/blob-report
+/apps/front/playwright/.cache
+/apps/front/convex/_generated
+/apps/front/convex/.convex
+/apps/front/convex/.convex/
+/apps/front/convex/.convex/
+/memoria_tfg
+
+**/*.md
+.cursorrules
+.cursor/
+.claude/
+dev.log
+opencode.json

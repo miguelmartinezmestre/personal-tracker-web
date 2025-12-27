@@ -3,10 +3,8 @@ import { ThemeToggle } from '@/components/theme-switcher';
 import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';
-import { api } from '@repo/backend/convex/_generated/api';
-import { convexQuery } from '@convex-dev/react-query';
-import { useQuery } from '@tanstack/react-query';
 import { Authenticated } from 'convex/react';
+import { useIsAuthenticated } from '@/hooks/api/use-auth';
 import type { Route } from 'next';
 
 type LinkItem = { name: string; href: Route };
@@ -21,7 +19,7 @@ export default function NavBar() {
         { name: t('login'), href: '/login' },
     ]);
 
-    const { data: _isAuthenticated } = useQuery(convexQuery(api.auth.isAuthenticated, {}));
+    const { data: _isAuthenticated } = useIsAuthenticated();
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">

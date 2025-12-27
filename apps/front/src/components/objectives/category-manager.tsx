@@ -20,9 +20,14 @@ import {
     DialogTrigger,
 } from '@repo/ui/components/dialog';
 import { Plus, Edit, Trash2, Tag } from 'lucide-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    useCategories,
+    useCreateCategory,
+    useUpdateCategory,
+    useDeleteCategory,
+    useCreateDefaultCategories,
+} from '@/hooks/api/use-categories';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
@@ -90,79 +95,64 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
 
         const queryClient = useQueryClient();
 
-        const { data: categories = [] } = useQuery(
-            convexQuery(api.categories.getCategoriesByUser, {})
-        );
+        const { data: categories = [] } = useCategories();
 
-        const createCategory = useMutation({
-            mutationFn: useConvexMutation(api.categories.createCategory),
-            onSuccess: () => {
-                toast.success(t('categories.toast.createSuccess'));
-                queryClient.invalidateQueries({ queryKey: ['categories'] });
-                setNewCategory({ name: '', color: '#3b82f6', icon: 'tag' });
-                setIsCreateOpen(false);
-            },
-            onError: (error: Error) => {
-                toast.error(t('categories.toast.createFailed'));
-                console.error(error);
-            },
-        });
-
-        const updateCategory = useMutation({
-            mutationFn: useConvexMutation(api.categories.updateCategory),
-            onSuccess: () => {
-                toast.success(t('categories.toast.updateSuccess'));
-                queryClient.invalidateQueries({ queryKey: ['categories'] });
-                setEditingCategory(null);
-            },
-            onError: (error: Error) => {
-                toast.error(t('categories.toast.updateFailed'));
-                console.error(error);
-            },
-        });
-
-        const deleteCategory = useMutation({
-            mutationFn: useConvexMutation(api.categories.deleteCategory),
-            onSuccess: () => {
-                toast.success(t('categories.toast.deleteSuccess'));
-                queryClient.invalidateQueries({ queryKey: ['categories'] });
-            },
-            onError: (error: Error) => {
-                toast.error(t('categories.toast.deleteFailed'));
-                console.error(error);
-            },
-        });
-
-        const createDefaultCategories = useMutation({
-            mutationFn: useConvexMutation(api.categories.createDefaultCategories),
-            onSuccess: () => {
-                toast.success(t('categories.toast.createDefaultsSuccess'));
-                queryClient.invalidateQueries({ queryKey: ['categories'] });
-            },
-            onError: (error: Error) => {
-                toast.error(t('categories.toast.createDefaultsFailed'));
-                console.error(error);
-            },
-        });
+        const createCategoryMutation = useCreateCategory();
+        const updateCategoryMutation = useUpdateCategory();
+        const deleteCategoryMutation = useDeleteCategory();
+        const createDefaultCategoriesMutation = useCreateDefaultCategories();
 
         const handleCreateCategory = () => {
             if (!newCategory.name.trim()) return;
-            createCategory.mutate(newCategory);
+            createCategoryMutation.mutate(newCategory, {
+                onSuccess: () => {
+                    toast.success(t('categories.toast.createSuccess'));
+                    setNewCategory({ name: '', color: '#3b82f6', icon: 'tag' });
+                    setIsCreateOpen(false);
+                },
+                onError: (error: Error) => {
+                    toast.error(t('categories.toast.createFailed'));
+                    console.error(error);
+                },
+            });
         };
 
         const handleUpdateCategory = () => {
             if (!editingCategory) return;
-            updateCategory.mutate({
-                id: editingCategory._id,
-                name: editingCategory.name,
-                color: editingCategory.color,
-                icon: editingCategory.icon,
-            });
+            updateCategoryMutation.mutate(
+                {
+                    id: editingCategory._id,
+                    name: editingCategory.name,
+                    color: editingCategory.color,
+                    icon: editingCategory.icon,
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t('categories.toast.updateSuccess'));
+                        setEditingCategory(null);
+                    },
+                    onError: (error: Error) => {
+                        toast.error(t('categories.toast.updateFailed'));
+                        console.error(error);
+                    },
+                }
+            );
         };
 
         const handleDeleteCategory = (id: Id<'categories'>) => {
             if (confirm(t('categories.confirmDelete'))) {
-                deleteCategory.mutate({ id });
+                deleteCategoryMutation.mutate(
+                    { id },
+                    {
+                        onSuccess: () => {
+                            toast.success(t('categories.toast.deleteSuccess'));
+                        },
+                        onError: (error: Error) => {
+                            toast.error(t('categories.toast.deleteFailed'));
+                            console.error(error);
+                        },
+                    }
+                );
             }
         };
 
@@ -179,8 +169,21 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => createDefaultCategories.mutate({})}
-                                disabled={createDefaultCategories.isPending}
+                                onClick={() =>
+                                    createDefaultCategoriesMutation.mutate(
+                                        {},
+                                        {
+                                            onSuccess: () => {
+                                                toast.success(t('categories.toast.createDefaultsSuccess'));
+                                            },
+                                            onError: (error: Error) => {
+                                                toast.error(t('categories.toast.createDefaultsFailed'));
+                                                console.error(error);
+                                            },
+                                        }
+                                    )
+                                }
+                                disabled={createDefaultCategoriesMutation.isPending}
                             >
                                 {t('categories.addDefault')}
                             </Button>
@@ -312,10 +315,10 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                         <Button
                                             onClick={handleCreateCategory}
                                             disabled={
-                                                createCategory.isPending || !newCategory.name.trim()
+                                                createCategoryMutation.isPending || !newCategory.name.trim()
                                             }
                                         >
-                                            {createCategory.isPending
+                                            {createCategoryMutation.isPending
                                                 ? t('categories.buttons.creating')
                                                 : t('categories.buttons.create')}
                                         </Button>
@@ -337,7 +340,22 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                             <p className="text-muted-foreground text-center mb-4">
                                 {t('categories.emptyDescription')}
                             </p>
-                            <Button onClick={() => createDefaultCategories.mutate({})}>
+                            <Button
+                                onClick={() =>
+                                    createDefaultCategoriesMutation.mutate(
+                                        {},
+                                        {
+                                            onSuccess: () => {
+                                                toast.success(t('categories.toast.createDefaultsSuccess'));
+                                            },
+                                            onError: (error: Error) => {
+                                                toast.error(t('categories.toast.createDefaultsFailed'));
+                                                console.error(error);
+                                            },
+                                        }
+                                    )
+                                }
+                            >
                                 {t('categories.addDefault')}
                             </Button>
                         </CardContent>
@@ -508,9 +526,9 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                     </Button>
                                     <Button
                                         onClick={handleUpdateCategory}
-                                        disabled={updateCategory.isPending}
+                                        disabled={updateCategoryMutation.isPending}
                                     >
-                                        {updateCategory.isPending
+                                        {updateCategoryMutation.isPending
                                             ? t('categories.buttons.updating')
                                             : t('categories.buttons.update')}
                                     </Button>

@@ -1,31 +1,33 @@
 'use client'
+import { useTranslations } from "next-intl";
 import { ObjectivesStatusChart } from "@/components/objectives-status-chart";
 import { MonthlyProgressChart } from "@/components/monthly-progress-chart";
 import { ObjetivesMostProgressGraph } from "@/components/objectives-most-progress-graph";
 
-const sampleData = {
-    totalObjectives: 50,
-    pendingObjectives: 20,
-    completedObjectives: 30,
-    progressAddedPerMonth: [
-      { month: "January", count: 15 },
-      { month: "February", count: 25 },
-      { month: "March", count: 30 },
-      { month: "April", count: 22 },
-      { month: "May", count: 40 },
-      { month: "June", count: 35 },
-    ],
-    objectivesWithMostProgress: [
-      { objective: "Develop New Onboarding Flow", progress: 90 },
-      { objective: "Finalize Q3 Marketing Strategy", progress: 75 },
-      { objective: "Complete Database Migration", progress: 60 },
-      { objective: "Redesign User Interface", progress: 45 },
-      { objective: "Write Technical Documentation", progress: 30 },
-    ],
-  }
-
-
 export default function Stats() {
+    const t = useTranslations('Stats');
+
+    const sampleData = {
+        totalObjectives: 50,
+        pendingObjectives: 20,
+        completedObjectives: 30,
+        progressAddedPerMonth: [
+            { month: t('sample.months.january'), count: 15 },
+            { month: t('sample.months.february'), count: 25 },
+            { month: t('sample.months.march'), count: 30 },
+            { month: t('sample.months.april'), count: 22 },
+            { month: t('sample.months.may'), count: 40 },
+            { month: t('sample.months.june'), count: 35 },
+        ],
+        objectivesWithMostProgress: [
+            { objective: t('sample.objectives.onboardingFlow'), progress: 90 },
+            { objective: t('sample.objectives.marketingStrategy'), progress: 75 },
+            { objective: t('sample.objectives.databaseMigration'), progress: 60 },
+            { objective: t('sample.objectives.redesignUi'), progress: 45 },
+            { objective: t('sample.objectives.technicalDocs'), progress: 30 },
+        ],
+    }
+
     // const objectives = useSuspenseQuery(trpc.user.getDashboardGraphsData.queryOptions({}));
 
     return (
@@ -46,4 +48,3 @@ export default function Stats() {
         </>
     );
 }
-

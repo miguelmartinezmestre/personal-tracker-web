@@ -76,7 +76,7 @@ export default function UpdateProgressFormModal({
             <DialogTrigger asChild>
                 <Button className="gap-2" data-testid="progress-edit-open">
                     <PlusCircle className="h-4 w-4" />
-                    Edit Progress
+                    {t('editProgress')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">

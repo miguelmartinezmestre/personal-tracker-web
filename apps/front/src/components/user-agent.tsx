@@ -14,6 +14,7 @@ import {
   Laptop,
 } from "lucide-react"
 import { UAParser } from "ua-parser-js"
+import { useTranslations } from "next-intl"
 
 interface DeviceInfo {
   icon: LucideIcon
@@ -38,6 +39,8 @@ export function UserAgentIcon({
   showFullInfo = true,
   userAgent,
 }: UserAgentIconProps) {
+  const t = useTranslations('UserAgent')
+
   // Parse user agent using ua-parser-js directly in the render body
   const parser = new UAParser(userAgent)
   const result = parser.getResult()
@@ -48,7 +51,7 @@ export function UserAgentIcon({
 
   // Determine device type and icon
   let icon: LucideIcon = Monitor // Default icon
-  let deviceName = device.model || device.vendor || "Dispositivo" // Default device name
+  let deviceName = device.model || device.vendor || t('device') // Default device name
   const deviceType = device.type || "desktop" // Default to desktop if type is unknown
 
   // Set icon and deviceName based on device type and OS
@@ -56,67 +59,67 @@ export function UserAgentIcon({
     case "mobile":
       if (os.name?.includes("iOS")) {
         icon = Apple
-        deviceName = device.model || device.vendor || "iPhone"
+        deviceName = device.model || device.vendor || t('iphone')
       } else if (os.name?.includes("Android")) {
         icon = Smartphone // Specific Android icon could be used if available/desired
-        deviceName = device.model || device.vendor || "Android Phone"
+        deviceName = device.model || device.vendor || t('androidPhone')
       } else {
         icon = Smartphone
-        deviceName = device.model || device.vendor || "Smartphone"
+        deviceName = device.model || device.vendor || t('smartphone')
       }
       break
     case "tablet":
       if (os.name?.includes("iOS")) {
         // iPadOS is reported as iOS by UAParser
         icon = Apple
-        deviceName = device.model || device.vendor || "iPad"
+        deviceName = device.model || device.vendor || t('ipad')
       } else if (os.name?.includes("Android")) {
         icon = Tablet
-        deviceName = device.model || device.vendor || "Android Tablet"
+        deviceName = device.model || device.vendor || t('androidTablet')
       } else {
         icon = Tablet
-        deviceName = device.model || device.vendor || "Tablet"
+        deviceName = device.model || device.vendor || t('tablet')
       }
       break
     case "smarttv":
       icon = Tv
-      deviceName = device.model || device.vendor || "Smart TV"
+      deviceName = device.model || device.vendor || t('smartTv')
       break
     case "wearable":
       icon = Watch
-      deviceName = device.model || device.vendor || "Dispositivo wearable"
+      deviceName = device.model || device.vendor || t('wearable')
       break
     case "embedded":
       icon = Cpu
-      deviceName = device.model || device.vendor || "Dispositivo embebido"
+      deviceName = device.model || device.vendor || t('embedded')
       break
     case "console":
       icon = Cpu // Consider Gamepad icon if available and more appropriate
-      deviceName = device.model || device.vendor || "Consola de juegos"
+      deviceName = device.model || device.vendor || t('gameConsole')
       break
     default: // 'desktop' or unknown type
       if (os.name) {
         if (os.name.includes("Windows")) {
           icon = Computer
-          deviceName = "Windows PC"
+          deviceName = t('windowsPc')
         } else if (os.name.includes("Mac OS")) {
           // UAParser uses "Mac OS" for macOS
           icon = Apple
-          deviceName = "Mac"
+          deviceName = t('mac')
         } else if (os.name.includes("Linux")) {
           icon = Laptop // Or Computer if it's a desktop Linux
-          deviceName = "Linux PC"
+          deviceName = t('linuxPc')
         } else if (os.name.includes("Chrome OS")) {
           icon = Laptop
-          deviceName = "Chromebook"
+          deviceName = t('chromebook')
         } else if (os.name.includes("Android")) {
           // This could be an Android-based desktop or AIO
           icon = Smartphone // Or a more generic Android icon
-          deviceName = "Dispositivo Android"
+          deviceName = t('androidDevice')
         } else if (os.name.includes("iOS")) {
           // Less common for default/desktop type, but possible
           icon = Apple
-          deviceName = "Dispositivo iOS"
+          deviceName = t('iosDevice')
         }
         // If no OS match, icon remains Monitor and deviceName its default
       }
@@ -126,19 +129,19 @@ export function UserAgentIcon({
   // Handle bots, checking the provided userAgent prop
   if (/bot|crawler|spider|crawling/i.test(userAgent.toLowerCase())) {
     icon = Bot
-    deviceName = "Bot/Crawler"
+    deviceName = t('botCrawler')
   }
 
   // Get OS name with version
-  const osName = os.name ? `${os.name}${os.version ? " " + os.version : ""}` : "Sistema operativo desconocido"
+  const osName = os.name ? `${os.name}${os.version ? " " + os.version : ""}` : t('unknownOs')
 
   // Get browser name with version
   const browserName = browser.name
     ? `${browser.name}${browser.version ? " " + browser.version : ""}`
-    : "Navegador desconocido"
+    : t('unknownBrowser')
 
-  // Create full description
-  const fullDescription = `${deviceName} con ${osName} usando ${browserName}`
+  // Create full description using translation template
+  const fullDescription = t('descriptionTemplate', { device: deviceName, os: osName, browser: browserName })
 
   // The deviceInfo is now derived on every render
   const derivedDeviceInfo: DeviceInfo = {

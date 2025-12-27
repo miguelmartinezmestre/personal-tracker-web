@@ -82,7 +82,7 @@ export default function TeamsTable() {
                 if (teamRow._id) {
                     return (
                         <Link href={`/dashboard/teams/${String(teamRow._id)}`} prefetch={false} data-testid="team-detail-link">
-                            Go to team
+                            {t('goToTeam')}
                         </Link>
                     );
                 }
