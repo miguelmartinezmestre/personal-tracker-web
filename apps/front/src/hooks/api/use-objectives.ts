@@ -1,0 +1,191 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import type { Id } from '@repo/backend/convex/_generated/dataModel';
+import type { Objective } from '@/schemas/objective';
+
+/**
+ * Tipos para las operaciones de objetivos
+ */
+export interface CreateObjectiveParams {
+    title: string;
+    description?: string;
+    category?: string;
+    targetValue: number;
+    currentValue: number;
+    deadline?: number;
+    status: string;
+    unit?: string;
+    objectiveType?: string;
+    period?: string;
+    periodStart?: number;
+    periodLengthDays?: number;
+}
+
+export interface UpdateObjectiveParams {
+    id: Id<'objectives'>;
+    title?: string;
+    description?: string;
+    category?: string;
+    targetValue?: number;
+    currentValue?: number;
+    deadline?: number;
+    status?: string;
+    unit?: string;
+    objectiveType?: string;
+    period?: string;
+    periodStart?: number;
+    periodLengthDays?: number;
+}
+
+export interface UpdateObjectiveStatusParams {
+    id: Id<'objectives'>;
+    status: string;
+}
+
+export interface ObjectiveActionParams {
+    id: Id<'objectives'>;
+}
+
+/**
+ * Hook para obtener todos los objetivos del usuario actual
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useObjectives() {
+    return useQuery(convexQuery(api.objectives.getObjectivesByUser, {}));
+}
+
+/**
+ * Hook para obtener un objetivo por su ID
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useObjective(objectiveId: Id<'objectives'> | null) {
+    return useQuery(
+        convexQuery(api.objectives.getObjectiveById, objectiveId ? { id: objectiveId } : 'skip')
+    );
+}
+
+/**
+ * Hook para crear un nuevo objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useCreateObjective() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.createObjective),
+        onSuccess: () => {
+            // Invalidar la query de objetivos para refrescar la lista
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
+/**
+ * Hook para actualizar un objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useUpdateObjective() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.updateObjective),
+        onSuccess: () => {
+            // Invalidar las queries relacionadas
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
+/**
+ * Hook para eliminar un objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useDeleteObjective() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.deleteObjective),
+        onSuccess: () => {
+            // Invalidar la query de objetivos para refrescar la lista
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
+/**
+ * Hook para completar un objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useCompleteObjective() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.completeObjective),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
+/**
+ * Hook para pausar un objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function usePauseObjective() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.pauseObjective),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
+/**
+ * Hook para archivar un objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useArchiveObjective() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.archiveObjective),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
+/**
+ * Hook para actualizar el estado de un objetivo
+ * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ */
+export function useUpdateObjectiveStatus() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: useConvexMutation(api.objectives.updateObjectiveStatus),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+            });
+        },
+    });
+}
+
