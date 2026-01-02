@@ -1,8 +1,10 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { Doc } from './_generated/dataModel';
+import { internal } from './_generated/api';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DEADLINE_SOON_DAYS = 3;
 
 type ObjectiveWithPeriod = Doc<'objectives'> & {
     objectiveType?: string;
@@ -59,6 +61,64 @@ const isEventBasedObjective = (objectiveType?: string, period?: string) => {
 
 const sumUpdates = (updates: { updatedValue: number }[]) =>
     updates.reduce((total, update) => total + update.updatedValue, 0);
+
+const formatStatusLabel = (status: string) => {
+    switch (status) {
+        case 'completed':
+            return 'completed';
+        case 'paused':
+            return 'paused';
+        case 'archived':
+            return 'archived';
+        case 'in_progress':
+            return 'in progress';
+        default:
+            return status;
+    }
+};
+
+const maybeNotifyDeadline = async (
+    ctx: { db: any },
+    {
+        objectiveId,
+        userId,
+        title,
+        deadline,
+        now,
+    }: { objectiveId: any; userId: string; title: string; deadline: number; now: number }
+) => {
+    const daysUntil = Math.ceil((deadline - now) / DAY_MS);
+    const formattedDate = new Date(deadline).toLocaleDateString();
+
+    if (deadline <= now) {
+        await ctx.db.insert('notifications', {
+            user: userId,
+            objective: objectiveId,
+            read: false,
+            notificationType: 'deadline',
+            notificationDate: now,
+            message: `Objective \"${title}\" is overdue since ${formattedDate}.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+        return;
+    }
+
+    if (daysUntil <= DEADLINE_SOON_DAYS) {
+        await ctx.db.insert('notifications', {
+            user: userId,
+            objective: objectiveId,
+            read: false,
+            notificationType: 'deadline',
+            notificationDate: now,
+            message: `Objective \"${title}\" is due in ${daysUntil} day${
+                daysUntil === 1 ? '' : 's'
+            } (${formattedDate}).`,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+};
 
 export const getObjectivesByUser = queryWithRLS({
     args: {},
@@ -175,7 +235,7 @@ export const createObjective = mutationWithRLS({
         const objectiveType = args.objectiveType ?? 'value';
         const period = args.period ?? 'none';
 
-        return await ctx.db.insert('objectives', {
+        const objectiveId = await ctx.db.insert('objectives', {
             user: String(ctx.identity?.subject),
             title: args.title,
             description: args.description,
@@ -192,6 +252,26 @@ export const createObjective = mutationWithRLS({
             createdAt: now,
             updatedAt: now,
         });
+
+        if (args.deadline) {
+            await maybeNotifyDeadline(ctx, {
+                objectiveId,
+                userId: String(ctx.identity?.subject),
+                title: args.title,
+                deadline: args.deadline,
+                now,
+            });
+        }
+
+        // Check for achievements
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId: String(ctx.identity?.subject),
+                trigger: 'objective_created',
+            });
+        }
+
+        return objectiveId;
     },
 });
 
@@ -213,7 +293,26 @@ export const updateObjective = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
-        return await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+        const existing = await ctx.db.get(id);
+        if (!existing) {
+            throw new Error('Objective not found');
+        }
+
+        const now = Date.now();
+        const updated = await ctx.db.patch(id, { ...rest, updatedAt: now });
+
+        if (args.deadline !== undefined && args.deadline !== existing.deadline) {
+            const updatedTitle = args.title ?? existing.title;
+            await maybeNotifyDeadline(ctx, {
+                objectiveId: id,
+                userId: existing.user,
+                title: updatedTitle,
+                deadline: args.deadline,
+                now,
+            });
+        }
+
+        return updated;
     },
 });
 
@@ -233,10 +332,32 @@ export const updateObjectiveStatus = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, status } = args;
-        return await ctx.db.patch(id, {
+        const objective = await ctx.db.get(id);
+        if (!objective) {
+            throw new Error('Objective not found');
+        }
+        if (objective.status === status) {
+            return objective;
+        }
+
+        const now = Date.now();
+        const updated = await ctx.db.patch(id, {
             status,
-            updatedAt: Date.now(),
+            updatedAt: now,
         });
+
+        await ctx.db.insert('notifications', {
+            user: objective.user,
+            objective: id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Objective \"${objective.title}\" marked as ${formatStatusLabel(status)}.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return updated;
     },
 });
 
@@ -250,11 +371,33 @@ export const completeObjective = mutationWithRLS({
             throw new Error('Objective not found');
         }
 
-        return await ctx.db.patch(args.id, {
+        const now = Date.now();
+        const updated = await ctx.db.patch(args.id, {
             status: 'completed',
             currentValue: objective.targetValue,
-            updatedAt: Date.now(),
+            updatedAt: now,
         });
+
+        await ctx.db.insert('notifications', {
+            user: objective.user,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Objective \"${objective.title}\" marked as completed.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        // Check for achievements
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId: objective.user,
+                trigger: 'objective_completed',
+            });
+        }
+
+        return updated;
     },
 });
 
@@ -263,10 +406,29 @@ export const archiveObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.patch(args.id, {
+        const objective = await ctx.db.get(args.id);
+        if (!objective) {
+            throw new Error('Objective not found');
+        }
+
+        const now = Date.now();
+        const updated = await ctx.db.patch(args.id, {
             status: 'archived',
-            updatedAt: Date.now(),
+            updatedAt: now,
         });
+
+        await ctx.db.insert('notifications', {
+            user: objective.user,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Objective \"${objective.title}\" marked as archived.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return updated;
     },
 });
 
@@ -275,9 +437,28 @@ export const pauseObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.patch(args.id, {
+        const objective = await ctx.db.get(args.id);
+        if (!objective) {
+            throw new Error('Objective not found');
+        }
+
+        const now = Date.now();
+        const updated = await ctx.db.patch(args.id, {
             status: 'paused',
-            updatedAt: Date.now(),
+            updatedAt: now,
         });
+
+        await ctx.db.insert('notifications', {
+            user: objective.user,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Objective \"${objective.title}\" marked as paused.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return updated;
     },
 });

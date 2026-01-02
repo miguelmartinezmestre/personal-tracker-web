@@ -295,6 +295,94 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return false;
             },
         },
+        // Achievement tables
+        achievementDefinitions: {
+            read: async () => {
+                // Todos pueden leer las definiciones de logros
+                return true;
+            },
+            insert: async () => {
+                // Solo admins pueden crear definiciones
+                return isAdmin;
+            },
+            modify: async () => {
+                // Solo admins pueden modificar definiciones
+                return isAdmin;
+            },
+        },
+        userAchievements: {
+            read: async (_, achievement) => {
+                if (!userId) return false;
+                // Los admins pueden leer todos los logros
+                if (isAdmin) return true;
+                // Los usuarios solo pueden ver sus propios logros
+                return achievement.user === userId;
+            },
+            insert: async () => {
+                // Solo el sistema puede otorgar logros (via internal mutations)
+                return true; // Permitir para internal mutations
+            },
+            modify: async () => {
+                // Los logros no deben modificarse
+                return false;
+            },
+        },
+        teamAchievements: {
+            read: async (_, achievement) => {
+                if (!userId) return false;
+                // Los admins pueden leer todos los logros de equipo
+                if (isAdmin) return true;
+                // Miembros del equipo pueden ver los logros
+                return await isOrganizationMember(achievement.team);
+            },
+            insert: async () => {
+                // Solo el sistema puede otorgar logros
+                return true;
+            },
+            modify: async () => {
+                // Los logros no deben modificarse
+                return false;
+            },
+        },
+        achievementProgress: {
+            read: async (_, progress) => {
+                if (!userId) return false;
+                // Los admins pueden leer todo el progreso
+                if (isAdmin) return true;
+                // Los usuarios pueden ver su propio progreso
+                if (progress.user === userId) return true;
+                // Miembros del equipo pueden ver el progreso del equipo
+                if (progress.team) {
+                    return await isOrganizationMember(progress.team);
+                }
+                return false;
+            },
+            insert: async () => {
+                // Solo el sistema puede crear registros de progreso
+                return true;
+            },
+            modify: async () => {
+                // Solo el sistema puede modificar el progreso
+                return true;
+            },
+        },
+        categories: {
+            read: async (_, category) => {
+                if (!userId) return false;
+                if (isAdmin) return true;
+                return category.user === userId;
+            },
+            insert: async (_, category) => {
+                if (!userId) return false;
+                if (isAdmin) return true;
+                return category.user === userId;
+            },
+            modify: async (_, category) => {
+                if (!userId) return false;
+                if (isAdmin) return true;
+                return category.user === userId;
+            },
+        },
     } satisfies Rules<QueryCtx, DataModel>;
 }
 

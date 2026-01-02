@@ -7,6 +7,11 @@ afterEach(() => {
     cleanup();
 });
 
+// Mock @repo/backend/convex/_generated/dataModel
+vi.mock('@repo/backend/convex/_generated/dataModel', () => ({
+    Id: String,
+}));
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
     useRouter: () => ({

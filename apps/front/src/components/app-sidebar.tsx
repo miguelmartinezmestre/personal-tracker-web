@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Shield } from 'lucide-react';
+import { Bell, Frame, Goal, Home, Shield, Trophy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -36,6 +36,11 @@ const baseProjects: ProjectNavItem[] = [
         name: 'objectives',
         url: '/dashboard/objectives',
         icon: Goal,
+    },
+    {
+        name: 'achievements',
+        url: '/dashboard/achievements',
+        icon: Trophy,
     },
     {
         name: 'notifications',

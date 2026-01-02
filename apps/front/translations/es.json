@@ -147,16 +147,209 @@
         "home": "Inicio",
         "dashboard": "Dashboard",
         "objectives": "Objetivos",
+        "achievements": "Logros",
         "notifications": "Notificaciones",
         "sessions": "Sesiones",
         "settings": "Configuración",
         "admin": "Administrar"
     },
+    "Achievements": {
+        "title": "Logros",
+        "description": "Sigue tu progreso y desbloquea logros.",
+        "widget": {
+            "title": "Logros",
+            "viewAll": "Ver todos",
+            "recentlyEarned": "Obtenidos recientemente",
+            "noAchievements": "Aún no tienes logros. ¡Sigue trabajando en tus objetivos!"
+        },
+        "stats": {
+            "totalPoints": "Puntos totales",
+            "earned": "Obtenidos",
+            "completion": "Progreso",
+            "completionDescription": "Completado general"
+        },
+        "filters": {
+            "all": "Todos",
+            "earned": "Obtenidos",
+            "locked": "Bloqueados"
+        },
+        "types": {
+            "individual": "Individual",
+            "team": "Equipo"
+        },
+        "tiers": {
+            "bronze": "Bronce",
+            "silver": "Plata",
+            "gold": "Oro",
+            "platinum": "Platino"
+        },
+        "categories": {
+            "milestone": "Hito",
+            "streak": "Racha",
+            "completion": "Completado",
+            "activity": "Actividad"
+        },
+        "card": {
+            "earned": "Obtenido",
+            "progress": "Progreso",
+            "locked": "Bloqueado",
+            "points": "{points} pts"
+        },
+        "definitions": {
+            "first_objective": {
+                "name": "Primeros pasos",
+                "description": "Crea tu primer objetivo"
+            },
+            "objectives_created_5": {
+                "name": "Planificador",
+                "description": "Crea {threshold} objetivos"
+            },
+            "objectives_created_15": {
+                "name": "Estratega",
+                "description": "Crea {threshold} objetivos"
+            },
+            "objectives_created_30": {
+                "name": "Maestro planificador",
+                "description": "Crea {threshold} objetivos"
+            },
+            "objectives_completed_3": {
+                "name": "Logrador",
+                "description": "Completa {threshold} objetivos"
+            },
+            "objectives_completed_10": {
+                "name": "Campeón",
+                "description": "Completa {threshold} objetivos"
+            },
+            "objectives_completed_25": {
+                "name": "Leyenda",
+                "description": "Completa {threshold} objetivos"
+            },
+            "streak_3": {
+                "name": "Constante",
+                "description": "Registra progreso durante {threshold} días consecutivos"
+            },
+            "streak_7": {
+                "name": "Dedicado",
+                "description": "Registra progreso durante {threshold} días consecutivos"
+            },
+            "streak_14": {
+                "name": "Imparable",
+                "description": "Registra progreso durante {threshold} días consecutivos"
+            },
+            "progress_updates_10": {
+                "name": "Seguidor del progreso",
+                "description": "Registra {threshold} actualizaciones de progreso"
+            },
+            "progress_updates_50": {
+                "name": "Diligente",
+                "description": "Registra {threshold} actualizaciones de progreso"
+            },
+            "progress_updates_100": {
+                "name": "Persistente",
+                "description": "Registra {threshold} actualizaciones de progreso"
+            },
+            "early_bird": {
+                "name": "Madrugador",
+                "description": "Completa un objetivo antes de su fecha límite"
+            },
+            "team_first_objective": {
+                "name": "Despegue del equipo",
+                "description": "El equipo crea su primer objetivo"
+            },
+            "team_completed_5": {
+                "name": "Equipo ganador",
+                "description": "El equipo completa {threshold} objetivos"
+            },
+            "team_completed_15": {
+                "name": "Escuadrón élite",
+                "description": "El equipo completa {threshold} objetivos"
+            },
+            "team_completed_30": {
+                "name": "Equipo de ensueño",
+                "description": "El equipo completa {threshold} objetivos"
+            },
+            "team_streak_7": {
+                "name": "Momentum del equipo",
+                "description": "El equipo registra progreso durante {threshold} días consecutivos"
+            }
+        },
+        "empty": {
+            "noAchievements": "No hay logros disponibles.",
+            "noEarned": "Aún no has obtenido ningún logro.",
+            "noLocked": "¡Has obtenido todos los logros disponibles!",
+            "noTeamAchievements": "No hay logros de equipo disponibles. Únete a un equipo para desbloquear logros de equipo."
+        },
+        "toast": {
+            "unlocked": "¡Logro desbloqueado!",
+            "points": "+{points} puntos"
+        }
+    },
     "Notifications": {
         "title": "Notificaciones",
         "description": "Ver tus notificaciones y actualizaciones.",
         "loading": "Cargando notificaciones...",
-        "empty": "Aún no hay notificaciones."
+        "empty": "Aún no hay notificaciones.",
+        "createNotification": "Crear notificación",
+        "createNotificationDescription": "Añade una nueva notificación vinculada a uno de tus objetivos.",
+        "loadingObjectives": "Cargando objetivos...",
+        "noObjectives": "Crea un objetivo primero para añadir notificaciones.",
+        "markAllRead": "Marcar todas como leídas",
+        "allCaughtUp": "No tienes notificaciones pendientes.",
+        "unreadCount": "Tienes {count} notificaciones sin leer.",
+        "form": {
+            "objective": "Objetivo",
+            "selectObjective": "Selecciona un objetivo",
+            "objectiveHelper": "Elige el objetivo al que pertenece esta notificación.",
+            "notificationType": "Tipo",
+            "typePlaceholder": "p. ej. recordatorio, fecha límite, progreso",
+            "typeHelper": "Añade un tipo para clasificar la notificación.",
+            "message": "Mensaje",
+            "messagePlaceholder": "Describe la notificación...",
+            "messageHelper": "Sé breve y accionable.",
+            "notificationDate": "Fecha de notificación",
+            "pickADate": "Elige una fecha",
+            "dateHelper": "¿Cuándo debe aparecer esta notificación?",
+            "cancel": "Cancelar",
+            "save": "Guardar notificación"
+        },
+        "table": {
+            "columns": {
+                "message": "Mensaje",
+                "objective": "Objetivo",
+                "type": "Tipo",
+                "date": "Fecha",
+                "status": "Estado",
+                "actions": "Acciones"
+            },
+            "unknownObjective": "Objetivo desconocido",
+            "read": "Leída",
+            "unread": "Sin leer",
+            "markRead": "Marcar como leída",
+            "markUnread": "Marcar como sin leer",
+            "delete": "Eliminar"
+        },
+        "typeOptions": {
+            "reminder": "Recordatorio",
+            "deadline": "Fecha límite",
+            "progress": "Progreso",
+            "status": "Estado"
+        },
+        "toast": {
+            "created": "Notificación creada.",
+            "createFailed": "No se pudo crear la notificación.",
+            "updated": "Notificación actualizada.",
+            "updateFailed": "No se pudo actualizar la notificación.",
+            "deleted": "Notificación eliminada.",
+            "deleteFailed": "No se pudo eliminar la notificación.",
+            "markAll": "Todas las notificaciones marcadas como leídas.",
+            "markAllFailed": "No se pudieron marcar las notificaciones como leídas."
+        },
+        "confirm": {
+            "deleteTitle": "¿Eliminar notificación?",
+            "deleteDescription": "Esto eliminará la notificación permanentemente.",
+            "deleteConfirm": "Eliminar",
+            "cancel": "Cancelar"
+        }
     },
     "CommandMenu": {
         "placeholder": "Buscar comandos...",

@@ -30,3 +30,5 @@ export * from './use-sessions';
 // Admin hooks
 export * from './use-admin';
 
+// Achievements hooks
+export * from './use-achievements';

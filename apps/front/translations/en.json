@@ -147,16 +147,209 @@
         "home": "Home",
         "dashboard": "Dashboard",
         "objectives": "Objectives",
+        "achievements": "Achievements",
         "notifications": "Notifications",
         "sessions": "Sessions",
         "settings": "Settings",
         "admin": "Admin"
     },
+    "Achievements": {
+        "title": "Achievements",
+        "description": "Track your progress and unlock achievements.",
+        "widget": {
+            "title": "Achievements",
+            "viewAll": "View All",
+            "recentlyEarned": "Recently Earned",
+            "noAchievements": "No achievements yet. Keep working on your objectives!"
+        },
+        "stats": {
+            "totalPoints": "Total Points",
+            "earned": "Earned",
+            "completion": "Progress",
+            "completionDescription": "Overall completion"
+        },
+        "filters": {
+            "all": "All",
+            "earned": "Earned",
+            "locked": "Locked"
+        },
+        "types": {
+            "individual": "Individual",
+            "team": "Team"
+        },
+        "tiers": {
+            "bronze": "Bronze",
+            "silver": "Silver",
+            "gold": "Gold",
+            "platinum": "Platinum"
+        },
+        "categories": {
+            "milestone": "Milestone",
+            "streak": "Streak",
+            "completion": "Completion",
+            "activity": "Activity"
+        },
+        "card": {
+            "earned": "Earned",
+            "progress": "Progress",
+            "locked": "Locked",
+            "points": "{points} pts"
+        },
+        "definitions": {
+            "first_objective": {
+                "name": "First Steps",
+                "description": "Create your first objective"
+            },
+            "objectives_created_5": {
+                "name": "Planner",
+                "description": "Create {threshold} objectives"
+            },
+            "objectives_created_15": {
+                "name": "Strategist",
+                "description": "Create {threshold} objectives"
+            },
+            "objectives_created_30": {
+                "name": "Master Planner",
+                "description": "Create {threshold} objectives"
+            },
+            "objectives_completed_3": {
+                "name": "Achiever",
+                "description": "Complete {threshold} objectives"
+            },
+            "objectives_completed_10": {
+                "name": "Champion",
+                "description": "Complete {threshold} objectives"
+            },
+            "objectives_completed_25": {
+                "name": "Legend",
+                "description": "Complete {threshold} objectives"
+            },
+            "streak_3": {
+                "name": "Consistent",
+                "description": "Log progress for {threshold} consecutive days"
+            },
+            "streak_7": {
+                "name": "Dedicated",
+                "description": "Log progress for {threshold} consecutive days"
+            },
+            "streak_14": {
+                "name": "Unstoppable",
+                "description": "Log progress for {threshold} consecutive days"
+            },
+            "progress_updates_10": {
+                "name": "Progress Tracker",
+                "description": "Log {threshold} progress updates"
+            },
+            "progress_updates_50": {
+                "name": "Diligent",
+                "description": "Log {threshold} progress updates"
+            },
+            "progress_updates_100": {
+                "name": "Persistent",
+                "description": "Log {threshold} progress updates"
+            },
+            "early_bird": {
+                "name": "Early Bird",
+                "description": "Complete an objective before its deadline"
+            },
+            "team_first_objective": {
+                "name": "Team Kickoff",
+                "description": "Team creates their first objective"
+            },
+            "team_completed_5": {
+                "name": "Winning Team",
+                "description": "Team completes {threshold} objectives"
+            },
+            "team_completed_15": {
+                "name": "Elite Squad",
+                "description": "Team completes {threshold} objectives"
+            },
+            "team_completed_30": {
+                "name": "Dream Team",
+                "description": "Team completes {threshold} objectives"
+            },
+            "team_streak_7": {
+                "name": "Team Momentum",
+                "description": "Team logs progress for {threshold} consecutive days"
+            }
+        },
+        "empty": {
+            "noAchievements": "No achievements available.",
+            "noEarned": "You haven't earned any achievements yet.",
+            "noLocked": "You've earned all available achievements!",
+            "noTeamAchievements": "No team achievements available. Join a team to unlock team achievements."
+        },
+        "toast": {
+            "unlocked": "Achievement Unlocked!",
+            "points": "+{points} points"
+        }
+    },
     "Notifications": {
         "title": "Notifications",
         "description": "View your notifications and updates.",
         "loading": "Loading notifications...",
-        "empty": "No notifications yet."
+        "empty": "No notifications yet.",
+        "createNotification": "Create notification",
+        "createNotificationDescription": "Add a new notification tied to one of your objectives.",
+        "loadingObjectives": "Loading objectives...",
+        "noObjectives": "Create an objective first to add notifications.",
+        "markAllRead": "Mark all as read",
+        "allCaughtUp": "You're all caught up.",
+        "unreadCount": "You have {count} unread notifications.",
+        "form": {
+            "objective": "Objective",
+            "selectObjective": "Select an objective",
+            "objectiveHelper": "Choose the objective this notification is about.",
+            "notificationType": "Type",
+            "typePlaceholder": "e.g. reminder, deadline, progress",
+            "typeHelper": "Add a type to help categorize this notification.",
+            "message": "Message",
+            "messagePlaceholder": "Describe the notification...",
+            "messageHelper": "Keep it short and actionable.",
+            "notificationDate": "Notification date",
+            "pickADate": "Pick a date",
+            "dateHelper": "When should this notification appear?",
+            "cancel": "Cancel",
+            "save": "Save notification"
+        },
+        "table": {
+            "columns": {
+                "message": "Message",
+                "objective": "Objective",
+                "type": "Type",
+                "date": "Date",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "unknownObjective": "Unknown objective",
+            "read": "Read",
+            "unread": "Unread",
+            "markRead": "Mark as read",
+            "markUnread": "Mark as unread",
+            "delete": "Delete"
+        },
+        "typeOptions": {
+            "reminder": "Reminder",
+            "deadline": "Deadline",
+            "progress": "Progress",
+            "status": "Status"
+        },
+        "toast": {
+            "created": "Notification created.",
+            "createFailed": "Failed to create notification.",
+            "updated": "Notification updated.",
+            "updateFailed": "Failed to update notification.",
+            "deleted": "Notification deleted.",
+            "deleteFailed": "Failed to delete notification.",
+            "markAll": "All notifications marked as read.",
+            "markAllFailed": "Failed to mark notifications as read."
+        },
+        "confirm": {
+            "deleteTitle": "Delete notification?",
+            "deleteDescription": "This will permanently remove the notification.",
+            "deleteConfirm": "Delete",
+            "cancel": "Cancel"
+        }
     },
     "CommandMenu": {
         "placeholder": "Search commands...",
