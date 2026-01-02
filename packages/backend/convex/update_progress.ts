@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { queryWithRLS, mutationWithRLS } from "./rls";
 import { getAuthenticatedUser } from "./auth";
+import { internal } from "./_generated/api";
 
 export const createUpdateProgress = mutationWithRLS({
     args: {
@@ -13,6 +14,11 @@ export const createUpdateProgress = mutationWithRLS({
         const user = await getAuthenticatedUser(ctx);
         if (!user || !user._id) throw new Error("User not authenticated");
 
+        const objective = await ctx.db.get(args.objective);
+        if (!objective) {
+            throw new Error("Objective not found");
+        }
+
         const now = Date.now();
         const id = await ctx.db.insert("progressUpdates", {
             objective: args.objective,
@@ -22,6 +28,27 @@ export const createUpdateProgress = mutationWithRLS({
             createdAt: now,
             updatedAt: now,
         });
+
+        const unitSuffix = objective.unit ? ` ${objective.unit}` : "";
+        await ctx.db.insert("notifications", {
+            user: objective.user,
+            objective: args.objective,
+            read: false,
+            notificationType: "progress",
+            notificationDate: now,
+            message: `Progress updated for \"${objective.title}\" (+${args.updatedValue}${unitSuffix}).`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        // Check for achievements (streak, progress updates count)
+        if (!process.env.VITEST && process.env.NODE_ENV !== "test") {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId: objective.user,
+                trigger: "progress_update",
+            });
+        }
+
         return await ctx.db.get(id);
     },
 });

@@ -1,19 +1,18 @@
-import { z } from "zod";
-
+import { z } from 'zod';
 
 export const notificationSchema = z.object({
-    userId: z.number(),
-    objectiveId: z.number(),
-    notificationType: z.string(),
+    objective: z.string().min(1, { message: 'Objective is required' }),
+    notificationType: z.string().min(1, { message: 'Notification type is required' }),
     notificationDate: z.date(),
-    message: z.string(),
-    read: z.boolean(),
-    // createdAt: z.date().nullable(),
-    // updatedAt: z.date().nullable(),
+    message: z.string().min(1, { message: 'Message is required' }),
 });
 
 export const savedNotificationSchema = notificationSchema.extend({
     _id: z.string(),
+    user: z.string(),
+    read: z.boolean(),
+    createdAt: z.number(),
+    updatedAt: z.number(),
 });
 
 export type Notification = z.infer<typeof savedNotificationSchema>;

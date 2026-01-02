@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -38,8 +39,6 @@ vi.mock('@/lib/auth-client', () => ({
 // The actual Form component expects react-hook-form, but LoginForm uses @tanstack/react-form
 // We need to create an adapter that works with @tanstack/react-form
 vi.mock('@/components/ui/form', () => {
-    import * as React from 'react';
-
     // Create a context to pass the tanstack form
     const TanstackFormContext = React.createContext<unknown>(null);
     // Create a context to pass the field name and errors to FormMessage

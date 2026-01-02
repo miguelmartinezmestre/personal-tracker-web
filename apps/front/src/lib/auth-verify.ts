@@ -34,8 +34,10 @@ export async function verifySession(): Promise<AuthResult> {
     };
 }
 
-export async function verifyAdminSession(): Promise<AuthResult> {
-    const result = await verifySession();
+export async function verifyAdminSession(
+    verify: () => Promise<AuthResult> = verifySession,
+): Promise<AuthResult> {
+    const result = await verify();
 
     if (!result.success || !result.session) {
         return { success: false, session: null, error: 'Not authenticated' };

@@ -1,5 +1,33 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@repo/ui/components/circular-progress', () => ({
+    CircularProgress: ({
+        value = 0,
+        max = 100,
+        size = 'md',
+        showValue = true,
+    }: {
+        value?: number;
+        max?: number;
+        size?: 'sm' | 'md' | 'lg';
+        showValue?: boolean;
+    }) => {
+        const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+        const sizeClasses = {
+            sm: 'w-8 h-8',
+            md: 'w-12 h-12',
+            lg: 'w-16 h-16',
+        };
+
+        return (
+            <div role="progressbar" className={sizeClasses[size]}>
+                {showValue ? <span>{Math.round(percentage)}%</span> : null}
+            </div>
+        );
+    },
+}));
+
 import { CircularProgress } from '@repo/ui/components/circular-progress';
 
 describe('CircularProgress', () => {

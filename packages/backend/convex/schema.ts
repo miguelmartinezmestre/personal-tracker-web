@@ -36,15 +36,16 @@ export default defineSchema({
 
     notifications: defineTable({
         user: v.string(),
-        objective: v.id('objectives'),
+        objective: v.optional(v.id('objectives')),
         read: v.boolean(),
-        notificationType: v.string(),
+        notificationType: v.string(), // 'deadline' | 'progress' | 'status' | 'achievement'
         notificationDate: v.number(),
         message: v.string(),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
         .index('by_user', ['user'])
+        .index('by_user_date', ['user', 'notificationDate'])
         .index('by_objective', ['objective']),
 
     auditLogs: defineTable({
@@ -62,4 +63,59 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     }).index('by_user', ['user']),
+
+    // Achievement definitions - what achievements exist
+    achievementDefinitions: defineTable({
+        code: v.string(),
+        type: v.string(), // 'individual' | 'team'
+        category: v.string(), // 'milestone' | 'streak' | 'completion' | 'activity'
+        tier: v.string(), // 'bronze' | 'silver' | 'gold' | 'platinum'
+        threshold: v.number(),
+        icon: v.string(),
+        points: v.number(),
+        isActive: v.boolean(),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index('by_code', ['code'])
+        .index('by_type', ['type'])
+        .index('by_category', ['category']),
+
+    // User achievements - which users earned which achievements
+    userAchievements: defineTable({
+        user: v.string(),
+        achievement: v.id('achievementDefinitions'),
+        earnedAt: v.number(),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index('by_user', ['user'])
+        .index('by_user_achievement', ['user', 'achievement'])
+        .index('by_earned_at', ['earnedAt']),
+
+    // Team achievements - which teams earned which achievements
+    teamAchievements: defineTable({
+        team: v.string(),
+        achievement: v.id('achievementDefinitions'),
+        earnedAt: v.number(),
+        contributingUsers: v.array(v.string()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index('by_team', ['team'])
+        .index('by_team_achievement', ['team', 'achievement'])
+        .index('by_earned_at', ['earnedAt']),
+
+    // Achievement progress tracking
+    achievementProgress: defineTable({
+        user: v.string(),
+        team: v.optional(v.string()),
+        achievement: v.id('achievementDefinitions'),
+        currentProgress: v.number(),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index('by_user', ['user'])
+        .index('by_team', ['team'])
+        .index('by_user_achievement', ['user', 'achievement']),
 });

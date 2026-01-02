@@ -102,8 +102,8 @@ export function UserAgentIcon({
         if (os.name.includes("Windows")) {
           icon = Computer
           deviceName = t('windowsPc')
-        } else if (os.name.includes("Mac OS")) {
-          // UAParser uses "Mac OS" for macOS
+        } else if (os.name.includes("Mac OS") || os.name.includes("macOS")) {
+          // UAParser reports "macOS" for modern Safari/Chrome strings
           icon = Apple
           deviceName = t('mac')
         } else if (os.name.includes("Linux")) {
@@ -116,10 +116,6 @@ export function UserAgentIcon({
           // This could be an Android-based desktop or AIO
           icon = Smartphone // Or a more generic Android icon
           deviceName = t('androidDevice')
-        } else if (os.name.includes("iOS")) {
-          // Less common for default/desktop type, but possible
-          icon = Apple
-          deviceName = t('iosDevice')
         }
         // If no OS match, icon remains Monitor and deviceName its default
       }

@@ -8,7 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
-    "clean": "turbo run clean && npx rimraf node_modules .next .turbo",
+    "clean": "turbo run clean && node scripts/clean.mjs node_modules .next .turbo",
     "gen:typescript-package": "turbo gen typescript-package",
     "gen": "turbo gen",
     "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
@@ -18,12 +18,15 @@
     "test:coverage": "vitest run --coverage --coverage.reporter=text"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.15",
+    "dotenv": "17.2.3",
+    "jose": "6.1.0",
     "prettier": "^3.7.4",
     "rimraf": "^6.1.2",
     "turbo": "^2.6.3",
     "typescript": "5.9.3",
-    "dotenv": "17.2.3",
-    "jose": "6.1.0"
+    "vitest": "^4.0.15"
   },
   "engines": {
     "node": ">=22.21.1"
