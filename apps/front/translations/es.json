@@ -135,6 +135,7 @@
         "reportsDescription": "Obtén profundas perspectivas sobre tus hábitos y rendimiento con análisis detallados y reportes.",
         "forgotPassword": "¿Olvidaste tu contraseña?",
         "resetPassword": "Restablecer contraseña",
+        "resetPasswordSuccess": "Tu contraseña ha sido restablecida. Ya puedes iniciar sesión.",
         "noAccount": "¿No tienes una cuenta?",
         "alreadyHaveAccount": "¿Ya tienes una cuenta?",
         "createAccount": "Crear cuenta",
@@ -380,7 +381,8 @@
         "confirm": "Eliminar cuenta"
     },
     "ForgotPassword": {
-        "submit": "Enviar"
+        "submit": "Enviar",
+        "successMessage": "Si el email existe, te enviaremos un enlace para restablecer la contraseña."
     },
     "NavMain": {
         "platform": "Plataforma"
@@ -696,7 +698,9 @@
         "cancel": "Cancelar",
         "savePassword": "Guardar contraseña",
         "confirmPassword": "Confirmar contraseña",
-        "newPassword": "Nueva contraseña"
+        "newPassword": "Nueva contraseña",
+        "accountUpdated": "Cuenta actualizada.",
+        "emailChangeRequested": "Te hemos enviado un email de verificación para confirmar tu nueva dirección."
     },
     "Admin": {
         "title": "Panel de Administración",
@@ -815,23 +819,9 @@
         "progressUpdatesAddedPerMonth": "Progresos añadidos por mes",
         "remainDaysToDeadline": "Días restantes para la deadline",
         "objectivesWithMostProgress": "Objetivos con mayor progreso (Sin completar)",
-        "sample": {
-            "months": {
-                "january": "Enero",
-                "february": "Febrero",
-                "march": "Marzo",
-                "april": "Abril",
-                "may": "Mayo",
-                "june": "Junio"
-            },
-            "objectives": {
-                "onboardingFlow": "Desarrollar nuevo flujo de onboarding",
-                "marketingStrategy": "Finalizar estrategia de marketing Q3",
-                "databaseMigration": "Completar migracion de base de datos",
-                "redesignUi": "Redisenar interfaz de usuario",
-                "technicalDocs": "Escribir documentacion tecnica"
-            }
-        }
+        "noObjectives": "No hay objetivos creados todavía",
+        "noProgressUpdates": "No hay actualizaciones de progreso en los últimos meses",
+        "noObjectivesWithProgress": "No hay objetivos con progreso registrado"
     },
     "Charts": {
         "labels": {
