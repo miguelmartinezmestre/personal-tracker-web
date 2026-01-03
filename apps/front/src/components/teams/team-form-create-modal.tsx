@@ -25,11 +25,9 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { useMutation } from '@tanstack/react-query';
 import { CreateTeam, teamSchema } from '@/schemas/team';
 import { useTranslations } from 'next-intl';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { useCreateTeam } from '@/hooks/api/use-teams';
 
 const defaultValues: CreateTeam = {
     name: '',
@@ -38,7 +36,7 @@ const defaultValues: CreateTeam = {
 
 export default function CreateTeamFormModal() {
     const t = useTranslations('Teams');
-    const createTeam = useMutation({ mutationFn: useConvexMutation(api.teams.createTeam) });
+    const createTeam = useCreateTeam();
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof teamSchema>>({
         defaultValues: defaultValues,

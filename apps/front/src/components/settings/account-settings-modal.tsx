@@ -20,7 +20,7 @@ import { useUser } from '@/contexts/user-context';
 export default function EditSettingsFormModal() {
     const t = useTranslations('Settings');
     const [open, setOpen] = useState(false);
-    
+
     // User is guaranteed to be available here since this component
     // is only rendered inside AuthenticatedView (via dashboard/layout.tsx)
     useUser(); // This will throw if not in context, which shouldn't happen

@@ -17,10 +17,14 @@ import { toast } from 'sonner';
 
 export default function UpdateProgressTable() {
     const t = useTranslations('UpdateProgress');
-    const { id: objectiveId } = useParams();
+    const params = useParams();
+    const objectiveIdParam = params.id;
+    const objectiveId = (
+        Array.isArray(objectiveIdParam) ? objectiveIdParam[0] : objectiveIdParam
+    ) as Id<'objectives'>;
     const updateProgress = useSuspenseQuery(
         convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
-            objectiveId: objectiveId as Id<'objectives'>,
+            objectiveId,
         })
     );
     const objective = useSuspenseQuery(
@@ -86,7 +90,12 @@ export default function UpdateProgressTable() {
             header: t('table.columns.date'),
             cell: ({ row }) => {
                 const progressRow = row.original;
-                return <span>{new Date(progressRow.updateDate).toLocaleDateString()} - {new Date(progressRow.updateDate).toLocaleTimeString()}</span>;
+                return (
+                    <span>
+                        {new Date(progressRow.updateDate).toLocaleDateString()} -{' '}
+                        {new Date(progressRow.updateDate).toLocaleTimeString()}
+                    </span>
+                );
             },
         },
         {
@@ -153,7 +162,12 @@ export default function UpdateProgressTable() {
     const period = objectiveDoc?.period ?? 'none';
     const isEventBased = objectiveType !== 'value' || (period && period !== 'none');
     const range = objectiveDoc
-        ? getPeriodRange(period, Date.now(), objectiveDoc.periodStart, objectiveDoc.periodLengthDays)
+        ? getPeriodRange(
+              period,
+              Date.now(),
+              objectiveDoc.periodStart,
+              objectiveDoc.periodLengthDays
+          )
         : null;
     const sortedUpdates = [...updates].sort((a, b) => a.updateDate - b.updateDate);
     const relevantUpdates = range

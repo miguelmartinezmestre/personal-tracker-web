@@ -1,32 +1,22 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useTeams, useDeleteTeam } from '@/hooks/api/use-teams';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
 import EditTeamFormModal from '@/components/teams/team-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
-import { Doc } from '@repo/backend/convex/_generated/dataModel';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
+import type { Team } from '@/schemas/team';
 
 export default function TeamsTable() {
     const t = useTranslations('Teams');
-    const teams = useSuspenseQuery(convexQuery(api.teams.getTeams, {}));
-    const deleteTeam = useMutation({
-        mutationFn: useConvexMutation(api.teams.deleteTeam),
-        onSuccess: () => {
-            toast.success(t('toast.deletedSuccess'));
-        },
-        onError: () => {
-            toast.error(t('toast.deleteFailed'));
-        },
-    });
+    const teams = useTeams();
+    const deleteTeam = useDeleteTeam();
 
-    const columns: ColumnDef<Doc<"organization">>[] = [
+    const columns: ColumnDef<Team>[] = [
         {
             accessorKey: 'name',
             header: t('name'),
@@ -40,9 +30,7 @@ export default function TeamsTable() {
             id: 'update-team',
             cell: ({ row }) => {
                 const teamRow = row.original;
-                return (
-                    <EditTeamFormModal defaultValues={teamRow} />
-                );
+                return <EditTeamFormModal defaultValues={teamRow} />;
             },
         },
         {
@@ -53,7 +41,12 @@ export default function TeamsTable() {
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
-                            await deleteTeam.mutateAsync({ _id: teamRow._id });
+                            try {
+                                await deleteTeam.mutateAsync({ id: teamRow.id });
+                                toast.success(t('toast.deletedSuccess'));
+                            } catch {
+                                toast.error(t('toast.deleteFailed'));
+                            }
                         }}
                         title={t('confirm.deleteTeam')}
                         description={t('confirm.deleteTeamDescription')}
@@ -79,9 +72,13 @@ export default function TeamsTable() {
             id: 'go-to-activity',
             cell: ({ row }) => {
                 const teamRow = row.original;
-                if (teamRow._id) {
+                if (teamRow.id) {
                     return (
-                        <Link href={`/dashboard/teams/${String(teamRow._id)}`} prefetch={false} data-testid="team-detail-link">
+                        <Link
+                            href={`/dashboard/teams/${String(teamRow.id)}`}
+                            prefetch={false}
+                            data-testid="team-detail-link"
+                        >
                             {t('goToTeam')}
                         </Link>
                     );
@@ -91,10 +88,6 @@ export default function TeamsTable() {
             },
         },
     ];
-
-
-
-
 
     return (
         <div>

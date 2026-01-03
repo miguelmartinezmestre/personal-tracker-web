@@ -17,12 +17,13 @@ import { Input } from '@repo/ui/components/input';
 import { accountDetailsSchema } from '@/schemas/account-details';
 import { DialogFooter } from '@repo/ui/components/dialog';
 import { useTranslations } from 'next-intl';
-import { useAccountDetails, useUpdateAccountDetails } from '@/hooks/api/use-users';
+import { authClient } from '@/lib/auth-client';
 
 export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
-    const accountDetails = useAccountDetails();
-    const updateAccountDetails = useUpdateAccountDetails();
+    const tCommon = useTranslations('Common');
+    const sessionQuery = authClient.useSession();
+    const sessionUser = sessionQuery?.data?.user;
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -42,39 +43,57 @@ export default function AccountSettingsFormEdit() {
     });
 
     const onSubmit = async (values: z.infer<typeof accountDetailsSchema>) => {
-        const updateData = {
-            email: values.email,
-            username: values.username,
-        };
+        setError('');
+        setMessage('');
 
-        const result = await updateAccountDetails.mutateAsync(updateData);
-
-        if (result.error) {
-            setError(result.message);
-        } else {
-            setMessage(result.message);
-            form.reset({
-                email: values.email,
-                username: values.username,
-            });
+        if (!sessionUser) {
+            setError(tCommon('genericErrorDescription'));
+            return;
         }
 
-        // Convex react-query client handles cache; explicit invalidation not required here.
+        const currentName = sessionUser.name ?? '';
+        const currentEmail = sessionUser.email ?? '';
+
+        // 1) Update profile name (immediate)
+        if (values.username !== currentName) {
+            const { error: updateError } = await authClient.updateUser({
+                name: values.username,
+            });
+            if (updateError) {
+                setError(updateError.message || tCommon('genericErrorDescription'));
+                return;
+            }
+        }
+
+        // 2) Change email (requires verification; not immediate)
+        if (values.email !== currentEmail) {
+            const { error: changeError } = await authClient.changeEmail({
+                newEmail: values.email,
+                callbackURL: '/dashboard/settings',
+            });
+            if (changeError) {
+                setError(changeError.message || tCommon('genericErrorDescription'));
+                return;
+            }
+
+            setMessage(t('emailChangeRequested'));
+        } else {
+            setMessage(t('accountUpdated'));
+        }
 
         setOpen(false);
-        form.reset();
     };
 
     useEffect(() => {
-        if (accountDetails.data) {
+        if (sessionUser) {
             form.reset({
-                email: accountDetails.data.email,
-                username: accountDetails.data.username,
+                email: sessionUser.email ?? '',
+                username: sessionUser.name ?? '',
             });
         }
-    }, [accountDetails.data, form]);
+    }, [sessionUser?.email, sessionUser?.name, form]);
 
-    if (accountDetails.isLoading) {
+    if (sessionQuery?.isPending) {
         return (
             <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
