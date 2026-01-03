@@ -66,7 +66,9 @@ export function DeleteConfirmationDialog({
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>{resolvedCancelLabel}</AlertDialogCancel>
+                    <AlertDialogCancel disabled={isLoading}>
+                        {resolvedCancelLabel}
+                    </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleConfirm}
                         disabled={isLoading}
@@ -79,4 +81,3 @@ export function DeleteConfirmationDialog({
         </AlertDialog>
     );
 }
-

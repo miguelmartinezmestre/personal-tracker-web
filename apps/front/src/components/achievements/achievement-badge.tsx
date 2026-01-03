@@ -1,16 +1,7 @@
 'use client';
 
 import { cn } from '@repo/ui/lib/utils';
-import {
-    Trophy,
-    Target,
-    CheckCircle,
-    Flame,
-    TrendingUp,
-    Clock,
-    Users,
-    Lock,
-} from 'lucide-react';
+import { Trophy, Target, CheckCircle, Flame, TrendingUp, Clock, Users, Lock } from 'lucide-react';
 import type { AchievementTier } from '@/schemas/achievement';
 import {
     Tooltip,
@@ -104,9 +95,7 @@ export function AchievementBadge({
                 <TooltipTrigger asChild>{badge}</TooltipTrigger>
                 <TooltipContent>
                     <p className="font-semibold">{name}</p>
-                    {description && (
-                        <p className="text-xs text-muted-foreground">{description}</p>
-                    )}
+                    {description && <p className="text-xs text-muted-foreground">{description}</p>}
                     {!earned && <p className="text-xs text-muted-foreground mt-1">Locked</p>}
                 </TooltipContent>
             </Tooltip>

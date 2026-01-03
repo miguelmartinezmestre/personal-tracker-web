@@ -3,8 +3,7 @@ import { ThemeToggle } from '@/components/theme-switcher';
 import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';
-import { Authenticated } from 'convex/react';
-import { useIsAuthenticated } from '@/hooks/api/use-auth';
+import { authClient } from '@/lib/auth-client';
 import type { Route } from 'next';
 
 type LinkItem = { name: string; href: Route };
@@ -19,7 +18,8 @@ export default function NavBar() {
         { name: t('login'), href: '/login' },
     ]);
 
-    const { data: _isAuthenticated } = useIsAuthenticated();
+    const sessionQuery = authClient.useSession();
+    const isAuthenticated = Boolean(sessionQuery?.data?.user);
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
@@ -33,7 +33,7 @@ export default function NavBar() {
                     {link.name}
                 </Link>
             ))}
-            <Authenticated>
+            {isAuthenticated && (
                 <Link
                     href="/dashboard/home"
                     className="text-primary hover:text-gray-700"
@@ -41,7 +41,7 @@ export default function NavBar() {
                 >
                     {t('goToDashboard')}
                 </Link>
-            </Authenticated>
+            )}
             <div className="text-primary hover:text-gray-700">
                 <ThemeToggle />
             </div>

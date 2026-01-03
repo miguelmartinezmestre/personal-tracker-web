@@ -19,15 +19,17 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/schemas/reset-password';
 import { useSearchParams } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
 export default function ResetPassword() {
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
 
-    const [registerError] = useState('');
+    const [registerError, setRegisterError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const searchParams = useSearchParams();
 
-    const resetPasswordKey = searchParams.get('key');
+    const resetPasswordKey = searchParams.get('token') ?? searchParams.get('key');
 
     const form = useForm<z.infer<typeof resetPasswordSchema>>({
         defaultValues: {
@@ -45,15 +47,25 @@ export default function ResetPassword() {
     });
 
     async function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
+        setRegisterError('');
+        setSuccessMessage('');
+
         if (values.password !== values.confirmPassword) {
             return;
         }
 
-        // const register = await resetPasswordAction(values);
+        const token = values.resetPasswordKey;
+        const { error } = await authClient.resetPassword({
+            newPassword: values.password,
+            token,
+        });
 
-        // if (register?.data?.error) {
-        //     setRegisterError(register?.data?.message);
-        // }
+        if (error) {
+            setRegisterError(error.message || tCommon('genericErrorDescription'));
+            return;
+        }
+
+        setSuccessMessage(t('resetPasswordSuccess'));
     }
 
     return (
@@ -70,6 +82,14 @@ export default function ResetPassword() {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{registerError}</AlertDescription>
+                    </Alert>
+                )}
+
+                {successMessage && (
+                    <Alert variant="default" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{tCommon('success')}</AlertTitle>
+                        <AlertDescription>{successMessage}</AlertDescription>
                     </Alert>
                 )}
 

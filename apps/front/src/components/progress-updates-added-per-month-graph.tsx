@@ -1,4 +1,4 @@
-"use client"
+'use client';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/card';
@@ -10,7 +10,11 @@ import {
 } from '@repo/ui/components/chart';
 import { useTranslations } from 'next-intl';
 
-export function ProgressUpdatesAddedPerMonthGraph({ data }: { data: { month: string; count: number }[] }) {
+export function ProgressUpdatesAddedPerMonthGraph({
+    data,
+}: {
+    data: { month: string; count: number }[];
+}) {
     const t = useTranslations('Stats');
     return (
         <Card>
@@ -28,10 +32,7 @@ export function ProgressUpdatesAddedPerMonthGraph({ data }: { data: { month: str
                             axisLine={false}
                             tickFormatter={value => value.slice(0, 3)}
                         />
-                        <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                        />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                         <Bar dataKey="count" fill="var(--color-count)" radius={7} />
                     </BarChart>
                 </ChartContainer>

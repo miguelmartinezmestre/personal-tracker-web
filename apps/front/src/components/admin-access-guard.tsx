@@ -23,7 +23,7 @@ function isAdminRole(role: string | string[] | undefined): boolean {
 
 export function AdminAccessGuard({ children, fallback }: AdminAccessGuardProps) {
     const t = useTranslations('Admin');
-    
+
     // Try to use context user first (more efficient), fallback to useUserRole if needed
     let isAdmin = false;
     try {

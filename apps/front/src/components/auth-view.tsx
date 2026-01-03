@@ -15,7 +15,7 @@ export default function AuthenticatedView({ children }: { children: React.ReactN
     // Its return shape may differ slightly by version, so we read the common fields.
     const sessionQuery = authClient.useSession();
     const session = sessionQuery?.data;
-    const isSessionLoading = Boolean(sessionQuery?.isPending ?? sessionQuery?.isLoading);
+    const isSessionLoading = Boolean(sessionQuery?.isPending);
 
     // Only query for the current user once we have a session.
     const user = useCurrentUser(!session?.user);

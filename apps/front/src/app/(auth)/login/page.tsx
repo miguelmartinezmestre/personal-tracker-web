@@ -1,7 +1,7 @@
-import Footer from "@/components/footer";
-import Header from "@/components/header";
-import LoginForm from "@/components/auth/login-form";
-import { useTranslations } from "next-intl";
+import Footer from '@/components/footer';
+import Header from '@/components/header';
+import LoginForm from '@/components/auth/login-form';
+import { useTranslations } from 'next-intl';
 
 export default function Login() {
     const t = useTranslations('HomePage');

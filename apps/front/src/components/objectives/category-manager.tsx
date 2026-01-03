@@ -174,10 +174,14 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                         {},
                                         {
                                             onSuccess: () => {
-                                                toast.success(t('categories.toast.createDefaultsSuccess'));
+                                                toast.success(
+                                                    t('categories.toast.createDefaultsSuccess')
+                                                );
                                             },
                                             onError: (error: Error) => {
-                                                toast.error(t('categories.toast.createDefaultsFailed'));
+                                                toast.error(
+                                                    t('categories.toast.createDefaultsFailed')
+                                                );
                                                 console.error(error);
                                             },
                                         }
@@ -315,7 +319,8 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                         <Button
                                             onClick={handleCreateCategory}
                                             disabled={
-                                                createCategoryMutation.isPending || !newCategory.name.trim()
+                                                createCategoryMutation.isPending ||
+                                                !newCategory.name.trim()
                                             }
                                         >
                                             {createCategoryMutation.isPending
@@ -346,10 +351,14 @@ const CategoryManager = React.forwardRef<HTMLDivElement, CategoryManagerProps>(
                                         {},
                                         {
                                             onSuccess: () => {
-                                                toast.success(t('categories.toast.createDefaultsSuccess'));
+                                                toast.success(
+                                                    t('categories.toast.createDefaultsSuccess')
+                                                );
                                             },
                                             onError: (error: Error) => {
-                                                toast.error(t('categories.toast.createDefaultsFailed'));
+                                                toast.error(
+                                                    t('categories.toast.createDefaultsFailed')
+                                                );
                                                 console.error(error);
                                             },
                                         }

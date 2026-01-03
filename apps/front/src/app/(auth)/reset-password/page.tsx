@@ -1,14 +1,17 @@
-import ResetPassword from "@/components/auth/reset-password";
-import Footer from "@/components/footer";
-import Header from "@/components/header";
-import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
+import ResetPassword from '@/components/auth/reset-password';
+import Footer from '@/components/footer';
+import Header from '@/components/header';
+import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
-export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
-
+export default async function ResetPasswordPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
     const params = await searchParams;
 
-    const resetPasswordKey = params.key;
+    const resetPasswordKey = params.key ?? params.token;
 
     if (!resetPasswordKey) {
         redirect('/');
@@ -39,5 +42,5 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
             </div>
             <Footer />
         </div>
-    )
+    );
 }
