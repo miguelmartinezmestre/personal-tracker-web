@@ -135,6 +135,7 @@
         "reportsDescription": "Get deep insights into your habits and performance with detailed analysis and reports.",
         "forgotPassword": "Forgot your password?",
         "resetPassword": "Reset password",
+        "resetPasswordSuccess": "Your password has been reset. You can now log in.",
         "noAccount": "Don't have an account?",
         "alreadyHaveAccount": "Already have an account?",
         "createAccount": "Create Account",
@@ -380,7 +381,8 @@
         "confirm": "Delete account"
     },
     "ForgotPassword": {
-        "submit": "Send"
+        "submit": "Send",
+        "successMessage": "If the email exists, we’ll send you a reset link."
     },
     "NavMain": {
         "platform": "Platform"
@@ -696,7 +698,9 @@
         "cancel": "Cancel",
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
-        "newPassword": "New Password"
+        "newPassword": "New Password",
+        "accountUpdated": "Account updated.",
+        "emailChangeRequested": "We sent a verification email to confirm your new address."
     },
     "Admin": {
         "title": "Admin Panel",
@@ -815,23 +819,9 @@
         "progressUpdatesAddedPerMonth": "Progress Updates Added Per Month",
         "remainDaysToDeadline": "Remain Days to Deadline",
         "objectivesWithMostProgress": "Objectives With Most Progress",
-        "sample": {
-            "months": {
-                "january": "January",
-                "february": "February",
-                "march": "March",
-                "april": "April",
-                "may": "May",
-                "june": "June"
-            },
-            "objectives": {
-                "onboardingFlow": "Develop New Onboarding Flow",
-                "marketingStrategy": "Finalize Q3 Marketing Strategy",
-                "databaseMigration": "Complete Database Migration",
-                "redesignUi": "Redesign User Interface",
-                "technicalDocs": "Write Technical Documentation"
-            }
-        }
+        "noObjectives": "No objectives created yet",
+        "noProgressUpdates": "No progress updates in recent months",
+        "noObjectivesWithProgress": "No objectives with recorded progress"
     },
     "Charts": {
         "labels": {
