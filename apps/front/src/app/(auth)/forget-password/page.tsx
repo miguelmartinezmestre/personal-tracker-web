@@ -1,7 +1,7 @@
-import Header from "@/components/header";
-import Footer from "@/components/footer";
-import ForgetPasswordForm from "@/components/auth/forget-password";
-import { getTranslations } from "next-intl/server";
+import Header from '@/components/header';
+import Footer from '@/components/footer';
+import ForgetPasswordForm from '@/components/auth/forget-password';
+import { getTranslations } from 'next-intl/server';
 
 export default async function ManageInvitationPage() {
     const t = await getTranslations('HomePage');
@@ -12,12 +12,12 @@ export default async function ManageInvitationPage() {
             <div className="flex-grow flex items-center justify-center p-6">
                 <div className="w-full max-w-md rounded-xl shadow-lg p-8 border">
                     <h1 className="text-2xl font-bold text-center mb-6 text-primary">
-                        {t('resetPassword')}
+                        {t('forgotPassword')}
                     </h1>
                     <ForgetPasswordForm />
                 </div>
             </div>
             <Footer />
         </div>
-    )
+    );
 }

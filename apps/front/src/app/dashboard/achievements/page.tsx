@@ -76,7 +76,9 @@ export default function AchievementsPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Trophy className="h-8 w-8 text-yellow-500" />
-                    <h1 className="text-2xl font-bold" data-testid="achievements-title">{t('title')}</h1>
+                    <h1 className="text-2xl font-bold" data-testid="achievements-title">
+                        {t('title')}
+                    </h1>
                 </div>
                 {needsSeeding && (
                     <Button
@@ -95,7 +97,12 @@ export default function AchievementsPage() {
                     <CardContent className="flex items-center gap-4 p-6">
                         <Star className="h-10 w-10 text-yellow-500" />
                         <div>
-                            <p className="text-3xl font-bold" data-testid="achievements-total-points">{stats?.totalPoints ?? 0}</p>
+                            <p
+                                className="text-3xl font-bold"
+                                data-testid="achievements-total-points"
+                            >
+                                {stats?.totalPoints ?? 0}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                                 {t('stats.totalPoints')}
                             </p>
@@ -106,7 +113,10 @@ export default function AchievementsPage() {
                     <CardContent className="flex items-center gap-4 p-6">
                         <Award className="h-10 w-10 text-primary" />
                         <div>
-                            <p className="text-3xl font-bold" data-testid="achievements-earned-count">
+                            <p
+                                className="text-3xl font-bold"
+                                data-testid="achievements-earned-count"
+                            >
                                 {stats?.earnedCount ?? 0}
                                 <span className="text-lg font-normal text-muted-foreground">
                                     /{stats?.totalAvailable ?? 0}
@@ -122,9 +132,7 @@ export default function AchievementsPage() {
                             <span className="text-lg font-bold text-primary">
                                 {stats?.totalAvailable
                                     ? Math.round(
-                                          ((stats?.earnedCount ?? 0) /
-                                              stats.totalAvailable) *
-                                              100
+                                          ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
                                       )
                                     : 0}
                                 %
@@ -171,19 +179,34 @@ export default function AchievementsPage() {
             {/* Achievements Tabs */}
             <Tabs defaultValue="individual" className="w-full" data-testid="achievements-tabs">
                 <TabsList className="grid w-full max-w-md grid-cols-2">
-                    <TabsTrigger value="individual" className="flex items-center gap-2" data-testid="achievements-tab-individual">
+                    <TabsTrigger
+                        value="individual"
+                        className="flex items-center gap-2"
+                        data-testid="achievements-tab-individual"
+                    >
                         <User className="h-4 w-4" />
                         {t('types.individual')}
                     </TabsTrigger>
-                    <TabsTrigger value="team" className="flex items-center gap-2" data-testid="achievements-tab-team">
+                    <TabsTrigger
+                        value="team"
+                        className="flex items-center gap-2"
+                        data-testid="achievements-tab-team"
+                    >
                         <Users className="h-4 w-4" />
                         {t('types.team')}
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="individual" className="mt-6" data-testid="achievements-content-individual">
+                <TabsContent
+                    value="individual"
+                    className="mt-6"
+                    data-testid="achievements-content-individual"
+                >
                     {individualAchievements && individualAchievements.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="achievements-grid-individual">
+                        <div
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                            data-testid="achievements-grid-individual"
+                        >
                             {individualAchievements.map(achievement => (
                                 <AchievementCard
                                     key={String(achievement.definition._id)}
@@ -212,7 +235,10 @@ export default function AchievementsPage() {
 
                 <TabsContent value="team" className="mt-6" data-testid="achievements-content-team">
                     {teamAchievements && teamAchievements.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="achievements-grid-team">
+                        <div
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                            data-testid="achievements-grid-team"
+                        >
                             {teamAchievements.map(achievement => (
                                 <AchievementCard
                                     key={String(achievement.definition._id)}
