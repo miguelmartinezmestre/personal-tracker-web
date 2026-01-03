@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the external dependencies
-vi.mock('convex/react', () => ({
-    useQuery: vi.fn(),
-}));
-
 vi.mock('@tanstack/react-query', () => ({
     useQuery: vi.fn(),
 }));
@@ -37,30 +33,36 @@ describe('use-auth hooks', () => {
         });
 
         it('should call useQuery with skip when skip is true', async () => {
-            const { useQuery } = await import('convex/react');
+            const { useQuery } = await import('@tanstack/react-query');
+            const { convexQuery } = await import('@convex-dev/react-query');
             const { useCurrentUser } = await import('./use-auth');
 
             useCurrentUser(true);
 
-            expect(useQuery).toHaveBeenCalledWith('getCurrentUser', 'skip');
+            expect(convexQuery).toHaveBeenCalledWith('getCurrentUser', 'skip');
+            expect(useQuery).toHaveBeenCalled();
         });
 
         it('should call useQuery with empty object when skip is false', async () => {
-            const { useQuery } = await import('convex/react');
+            const { useQuery } = await import('@tanstack/react-query');
+            const { convexQuery } = await import('@convex-dev/react-query');
             const { useCurrentUser } = await import('./use-auth');
 
             useCurrentUser(false);
 
-            expect(useQuery).toHaveBeenCalledWith('getCurrentUser', {});
+            expect(convexQuery).toHaveBeenCalledWith('getCurrentUser', {});
+            expect(useQuery).toHaveBeenCalled();
         });
 
         it('should call useQuery with empty object when skip is undefined', async () => {
-            const { useQuery } = await import('convex/react');
+            const { useQuery } = await import('@tanstack/react-query');
+            const { convexQuery } = await import('@convex-dev/react-query');
             const { useCurrentUser } = await import('./use-auth');
 
             useCurrentUser();
 
-            expect(useQuery).toHaveBeenCalledWith('getCurrentUser', {});
+            expect(convexQuery).toHaveBeenCalledWith('getCurrentUser', {});
+            expect(useQuery).toHaveBeenCalled();
         });
     });
 
@@ -72,10 +74,12 @@ describe('use-auth hooks', () => {
 
         it('should call useQuery from react-query', async () => {
             const { useQuery } = await import('@tanstack/react-query');
+            const { convexQuery } = await import('@convex-dev/react-query');
             const { useIsAuthenticated } = await import('./use-auth');
 
             useIsAuthenticated();
 
+            expect(convexQuery).toHaveBeenCalledWith('isAuthenticated', {});
             expect(useQuery).toHaveBeenCalled();
         });
     });

@@ -3,25 +3,27 @@ import { cookies } from 'next/headers';
 import { routing } from './routing';
 
 export default getRequestConfig(async () => {
-  // Priority: Cookie > Default locale (English)
-  // We only use cookies for locale detection, no URL prefixes
-  let locale: string | undefined;
+    type AppLocale = (typeof routing.locales)[number];
+    const isAppLocale = (value: string): value is AppLocale =>
+        (routing.locales as readonly string[]).includes(value);
 
-  try {
-    const cookieStore = await cookies();
-    locale = cookieStore.get('locale')?.value;
-  } catch (error) {
-    // Fallback if cookie reading fails
-    console.error('Error reading locale cookie:', error);
-  }
+    // Priority: Cookie > Default locale (English)
+    // We only use cookies for locale detection, no URL prefixes
+    let locale: string | undefined;
 
-  // Validate locale and default to English if not found or invalid
-  const validLocale = locale && routing.locales.includes(locale)
-    ? locale
-    : routing.defaultLocale;
+    try {
+        const cookieStore = await cookies();
+        locale = cookieStore.get('locale')?.value;
+    } catch (error) {
+        // Fallback if cookie reading fails
+        console.error('Error reading locale cookie:', error);
+    }
 
-  return {
-    locale: validLocale,
-    messages: (await import(`../../translations/${validLocale}.json`)).default
-  };
+    // Validate locale and default to English if not found or invalid
+    const validLocale: AppLocale = locale && isAppLocale(locale) ? locale : routing.defaultLocale;
+
+    return {
+        locale: validLocale,
+        messages: (await import(`../../translations/${validLocale}.json`)).default,
+    };
 });

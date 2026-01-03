@@ -5,6 +5,31 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import type { Objective } from '@/schemas/objective';
+import { objectiveTypeSchema, periodSchema, savedObjectiveSchema } from '@/schemas/objective';
+import type { Doc } from '@repo/backend/convex/_generated/dataModel';
+
+const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
+    const objectiveType = objectiveTypeSchema.safeParse(objective.objectiveType).success
+        ? objective.objectiveType
+        : null;
+    const period = periodSchema.safeParse(objective.period).success ? objective.period : null;
+
+    return savedObjectiveSchema.parse({
+        _id: String(objective._id),
+        title: objective.title,
+        description: objective.description ?? null,
+        category: objective.category ?? null,
+        targetValue: objective.targetValue,
+        currentValue: objective.currentValue,
+        deadline: objective.deadline ?? null,
+        status: objective.status ?? null,
+        unit: objective.unit ?? null,
+        objectiveType,
+        period,
+        periodStart: objective.periodStart ?? null,
+        periodLengthDays: objective.periodLengthDays ?? null,
+    });
+};
 
 /**
  * Tipos para las operaciones de objetivos
@@ -54,7 +79,10 @@ export interface ObjectiveActionParams {
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useObjectives() {
-    return useQuery(convexQuery(api.objectives.getObjectivesByUser, {}));
+    return useQuery({
+        ...convexQuery(api.objectives.getObjectivesByUser, {}),
+        select: objectives => objectives.map(normalizeObjective),
+    });
 }
 
 /**
@@ -62,9 +90,10 @@ export function useObjectives() {
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useObjective(objectiveId: Id<'objectives'> | null) {
-    return useQuery(
-        convexQuery(api.objectives.getObjectiveById, objectiveId ? { id: objectiveId } : 'skip')
-    );
+    return useQuery({
+        ...convexQuery(api.objectives.getObjectiveById, objectiveId ? { id: objectiveId } : 'skip'),
+        select: objective => (objective ? normalizeObjective(objective) : null),
+    });
 }
 
 /**
@@ -188,4 +217,3 @@ export function useUpdateObjectiveStatus() {
         },
     });
 }
-

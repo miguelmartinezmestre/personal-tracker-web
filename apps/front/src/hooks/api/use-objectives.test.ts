@@ -6,7 +6,7 @@ const invalidateQueriesMock = vi.fn();
 // Mock the external dependencies
 vi.mock('@tanstack/react-query', () => ({
     useQuery: vi.fn(),
-    useMutation: vi.fn((options) => {
+    useMutation: vi.fn(options => {
         lastMutationOptions = options;
         return {
             mutate: vi.fn(),
