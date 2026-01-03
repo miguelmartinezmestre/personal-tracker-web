@@ -1,41 +1,220 @@
+%% Legend:
+%% Better Auth tables (from convex/betterAuth/schema.ts): user, session, account, verification, jwks, organization, member, invitation
+%% App tables come from convex/schema.ts
+%% Optional fields are marked with "?"
+%% String-based references are logical links (not Convex v.id FKs) unless the type is "id"
+%% userPermissions.scopeType / scopeTeamId map to scope.type / scope.teamId inside the scope object in schema
+
 erDiagram
-    User {
-        int user_id PK
-        string email
-        string password
-        string username
-    }
+  objectives {
+    string user
+    string title
+    string? description
+    string? category
+    number targetValue
+    number currentValue
+    number? deadline
+    string status
+    string? unit
+    string? objectiveType
+    string? period
+    number? periodStart
+    number? periodLengthDays
+    number createdAt
+    number updatedAt
+  }
 
-    Objectives {
-        int goal_id PK
-        int user_id FK
-        string title
-        string description
-        string category
-        float target_value
-        float current_value
-        date deadline
-        string status
-    }
+  progressUpdates {
+    id objective
+    number updatedValue
+    number updateDate
+    string? comment
+    number createdAt
+    number updatedAt
+  }
 
-    ProgressUpdate {
-        int update_id PK
-        int goal_id FK
-        float updated_value
-        datetime update_date
-        string comment
-    }
+  notifications {
+    string user
+    id? objective
+    boolean read
+    string notificationType
+    number notificationDate
+    string message
+    number createdAt
+    number updatedAt
+  }
 
-    Notification {
-        int notification_id PK
-        int user_id FK
-        int goal_id FK
-        string notification_type
-        datetime notification_date
-        string message
-    }
+  auditLogs {
+    string user
+    string action
+    number createdAt
+    number updatedAt
+  }
 
-    User ||--o{ Objectives : "creates"
-    Objectives ||--o{ ProgressUpdate : "has updates"
-    User ||--o{ Notification : "receives"
-    Objectives ||--o{ Notification : "triggers"
+  categories {
+    string user
+    string name
+    string color
+    string? icon
+    number createdAt
+    number updatedAt
+  }
+
+  achievementDefinitions {
+    string code
+    string type
+    string category
+    string tier
+    number threshold
+    string icon
+    number points
+    boolean isActive
+    number createdAt
+    number updatedAt
+  }
+
+  userAchievements {
+    string user
+    id achievement
+    number earnedAt
+    number createdAt
+    number updatedAt
+  }
+
+  teamAchievements {
+    string team
+    id achievement
+    number earnedAt
+    string[] contributingUsers
+    number createdAt
+    number updatedAt
+  }
+
+  achievementProgress {
+    string user
+    string? team
+    id achievement
+    number currentProgress
+    number createdAt
+    number updatedAt
+  }
+
+  userPermissions {
+    string userId
+    string permission
+    string grantedBy
+    number grantedAt
+    number? expiresAt
+    string? scopeType
+    id? scopeTeamId
+  }
+
+  user {
+    string name
+    string email
+    boolean emailVerified
+    string? image
+    number createdAt
+    number updatedAt
+    string? userId
+    string? role
+    boolean? banned
+    string? banReason
+    number? banExpires
+  }
+
+  session {
+    number expiresAt
+    string token
+    number createdAt
+    number updatedAt
+    string? ipAddress
+    string? userAgent
+    string userId
+    string? impersonatedBy
+    string? activeOrganizationId
+  }
+
+  account {
+    string accountId
+    string providerId
+    string userId
+    string? accessToken
+    string? refreshToken
+    string? idToken
+    number? accessTokenExpiresAt
+    number? refreshTokenExpiresAt
+    string? scope
+    string? password
+    number createdAt
+    number updatedAt
+  }
+
+  verification {
+    string identifier
+    string value
+    number expiresAt
+    number createdAt
+    number updatedAt
+  }
+
+  jwks {
+    string publicKey
+    string privateKey
+    number createdAt
+  }
+
+  organization {
+    string name
+    string slug
+    string? logo
+    number createdAt
+    string? metadata
+    string? description
+  }
+
+  member {
+    string organizationId
+    string userId
+    string role
+    number createdAt
+  }
+
+  invitation {
+    string organizationId
+    string email
+    string? role
+    string status
+    number expiresAt
+    string inviterId
+  }
+
+  %% App relationships
+  user ||--o{ objectives : user
+  objectives ||--o{ progressUpdates : objective
+  objectives o|--o{ notifications : objective
+  user ||--o{ notifications : user
+  user ||--o{ auditLogs : user
+  user ||--o{ categories : user
+
+  achievementDefinitions ||--o{ userAchievements : achievement
+  achievementDefinitions ||--o{ teamAchievements : achievement
+  achievementDefinitions ||--o{ achievementProgress : achievement
+  user ||--o{ userAchievements : user
+  organization ||--o{ teamAchievements : team
+  user ||--o{ achievementProgress : user
+  organization o|--o{ achievementProgress : team
+
+  user ||--o{ userPermissions : userId
+  user ||--o{ userPermissions : grantedBy
+  organization o|--o{ userPermissions : scopeTeamId
+
+  %% Better Auth relationships
+  user ||--o{ session : userId
+  user o|--o{ session : impersonatedBy
+  organization o|--o{ session : activeOrganizationId
+  user ||--o{ account : userId
+  user ||--o{ member : userId
+  organization ||--o{ member : organizationId
+  user ||--o{ invitation : inviterId
+  organization ||--o{ invitation : organizationId
