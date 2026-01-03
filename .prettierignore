@@ -1,2 +1,5 @@
+# Ignore formatting for the shared UI package (requested)
+packages/ui/**
+
 routeTree.gen.ts
 **/components/ui/**/*.tsx
