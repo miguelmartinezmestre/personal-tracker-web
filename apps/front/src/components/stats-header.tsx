@@ -7,12 +7,15 @@ interface StatsHeaderProps {
     pendingObjectives: number;
 }
 
-
-export default function StatsHeader({ totalObjectives, completedObjectives, pendingObjectives }: StatsHeaderProps) {
+export default function StatsHeader({
+    totalObjectives,
+    completedObjectives,
+    pendingObjectives,
+}: StatsHeaderProps) {
     const t = useTranslations('Stats');
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className='text-center'>
+            <Card className="text-center">
                 <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t('totalObjectives')}</CardTitle>
                 </CardHeader>
@@ -22,7 +25,7 @@ export default function StatsHeader({ totalObjectives, completedObjectives, pend
                 </CardContent>
             </Card>
 
-            <Card className='text-center'>
+            <Card className="text-center">
                 <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t('pendingObjectives')}</CardTitle>
                 </CardHeader>
@@ -32,19 +35,17 @@ export default function StatsHeader({ totalObjectives, completedObjectives, pend
                 </CardContent>
             </Card>
 
-
-            <Card className='text-center'>
+            <Card className="text-center">
                 <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t('completedObjectives')}</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                        {t('completedObjectives')}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold mb-2">{completedObjectives}</div>
                     <p className="text-xs text-muted-foreground">{t('completedObjectives')}</p>
                 </CardContent>
             </Card>
-
         </div>
-    )
-
+    );
 }
-

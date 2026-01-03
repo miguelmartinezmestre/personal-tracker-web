@@ -71,9 +71,7 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
                         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                             <Star className="h-8 w-8 text-yellow-500" />
                             <div>
-                                <p className="text-2xl font-bold">
-                                    {stats?.totalPoints ?? 0}
-                                </p>
+                                <p className="text-2xl font-bold">{stats?.totalPoints ?? 0}</p>
                                 <p className="text-xs text-muted-foreground">
                                     {t('stats.totalPoints')}
                                 </p>
@@ -88,9 +86,7 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
                                         /{stats?.totalAvailable ?? 0}
                                     </span>
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('stats.earned')}
-                                </p>
+                                <p className="text-xs text-muted-foreground">{t('stats.earned')}</p>
                             </div>
                         </div>
                     </div>
@@ -112,7 +108,10 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
                                         }
                                         name={t(
                                             `definitions.${achievement.definition?.code}.name`,
-                                            { defaultValue: achievement.definition?.code ?? 'Achievement' }
+                                            {
+                                                defaultValue:
+                                                    achievement.definition?.code ?? 'Achievement',
+                                            }
                                         )}
                                         earned={true}
                                         size="md"

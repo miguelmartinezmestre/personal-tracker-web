@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield} from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { SidebarProvider, SidebarInset } from '@repo/ui/components/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import {

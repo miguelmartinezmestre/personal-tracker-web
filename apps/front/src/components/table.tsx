@@ -3,6 +3,7 @@ import {
     type ColumnOrderState,
     type ColumnFiltersState,
     type FilterFn,
+    type RowData,
     type SortingState,
     type VisibilityState,
     useReactTable,
@@ -13,7 +14,14 @@ import {
     flexRender,
     getSortedRowModel,
 } from '@tanstack/react-table';
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@repo/ui/components/table';
+import {
+    TableHeader,
+    TableRow,
+    TableHead,
+    TableBody,
+    TableCell,
+    Table,
+} from '@repo/ui/components/table';
 // import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { Button } from '@repo/ui/components/button';
@@ -81,14 +89,14 @@ const getColumnLabel = (columnId: string, header: unknown) => {
     return columnId;
 };
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends RowData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     isLoading?: boolean;
     enableSorting?: boolean;
 }
 
-interface DataTableAdvancedProps<TData, TValue> {
+interface DataTableAdvancedProps<TData extends RowData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     isLoading?: boolean;
@@ -102,7 +110,7 @@ interface DataTableAdvancedProps<TData, TValue> {
     searchPlaceholder?: string;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData, TValue>({
     columns,
     data,
     isLoading = false,
@@ -110,7 +118,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
     const t = useTranslations('Table');
     const [sorting, setSorting] = useState<SortingState>([]);
-    const table = useReactTable({
+    const table = useReactTable<TData>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -226,7 +234,7 @@ export function DataTable<TData, TValue>({
     );
 }
 
-export function DataTableAdvanced<TData, TValue>({
+export function DataTableAdvanced<TData extends RowData, TValue>({
     columns,
     data,
     isLoading = false,
@@ -247,7 +255,7 @@ export function DataTableAdvanced<TData, TValue>({
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
 
-    const table = useReactTable({
+    const table = useReactTable<TData>({
         data,
         columns,
         state: {
@@ -265,12 +273,12 @@ export function DataTableAdvanced<TData, TValue>({
         onGlobalFilterChange: setGlobalFilter,
         onColumnVisibilityChange: setColumnVisibility,
         onColumnOrderChange: setColumnOrder,
-        globalFilterFn: 'text',
+        globalFilterFn: textFilter,
         filterFns: {
             text: textFilter,
         },
         defaultColumn: {
-            filterFn: 'text',
+            filterFn: textFilter,
         },
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -303,9 +311,11 @@ export function DataTableAdvanced<TData, TValue>({
         const headers = orderedVisibleColumns.map(column =>
             getColumnLabel(column.id, column.columnDef.header)
         );
-        const rows = table.getRowModel().rows.map(row =>
-            orderedVisibleColumns.map(column => formatExportValue(row.getValue(column.id)))
-        );
+        const rows = table
+            .getRowModel()
+            .rows.map(row =>
+                orderedVisibleColumns.map(column => formatExportValue(row.getValue(column.id)))
+            );
         return { headers, rows };
     };
 
@@ -361,7 +371,8 @@ export function DataTableAdvanced<TData, TValue>({
                             <DropdownMenuLabel>{t('columnFilters')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <div className="space-y-3 p-3">
-                                {orderedColumns.filter(column => column.getCanFilter()).length === 0 && (
+                                {orderedColumns.filter(column => column.getCanFilter()).length ===
+                                    0 && (
                                     <p className="text-sm text-muted-foreground">
                                         {t('noFilterableColumns')}
                                     </p>
@@ -379,11 +390,15 @@ export function DataTableAdvanced<TData, TValue>({
                                                     {headerLabel}
                                                 </span>
                                                 <Input
-                                                    value={(column.getFilterValue() as string) ?? ''}
+                                                    value={
+                                                        (column.getFilterValue() as string) ?? ''
+                                                    }
                                                     onChange={event =>
                                                         column.setFilterValue(event.target.value)
                                                     }
-                                                    placeholder={t('filterColumn', { column: headerLabel })}
+                                                    placeholder={t('filterColumn', {
+                                                        column: headerLabel,
+                                                    })}
                                                     className="h-8"
                                                 />
                                             </div>
@@ -406,23 +421,25 @@ export function DataTableAdvanced<TData, TValue>({
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>{t('toggleColumns')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {orderedColumns.filter(column => column.getCanHide()).map(column => {
-                                const headerLabel = getColumnLabel(
-                                    column.id,
-                                    column.columnDef.header
-                                );
-                                return (
-                                    <DropdownMenuCheckboxItem
-                                        key={column.id}
-                                        checked={column.getIsVisible()}
-                                        onCheckedChange={value =>
-                                            column.toggleVisibility(Boolean(value))
-                                        }
-                                    >
-                                        {headerLabel}
-                                    </DropdownMenuCheckboxItem>
-                                );
-                            })}
+                            {orderedColumns
+                                .filter(column => column.getCanHide())
+                                .map(column => {
+                                    const headerLabel = getColumnLabel(
+                                        column.id,
+                                        column.columnDef.header
+                                    );
+                                    return (
+                                        <DropdownMenuCheckboxItem
+                                            key={column.id}
+                                            checked={column.getIsVisible()}
+                                            onCheckedChange={value =>
+                                                column.toggleVisibility(Boolean(value))
+                                            }
+                                        >
+                                            {headerLabel}
+                                        </DropdownMenuCheckboxItem>
+                                    );
+                                })}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )}

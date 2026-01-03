@@ -17,13 +17,14 @@ import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { forgetPasswordSchema } from '@/schemas/forget-password';
+import { authClient } from '@/lib/auth-client';
 
 export default function ForgetPasswordForm() {
     const tCommon = useTranslations('Common');
     const t = useTranslations('ForgotPassword');
 
-    const [loginError] = useState('');
-    const [successMessage] = useState('');
+    const [loginError, setLoginError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const form = useForm<z.infer<typeof forgetPasswordSchema>>({
         defaultValues: {
@@ -38,14 +39,22 @@ export default function ForgetPasswordForm() {
         },
     });
 
-    async function onSubmit(_values: z.infer<typeof forgetPasswordSchema>) {
-        // mutation.mutate(values);
-        // const login = await forgetPasswordAction(values);
-        // if (login?.data?.error) {
-        //     setLoginError(login?.data?.message);
-        // } else {
-        //     setSuccessMessage('Email enviado correctamente');
-        // }
+    async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
+        setLoginError('');
+        setSuccessMessage('');
+
+        const redirectTo = `${window.location.origin}/reset-password`;
+        const { error } = await authClient.requestPasswordReset({
+            email: values.email,
+            redirectTo,
+        });
+
+        if (error) {
+            setLoginError(error.message || tCommon('genericErrorDescription'));
+            return;
+        }
+
+        setSuccessMessage(t('successMessage'));
     }
 
     return (

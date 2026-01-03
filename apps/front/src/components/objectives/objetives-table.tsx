@@ -67,11 +67,7 @@ export default function ObjetivesTable({
                 const maxValue = objective.targetValue > 0 ? objective.targetValue : 100;
                 return (
                     <div className="flex items-center space-x-2">
-                        <CircularProgress
-                            value={objective.currentValue}
-                            max={maxValue}
-                            size="sm"
-                        />
+                        <CircularProgress value={objective.currentValue} max={maxValue} size="sm" />
                         <span className="text-sm text-muted-foreground">
                             {objective.currentValue}/{objective.targetValue} {objective.unit || ''}
                             {periodLabel ? ` (${periodLabel})` : ''}

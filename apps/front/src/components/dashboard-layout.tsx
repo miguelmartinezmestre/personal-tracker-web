@@ -5,7 +5,6 @@ import CommandMenu from '@/components/command';
 import { LanguageSwitcher } from './language-switcher';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -20,9 +19,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
                 <CommandMenu />
-                <div className="grid grid-cols-1 gap-4 p-4 pt-0">
-                    {children}
-                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 pt-0">{children}</div>
             </SidebarInset>
         </SidebarProvider>
     );

@@ -39,14 +39,9 @@ export function AchievementCard({
 }: AchievementCardProps) {
     const t = useTranslations('Achievements');
 
-    const progressPercent = Math.min(
-        (currentProgress / definition.threshold) * 100,
-        100
-    );
+    const progressPercent = Math.min((currentProgress / definition.threshold) * 100, 100);
 
-    const formattedEarnedDate = earnedAt
-        ? new Date(earnedAt).toLocaleDateString()
-        : null;
+    const formattedEarnedDate = earnedAt ? new Date(earnedAt).toLocaleDateString() : null;
 
     return (
         <Card
@@ -61,7 +56,9 @@ export function AchievementCard({
                 <AchievementBadge
                     icon={definition.icon}
                     tier={definition.tier as AchievementTier}
-                    name={t(`definitions.${definition.code}.name`, { defaultValue: definition.code })}
+                    name={t(`definitions.${definition.code}.name`, {
+                        defaultValue: definition.code,
+                    })}
                     earned={isEarned}
                     size="lg"
                     showTooltip={false}
@@ -69,13 +66,17 @@ export function AchievementCard({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-sm truncate">
-                            {t(`definitions.${definition.code}.name`, { defaultValue: definition.code })}
+                            {t(`definitions.${definition.code}.name`, {
+                                defaultValue: definition.code,
+                            })}
                         </h3>
                         <Badge
                             variant={TIER_BADGE_VARIANTS[definition.tier as AchievementTier]}
                             className="text-xs"
                         >
-                            {t(`tiers.${definition.tier}`, { defaultValue: TIER_LABELS[definition.tier as AchievementTier] })}
+                            {t(`tiers.${definition.tier}`, {
+                                defaultValue: TIER_LABELS[definition.tier as AchievementTier],
+                            })}
                         </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -90,21 +91,15 @@ export function AchievementCard({
                 <div className="space-y-2">
                     {isEarned ? (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-green-600 font-medium">
-                                {t('card.earned')}
-                            </span>
+                            <span className="text-green-600 font-medium">{t('card.earned')}</span>
                             {formattedEarnedDate && (
-                                <span className="text-muted-foreground">
-                                    {formattedEarnedDate}
-                                </span>
+                                <span className="text-muted-foreground">{formattedEarnedDate}</span>
                             )}
                         </div>
                     ) : (
                         <>
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">
-                                    {t('card.progress')}
-                                </span>
+                                <span className="text-muted-foreground">{t('card.progress')}</span>
                                 <span className="font-medium">
                                     {currentProgress} / {definition.threshold}
                                 </span>

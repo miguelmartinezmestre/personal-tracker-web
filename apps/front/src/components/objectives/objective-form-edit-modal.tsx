@@ -35,9 +35,15 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { Objective, savedObjectiveSchema } from '@/schemas/objective';
+import {
+    Objective,
+    savedObjectiveSchema,
+    objectiveTypeSchema,
+    periodSchema,
+} from '@/schemas/objective';
 import { useUpdateObjective } from '@/hooks/api/use-objectives';
 import { useTranslations } from 'next-intl';
+import type { Id } from '@repo/backend/convex/_generated/dataModel';
 const statusOptions = [
     { value: 'not_started', label: 'Not Started' },
     { value: 'in_progress', label: 'In Progress' },
@@ -71,13 +77,16 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
         { value: 'custom', label: t('periodOptions.custom') },
     ];
 
-    const defaultUnitByType: Record<string, string> = {
+    type ObjectiveType = z.infer<typeof objectiveTypeSchema>;
+    type Period = z.infer<typeof periodSchema>;
+
+    const defaultUnitByType: Partial<Record<ObjectiveType, string>> = {
         count: 'times',
         money: 'EUR',
         duration: 'minutes',
     };
 
-    const defaultPeriodByType: Record<string, string> = {
+    const defaultPeriodByType: Partial<Record<ObjectiveType, Period>> = {
         count: 'weekly',
         money: 'monthly',
         duration: 'weekly',
@@ -104,7 +113,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
     const onSubmit = async (values: Objective) => {
         const updateData = {
-            id: values._id,
+            id: values._id as Id<'objectives'>,
             title: values.title,
             description: values.description ?? undefined,
             category: values.category ?? undefined,
@@ -232,6 +241,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         <FormLabel>{t('smartForm.fields.objectiveType')}</FormLabel>
                                         <Select
                                             onValueChange={value => {
+                                                const nextType = value as ObjectiveType;
                                                 field.onChange(value);
                                                 if (value === 'value') {
                                                     form.setFieldValue('period', 'none');
@@ -243,16 +253,16 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                 ) {
                                                     form.setFieldValue(
                                                         'period',
-                                                        defaultPeriodByType[value] ?? 'weekly'
+                                                        defaultPeriodByType[nextType] ?? 'weekly'
                                                     );
                                                 }
                                                 if (
                                                     !form.state.values.unit &&
-                                                    defaultUnitByType[value]
+                                                    defaultUnitByType[nextType]
                                                 ) {
                                                     form.setFieldValue(
                                                         'unit',
-                                                        defaultUnitByType[value]
+                                                        defaultUnitByType[nextType]
                                                     );
                                                 }
                                             }}
@@ -332,9 +342,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>
-                                            {t('periodDescription')}
-                                        </FormDescription>
+                                        <FormDescription>{t('periodDescription')}</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -364,9 +372,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                                     field.value
                                                                 ).toLocaleDateString()
                                                             ) : (
-                                                                <span>
-                                                                    {t('pickADate')}
-                                                                </span>
+                                                                <span>{t('pickADate')}</span>
                                                             )}
                                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                         </Button>
@@ -384,9 +390,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                                 : undefined
                                                         }
                                                         onSelect={date =>
-                                                            field.onChange(
-                                                                date?.getTime() || null
-                                                            )
+                                                            field.onChange(date?.getTime() || null)
                                                         }
                                                         initialFocus
                                                     />
@@ -414,7 +418,10 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                         field.onChange(
                                                             e.target.value === ''
                                                                 ? null
-                                                                : Number.parseInt(e.target.value, 10)
+                                                                : Number.parseInt(
+                                                                      e.target.value,
+                                                                      10
+                                                                  )
                                                         )
                                                     }
                                                 />

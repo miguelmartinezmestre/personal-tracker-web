@@ -37,8 +37,7 @@ interface ProgressChartProps {
     lastUpdated?: number | null;
 }
 
-const clamp = (value: number, min: number, max: number) =>
-    Math.min(Math.max(value, min), max);
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const coerceTimestamp = (value: unknown) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -77,7 +76,8 @@ export default function ProgressChart({
         []
     );
     const longDateFormatter = useMemo(
-        () => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+        () =>
+            new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
         []
     );
 
@@ -136,9 +136,7 @@ export default function ProgressChart({
                     <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <p className="text-muted-foreground">{tObjectives('currentValue')}</p>
-                            <p className="font-medium tabular-nums">
-                                {formatValue(currentValue)}
-                            </p>
+                            <p className="font-medium tabular-nums">{formatValue(currentValue)}</p>
                         </div>
                         <div>
                             <p className="text-muted-foreground">{tObjectives('targetValue')}</p>

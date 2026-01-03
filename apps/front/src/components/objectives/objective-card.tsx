@@ -74,7 +74,8 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">
-                                    {Math.round(progress)}{t('percentComplete')}
+                                    {Math.round(progress)}
+                                    {t('percentComplete')}
                                 </span>
                                 <StatusIndicator
                                     status={objective.status}

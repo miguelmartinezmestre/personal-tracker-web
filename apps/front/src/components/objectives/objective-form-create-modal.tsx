@@ -35,7 +35,12 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { CreateObjective, objectiveSchema } from '@/schemas/objective';
+import {
+    CreateObjective,
+    objectiveSchema,
+    objectiveTypeSchema,
+    periodSchema,
+} from '@/schemas/objective';
 import { useCreateObjective } from '@/hooks/api/use-objectives';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/contexts/user-context';
@@ -82,13 +87,16 @@ export default function CreateObjectiveFormModal() {
         { value: 'custom', label: t('periodOptions.custom') },
     ];
 
-    const defaultUnitByType: Record<string, string> = {
+    type ObjectiveType = z.infer<typeof objectiveTypeSchema>;
+    type Period = z.infer<typeof periodSchema>;
+
+    const defaultUnitByType: Partial<Record<ObjectiveType, string>> = {
         count: 'times',
         money: 'EUR',
         duration: 'minutes',
     };
 
-    const defaultPeriodByType: Record<string, string> = {
+    const defaultPeriodByType: Partial<Record<ObjectiveType, Period>> = {
         count: 'weekly',
         money: 'monthly',
         duration: 'weekly',
@@ -247,6 +255,7 @@ export default function CreateObjectiveFormModal() {
                                         <FormLabel>{t('smartForm.fields.objectiveType')}</FormLabel>
                                         <Select
                                             onValueChange={value => {
+                                                const nextType = value as ObjectiveType;
                                                 field.onChange(value);
                                                 if (value === 'value') {
                                                     form.setFieldValue('period', 'none');
@@ -258,25 +267,23 @@ export default function CreateObjectiveFormModal() {
                                                 ) {
                                                     form.setFieldValue(
                                                         'period',
-                                                        defaultPeriodByType[value] ?? 'weekly'
+                                                        defaultPeriodByType[nextType] ?? 'weekly'
                                                     );
                                                 }
                                                 if (
                                                     !form.state.values.unit &&
-                                                    defaultUnitByType[value]
+                                                    defaultUnitByType[nextType]
                                                 ) {
                                                     form.setFieldValue(
                                                         'unit',
-                                                        defaultUnitByType[value]
+                                                        defaultUnitByType[nextType]
                                                     );
                                                 }
                                             }}
                                             value={field.value || 'value'}
                                         >
                                             <FormControl>
-                                                <SelectTrigger
-                                                    data-testid="objective-type-select"
-                                                >
+                                                <SelectTrigger data-testid="objective-type-select">
                                                     <SelectValue
                                                         placeholder={t(
                                                             'smartForm.placeholders.objectiveType'
@@ -330,9 +337,7 @@ export default function CreateObjectiveFormModal() {
                                             disabled={objectiveType === 'value'}
                                         >
                                             <FormControl>
-                                                <SelectTrigger
-                                                    data-testid="objective-period-select"
-                                                >
+                                                <SelectTrigger data-testid="objective-period-select">
                                                     <SelectValue
                                                         placeholder={t(
                                                             'smartForm.placeholders.period'
@@ -351,9 +356,7 @@ export default function CreateObjectiveFormModal() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>
-                                            {t('periodDescription')}
-                                        </FormDescription>
+                                        <FormDescription>{t('periodDescription')}</FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -383,9 +386,7 @@ export default function CreateObjectiveFormModal() {
                                                                     field.value
                                                                 ).toLocaleDateString()
                                                             ) : (
-                                                                <span>
-                                                                    {t('pickADate')}
-                                                                </span>
+                                                                <span>{t('pickADate')}</span>
                                                             )}
                                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                         </Button>
@@ -403,9 +404,7 @@ export default function CreateObjectiveFormModal() {
                                                                 : undefined
                                                         }
                                                         onSelect={date =>
-                                                            field.onChange(
-                                                                date?.getTime() || null
-                                                            )
+                                                            field.onChange(date?.getTime() || null)
                                                         }
                                                         initialFocus
                                                     />
@@ -433,7 +432,10 @@ export default function CreateObjectiveFormModal() {
                                                         field.onChange(
                                                             e.target.value === ''
                                                                 ? null
-                                                                : Number.parseInt(e.target.value, 10)
+                                                                : Number.parseInt(
+                                                                      e.target.value,
+                                                                      10
+                                                                  )
                                                         )
                                                     }
                                                 />

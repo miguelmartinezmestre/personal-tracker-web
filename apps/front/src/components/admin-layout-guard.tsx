@@ -34,4 +34,3 @@ export function AdminLayoutGuard({ children }: { children: React.ReactNode }) {
 
     return <>{children}</>;
 }
-

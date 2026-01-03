@@ -193,9 +193,7 @@ export default function NotificationsTable() {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-muted-foreground">
-                    {unreadCount > 0
-                        ? t('unreadCount', { count: unreadCount })
-                        : t('allCaughtUp')}
+                    {unreadCount > 0 ? t('unreadCount', { count: unreadCount }) : t('allCaughtUp')}
                 </div>
                 <Button
                     variant="outline"
