@@ -1,11 +1,17 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-// import { api } from "@repo/backend/convex/_generated/api";
-import type { Doc } from '@repo/backend/convex/_generated/dataModel';
-
-// getCurrentUser returns Doc<"user"> | null
-type User = Doc<'user'>;
+// Minimal user shape used across the frontend.
+// We intentionally keep this decoupled from the backend `Doc<'user'>` shape because
+// session-derived users (Better Auth) don't include all Convex document fields.
+export type User = {
+    _id: string;
+    _creationTime: number;
+    email: string;
+    name: string;
+    role?: string | string[];
+    image?: string | null;
+};
 
 interface UserContextType {
     user: User;

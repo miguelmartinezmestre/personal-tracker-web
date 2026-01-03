@@ -10,7 +10,12 @@ vi.mock('@tanstack/react-query', () => ({
         isLoading: false,
         isError: false,
     })),
-    useMutation: vi.fn((options) => {
+    useQuery: vi.fn(() => ({
+        data: null,
+        isLoading: false,
+        isError: false,
+    })),
+    useMutation: vi.fn(options => {
         lastMutationOptions = options;
         return {
             mutate: vi.fn(),
@@ -25,22 +30,14 @@ vi.mock('@tanstack/react-query', () => ({
     })),
 }));
 
-vi.mock('@convex-dev/react-query', () => ({
-    convexQuery: vi.fn((fn, args) => ({
-        queryKey: ['convex', String(fn), args],
-        queryFn: vi.fn(),
-    })),
-    useConvexMutation: vi.fn(() => vi.fn()),
-}));
-
-vi.mock('@repo/backend/convex/_generated/api', () => ({
-    api: {
-        teams: {
-            getTeams: 'getTeams',
-            getTeamById: 'getTeamById',
-            createTeam: 'createTeam',
-            updateTeam: 'updateTeam',
-            deleteTeam: 'deleteTeam',
+vi.mock('@/lib/auth-client', () => ({
+    authClient: {
+        organization: {
+            list: vi.fn(async () => []),
+            create: vi.fn(async () => ({})),
+            update: vi.fn(async () => ({})),
+            delete: vi.fn(async () => ({})),
+            checkSlug: vi.fn(async () => ({ status: true })),
         },
     },
 }));
@@ -83,23 +80,25 @@ describe('use-teams hooks', () => {
             expect(typeof useTeam).toBe('function');
         });
 
-        it('should call convexQuery with skip when teamId is null', async () => {
-            const { convexQuery } = await import('@convex-dev/react-query');
+        it('should call useQuery with disabled when teamId is null', async () => {
+            const { useQuery } = await import('@tanstack/react-query');
             const { useTeam } = await import('./use-teams');
 
             useTeam(null);
 
-            expect(convexQuery).toHaveBeenCalledWith('getTeamById', 'skip');
+            expect(useQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
         });
 
-        it('should call convexQuery with _id when teamId is provided', async () => {
-            const { convexQuery } = await import('@convex-dev/react-query');
+        it('should call useQuery with teamId when teamId is provided', async () => {
+            const { useQuery } = await import('@tanstack/react-query');
             const { useTeam } = await import('./use-teams');
 
-            const teamId = 'team-123' as any;
+            const teamId = 'team-123';
             useTeam(teamId);
 
-            expect(convexQuery).toHaveBeenCalledWith('getTeamById', { _id: teamId });
+            expect(useQuery).toHaveBeenCalledWith(
+                expect.objectContaining({ queryKey: ['organization', teamId] })
+            );
         });
     });
 
@@ -126,7 +125,7 @@ describe('use-teams hooks', () => {
             lastMutationOptions?.onSuccess?.();
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['convex', 'getTeams', {}],
+                queryKey: ['organizations'],
             });
         });
     });
@@ -153,7 +152,7 @@ describe('use-teams hooks', () => {
             lastMutationOptions?.onSuccess?.();
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['convex', 'getTeams', {}],
+                queryKey: ['organizations'],
             });
         });
     });
@@ -180,7 +179,7 @@ describe('use-teams hooks', () => {
             lastMutationOptions?.onSuccess?.();
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['convex', 'getTeams', {}],
+                queryKey: ['organizations'],
             });
         });
     });
@@ -197,7 +196,7 @@ describe('use-teams types', () => {
 
     it('should export UpdateTeamParams type', async () => {
         const params: import('./use-teams').UpdateTeamParams = {
-            _id: 'team-id' as any,
+            id: 'team-id',
             name: 'Updated Team',
             description: 'Updated description',
         };

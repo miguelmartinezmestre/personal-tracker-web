@@ -56,7 +56,7 @@ describe('UserContext', () => {
                 <div>
                     <div data-testid="email">{user.email || ''}</div>
                     <div data-testid="name">{user.name || ''}</div>
-                    <div data-testid="userId">{user.userId || ''}</div>
+                    <div data-testid="userId">{user._id || ''}</div>
                 </div>
             );
         };

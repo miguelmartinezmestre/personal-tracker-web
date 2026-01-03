@@ -1,32 +1,72 @@
 'use client';
 
-import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
-import type { Id } from '@repo/backend/convex/_generated/dataModel';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { authClient } from '@/lib/auth-client';
+import type { TeamMember } from '@/schemas/team-member';
+import { TeamRole } from '@/schemas/roles';
 
 /**
  * Tipos para las operaciones de miembros de equipo
  */
 export interface CreateTeamMemberParams {
-    team: Id<'organization'>;
-    user: string;
+    organizationId: string;
+    email: string;
     role: 'MANAGER' | 'MEMBER';
 }
 
 export interface UpdateTeamMemberParams {
-    id: Id<'member'>;
+    memberId: string;
+    organizationId?: string;
     role: 'MANAGER' | 'MEMBER';
 }
+
+export interface DeleteTeamMemberParams {
+    memberId: string;
+    organizationId?: string;
+}
+
+const TEAM_MEMBERS_QUERY_KEY = (teamId: string | null) => ['organization-members', teamId];
+
+const mapTeamRoleToOrganizationRole = (role: TeamRole | 'MANAGER' | 'MEMBER') =>
+    role === TeamRole.MANAGER ? 'admin' : 'member';
+
+const mapOrganizationRoleToTeamRole = (role: string) =>
+    role === 'owner' || role === 'admin' ? 'MANAGER' : 'MEMBER';
+
+const normalizeMember = (member: {
+    id: string;
+    organizationId: string;
+    userId: string;
+    role: string;
+    createdAt: Date;
+    user?: { email?: string | null };
+}) =>
+    ({
+        id: member.id,
+        organizationId: member.organizationId,
+        userId: member.userId,
+        email: member.user?.email ?? '',
+        role: mapOrganizationRoleToTeamRole(member.role),
+        createdAt: member.createdAt,
+    }) satisfies TeamMember;
 
 /**
  * Hook para obtener los miembros de un equipo
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
-export function useTeamMembers(teamId: Id<'organization'> | null) {
-    return useSuspenseQuery(
-        convexQuery(api.teamMembers.getTeamMembersByTeamId, teamId ? { team: teamId } : 'skip')
-    );
+export function useTeamMembers(teamId: string | null) {
+    return useSuspenseQuery({
+        queryKey: TEAM_MEMBERS_QUERY_KEY(teamId),
+        queryFn: async () => {
+            if (!teamId) return [];
+            const result = await authClient.organization.listMembers({
+                query: { organizationId: teamId },
+            });
+            const payload =
+                result && typeof result === 'object' && 'data' in result ? result.data : null;
+            return (payload?.members ?? []).map(normalizeMember);
+        },
+    });
 }
 
 /**
@@ -37,13 +77,16 @@ export function useCreateTeamMember() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: useConvexMutation(api.teamMembers.createTeamMember),
+        mutationFn: async (values: CreateTeamMemberParams) => {
+            return await authClient.organization.inviteMember({
+                email: values.email,
+                role: mapTeamRoleToOrganizationRole(values.role),
+                organizationId: values.organizationId,
+            });
+        },
         onSuccess: (_data, variables) => {
-            // Invalidar la query de miembros del equipo
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.teamMembers.getTeamMembersByTeamId, {
-                    team: variables.team,
-                }).queryKey,
+                queryKey: TEAM_MEMBERS_QUERY_KEY(variables.organizationId),
             });
         },
     });
@@ -57,15 +100,16 @@ export function useUpdateTeamMember() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: useConvexMutation(api.teamMembers.updateTeamMember),
-        onSuccess: () => {
-            // Invalidar todas las queries de miembros de equipo
+        mutationFn: async (values: UpdateTeamMemberParams) => {
+            return await authClient.organization.updateMemberRole({
+                memberId: values.memberId,
+                role: mapTeamRoleToOrganizationRole(values.role),
+                organizationId: values.organizationId,
+            });
+        },
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
-                predicate: query => {
-                    return query.queryKey[0] === 'convex' && 
-                           typeof query.queryKey[1] === 'string' &&
-                           query.queryKey[1].includes('teamMembers');
-                },
+                queryKey: TEAM_MEMBERS_QUERY_KEY(variables.organizationId ?? null),
             });
         },
     });
@@ -79,17 +123,16 @@ export function useDeleteTeamMember() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: useConvexMutation(api.teamMembers.deleteTeamMember),
-        onSuccess: () => {
-            // Invalidar todas las queries de miembros de equipo
+        mutationFn: async (values: DeleteTeamMemberParams) => {
+            return await authClient.organization.removeMember({
+                memberIdOrEmail: values.memberId,
+                organizationId: values.organizationId,
+            });
+        },
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
-                predicate: query => {
-                    return query.queryKey[0] === 'convex' && 
-                           typeof query.queryKey[1] === 'string' &&
-                           query.queryKey[1].includes('teamMembers');
-                },
+                queryKey: TEAM_MEMBERS_QUERY_KEY(variables.organizationId ?? null),
             });
         },
     });
 }
-

@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-query', () => ({
         isLoading: false,
         isError: false,
     })),
-    useMutation: vi.fn((options) => {
+    useMutation: vi.fn(options => {
         lastMutationOptions = options;
         return {
             mutate: vi.fn(),

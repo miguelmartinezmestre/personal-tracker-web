@@ -41,9 +41,10 @@ export function useUpdateProgressByObjective(objectiveId: Id<'objectives'> | nul
  */
 export function useCreateUpdateProgress() {
     const queryClient = useQueryClient();
+    const createUpdateProgress = useConvexMutation(api.update_progress.createUpdateProgress);
 
-    return useMutation({
-        mutationFn: useConvexMutation(api.update_progress.createUpdateProgress),
+    return useMutation<unknown, Error, CreateUpdateProgressParams>({
+        mutationFn: variables => createUpdateProgress(variables),
         onSuccess: (_data, variables) => {
             // Invalidar la query de actualizaciones de progreso del objetivo
             queryClient.invalidateQueries({
@@ -77,10 +78,12 @@ export function useUpdateUpdateProgress() {
             // Invalidar todas las queries relacionadas
             queryClient.invalidateQueries({
                 predicate: query => {
-                    return query.queryKey[0] === 'convex' && 
-                           typeof query.queryKey[1] === 'string' &&
-                           (query.queryKey[1].includes('update_progress') || 
-                            query.queryKey[1].includes('objectives'));
+                    return (
+                        query.queryKey[0] === 'convex' &&
+                        typeof query.queryKey[1] === 'string' &&
+                        (query.queryKey[1].includes('update_progress') ||
+                            query.queryKey[1].includes('objectives'))
+                    );
                 },
             });
         },
@@ -100,13 +103,14 @@ export function useDeleteUpdateProgress() {
             // Invalidar todas las queries relacionadas
             queryClient.invalidateQueries({
                 predicate: query => {
-                    return query.queryKey[0] === 'convex' && 
-                           typeof query.queryKey[1] === 'string' &&
-                           (query.queryKey[1].includes('update_progress') || 
-                            query.queryKey[1].includes('objectives'));
+                    return (
+                        query.queryKey[0] === 'convex' &&
+                        typeof query.queryKey[1] === 'string' &&
+                        (query.queryKey[1].includes('update_progress') ||
+                            query.queryKey[1].includes('objectives'))
+                    );
                 },
             });
         },
     });
 }
-

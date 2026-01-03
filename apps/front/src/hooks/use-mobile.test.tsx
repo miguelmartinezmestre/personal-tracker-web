@@ -1,21 +1,21 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-import { useIsMobile } from "./use-mobile";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useIsMobile } from './use-mobile';
 
-describe("useIsMobile", () => {
+describe('useIsMobile', () => {
     const originalInnerWidth = window.innerWidth;
     const originalMatchMedia = window.matchMedia;
 
     beforeEach(() => {
         // Reset window.innerWidth
-        Object.defineProperty(window, "innerWidth", {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: originalInnerWidth,
         });
 
         // Mock matchMedia
-        window.matchMedia = vi.fn().mockImplementation((query) => ({
+        window.matchMedia = vi.fn().mockImplementation(query => ({
             matches: false,
             media: query,
             onchange: null,
@@ -29,15 +29,15 @@ describe("useIsMobile", () => {
 
     afterEach(() => {
         window.matchMedia = originalMatchMedia;
-        Object.defineProperty(window, "innerWidth", {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: originalInnerWidth,
         });
     });
 
-    it("should return false for desktop width", () => {
-        Object.defineProperty(window, "innerWidth", {
+    it('should return false for desktop width', () => {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: 1024,
@@ -47,8 +47,8 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(false);
     });
 
-    it("should return true for mobile width", () => {
-        Object.defineProperty(window, "innerWidth", {
+    it('should return true for mobile width', () => {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: 500,
@@ -58,8 +58,8 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(true);
     });
 
-    it("should return false for tablet width (768px)", () => {
-        Object.defineProperty(window, "innerWidth", {
+    it('should return false for tablet width (768px)', () => {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: 768,
@@ -69,8 +69,8 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(false);
     });
 
-    it("should return true for width below 768px", () => {
-        Object.defineProperty(window, "innerWidth", {
+    it('should return true for width below 768px', () => {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: 767,
@@ -80,8 +80,8 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(true);
     });
 
-    it("should update when window width changes", () => {
-        const matchMediaMock = vi.fn().mockImplementation((query) => {
+    it('should update when window width changes', () => {
+        const matchMediaMock = vi.fn().mockImplementation(query => {
             const mql = {
                 matches: false,
                 media: query,
@@ -89,7 +89,7 @@ describe("useIsMobile", () => {
                 addListener: vi.fn(),
                 removeListener: vi.fn(),
                 addEventListener: vi.fn((event, handler) => {
-                    if (event === "change") {
+                    if (event === 'change') {
                         mql.onchange = handler;
                     }
                 }),
@@ -101,7 +101,7 @@ describe("useIsMobile", () => {
 
         window.matchMedia = matchMediaMock;
 
-        Object.defineProperty(window, "innerWidth", {
+        Object.defineProperty(window, 'innerWidth', {
             writable: true,
             configurable: true,
             value: 1024,
@@ -112,7 +112,7 @@ describe("useIsMobile", () => {
 
         // Simulate window resize
         act(() => {
-            Object.defineProperty(window, "innerWidth", {
+            Object.defineProperty(window, 'innerWidth', {
                 writable: true,
                 configurable: true,
                 value: 500,
@@ -127,4 +127,3 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(true);
     });
 });
-

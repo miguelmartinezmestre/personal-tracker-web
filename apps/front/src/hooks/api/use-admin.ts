@@ -11,4 +11,3 @@ import { api } from '@repo/backend/convex/_generated/api';
 export function useAuditLogs() {
     return useQuery(convexQuery(api.auditLogs.getAuditLogs, {}));
 }
-

@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-query', () => ({
         isLoading: false,
         isError: false,
     })),
-    useMutation: vi.fn((options) => {
+    useMutation: vi.fn(options => {
         lastMutationOptions = options;
         return {
             mutate: vi.fn(),
@@ -85,7 +85,9 @@ describe('use-achievements hooks', () => {
 
             useAchievementDefinitions('individual');
 
-            expect(convexQuery).toHaveBeenCalledWith('getAchievementDefinitions', { type: 'individual' });
+            expect(convexQuery).toHaveBeenCalledWith('getAchievementDefinitions', {
+                type: 'individual',
+            });
         });
 
         it('should accept team type', async () => {

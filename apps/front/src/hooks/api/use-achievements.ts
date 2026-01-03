@@ -3,14 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
+import { achievementProgressSchema, type AchievementProgress } from '@/schemas/achievement';
 
 /**
  * Hook para obtener todas las definiciones de logros
  */
 export function useAchievementDefinitions(type?: 'individual' | 'team') {
-    return useQuery(
-        convexQuery(api.achievements.getAchievementDefinitions, type ? { type } : {})
-    );
+    return useQuery(convexQuery(api.achievements.getAchievementDefinitions, type ? { type } : {}));
 }
 
 /**
@@ -25,10 +24,7 @@ export function useUserAchievements() {
  */
 export function useTeamAchievements(teamId: string | null) {
     return useQuery(
-        convexQuery(
-            api.achievements.getTeamAchievements,
-            teamId ? { teamId } : 'skip'
-        )
+        convexQuery(api.achievements.getTeamAchievements, teamId ? { teamId } : 'skip')
     );
 }
 
@@ -50,7 +46,11 @@ export function useRecentAchievements(limit: number = 5) {
  * Hook para obtener el progreso hacia todos los logros
  */
 export function useUserAchievementProgress() {
-    return useQuery(convexQuery(api.achievements.getUserAchievementProgress, {}));
+    return useQuery({
+        ...convexQuery(api.achievements.getUserAchievementProgress, {}),
+        select: (progress): AchievementProgress[] =>
+            progress.map(item => achievementProgressSchema.parse(item)),
+    });
 }
 
 /**

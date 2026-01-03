@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-query', () => ({
         isLoading: false,
         isError: false,
     })),
-    useMutation: vi.fn((options) => {
+    useMutation: vi.fn(options => {
         lastMutationOptions = options;
         return {
             mutate: vi.fn(),
@@ -77,7 +77,9 @@ describe('use-update-progress hooks', () => {
             const objectiveId = 'objective-123' as any;
             useUpdateProgressByObjective(objectiveId);
 
-            expect(convexQuery).toHaveBeenCalledWith('getUpdateProgressByObjectiveId', { objectiveId });
+            expect(convexQuery).toHaveBeenCalledWith('getUpdateProgressByObjectiveId', {
+                objectiveId,
+            });
         });
 
         it('should return query result', async () => {

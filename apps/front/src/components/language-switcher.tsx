@@ -48,7 +48,7 @@ export function LanguageSwitcher() {
         Cookies.set('locale', newLocale, {
             path: '/',
             sameSite: 'lax',
-            expires: 365 // 1 year in days
+            expires: 365, // 1 year in days
         });
 
         // Use router.refresh() to update the page without full reload
@@ -60,19 +60,19 @@ export function LanguageSwitcher() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                    {currentLocale === 'es' ? <span>{t('spanish')}</span> : <span>{t('english')}</span>}
+                    {currentLocale === 'es' ? (
+                        <span>{t('spanish')}</span>
+                    ) : (
+                        <span>{t('english')}</span>
+                    )}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                    onClick={() => handleLanguageChange('es')}
-                >
+                <DropdownMenuItem onClick={() => handleLanguageChange('es')}>
                     <span>{t('spanish')}</span>
                     {currentLocale === 'es' && <Check className="h-4 w-4" />}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                    onClick={() => handleLanguageChange('en')}
-                >
+                <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
                     <span>{t('english')}</span>
                     {currentLocale === 'en' && <Check className="h-4 w-4" />}
                 </DropdownMenuItem>

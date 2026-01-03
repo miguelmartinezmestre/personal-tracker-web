@@ -29,7 +29,7 @@ export function useUserRole() {
     // Only query if context user is not available
     const authUser = useCurrentUser(!!contextUser);
     const userRoleQuery = useUserRoleQuery();
-    const userRole = contextUser ? null : userRoleQuery.data ?? null;
+    const userRole = contextUser ? null : (userRoleQuery.data ?? null);
     const { data: session } = authClient.useSession();
 
     // Use context user if available, otherwise use queried user
@@ -66,10 +66,7 @@ export function useUserRole() {
         user,
         isAdmin,
         isAuthenticated,
-        role:
-            (user as { role?: string | string[] })?.role ||
-            userRole?.role ||
-            session?.user?.role,
+        role: (user as { role?: string | string[] })?.role || userRole?.role || session?.user?.role,
     };
 }
 

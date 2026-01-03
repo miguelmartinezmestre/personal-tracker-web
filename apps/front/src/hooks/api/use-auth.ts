@@ -1,7 +1,6 @@
 'use client';
 
-import { useQuery } from 'convex/react';
-import { useQuery as useReactQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 
@@ -11,7 +10,8 @@ import { api } from '@repo/backend/convex/_generated/api';
  * @param skip - Si es true, no se ejecutará la query
  */
 export function useCurrentUser(skip?: boolean) {
-    return useQuery(api.auth.getCurrentUser, skip ? 'skip' : {});
+    const query = useQuery(convexQuery(api.auth.getCurrentUser, skip ? 'skip' : {}));
+    return query.data;
 }
 
 /**
@@ -19,6 +19,5 @@ export function useCurrentUser(skip?: boolean) {
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useIsAuthenticated() {
-    return useReactQuery(convexQuery(api.auth.isAuthenticated, {}));
+    return useQuery(convexQuery(api.auth.isAuthenticated, {}));
 }
-

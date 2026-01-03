@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-query', () => ({
         isLoading: false,
         isError: false,
     })),
-    useMutation: vi.fn((options) => {
+    useMutation: vi.fn(options => {
         lastMutationOptions = options;
         return {
             mutate: vi.fn(),
@@ -25,21 +25,13 @@ vi.mock('@tanstack/react-query', () => ({
     })),
 }));
 
-vi.mock('@convex-dev/react-query', () => ({
-    convexQuery: vi.fn((fn, args) => ({
-        queryKey: ['convex', String(fn), args],
-        queryFn: vi.fn(),
-    })),
-    useConvexMutation: vi.fn(() => vi.fn()),
-}));
-
-vi.mock('@repo/backend/convex/_generated/api', () => ({
-    api: {
-        teamMembers: {
-            getTeamMembersByTeamId: 'getTeamMembersByTeamId',
-            createTeamMember: 'createTeamMember',
-            updateTeamMember: 'updateTeamMember',
-            deleteTeamMember: 'deleteTeamMember',
+vi.mock('@/lib/auth-client', () => ({
+    authClient: {
+        organization: {
+            listMembers: vi.fn(async () => ({ members: [], total: 0 })),
+            inviteMember: vi.fn(async () => ({})),
+            updateMemberRole: vi.fn(async () => ({})),
+            removeMember: vi.fn(async () => ({})),
         },
     },
 }));
@@ -57,23 +49,27 @@ describe('use-team-members hooks', () => {
             expect(typeof useTeamMembers).toBe('function');
         });
 
-        it('should call convexQuery with skip when teamId is null', async () => {
-            const { convexQuery } = await import('@convex-dev/react-query');
+        it('should call useSuspenseQuery with teamId when provided', async () => {
+            const { useSuspenseQuery } = await import('@tanstack/react-query');
+            const { useTeamMembers } = await import('./use-team-members');
+
+            const teamId = 'team-123';
+            useTeamMembers(teamId);
+
+            expect(useSuspenseQuery).toHaveBeenCalledWith(
+                expect.objectContaining({ queryKey: ['organization-members', teamId] })
+            );
+        });
+
+        it('should call useSuspenseQuery with null when teamId is null', async () => {
+            const { useSuspenseQuery } = await import('@tanstack/react-query');
             const { useTeamMembers } = await import('./use-team-members');
 
             useTeamMembers(null);
 
-            expect(convexQuery).toHaveBeenCalledWith('getTeamMembersByTeamId', 'skip');
-        });
-
-        it('should call convexQuery with team when teamId is provided', async () => {
-            const { convexQuery } = await import('@convex-dev/react-query');
-            const { useTeamMembers } = await import('./use-team-members');
-
-            const teamId = 'team-123' as any;
-            useTeamMembers(teamId);
-
-            expect(convexQuery).toHaveBeenCalledWith('getTeamMembersByTeamId', { team: teamId });
+            expect(useSuspenseQuery).toHaveBeenCalledWith(
+                expect.objectContaining({ queryKey: ['organization-members', null] })
+            );
         });
 
         it('should return query result', async () => {
@@ -105,10 +101,10 @@ describe('use-team-members hooks', () => {
 
             useCreateTeamMember();
 
-            lastMutationOptions?.onSuccess?.(undefined, { team: 'team-123' }, undefined);
+            lastMutationOptions?.onSuccess?.(undefined, { organizationId: 'team-123' }, undefined);
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['convex', 'getTeamMembersByTeamId', { team: 'team-123' }],
+                queryKey: ['organization-members', 'team-123'],
             });
         });
     });
@@ -127,17 +123,16 @@ describe('use-team-members hooks', () => {
             expect(result).toHaveProperty('mutate');
         });
 
-        it('invalidates team member queries with predicate', async () => {
+        it('invalidates team member queries on success', async () => {
             const { useUpdateTeamMember } = await import('./use-team-members');
 
             useUpdateTeamMember();
 
-            lastMutationOptions?.onSuccess?.();
+            lastMutationOptions?.onSuccess?.(undefined, { organizationId: 'team-123' }, undefined);
 
-            const predicate = invalidateQueriesMock.mock.calls[0][0].predicate;
-            expect(predicate({ queryKey: ['convex', 'teamMembers.list'] })).toBe(true);
-            expect(predicate({ queryKey: ['convex', 'other'] })).toBe(false);
-            expect(predicate({ queryKey: ['other', 'teamMembers.list'] })).toBe(false);
+            expect(invalidateQueriesMock).toHaveBeenCalledWith({
+                queryKey: ['organization-members', 'team-123'],
+            });
         });
     });
 
@@ -155,17 +150,16 @@ describe('use-team-members hooks', () => {
             expect(result).toHaveProperty('mutate');
         });
 
-        it('invalidates team member queries with predicate', async () => {
+        it('invalidates team member queries on success', async () => {
             const { useDeleteTeamMember } = await import('./use-team-members');
 
             useDeleteTeamMember();
 
-            lastMutationOptions?.onSuccess?.();
+            lastMutationOptions?.onSuccess?.(undefined, { organizationId: 'team-123' }, undefined);
 
-            const predicate = invalidateQueriesMock.mock.calls[0][0].predicate;
-            expect(predicate({ queryKey: ['convex', 'teamMembers.detail'] })).toBe(true);
-            expect(predicate({ queryKey: ['convex', 123] })).toBe(false);
-            expect(predicate({ queryKey: ['other', 'teamMembers.detail'] })).toBe(false);
+            expect(invalidateQueriesMock).toHaveBeenCalledWith({
+                queryKey: ['organization-members', 'team-123'],
+            });
         });
     });
 });
@@ -173,8 +167,8 @@ describe('use-team-members hooks', () => {
 describe('use-team-members types', () => {
     it('should export CreateTeamMemberParams type', async () => {
         const params: import('./use-team-members').CreateTeamMemberParams = {
-            team: 'org-123' as any,
-            user: 'user-123',
+            organizationId: 'org-123',
+            email: 'member@example.com',
             role: 'MEMBER',
         };
         expect(params.role).toBe('MEMBER');
@@ -182,8 +176,8 @@ describe('use-team-members types', () => {
 
     it('should export CreateTeamMemberParams with MANAGER role', async () => {
         const params: import('./use-team-members').CreateTeamMemberParams = {
-            team: 'org-123' as any,
-            user: 'user-456',
+            organizationId: 'org-123',
+            email: 'manager@example.com',
             role: 'MANAGER',
         };
         expect(params.role).toBe('MANAGER');
@@ -191,7 +185,8 @@ describe('use-team-members types', () => {
 
     it('should export UpdateTeamMemberParams type', async () => {
         const params: import('./use-team-members').UpdateTeamMemberParams = {
-            id: 'member-123' as any,
+            memberId: 'member-123',
+            organizationId: 'org-123',
             role: 'MANAGER',
         };
         expect(params.role).toBe('MANAGER');
