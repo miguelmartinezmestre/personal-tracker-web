@@ -1,17 +1,17 @@
-import { MutationCtx } from "./_generated/server";
+import { MutationCtx } from './_generated/server';
 
 /**
  * Helper function to create a complete test user with all required fields
  * Similar to what better-auth does when creating a user via sign-up
- * 
+ *
  * Note: This requires a context with write access (MutationCtx or equivalent from convex-test)
- * 
+ *
  * IMPORTANT: The userId must match the 'subject' in the identity used for testing.
- * For example, if you use `t.withIdentity({ subject: "test-user-123" })`, 
+ * For example, if you use `t.withIdentity({ subject: "test-user-123" })`,
  * then the userId should be "test-user-123".
  */
 export async function createTestUser(
-    ctx: { db: MutationCtx["db"] },
+    ctx: { db: MutationCtx['db'] },
     options: {
         userId: string;
         email: string;
@@ -26,8 +26,8 @@ export async function createTestUser(
 
     // Check if user already exists to avoid duplicates
     const existingUser = await ctx.db
-        .query("user")
-        .withIndex("userId", (q) => q.eq("userId", userId))
+        .query('user')
+        .withIndex('userId', q => q.eq('userId', userId))
         .first();
 
     let userRecordId;
@@ -43,7 +43,7 @@ export async function createTestUser(
         });
     } else {
         // Create user record - userId must match the 'subject' in the identity
-        userRecordId = await ctx.db.insert("user", {
+        userRecordId = await ctx.db.insert('user', {
             userId: userId, // This must match the 'subject' in withIdentity
             email,
             name,
@@ -62,9 +62,9 @@ export async function createTestUser(
     if (password) {
         // Check if account already exists
         const existingAccount = await ctx.db
-            .query("account")
-            .withIndex("providerId_userId", (q) =>
-                q.eq("providerId", "credential").eq("userId", userId)
+            .query('account')
+            .withIndex('providerId_userId', q =>
+                q.eq('providerId', 'credential').eq('userId', userId)
             )
             .first();
 
@@ -72,9 +72,9 @@ export async function createTestUser(
             // In a real scenario, better-auth would hash the password
             // For tests, we can store a placeholder or use a simple hash
             // Note: better-auth handles password hashing internally
-            await ctx.db.insert("account", {
+            await ctx.db.insert('account', {
                 accountId: email, // For email provider, accountId is typically the email
-                providerId: "credential", // better-auth uses "credential" for email/password
+                providerId: 'credential', // better-auth uses "credential" for email/password
                 userId: userId,
                 password: password, // In real better-auth, this would be hashed
                 createdAt: now,
@@ -99,11 +99,11 @@ export async function createTestUser(
 
 /**
  * Helper to create multiple test users at once
- * 
+ *
  * Note: This requires a context with write access (MutationCtx or equivalent from convex-test)
  */
 export async function createTestUsers(
-    ctx: { db: MutationCtx["db"] },
+    ctx: { db: MutationCtx['db'] },
     users: Array<{
         userId: string;
         email: string;
@@ -120,4 +120,3 @@ export async function createTestUsers(
     }
     return results;
 }
-

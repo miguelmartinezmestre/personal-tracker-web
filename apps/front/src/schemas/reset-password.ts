@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { z } from 'zod';
 
 export const resetPasswordSchema = z
     .object({

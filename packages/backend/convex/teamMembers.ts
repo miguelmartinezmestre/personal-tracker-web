@@ -4,32 +4,32 @@ import { getAuthenticatedUser } from './auth';
 
 export const createTeamMember = mutationWithRLS({
     args: {
-        team: v.id("organization"),
+        team: v.id('organization'),
         user: v.string(),
-        role: v.union(v.literal("MANAGER"), v.literal("MEMBER")),
+        role: v.union(v.literal('MANAGER'), v.literal('MEMBER')),
     },
     handler: async (ctx, args) => {
         const user = await getAuthenticatedUser(ctx);
-        if (!user || !user._id) throw new Error("User not authenticated");
-        
+        if (!user || !user._id) throw new Error('User not authenticated');
+
         const now = Date.now();
         const organizationId = String(args.team);
-        
+
         // Check if member already exists
         const existing = await ctx.db
-            .query("member")
-            .withIndex("organizationId", (q) => q.eq("organizationId", organizationId))
-            .filter((q) => q.eq(q.field("userId"), args.user))
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+            .filter(q => q.eq(q.field('userId'), args.user))
             .first();
-        
+
         if (existing) {
-            throw new Error("Member already exists in this organization");
+            throw new Error('Member already exists in this organization');
         }
-        
+
         // Map frontend roles to better-auth roles
-        const betterAuthRole = args.role === "MANAGER" ? "admin" : "member";
-        
-        const id = await ctx.db.insert("member", {
+        const betterAuthRole = args.role === 'MANAGER' ? 'admin' : 'member';
+
+        const id = await ctx.db.insert('member', {
             organizationId: organizationId,
             userId: args.user,
             role: betterAuthRole,
