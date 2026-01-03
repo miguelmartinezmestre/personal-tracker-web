@@ -196,7 +196,7 @@ export const getAchievementDefinitions = queryWithRLS({
         if (typeFilter) {
             const definitions = await ctx.db
                 .query('achievementDefinitions')
-                .withIndex('by_type', (q) => q.eq('type', typeFilter))
+                .withIndex('by_type', q => q.eq('type', typeFilter))
                 .collect();
             return definitions.filter(d => d.isActive);
         }
@@ -345,9 +345,7 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
 
-        const progressUpdates = await ctx.db
-            .query('progressUpdates')
-            .collect();
+        const progressUpdates = await ctx.db.query('progressUpdates').collect();
 
         // Filter progress updates for user's objectives
         const userObjectiveIds = new Set(objectivesCount.map(o => String(o._id)));
@@ -412,7 +410,7 @@ export const getUserAchievementProgress = queryWithRLS({
 async function calculateUserStreak(ctx: { db: QueryCtx['db'] }, userId: string): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
-        .withIndex('by_user', (q) => q.eq('user', userId))
+        .withIndex('by_user', q => q.eq('user', userId))
         .collect();
 
     const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
@@ -633,10 +631,13 @@ export const checkUserAchievements = internalMutation({
 });
 
 // Internal helper for streak calculation (without RLS context)
-async function calculateUserStreakInternal(ctx: { db: MutationCtx['db'] }, userId: string): Promise<number> {
+async function calculateUserStreakInternal(
+    ctx: { db: MutationCtx['db'] },
+    userId: string
+): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
-        .withIndex('by_user', (q) => q.eq('user', userId))
+        .withIndex('by_user', q => q.eq('user', userId))
         .collect();
 
     const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);

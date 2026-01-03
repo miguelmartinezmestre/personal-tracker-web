@@ -1,34 +1,22 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useDeleteTeamMember, useTeamMembers } from '@/hooks/api/use-team-members';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import { TeamMember } from '@/schemas/team-member';
 import { useParams } from 'next/navigation';
 import TeamMemberEditFormModal from '@/components/team-members/team-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 export default function TeamMembersTable() {
     const t = useTranslations('TeamMembers');
-    const { id: teamId } = useParams();
-    const teamMembers = useSuspenseQuery(
-        convexQuery(api.teamMembers.getTeamMembersByTeamId, { team: teamId as Id<'teams'> })
-    );
-    const deleteTeamMember = useMutation({
-        mutationFn: useConvexMutation(api.teamMembers.deleteTeamMember),
-        onSuccess: () => {
-            toast.success(t('toast.deletedSuccess'));
-        },
-        onError: () => {
-            toast.error(t('toast.deleteFailed'));
-        },
-    });
+    const { id } = useParams();
+    const teamId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : null;
+    const teamMembers = useTeamMembers(teamId);
+    const deleteTeamMember = useDeleteTeamMember();
 
     const columns: ColumnDef<TeamMember>[] = [
         {
@@ -54,9 +42,15 @@ export default function TeamMembersTable() {
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
-                            await deleteTeamMember.mutateAsync({
-                                _id: row.original._id as Id<'teamMembers'>,
-                            });
+                            try {
+                                await deleteTeamMember.mutateAsync({
+                                    memberId: row.original.id,
+                                    organizationId: teamId ?? undefined,
+                                });
+                                toast.success(t('toast.deletedSuccess'));
+                            } catch {
+                                toast.error(t('toast.deleteFailed'));
+                            }
                         }}
                         title={t('confirm.deleteTitle')}
                         description={t('confirm.deleteDescription')}

@@ -83,19 +83,22 @@ const SmartObjectiveForm = React.forwardRef<HTMLFormElement, SmartObjectiveFormP
             },
             onSubmit: async ({ value }) => {
                 if (mode === 'create') {
-                    createObjectiveMutation.mutate({
-                        ...value,
-                        status: value.status || 'in_progress',
-                    }, {
-                        onSuccess: () => {
-                            toast.success(t('toast.createSuccess'));
-                            onSubmit?.(value);
+                    createObjectiveMutation.mutate(
+                        {
+                            ...value,
+                            status: value.status || 'in_progress',
                         },
-                        onError: (error: Error) => {
-                            toast.error(t('toast.createFailed'));
-                            console.error(error);
-                        },
-                    });
+                        {
+                            onSuccess: () => {
+                                toast.success(t('toast.createSuccess'));
+                                onSubmit?.(value);
+                            },
+                            onError: (error: Error) => {
+                                toast.error(t('toast.createFailed'));
+                                console.error(error);
+                            },
+                        }
+                    );
                 } else if (mode === 'edit' && objectiveId) {
                     updateObjectiveMutation.mutate(
                         { id: objectiveId, ...value },

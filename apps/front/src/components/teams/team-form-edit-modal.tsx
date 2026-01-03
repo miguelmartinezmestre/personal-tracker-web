@@ -25,24 +25,17 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { useMutation } from '@tanstack/react-query';
 import { Team, savedTeamSchema } from '@/schemas/team';
 import { useTranslations } from 'next-intl';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
-import { Doc } from '@repo/backend/convex/_generated/dataModel';
+import { useUpdateTeam } from '@/hooks/api/use-teams';
 
-export default function EditTeamFormModal({
-    defaultValues,
-}: {
-    defaultValues: Doc<'organization'>;
-}) {
+export default function EditTeamFormModal({ defaultValues }: { defaultValues: Team }) {
     const t = useTranslations('Teams');
-    const updateTeam = useMutation({ mutationFn: useConvexMutation(api.teams.updateTeam) });
+    const updateTeam = useUpdateTeam();
     const [open, setOpen] = useState(false);
     const form = useForm<z.infer<typeof savedTeamSchema>>({
         defaultValues: {
-            _id: defaultValues._id,
+            id: defaultValues.id,
             name: defaultValues.name,
             description: defaultValues.description ?? '',
         },
@@ -57,7 +50,7 @@ export default function EditTeamFormModal({
 
     const onSubmit = async (values: Team) => {
         const updateData = {
-            _id: values._id,
+            id: values.id,
             name: values.name,
             description: values.description ?? undefined,
         };

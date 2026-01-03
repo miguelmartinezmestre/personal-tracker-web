@@ -32,9 +32,7 @@ const buildDeadlineMessage = (
 
     const isDueToday = objective.deadline >= dayStart && objective.deadline < dayEnd;
     if (isDueToday) {
-        return `Objective \"${objective.title}\" is due today (${formatDate(
-            objective.deadline
-        )}).`;
+        return `Objective \"${objective.title}\" is due today (${formatDate(objective.deadline)}).`;
     }
 
     const daysUntil = Math.ceil((objective.deadline - now) / DAY_MS);

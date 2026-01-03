@@ -34,25 +34,25 @@ import {
 } from '@repo/ui/components/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
+import { useCreateTeamMember } from '@/hooks/api/use-team-members';
 
 export default function CreateTeamMemberFormModal() {
     const t = useTranslations('TeamMembers');
-    const tCommon = useTranslations('Common');
-    const { id: teamId } = useParams();
+    const { id } = useParams();
+    const teamId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : null;
+    const createTeamMember = useCreateTeamMember();
 
     const roleOptions = [
         { value: TeamRole.MANAGER, label: t('roles.manager') },
         { value: TeamRole.MEMBER, label: t('roles.member') },
     ];
 
-    // const createTeamMember = useMutation({ mutationFn: useConvexMutation(api.teamMembers.createTeamMember) });
     const [open, setOpen] = useState(false);
     const form = useForm<CreateTeamMember>({
         defaultValues: {
             email: '',
             role: TeamRole.MEMBER,
-            userId: '',
-            organizationId: teamId as string,
+            organizationId: teamId ?? '',
         },
         validators: {
             onChange: teamMemberSchema,
@@ -63,10 +63,13 @@ export default function CreateTeamMemberFormModal() {
         },
     });
 
-    const onSubmit = async (_values: CreateTeamMember) => {
-        // NOTE: In Convex, you need a user id to create a team member. This UI previously created a user implicitly.
-        // Hook up a flow to select an existing user id, then call:
-        // await createTeamMember.mutateAsync({ team: teamId as any, user: selectedUserId as any, role: values.role });
+    const onSubmit = async (values: CreateTeamMember) => {
+        if (!values.organizationId) return;
+        await createTeamMember.mutateAsync({
+            organizationId: values.organizationId,
+            email: values.email,
+            role: values.role,
+        });
         setOpen(false);
         form.reset();
     };
@@ -110,25 +113,6 @@ export default function CreateTeamMemberFormModal() {
                                     <FormDescription>
                                         {t('giveYourTeamMemberAClearConciseEmail')}
                                     </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            name="userId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{tCommon('fields.userId')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t('enterUserId')}
-                                            {...field}
-                                            value={field.value || ''}
-                                            onChange={e => field.onChange(e.target.value)}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>{t('userIdDescription')}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

@@ -21,7 +21,7 @@ export const objectiveSchema = z.object({
 });
 
 export const savedObjectiveSchema = objectiveSchema.extend({
-    _id: z.string()
+    _id: z.string(),
 });
 
 export type Objective = z.infer<typeof savedObjectiveSchema>;

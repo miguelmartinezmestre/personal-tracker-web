@@ -33,9 +33,7 @@ import {
 } from '@repo/ui/components/select';
 import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
-import { useMutation } from '@tanstack/react-query';
-import { useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { useUpdateTeamMember } from '@/hooks/api/use-team-members';
 
 export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
     const t = useTranslations('TeamMembers');
@@ -44,9 +42,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
         { value: TeamRole.MANAGER, label: t('roles.manager') },
         { value: TeamRole.MEMBER, label: t('roles.member') },
     ];
-    const updateTeamMember = useMutation({
-        mutationFn: useConvexMutation(api.teamMembers.updateTeamMember),
-    });
+    const updateTeamMember = useUpdateTeamMember();
     const [open, setOpen] = useState(false);
     const form = useForm<TeamMember>({
         defaultValues: defaultValues,
@@ -61,7 +57,8 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
 
     const onSubmit = async (values: TeamMember) => {
         const updateData = {
-            id: values._id,
+            memberId: values.id,
+            organizationId: values.organizationId,
             role: values.role as 'MANAGER' | 'MEMBER',
         };
 
