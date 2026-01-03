@@ -10,9 +10,10 @@ import { DataModel } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
 
 async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
+    const normalizedRole = role.toLowerCase();
     // Helper para verificar si un usuario es admin global
     const isGlobalAdmin = async () => {
-        if (role !== 'admin') return false;
+        if (normalizedRole !== 'admin') return false;
         try {
             // If not found, try to find by _id
             return true;
@@ -23,7 +24,7 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
 
     // Helper para verificar si un usuario es miembro de una organización
     const isOrganizationMember = async (organizationId: string) => {
-        if (role !== "admin") return false;
+        if (!userId) return false;
         const member = await ctx.db
             .query('member')
             .withIndex('organizationId', q => q.eq('organizationId', organizationId))
@@ -383,6 +384,40 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return category.user === userId;
             },
         },
+        userPermissions: {
+            read: async (_, permission) => {
+                if (!userId) return false;
+                // Los admins pueden ver todos los permisos
+                if (isAdmin) return true;
+                // Los usuarios pueden ver sus propios permisos
+                if (permission.userId === userId) return true;
+                // Los managers de equipo pueden ver permisos de su equipo
+                if (permission.scope?.type === 'team' && permission.scope.teamId) {
+                    return await isOrganizationAdmin(permission.scope.teamId);
+                }
+                return false;
+            },
+            insert: async (_, permission) => {
+                if (!userId) return false;
+                // Los admins pueden crear cualquier permiso
+                if (isAdmin) return true;
+                // Los managers de equipo pueden crear permisos de su equipo
+                if (permission.scope?.type === 'team' && permission.scope.teamId) {
+                    return await isOrganizationAdmin(permission.scope.teamId);
+                }
+                return false;
+            },
+            modify: async (_, permission) => {
+                if (!userId) return false;
+                // Los admins pueden modificar cualquier permiso
+                if (isAdmin) return true;
+                // Los managers de equipo pueden modificar permisos de su equipo
+                if (permission.scope?.type === 'team' && permission.scope.teamId) {
+                    return await isOrganizationAdmin(permission.scope.teamId);
+                }
+                return false;
+            },
+        },
     } satisfies Rules<QueryCtx, DataModel>;
 }
 
@@ -398,7 +433,7 @@ export const queryWithRLS = customQuery(
             throw new ConvexError('User not authenticated');
         }
 
-        const role = String(identity.role ?? 'user');
+        const role = String(identity.role ?? 'user').toLowerCase();
         const userId = String(identity.subject);
 
         if (!userId || userId === '') {
@@ -421,7 +456,7 @@ export const mutationWithRLS = customMutation(
             throw new ConvexError('User not authenticated');
         }
 
-        const role = String(identity.role ?? 'user');
+        const role = String(identity.role ?? 'user').toLowerCase();
         const userId = String(identity.subject);
 
         if (!userId || userId === '') {
