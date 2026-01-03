@@ -8,7 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
-    "clean": "turbo run clean && npx rimraf node_modules .next .turbo",
+    "clean": "turbo run clean && node scripts/clean.mjs node_modules .next .turbo",
     "gen:typescript-package": "turbo gen typescript-package",
     "gen": "turbo gen",
     "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
