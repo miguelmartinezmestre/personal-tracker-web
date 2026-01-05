@@ -69,8 +69,18 @@ export function useSeedAchievements() {
     return useMutation({
         mutationFn: useConvexMutation(api.achievements.seedAchievementDefinitions),
         onSuccess: () => {
+            // Invalidate all achievement-related queries to refresh the UI
             queryClient.invalidateQueries({
                 queryKey: convexQuery(api.achievements.getAchievementDefinitions, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievementProgress, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievementStats, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievements, {}).queryKey,
             });
         },
     });

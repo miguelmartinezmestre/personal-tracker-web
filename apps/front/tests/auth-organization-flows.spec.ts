@@ -8,57 +8,74 @@ async function createOrganization(
     page: Page,
     data: { name: string; slug: string; description?: string }
 ) {
-    const response = await page.request.post('/api/auth/organization/create', {
-        data,
-    });
+    const response = await page.evaluate(async payload => {
+        const res = await fetch('/api/auth/organization/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return { ok: res.ok, status: res.status, text: await res.text() };
+    }, data);
 
-    if (!response.ok()) {
-        throw new Error(`createOrganization failed: ${response.status()} ${await response.text()}`);
+    if (!response.ok) {
+        throw new Error(`createOrganization failed: ${response.status} ${response.text}`);
     }
 
-    return response.json() as Promise<{ id: string; name: string; slug: string }>;
+    return JSON.parse(response.text) as { id: string; name: string; slug: string };
 }
 
 async function inviteMember(
     page: Page,
     data: { organizationId: string; email: string; role: 'admin' | 'member' | 'owner' }
 ) {
-    const response = await page.request.post('/api/auth/organization/invite-member', {
-        data,
-    });
+    const response = await page.evaluate(async payload => {
+        const res = await fetch('/api/auth/organization/invite-member', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return { ok: res.ok, status: res.status, text: await res.text() };
+    }, data);
 
-    if (!response.ok()) {
-        throw new Error(`inviteMember failed: ${response.status()} ${await response.text()}`);
+    if (!response.ok) {
+        throw new Error(`inviteMember failed: ${response.status} ${response.text}`);
     }
 
-    return response.json() as Promise<{ id: string; email: string; organizationId: string }>;
+    return JSON.parse(response.text) as { id: string; email: string; organizationId: string };
 }
 
 async function acceptInvitation(page: Page, invitationId: string) {
-    const response = await page.request.post('/api/auth/organization/accept-invitation', {
-        data: { invitationId },
-    });
+    const response = await page.evaluate(async payload => {
+        const res = await fetch('/api/auth/organization/accept-invitation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return { ok: res.ok, status: res.status, text: await res.text() };
+    }, { invitationId });
 
-    if (!response.ok()) {
-        throw new Error(`acceptInvitation failed: ${response.status()} ${await response.text()}`);
+    if (!response.ok) {
+        throw new Error(`acceptInvitation failed: ${response.status} ${response.text}`);
     }
 
-    return response.json() as Promise<{
+    return JSON.parse(response.text) as {
         invitation: { id: string; status: string };
         member: { id: string; organizationId: string; userId: string; role: string };
-    }>;
+    };
 }
 
 async function listMembers(page: Page, organizationId: string) {
-    const response = await page.request.get('/api/auth/organization/list-members', {
-        params: { organizationId },
-    });
+    const response = await page.evaluate(async payload => {
+        const params = new URLSearchParams({ organizationId: payload.organizationId });
+        const res = await fetch(`/api/auth/organization/list-members?${params.toString()}`);
+        return { ok: res.ok, status: res.status, text: await res.text() };
+    }, { organizationId });
 
-    if (!response.ok()) {
-        throw new Error(`listMembers failed: ${response.status()} ${await response.text()}`);
+    if (!response.ok) {
+        throw new Error(`listMembers failed: ${response.status} ${response.text}`);
     }
 
-    const data = (await response.json()) as {
+    const data = JSON.parse(response.text) as {
         members: Array<{ user: { email: string } }>;
         total: number;
     };
@@ -66,7 +83,7 @@ async function listMembers(page: Page, organizationId: string) {
     return data.members;
 }
 
-test('usuario puede registrarse e iniciar sesión', async ({ page }) => {
+test('usuario puede registrarse e iniciar sesi?n', async ({ page }) => {
     const { email } = await createTestUser(page);
 
     await page.context().clearCookies();
@@ -95,7 +112,7 @@ test('admin invita a un usuario y el invitado invita a otros miembros', async ({
         const organization = await createOrganization(adminPage, {
             name: orgName,
             slug: orgSlug,
-            description: 'Org creada para pruebas de invitación',
+            description: 'Org creada para pruebas de invitaci?n',
         });
 
         const invitedUser = await createTestUser(invitedPage);
@@ -134,15 +151,20 @@ test('admin invita a un usuario y el invitado invita a otros miembros', async ({
 test('usuario puede borrar su cuenta', async ({ page }) => {
     const { email } = await createTestUser(page);
 
-    const response = await page.request.post('/api/auth/delete-user', {
-        data: { password: PASSWORD },
-    });
+    const response = await page.evaluate(async payload => {
+        const res = await fetch('/api/auth/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        return { ok: res.ok, status: res.status, text: await res.text() };
+    }, { password: PASSWORD });
 
-    if (!response.ok()) {
-        throw new Error(`deleteUser failed: ${response.status()} ${await response.text()}`);
+    if (!response.ok) {
+        throw new Error(`deleteUser failed: ${response.status} ${response.text}`);
     }
 
-    const payload = (await response.json()) as { success?: boolean };
+    const payload = JSON.parse(response.text) as { success?: boolean };
     expect(payload.success).toBe(true);
 
     await page.goto('/dashboard/home');

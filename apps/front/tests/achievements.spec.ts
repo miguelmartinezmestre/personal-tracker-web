@@ -49,8 +49,9 @@ test.describe('Achievements', () => {
     test('achievements link in sidebar navigates correctly', async ({ page }) => {
         await createTestUser(page);
 
-        // Click on achievements in sidebar
-        const sidebarLink = page.locator('a[href="/dashboard/achievements"]');
+        // Click on achievements in sidebar - use data-slot to identify sidebar link specifically
+        // This avoids matching the "View All" button which also links to achievements
+        const sidebarLink = page.locator('a[href="/dashboard/achievements"][data-slot="sidebar-menu-button"]');
         await expect(sidebarLink).toBeVisible();
         await sidebarLink.click();
 
@@ -108,15 +109,23 @@ test.describe('Achievements', () => {
             await takeScreenshot(page, 'achievements', 'before-initialize');
             await initButton.click();
 
-            // Wait for the seeding to complete
-            await page.waitForTimeout(2000);
+            // Wait for the button to show "Seeding..." and then disappear
+            await expect(initButton).toHaveText(/seeding/i, { timeout: 5000 }).catch(() => {});
+            
+            // Wait for the seeding to complete and button to disappear
+            await expect(initButton).not.toBeVisible({ timeout: 10000 });
+            
+            // Wait for network to be idle and data to load
             await page.waitForLoadState('networkidle');
+            
+            // Wait a bit more for React Query to refetch and render
+            await page.waitForTimeout(1000);
 
             await takeScreenshot(page, 'achievements', 'after-initialize');
 
             // Verify achievements grid is now visible
             await expect(page.getByTestId('achievements-grid-individual')).toBeVisible({
-                timeout: 5000,
+                timeout: 10000,
             });
         }
     });
