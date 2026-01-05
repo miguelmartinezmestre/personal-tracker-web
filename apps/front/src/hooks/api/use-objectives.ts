@@ -32,49 +32,6 @@ const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
 };
 
 /**
- * Tipos para las operaciones de objetivos
- */
-export interface CreateObjectiveParams {
-    title: string;
-    description?: string;
-    category?: string;
-    targetValue: number;
-    currentValue: number;
-    deadline?: number;
-    status: string;
-    unit?: string;
-    objectiveType?: string;
-    period?: string;
-    periodStart?: number;
-    periodLengthDays?: number;
-}
-
-export interface UpdateObjectiveParams {
-    id: Id<'objectives'>;
-    title?: string;
-    description?: string;
-    category?: string;
-    targetValue?: number;
-    currentValue?: number;
-    deadline?: number;
-    status?: string;
-    unit?: string;
-    objectiveType?: string;
-    period?: string;
-    periodStart?: number;
-    periodLengthDays?: number;
-}
-
-export interface UpdateObjectiveStatusParams {
-    id: Id<'objectives'>;
-    status: string;
-}
-
-export interface ObjectiveActionParams {
-    id: Id<'objectives'>;
-}
-
-/**
  * Hook para obtener todos los objetivos del usuario actual
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */

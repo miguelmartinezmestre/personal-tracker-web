@@ -3,23 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import type { Id } from '@repo/backend/convex/_generated/dataModel';
-
-/**
- * Tipos para las operaciones de categorías
- */
-export interface CreateCategoryParams {
-    name: string;
-    color: string;
-    icon?: string;
-}
-
-export interface UpdateCategoryParams {
-    id: Id<'categories'>;
-    name?: string;
-    color?: string;
-    icon?: string;
-}
 
 /**
  * Hook para obtener todas las categorías del usuario actual

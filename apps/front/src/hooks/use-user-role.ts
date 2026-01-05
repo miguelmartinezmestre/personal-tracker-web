@@ -70,30 +70,6 @@ export function useUserRole() {
     };
 }
 
-export function useRequireAuth() {
-    // Try to use user from context first (more efficient)
-    let contextUser: ReturnType<typeof useUser> | null = null;
-    try {
-        contextUser = useUser();
-    } catch {
-        // User context not available, will fall back to useUserRole
-    }
-
-    // If context user is available, use it directly (no queries needed)
-    if (contextUser) {
-        return { user: contextUser, isAuthenticated: true };
-    }
-
-    // Fallback to useUserRole if context is not available
-    const { isAuthenticated, user } = useUserRole();
-
-    if (!isAuthenticated || !user) {
-        throw new Error('Authentication required');
-    }
-
-    return { user, isAuthenticated };
-}
-
 export function useRequireAdmin() {
     const { isAdmin, user, isAuthenticated } = useUserRole();
 

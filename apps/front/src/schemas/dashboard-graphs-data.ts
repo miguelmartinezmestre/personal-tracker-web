@@ -25,4 +25,3 @@ export const dashboardGraphsDataSchema = z.object({
     ),
 });
 
-export type DashboardGraphsData = z.infer<typeof dashboardGraphsDataSchema>;

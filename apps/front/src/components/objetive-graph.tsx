@@ -14,7 +14,7 @@ import {
 } from '@repo/ui/components/card';
 import { Progress as ProgressBar } from '@repo/ui/components/progress';
 
-export type ObjectiveProgressPoint = {
+type ObjectiveProgressPoint = {
     date: number;
     currentValue: number;
     objective: number;

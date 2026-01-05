@@ -13,5 +13,3 @@ export const savedSessionSchema = sessionSchema.extend({
     _id: z.string(),
 });
 
-export type Session = z.infer<typeof savedSessionSchema>;
-export type CreateSession = z.infer<typeof sessionSchema>;

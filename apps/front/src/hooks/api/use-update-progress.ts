@@ -15,13 +15,6 @@ export interface CreateUpdateProgressParams {
     comment?: string;
 }
 
-export interface UpdateUpdateProgressParams {
-    id: Id<'progressUpdates'>;
-    updatedValue: number;
-    updateDate: number;
-    comment?: string;
-}
-
 /**
  * Hook para obtener las actualizaciones de progreso de un objetivo
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro

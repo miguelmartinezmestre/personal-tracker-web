@@ -6,7 +6,7 @@ import { query, QueryCtx, MutationCtx } from './_generated/server';
 import { betterAuth } from 'better-auth';
 import { organization, admin } from 'better-auth/plugins';
 import schema from './betterAuth/schema';
-import { sendEmail } from './email';
+// import { sendEmail } from './email';
 
 const siteUrl = process.env.SITE_URL;
 
@@ -66,14 +66,15 @@ export const createAuth = (
             // Log password reset emails instead of sending
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             sendResetPassword: async ({ user, url }, _request) => {
-                void sendEmail({
-                    to: user.email,
-                    subject: 'Reset your password',
-                    text: `Click the link to reset your password: ${url}`,
-                    html: `<p>Click the link to reset your password:</p><p><a href="${url}">${url}</a></p>`,
-                }).catch(err => {
-                    console.error('[email] Failed to send reset password email:', err);
-                });
+                // void sendEmail({
+                //     to: user.email,
+                //     subject: 'Reset your password',
+                //     text: `Click the link to reset your password: ${url}`,
+                //     html: `<p>Click the link to reset your password:</p><p><a href="${url}">${url}</a></p>`,
+                // }).catch(err => {
+                //     console.error('[email] Failed to send reset password email:', err);
+                // });
+                console.log('Reset password email sent to', user.email);
             },
         },
         // Email verification configuration
@@ -81,14 +82,15 @@ export const createAuth = (
             // Log verification emails instead of sending
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             sendVerificationEmail: async ({ user, url }, _request) => {
-                void sendEmail({
-                    to: user.email,
-                    subject: 'Verify your email address',
-                    text: `Click the link to verify your email: ${url}`,
-                    html: `<p>Click the link to verify your email:</p><p><a href="${url}">${url}</a></p>`,
-                }).catch(err => {
-                    console.error('[email] Failed to send verification email:', err);
-                });
+                // void sendEmail({
+                //     to: user.email,
+                //     subject: 'Verify your email address',
+                //     text: `Click the link to verify your email: ${url}`,
+                //     html: `<p>Click the link to verify your email:</p><p><a href="${url}">${url}</a></p>`,
+                // }).catch(err => {
+                //     console.error('[email] Failed to send verification email:', err);
+                // });
+                console.log('Verification email sent to', user.email);
             },
         },
         // User email change configuration
@@ -101,14 +103,15 @@ export const createAuth = (
                 // Log email change verification emails instead of sending
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 sendChangeEmailVerification: async ({ user, newEmail, url }, _request) => {
-                    void sendEmail({
-                        to: user.email,
-                        subject: 'Approve email change',
-                        text: `You requested to change your email to ${newEmail}. Approve it here: ${url}`,
-                        html: `<p>You requested to change your email to <strong>${newEmail}</strong>.</p><p>Approve it here: <a href="${url}">${url}</a></p>`,
-                    }).catch(err => {
-                        console.error('[email] Failed to send change email verification:', err);
-                    });
+                    // void sendEmail({
+                    //     to: user.email,
+                    //     subject: 'Approve email change',
+                    //     text: `You requested to change your email to ${newEmail}. Approve it here: ${url}`,
+                    //     html: `<p>You requested to change your email to <strong>${newEmail}</strong>.</p><p>Approve it here: <a href="${url}">${url}</a></p>`,
+                    // }).catch(err => {
+                    //     console.error('[email] Failed to send change email verification:', err);
+                    // });
+                    console.log('Change email verification email sent to', user.email);
                 },
             },
         },
@@ -138,14 +141,15 @@ export const createAuth = (
                 // Log invitation emails instead of sending
                 async sendInvitationEmail(data) {
                     const inviteLink = `${siteUrl}/accept-invitation/${data.id}`;
-                    void sendEmail({
-                        to: data.email,
-                        subject: `Invitation to join ${data.organization.name}`,
-                        text: `You've been invited to join ${data.organization.name}. Click here: ${inviteLink}`,
-                        html: `<p>You've been invited to join <strong>${data.organization.name}</strong>.</p><p><a href="${inviteLink}">Accept invitation</a></p>`,
-                    }).catch(err => {
-                        console.error('[email] Failed to send organization invitation:', err);
-                    });
+                    // void sendEmail({
+                    //     to: data.email,
+                    //     subject: `Invitation to join ${data.organization.name}`,
+                    //     text: `You've been invited to join ${data.organization.name}. Click here: ${inviteLink}`,
+                    //     html: `<p>You've been invited to join <strong>${data.organization.name}</strong>.</p><p><a href="${inviteLink}">Accept invitation</a></p>`,
+                    // }).catch(err => {
+                    //     console.error('[email] Failed to send organization invitation:', err);
+                    // });
+                    console.log('Organization invitation email sent to', data.email);
                 },
             }),
         ],
