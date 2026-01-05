@@ -3,10 +3,40 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import type { Id } from '@repo/backend/convex/_generated/dataModel';
+import type { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
 import type { Objective } from '@/schemas/objective';
 import { objectiveTypeSchema, periodSchema, savedObjectiveSchema } from '@/schemas/objective';
-import type { Doc } from '@repo/backend/convex/_generated/dataModel';
+
+export interface CreateObjectiveParams {
+    title: string;
+    targetValue: number;
+    currentValue: number;
+    description?: string | null;
+    category?: string | null;
+    deadline?: number | null;
+    status?: string | null;
+    unit?: string | null;
+    objectiveType?: string | null;
+    period?: string | null;
+    periodStart?: number | null;
+    periodLengthDays?: number | null;
+}
+
+export interface UpdateObjectiveParams {
+    id: Id<'objectives'>;
+    title?: string;
+    description?: string | null;
+    category?: string | null;
+    targetValue?: number;
+    currentValue?: number;
+    deadline?: number | null;
+    status?: string | null;
+    unit?: string | null;
+    objectiveType?: string | null;
+    period?: string | null;
+    periodStart?: number | null;
+    periodLengthDays?: number | null;
+}
 
 const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
     const objectiveType = objectiveTypeSchema.safeParse(objective.objectiveType).success
@@ -30,49 +60,6 @@ const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
         periodLengthDays: objective.periodLengthDays ?? null,
     });
 };
-
-/**
- * Tipos para las operaciones de objetivos
- */
-export interface CreateObjectiveParams {
-    title: string;
-    description?: string;
-    category?: string;
-    targetValue: number;
-    currentValue: number;
-    deadline?: number;
-    status: string;
-    unit?: string;
-    objectiveType?: string;
-    period?: string;
-    periodStart?: number;
-    periodLengthDays?: number;
-}
-
-export interface UpdateObjectiveParams {
-    id: Id<'objectives'>;
-    title?: string;
-    description?: string;
-    category?: string;
-    targetValue?: number;
-    currentValue?: number;
-    deadline?: number;
-    status?: string;
-    unit?: string;
-    objectiveType?: string;
-    period?: string;
-    periodStart?: number;
-    periodLengthDays?: number;
-}
-
-export interface UpdateObjectiveStatusParams {
-    id: Id<'objectives'>;
-    status: string;
-}
-
-export interface ObjectiveActionParams {
-    id: Id<'objectives'>;
-}
 
 /**
  * Hook para obtener todos los objetivos del usuario actual

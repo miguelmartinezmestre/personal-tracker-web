@@ -1,53 +1,53 @@
-import { convexTest } from "convex-test";
-import { describe, expect, test, beforeEach } from "vitest";
-import { api } from "./_generated/api";
-import schema from "./schema";
-import { modules } from "../test.setup";
-import { createTestUser } from "./test_helpers";
+import { convexTest } from 'convex-test';
+import { describe, expect, test, beforeEach } from 'vitest';
+import { api } from './_generated/api';
+import schema from './schema';
+import { modules } from '../test.setup';
+import { createTestUser } from './test_helpers';
 
-describe("convex auditLogs", () => {
+describe('convex auditLogs', () => {
     const t = convexTest(schema, modules);
     let userId: string;
 
     const userIdentity = t.withIdentity({
-        subject: "test-user-123",
-        role: "admin",
+        subject: 'test-user-123',
+        role: 'admin',
     });
 
     beforeEach(async () => {
         // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async (ctx) => {
+        const result = await userIdentity.run(async ctx => {
             return await createTestUser(ctx, {
-                userId: "test-user-123",
-                email: "test@example.com",
-                name: "Test User",
-                password: "test-password",
-                role: "admin",
+                userId: 'test-user-123',
+                email: 'test@example.com',
+                name: 'Test User',
+                password: 'test-password',
+                role: 'admin',
                 emailVerified: false,
             });
         });
         userId = result.userId;
     });
 
-    test("getAuditLogs returns audit logs sorted by date", async () => {
+    test('getAuditLogs returns audit logs sorted by date', async () => {
         // Create some audit logs
-        await userIdentity.run(async (ctx) => {
+        await userIdentity.run(async ctx => {
             const now = Date.now();
-            await ctx.db.insert("auditLogs", {
+            await ctx.db.insert('auditLogs', {
                 user: userId,
-                action: "CREATE_OBJECTIVE",
+                action: 'CREATE_OBJECTIVE',
                 createdAt: now - 2000,
                 updatedAt: now - 2000,
             });
-            await ctx.db.insert("auditLogs", {
+            await ctx.db.insert('auditLogs', {
                 user: userId,
-                action: "UPDATE_OBJECTIVE",
+                action: 'UPDATE_OBJECTIVE',
                 createdAt: now - 1000,
                 updatedAt: now - 1000,
             });
-            await ctx.db.insert("auditLogs", {
+            await ctx.db.insert('auditLogs', {
                 user: userId,
-                action: "DELETE_OBJECTIVE",
+                action: 'DELETE_OBJECTIVE',
                 createdAt: now,
                 updatedAt: now,
             });
@@ -66,12 +66,12 @@ describe("convex auditLogs", () => {
         }
     });
 
-    test("getAuditLogs limits to 100 logs", async () => {
+    test('getAuditLogs limits to 100 logs', async () => {
         // Create more than 100 logs
-        await userIdentity.run(async (ctx) => {
+        await userIdentity.run(async ctx => {
             const now = Date.now();
             for (let i = 0; i < 150; i++) {
-                await ctx.db.insert("auditLogs", {
+                await ctx.db.insert('auditLogs', {
                     user: userId,
                     action: `ACTION_${i}`,
                     createdAt: now - i * 1000,
@@ -85,9 +85,8 @@ describe("convex auditLogs", () => {
         expect(logs.length).toBeLessThanOrEqual(100);
     });
 
-    test("getAuditLogs returns empty array when no logs exist", async () => {
+    test('getAuditLogs returns empty array when no logs exist', async () => {
         const logs = await userIdentity.query(api.auditLogs.getAuditLogs, {});
         expect(Array.isArray(logs)).toBe(true);
     });
 });
-

@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
-import { getAuthenticatedUser } from './auth';
+import { authComponent } from './auth';
 import { internal } from './_generated/api';
 
 export const createUpdateProgress = mutationWithRLS({
@@ -11,7 +11,7 @@ export const createUpdateProgress = mutationWithRLS({
         comment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const user = await getAuthenticatedUser(ctx);
+        const user = await authComponent.getAuthUser(ctx).catch(() => null);
         if (!user || !user._id) throw new Error('User not authenticated');
 
         const objective = await ctx.db.get(args.objective);

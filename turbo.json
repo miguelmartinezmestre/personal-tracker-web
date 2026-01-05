@@ -12,10 +12,12 @@
             "dependsOn": ["^lint"]
         },
         "check-types": {
-            "dependsOn": ["^check-types"]
+            "dependsOn": ["^check-types"],
+            "cache": false
         },
         "test": {
             "dependsOn": ["^build"],
+            "cache": false,
             "inputs": [
                 "$TURBO_DEFAULT$",
                 "src/**/*.ts",

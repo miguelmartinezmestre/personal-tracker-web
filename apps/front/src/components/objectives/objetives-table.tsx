@@ -46,6 +46,13 @@ export default function ObjetivesTable({
     const objectives = propObjectives ?? fetchedObjectives ?? [];
     const isLoading = propIsLoading ?? fetchedIsLoading;
 
+    const actionMeta = {
+        isAction: true,
+        excludeFromExport: true,
+        disableColumnOrder: true,
+        disableColumnVisibility: true,
+    };
+
     const columns: ColumnDef<Objective>[] = [
         {
             accessorKey: 'title',
@@ -102,6 +109,8 @@ export default function ObjetivesTable({
         {
             header: t('quickActions'),
             id: 'quick-actions',
+            meta: actionMeta,
+            enableSorting: false,
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 return (
@@ -115,6 +124,8 @@ export default function ObjetivesTable({
         {
             header: '',
             id: 'update-objective',
+            meta: actionMeta,
+            enableSorting: false,
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 return <EditObjectiveFormModal defaultValues={objetiveRow} />;
@@ -123,6 +134,8 @@ export default function ObjetivesTable({
         {
             header: '',
             id: 'delete',
+            meta: actionMeta,
+            enableSorting: false,
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 return (
@@ -162,6 +175,8 @@ export default function ObjetivesTable({
         {
             header: '',
             id: 'go-to-activity',
+            meta: actionMeta,
+            enableSorting: false,
             cell: ({ row }) => {
                 const objetiveRow = row.original;
                 if (objetiveRow._id) {
@@ -187,7 +202,9 @@ export default function ObjetivesTable({
                 columns={columns}
                 data={objectives ?? []}
                 isLoading={isLoading}
-                exportFileName="objectives"
+                enableGlobalSearch={false}
+                enableColumnFilters={false}
+                enableSorting={true}
             />
         </div>
     );

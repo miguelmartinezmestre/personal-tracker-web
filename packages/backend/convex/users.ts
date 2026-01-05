@@ -1,11 +1,12 @@
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { ConvexError, v } from 'convex/values';
-import { getAuthenticatedUser } from './auth';
+import { authComponent } from './auth';
+import { components } from './_generated/api';
 
 export const getUser = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const user = await getAuthenticatedUser(ctx);
+        const user = await authComponent.getAuthUser(ctx).catch(() => null);
         if (!user) {
             return null;
         }
@@ -16,7 +17,7 @@ export const getUser = queryWithRLS({
 export const getAccountDetails = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const user = await getAuthenticatedUser(ctx);
+        const user = await authComponent.getAuthUser(ctx).catch(() => null);
         if (!user) throw new ConvexError('Unauthorized');
         return {
             email: user.email ?? '',
@@ -28,15 +29,18 @@ export const getAccountDetails = queryWithRLS({
 export const getUserRole = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const user = await getAuthenticatedUser(ctx);
+        const user = await authComponent.getAuthUser(ctx).catch(() => null);
         if (!user || !user._id) return null;
 
         // Buscar el usuario en la tabla user de betterAuth para obtener el rol
         const userId = user.userId || String(user._id);
-        const userRecord = await ctx.db
-            .query('user')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .first();
+        const userRecord = (await ctx.runQuery(
+            components.betterAuth.adapter.findOne,
+            {
+              model: "user",
+              where: [{ field: "userId", value: userId }],
+            }
+        )) as BetterAuthDataModel["user"]["document"] | null;
 
         if (!userRecord) return null;
 
@@ -53,15 +57,18 @@ export const updateAccountDetails = mutationWithRLS({
         username: v.string(),
     },
     handler: async (ctx, args) => {
-        const user = await getAuthenticatedUser(ctx);
+        const user = await authComponent.getAuthUser(ctx).catch(() => null);
         if (!user || !user._id) throw new ConvexError('Unauthorized');
 
         // Buscar el usuario por userId
         const userId = user.userId || String(user._id);
-        const userRecord = await ctx.db
-            .query('user')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .first();
+        const userRecord = (await ctx.runQuery(
+            components.betterAuth.adapter.findOne,
+            {
+              model: "user",
+              where: [{ field: "userId", value: userId }],
+            }
+        )) as BetterAuthDataModel["user"]["document"] | null;
 
         if (!userRecord) throw new ConvexError('User not found');
 
@@ -74,10 +81,16 @@ export const updateAccountDetails = mutationWithRLS({
             );
         }
 
-        await ctx.db.patch(userRecord._id, {
-            name: args.username,
-            updatedAt: Date.now(),
-        });
+        await ctx.runMutation(
+            components.betterAuth.adapter.updateOne,
+            {
+              input: {
+                model: "user",
+                update: { name: args.username, updatedAt: Date.now() },
+                where: [{ field: "userId", value: userId }],
+              },
+            }
+        );
         return { message: 'Account details updated', error: false } as const;
     },
 });

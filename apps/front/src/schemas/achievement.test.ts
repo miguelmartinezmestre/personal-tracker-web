@@ -75,8 +75,17 @@ describe('achievementDefinitionSchema', () => {
 
     it('rejects missing required fields', () => {
         const requiredFields = [
-            '_id', 'code', 'type', 'category', 'tier',
-            'threshold', 'icon', 'points', 'isActive', 'createdAt', 'updatedAt'
+            '_id',
+            'code',
+            'type',
+            'category',
+            'tier',
+            'threshold',
+            'icon',
+            'points',
+            'isActive',
+            'createdAt',
+            'updatedAt',
         ];
 
         requiredFields.forEach(field => {

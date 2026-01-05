@@ -87,7 +87,7 @@ export function EditUserModal({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" data-testid="user-edit-open">
                     <Edit className="h-4 w-4" />
                 </Button>
             </DialogTrigger>

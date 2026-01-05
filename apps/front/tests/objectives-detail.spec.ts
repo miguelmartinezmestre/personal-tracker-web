@@ -40,9 +40,12 @@ test('objectives: navigate to objective detail page and verify content', async (
     await expect(page).toHaveURL(/\/dashboard\/objectives\/[^/]+$/);
 
     // Verify the page loaded correctly by checking for the heading
-    await expect(page.getByRole('heading', { name: /objectives/i })).toBeVisible({ timeout: 10000 });
+    await expect(
+        page.getByRole('heading', { name: /objective progress|progreso del objetivo/i })
+    ).toBeVisible({
+        timeout: 10000,
+    });
 
     // Screenshot: Objective detail page
     await takeScreenshot(page, 'objectives-detail', 'detail-page', uuid);
 });
-

@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import { takeScreenshot } from './test-helpers';
 
-test('objectives end-to-end: register, validate, create, progress, edit, delete', async ({ page }) => {
+test('objectives end-to-end: register, validate, create, progress, edit, delete', async ({
+    page,
+}) => {
     const uuid = randomUUID();
     const username = `usernametest-${uuid}`;
     const email = `useremail-${uuid}@useremail.com`;
@@ -44,10 +46,10 @@ test('objectives end-to-end: register, validate, create, progress, edit, delete'
     await page.getByTestId('objective-target-input').fill('10');
     await page.getByTestId('objective-unit-input').fill('eur');
     await page.getByTestId('objective-current-input').fill('1');
-    
+
     // Screenshot: Form filled before saving
     await takeScreenshot(page, 'objectives-end-to-end', 'create-form-filled');
-    
+
     // Leave deadline and status as default to reduce flakiness
     await page.getByTestId('objective-save-button').click();
 
@@ -79,7 +81,11 @@ test('objectives end-to-end: register, validate, create, progress, edit, delete'
     // Delete the objective (scoped to the edited row)
     row = page.locator('tr', { hasText: editedTitle }).first();
     await row.getByTestId('objective-delete-button').click();
-    await expect(page.getByText(editedTitle)).not.toBeVisible({ timeout: 5000 });
+    const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: /delete/i }).click();
+    await expect(deleteDialog).toBeHidden({ timeout: 10000 });
+    await expect(page.getByText(editedTitle)).not.toBeVisible({ timeout: 10000 });
 });
 
 test('objectives: validation for required fields', async ({ page }) => {
@@ -106,5 +112,3 @@ test('objectives: validation for required fields', async ({ page }) => {
     await expect(page.getByText('Title is required')).toBeVisible();
     await takeScreenshot(page, 'objectives-validation', 'validation-error-displayed');
 });
-
-

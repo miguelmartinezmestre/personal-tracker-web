@@ -61,14 +61,11 @@ describe('convex notifications', async () => {
 
     describe('createNotification', () => {
         test('creates notification successfully', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test notification message',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test notification message',
+            });
 
             expect(notification).toBeDefined();
             expect(notification?.message).toBe('Test notification message');
@@ -80,29 +77,23 @@ describe('convex notifications', async () => {
 
         test('creates notification with custom date', async () => {
             const customDate = Date.now() + DAY_MS;
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'deadline',
-                    message: 'Deadline approaching',
-                    notificationDate: customDate,
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'deadline',
+                message: 'Deadline approaching',
+                notificationDate: customDate,
+            });
 
             expect(notification?.notificationDate).toBe(customDate);
         });
 
         test('sets current date when notificationDate not provided', async () => {
             const before = Date.now();
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'progress',
-                    message: 'Progress update',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'progress',
+                message: 'Progress update',
+            });
             const after = Date.now();
 
             expect(notification?.notificationDate).toBeGreaterThanOrEqual(before);
@@ -187,15 +178,12 @@ describe('convex notifications', async () => {
             });
 
             // Create objective and notification for admin
-            const adminObjectiveId = await adminIdentity.mutation(
-                api.objectives.createObjective,
-                {
-                    title: 'Admin Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'in_progress',
-                }
-            );
+            const adminObjectiveId = await adminIdentity.mutation(api.objectives.createObjective, {
+                title: 'Admin Objective',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'in_progress',
+            });
             await adminIdentity.mutation(api.notifications.createNotification, {
                 objective: adminObjectiveId,
                 notificationType: 'reminder',
@@ -211,43 +199,34 @@ describe('convex notifications', async () => {
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(
-                t.query(api.notifications.getNotificationsByUser, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.notifications.getNotificationsByUser, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
     });
 
     describe('setNotificationRead', () => {
         test('marks notification as read', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test',
+            });
 
-            const updated = await userIdentity.mutation(
-                api.notifications.setNotificationRead,
-                {
-                    id: notification!._id,
-                    read: true,
-                }
-            );
+            const updated = await userIdentity.mutation(api.notifications.setNotificationRead, {
+                id: notification!._id,
+                read: true,
+            });
 
             expect(updated?.read).toBe(true);
         });
 
         test('marks notification as unread', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test',
+            });
 
             // First mark as read
             await userIdentity.mutation(api.notifications.setNotificationRead, {
@@ -256,49 +235,37 @@ describe('convex notifications', async () => {
             });
 
             // Then mark as unread
-            const updated = await userIdentity.mutation(
-                api.notifications.setNotificationRead,
-                {
-                    id: notification!._id,
-                    read: false,
-                }
-            );
+            const updated = await userIdentity.mutation(api.notifications.setNotificationRead, {
+                id: notification!._id,
+                read: false,
+            });
 
             expect(updated?.read).toBe(false);
         });
 
         test('updates updatedAt timestamp', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test',
+            });
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            const updated = await userIdentity.mutation(
-                api.notifications.setNotificationRead,
-                {
-                    id: notification!._id,
-                    read: true,
-                }
-            );
+            const updated = await userIdentity.mutation(api.notifications.setNotificationRead, {
+                id: notification!._id,
+                read: true,
+            });
 
             expect(updated?.updatedAt).toBeGreaterThan(notification!.updatedAt);
         });
 
         test('rejects unauthenticated users', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test',
+            });
 
             await expect(
                 t.mutation(api.notifications.setNotificationRead, {
@@ -343,14 +310,11 @@ describe('convex notifications', async () => {
         });
 
         test('returns zero when all notifications already read', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test',
+            });
 
             await userIdentity.mutation(api.notifications.setNotificationRead, {
                 id: notification!._id,
@@ -367,14 +331,11 @@ describe('convex notifications', async () => {
 
         test('only updates unread notifications', async () => {
             // Create one read and one unread notification
-            const read = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Read',
-                }
-            );
+            const read = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Read',
+            });
             await userIdentity.mutation(api.notifications.setNotificationRead, {
                 id: read!._id,
                 read: true,
@@ -403,37 +364,28 @@ describe('convex notifications', async () => {
 
     describe('deleteNotification', () => {
         test('deletes notification successfully', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'To Delete',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'To Delete',
+            });
 
-            const result = await userIdentity.mutation(
-                api.notifications.deleteNotification,
-                { id: notification!._id }
-            );
+            const result = await userIdentity.mutation(api.notifications.deleteNotification, {
+                id: notification!._id,
+            });
 
             expect(result).toBe('Notification deleted successfully');
 
-            const deleted = await userIdentity.run(async ctx =>
-                ctx.db.get(notification!._id)
-            );
+            const deleted = await userIdentity.run(async ctx => ctx.db.get(notification!._id));
             expect(deleted).toBeNull();
         });
 
         test('rejects unauthenticated users', async () => {
-            const notification = await userIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                }
-            );
+            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: 'Test',
+            });
 
             await expect(
                 t.mutation(api.notifications.deleteNotification, {

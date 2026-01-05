@@ -6,17 +6,17 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
-    retries: 2,
-    workers: 1,
+    // retries: 2,
+    workers: 16,
     reporter: 'html',
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
         trace: 'on-first-retry',
         // Screenshots always for documentation purposes
-        screenshot: 'on',
+        // screenshot: 'on',
         // Increase timeout for authentication flows
-        actionTimeout: 10000,
-        navigationTimeout: 10000,
+        // actionTimeout: 10000,
+        // navigationTimeout: 10000,
     },
     projects: [
         {

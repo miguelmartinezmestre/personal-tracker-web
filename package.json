@@ -7,23 +7,28 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test": "turbo run test",
+    "test": "turbo run test --ui=stream",
     "clean": "turbo run clean && node scripts/clean.mjs node_modules .next .turbo",
     "gen:typescript-package": "turbo gen typescript-package",
     "gen": "turbo gen",
     "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
+    "create-user": "tsx scripts/create-user.ts",
     "test-vitest": "vitest",
     "test:once": "vitest run",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:coverage": "vitest run --coverage --coverage.reporter=text"
+    "test:coverage": "vitest run --coverage --coverage.reporter=text",
+    "knip": "knip"
   },
   "devDependencies": {
+    "@types/node": "^24.10.2",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.15",
     "dotenv": "17.2.3",
     "jose": "6.1.0",
+    "knip": "^5.79.0",
     "prettier": "^3.7.4",
     "rimraf": "^6.1.2",
+    "tsx": "^4.21.0",
     "turbo": "^2.6.3",
     "typescript": "5.9.3",
     "vitest": "^4.0.15"
@@ -38,6 +43,15 @@
       "js-yaml": "^4.1.1",
       "tmp": ">=0.2.4",
       "rimraf": "^6.1.2"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "@tailwindcss/oxide",
+      "core-js-pure",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

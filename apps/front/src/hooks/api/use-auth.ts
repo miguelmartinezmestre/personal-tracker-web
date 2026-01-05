@@ -19,5 +19,6 @@ export function useCurrentUser(skip?: boolean) {
  * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useIsAuthenticated() {
-    return useQuery(convexQuery(api.auth.isAuthenticated, {}));
+    const query = useQuery(convexQuery(api.auth.isAuthenticated, {}));
+    return query.data ?? false;
 }

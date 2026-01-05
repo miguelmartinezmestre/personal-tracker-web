@@ -16,4 +16,3 @@ export const resetPasswordSchema = z
         }
     });
 
-export type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;

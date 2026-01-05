@@ -1,17 +1,14 @@
-'use client';
-import { ConvexQueryClient } from '@convex-dev/react-query';
-import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConvexReactClient } from 'convex/react';
-import { ReactNode } from 'react';
-import { toast } from 'sonner';
-import { authClient } from '@/lib/auth-client';
-import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
+"use client";
 
-if (!process.env.NEXT_PUBLIC_CONVEX_URL) {
-    throw new Error('NEXT_PUBLIC_CONVEX_URL is not set');
-}
+import { ReactNode } from "react";
+import { ConvexReactClient } from "convex/react";
+import { authClient } from "@/lib/auth-client";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ConvexQueryClient } from "@convex-dev/react-query";
+import { toast } from "sonner";
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL);
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 const convexQueryClient = new ConvexQueryClient(convex);
 const queryClient = new QueryClient({
@@ -29,10 +26,22 @@ const queryClient = new QueryClient({
 });
 convexQueryClient.connect(queryClient);
 
-export default function ConvexClientProvider({ children }: { children: ReactNode }) {
-    return (
-        <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        </ConvexBetterAuthProvider>
-    );
+export function ConvexClientProvider({
+  children,
+  initialToken,
+}: {
+  children: ReactNode;
+  initialToken?: string | null;
+}) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ConvexBetterAuthProvider
+        client={convex}
+        authClient={authClient}
+        initialToken={initialToken}
+      >
+        {children}
+      </ConvexBetterAuthProvider>
+    </QueryClientProvider>
+  );
 }

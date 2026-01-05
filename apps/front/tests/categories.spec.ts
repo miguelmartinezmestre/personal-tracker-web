@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createTestUser, takeScreenshot } from './test-helpers';
+import { randomUUID } from 'crypto';
 
 test.describe('Categories Management', () => {
     test('categories are accessible from objectives page', async ({ page }) => {
@@ -7,40 +8,45 @@ test.describe('Categories Management', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
-        await takeScreenshot(page, 'categories-access', 'objectives-page');
+        // Open create objective dialog
+        const createButton = page.getByTestId('objective-create-open');
+        await expect(createButton).toBeVisible();
+        await createButton.click();
+        await page.waitForLoadState('networkidle');
 
-        // Look for category selection in objective creation
-        const createButton = page.getByRole('button', { name: /create|new|add|crear/i }).first();
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.waitForLoadState('networkidle');
-            await takeScreenshot(page, 'categories-access', 'create-objective-form');
-
-            // Look for category field
-            const categoryField = page.getByRole('combobox', { name: /category|categoría/i });
-            if (await categoryField.isVisible()) {
-                await categoryField.click();
-                await takeScreenshot(page, 'categories-access', 'category-dropdown');
-            }
-        }
+        // Category field should be visible
+        const categoryField = page.getByTestId('objective-category-select');
+        await expect(categoryField).toBeVisible();
     });
 
     test('can select category when creating objective', async ({ page }) => {
+        const uuid = randomUUID();
+        const objectiveTitle = `category-test-${uuid}`;
+
         await createTestUser(page);
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
-        const createButton = page.getByRole('button', { name: /create|new|add|crear/i }).first();
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.waitForLoadState('networkidle');
+        // Open create dialog
+        await page.getByTestId('objective-create-open').click();
+        await page.waitForLoadState('networkidle');
 
-            // Look for category select/combobox
-            const categorySelect = page.locator('[name="category"], [data-testid="category-select"]');
-            if (await categorySelect.first().isVisible()) {
-                await takeScreenshot(page, 'categories-select', 'category-field');
-            }
-        }
+        // Fill in objective details with a specific category
+        await page.getByTestId('objective-title-input').fill(objectiveTitle);
+        await page.getByTestId('objective-description-input').fill('Test category assignment');
+        await page.getByTestId('objective-category-select').click();
+        await page.getByRole('option', { name: /personal/i }).click();
+        await page.getByTestId('objective-target-input').fill('100');
+        await page.getByTestId('objective-unit-input').fill('units');
+        await page.getByTestId('objective-current-input').fill('0');
+        await page.getByTestId('objective-save-button').click();
+
+        // Verify objective was created
+        await expect(page.getByText(objectiveTitle)).toBeVisible({ timeout: 10000 });
+
+        // Verify the category appears in the objectives table
+        const row = page.locator('tr', { hasText: objectiveTitle }).first();
+        await expect(row).toContainText(/personal/i);
     });
 
     test('default categories are available for new users', async ({ page }) => {
@@ -48,35 +54,146 @@ test.describe('Categories Management', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
-        const createButton = page.getByRole('button', { name: /create|new|add|crear/i }).first();
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.waitForLoadState('networkidle');
+        // Open create dialog
+        await page.getByTestId('objective-create-open').click();
+        await page.waitForLoadState('networkidle');
 
-            // Look for category dropdown options
-            const categoryField = page.locator('[name="category"]').first();
-            if (await categoryField.isVisible()) {
-                await categoryField.click();
-                await page.waitForTimeout(500);
-                await takeScreenshot(page, 'categories-default', 'default-options');
-            }
+        // Open category dropdown
+        const categorySelect = page.getByTestId('objective-category-select');
+        await categorySelect.click();
+
+        // Verify default categories exist (Personal, Work, Health, etc.)
+        await expect(page.getByRole('option', { name: /personal/i })).toBeVisible();
+
+        // Verify we can select a category
+        await page.getByRole('option', { name: /personal/i }).click();
+
+        // Category should be selected
+        await expect(categorySelect).toContainText(/personal/i);
+    });
+
+    test('category persists after objective creation and reload', async ({ page }) => {
+        const uuid = randomUUID();
+        const objectiveTitle = `category-persist-${uuid}`;
+
+        await createTestUser(page);
+        await page.goto('/dashboard/objectives');
+
+        // Create objective with specific category
+        await page.getByTestId('objective-create-open').click();
+        await page.getByTestId('objective-title-input').fill(objectiveTitle);
+        await page.getByTestId('objective-description-input').fill('Testing category persistence');
+        await page.getByTestId('objective-category-select').click();
+        await page.getByRole('option', { name: /personal/i }).click();
+        await page.getByTestId('objective-target-input').fill('100');
+        await page.getByTestId('objective-unit-input').fill('units');
+        await page.getByTestId('objective-current-input').fill('0');
+        await page.getByTestId('objective-save-button').click();
+
+        await expect(page.getByText(objectiveTitle)).toBeVisible({ timeout: 10000 });
+
+        // Reload page
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+
+        // Category should still be visible
+        const row = page.locator('tr', { hasText: objectiveTitle }).first();
+        await expect(row).toContainText(/personal/i);
+    });
+
+    test('can create objectives with different categories', async ({ page }) => {
+        const uuid = randomUUID();
+
+        await createTestUser(page);
+        await page.goto('/dashboard/objectives');
+
+        // Create first objective with Personal category
+        await page.getByTestId('objective-create-open').click();
+        await page.getByTestId('objective-title-input').fill(`personal-obj-${uuid}`);
+        await page.getByTestId('objective-description-input').fill('Personal category test');
+        await page.getByTestId('objective-category-select').click();
+        await page.getByRole('option', { name: /personal/i }).click();
+        await page.getByTestId('objective-target-input').fill('100');
+        await page.getByTestId('objective-unit-input').fill('units');
+        await page.getByTestId('objective-current-input').fill('0');
+        await page.getByTestId('objective-save-button').click();
+        await expect(page.getByText(`personal-obj-${uuid}`)).toBeVisible({ timeout: 10000 });
+
+        // Create second objective with different category (if Work exists)
+        await page.getByTestId('objective-create-open').click();
+        await page.getByTestId('objective-title-input').fill(`work-obj-${uuid}`);
+        await page.getByTestId('objective-description-input').fill('Work category test');
+        await page.getByTestId('objective-category-select').click();
+
+        // Try to select Work category if available, otherwise skip
+        const workOption = page.getByRole('option', { name: /work|trabajo/i });
+        const workExists = await workOption.count();
+
+        if (workExists > 0) {
+            await workOption.click();
+            await page.getByTestId('objective-target-input').fill('100');
+            await page.getByTestId('objective-unit-input').fill('units');
+            await page.getByTestId('objective-current-input').fill('0');
+            await page.getByTestId('objective-save-button').click();
+            await expect(page.getByText(`work-obj-${uuid}`)).toBeVisible({ timeout: 10000 });
+
+            // Verify both objectives with different categories exist
+            const personalRow = page.locator('tr', { hasText: `personal-obj-${uuid}` }).first();
+            const workRow = page.locator('tr', { hasText: `work-obj-${uuid}` }).first();
+
+            await expect(personalRow).toContainText(/personal/i);
+            await expect(workRow).toContainText(/work|trabajo/i);
+        } else {
+            // Close dialog if Work category doesn't exist
+            await page.getByTestId('objective-cancel-button').click();
         }
+    });
+
+    test('category is required can be empty for objective creation', async ({ page }) => {
+        const uuid = randomUUID();
+        const objectiveTitle = `no-category-${uuid}`;
+
+        await createTestUser(page);
+        await page.goto('/dashboard/objectives');
+
+        // Create objective without selecting a category
+        await page.getByTestId('objective-create-open').click();
+        await page.getByTestId('objective-title-input').fill(objectiveTitle);
+        await page.getByTestId('objective-description-input').fill('No category test');
+        // Skip category selection
+        await page.getByTestId('objective-target-input').fill('100');
+        await page.getByTestId('objective-unit-input').fill('units');
+        await page.getByTestId('objective-current-input').fill('0');
+        await page.getByTestId('objective-save-button').click();
+
+        // Should still create successfully (category is optional)
+        await expect(page.getByText(objectiveTitle)).toBeVisible({ timeout: 10000 });
     });
 });
 
 test.describe('Category Filtering', () => {
-    test('can filter objectives by category', async ({ page }) => {
+    test('objectives list displays with categories', async ({ page }) => {
+        const uuid = randomUUID();
+        const objectiveTitle = `filter-test-${uuid}`;
+
         await createTestUser(page);
         await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
 
-        await takeScreenshot(page, 'categories-filter', 'objectives-list');
+        // Create an objective with a category
+        await page.getByTestId('objective-create-open').click();
+        await page.getByTestId('objective-title-input').fill(objectiveTitle);
+        await page.getByTestId('objective-description-input').fill('Category filter test');
+        await page.getByTestId('objective-category-select').click();
+        await page.getByRole('option', { name: /personal/i }).click();
+        await page.getByTestId('objective-target-input').fill('100');
+        await page.getByTestId('objective-unit-input').fill('units');
+        await page.getByTestId('objective-current-input').fill('0');
+        await page.getByTestId('objective-save-button').click();
 
-        // Look for category filter
-        const filterButton = page.getByRole('button', { name: /filter|filtrar/i });
-        if (await filterButton.isVisible()) {
-            await filterButton.click();
-            await takeScreenshot(page, 'categories-filter', 'filter-open');
-        }
+        await expect(page.getByText(objectiveTitle)).toBeVisible({ timeout: 10000 });
+
+        // Verify the category is displayed in the list
+        const row = page.locator('tr', { hasText: objectiveTitle }).first();
+        await expect(row).toContainText(/personal/i);
     });
 });

@@ -1,7 +1,8 @@
 import { v } from 'convex/values';
 import { Id } from './_generated/dataModel';
 import { query, mutation, QueryCtx, MutationCtx } from './_generated/server';
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
+import { components } from './_generated/api';
 
 // ============================================================================
 // RECURSOS Y ACCIONES
@@ -132,9 +133,9 @@ export function matchesPermission(pattern: string, permission: string): boolean 
  * - Para recursos de equipo: verifica rol en el equipo (independiente del rol global)
  */
 export async function checkPermission(
-    ctx: { db: QueryCtx['db']; auth: QueryCtx['auth'] },
+    ctx: { db: QueryCtx['db']; auth: QueryCtx['auth']; runQuery: QueryCtx['runQuery'] },
     permission: Permission,
-    options?: { teamId?: Id<'organization'> }
+    options?: { teamId?: string }
 ): Promise<boolean> {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return false;
@@ -152,11 +153,14 @@ export async function checkPermission(
 
         // organizationId se guarda como string en la tabla member
         const teamIdString = String(options.teamId);
-        const member = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', teamIdString))
-            .filter(q => q.eq(q.field('userId'), userId))
-            .first();
+
+        const member = (await ctx.runQuery(
+            components.betterAuth.adapter.findOne,
+            {
+              model: "member",
+              where: [{ field: "organizationId", value: teamIdString }, { field: "userId", value: userId }],
+            }
+        )) as BetterAuthDataModel["member"]["document"] | null;
 
         if (!member) return false;
 
@@ -302,11 +306,13 @@ export const getTeamRole = queryWithRLS({
 
         // organizationId se guarda como string en la tabla member
         const teamIdString = String(args.teamId);
-        const member = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', teamIdString))
-            .filter(q => q.eq(q.field('userId'), userId))
-            .first();
+        const member = (await ctx.runQuery(
+                components.betterAuth.adapter.findOne,
+                {
+                  model: "member",
+                  where: [{ field: "organizationId", value: teamIdString }, { field: "userId", value: userId }],
+                }
+            )) as BetterAuthDataModel["member"]["document"] | null;
 
         if (!member) return null;
 

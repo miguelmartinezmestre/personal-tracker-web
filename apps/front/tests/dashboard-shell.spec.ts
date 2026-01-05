@@ -17,11 +17,43 @@ test('dashboard shell: theme switcher toggles theme', async ({ page }) => {
 test('dashboard shell: command menu navigates to objectives', async ({ page }) => {
     await createTestUser(page);
 
-    await page.keyboard.press('Control+K');
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByPlaceholder(/search commands/i)).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    const input = page.getByPlaceholder(/search commands/i);
+    const dialog = page.locator('[data-slot="dialog-content"]');
 
+    const openWithDispatch = async () => {
+        await page.evaluate(() => {
+            document.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    key: 'k',
+                    code: 'KeyK',
+                    ctrlKey: true,
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true,
+                })
+            );
+        });
+    };
+
+    const tryOpen = async () => {
+        await openWithDispatch();
+        try {
+            await expect(input).toBeVisible({ timeout: 2000 });
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
+    if (!(await tryOpen())) {
+        await page.click('body');
+        await page.keyboard.press('Control+K');
+        await expect(input).toBeVisible({ timeout: 5000 });
+    }
+
+    await expect(dialog).toBeVisible();
+    await input.fill('objectives');
     await dialog.getByRole('option', { name: /objectives/i }).click();
     await expect(page).toHaveURL(/\/dashboard\/objectives$/);
 });

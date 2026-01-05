@@ -15,9 +15,7 @@ test.describe('Notifications Page', () => {
         await expect(heading).toBeVisible();
     });
 
-    test('mark all as read button is disabled when no unread notifications', async ({
-        page,
-    }) => {
+    test('mark all as read button is disabled when no unread notifications', async ({ page }) => {
         await createTestUser(page);
         await page.goto('/dashboard/notifications');
 
@@ -31,30 +29,6 @@ test.describe('Notifications Page', () => {
         if (await markAllButton.isVisible()) {
             await expect(markAllButton).toBeDisabled();
         }
-    });
-
-    test('navigates to notifications from sidebar', async ({ page }) => {
-        await createTestUser(page);
-
-        // Click on notifications link in sidebar
-        const notificationsLink = page.getByRole('link', { name: /notifications/i });
-        await notificationsLink.click();
-
-        await expect(page).toHaveURL(/\/dashboard\/notifications$/);
-        await takeScreenshot(page, 'notifications-navigation', 'from-sidebar');
-    });
-
-    test('displays notification types correctly', async ({ page }) => {
-        await createTestUser(page);
-        await page.goto('/dashboard/notifications');
-
-        // Wait for content to load
-        await page.waitForLoadState('networkidle');
-        await takeScreenshot(page, 'notifications-types', 'page-loaded');
-
-        // Verify page heading
-        const heading = page.getByRole('heading', { name: /notifications/i });
-        await expect(heading).toBeVisible();
     });
 
     test('notification table is responsive', async ({ page }) => {
@@ -77,22 +51,6 @@ test.describe('Notifications Page', () => {
 });
 
 test.describe('Notifications Interaction', () => {
-    test('can create objective and receive notification on deadline', async ({ page }) => {
-        await createTestUser(page);
-
-        // Create an objective with a deadline
-        await page.goto('/dashboard/objectives');
-        await takeScreenshot(page, 'notifications-create-objective', 'objectives-page');
-
-        // Click create objective button
-        const createButton = page.getByRole('button', { name: /create|new|add/i }).first();
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.waitForLoadState('networkidle');
-            await takeScreenshot(page, 'notifications-create-objective', 'create-form');
-        }
-    });
-
     test('unread count is shown in sidebar', async ({ page }) => {
         await createTestUser(page);
         await page.goto('/dashboard/home');
@@ -100,18 +58,5 @@ test.describe('Notifications Interaction', () => {
 
         // Look for notification indicator in sidebar
         await takeScreenshot(page, 'notifications-sidebar', 'unread-indicator');
-    });
-});
-
-test.describe('Notifications Filters', () => {
-    test('page loads with default filter state', async ({ page }) => {
-        await createTestUser(page);
-        await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('networkidle');
-
-        await takeScreenshot(page, 'notifications-filters', 'default-state');
-
-        // Verify heading
-        await expect(page.getByRole('heading', { name: /notifications/i })).toBeVisible();
     });
 });

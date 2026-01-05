@@ -1,11 +1,5 @@
 import { z } from 'zod';
 
-export const updateProgressBeforeCreateSchema = z.object({
-    updatedValue: z.number().positive({ message: 'Updated value must be greater than 0' }),
-    updateDate: z.date().describe('label:updateDate'),
-    comment: z.string().nullable().describe('label:comment'),
-});
-
 export const updateProgressSchema = z.object({
     id: z.number().optional(),
     objectiveId: z.number().optional(),
@@ -22,4 +16,3 @@ export const savedUpdateProgressSchema = updateProgressSchema.extend({
 
 export type UpdateProgress = z.infer<typeof savedUpdateProgressSchema>;
 export type CreateUpdateProgress = z.infer<typeof updateProgressSchema>;
-export type CreateUpdateProgressBeforeCreate = z.infer<typeof updateProgressBeforeCreateSchema>;

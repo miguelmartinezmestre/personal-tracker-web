@@ -49,8 +49,9 @@ test.describe('Achievements', () => {
     test('achievements link in sidebar navigates correctly', async ({ page }) => {
         await createTestUser(page);
 
-        // Click on achievements in sidebar
-        const sidebarLink = page.locator('a[href="/dashboard/achievements"]');
+        // Click on achievements in sidebar - use data-slot to identify sidebar link specifically
+        // This avoids matching the "View All" button which also links to achievements
+        const sidebarLink = page.locator('a[href="/dashboard/achievements"][data-slot="sidebar-menu-button"]');
         await expect(sidebarLink).toBeVisible();
         await sidebarLink.click();
 
@@ -108,14 +109,24 @@ test.describe('Achievements', () => {
             await takeScreenshot(page, 'achievements', 'before-initialize');
             await initButton.click();
 
-            // Wait for the seeding to complete
-            await page.waitForTimeout(2000);
+            // Wait for the button to show "Seeding..." and then disappear
+            await expect(initButton).toHaveText(/seeding/i, { timeout: 5000 }).catch(() => {});
+            
+            // Wait for the seeding to complete and button to disappear
+            await expect(initButton).not.toBeVisible({ timeout: 10000 });
+            
+            // Wait for network to be idle and data to load
             await page.waitForLoadState('networkidle');
+            
+            // Wait a bit more for React Query to refetch and render
+            await page.waitForTimeout(1000);
 
             await takeScreenshot(page, 'achievements', 'after-initialize');
 
             // Verify achievements grid is now visible
-            await expect(page.getByTestId('achievements-grid-individual')).toBeVisible({ timeout: 5000 });
+            await expect(page.getByTestId('achievements-grid-individual')).toBeVisible({
+                timeout: 10000,
+            });
         }
     });
 
@@ -178,11 +189,10 @@ test.describe('Achievements - Earning Flow', () => {
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
 
-        const initButton = page.getByRole('button', { name: /initialize/i });
-        if (await initButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-            await initButton.click();
-            await page.waitForTimeout(2000);
-        }
+        const initButton = page.getByTestId('achievements-seed-button');
+        await expect(initButton).toBeVisible();
+        await initButton.click();
+        await expect(initButton).not.toBeVisible({ timeout: 15000 });
 
         // Navigate to objectives and create one
         await page.goto('/dashboard/objectives');
@@ -210,6 +220,14 @@ test.describe('Achievements - Earning Flow', () => {
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
+
+        const firstObjectiveCard = page.getByTestId('achievement-card-first_objective');
+        await expect(firstObjectiveCard).toBeVisible({ timeout: 10000 });
+        await expect(firstObjectiveCard).toContainText(/earned|ganad|conseguid|obtenid/i);
+
+        const earnedCountText = await page.getByTestId('achievements-earned-count').innerText();
+        const earnedCount = Number.parseInt(earnedCountText, 10);
+        expect(earnedCount).toBeGreaterThan(0);
 
         await takeScreenshot(page, 'achievements', 'after-first-objective-achievement');
     });

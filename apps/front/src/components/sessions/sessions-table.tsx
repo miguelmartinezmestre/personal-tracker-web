@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
+import { BetterAuthDataModel } from '@repo/backend/convex/rls';
 
 export default function SessionsTable() {
     const t = useTranslations('Sessions');
@@ -19,7 +20,7 @@ export default function SessionsTable() {
     });
     const _router = useRouter();
 
-    const columns: ColumnDef<Doc<'session'>>[] = [
+    const columns: ColumnDef<BetterAuthDataModel['session']['document']>[] = [
         {
             accessorKey: 'userAgent',
             header: t('device'),

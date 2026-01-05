@@ -1,224 +1,117 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect, type Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
 
-test('search and filtering: objectives search', async ({ page }) => {
-    // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
+async function registerUser(page: Page, uuid: string) {
     await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
+    await page.getByTestId('register-username-input').fill(`usernametest-${uuid}`);
+    await page.getByTestId('register-email-input').fill(`useremail-${uuid}@useremail.com`);
     await page.getByTestId('register-password-input').fill('12345678');
     await page.getByTestId('register-confirm-password-input').fill('12345678');
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
+}
 
-    // Navigate to objectives
-    await page.goto('/dashboard/objectives');
-
-    // Create a test objective
-    const objectiveTitle = `testobjective-${uuid}`;
+async function createObjective(
+    page: Page,
+    title: string,
+    statusLabel: RegExp,
+    currentValue: string = '5'
+) {
     await page.getByTestId('objective-create-open').click();
-    await page.getByTestId('objective-title-input').fill(objectiveTitle);
-    await page.getByTestId('objective-description-input').fill('Test description');
+    await page.getByTestId('objective-title-input').fill(title);
+    await page.getByTestId('objective-description-input').fill(`desc-${title}`);
     await page.getByTestId('objective-category-select').click();
-    await page.getByRole('option', { name: 'Personal' }).click();
+    await page.getByRole('option', { name: /personal/i }).click();
     await page.getByTestId('objective-target-input').fill('10');
     await page.getByTestId('objective-unit-input').fill('units');
-    await page.getByTestId('objective-current-input').fill('1');
+    await page.getByTestId('objective-current-input').fill(currentValue);
+
+    await page.getByTestId('objective-status-select').click();
+    await page.getByRole('option', { name: statusLabel }).click();
+
     await page.getByTestId('objective-save-button').click();
-    await expect(page.getByText(objectiveTitle)).toBeVisible();
+    await expect(page.getByText(title)).toBeVisible({ timeout: 10000 });
+}
 
-    // Test search functionality
-    const searchInput = page.getByTestId('objectives-search-input');
-    if (await searchInput.isVisible()) {
-        // Search for the created objective
-        await searchInput.fill(objectiveTitle);
-        await page.waitForTimeout(500);
-
-        // Should still show the objective
-        await expect(page.getByText(objectiveTitle)).toBeVisible();
-
-        // Search for something else
-        await searchInput.fill('nonexistent');
-        await page.waitForTimeout(500);
-
-        // Should not show the objective
-        await expect(page.getByText(objectiveTitle)).not.toBeVisible();
-
-        // Clear search
-        await searchInput.clear();
-        await page.waitForTimeout(500);
-
-        // Should show the objective again
-        await expect(page.getByText(objectiveTitle)).toBeVisible();
-    }
-});
-
-test('search and filtering: objectives category filter', async ({ page }) => {
-    // Register and login
+test('search and filtering: global search filters objectives', async ({ page }) => {
     const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
+    await registerUser(page, uuid);
 
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
-
-    // Navigate to objectives
     await page.goto('/dashboard/objectives');
 
-    // Create a test objective with Personal category
-    const objectiveTitle = `testobjective-${uuid}`;
-    await page.getByTestId('objective-create-open').click();
-    await page.getByTestId('objective-title-input').fill(objectiveTitle);
-    await page.getByTestId('objective-description-input').fill('Test description');
-    await page.getByTestId('objective-category-select').click();
-    await page.getByRole('option', { name: 'Personal' }).click();
-    await page.getByTestId('objective-target-input').fill('10');
-    await page.getByTestId('objective-unit-input').fill('units');
-    await page.getByTestId('objective-current-input').fill('1');
-    await page.getByTestId('objective-save-button').click();
-    await expect(page.getByText(objectiveTitle)).toBeVisible();
-
-    // Test category filter
-    const categoryFilter = page.getByTestId('objectives-category-filter');
-    if (await categoryFilter.isVisible()) {
-        // Filter by Personal category
-        await categoryFilter.click();
-        await page.getByRole('option', { name: 'Personal' }).click();
-        await page.waitForTimeout(500);
-
-        // Should still show the objective
-        await expect(page.getByText(objectiveTitle)).toBeVisible();
-
-        // Filter by different category
-        await categoryFilter.click();
-        await page.getByRole('option', { name: 'Work' }).click();
-        await page.waitForTimeout(500);
-
-        // Should not show the objective
-        await expect(page.getByText(objectiveTitle)).not.toBeVisible();
-    }
-});
-
-test('search and filtering: objectives status filter', async ({ page }) => {
-    // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
-
-    // Navigate to objectives
-    await page.goto('/dashboard/objectives');
-
-    // Create a test objective
-    const objectiveTitle = `testobjective-${uuid}`;
-    await page.getByTestId('objective-create-open').click();
-    await page.getByTestId('objective-title-input').fill(objectiveTitle);
-    await page.getByTestId('objective-description-input').fill('Test description');
-    await page.getByTestId('objective-category-select').click();
-    await page.getByRole('option', { name: 'Personal' }).click();
-    await page.getByTestId('objective-target-input').fill('10');
-    await page.getByTestId('objective-unit-input').fill('units');
-    await page.getByTestId('objective-current-input').fill('1');
-    await page.getByTestId('objective-save-button').click();
-    await expect(page.getByText(objectiveTitle)).toBeVisible();
-
-    // Test status filter
-    const statusFilter = page.getByTestId('objectives-status-filter');
-    if (await statusFilter.isVisible()) {
-        // Filter by Not Started status
-        await statusFilter.click();
-        await page.getByRole('option', { name: 'Not Started' }).click();
-        await page.waitForTimeout(500);
-
-        // Should still show the objective
-        await expect(page.getByText(objectiveTitle)).toBeVisible();
-
-        // Filter by Completed status
-        await statusFilter.click();
-        await page.getByRole('option', { name: 'Completed' }).click();
-        await page.waitForTimeout(500);
-
-        // Should not show the objective
-        await expect(page.getByText(objectiveTitle)).not.toBeVisible();
-    }
-});
-
-test('search and filtering: table sorting', async ({ page }) => {
-    // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
-
-    // Navigate to objectives
-    await page.goto('/dashboard/objectives');
-
-    // Create multiple objectives for sorting test
     const firstObjective = `aaa-${uuid}`;
     const secondObjective = `zzz-${uuid}`;
 
-    // Create first objective
-    await page.getByTestId('objective-create-open').click();
-    await page.getByTestId('objective-title-input').fill(firstObjective);
-    await page.getByTestId('objective-description-input').fill('First objective');
-    await page.getByTestId('objective-category-select').click();
-    await page.getByRole('option', { name: 'Personal' }).click();
-    await page.getByTestId('objective-target-input').fill('10');
-    await page.getByTestId('objective-unit-input').fill('units');
-    await page.getByTestId('objective-current-input').fill('1');
-    await page.getByTestId('objective-save-button').click();
+    await createObjective(page, firstObjective, /completed|completad[oa]/i, '2');
+    await createObjective(page, secondObjective, /not started|no iniciado|no empezad[oa]/i, '9');
+
+    const searchInput = page.getByTestId('objectives-search-input');
+    await expect(searchInput).toBeVisible();
+
+    await searchInput.fill(firstObjective);
     await expect(page.getByText(firstObjective)).toBeVisible();
+    await expect(page.getByText(secondObjective)).not.toBeVisible();
 
-    // Create second objective
-    await page.getByTestId('objective-create-open').click();
-    await page.getByTestId('objective-title-input').fill(secondObjective);
-    await page.getByTestId('objective-description-input').fill('Second objective');
-    await page.getByTestId('objective-category-select').click();
-    await page.getByRole('option', { name: 'Personal' }).click();
-    await page.getByTestId('objective-target-input').fill('10');
-    await page.getByTestId('objective-unit-input').fill('units');
-    await page.getByTestId('objective-current-input').fill('1');
-    await page.getByTestId('objective-save-button').click();
+    await searchInput.fill(secondObjective);
     await expect(page.getByText(secondObjective)).toBeVisible();
+    await expect(page.getByText(firstObjective)).not.toBeVisible();
 
-    // Test sorting by title
+    await searchInput.clear();
+    await expect(page.getByText(firstObjective)).toBeVisible();
+    await expect(page.getByText(secondObjective)).toBeVisible();
+});
+
+test('search and filtering: status column filter narrows results', async ({ page }) => {
+    const uuid = randomUUID();
+    await registerUser(page, uuid);
+
+    await page.goto('/dashboard/objectives');
+
+    const completedObjective = `completed-${uuid}`;
+    const pendingObjective = `pending-${uuid}`;
+
+    await createObjective(page, completedObjective, /completed|completad[oa]/i, '7');
+    await createObjective(page, pendingObjective, /not started|no iniciado|no empezad[oa]/i, '1');
+
+    const statusFilter = page.getByTestId('objectives-status-filter');
+    await statusFilter.click();
+    await page.getByTestId('objectives-status-completed').click();
+
+    await expect(page.getByText(completedObjective)).toBeVisible();
+    await expect(page.getByText(pendingObjective)).not.toBeVisible();
+});
+
+test('search and filtering: table sorting by title and progress', async ({ page }) => {
+    const uuid = randomUUID();
+    await registerUser(page, uuid);
+
+    await page.goto('/dashboard/objectives');
+
+    const firstObjective = `aaa-${uuid}`;
+    const secondObjective = `zzz-${uuid}`;
+
+    await createObjective(page, firstObjective, /completed|completad[oa]/i, '1');
+    await createObjective(page, secondObjective, /not started|no iniciado|no empezad[oa]/i, '9');
+
     const titleSort = page.getByTestId('table-sort-title');
-    if (await titleSort.isVisible()) {
-        await titleSort.click();
-        await page.waitForTimeout(500);
+    await titleSort.click();
 
-        // Verify sorting works (aaa should come before zzz in ascending order)
-        const firstElement = page.locator('tr').filter({ hasText: firstObjective }).first();
-        const secondElement = page.locator('tr').filter({ hasText: secondObjective }).first();
+    const firstRow = page.locator('tr', { hasText: firstObjective }).first();
+    const secondRow = page.locator('tr', { hasText: secondObjective }).first();
 
-        const firstBoundingBox = await firstElement.boundingBox();
-        const secondBoundingBox = await secondElement.boundingBox();
+    const firstBox = await firstRow.boundingBox();
+    const secondBox = await secondRow.boundingBox();
+    if (firstBox && secondBox) {
+        expect(firstBox.y).toBeLessThan(secondBox.y);
+    }
 
-        if (firstBoundingBox && secondBoundingBox) {
-            expect(firstBoundingBox.y).toBeLessThan(secondBoundingBox.y);
-        }
+    const progressSort = page.getByTestId('table-sort-progress');
+    await progressSort.click();
+    await progressSort.click();
+
+    const firstAfterSort = await firstRow.boundingBox();
+    const secondAfterSort = await secondRow.boundingBox();
+    if (firstAfterSort && secondAfterSort) {
+        expect(secondAfterSort.y).toBeLessThan(firstAfterSort.y);
     }
 });

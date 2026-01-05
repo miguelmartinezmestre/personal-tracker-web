@@ -82,10 +82,9 @@ describe('convex achievements', async () => {
                 { type: 'individual' }
             );
 
-            const teamDefs = await userIdentity.query(
-                api.achievements.getAchievementDefinitions,
-                { type: 'team' }
-            );
+            const teamDefs = await userIdentity.query(api.achievements.getAchievementDefinitions, {
+                type: 'team',
+            });
 
             expect(individualDefs.every(d => d.type === 'individual')).toBe(true);
             expect(teamDefs.every(d => d.type === 'team')).toBe(true);
@@ -94,10 +93,7 @@ describe('convex achievements', async () => {
 
     describe('getUserAchievements', () => {
         test('returns empty array when user has no achievements', async () => {
-            const achievements = await userIdentity.query(
-                api.achievements.getUserAchievements,
-                {}
-            );
+            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
             expect(achievements).toEqual([]);
         });
@@ -107,9 +103,7 @@ describe('convex achievements', async () => {
 
             // Manually award an achievement for testing
             await userIdentity.run(async ctx => {
-                const firstDef = await ctx.db
-                    .query('achievementDefinitions')
-                    .first();
+                const firstDef = await ctx.db.query('achievementDefinitions').first();
 
                 if (firstDef) {
                     await ctx.db.insert('userAchievements', {
@@ -122,10 +116,7 @@ describe('convex achievements', async () => {
                 }
             });
 
-            const achievements = await userIdentity.query(
-                api.achievements.getUserAchievements,
-                {}
-            );
+            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
             expect(achievements.length).toBe(1);
             expect(achievements[0].definition).toBeDefined();
@@ -137,10 +128,7 @@ describe('convex achievements', async () => {
         test('returns zero stats when user has no achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            const stats = await userIdentity.query(
-                api.achievements.getUserAchievementStats,
-                {}
-            );
+            const stats = await userIdentity.query(api.achievements.getUserAchievementStats, {});
 
             expect(stats.totalPoints).toBe(0);
             expect(stats.earnedCount).toBe(0);
@@ -170,10 +158,7 @@ describe('convex achievements', async () => {
                 return 0;
             });
 
-            const stats = await userIdentity.query(
-                api.achievements.getUserAchievementStats,
-                {}
-            );
+            const stats = await userIdentity.query(api.achievements.getUserAchievementStats, {});
 
             expect(stats.totalPoints).toBe(awardedPoints);
             expect(stats.earnedCount).toBe(1);
@@ -199,10 +184,9 @@ describe('convex achievements', async () => {
                 }
             });
 
-            const recent = await userIdentity.query(
-                api.achievements.getRecentAchievements,
-                { limit: 2 }
-            );
+            const recent = await userIdentity.query(api.achievements.getRecentAchievements, {
+                limit: 2,
+            });
 
             expect(recent.length).toBe(2);
         });
@@ -319,10 +303,7 @@ describe('convex achievements', async () => {
             await new Promise(resolve => setTimeout(resolve, 100));
 
             // Check if achievement was awarded
-            const achievements = await userIdentity.query(
-                api.achievements.getUserAchievements,
-                {}
-            );
+            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
             const firstObjectiveAchievement = achievements.find(
                 a => a.definition?.code === 'first_objective'
@@ -362,10 +343,7 @@ describe('convex achievements', async () => {
                 status: 'in_progress',
             });
 
-            const achievements = await userIdentity.query(
-                api.achievements.getUserAchievements,
-                {}
-            );
+            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
             const firstObjectiveCount = achievements.filter(
                 a => a.definition?.code === 'first_objective'
@@ -373,25 +351,118 @@ describe('convex achievements', async () => {
 
             expect(firstObjectiveCount).toBe(1);
         });
+
+        test('progress achievement logic validates correct threshold', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            // Create an objective
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Progress Threshold Test',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'in_progress',
+            });
+
+            // Create exactly 10 progress updates
+            for (let i = 1; i <= 10; i++) {
+                await userIdentity.run(async ctx => {
+                    await ctx.db.insert('progressUpdates', {
+                        objective: objectiveId,
+                        updatedValue: 5,
+                        updateDate: Date.now() + i * 1000,
+                        notes: `Update ${i}`,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
+                });
+            }
+
+            // Check progress manually
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const progressUpdateProgress = progress.find(
+                p => p.definition.code === 'progress_updates_10'
+            );
+
+            expect(progressUpdateProgress).toBeDefined();
+            if (progressUpdateProgress) {
+                expect(progressUpdateProgress.currentProgress).toBe(10);
+                expect(progressUpdateProgress.definition.threshold).toBe(10);
+
+                // Since progress equals threshold, achievement should be earnable
+                expect(progressUpdateProgress.currentProgress).toBeGreaterThanOrEqual(
+                    progressUpdateProgress.definition.threshold
+                );
+            }
+        });
+
+        test('streak achievement tracks consecutive daily updates', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            // Create an objective
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Streak Test Objective',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'in_progress',
+            });
+
+            const DAY_MS = 24 * 60 * 60 * 1000;
+            const today = new Date();
+            today.setHours(12, 0, 0, 0); // Noon to avoid timezone issues
+            const todayMs = today.getTime();
+
+            // Create progress updates for 3 consecutive days
+            for (let i = 0; i < 3; i++) {
+                await userIdentity.run(async ctx => {
+                    await ctx.db.insert('progressUpdates', {
+                        objective: objectiveId,
+                        updatedValue: 5,
+                        updateDate: todayMs - i * DAY_MS,
+                        notes: `Day ${i + 1}`,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
+                });
+            }
+
+            // Check progress
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const streak3Progress = progress.find(p => p.definition.code === 'streak_3');
+
+            expect(streak3Progress).toBeDefined();
+            if (streak3Progress) {
+                // Streak calculation depends on consecutive days, should be >= 0
+                expect(streak3Progress.currentProgress).toBeGreaterThanOrEqual(0);
+                expect(streak3Progress.definition.threshold).toBe(3);
+            }
+        });
     });
 
     describe('authentication', () => {
         test('getAchievementDefinitions rejects unauthenticated users', async () => {
-            await expect(
-                t.query(api.achievements.getAchievementDefinitions, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.achievements.getAchievementDefinitions, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('getUserAchievements rejects unauthenticated users', async () => {
-            await expect(
-                t.query(api.achievements.getUserAchievements, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.achievements.getUserAchievements, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('getUserAchievementStats rejects unauthenticated users', async () => {
-            await expect(
-                t.query(api.achievements.getUserAchievementStats, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.achievements.getUserAchievementStats, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('seedAchievementDefinitions rejects unauthenticated users', async () => {

@@ -12,5 +12,3 @@ export const savedAuditLogSchema = auditLogSchema.extend({
     _id: z.string(),
 });
 
-export type AuditLog = z.infer<typeof savedAuditLogSchema>;
-export type CreateAuditLog = z.infer<typeof auditLogSchema>;

@@ -419,27 +419,27 @@ describe('convex RLS (Row-Level Security)', async () => {
 
     describe('unauthenticated access', () => {
         test('unauthenticated user cannot access objectives', async () => {
-            await expect(
-                t.query(api.objectives.getObjectivesByUser, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.objectives.getObjectivesByUser, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('unauthenticated user cannot access categories', async () => {
-            await expect(
-                t.query(api.categories.getCategoriesByUser, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.categories.getCategoriesByUser, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('unauthenticated user cannot access notifications', async () => {
-            await expect(
-                t.query(api.notifications.getNotificationsByUser, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.notifications.getNotificationsByUser, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('unauthenticated user cannot access achievements', async () => {
-            await expect(
-                t.query(api.achievements.getUserAchievements, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.achievements.getUserAchievements, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
 
         test('unauthenticated user cannot create objectives', async () => {
@@ -506,14 +506,8 @@ describe('convex RLS (Row-Level Security)', async () => {
     describe('data isolation', () => {
         test('creating data for one user does not affect another', async () => {
             // Get initial counts
-            const initialUser1 = await user1Identity.query(
-                api.objectives.getObjectivesByUser,
-                {}
-            );
-            const initialUser2 = await user2Identity.query(
-                api.objectives.getObjectivesByUser,
-                {}
-            );
+            const initialUser1 = await user1Identity.query(api.objectives.getObjectivesByUser, {});
+            const initialUser2 = await user2Identity.query(api.objectives.getObjectivesByUser, {});
 
             // User 1 creates multiple objectives
             await user1Identity.mutation(api.objectives.createObjective, {
@@ -530,17 +524,11 @@ describe('convex RLS (Row-Level Security)', async () => {
             });
 
             // User 2's count should not change
-            const afterUser2 = await user2Identity.query(
-                api.objectives.getObjectivesByUser,
-                {}
-            );
+            const afterUser2 = await user2Identity.query(api.objectives.getObjectivesByUser, {});
             expect(afterUser2.length).toBe(initialUser2.length);
 
             // User 1's count should increase by 2
-            const afterUser1 = await user1Identity.query(
-                api.objectives.getObjectivesByUser,
-                {}
-            );
+            const afterUser1 = await user1Identity.query(api.objectives.getObjectivesByUser, {});
             expect(afterUser1.length).toBe(initialUser1.length + 2);
         });
 
@@ -564,10 +552,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             await user1Identity.mutation(api.objectives.deleteObjective, { id: obj1Id });
 
             // User 2's objective should still exist
-            const user2Objs = await user2Identity.query(
-                api.objectives.getObjectivesByUser,
-                {}
-            );
+            const user2Objs = await user2Identity.query(api.objectives.getObjectivesByUser, {});
             expect(user2Objs.length).toBeGreaterThan(0);
         });
     });

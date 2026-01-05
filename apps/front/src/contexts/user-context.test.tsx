@@ -1,11 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { UserProvider, useUser } from './user-context';
-import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 // Mock user data - must match the type from api.auth.getCurrentUser
 const mockUser = {
-    _id: 'user123' as Id<'user'>,
+    _id: 'user123',
     _creationTime: Date.now(),
     userId: 'user123',
     email: 'test@example.com',
@@ -34,7 +33,7 @@ describe('UserContext', () => {
 
     it('should throw error when useUser is used outside provider', () => {
         // Suppress console.error for this test
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
         const TestComponent = () => {
             useUser();

@@ -21,7 +21,6 @@ interface FilterOptions {
     status: string;
     category: string;
     deadlineRange: string;
-    sortBy: string;
 }
 
 interface ObjectivesFiltersProps {
@@ -53,24 +52,12 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
             { value: 'overdue', label: t('deadlineRangeOptions.overdue') },
         ];
 
-        const sortOptions = [
-            { value: 'createdAt_desc', label: t('sortOptions.newestFirst') },
-            { value: 'createdAt_asc', label: t('sortOptions.oldestFirst') },
-            { value: 'deadline_asc', label: t('sortOptions.deadlineSoonest') },
-            { value: 'deadline_desc', label: t('sortOptions.deadlineLatest') },
-            { value: 'title_asc', label: t('sortOptions.titleAsc') },
-            { value: 'title_desc', label: t('sortOptions.titleDesc') },
-            { value: 'progress_desc', label: t('sortOptions.mostProgress') },
-            { value: 'progress_asc', label: t('sortOptions.leastProgress') },
-        ];
-
         const activeFiltersCount = React.useMemo(() => {
             let count = 0;
             if (filters.search) count++;
             if (filters.status && filters.status !== 'all') count++;
             if (filters.category && filters.category !== 'all') count++;
             if (filters.deadlineRange && filters.deadlineRange !== 'all') count++;
-            if (filters.sortBy && filters.sortBy !== 'createdAt_desc') count++;
             return count;
         }, [filters]);
 
@@ -87,7 +74,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                 status: 'all',
                 category: 'all',
                 deadlineRange: 'all',
-                sortBy: 'createdAt_desc',
             });
         };
 
@@ -97,7 +83,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                 status: 'all',
                 category: 'all',
                 deadlineRange: 'all',
-                sortBy: 'createdAt_desc',
             };
             handleFilterChange(key, defaultValues[key]);
         };
@@ -112,6 +97,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         value={filters.search}
                         onChange={e => handleFilterChange('search', e.target.value)}
                         className="pl-10"
+                        data-testid="objectives-search-input"
                     />
                 </div>
 
@@ -122,12 +108,16 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         value={filters.status}
                         onValueChange={value => handleFilterChange('status', value)}
                     >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="w-[140px]" data-testid="objectives-status-filter">
                             <SelectValue placeholder={t('filters.status')} />
                         </SelectTrigger>
                         <SelectContent>
                             {statusOptions.map(option => (
-                                <SelectItem key={option.value} value={option.value}>
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    data-testid={`objectives-status-${option.value}`}
+                                >
                                     {option.label}
                                 </SelectItem>
                             ))}
@@ -139,13 +129,22 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         value={filters.category}
                         onValueChange={value => handleFilterChange('category', value)}
                     >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger
+                            className="w-[140px]"
+                            data-testid="objectives-category-filter"
+                        >
                             <SelectValue placeholder={t('filters.category')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">{t('categoryOptions.all')}</SelectItem>
+                            <SelectItem value="all" data-testid="objectives-category-all">
+                                {t('categoryOptions.all')}
+                            </SelectItem>
                             {categories.map(category => (
-                                <SelectItem key={category} value={category}>
+                                <SelectItem
+                                    key={category}
+                                    value={category}
+                                    data-testid={`objectives-category-${category}`}
+                                >
                                     {category}
                                 </SelectItem>
                             ))}
@@ -157,29 +156,19 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         value={filters.deadlineRange}
                         onValueChange={value => handleFilterChange('deadlineRange', value)}
                     >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger
+                            className="w-[140px]"
+                            data-testid="objectives-deadline-filter"
+                        >
                             <SelectValue placeholder={t('filters.deadline')} />
                         </SelectTrigger>
                         <SelectContent>
                             {deadlineRangeOptions.map(option => (
-                                <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {/* Sort Filter */}
-                    <Select
-                        value={filters.sortBy}
-                        onValueChange={value => handleFilterChange('sortBy', value)}
-                    >
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder={t('filters.sortBy')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {sortOptions.map(option => (
-                                <SelectItem key={option.value} value={option.value}>
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    data-testid={`objectives-deadline-${option.value}`}
+                                >
                                     {option.label}
                                 </SelectItem>
                             ))}
@@ -281,25 +270,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => removeFilter('deadlineRange')}
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                        {filters.sortBy !== 'createdAt_desc' && (
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm">
-                                                    {t('filters.sortBy')}:{' '}
-                                                    {
-                                                        sortOptions.find(
-                                                            s => s.value === filters.sortBy
-                                                        )?.label
-                                                    }
-                                                </span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => removeFilter('sortBy')}
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </Button>

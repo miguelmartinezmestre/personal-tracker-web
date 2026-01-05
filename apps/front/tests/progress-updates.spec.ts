@@ -70,7 +70,13 @@ test('progress updates: create, edit, delete progress entry', async ({ page }) =
     // Delete progress update
     const updatedRow = page.locator('tr', { hasText: 'Updated comment' }).first();
     await updatedRow.getByTestId('progress-delete-button').click();
-    await expect(page.locator('td', { hasText: 'Updated comment' })).not.toBeVisible();
+    const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: /delete|eliminar/i }).click();
+    await expect(deleteDialog).toBeHidden({ timeout: 10000 });
+    await expect(page.locator('td', { hasText: 'Updated comment' })).not.toBeVisible({
+        timeout: 10000,
+    });
 });
 
 test('progress updates: validation for required fields', async ({ page }) => {
@@ -106,14 +112,19 @@ test('progress updates: validation for required fields', async ({ page }) => {
     await objectiveRow.getByTestId('objective-progress-link').click();
     await expect(page).toHaveURL(/\/dashboard\/objectives\/[^/]+$/);
 
-    // Try to create progress without value
+    // Try to create progress with invalid values
     await expect(page.getByTestId('progress-create-open')).toBeVisible();
     await page.getByTestId('progress-create-open').click();
     await expect(page.getByTestId('progress-value-input')).toBeVisible();
     await takeScreenshot(page, 'progress-updates-validation', 'empty-form');
+    await page.getByTestId('progress-value-input').fill('-5');
     await page.getByTestId('progress-save-button').click();
 
-    // Should show validation error
-    await expect(page.getByText('Value is required')).toBeVisible();
+    // Should show validation error for negative values
+    await expect(page.getByText(/updated value must be greater than 0/i)).toBeVisible();
+
+    await page.getByTestId('progress-value-input').fill('0');
+    await page.getByTestId('progress-save-button').click();
+    await expect(page.getByText(/updated value must be greater than 0/i)).toBeVisible();
     await takeScreenshot(page, 'progress-updates-validation', 'validation-error-displayed');
 });

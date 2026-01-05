@@ -147,6 +147,7 @@ export function UserSessions() {
                     variant="destructive"
                     onClick={() => revokeSession.mutate({ sessionToken: row.original.token })}
                     disabled={revokeSession.isPending}
+                    data-testid="session-terminate-button"
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
@@ -163,12 +164,14 @@ export function UserSessions() {
                     value={userId}
                     onChange={e => setUserId(e.target.value)}
                     className="flex-1"
+                    data-testid="user-sessions-userid-input"
                 />
                 {userId && (
                     <Button
                         variant="destructive"
                         onClick={() => revokeAllSessions.mutate({ userId })}
                         disabled={revokeAllSessions.isPending}
+                        data-testid="user-sessions-revoke-all-button"
                     >
                         <RefreshCw className="h-4 w-4 mr-2" />
                         {t('userSessions.buttons.revokeAll')}

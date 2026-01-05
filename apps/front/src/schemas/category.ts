@@ -11,5 +11,3 @@ export const savedCategorySchema = categorySchema.extend({
     _id: z.string(),
 });
 
-export type Category = z.infer<typeof savedCategorySchema>;
-export type CreateCategory = z.infer<typeof categorySchema>;

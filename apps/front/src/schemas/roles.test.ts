@@ -1,33 +1,33 @@
-import { describe, it, expect } from "vitest";
-import { Role, TeamRole } from "./roles";
+import { describe, it, expect } from 'vitest';
+import { Role, TeamRole } from './roles';
 
-describe("Role enum", () => {
-    it("should have ADMIN value", () => {
-        expect(Role.ADMIN).toBe("ADMIN");
+describe('Role enum', () => {
+    it('should have ADMIN value', () => {
+        expect(Role.ADMIN).toBe('ADMIN');
     });
 
-    it("should have USER value", () => {
-        expect(Role.USER).toBe("USER");
+    it('should have USER value', () => {
+        expect(Role.USER).toBe('USER');
     });
 
-    it("should have exactly 2 values", () => {
+    it('should have exactly 2 values', () => {
         const roleValues = Object.values(Role);
         expect(roleValues).toHaveLength(2);
     });
 
-    it("should contain expected values", () => {
+    it('should contain expected values', () => {
         const roleValues = Object.values(Role);
-        expect(roleValues).toContain("ADMIN");
-        expect(roleValues).toContain("USER");
+        expect(roleValues).toContain('ADMIN');
+        expect(roleValues).toContain('USER');
     });
 
-    it("should be usable in type comparisons", () => {
-        const userRole: Role = Role.USER;
-        expect(userRole === Role.USER).toBe(true);
-        expect(userRole === Role.ADMIN).toBe(false);
+    it('should be usable in type comparisons', () => {
+        const isAdmin = (role: Role) => role === Role.ADMIN;
+        expect(isAdmin(Role.USER)).toBe(false);
+        expect(isAdmin(Role.ADMIN)).toBe(true);
     });
 
-    it("should be usable in switch statements", () => {
+    it('should be usable in switch statements', () => {
         const getPermissionLevel = (role: Role): number => {
             switch (role) {
                 case Role.ADMIN:
@@ -44,33 +44,33 @@ describe("Role enum", () => {
     });
 });
 
-describe("TeamRole enum", () => {
-    it("should have MANAGER value", () => {
-        expect(TeamRole.MANAGER).toBe("MANAGER");
+describe('TeamRole enum', () => {
+    it('should have MANAGER value', () => {
+        expect(TeamRole.MANAGER).toBe('MANAGER');
     });
 
-    it("should have MEMBER value", () => {
-        expect(TeamRole.MEMBER).toBe("MEMBER");
+    it('should have MEMBER value', () => {
+        expect(TeamRole.MEMBER).toBe('MEMBER');
     });
 
-    it("should have exactly 2 values", () => {
+    it('should have exactly 2 values', () => {
         const teamRoleValues = Object.values(TeamRole);
         expect(teamRoleValues).toHaveLength(2);
     });
 
-    it("should contain expected values", () => {
+    it('should contain expected values', () => {
         const teamRoleValues = Object.values(TeamRole);
-        expect(teamRoleValues).toContain("MANAGER");
-        expect(teamRoleValues).toContain("MEMBER");
+        expect(teamRoleValues).toContain('MANAGER');
+        expect(teamRoleValues).toContain('MEMBER');
     });
 
-    it("should be usable in type comparisons", () => {
-        const teamRole: TeamRole = TeamRole.MANAGER;
-        expect(teamRole === TeamRole.MANAGER).toBe(true);
-        expect(teamRole === TeamRole.MEMBER).toBe(false);
+    it('should be usable in type comparisons', () => {
+        const isManager = (role: TeamRole) => role === TeamRole.MANAGER;
+        expect(isManager(TeamRole.MEMBER)).toBe(false);
+        expect(isManager(TeamRole.MANAGER)).toBe(true);
     });
 
-    it("should be usable in switch statements", () => {
+    it('should be usable in switch statements', () => {
         const getTeamPermissionLevel = (role: TeamRole): number => {
             switch (role) {
                 case TeamRole.MANAGER:

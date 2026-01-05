@@ -1,26 +1,26 @@
-import { describe, it, expect } from "vitest";
-import { dashboardGraphsDataSchema } from "./dashboard-graphs-data";
+import { describe, it, expect } from 'vitest';
+import { dashboardGraphsDataSchema } from './dashboard-graphs-data';
 
-describe("dashboardGraphsDataSchema", () => {
+describe('dashboardGraphsDataSchema', () => {
     const validData = {
         totalObjectives: 10,
         pendingObjectives: 3,
         completedObjectives: 7,
         progressAddedPerMonth: [
-            { month: "January", count: 5 },
-            { month: "February", count: 8 },
+            { month: 'January', count: 5 },
+            { month: 'February', count: 8 },
         ],
         mostRecentObjectivesDeadlines: [
-            { objective: "Learn TypeScript", days: 5, fill: "#ff0000" },
-            { objective: "Complete Project", days: 10, fill: "#00ff00" },
+            { objective: 'Learn TypeScript', days: 5, fill: '#ff0000' },
+            { objective: 'Complete Project', days: 10, fill: '#00ff00' },
         ],
         objectivesWithMostProgress: [
-            { objective: "Learn React", progress: 80 },
-            { objective: "Build App", progress: 60 },
+            { objective: 'Learn React', progress: 80 },
+            { objective: 'Build App', progress: 60 },
         ],
     };
 
-    it("should validate valid dashboard data", () => {
+    it('should validate valid dashboard data', () => {
         const result = dashboardGraphsDataSchema.safeParse(validData);
         expect(result.success).toBe(true);
         if (result.success) {
@@ -30,7 +30,7 @@ describe("dashboardGraphsDataSchema", () => {
         }
     });
 
-    it("should require totalObjectives", () => {
+    it('should require totalObjectives', () => {
         const invalidData = { ...validData };
         delete (invalidData as any).totalObjectives;
 
@@ -38,7 +38,7 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("should require pendingObjectives", () => {
+    it('should require pendingObjectives', () => {
         const invalidData = { ...validData };
         delete (invalidData as any).pendingObjectives;
 
@@ -46,7 +46,7 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("should require completedObjectives", () => {
+    it('should require completedObjectives', () => {
         const invalidData = { ...validData };
         delete (invalidData as any).completedObjectives;
 
@@ -54,17 +54,17 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("should validate progressAddedPerMonth array", () => {
+    it('should validate progressAddedPerMonth array', () => {
         const result = dashboardGraphsDataSchema.safeParse(validData);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.progressAddedPerMonth).toHaveLength(2);
-            expect(result.data.progressAddedPerMonth[0]?.month).toBe("January");
+            expect(result.data.progressAddedPerMonth[0]?.month).toBe('January');
             expect(result.data.progressAddedPerMonth[0]?.count).toBe(5);
         }
     });
 
-    it("should accept empty progressAddedPerMonth array", () => {
+    it('should accept empty progressAddedPerMonth array', () => {
         const dataWithEmptyProgress = {
             ...validData,
             progressAddedPerMonth: [],
@@ -74,28 +74,30 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(true);
     });
 
-    it("should validate progressAddedPerMonth items structure", () => {
+    it('should validate progressAddedPerMonth items structure', () => {
         const invalidData = {
             ...validData,
-            progressAddedPerMonth: [{ month: "January" }], // missing count
+            progressAddedPerMonth: [{ month: 'January' }], // missing count
         };
 
         const result = dashboardGraphsDataSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
     });
 
-    it("should validate mostRecentObjectivesDeadlines array", () => {
+    it('should validate mostRecentObjectivesDeadlines array', () => {
         const result = dashboardGraphsDataSchema.safeParse(validData);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.mostRecentObjectivesDeadlines).toHaveLength(2);
-            expect(result.data.mostRecentObjectivesDeadlines[0]?.objective).toBe("Learn TypeScript");
+            expect(result.data.mostRecentObjectivesDeadlines[0]?.objective).toBe(
+                'Learn TypeScript'
+            );
             expect(result.data.mostRecentObjectivesDeadlines[0]?.days).toBe(5);
-            expect(result.data.mostRecentObjectivesDeadlines[0]?.fill).toBe("#ff0000");
+            expect(result.data.mostRecentObjectivesDeadlines[0]?.fill).toBe('#ff0000');
         }
     });
 
-    it("should accept empty mostRecentObjectivesDeadlines array", () => {
+    it('should accept empty mostRecentObjectivesDeadlines array', () => {
         const dataWithEmptyDeadlines = {
             ...validData,
             mostRecentObjectivesDeadlines: [],
@@ -105,27 +107,27 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(true);
     });
 
-    it("should validate mostRecentObjectivesDeadlines items structure", () => {
+    it('should validate mostRecentObjectivesDeadlines items structure', () => {
         const invalidData = {
             ...validData,
-            mostRecentObjectivesDeadlines: [{ objective: "Test", days: 5 }], // missing fill
+            mostRecentObjectivesDeadlines: [{ objective: 'Test', days: 5 }], // missing fill
         };
 
         const result = dashboardGraphsDataSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
     });
 
-    it("should validate objectivesWithMostProgress array", () => {
+    it('should validate objectivesWithMostProgress array', () => {
         const result = dashboardGraphsDataSchema.safeParse(validData);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.objectivesWithMostProgress).toHaveLength(2);
-            expect(result.data.objectivesWithMostProgress[0]?.objective).toBe("Learn React");
+            expect(result.data.objectivesWithMostProgress[0]?.objective).toBe('Learn React');
             expect(result.data.objectivesWithMostProgress[0]?.progress).toBe(80);
         }
     });
 
-    it("should accept empty objectivesWithMostProgress array", () => {
+    it('should accept empty objectivesWithMostProgress array', () => {
         const dataWithEmptyProgress = {
             ...validData,
             objectivesWithMostProgress: [],
@@ -135,17 +137,17 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(true);
     });
 
-    it("should validate objectivesWithMostProgress items structure", () => {
+    it('should validate objectivesWithMostProgress items structure', () => {
         const invalidData = {
             ...validData,
-            objectivesWithMostProgress: [{ objective: "Test" }], // missing progress
+            objectivesWithMostProgress: [{ objective: 'Test' }], // missing progress
         };
 
         const result = dashboardGraphsDataSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
     });
 
-    it("should accept zero values for numeric fields", () => {
+    it('should accept zero values for numeric fields', () => {
         const dataWithZeros = {
             totalObjectives: 0,
             pendingObjectives: 0,
@@ -159,11 +161,11 @@ describe("dashboardGraphsDataSchema", () => {
         expect(result.success).toBe(true);
     });
 
-    it("should accept negative days for deadlines", () => {
+    it('should accept negative days for deadlines', () => {
         const dataWithNegativeDays = {
             ...validData,
             mostRecentObjectivesDeadlines: [
-                { objective: "Overdue Task", days: -5, fill: "#ff0000" },
+                { objective: 'Overdue Task', days: -5, fill: '#ff0000' },
             ],
         };
 

@@ -5,9 +5,6 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 
-/**
- * Tipos para las operaciones de categorías
- */
 export interface CreateCategoryParams {
     name: string;
     color: string;

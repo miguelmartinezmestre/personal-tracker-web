@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AchievementsWidget } from '@/components/achievements';
+import { AchievementsWidget } from '@/components/achievements/achievements-widget';
 
 export default function HomePage() {
     const user = useUser();

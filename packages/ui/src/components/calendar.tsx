@@ -36,7 +36,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) =>
+        formatMonthDropdown: (date: Date) =>
           date.toLocaleString("default", { month: "short" }),
         ...formatters,
       }}
@@ -128,7 +128,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }: { className?: string; rootRef?: React.RefObject<HTMLDivElement>; [key: string]: unknown }) => {
+        Root: (({ className, rootRef, ...props }: { className?: string; rootRef?: React.Ref<HTMLDivElement>;[key: string]: unknown }) => {
           return (
             <div
               data-slot="calendar"
@@ -137,8 +137,8 @@ function Calendar({
               {...props}
             />
           )
-        },
-        Chevron: ({ className, orientation, ...props }: { className?: string; orientation?: string; [key: string]: unknown }) => {
+        }) as React.ComponentType<{ rootRef?: React.Ref<HTMLDivElement> } & React.HTMLAttributes<HTMLDivElement>>,
+        Chevron: ({ className, orientation, ...props }: { className?: string; orientation?: string;[key: string]: unknown }) => {
           if (orientation === "left") {
             return (
               <ChevronLeftIcon className={cn("size-4", className)} {...props} />
@@ -159,7 +159,7 @@ function Calendar({
           )
         },
         DayButton: CalendarDayButton,
-        WeekNumber: ({ children, ...props }) => {
+        WeekNumber: (({ children, ...props }: { children?: React.ReactNode; week?: { from: Date; to: Date }; weekNumber?: number;[key: string]: unknown }) => {
           return (
             <td {...props}>
               <div className="flex size-(--cell-size) items-center justify-center text-center">
@@ -167,9 +167,9 @@ function Calendar({
               </div>
             </td>
           )
-        },
+        }) as React.ComponentType<{ week: { from: Date; to: Date }; weekNumber: number } & React.ThHTMLAttributes<HTMLTableCellElement>>,
         ...components,
-      }}
+      } as React.ComponentProps<typeof DayPicker>["components"]}
       {...props}
     />
   )

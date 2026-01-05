@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
-import { getAuthenticatedUser } from './auth';
+import { authComponent } from './auth';
 import { internalMutation } from './_generated/server';
 import type { Doc } from './_generated/dataModel';
 
@@ -63,7 +63,7 @@ export const createNotification = mutationWithRLS({
         message: v.string(),
     },
     handler: async (ctx, args) => {
-        const user = await getAuthenticatedUser(ctx);
+        const user = await authComponent.getAuthUser(ctx).catch(() => null);
         if (!user || !user._id) throw new Error('User not authenticated');
 
         const userId = String(ctx.identity?.subject);

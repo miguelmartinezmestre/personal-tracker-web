@@ -9,8 +9,20 @@ vi.mock('next-intl', () => ({
 
 // Mock next/link
 vi.mock('next/link', () => ({
-    default: ({ children, href, className, prefetch }: { children: React.ReactNode; href: string; className?: string; prefetch?: boolean }) => (
-        <a href={href} className={className} data-prefetch={prefetch?.toString()}>{children}</a>
+    default: ({
+        children,
+        href,
+        className,
+        prefetch,
+    }: {
+        children: React.ReactNode;
+        href: string;
+        className?: string;
+        prefetch?: boolean;
+    }) => (
+        <a href={href} className={className} data-prefetch={prefetch?.toString()}>
+            {children}
+        </a>
     ),
 }));
 
@@ -21,8 +33,12 @@ vi.mock('@/components/navbar', () => ({
 
 // Mock lucide-react
 vi.mock('lucide-react', () => ({
-    X: ({ className }: { className?: string }) => <svg data-testid="x-icon" className={className} />,
-    Menu: ({ className }: { className?: string }) => <svg data-testid="menu-icon" className={className} />,
+    X: ({ className }: { className?: string }) => (
+        <svg data-testid="x-icon" className={className} />
+    ),
+    Menu: ({ className }: { className?: string }) => (
+        <svg data-testid="menu-icon" className={className} />
+    ),
 }));
 
 describe('Header', () => {

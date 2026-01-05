@@ -31,7 +31,9 @@ vi.mock('@repo/ui/components/sidebar', () => ({
         <main data-testid="sidebar-inset">{children}</main>
     ),
     SidebarTrigger: ({ className }: { className?: string }) => (
-        <button data-testid="sidebar-trigger" className={className}>Toggle</button>
+        <button data-testid="sidebar-trigger" className={className}>
+            Toggle
+        </button>
     ),
 }));
 

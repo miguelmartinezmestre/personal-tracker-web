@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { formSchema } from "./delete-account";
+import { describe, it, expect } from 'vitest';
+import { formSchema } from './delete-account';
 
-describe("deleteAccountSchema (formSchema)", () => {
-    it("should validate a valid delete account request", () => {
+describe('deleteAccountSchema (formSchema)', () => {
+    it('should validate a valid delete account request', () => {
         const validData = {
             id: 123,
         };
@@ -14,27 +14,27 @@ describe("deleteAccountSchema (formSchema)", () => {
         }
     });
 
-    it("should require id", () => {
+    it('should require id', () => {
         const invalidData = {};
 
         const result = formSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const idError = result.error.issues.find(issue => issue.path.includes("id"));
+            const idError = result.error.issues.find(issue => issue.path.includes('id'));
             expect(idError).toBeDefined();
         }
     });
 
-    it("should validate id as number", () => {
+    it('should validate id as number', () => {
         const invalidData = {
-            id: "not-a-number",
+            id: 'not-a-number',
         };
 
         const result = formSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
     });
 
-    it("should accept zero as valid id", () => {
+    it('should accept zero as valid id', () => {
         const validData = {
             id: 0,
         };
@@ -43,7 +43,7 @@ describe("deleteAccountSchema (formSchema)", () => {
         expect(result.success).toBe(true);
     });
 
-    it("should accept negative numbers as id", () => {
+    it('should accept negative numbers as id', () => {
         const validData = {
             id: -1,
         };
@@ -52,7 +52,7 @@ describe("deleteAccountSchema (formSchema)", () => {
         expect(result.success).toBe(true);
     });
 
-    it("should reject floating point numbers", () => {
+    it('should reject floating point numbers', () => {
         const invalidData = {
             id: 1.5,
         };

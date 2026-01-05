@@ -52,11 +52,6 @@ export const achievementStatsSchema = z.object({
     totalAvailable: z.number(),
 });
 
-export type AchievementType = z.infer<typeof achievementTypeSchema>;
-export type AchievementCategory = z.infer<typeof achievementCategorySchema>;
 export type AchievementTier = z.infer<typeof achievementTierSchema>;
 export type AchievementDefinition = z.infer<typeof achievementDefinitionSchema>;
-export type UserAchievement = z.infer<typeof userAchievementSchema>;
-export type TeamAchievement = z.infer<typeof teamAchievementSchema>;
 export type AchievementProgress = z.infer<typeof achievementProgressSchema>;
-export type AchievementStats = z.infer<typeof achievementStatsSchema>;

@@ -1,3 +1,99 @@
 {
-    "ignore": ["apps/frontend/src/routeTree.gen.ts", "apps/**/dist/**", "apps/frontend/coverage/**"]
+    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "workspaces": {
+        ".": {
+            "entry": ["scripts/**/*.{ts,js,mjs}", "test.setup.ts"],
+            "ignore": [
+                "turbo/generators/config.ts",
+                "**/node_modules/**",
+                "**/dist/**",
+                "**/.next/**",
+                "**/coverage/**",
+                "**/build/**",
+                "**/.turbo/**",
+                "**/*.d.ts",
+                "**/_generated/**",
+                "**/test-results/**",
+                "**/playwright-report/**",
+                "mysql-data/**",
+                "data/**"
+            ]
+        },
+        "apps/front": {
+            "entry": [
+                "src/app/**/*.{ts,tsx}",
+                "src/**/*.test.{ts,tsx}",
+                "vitest.setup.ts",
+                "scripts/**/*.{ts,js}"
+            ],
+            "ignore": [
+                "**/node_modules/**",
+                "**/dist/**",
+                "**/.next/**",
+                "**/coverage/**",
+                "**/build/**",
+                "**/.turbo/**",
+                "**/*.d.ts",
+                "**/_generated/**",
+                "**/test-results/**",
+                "**/playwright-report/**"
+            ],
+            "ignoreDependencies": [
+                "@eslint/eslintrc",
+                "@vitejs/plugin-react",
+                "@vitest/coverage-v8",
+                "baseline-browser-mapping",
+                "eslint-config-next",
+                "tailwindcss",
+                "tw-animate-css"
+            ]
+        },
+        "packages/backend": {
+            "entry": ["convex/**/*.ts", "test.setup.ts"],
+            "ignore": ["**/node_modules/**", "**/_generated/**", "**/*.d.ts"]
+        },
+        "packages/ui": {
+            "entry": ["src/**/*.{ts,tsx}"],
+            "ignore": ["**/node_modules/**", "**/dist/**", "**/*.d.ts", "**/*.css"],
+            "ignoreDependencies": ["@tailwindcss/postcss", "@turbo/gen"]
+        }
+    },
+    "ignore": [
+        "apps/**/dist/**",
+        "apps/**/coverage/**",
+        "apps/**/.next/**",
+        "packages/**/dist/**",
+        "packages/**/_generated/**",
+        "**/*.d.ts",
+        "node_modules/**",
+        ".turbo/**",
+        "mysql-data/**",
+        "data/**",
+        "packages/backend/convex/achievements.ts",
+        "packages/backend/convex/auditLogs.ts",
+        "packages/backend/convex/betterAuth/adapter.ts",
+        "packages/backend/convex/betterAuth/auth.ts",
+        "packages/backend/convex/categories.ts",
+        "packages/backend/convex/crons.ts",
+        "packages/backend/convex/dashboard.ts",
+        "packages/backend/convex/healthCheck.ts",
+        "packages/backend/convex/http.ts",
+        "packages/backend/convex/notifications.ts",
+        "packages/backend/convex/objectives.ts",
+        "packages/backend/convex/sessions.ts",
+        "packages/backend/convex/teamMembers.ts",
+        "packages/backend/convex/teams.ts",
+        "packages/backend/convex/update_progress.ts",
+        "packages/backend/convex/users.ts"
+    ],
+    "ignoreDependencies": [
+        "rimraf",
+        "postcss",
+        "postcss-load-config",
+        "jsdom",
+        "@repo/backend",
+        "vite",
+        "next"
+    ],
+    "ignoreExportsUsedInFile": true
 }

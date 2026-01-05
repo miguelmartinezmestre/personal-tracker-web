@@ -183,6 +183,7 @@ export function UsersTable() {
                                 variant="outline"
                                 onClick={() => unbanUser.mutate({ userId: user.id })}
                                 disabled={unbanUser.isPending}
+                                data-testid="user-unban-button"
                             >
                                 <UserCheck className="h-4 w-4" />
                             </Button>
@@ -192,6 +193,7 @@ export function UsersTable() {
                                 variant="outline"
                                 onClick={() => banUser.mutate({ userId: user.id })}
                                 disabled={banUser.isPending}
+                                data-testid="user-ban-button"
                             >
                                 <Ban className="h-4 w-4" />
                             </Button>
@@ -210,6 +212,7 @@ export function UsersTable() {
                                     size="sm"
                                     variant="destructive"
                                     disabled={deleteUser.isPending}
+                                    data-testid="user-delete-button"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>

@@ -6,7 +6,9 @@ test('landing page: displays main content and navigation links', async ({ page }
     await takeScreenshot(page, 'landing-page-main-content', 'full-page');
 
     // Verify main heading (h1)
-    await expect(page.getByRole('heading', { name: /achieve your goals\. control your progress/i })).toBeVisible();
+    await expect(
+        page.getByRole('heading', { name: /achieve your goals\. control your progress/i })
+    ).toBeVisible();
 
     // Verify description text
     await expect(page.getByText(/define, control and visualize/i)).toBeVisible();
@@ -41,13 +43,14 @@ test('landing page: displays features section', async ({ page }) => {
     await page.goto('/');
 
     // Verify features heading
-    await expect(page.getByRole('heading', { name: /achieve your goals with our system/i })).toBeVisible();
+    await expect(
+        page.getByRole('heading', { name: /achieve your goals with our system/i })
+    ).toBeVisible();
 
     // Verify some feature items are visible
     await expect(page.getByText(/customizable goals/i)).toBeVisible();
     await expect(page.getByText(/visual progress panel/i)).toBeVisible();
-    
+
     // Screenshot: Features section
     await takeScreenshot(page, 'landing-page-features', 'features-section');
 });
-
