@@ -19,9 +19,7 @@ vi.mock('@repo/ui/components/card', () => ({
             {children}
         </div>
     ),
-    CardHeader: ({ children, className }: any) => (
-        <div className={className}>{children}</div>
-    ),
+    CardHeader: ({ children, className }: any) => <div className={className}>{children}</div>,
     CardContent: ({ children }: any) => <div>{children}</div>,
 }));
 
@@ -92,11 +90,7 @@ describe('AchievementCard', () => {
 
     it('displays tier badge', () => {
         render(
-            <AchievementCard
-                definition={mockDefinition}
-                isEarned={false}
-                currentProgress={0}
-            />
+            <AchievementCard definition={mockDefinition} isEarned={false} currentProgress={0} />
         );
 
         // Should show tier badge
@@ -108,11 +102,7 @@ describe('AchievementCard', () => {
         const handleClick = vi.fn();
 
         render(
-            <AchievementCard
-                definition={mockDefinition}
-                isEarned={true}
-                onClick={handleClick}
-            />
+            <AchievementCard definition={mockDefinition} isEarned={true} onClick={handleClick} />
         );
 
         const card = screen.getByTestId(`achievement-card-${mockDefinition.code}`);
@@ -125,11 +115,7 @@ describe('AchievementCard', () => {
         const earnedDate = new Date('2024-01-15').getTime();
 
         render(
-            <AchievementCard
-                definition={mockDefinition}
-                isEarned={true}
-                earnedAt={earnedDate}
-            />
+            <AchievementCard definition={mockDefinition} isEarned={true} earnedAt={earnedDate} />
         );
 
         // Should display formatted date
@@ -150,12 +136,7 @@ describe('AchievementCard', () => {
     });
 
     it('displays points correctly', () => {
-        render(
-            <AchievementCard
-                definition={{ ...mockDefinition, points: 50 }}
-                isEarned={true}
-            />
-        );
+        render(<AchievementCard definition={{ ...mockDefinition, points: 50 }} isEarned={true} />);
 
         expect(screen.getByText(/card.points/)).toBeInTheDocument();
     });
@@ -165,25 +146,20 @@ describe('AchievementCard', () => {
 
         tiers.forEach(tier => {
             const { unmount } = render(
-                <AchievementCard
-                    definition={{ ...mockDefinition, tier }}
-                    isEarned={true}
-                />
+                <AchievementCard definition={{ ...mockDefinition, tier }} isEarned={true} />
             );
 
             // Should render without errors
-            expect(screen.getByTestId(`achievement-card-${mockDefinition.code}`)).toBeInTheDocument();
+            expect(
+                screen.getByTestId(`achievement-card-${mockDefinition.code}`)
+            ).toBeInTheDocument();
             unmount();
         });
     });
 
     it('has reduced opacity when not earned', () => {
         render(
-            <AchievementCard
-                definition={mockDefinition}
-                isEarned={false}
-                currentProgress={0}
-            />
+            <AchievementCard definition={mockDefinition} isEarned={false} currentProgress={0} />
         );
 
         const card = screen.getByTestId(`achievement-card-${mockDefinition.code}`);
@@ -191,12 +167,7 @@ describe('AchievementCard', () => {
     });
 
     it('has primary border when earned', () => {
-        render(
-            <AchievementCard
-                definition={mockDefinition}
-                isEarned={true}
-            />
-        );
+        render(<AchievementCard definition={mockDefinition} isEarned={true} />);
 
         const card = screen.getByTestId(`achievement-card-${mockDefinition.code}`);
         expect(card.className).toContain('border-primary');
@@ -204,10 +175,7 @@ describe('AchievementCard', () => {
 
     it('renders with default progress of 0', () => {
         render(
-            <AchievementCard
-                definition={{ ...mockDefinition, threshold: 10 }}
-                isEarned={false}
-            />
+            <AchievementCard definition={{ ...mockDefinition, threshold: 10 }} isEarned={false} />
         );
 
         expect(screen.getByText('0 / 10')).toBeInTheDocument();

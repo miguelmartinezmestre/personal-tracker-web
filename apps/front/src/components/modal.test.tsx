@@ -5,16 +5,22 @@ import { Modal } from './modal';
 // Mock @repo/ui components
 vi.mock('@repo/ui/components/button', () => ({
     Button: ({ children, variant }: { children: React.ReactNode; variant?: string }) => (
-        <button data-testid="button" data-variant={variant}>{children}</button>
+        <button data-testid="button" data-variant={variant}>
+            {children}
+        </button>
     ),
 }));
 
 vi.mock('@repo/ui/components/dialog', () => ({
     Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) => (
-        <div data-testid="dialog" data-open={open}>{children}</div>
+        <div data-testid="dialog" data-open={open}>
+            {children}
+        </div>
     ),
     DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-        <div data-testid="dialog-content" className={className}>{children}</div>
+        <div data-testid="dialog-content" className={className}>
+            {children}
+        </div>
     ),
     DialogDescription: ({ children }: { children: React.ReactNode }) => (
         <p data-testid="dialog-description">{children}</p>
@@ -26,7 +32,9 @@ vi.mock('@repo/ui/components/dialog', () => ({
         <h2 data-testid="dialog-title">{children}</h2>
     ),
     DialogTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => (
-        <div data-testid="dialog-trigger" data-as-child={asChild}>{children}</div>
+        <div data-testid="dialog-trigger" data-as-child={asChild}>
+            {children}
+        </div>
     ),
 }));
 
@@ -115,11 +123,7 @@ describe('Modal', () => {
             </div>
         );
 
-        render(
-            <Modal {...defaultProps}>
-                {complexChildren}
-            </Modal>
-        );
+        render(<Modal {...defaultProps}>{complexChildren}</Modal>);
 
         expect(screen.getByTestId('form')).toBeInTheDocument();
         expect(screen.getByTestId('input')).toBeInTheDocument();

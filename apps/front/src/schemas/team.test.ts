@@ -1,43 +1,43 @@
-import { describe, it, expect } from "vitest";
-import { teamSchema } from "./team";
+import { describe, it, expect } from 'vitest';
+import { teamSchema } from './team';
 
-describe("teamSchema", () => {
-    it("should validate a valid team", () => {
+describe('teamSchema', () => {
+    it('should validate a valid team', () => {
         const validTeam = {
-            name: "Engineering Team",
-            description: "Our awesome engineering team",
+            name: 'Engineering Team',
+            description: 'Our awesome engineering team',
         };
 
         const result = teamSchema.safeParse(validTeam);
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.name).toBe("Engineering Team");
-            expect(result.data.description).toBe("Our awesome engineering team");
+            expect(result.data.name).toBe('Engineering Team');
+            expect(result.data.description).toBe('Our awesome engineering team');
         }
     });
 
-    it("should require name", () => {
+    it('should require name', () => {
         const invalidTeam = {
-            description: "Description",
+            description: 'Description',
         };
 
         const result = teamSchema.safeParse(invalidTeam);
         expect(result.success).toBe(false);
     });
 
-    it("should require description", () => {
+    it('should require description', () => {
         const invalidTeam = {
-            name: "Team Name",
+            name: 'Team Name',
         };
 
         const result = teamSchema.safeParse(invalidTeam);
         expect(result.success).toBe(false);
     });
 
-    it("should allow empty string for name (Zod string() allows empty)", () => {
+    it('should allow empty string for name (Zod string() allows empty)', () => {
         const teamWithEmptyName = {
-            name: "",
-            description: "Description",
+            name: '',
+            description: 'Description',
         };
 
         // Zod's z.string() allows empty strings by default
@@ -47,4 +47,3 @@ describe("teamSchema", () => {
         expect(result.success).toBe(true);
     });
 });
-

@@ -40,7 +40,9 @@ vi.mock('@/lib/auth-client', () => ({
 // We need to create an adapter that works with @tanstack/react-form
 vi.mock('@/components/ui/form', () => {
     // Create a context to pass the tanstack form
-    const TanstackFormContext = React.createContext<unknown>(null);
+    // Tests only: the mocked form surface is intentionally loose.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const TanstackFormContext = React.createContext<any>(null);
     // Create a context to pass the field name and errors to FormMessage
     const FormFieldContext = React.createContext({
         name: undefined as string | undefined,
@@ -95,15 +97,12 @@ vi.mock('@/components/ui/form', () => {
                                         onChange: (
                                             e: React.ChangeEvent<HTMLInputElement> | string
                                         ) => {
-                                            const value = e?.target?.value ?? e;
-                                            if (currentField.handleChange) {
-                                                currentField.handleChange(value);
-                                            }
+                                            const nextValue =
+                                                typeof e === 'string' ? e : e.target.value;
+                                            currentField.handleChange?.(nextValue);
                                         },
                                         onBlur: () => {
-                                            if (currentField.handleBlur) {
-                                                currentField.handleBlur();
-                                            }
+                                            currentField.handleBlur?.();
                                         },
                                     },
                                 })}
@@ -117,18 +116,16 @@ vi.mock('@/components/ui/form', () => {
                 }
             }
             return (
-                <FormFieldContext.Provider value={{ name }}>
+                <FormFieldContext.Provider value={{ name, error: undefined }}>
                     {render({
                         field: {
                             name,
                             value,
                             onChange: (e: React.ChangeEvent<HTMLInputElement> | string) => {
-                                const newValue = e?.target?.value ?? e;
+                                const newValue = typeof e === 'string' ? e : e.target.value;
                                 setValue(newValue);
                                 // Also update the form if it exists
-                                if (form && form.setFieldValue) {
-                                    form.setFieldValue(name, newValue);
-                                }
+                                form?.setFieldValue?.(name, newValue);
                             },
                             onBlur: () => {},
                         },

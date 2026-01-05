@@ -9,20 +9,53 @@ vi.mock('next-intl', () => ({
 
 // Mock @repo/ui components
 vi.mock('@repo/ui/components/label', () => ({
-    Label: ({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) => (
-        <label data-testid="label" htmlFor={htmlFor} className={className}>{children}</label>
+    Label: ({
+        children,
+        htmlFor,
+        className,
+    }: {
+        children: React.ReactNode;
+        htmlFor?: string;
+        className?: string;
+    }) => (
+        <label data-testid="label" htmlFor={htmlFor} className={className}>
+            {children}
+        </label>
     ),
 }));
 
 vi.mock('@repo/ui/components/sidebar', () => ({
     SidebarGroup: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-        <div data-testid="sidebar-group" className={className}>{children}</div>
+        <div data-testid="sidebar-group" className={className}>
+            {children}
+        </div>
     ),
-    SidebarGroupContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-        <div data-testid="sidebar-group-content" className={className}>{children}</div>
+    SidebarGroupContent: ({
+        children,
+        className,
+    }: {
+        children: React.ReactNode;
+        className?: string;
+    }) => (
+        <div data-testid="sidebar-group-content" className={className}>
+            {children}
+        </div>
     ),
-    SidebarInput: ({ id, placeholder, className }: { id?: string; placeholder?: string; className?: string }) => (
-        <input data-testid="sidebar-input" id={id} placeholder={placeholder} className={className} />
+    SidebarInput: ({
+        id,
+        placeholder,
+        className,
+    }: {
+        id?: string;
+        placeholder?: string;
+        className?: string;
+    }) => (
+        <input
+            data-testid="sidebar-input"
+            id={id}
+            placeholder={placeholder}
+            className={className}
+        />
     ),
 }));
 
@@ -61,7 +94,7 @@ describe('SearchForm', () => {
     });
 
     it('passes props to the form element', () => {
-        const onSubmit = vi.fn((e) => e.preventDefault());
+        const onSubmit = vi.fn(e => e.preventDefault());
         render(<SearchForm onSubmit={onSubmit} className="custom-class" />);
 
         const form = document.querySelector('form');

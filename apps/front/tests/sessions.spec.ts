@@ -45,4 +45,3 @@ test('sessions: accessible from sidebar navigation', async ({ page }) => {
     await expect(page).toHaveURL(/\/dashboard\/sessions$/);
     await expect(page.getByRole('heading', { name: /sessions/i })).toBeVisible();
 });
-

@@ -18,9 +18,9 @@ describe('auth-server', () => {
         const { getToken: getTokenNextjs } = await import('@convex-dev/better-auth/nextjs');
         const { createAuth } = await import('@repo/backend/convex/auth');
 
-        vi.mocked(getTokenNextjs).mockReturnValue('token-result');
+        vi.mocked(getTokenNextjs).mockResolvedValue('token-result');
 
-        const result = getToken();
+        const result = await getToken();
 
         expect(getTokenNextjs).toHaveBeenCalledWith(createAuth);
         expect(result).toBe('token-result');

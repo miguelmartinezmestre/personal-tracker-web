@@ -11,5 +11,3 @@ test('login invalid credentials shows error and stays on login', async ({ page }
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByText('Error')).toBeVisible();
 });
-
-

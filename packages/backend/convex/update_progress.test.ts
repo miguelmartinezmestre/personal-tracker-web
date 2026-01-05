@@ -1,76 +1,82 @@
-import { convexTest } from "convex-test";
-import { describe, expect, test, beforeEach } from "vitest";
-import { api } from "./_generated/api";
-import schema from "./schema";
-import { modules } from "../test.setup";
-import { createTestUser } from "./test_helpers";
+import { convexTest } from 'convex-test';
+import { describe, expect, test, beforeEach } from 'vitest';
+import { api } from './_generated/api';
+import schema from './schema';
+import { modules } from '../test.setup';
+import { createTestUser } from './test_helpers';
 
-describe("convex update_progress", () => {
+describe('convex update_progress', () => {
     const t = convexTest(schema, modules);
     let userId: string;
     let objectiveId: string;
 
     const userIdentity = t.withIdentity({
-        subject: "test-user-123",
-        role: "admin",
+        subject: 'test-user-123',
+        role: 'admin',
     });
 
     beforeEach(async () => {
         // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async (ctx) => {
+        const result = await userIdentity.run(async ctx => {
             return await createTestUser(ctx, {
-                userId: "test-user-123",
-                email: "test@example.com",
-                name: "Test User",
-                password: "test-password",
-                role: "admin",
+                userId: 'test-user-123',
+                email: 'test@example.com',
+                name: 'Test User',
+                password: 'test-password',
+                role: 'admin',
                 emailVerified: false,
             });
         });
         userId = result.userId;
 
-        objectiveId = await userIdentity.run(async (ctx) => {
-            return await ctx.db.insert("objectives", {
+        objectiveId = await userIdentity.run(async ctx => {
+            return await ctx.db.insert('objectives', {
                 user: userId,
-                title: "Test Objective",
+                title: 'Test Objective',
                 targetValue: 100,
                 currentValue: 50,
-                status: "in_progress",
+                status: 'in_progress',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
         });
     });
 
-    test("createUpdateProgress creates a new progress update", async () => {
+    test('createUpdateProgress creates a new progress update', async () => {
         const updateDate = Date.now();
-        const progressUpdate = await userIdentity.mutation(api.update_progress.createUpdateProgress, {
-            objective: objectiveId,
-            updatedValue: 75,
-            updateDate,
-            comment: "Great progress!",
-        });
+        const progressUpdate = await userIdentity.mutation(
+            api.update_progress.createUpdateProgress,
+            {
+                objective: objectiveId,
+                updatedValue: 75,
+                updateDate,
+                comment: 'Great progress!',
+            }
+        );
 
         expect(progressUpdate).toBeDefined();
         expect(progressUpdate?.updatedValue).toBe(75);
         expect(progressUpdate?.updateDate).toBe(updateDate);
-        expect(progressUpdate?.comment).toBe("Great progress!");
+        expect(progressUpdate?.comment).toBe('Great progress!');
         expect(progressUpdate?.objective).toBe(objectiveId);
     });
 
-    test("createUpdateProgress works without comment", async () => {
+    test('createUpdateProgress works without comment', async () => {
         const updateDate = Date.now();
-        const progressUpdate = await userIdentity.mutation(api.update_progress.createUpdateProgress, {
-            objective: objectiveId,
-            updatedValue: 80,
-            updateDate,
-        });
+        const progressUpdate = await userIdentity.mutation(
+            api.update_progress.createUpdateProgress,
+            {
+                objective: objectiveId,
+                updatedValue: 80,
+                updateDate,
+            }
+        );
 
         expect(progressUpdate?.updatedValue).toBe(80);
         expect(progressUpdate?.comment).toBeUndefined();
     });
 
-    test("getUpdateProgressByObjectiveId returns all updates for an objective", async () => {
+    test('getUpdateProgressByObjectiveId returns all updates for an objective', async () => {
         const updateDate1 = Date.now();
         const updateDate2 = Date.now() + 1000;
 
@@ -78,33 +84,36 @@ describe("convex update_progress", () => {
             objective: objectiveId,
             updatedValue: 60,
             updateDate: updateDate1,
-            comment: "First update",
+            comment: 'First update',
         });
 
         await userIdentity.mutation(api.update_progress.createUpdateProgress, {
             objective: objectiveId,
             updatedValue: 70,
             updateDate: updateDate2,
-            comment: "Second update",
+            comment: 'Second update',
         });
 
-        const updates = await userIdentity.query(api.update_progress.getUpdateProgressByObjectiveId, {
-            objectiveId,
-        });
+        const updates = await userIdentity.query(
+            api.update_progress.getUpdateProgressByObjectiveId,
+            {
+                objectiveId,
+            }
+        );
 
         expect(updates).toHaveLength(2);
         expect(updates.map(u => u.updatedValue)).toContain(60);
         expect(updates.map(u => u.updatedValue)).toContain(70);
     });
 
-    test("updateUpdateProgress modifies an existing update", async () => {
+    test('updateUpdateProgress modifies an existing update', async () => {
         const updateDate = Date.now();
-        const progressUpdateId = await userIdentity.run(async (ctx) => {
-            const id = await ctx.db.insert("progressUpdates", {
+        const progressUpdateId = await userIdentity.run(async ctx => {
+            const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 updatedValue: 60,
                 updateDate,
-                comment: "Initial comment",
+                comment: 'Initial comment',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
@@ -116,17 +125,17 @@ describe("convex update_progress", () => {
             id: progressUpdateId,
             updatedValue: 85,
             updateDate: newUpdateDate,
-            comment: "Updated comment",
+            comment: 'Updated comment',
         });
 
         expect(updated?.updatedValue).toBe(85);
         expect(updated?.updateDate).toBe(newUpdateDate);
-        expect(updated?.comment).toBe("Updated comment");
+        expect(updated?.comment).toBe('Updated comment');
     });
 
-    test("deleteUpdateProgress removes an update", async () => {
-        const progressUpdateId = await userIdentity.run(async (ctx) => {
-            return await ctx.db.insert("progressUpdates", {
+    test('deleteUpdateProgress removes an update', async () => {
+        const progressUpdateId = await userIdentity.run(async ctx => {
+            return await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 updatedValue: 60,
                 updateDate: Date.now(),
@@ -139,13 +148,13 @@ describe("convex update_progress", () => {
             _id: progressUpdateId,
         });
 
-        expect(result).toBe("Update progress deleted successfully");
+        expect(result).toBe('Update progress deleted successfully');
 
-        const deleted = await userIdentity.run(async (ctx) => ctx.db.get(progressUpdateId));
+        const deleted = await userIdentity.run(async ctx => ctx.db.get(progressUpdateId));
         expect(deleted).toBeNull();
     });
 
-    test("createUpdateProgress rejects when unauthenticated", async () => {
+    test('createUpdateProgress rejects when unauthenticated', async () => {
         await expect(
             t.mutation(api.update_progress.createUpdateProgress, {
                 objective: objectiveId,
@@ -155,9 +164,9 @@ describe("convex update_progress", () => {
         ).rejects.toThrow(/Unauthenticated|User not authenticated/);
     });
 
-    test("updateUpdateProgress updates updatedAt timestamp", async () => {
-        const progressUpdateId = await userIdentity.run(async (ctx) => {
-            const id = await ctx.db.insert("progressUpdates", {
+    test('updateUpdateProgress updates updatedAt timestamp', async () => {
+        const progressUpdateId = await userIdentity.run(async ctx => {
+            const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 updatedValue: 60,
                 updateDate: Date.now(),

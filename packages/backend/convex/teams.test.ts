@@ -1,93 +1,93 @@
-import { convexTest } from "convex-test";
-import { describe, expect, test, beforeEach } from "vitest";
-import { api } from "./_generated/api";
-import schema from "./schema";
-import { modules } from "../test.setup";
-import { createTestUser } from "./test_helpers";
+import { convexTest } from 'convex-test';
+import { describe, expect, test, beforeEach } from 'vitest';
+import { api } from './_generated/api';
+import schema from './schema';
+import { modules } from '../test.setup';
+import { createTestUser } from './test_helpers';
 
-describe("convex teams", () => {
+describe('convex teams', () => {
     const t = convexTest(schema, modules);
     let userId: string;
 
     const userIdentity = t.withIdentity({
-        subject: "test-user-123",
-        role: "admin",
+        subject: 'test-user-123',
+        role: 'admin',
     });
 
     beforeEach(async () => {
         // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async (ctx) => {
+        const result = await userIdentity.run(async ctx => {
             return await createTestUser(ctx, {
-                userId: "test-user-123",
-                email: "test@example.com",
-                name: "Test User",
-                password: "test-password",
-                role: "admin",
+                userId: 'test-user-123',
+                email: 'test@example.com',
+                name: 'Test User',
+                password: 'test-password',
+                role: 'admin',
                 emailVerified: false,
             });
         });
         userId = result.userId;
     });
 
-    test("createTeam creates a new team with slug", async () => {
+    test('createTeam creates a new team with slug', async () => {
         const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Engineering Team",
-            description: "Our awesome engineering team",
+            name: 'Engineering Team',
+            description: 'Our awesome engineering team',
         });
 
         expect(team).toBeDefined();
-        expect(team?.name).toBe("Engineering Team");
-        expect(team?.description).toBe("Our awesome engineering team");
-        expect(team?.slug).toBe("engineering-team");
+        expect(team?.name).toBe('Engineering Team');
+        expect(team?.description).toBe('Our awesome engineering team');
+        expect(team?.slug).toBe('engineering-team');
     });
 
-    test("createTeam generates unique slugs", async () => {
+    test('createTeam generates unique slugs', async () => {
         const team1 = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Test Team",
-            description: "First team",
+            name: 'Test Team',
+            description: 'First team',
         });
 
         const team2 = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Test Team",
-            description: "Second team",
+            name: 'Test Team',
+            description: 'Second team',
         });
 
-        expect(team1?.slug).toBe("test-team");
-        expect(team2?.slug).toBe("test-team-1");
+        expect(team1?.slug).toBe('test-team');
+        expect(team2?.slug).toBe('test-team-1');
     });
 
-    test("createTeam adds creator as owner", async () => {
+    test('createTeam adds creator as owner', async () => {
         const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: "My Team",
-            description: "Description",
+            name: 'My Team',
+            description: 'Description',
         });
 
         expect(team).toBeDefined();
-        const members = await userIdentity.run(async (ctx) => {
+        const members = await userIdentity.run(async ctx => {
             return await ctx.db
-                .query("member")
-                .withIndex("organizationId", (q) => q.eq("organizationId", String(team!._id)))
+                .query('member')
+                .withIndex('organizationId', q => q.eq('organizationId', String(team!._id)))
                 .collect();
         });
 
         expect(members).toHaveLength(1);
         expect(members[0]?.userId).toBe(userId);
-        expect(members[0]?.role).toBe("owner");
+        expect(members[0]?.role).toBe('owner');
     });
 
-    test("getTeams returns teams where user is a member", async () => {
+    test('getTeams returns teams where user is a member', async () => {
         // Get initial count to account for teams from other tests
         const initialTeams = await userIdentity.query(api.teams.getTeams, {});
         const initialCount = initialTeams.length;
 
         const team1 = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Team 1",
-            description: "Description 1",
+            name: 'Team 1',
+            description: 'Description 1',
         });
 
         const team2 = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Team 2",
-            description: "Description 2",
+            name: 'Team 2',
+            description: 'Description 2',
         });
 
         const teams = await userIdentity.query(api.teams.getTeams, {});
@@ -99,10 +99,10 @@ describe("convex teams", () => {
         expect(teams.map(team => team._id)).toContain(team2!._id);
     });
 
-    test("getTeamById returns a specific team", async () => {
+    test('getTeamById returns a specific team', async () => {
         const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Test Team",
-            description: "Test Description",
+            name: 'Test Team',
+            description: 'Test Description',
         });
 
         expect(team).toBeDefined();
@@ -111,39 +111,39 @@ describe("convex teams", () => {
         });
 
         expect(retrieved?._id).toBe(team!._id);
-        expect(retrieved?.name).toBe("Test Team");
+        expect(retrieved?.name).toBe('Test Team');
     });
 
-    test("updateTeam modifies team details", async () => {
+    test('updateTeam modifies team details', async () => {
         const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Old Name",
-            description: "Old Description",
+            name: 'Old Name',
+            description: 'Old Description',
         });
 
         expect(team).toBeDefined();
         const updated = await userIdentity.mutation(api.teams.updateTeam, {
             _id: team!._id,
-            name: "New Name",
-            description: "New Description",
+            name: 'New Name',
+            description: 'New Description',
         });
 
-        expect(updated?.name).toBe("New Name");
-        expect(updated?.description).toBe("New Description");
+        expect(updated?.name).toBe('New Name');
+        expect(updated?.description).toBe('New Description');
     });
 
-    test("deleteTeam removes team and all members", async () => {
+    test('deleteTeam removes team and all members', async () => {
         const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Team to Delete",
-            description: "Description",
+            name: 'Team to Delete',
+            description: 'Description',
         });
 
         expect(team).toBeDefined();
         // Add another member
-        await userIdentity.run(async (ctx) => {
-            await ctx.db.insert("member", {
+        await userIdentity.run(async ctx => {
+            await ctx.db.insert('member', {
                 organizationId: String(team!._id),
-                userId: "other-user",
-                role: "member",
+                userId: 'other-user',
+                role: 'member',
                 createdAt: Date.now(),
             });
         });
@@ -152,39 +152,39 @@ describe("convex teams", () => {
             _id: team!._id,
         });
 
-        expect(result).toBe("Team deleted successfully");
+        expect(result).toBe('Team deleted successfully');
 
-        const deleted = await userIdentity.run(async (ctx) => ctx.db.get(team!._id));
+        const deleted = await userIdentity.run(async ctx => ctx.db.get(team!._id));
         expect(deleted).toBeNull();
 
-        const members = await userIdentity.run(async (ctx) => {
+        const members = await userIdentity.run(async ctx => {
             return await ctx.db
-                .query("member")
-                .withIndex("organizationId", (q) => q.eq("organizationId", String(team!._id)))
+                .query('member')
+                .withIndex('organizationId', q => q.eq('organizationId', String(team!._id)))
                 .collect();
         });
         expect(members).toHaveLength(0);
     });
 
-    test("createTeam rejects when unauthenticated", async () => {
+    test('createTeam rejects when unauthenticated', async () => {
         await expect(
             t.mutation(api.teams.createTeam, {
-                name: "Test",
-                description: "Test",
+                name: 'Test',
+                description: 'Test',
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated/);
     });
 
-    test("getTeams rejects when unauthenticated", async () => {
+    test('getTeams rejects when unauthenticated', async () => {
         await expect(t.query(api.teams.getTeams, {})).rejects.toThrow(
             /Unauthenticated|User not authenticated/
         );
     });
 
-    test("createTeam handles special characters in name", async () => {
+    test('createTeam handles special characters in name', async () => {
         const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: "Team @#$%^&*()!",
-            description: "Description",
+            name: 'Team @#$%^&*()!',
+            description: 'Description',
         });
 
         // When name has special characters, they are removed/replaced

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeToggle } from './theme-switcher';
 
@@ -18,7 +18,17 @@ vi.mock('next-themes', () => ({
 
 // Mock @repo/ui components
 vi.mock('@repo/ui/components/button', () => ({
-    Button: ({ children, variant, size, ...props }: { children: React.ReactNode; variant?: string; size?: string; [key: string]: any }) => (
+    Button: ({
+        children,
+        variant,
+        size,
+        ...props
+    }: {
+        children: React.ReactNode;
+        variant?: string;
+        size?: string;
+        [key: string]: any;
+    }) => (
         <button data-testid="theme-button" data-variant={variant} data-size={size} {...props}>
             {children}
         </button>
@@ -30,20 +40,42 @@ vi.mock('@repo/ui/components/dropdown-menu', () => ({
         <div data-testid="dropdown-menu">{children}</div>
     ),
     DropdownMenuContent: ({ children, align }: { children: React.ReactNode; align?: string }) => (
-        <div data-testid="dropdown-content" data-align={align}>{children}</div>
+        <div data-testid="dropdown-content" data-align={align}>
+            {children}
+        </div>
     ),
-    DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-        <button data-testid="dropdown-item" onClick={onClick}>{children}</button>
+    DropdownMenuItem: ({
+        children,
+        onClick,
+    }: {
+        children: React.ReactNode;
+        onClick?: () => void;
+    }) => (
+        <button data-testid="dropdown-item" onClick={onClick}>
+            {children}
+        </button>
     ),
-    DropdownMenuTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => (
-        <div data-testid="dropdown-trigger" data-as-child={asChild}>{children}</div>
+    DropdownMenuTrigger: ({
+        children,
+        asChild,
+    }: {
+        children: React.ReactNode;
+        asChild?: boolean;
+    }) => (
+        <div data-testid="dropdown-trigger" data-as-child={asChild}>
+            {children}
+        </div>
     ),
 }));
 
 // Mock lucide-react
 vi.mock('lucide-react', () => ({
-    Moon: ({ className }: { className?: string }) => <svg data-testid="moon-icon" className={className} />,
-    Sun: ({ className }: { className?: string }) => <svg data-testid="sun-icon" className={className} />,
+    Moon: ({ className }: { className?: string }) => (
+        <svg data-testid="moon-icon" className={className} />
+    ),
+    Sun: ({ className }: { className?: string }) => (
+        <svg data-testid="sun-icon" className={className} />
+    ),
 }));
 
 describe('ThemeToggle', () => {

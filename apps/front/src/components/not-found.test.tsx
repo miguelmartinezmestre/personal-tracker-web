@@ -48,6 +48,12 @@ describe('NotFound', () => {
         const { container } = render(<NotFound />);
 
         const mainDiv = container.firstChild as HTMLElement;
-        expect(mainDiv).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'min-h-screen');
+        expect(mainDiv).toHaveClass(
+            'flex',
+            'flex-col',
+            'items-center',
+            'justify-center',
+            'min-h-screen'
+        );
     });
 });

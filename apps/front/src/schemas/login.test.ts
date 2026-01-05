@@ -1,51 +1,53 @@
-import { describe, it, expect } from "vitest";
-import { loginSchema } from "./login";
+import { describe, it, expect } from 'vitest';
+import { loginSchema } from './login';
 
-describe("loginSchema", () => {
-    it("should validate a valid login", () => {
+describe('loginSchema', () => {
+    it('should validate a valid login', () => {
         const validLogin = {
-            email: "test@example.com",
-            password: "password123",
+            email: 'test@example.com',
+            password: 'password123',
         };
 
         const result = loginSchema.safeParse(validLogin);
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.email).toBe("test@example.com");
-            expect(result.data.password).toBe("password123");
+            expect(result.data.email).toBe('test@example.com');
+            expect(result.data.password).toBe('password123');
         }
     });
 
-    it("should require email", () => {
+    it('should require email', () => {
         const invalidLogin = {
-            password: "password123",
+            password: 'password123',
         };
 
         const result = loginSchema.safeParse(invalidLogin);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const emailError = result.error.issues.find(issue => issue.path.includes("email"));
+            const emailError = result.error.issues.find(issue => issue.path.includes('email'));
             expect(emailError).toBeDefined();
         }
     });
 
-    it("should require password", () => {
+    it('should require password', () => {
         const invalidLogin = {
-            email: "test@example.com",
+            email: 'test@example.com',
         };
 
         const result = loginSchema.safeParse(invalidLogin);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const passwordError = result.error.issues.find(issue => issue.path.includes("password"));
+            const passwordError = result.error.issues.find(issue =>
+                issue.path.includes('password')
+            );
             expect(passwordError).toBeDefined();
         }
     });
 
-    it("should validate email format", () => {
+    it('should validate email format', () => {
         const invalidLogin = {
-            email: "not-an-email",
-            password: "password123",
+            email: 'not-an-email',
+            password: 'password123',
         };
 
         const result = loginSchema.safeParse(invalidLogin);
@@ -55,20 +57,15 @@ describe("loginSchema", () => {
         }
     });
 
-    it("should accept valid email formats", () => {
-        const validEmails = [
-            "test@example.com",
-            "user.name@example.co.uk",
-            "user+tag@example.com",
-        ];
+    it('should accept valid email formats', () => {
+        const validEmails = ['test@example.com', 'user.name@example.co.uk', 'user+tag@example.com'];
 
-        validEmails.forEach((email) => {
+        validEmails.forEach(email => {
             const result = loginSchema.safeParse({
                 email,
-                password: "password123",
+                password: 'password123',
             });
             expect(result.success).toBe(true);
         });
     });
 });
-

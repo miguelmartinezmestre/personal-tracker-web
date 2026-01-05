@@ -9,8 +9,20 @@ vi.mock('next-intl', () => ({
 
 // Mock next/link
 vi.mock('next/link', () => ({
-    default: ({ children, href, className, prefetch }: { children: React.ReactNode; href: string; className?: string; prefetch?: boolean }) => (
-        <a href={href} className={className} data-prefetch={prefetch?.toString()}>{children}</a>
+    default: ({
+        children,
+        href,
+        className,
+        prefetch,
+    }: {
+        children: React.ReactNode;
+        href: string;
+        className?: string;
+        prefetch?: boolean;
+    }) => (
+        <a href={href} className={className} data-prefetch={prefetch?.toString()}>
+            {children}
+        </a>
     ),
 }));
 
@@ -24,16 +36,14 @@ vi.mock('./language-switcher', () => ({
     LanguageSwitcher: () => <button data-testid="language-switcher">Language Switcher</button>,
 }));
 
-// Mock convex/react
-vi.mock('convex/react', () => ({
-    Authenticated: ({ children }: { children: React.ReactNode }) => (
-        <div data-testid="authenticated">{children}</div>
-    ),
-}));
-
-// Mock use-auth hook
-vi.mock('@/hooks/api/use-auth', () => ({
-    useIsAuthenticated: () => ({ data: true }),
+// Mock auth-client session
+vi.mock('@/lib/auth-client', () => ({
+    authClient: {
+        useSession: () => ({
+            data: { user: { id: 'test-user', email: 'test@example.com', name: 'Test' } },
+            isPending: false,
+        }),
+    },
 }));
 
 describe('NavBar', () => {
@@ -74,9 +84,6 @@ describe('NavBar', () => {
 
     it('renders authenticated section with dashboard link', () => {
         render(<NavBar />);
-
-        const authenticated = screen.getByTestId('authenticated');
-        expect(authenticated).toBeInTheDocument();
 
         const dashboardLink = screen.getByText('goToDashboard');
         expect(dashboardLink).toBeInTheDocument();

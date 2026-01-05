@@ -36,7 +36,9 @@ test.describe('Categories Management', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for category select/combobox
-            const categorySelect = page.locator('[name="category"], [data-testid="category-select"]');
+            const categorySelect = page.locator(
+                '[name="category"], [data-testid="category-select"]'
+            );
             if (await categorySelect.first().isVisible()) {
                 await takeScreenshot(page, 'categories-select', 'category-field');
             }

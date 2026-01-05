@@ -53,5 +53,3 @@ test('register validation: empty username shows error', async ({ page }) => {
     // Should not navigate
     await expect(page).toHaveURL(/\/register$/);
 });
-
-

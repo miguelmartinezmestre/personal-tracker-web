@@ -77,8 +77,10 @@ describe('QuickActions', () => {
     };
 
     it('renders all action buttons for in_progress objective', () => {
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />
+        );
 
         expect(screen.getByTitle('tooltips.complete')).toBeInTheDocument();
         expect(screen.getByTitle('tooltips.pause')).toBeInTheDocument();
@@ -87,8 +89,10 @@ describe('QuickActions', () => {
     });
 
     it('renders only resume button for paused objective', () => {
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="paused" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="paused" />
+        );
 
         expect(screen.getByTitle('tooltips.resume')).toBeInTheDocument();
         expect(screen.getByTitle('tooltips.archive')).toBeInTheDocument();
@@ -97,8 +101,10 @@ describe('QuickActions', () => {
     });
 
     it('renders no action buttons for completed objective', () => {
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="completed" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="completed" />
+        );
 
         expect(screen.queryByTitle('tooltips.complete')).not.toBeInTheDocument();
         expect(screen.queryByTitle('tooltips.pause')).not.toBeInTheDocument();
@@ -107,8 +113,10 @@ describe('QuickActions', () => {
     });
 
     it('renders no action buttons for archived objective', () => {
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="archived" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="archived" />
+        );
 
         expect(screen.queryByTitle('tooltips.complete')).not.toBeInTheDocument();
         expect(screen.queryByTitle('tooltips.pause')).not.toBeInTheDocument();
@@ -117,8 +125,10 @@ describe('QuickActions', () => {
     });
 
     it('opens dropdown menu when more button is clicked', async () => {
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />
+        );
 
         const moreButton = screen.getByTitle('tooltips.more');
         fireEvent.click(moreButton);
@@ -135,8 +145,10 @@ describe('QuickActions', () => {
         objectiveMutations.pause.mockImplementation((_vars, options) => options?.onSuccess?.());
         objectiveMutations.archive.mockImplementation((_vars, options) => options?.onSuccess?.());
 
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />
+        );
 
         fireEvent.click(screen.getByTitle('tooltips.complete'));
         fireEvent.click(screen.getByTitle('tooltips.pause'));
@@ -160,8 +172,10 @@ describe('QuickActions', () => {
             options?.onError?.(new Error('archive failed'))
         );
 
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="in_progress" />
+        );
 
         fireEvent.click(screen.getByTitle('tooltips.complete'));
         fireEvent.click(screen.getByTitle('tooltips.pause'));
@@ -183,8 +197,10 @@ describe('QuickActions', () => {
                 options?.onError?.(new Error('resume failed'))
             );
 
-        const testObjectiveId = "test123" as Id<'objectives'>;
-        renderWithQueryClient(<QuickActions objectiveId={testObjectiveId} currentStatus="paused" />);
+        const testObjectiveId = 'test123' as Id<'objectives'>;
+        renderWithQueryClient(
+            <QuickActions objectiveId={testObjectiveId} currentStatus="paused" />
+        );
 
         fireEvent.click(screen.getByTitle('tooltips.resume'));
         fireEvent.click(screen.getByTitle('tooltips.resume'));

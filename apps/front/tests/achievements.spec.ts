@@ -115,7 +115,9 @@ test.describe('Achievements', () => {
             await takeScreenshot(page, 'achievements', 'after-initialize');
 
             // Verify achievements grid is now visible
-            await expect(page.getByTestId('achievements-grid-individual')).toBeVisible({ timeout: 5000 });
+            await expect(page.getByTestId('achievements-grid-individual')).toBeVisible({
+                timeout: 5000,
+            });
         }
     });
 

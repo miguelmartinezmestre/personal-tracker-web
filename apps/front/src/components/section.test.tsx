@@ -45,7 +45,7 @@ describe('Section', () => {
             />
         );
 
-        expect(screen.getByText("Special <characters> & symbols")).toBeInTheDocument();
+        expect(screen.getByText('Special <characters> & symbols')).toBeInTheDocument();
         expect(screen.getByText('Content with \'quotes\' and "double quotes"')).toBeInTheDocument();
     });
 

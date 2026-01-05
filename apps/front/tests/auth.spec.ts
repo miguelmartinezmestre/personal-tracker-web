@@ -5,16 +5,16 @@ test('register new user', async ({ page }) => {
     // Screenshot: Landing page before registration
     await page.goto('/');
     await takeScreenshot(page, 'register-new-user', 'landing-page');
-    
+
     // Screenshot: Registration form
     await page.goto('/register');
     await takeScreenshot(page, 'register-new-user', 'registration-form');
-    
+
     const { username } = await createTestUser(page);
-    
+
     // Screenshot: Dashboard after successful registration
     await takeScreenshot(page, 'register-new-user', 'dashboard-after-registration');
-    
+
     const welcomeMessage = await page.getByTestId('welcome-message').textContent();
     expect(welcomeMessage).toContain(username);
 });
@@ -29,13 +29,13 @@ test('login with existing user', async ({ page }) => {
     // Screenshot: Login form
     await page.goto('/login');
     await takeScreenshot(page, 'login-with-existing-user', 'login-form');
-    
+
     await page.getByTestId('email-input').fill(email);
     await page.getByTestId('password-input').fill('12345678');
-    
+
     // Screenshot: Login form filled
     await takeScreenshot(page, 'login-with-existing-user', 'login-form-filled');
-    
+
     await page.getByTestId('login-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
 

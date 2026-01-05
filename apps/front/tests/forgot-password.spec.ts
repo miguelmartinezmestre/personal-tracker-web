@@ -15,4 +15,3 @@ test('forgot password: form has email input', async ({ page }) => {
     await page.goto('/forget-password');
     await expect(page.getByTestId('email-input')).toBeVisible();
 });
-

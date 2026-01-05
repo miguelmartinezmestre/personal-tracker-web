@@ -4,7 +4,8 @@ import { UserAgentIcon } from './user-agent';
 
 describe('UserAgentIcon', () => {
     it('renders with a user agent string', () => {
-        const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+        const userAgent =
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
         const { container } = render(<UserAgentIcon userAgent={userAgent} />);
 
         // Should render an icon (SVG element)
@@ -12,7 +13,8 @@ describe('UserAgentIcon', () => {
     });
 
     it('shows device name by default', () => {
-        const userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1';
+        const userAgent =
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1';
         render(<UserAgentIcon userAgent={userAgent} showName={true} />);
 
         // Should show some device info text
@@ -30,7 +32,8 @@ describe('UserAgentIcon', () => {
     });
 
     it('shows full info when showFullInfo is true', () => {
-        const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+        const userAgent =
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
         const { container } = render(
             <UserAgentIcon userAgent={userAgent} showName={true} showFullInfo={true} />
         );
@@ -53,7 +56,9 @@ describe('UserAgentIcon', () => {
 
     it('respects custom size prop', () => {
         const userAgent = 'Mozilla/5.0 Chrome/91.0';
-        const { container } = render(<UserAgentIcon userAgent={userAgent} size={48} showName={false} />);
+        const { container } = render(
+            <UserAgentIcon userAgent={userAgent} size={48} showName={false} />
+        );
 
         // The SVG should have the specified size attributes
         const svg = container.querySelector('svg');
@@ -80,7 +85,8 @@ describe('UserAgentIcon', () => {
     });
 
     it('handles mobile Android user agent', () => {
-        const androidUserAgent = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36';
+        const androidUserAgent =
+            'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36';
         const { container } = render(<UserAgentIcon userAgent={androidUserAgent} />);
 
         // Should recognize as mobile device (renders without crashing)
@@ -88,7 +94,8 @@ describe('UserAgentIcon', () => {
     });
 
     it('handles tablet user agent', () => {
-        const tabletUserAgent = 'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1';
+        const tabletUserAgent =
+            'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1';
         const { container } = render(<UserAgentIcon userAgent={tabletUserAgent} />);
 
         // Should render with tablet-related info (renders without crashing)
@@ -103,7 +110,8 @@ describe('UserAgentIcon', () => {
     });
 
     it('handles Mac OS user agent', () => {
-        const macUserAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15';
+        const macUserAgent =
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15';
         const { container } = render(<UserAgentIcon userAgent={macUserAgent} />);
 
         // Should render with Mac-related info (renders without crashing)
@@ -114,7 +122,8 @@ describe('UserAgentIcon', () => {
     });
 
     it('handles Linux user agent', () => {
-        const linuxUserAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+        const linuxUserAgent =
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
         const { container } = render(<UserAgentIcon userAgent={linuxUserAgent} />);
 
         // Should render with Linux-related info (renders without crashing)

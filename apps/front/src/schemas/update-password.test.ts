@@ -57,8 +57,8 @@ describe('updatePasswordSchema', () => {
         expect(result.success).toBe(false);
 
         if (!result.success) {
-            const confirmPasswordError = result.error.issues.find(
-                issue => issue.path.includes('confirmPassword')
+            const confirmPasswordError = result.error.issues.find(issue =>
+                issue.path.includes('confirmPassword')
             );
             expect(confirmPasswordError).toBeDefined();
         }

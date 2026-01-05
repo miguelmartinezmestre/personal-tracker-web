@@ -122,18 +122,15 @@ describe('convex categories', async () => {
                 color: '#f59e0b',
             });
 
-            const userCategories = await userIdentity.query(
-                api.categories.getCategoriesByUser,
-                {}
-            );
+            const userCategories = await userIdentity.query(api.categories.getCategoriesByUser, {});
             expect(userCategories).toHaveLength(2);
             expect(userCategories.every(c => c.user === userId)).toBe(true);
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(
-                t.query(api.categories.getCategoriesByUser, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.query(api.categories.getCategoriesByUser, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
     });
 
@@ -263,10 +260,7 @@ describe('convex categories', async () => {
 
     describe('createDefaultCategories', () => {
         test('creates all 9 default categories', async () => {
-            const result = await userIdentity.mutation(
-                api.categories.createDefaultCategories,
-                {}
-            );
+            const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
 
             expect(result).toHaveLength(9);
 
@@ -289,10 +283,7 @@ describe('convex categories', async () => {
         });
 
         test('all default categories have colors and icons', async () => {
-            const result = await userIdentity.mutation(
-                api.categories.createDefaultCategories,
-                {}
-            );
+            const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
 
             result.forEach(category => {
                 expect(category?.color).toBeDefined();
@@ -302,10 +293,7 @@ describe('convex categories', async () => {
         });
 
         test('all default categories belong to calling user', async () => {
-            const result = await userIdentity.mutation(
-                api.categories.createDefaultCategories,
-                {}
-            );
+            const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
 
             result.forEach(category => {
                 expect(category?.user).toBe(userId);
@@ -313,9 +301,9 @@ describe('convex categories', async () => {
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(
-                t.mutation(api.categories.createDefaultCategories, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            await expect(t.mutation(api.categories.createDefaultCategories, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
         });
     });
 });

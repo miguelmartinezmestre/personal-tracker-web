@@ -15,9 +15,7 @@ test.describe('Notifications Page', () => {
         await expect(heading).toBeVisible();
     });
 
-    test('mark all as read button is disabled when no unread notifications', async ({
-        page,
-    }) => {
+    test('mark all as read button is disabled when no unread notifications', async ({ page }) => {
         await createTestUser(page);
         await page.goto('/dashboard/notifications');
 
