@@ -39,14 +39,53 @@ async function acceptInvitation(page: Page, invitationId: string) {
 
 test('team members: add, edit role, and delete team members', async ({ page, browser }) => {
     const uuid = randomUUID();
+    const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
+
+    // Create main user (team owner)
     await createTestUser(page);
 
+    // Create a team
     await page.goto('/dashboard/teams');
     await page.waitForLoadState('networkidle');
 
     const createButton = page.getByTestId('team-create-open');
     await expect(createButton).toBeVisible({ timeout: 10000 });
 
+    const teamName = `testteam-${uuid}`;
+    await createButton.click();
+    await expect(page.getByTestId('team-name-input')).toBeVisible();
+    await page.getByTestId('team-name-input').fill(teamName);
+    await page.getByTestId('team-description-input').fill('Test team description');
+    await expect(page.getByTestId('team-save-button')).toBeEnabled();
+    await page.getByTestId('team-save-button').click();
+
+    // Wait for team to be created and navigate to team detail
+    await expect(page.getByText(teamName)).toBeVisible({ timeout: 10000 });
+    const teamRow = page.locator('tr', { hasText: teamName }).first();
+    await teamRow.getByTestId('team-detail-link').click();
+
+    // Extract team ID from URL
+    await page.waitForLoadState('networkidle');
+    const url = page.url();
+    const teamIdMatch = url.match(/\/dashboard\/teams\/([^/]+)/);
+    if (!teamIdMatch) {
+        throw new Error('Could not extract team ID from URL');
+    }
+    const teamId = teamIdMatch[1];
+
+    // Create a second user and invite them
+    const invitedContext = await browser.newContext({ baseURL });
+    const invitedPage = await invitedContext.newPage();
+    const invitedUser = await createTestUser(invitedPage);
+
+    // Invite the user
+    const invitation = await inviteMember(page, teamId, invitedUser.email, 'member');
+
+    // Accept invitation
+    await acceptInvitation(invitedPage, invitation.id);
+    await invitedContext.close();
+
+    // Navigate to team members page
     await page.goto(`/dashboard/teams/${teamId}`);
     await page.waitForLoadState('networkidle');
 

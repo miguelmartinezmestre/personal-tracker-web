@@ -1,7 +1,9 @@
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from './rls';
-import { Doc, Id } from './_generated/dataModel';
-import { internalMutation, internalQuery, QueryCtx, MutationCtx } from './_generated/server';
+import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
+import { Doc } from './_generated/dataModel';
+import { internalMutation, QueryCtx, MutationCtx } from './_generated/server';
+import { components } from './_generated/api';
+
 
 // Achievement definitions data
 const ACHIEVEMENT_DEFINITIONS = [
@@ -723,10 +725,19 @@ export const checkTeamAchievements = internalMutation({
         );
 
         // Get team members
-        const members = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', teamId))
-            .collect();
+        const members = (await ctx.runQuery(
+            components.betterAuth.adapter.findMany,
+            {
+              model: "member",
+              where: [{ field: "organizationId", value: teamId }],
+              paginationOpts: {
+                cursor: null,
+                numItems: 10,
+              },
+            }
+        )) as BetterAuthDataModel["member"]["document"][];
+
+        
 
         const memberUserIds = members.map(m => m.userId);
 
@@ -759,10 +770,12 @@ export const checkTeamAchievements = internalMutation({
                         trigger === 'objective_completed' && completedTeamObjectives.length >= 30;
                     break;
                 case 'team_streak_7':
-                    // Check if team has had activity for 7 consecutive days
-                    const teamStreak = await calculateTeamStreak(ctx, memberUserIds);
-                    shouldAward = trigger === 'progress_update' && teamStreak >= 7;
-                    break;
+                    {
+                        // Check if team has had activity for 7 consecutive days
+                        const teamStreak = await calculateTeamStreak(ctx, memberUserIds);
+                        shouldAward = trigger === 'progress_update' && teamStreak >= 7;
+                        break;
+                    }
             }
 
             if (shouldAward) {
@@ -797,7 +810,7 @@ export const checkTeamAchievements = internalMutation({
     },
 });
 
-async function calculateTeamStreak(ctx: any, memberUserIds: string[]): Promise<number> {
+async function calculateTeamStreak(ctx: QueryCtx, memberUserIds: string[]): Promise<number> {
     const allObjectives = await ctx.db.query('objectives').collect();
     const teamObjectives = allObjectives.filter((o: Doc<'objectives'>) =>
         memberUserIds.includes(o.user)

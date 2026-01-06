@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const mockGetToken = vi.fn();
+
 vi.mock('@convex-dev/better-auth/nextjs', () => ({
-    getToken: vi.fn(),
+    convexBetterAuthNextJs: vi.fn(() => ({
+        getToken: mockGetToken,
+    })),
 }));
 
 vi.mock('@repo/backend/convex/auth', () => ({
@@ -15,14 +19,13 @@ describe('auth-server', () => {
 
     it('delegates to getTokenNextjs with the auth config', async () => {
         const { getToken } = await import('./auth-server');
-        const { getToken: getTokenNextjs } = await import('@convex-dev/better-auth/nextjs');
         const { createAuth } = await import('@repo/backend/convex/auth');
 
-        vi.mocked(getTokenNextjs).mockResolvedValue('token-result');
+        mockGetToken.mockResolvedValue('token-result');
 
         const result = await getToken();
 
-        expect(getTokenNextjs).toHaveBeenCalledWith(createAuth);
+        expect(mockGetToken).toHaveBeenCalled();
         expect(result).toBe('token-result');
     });
 });

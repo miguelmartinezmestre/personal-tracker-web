@@ -1,4 +1,6 @@
+import { components } from './_generated/api';
 import { MutationCtx } from './_generated/server';
+import { BetterAuthDataModel } from './rls';
 
 /**
  * Helper function to create a complete test user with all required fields
@@ -11,7 +13,7 @@ import { MutationCtx } from './_generated/server';
  * then the userId should be "test-user-123".
  */
 export async function createTestUser(
-    ctx: { db: MutationCtx['db'] },
+    ctx: { db: MutationCtx['db']; runQuery: MutationCtx['runQuery']; runMutation: MutationCtx['runMutation'] },
     options: {
         userId: string;
         email: string;
@@ -25,67 +27,123 @@ export async function createTestUser(
     const { userId, email, name, password, role, emailVerified = false } = options;
 
     // Check if user already exists to avoid duplicates
-    const existingUser = await ctx.db
-        .query('user')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .first();
+    const existingUser = (await ctx.runQuery(
+            components.betterAuth.adapter.findOne,
+            {
+              model: "user",
+              where: [{ field: "userId", value: userId }],
+            }
+        )) as BetterAuthDataModel["user"]["document"] | null;
 
     let userRecordId;
     if (existingUser) {
         userRecordId = existingUser._id;
         // Update the existing user
-        await ctx.db.patch(userRecordId, {
-            email,
-            name,
-            emailVerified,
-            updatedAt: now,
-            role: role !== undefined ? role : existingUser.role,
-        });
+        await ctx.runMutation(
+            components.betterAuth.adapter.updateOne,
+            {
+                input: {
+                    model: "user",
+                    update: {
+                        email: email,
+                        name: name,
+                        emailVerified: emailVerified,
+                        updatedAt: now,
+                        role: role !== undefined ? role : existingUser.role,
+                    },
+                    where: [{ field: "_id", value: userRecordId }],
+                },
+            }
+        );
     } else {
         // Create user record - userId must match the 'subject' in the identity
-        userRecordId = await ctx.db.insert('user', {
-            userId: userId, // This must match the 'subject' in withIdentity
-            email,
-            name,
-            emailVerified,
-            createdAt: now,
-            updatedAt: now,
-            role: role || null,
-            image: null,
-            banned: null,
-            banReason: null,
-            banExpires: null,
-        });
+        const userRecord = (await ctx.runMutation(
+            components.betterAuth.adapter.create,
+            {
+                input: {
+                    data: {
+                        userId: userId,
+                        email: email,
+                        name: name,
+                        emailVerified: emailVerified,
+                        createdAt: now,
+                        updatedAt: now,
+                        role: role !== undefined ? role : null,
+                        image: null,
+                        banned: null,
+                        banReason: null,
+                        banExpires: null,
+                    },
+                    model: "user",
+                },
+            }
+        )) as BetterAuthDataModel["user"]["document"];
+        userRecordId = userRecord._id;
     }
 
     // Create account record (required by better-auth for email/password authentication)
     if (password) {
         // Check if account already exists
-        const existingAccount = await ctx.db
-            .query('account')
-            .withIndex('providerId_userId', q =>
-                q.eq('providerId', 'credential').eq('userId', userId)
-            )
-            .first();
+        const existingAccount = (await ctx.runQuery(
+            components.betterAuth.adapter.findMany,
+            {
+              model: "account",
+              where: [{ field: "providerId", value: 'credential' }, { field: "userId", value: userId }],
+              paginationOpts: {
+                cursor: null,
+                numItems: 1,
+              },
+            }
+        )) as BetterAuthDataModel["account"]["document"] | null;
 
         if (!existingAccount) {
             // In a real scenario, better-auth would hash the password
             // For tests, we can store a placeholder or use a simple hash
             // Note: better-auth handles password hashing internally
-            await ctx.db.insert('account', {
-                accountId: email, // For email provider, accountId is typically the email
-                providerId: 'credential', // better-auth uses "credential" for email/password
-                userId: userId,
-                password: password, // In real better-auth, this would be hashed
-                createdAt: now,
-                updatedAt: now,
-                accessToken: null,
-                refreshToken: null,
-                idToken: null,
-                accessTokenExpiresAt: null,
-                refreshTokenExpiresAt: null,
-                scope: null,
-            });
+            await ctx.runMutation(
+                components.betterAuth.adapter.create,
+                {
+                  input: {
+                    data: {
+                      accountId: email, // For email provider, accountId is typically the email
+                      providerId: 'credential', // better-auth uses "credential" for email/password
+                      userId: userId,
+                      password: password, // In real better-auth, this would be hashed
+                      createdAt: now,
+                      updatedAt: now,
+                      accessToken: null,
+                      refreshToken: null,
+                      idToken: null,
+                      accessTokenExpiresAt: null,
+                      refreshTokenExpiresAt: null,
+                      scope: null,
+                    },
+                    model: "account",
+                  },
+                }
+            )
+
+            await ctx.runMutation(
+                components.betterAuth.adapter.create,
+                {
+                  input: {
+                    data: {
+                      userId: userId,
+                      email: email,
+                      name: name,
+                      emailVerified: emailVerified,
+                      createdAt: now,
+                      updatedAt: now,
+                      role: role || null,
+                      image: null,
+                      banned: null,
+                      banReason: null,
+                      banExpires: null,
+                    },
+                    model: "user",
+                  },
+                }
+            )
         }
     }
 
@@ -103,7 +161,7 @@ export async function createTestUser(
  * Note: This requires a context with write access (MutationCtx or equivalent from convex-test)
  */
 export async function createTestUsers(
-    ctx: { db: MutationCtx['db'] },
+    ctx: { db: MutationCtx['db']; runQuery: MutationCtx['runQuery']; runMutation: MutationCtx['runMutation'] },
     users: Array<{
         userId: string;
         email: string;

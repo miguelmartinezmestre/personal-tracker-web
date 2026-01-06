@@ -22,11 +22,10 @@
     "typescript-eslint": "^8.49.0"
   },
   "dependencies": {
-    "convex": "^1.31.0",
-    "convex-helpers": "^0.1.104",
-    "convex-test": "^0.0.38",
-    "@convex-dev/better-auth": "0.9.7",
-    "better-auth": "1.3.34",
-    "nodemailer": "^7.0.11"
+    "@convex-dev/better-auth": "catalog:",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "convex-helpers": "^0.1.108",
+    "convex-test": "^0.0.41"
   }
 }

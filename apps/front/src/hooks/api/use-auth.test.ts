@@ -75,16 +75,18 @@ describe('use-auth hooks', () => {
             expect(typeof useIsAuthenticated).toBe('function');
         });
 
-        it('should call useQuery from react-query', async () => {
+        it('should call useQuery from react-query and return boolean', async () => {
             const { useQuery } = await import('@tanstack/react-query');
             const { convexQuery } = await import('@convex-dev/react-query');
             const { api } = await import('@repo/backend/convex/_generated/api');
             const { useIsAuthenticated } = await import('./use-auth');
 
-            useIsAuthenticated();
+            vi.mocked(useQuery).mockReturnValue({ data: true } as any);
+            const result = useIsAuthenticated();
 
             expect(convexQuery).toHaveBeenCalledWith(api.auth.isAuthenticated, {});
             expect(useQuery).toHaveBeenCalled();
+            expect(result).toBe(true);
         });
     });
 });

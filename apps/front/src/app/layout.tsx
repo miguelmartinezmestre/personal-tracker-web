@@ -1,6 +1,6 @@
 import '@repo/ui/globals.css';
 
-import ConvexClientProvider from '@/providers/convex-provider';
+import { ConvexClientProvider } from '@/providers/convex-provider';
 import { ThemeProvider } from '@/providers/theme';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider, useLocale, useMessages } from 'next-intl';
