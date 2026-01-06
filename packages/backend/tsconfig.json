@@ -29,8 +29,11 @@
     "exclude": [
         "node_modules",
         "convex/_generated",
+        "convex/**/_generated",
         "convex/**/*.test.ts",
+        "convex/**/*.test.tsx",
         "convex/test.setup.ts",
+        "test.setup.ts",
         "../apps",
         "../packages"
     ]
