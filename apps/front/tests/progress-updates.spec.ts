@@ -112,15 +112,19 @@ test('progress updates: validation for required fields', async ({ page }) => {
     await objectiveRow.getByTestId('objective-progress-link').click();
     await expect(page).toHaveURL(/\/dashboard\/objectives\/[^/]+$/);
 
-    // Try to create progress with invalid value
+    // Try to create progress with invalid values
     await expect(page.getByTestId('progress-create-open')).toBeVisible();
     await page.getByTestId('progress-create-open').click();
     await expect(page.getByTestId('progress-value-input')).toBeVisible();
     await takeScreenshot(page, 'progress-updates-validation', 'empty-form');
-    await page.getByTestId('progress-value-input').fill('0');
+    await page.getByTestId('progress-value-input').fill('-5');
     await page.getByTestId('progress-save-button').click();
 
-    // Should show validation error
+    // Should show validation error for negative values
+    await expect(page.getByText(/updated value must be greater than 0/i)).toBeVisible();
+
+    await page.getByTestId('progress-value-input').fill('0');
+    await page.getByTestId('progress-save-button').click();
     await expect(page.getByText(/updated value must be greater than 0/i)).toBeVisible();
     await takeScreenshot(page, 'progress-updates-validation', 'validation-error-displayed');
 });

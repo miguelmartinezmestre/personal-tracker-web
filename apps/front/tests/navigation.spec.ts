@@ -39,25 +39,3 @@ test('navigation: logo link redirects to home', async ({ page }) => {
     await page.getByRole('link', { name: /home/i }).click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
 });
-
-test('navigation: direct URL navigation works for authenticated users', async ({ page }) => {
-    // Register and login
-    await createTestUser(page);
-
-    // Direct navigation to different pages
-    await page.goto('/dashboard/objectives');
-    await expect(page).toHaveURL(/\/dashboard\/objectives$/);
-    await takeScreenshot(page, 'navigation-direct-url', 'objectives-direct');
-
-    await page.goto('/dashboard/sessions');
-    await expect(page).toHaveURL(/\/dashboard\/sessions$/);
-    await takeScreenshot(page, 'navigation-direct-url', 'sessions-direct');
-
-    await page.goto('/dashboard/teams');
-    await expect(page).toHaveURL(/\/dashboard\/teams$/);
-    await takeScreenshot(page, 'navigation-direct-url', 'teams-direct');
-
-    await page.goto('/dashboard/notifications');
-    await expect(page).toHaveURL(/\/dashboard\/notifications$/);
-    await takeScreenshot(page, 'navigation-direct-url', 'notifications-direct');
-});

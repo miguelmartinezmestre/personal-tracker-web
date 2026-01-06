@@ -1,116 +1,76 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
+import { createTestUser, getPageOrigin } from './test-helpers';
 
-test('team members: add and view team members', async ({ page }) => {
-    // Register and login
+type InviteRole = 'admin' | 'member';
+
+async function inviteMember(
+    page: Page,
+    organizationId: string,
+    email: string,
+    role: InviteRole = 'member'
+) {
+    const origin = getPageOrigin(page);
+    const response = await page.request.post('/api/auth/organization/invite-member', {
+        data: { organizationId, email, role },
+        headers: { Origin: origin },
+    });
+
+    if (!response.ok()) {
+        throw new Error(`inviteMember failed: ${response.status()} ${await response.text()}`);
+    }
+
+    return (await response.json()) as { id: string };
+}
+
+async function acceptInvitation(page: Page, invitationId: string) {
+    const origin = getPageOrigin(page);
+    const response = await page.request.post('/api/auth/organization/accept-invitation', {
+        data: { invitationId },
+        headers: { Origin: origin },
+    });
+
+    if (!response.ok()) {
+        throw new Error(`acceptInvitation failed: ${response.status()} ${await response.text()}`);
+    }
+
+    return response.json();
+}
+
+test('team members: add, edit role, and delete team members', async ({ page, browser }) => {
     const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
+    await createTestUser(page);
 
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
-
-    // Check teams accessibility immediately
     await page.goto('/dashboard/teams');
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
 
     const createButton = page.getByTestId('team-create-open');
-    const isTeamsAccessible = await createButton.isVisible({ timeout: 3000 }).catch(() => false);
+    await expect(createButton).toBeVisible({ timeout: 10000 });
 
-    if (!isTeamsAccessible) {
-        // Teams functionality requires permissions - test access control
-        const currentUrl = page.url();
-        expect(currentUrl).toContain('/dashboard');
-        console.log('✅ Team members correctly restricted - requires teams access');
-        test.skip();
-        return;
-    }
+    await page.goto(`/dashboard/teams/${teamId}`);
+    await page.waitForLoadState('networkidle');
 
-    // Create a team if accessible
-    const teamName = `testteam-${uuid}`;
-    await createButton.click();
-    await expect(page.getByTestId('team-name-input')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /team members|miembros/i })).toBeVisible({
+        timeout: 10000,
+    });
+    await expect(page.getByText(invitedUser.email)).toBeVisible({ timeout: 10000 });
 
-    await page.getByTestId('team-name-input').fill(teamName);
-    await page.getByTestId('team-description-input').fill('Test team description');
-    await expect(page.getByTestId('team-save-button')).toBeEnabled();
-    await page.getByTestId('team-save-button').click();
-    await expect(page.getByText(teamName)).toBeVisible();
+    const memberRow = page.locator('tr', { hasText: invitedUser.email }).first();
+    await memberRow.getByRole('button', { name: /edit/i }).click();
 
-    // Navigate to team detail page
-    const teamRow = page.locator('tr', { hasText: teamName }).first();
-    await teamRow.getByTestId('team-detail-link').click();
-    await expect(page).toHaveURL(/\/dashboard\/teams\/[^/]+$/);
+    const dialog = page.getByRole('dialog');
+    const roleTrigger = dialog.getByRole('button').first();
+    await roleTrigger.click();
+    await page.getByRole('option', { name: /manager|admin/i }).click();
+    await dialog.getByRole('button', { name: /save|guardar/i }).click();
 
-    // Verify team members section is visible
-    await expect(page.getByRole('heading', { name: /team members/i })).toBeVisible();
-    await expect(page.getByTestId('table')).toBeVisible();
+    await expect(memberRow).toContainText(/manager|admin|MANAGER/i);
 
-    // Try to add a team member (if button exists)
-    const addMemberButton = page.getByTestId('team-member-add-open');
-    if (await addMemberButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await addMemberButton.click();
-        await expect(page.getByTestId('team-member-email-input')).toBeVisible();
-        await page.getByTestId('team-member-cancel-button').click();
-    }
-});
+    await memberRow.getByRole('button', { name: /delete|eliminar/i }).click();
+    const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
+    await expect(deleteDialog).toBeVisible();
+    await deleteDialog.getByRole('button', { name: /confirm|delete|eliminar/i }).click();
+    await expect(deleteDialog).toBeHidden({ timeout: 10000 });
 
-test('team members: edit team member roles', async ({ page }) => {
-    // Register and login
-    const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
-
-    await page.goto('/register');
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill('12345678');
-    await page.getByTestId('register-confirm-password-input').fill('12345678');
-    await page.getByTestId('register-button').click();
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
-
-    // Check teams accessibility immediately
-    await page.goto('/dashboard/teams');
-    await page.waitForTimeout(2000);
-
-    const createButton = page.getByTestId('team-create-open');
-    const isTeamsAccessible = await createButton.isVisible({ timeout: 3000 }).catch(() => false);
-
-    if (!isTeamsAccessible) {
-        // Test access control instead
-        const currentUrl = page.url();
-        expect(currentUrl).toContain('/dashboard');
-        console.log('✅ Team member management correctly restricted');
-        test.skip();
-        return;
-    }
-
-    // Create a team if accessible
-    const teamName = `testteam-${uuid}`;
-    await createButton.click();
-    await expect(page.getByTestId('team-name-input')).toBeVisible();
-
-    await page.getByTestId('team-name-input').fill(teamName);
-    await page.getByTestId('team-description-input').fill('Test team description');
-    await expect(page.getByTestId('team-save-button')).toBeEnabled();
-    await page.getByTestId('team-save-button').click();
-    await expect(page.getByText(teamName)).toBeVisible();
-
-    // Navigate to team detail page
-    const teamRow = page.locator('tr', { hasText: teamName }).first();
-    await teamRow.getByTestId('team-detail-link').click();
-    await expect(page).toHaveURL(/\/dashboard\/teams\/[^/]+$/);
-
-    // Check if edit member functionality exists
-    const editMemberButton = page.getByTestId('team-member-edit-open').first();
-    if (await editMemberButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await editMemberButton.click();
-        await expect(page.getByTestId('team-member-edit-save-button')).toBeVisible();
-        await page.getByTestId('team-member-edit-cancel-button').click();
-    }
+    await expect(page.getByText(invitedUser.email)).not.toBeVisible({ timeout: 10000 });
 });

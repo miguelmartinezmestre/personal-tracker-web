@@ -62,6 +62,16 @@ test('login redirects to register link works', async ({ page }) => {
     await takeScreenshot(page, 'login-redirects-to-register', 'register-page-after-redirect');
 });
 
-test.skip('logout', async () => {
-    // Logout UI is not available yet; enable once implemented.
+test('logout clears auth session (cookie-based)', async ({ page }) => {
+    await createTestUser(page);
+
+    // Ensure we are logged in first
+    await expect(page).toHaveURL(/\/dashboard\/home$/);
+
+    // Clear cookies to simulate logout (current UX)
+    await page.context().clearCookies();
+
+    // Navigate to a protected page; should redirect to login
+    await page.goto('/dashboard/home');
+    await expect(page).toHaveURL(/\/login$/);
 });

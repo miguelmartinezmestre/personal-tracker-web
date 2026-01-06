@@ -61,6 +61,16 @@ const textFilter: FilterFn<unknown> = (row, columnId, filterValue) => {
     return String(value).toLowerCase().includes(searchValue);
 };
 
+type ColumnMeta = {
+    excludeFromExport?: boolean;
+    disableColumnOrder?: boolean;
+    disableColumnVisibility?: boolean;
+    isAction?: boolean;
+};
+
+const getColumnMeta = (column: { columnDef?: { meta?: unknown } }) =>
+    column.columnDef?.meta as ColumnMeta | undefined;
+
 const formatExportValue = (value: unknown) => {
     if (value === null || value === undefined) {
         return '';
@@ -181,6 +191,7 @@ export function DataTable<TData extends RowData, TValue>({
                                                 onClick={header.column.getToggleSortingHandler()}
                                                 className="flex w-full items-center gap-2 text-left"
                                                 aria-label={t('toggleSorting')}
+                                                data-testid={`table-sort-${header.column.id}`}
                                             >
                                                 {flexRender(
                                                     header.column.columnDef.header,
@@ -293,13 +304,24 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
     const currentOrder =
         activeOrder.length > 0 ? activeOrder : orderedColumns.map(column => column.id);
 
+    const orderableColumns = orderedColumns.filter(column => {
+        const meta = getColumnMeta(column);
+        return !(meta?.disableColumnOrder || meta?.isAction);
+    });
+    const orderableColumnIds = new Set(orderableColumns.map(column => column.id));
+    const orderableOrder = currentOrder.filter(columnId => orderableColumnIds.has(columnId));
+
     const moveColumn = (columnId: string, direction: 'up' | 'down') => {
-        const currentIndex = currentOrder.indexOf(columnId);
+        const currentIndex = orderableOrder.indexOf(columnId);
         const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (currentIndex === -1 || targetIndex < 0 || targetIndex >= currentOrder.length) {
+        if (
+            currentIndex === -1 ||
+            targetIndex < 0 ||
+            targetIndex >= orderableOrder.length
+        ) {
             return;
         }
-        const nextOrder = [...currentOrder];
+        const nextOrder = [...orderableOrder];
         [nextOrder[currentIndex], nextOrder[targetIndex]] = [
             nextOrder[targetIndex],
             nextOrder[currentIndex],
@@ -308,13 +330,17 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
     };
 
     const buildExportData = () => {
-        const headers = orderedVisibleColumns.map(column =>
+        const exportableColumns = orderedVisibleColumns.filter(column => {
+            const meta = getColumnMeta(column);
+            return !(meta?.excludeFromExport || meta?.isAction);
+        });
+        const headers = exportableColumns.map(column =>
             getColumnLabel(column.id, column.columnDef.header)
         );
         const rows = table
             .getRowModel()
             .rows.map(row =>
-                orderedVisibleColumns.map(column => formatExportValue(row.getValue(column.id)))
+                exportableColumns.map(column => formatExportValue(row.getValue(column.id)))
             );
         return { headers, rows };
     };
@@ -357,6 +383,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                         placeholder={resolvedSearchPlaceholder}
                         className="sm:max-w-xs"
                         disabled={isLoading}
+                        data-testid="table-global-search"
                     />
                 )}
                 {enableColumnFilters && (
@@ -400,6 +427,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                                                         column: headerLabel,
                                                     })}
                                                     className="h-8"
+                                                    data-testid={`table-filter-${column.id}`}
                                                 />
                                             </div>
                                         );
@@ -422,7 +450,13 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                             <DropdownMenuLabel>{t('toggleColumns')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {orderedColumns
-                                .filter(column => column.getCanHide())
+                                .filter(column => {
+                                    const meta = getColumnMeta(column);
+                                    return (
+                                        column.getCanHide() &&
+                                        !(meta?.disableColumnVisibility || meta?.isAction)
+                                    );
+                                })
                                 .map(column => {
                                     const headerLabel = getColumnLabel(
                                         column.id,
@@ -455,8 +489,8 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                             <DropdownMenuLabel>{t('columnOrder')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <div className="space-y-2 p-2">
-                                {currentOrder.map((columnId, index) => {
-                                    const column = orderedColumns.find(
+                                {orderableOrder.map((columnId, index) => {
+                                    const column = orderableColumns.find(
                                         entry => entry.id === columnId
                                     );
                                     if (!column) {
@@ -487,7 +521,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                                                     variant="ghost"
                                                     size="icon-sm"
                                                     onClick={() => moveColumn(column.id, 'down')}
-                                                    disabled={index === currentOrder.length - 1}
+                                                    disabled={index === orderableOrder.length - 1}
                                                 >
                                                     <ChevronDown className="h-4 w-4" />
                                                 </Button>
@@ -596,6 +630,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                                                     onClick={header.column.getToggleSortingHandler()}
                                                     className="flex w-full items-center gap-2 text-left"
                                                     aria-label={t('toggleSorting')}
+                                                    data-testid={`table-sort-${header.column.id}`}
                                                 >
                                                     {flexRender(
                                                         header.column.columnDef.header,

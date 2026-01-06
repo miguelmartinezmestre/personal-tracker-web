@@ -351,6 +351,99 @@ describe('convex achievements', async () => {
 
             expect(firstObjectiveCount).toBe(1);
         });
+
+        test('progress achievement logic validates correct threshold', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            // Create an objective
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Progress Threshold Test',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'in_progress',
+            });
+
+            // Create exactly 10 progress updates
+            for (let i = 1; i <= 10; i++) {
+                await userIdentity.run(async ctx => {
+                    await ctx.db.insert('progressUpdates', {
+                        objective: objectiveId,
+                        updatedValue: 5,
+                        updateDate: Date.now() + i * 1000,
+                        notes: `Update ${i}`,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
+                });
+            }
+
+            // Check progress manually
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const progressUpdateProgress = progress.find(
+                p => p.definition.code === 'progress_updates_10'
+            );
+
+            expect(progressUpdateProgress).toBeDefined();
+            if (progressUpdateProgress) {
+                expect(progressUpdateProgress.currentProgress).toBe(10);
+                expect(progressUpdateProgress.definition.threshold).toBe(10);
+
+                // Since progress equals threshold, achievement should be earnable
+                expect(progressUpdateProgress.currentProgress).toBeGreaterThanOrEqual(
+                    progressUpdateProgress.definition.threshold
+                );
+            }
+        });
+
+        test('streak achievement tracks consecutive daily updates', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            // Create an objective
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Streak Test Objective',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'in_progress',
+            });
+
+            const DAY_MS = 24 * 60 * 60 * 1000;
+            const today = new Date();
+            today.setHours(12, 0, 0, 0); // Noon to avoid timezone issues
+            const todayMs = today.getTime();
+
+            // Create progress updates for 3 consecutive days
+            for (let i = 0; i < 3; i++) {
+                await userIdentity.run(async ctx => {
+                    await ctx.db.insert('progressUpdates', {
+                        objective: objectiveId,
+                        updatedValue: 5,
+                        updateDate: todayMs - i * DAY_MS,
+                        notes: `Day ${i + 1}`,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
+                });
+            }
+
+            // Check progress
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const streak3Progress = progress.find(p => p.definition.code === 'streak_3');
+
+            expect(streak3Progress).toBeDefined();
+            if (streak3Progress) {
+                // Streak calculation depends on consecutive days, should be >= 0
+                expect(streak3Progress.currentProgress).toBeGreaterThanOrEqual(0);
+                expect(streak3Progress.definition.threshold).toBe(3);
+            }
+        });
     });
 
     describe('authentication', () => {

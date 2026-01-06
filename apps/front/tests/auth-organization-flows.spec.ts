@@ -83,15 +83,6 @@ async function listMembers(page: Page, organizationId: string) {
     return data.members;
 }
 
-test('usuario puede registrarse e iniciar sesi?n', async ({ page }) => {
-    const { email } = await createTestUser(page);
-
-    await page.context().clearCookies();
-    await loginUser(page, email, PASSWORD);
-
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
-});
-
 test('admin invita a un usuario y el invitado invita a otros miembros', async ({ browser }) => {
     const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 

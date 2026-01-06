@@ -6,8 +6,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
-    retries: 2,
-    workers: 1,
+    // retries: 2,
+    workers: 16,
     reporter: 'html',
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',

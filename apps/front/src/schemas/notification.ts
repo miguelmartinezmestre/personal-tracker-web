@@ -15,3 +15,5 @@ export const savedNotificationSchema = notificationSchema.extend({
     updatedAt: z.number(),
 });
 
+export type CreateNotification = z.infer<typeof notificationSchema>;
+export type SavedNotification = z.infer<typeof savedNotificationSchema>;

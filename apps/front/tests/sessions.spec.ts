@@ -26,7 +26,7 @@ test('sessions: page loads and displays sessions table', async ({ page }) => {
     await expect(page.getByTestId('table')).toBeVisible();
 });
 
-test('sessions: accessible from sidebar navigation', async ({ page }) => {
+test('sessions: displays current session after login', async ({ page }) => {
     // Register and login
     const uuid = randomUUID();
     const username = `usernametest-${uuid}`;
@@ -40,8 +40,107 @@ test('sessions: accessible from sidebar navigation', async ({ page }) => {
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
 
-    // Navigate to Sessions via sidebar
-    await page.getByRole('link', { name: /sessions/i }).click();
+    // Navigate to Sessions
+    await page.goto('/dashboard/sessions');
     await expect(page).toHaveURL(/\/dashboard\/sessions$/);
-    await expect(page.getByRole('heading', { name: /sessions/i })).toBeVisible();
+
+    // Verify at least one session is shown (the current one)
+    const table = page.getByTestId('table');
+    await expect(table).toBeVisible();
+
+    // The table should have at least one row (besides header)
+    const rows = table.locator('tbody tr');
+    await expect(rows).not.toHaveCount(0);
+
+    // Verify session shows active status
+    await expect(rows.first()).toContainText(/active|activ[oa]/i);
+});
+
+test('sessions: multiple browser contexts create multiple sessions', async ({ browser }) => {
+    const uuid = randomUUID();
+    const username = `usernametest-${uuid}`;
+    const email = `useremail-${uuid}@useremail.com`;
+
+    // Create first context and register
+    const context1 = await browser.newContext();
+    const page1 = await context1.newPage();
+
+    await page1.goto('/register');
+    await page1.getByTestId('register-username-input').fill(username);
+    await page1.getByTestId('register-email-input').fill(email);
+    await page1.getByTestId('register-password-input').fill('12345678');
+    await page1.getByTestId('register-confirm-password-input').fill('12345678');
+    await page1.getByTestId('register-button').click();
+    await expect(page1).toHaveURL(/\/dashboard\/home$/);
+
+    // Check sessions from first context
+    await page1.goto('/dashboard/sessions');
+    let table = page1.getByTestId('table');
+    let rows = table.locator('tbody tr');
+    await expect(rows).toHaveCount(1); // Should have 1 session
+
+    // Create second context and login with same user
+    const context2 = await browser.newContext();
+    const page2 = await context2.newPage();
+
+    await page2.goto('/login');
+    await page2.getByTestId('login-email-input').fill(email);
+    await page2.getByTestId('login-password-input').fill('12345678');
+    await page2.getByTestId('login-button').click();
+    await expect(page2).toHaveURL(/\/dashboard\/home$/);
+
+    // Reload sessions page in first context
+    await page1.reload();
+    await page1.waitForLoadState('networkidle');
+
+    table = page1.getByTestId('table');
+    rows = table.locator('tbody tr');
+
+    // Should now have 2 sessions
+    await expect(rows).toHaveCount(2);
+
+    // Cleanup
+    await context1.close();
+    await context2.close();
+});
+
+test('sessions: persists after navigation and reload', async ({ page }) => {
+    // Register and login
+    const uuid = randomUUID();
+    const username = `usernametest-${uuid}`;
+    const email = `useremail-${uuid}@useremail.com`;
+
+    await page.goto('/register');
+    await page.getByTestId('register-username-input').fill(username);
+    await page.getByTestId('register-email-input').fill(email);
+    await page.getByTestId('register-password-input').fill('12345678');
+    await page.getByTestId('register-confirm-password-input').fill('12345678');
+    await page.getByTestId('register-button').click();
+    await expect(page).toHaveURL(/\/dashboard\/home$/);
+
+    // Go to sessions
+    await page.goto('/dashboard/sessions');
+    const table = page.getByTestId('table');
+    const rows = table.locator('tbody tr');
+    const initialCount = await rows.count();
+    expect(initialCount).toBeGreaterThan(0);
+
+    // Navigate away and back
+    await page.goto('/dashboard/objectives');
+    await expect(page).toHaveURL(/\/dashboard\/objectives$/);
+
+    await page.goto('/dashboard/sessions');
+    await expect(page).toHaveURL(/\/dashboard\/sessions$/);
+
+    // Sessions should still be there
+    const rowsAfterNav = table.locator('tbody tr');
+    await expect(rowsAfterNav).toHaveCount(initialCount);
+
+    // Reload page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Sessions should persist after reload
+    const rowsAfterReload = table.locator('tbody tr');
+    await expect(rowsAfterReload).toHaveCount(initialCount);
 });

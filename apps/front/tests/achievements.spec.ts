@@ -189,11 +189,10 @@ test.describe('Achievements - Earning Flow', () => {
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
 
-        const initButton = page.getByRole('button', { name: /initialize/i });
-        if (await initButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-            await initButton.click();
-            await page.waitForTimeout(2000);
-        }
+        const initButton = page.getByTestId('achievements-seed-button');
+        await expect(initButton).toBeVisible();
+        await initButton.click();
+        await expect(initButton).not.toBeVisible({ timeout: 15000 });
 
         // Navigate to objectives and create one
         await page.goto('/dashboard/objectives');
@@ -221,6 +220,14 @@ test.describe('Achievements - Earning Flow', () => {
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
+
+        const firstObjectiveCard = page.getByTestId('achievement-card-first_objective');
+        await expect(firstObjectiveCard).toBeVisible({ timeout: 10000 });
+        await expect(firstObjectiveCard).toContainText(/earned|ganad|conseguid|obtenid/i);
+
+        const earnedCountText = await page.getByTestId('achievements-earned-count').innerText();
+        const earnedCount = Number.parseInt(earnedCountText, 10);
+        expect(earnedCount).toBeGreaterThan(0);
 
         await takeScreenshot(page, 'achievements', 'after-first-objective-achievement');
     });
