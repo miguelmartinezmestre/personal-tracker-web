@@ -12,6 +12,7 @@
     "gen:typescript-package": "turbo gen typescript-package",
     "gen": "turbo gen",
     "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
+    "create-user": "tsx scripts/create-user.ts",
     "test-vitest": "vitest",
     "test:once": "vitest run",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
@@ -29,7 +30,8 @@
     "rimraf": "^6.1.2",
     "turbo": "^2.6.3",
     "typescript": "5.9.3",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.15",
+    "tsx": "^4.21.0"
   },
   "engines": {
     "node": ">=22.21.1"
