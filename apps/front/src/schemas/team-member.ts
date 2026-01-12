@@ -1,7 +1,7 @@
 import { z } from 'zod';
 export const teamMemberSchema = z.object({
     email: z.string().email(),
-    role: z.enum(['MANAGER', 'MEMBER']),
+    role: z.enum(['owner', 'admin', 'member']),
     organizationId: z.string(),
 });
 
