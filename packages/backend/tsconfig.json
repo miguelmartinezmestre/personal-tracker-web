@@ -35,6 +35,7 @@
         "convex/test.setup.ts",
         "test.setup.ts",
         "../apps",
-        "../packages"
+        "../packages",
+        "test_helpers.ts"
     ]
 }
