@@ -3,7 +3,8 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api, internal } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestMember, createTestOrganization, createTestUser } from '../test_helpers';
+import { register } from '../better-auth.helper';
 
 describe('convex achievements', async () => {
     let t: ReturnType<typeof convexTest>;
@@ -13,20 +14,19 @@ describe('convex achievements', async () => {
 
     beforeEach(async () => {
         t = convexTest(schema, modules);
+        register(t);
         userIdentity = t.withIdentity({
             subject: 'test-user-achievements',
             role: 'admin',
         });
 
-        const result = await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-achievements',
-                email: 'achievements-test@example.com',
-                name: 'Achievements Test User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        const result = await createTestUser(t, {
+            userId: 'test-user-achievements',
+            email: 'achievements-test@example.com',
+            name: 'Achievements Test User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
         userId = result.userId;
     });
@@ -370,7 +370,7 @@ describe('convex achievements', async () => {
                         objective: objectiveId,
                         updatedValue: 5,
                         updateDate: Date.now() + i * 1000,
-                        notes: `Update ${i}`,
+                        comment: `Update ${i}`,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -422,7 +422,7 @@ describe('convex achievements', async () => {
                         objective: objectiveId,
                         updatedValue: 5,
                         updateDate: todayMs - i * DAY_MS,
-                        notes: `Day ${i + 1}`,
+                        comment: `Day ${i + 1}`,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -475,25 +475,19 @@ describe('convex achievements', async () => {
     describe('team achievements', () => {
         test('getTeamAchievements returns empty for new team', async () => {
             // Create a team/organization
-            const teamId = await userIdentity.run(async ctx => {
-                const orgId = await ctx.db.insert('organization', {
-                    name: 'Test Team',
-                    slug: 'test-team',
-                    createdAt: Date.now(),
-                    metadata: null,
-                    logo: null,
-                });
-
-                // Add user as member
-                await ctx.db.insert('member', {
-                    organizationId: String(orgId),
-                    userId: userId,
-                    role: 'owner',
-                    createdAt: Date.now(),
-                });
-
-                return String(orgId);
+            const orgId = await createTestOrganization(t, {
+                name: 'Test Team',
+                slug: 'test-team',
             });
+
+            // Add user as member
+            await createTestMember(t, {
+                organizationId: String(orgId),
+                userId: userId,
+                role: 'owner',
+            });
+
+            const teamId = String(orgId);
 
             const teamAchievements = await userIdentity.query(
                 api.achievements.getTeamAchievements,

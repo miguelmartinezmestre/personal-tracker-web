@@ -3,7 +3,7 @@ import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { Doc } from './_generated/dataModel';
 import { internalMutation, QueryCtx, MutationCtx } from './_generated/server';
 import { components } from './_generated/api';
-
+import { TIME } from './utils/constants';
 
 // Achievement definitions data
 const ACHIEVEMENT_DEFINITIONS = [
@@ -429,7 +429,6 @@ async function calculateUserStreak(ctx: { db: QueryCtx['db'] }, userId: string):
 
     if (userUpdates.length === 0) return 0;
 
-    const DAY_MS = 24 * 60 * 60 * 1000;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayMs = today.getTime();
@@ -446,7 +445,7 @@ async function calculateUserStreak(ctx: { db: QueryCtx['db'] }, userId: string):
 
     // Check if there's activity today or yesterday (to maintain streak)
     const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - DAY_MS) {
+    if (mostRecentDay < todayMs - TIME.DAY_MS) {
         return 0; // Streak broken
     }
 
@@ -457,7 +456,7 @@ async function calculateUserStreak(ctx: { db: QueryCtx['db'] }, userId: string):
     for (const day of sortedDays) {
         if (day === expectedDay) {
             streak++;
-            expectedDay -= DAY_MS;
+            expectedDay -= TIME.DAY_MS;
         } else if (day < expectedDay) {
             break; // Gap in streak
         }
@@ -656,7 +655,6 @@ async function calculateUserStreakInternal(
 
     if (userUpdates.length === 0) return 0;
 
-    const DAY_MS = 24 * 60 * 60 * 1000;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayMs = today.getTime();
@@ -671,7 +669,7 @@ async function calculateUserStreakInternal(
     const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
 
     const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - DAY_MS) {
+    if (mostRecentDay < todayMs - TIME.DAY_MS) {
         return 0;
     }
 
@@ -681,7 +679,7 @@ async function calculateUserStreakInternal(
     for (const day of sortedDays) {
         if (day === expectedDay) {
             streak++;
-            expectedDay -= DAY_MS;
+            expectedDay -= TIME.DAY_MS;
         } else if (day < expectedDay) {
             break;
         }
@@ -725,19 +723,14 @@ export const checkTeamAchievements = internalMutation({
         );
 
         // Get team members
-        const members = (await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-              model: "member",
-              where: [{ field: "organizationId", value: teamId }],
-              paginationOpts: {
+        const members = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+            model: 'member',
+            where: [{ field: 'organizationId', value: teamId }],
+            paginationOpts: {
                 cursor: null,
                 numItems: 10,
-              },
-            }
-        )) as BetterAuthDataModel["member"]["document"][];
-
-        
+            },
+        })) as BetterAuthDataModel['member']['document'][];
 
         const memberUserIds = members.map(m => m.userId);
 
@@ -769,13 +762,12 @@ export const checkTeamAchievements = internalMutation({
                     shouldAward =
                         trigger === 'objective_completed' && completedTeamObjectives.length >= 30;
                     break;
-                case 'team_streak_7':
-                    {
-                        // Check if team has had activity for 7 consecutive days
-                        const teamStreak = await calculateTeamStreak(ctx, memberUserIds);
-                        shouldAward = trigger === 'progress_update' && teamStreak >= 7;
-                        break;
-                    }
+                case 'team_streak_7': {
+                    // Check if team has had activity for 7 consecutive days
+                    const teamStreak = await calculateTeamStreak(ctx, memberUserIds);
+                    shouldAward = trigger === 'progress_update' && teamStreak >= 7;
+                    break;
+                }
             }
 
             if (shouldAward) {
@@ -828,7 +820,6 @@ async function calculateTeamStreak(ctx: QueryCtx, memberUserIds: string[]): Prom
 
     if (teamUpdates.length === 0) return 0;
 
-    const DAY_MS = 24 * 60 * 60 * 1000;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayMs = today.getTime();
@@ -843,7 +834,7 @@ async function calculateTeamStreak(ctx: QueryCtx, memberUserIds: string[]): Prom
     const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
 
     const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - DAY_MS) {
+    if (mostRecentDay < todayMs - TIME.DAY_MS) {
         return 0;
     }
 
@@ -853,7 +844,7 @@ async function calculateTeamStreak(ctx: QueryCtx, memberUserIds: string[]): Prom
     for (const day of sortedDays) {
         if (day === expectedDay) {
             streak++;
-            expectedDay -= DAY_MS;
+            expectedDay -= TIME.DAY_MS;
         } else if (day < expectedDay) {
             break;
         }
