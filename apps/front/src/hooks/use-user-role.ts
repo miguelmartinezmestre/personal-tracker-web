@@ -9,9 +9,9 @@ import { useUserRole as useUserRoleQuery } from './api/use-users';
 // Helper to check if a role is admin
 function isAdminRole(role: string | string[] | undefined): boolean {
     if (!role) return false;
-    if (role === 'admin' || role === 'ADMIN') return true;
+    if (role === 'admin') return true;
     if (Array.isArray(role)) {
-        return role.includes('admin') || role.includes('ADMIN');
+        return role.includes('admin');
     }
     return false;
 }
@@ -50,7 +50,7 @@ export function useUserRole() {
         }
 
         // 3. Check session role from better-auth (fallback)
-        const sessionRole = session?.user?.role;
+        const sessionRole = session?.user?.role ?? undefined;
         if (isAdminRole(sessionRole)) {
             return true;
         }
