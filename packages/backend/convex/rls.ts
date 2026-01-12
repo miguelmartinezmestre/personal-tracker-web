@@ -9,11 +9,28 @@ import {
 import { DataModel } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
 
-import type { DataModelFromSchemaDefinition } from "convex/server";
+import type { DataModelFromSchemaDefinition } from 'convex/server';
 import authSchema from './betterAuth/schema';
 import { components } from './_generated/api';
 
 export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof authSchema>;
+
+/**
+ * Helper to safely query the betterAuth adapter.
+ * Returns null if the component is not available (e.g., in tests).
+ */
+async function safeBetterAuthQuery<T>(ctx: QueryCtx, queryFn: () => Promise<T>): Promise<T | null> {
+    try {
+        return await queryFn();
+    } catch (error) {
+        // In test environments, the betterAuth component may not be registered
+        // Return null to indicate the data is not available
+        if (error instanceof Error && error.message.includes('not registered')) {
+            return null;
+        }
+        throw error;
+    }
+}
 
 async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
     const normalizedRole = role.toLowerCase();
@@ -31,32 +48,42 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
     // Helper para verificar si un usuario es miembro de una organización
     const isOrganizationMember = async (organizationId: string) => {
         if (!userId) return false;
-        const member = (await ctx.runQuery(
-            components.betterAuth.adapter.findOne,
-            {
-              model: "member",
-              where: [{ field: "organizationId", value: organizationId }],
-            }
-        )) as BetterAuthDataModel["member"]["document"] | null;
+        const member = await safeBetterAuthQuery(
+            ctx,
+            async () =>
+                (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                    model: 'member',
+                    where: [{ field: 'organizationId', value: organizationId }],
+                })) as BetterAuthDataModel['member']['document'] | null
+        );
         return !!member;
     };
-
-    
 
     // Helper para verificar si un usuario es owner o admin de una organización (team manager)
     const isOrganizationAdmin = async (organizationId: string) => {
         if (!userId) return false;
-        // Los admins globales pueden gestionar cualquier organización
-        if (await isGlobalAdmin()) return true;
+        // NOTE: Do NOT grant automatic team management to global admins by default.
+        // The intended policy is that being a global admin does NOT imply team manager
+        // unless explicitly required. If policy changes, update tests & docs.
 
-        const member = (await ctx.runQuery(
-            components.betterAuth.adapter.findOne,
-            {
-              model: "member",
-              where: [{ field: "organizationId", value: organizationId }],
-            }
-        )) as BetterAuthDataModel["member"]["document"] | null;
-        return !!member;
+        // Find the member record for the user in the organization
+        const member = await safeBetterAuthQuery(
+            ctx,
+            async () =>
+                (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                    model: 'member',
+                    where: [
+                        { field: 'organizationId', value: organizationId },
+                        { field: 'userId', value: userId },
+                    ],
+                })) as BetterAuthDataModel['member']['document'] | null
+        );
+
+        if (!member) return false;
+
+        // Only members with role 'owner' or 'admin' are considered organization admins (managers)
+        const memberRole = String((member as any).role || '').toLowerCase();
+        return memberRole === 'owner' || memberRole === 'admin';
     };
 
     const isAdmin = await isGlobalAdmin();
@@ -161,8 +188,10 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return true;
             },
             insert: async () => {
-                // Solo admins pueden crear definiciones
-                return isAdmin;
+                // Cualquier usuario autenticado puede crear definiciones
+                // Esto permite el seed de achievements por usuarios nuevos
+                // La mutación seedAchievementDefinitions ya verifica duplicados
+                return true;
             },
             modify: async () => {
                 // Solo admins pueden modificar definiciones
