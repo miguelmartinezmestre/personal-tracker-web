@@ -3,7 +3,8 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestUser } from '../test_helpers';
+import { register } from '../better-auth.helper';
 
 describe('convex dashboard', async () => {
     let t: ReturnType<typeof convexTest>;
@@ -11,20 +12,19 @@ describe('convex dashboard', async () => {
 
     beforeEach(async () => {
         t = convexTest(schema, modules);
+        register(t);
         userIdentity = t.withIdentity({
             subject: 'test-user-dashboard',
             role: 'admin',
         });
 
-        await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-dashboard',
-                email: 'dashboard-test@example.com',
-                name: 'Dashboard Test User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        await createTestUser(t, {
+            userId: 'test-user-dashboard',
+            email: 'dashboard-test@example.com',
+            name: 'Dashboard Test User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
     });
 
@@ -115,7 +115,7 @@ describe('convex dashboard', async () => {
                         objective: objectiveId,
                         updatedValue: 5,
                         updateDate: currentMonth.getTime() + i * 1000,
-                        notes: `Current month update ${i + 1}`,
+                        comment: `Current month update ${i + 1}`,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -129,7 +129,7 @@ describe('convex dashboard', async () => {
                         objective: objectiveId,
                         updatedValue: 5,
                         updateDate: lastMonth.getTime() + i * 1000,
-                        notes: `Last month update ${i + 1}`,
+                        comment: `Last month update ${i + 1}`,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -139,8 +139,9 @@ describe('convex dashboard', async () => {
             const monthlyProgress = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
 
             // Find current month and last month in results
-            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const lastMonthKey = `${now.getFullYear()}-${String(now.getMonth()).padStart(2, '0')}`;
+            // Use the same date objects to ensure correct year handling
+            const currentMonthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+            const lastMonthKey = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
             const currentMonthData = monthlyProgress.find(m => m.monthKey === currentMonthKey);
             const lastMonthData = monthlyProgress.find(m => m.monthKey === lastMonthKey);
@@ -397,7 +398,7 @@ describe('convex dashboard', async () => {
                         objective: objectiveId,
                         updatedValue: 5,
                         updateDate: now - i * DAY_MS,
-                        notes: `Recent update ${i + 1}`,
+                        comment: `Recent update ${i + 1}`,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -411,7 +412,7 @@ describe('convex dashboard', async () => {
                         objective: objectiveId,
                         updatedValue: 5,
                         updateDate: now - (40 + i) * DAY_MS,
-                        notes: `Old update ${i + 1}`,
+                        comment: `Old update ${i + 1}`,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
