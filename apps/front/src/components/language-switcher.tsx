@@ -66,7 +66,6 @@ export function LanguageSwitcher() {
                     data-testid="language-switcher"
                     className="min-w-[100px]"
                 >
-                    <span className="mr-2">{currentLocaleData.flag}</span>
                     <span className="hidden sm:inline">{currentLocaleData.label}</span>
                     <span className="sr-only">{t('label')}</span>
                 </Button>
@@ -79,7 +78,6 @@ export function LanguageSwitcher() {
                         data-testid={`language-option-${locale.value}`}
                         className="flex items-center gap-3 cursor-pointer"
                     >
-                        <span className="text-lg">{locale.flag}</span>
                         <span className="flex-1">{locale.label}</span>
                         {currentLocale === locale.value && (
                             <Check className="h-4 w-4 text-primary" />
