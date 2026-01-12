@@ -38,7 +38,7 @@ describe('convex sessions', () => {
         });
     });
 
-    test("createTestSession creates sessions for user", async () => {
+    test('createTestSession creates sessions for user', async () => {
         // Create another session
         await createTestSession(t, {
             userId: userId,

@@ -26,8 +26,21 @@ describe('convex teamMembers', () => {
     beforeEach(async () => {
         // Create complete test users with accounts
         const results = await createTestUsers(t, [
-            { userId: 'test-user-123', email: 'test@example.com', name: 'Test User', password: 'test-password', role: 'admin', emailVerified: false },
-            { userId: 'other-user-456', email: 'other@example.com', name: 'other User', password: 'test-password', emailVerified: false },
+            {
+                userId: 'test-user-123',
+                email: 'test@example.com',
+                name: 'Test User',
+                password: 'test-password',
+                role: 'admin',
+                emailVerified: false,
+            },
+            {
+                userId: 'other-user-456',
+                email: 'other@example.com',
+                name: 'other User',
+                password: 'test-password',
+                emailVerified: false,
+            },
         ]);
         userId = results[0]!.userId;
         otherUserId = results[1]!.userId;

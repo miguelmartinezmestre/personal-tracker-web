@@ -2,11 +2,7 @@ import { z } from 'zod';
 import { Hono } from 'hono';
 import type { Env } from './index';
 import { sendEmail, verifyConnection } from './mailer';
-import {
-    sendWelcomeEmail,
-    sendPasswordResetEmail,
-    sendDeadlineReminderEmail,
-} from './templates';
+import { sendWelcomeEmail, sendPasswordResetEmail, sendDeadlineReminderEmail } from './templates';
 import { isEmailConfigured } from './config';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -39,18 +35,18 @@ const deadlineReminderEmailSchema = z.object({
 });
 
 // Health check endpoint
-app.get('/health', (c) => {
+app.get('/health', c => {
     return c.json({ status: 'ok', configured: isEmailConfigured() });
 });
 
 // Verify SMTP connection
-app.get('/verify', async (c) => {
+app.get('/verify', async c => {
     const verified = await verifyConnection();
     return c.json({ configured: isEmailConfigured(), verified });
 });
 
 // Send generic email
-app.post('/send', async (c) => {
+app.post('/send', async c => {
     const body = await c.req.json();
     const result = sendEmailSchema.safeParse(body);
 
@@ -64,7 +60,7 @@ app.post('/send', async (c) => {
 });
 
 // Send welcome email
-app.post('/welcome', async (c) => {
+app.post('/welcome', async c => {
     const body = await c.req.json();
     const result = welcomeEmailSchema.safeParse(body);
 
@@ -78,7 +74,7 @@ app.post('/welcome', async (c) => {
 });
 
 // Send password reset email
-app.post('/password-reset', async (c) => {
+app.post('/password-reset', async c => {
     const body = await c.req.json();
     const result = passwordResetEmailSchema.safeParse(body);
 
@@ -92,7 +88,7 @@ app.post('/password-reset', async (c) => {
 });
 
 // Send deadline reminder email
-app.post('/deadline-reminder', async (c) => {
+app.post('/deadline-reminder', async c => {
     const body = await c.req.json();
     const result = deadlineReminderEmailSchema.safeParse(body);
 

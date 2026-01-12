@@ -15,7 +15,7 @@ export const createUpdateProgress = mutationWithRLS({
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
         const userId = String(ctx.identity?.subject);
         if (!userId) throw new Error('User not authenticated');
-        
+
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new Error('User not authenticated');
 
@@ -41,7 +41,7 @@ export const createUpdateProgress = mutationWithRLS({
             read: false,
             notificationType: 'progress',
             notificationDate: now,
-            message: `Progress updated for \"${objective.title}\" (+${args.updatedValue}${unitSuffix}).`,
+            message: `Progress updated for ${objective.title} (+${args.updatedValue}${unitSuffix}).`,
             createdAt: now,
             updatedAt: now,
         });

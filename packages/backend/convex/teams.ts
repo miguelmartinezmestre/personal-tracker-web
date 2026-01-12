@@ -11,9 +11,9 @@ export const createTeam = mutationWithRLS({
     handler: async (ctx, args) => {
         // Try to get user from betterAuth, but fall back to identity for tests
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
-        const userId = user ? (user.userId || String(user._id)) : String(ctx.identity?.subject);
+        const userId = user ? user.userId || String(user._id) : String(ctx.identity?.subject);
         if (!userId) throw new Error('User not authenticated');
-        
+
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new Error('User not authenticated');
         const now = Date.now();
@@ -29,22 +29,21 @@ export const createTeam = mutationWithRLS({
         const baseSlug = slug;
         try {
             while (
-                await ctx.runQuery(
-                    components.betterAuth.adapter.findOne, {
-                    model: "organization",
-                    where: [{ field: "slug", value: slug }],
-                }
-                ) as BetterAuthDataModel["organization"]["document"] | null
+                (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                    model: 'organization',
+                    where: [{ field: 'slug', value: slug }],
+                })) as BetterAuthDataModel['organization']['document'] | null
             ) {
                 slug = `${baseSlug}-${counter}`;
                 counter++;
             }
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, skip slug uniqueness check
             } else {
                 throw error;
@@ -54,63 +53,55 @@ export const createTeam = mutationWithRLS({
         // Create organization directly in database
         let orgId: string | null = null;
         try {
-            const createdOrg = await ctx.runMutation(
-                components.betterAuth.adapter.create,
-                {
-                    input: {
-                        data: {
-                            name: args.name,
-                            slug: slug,
-                            description: args.description,
-                            createdAt: now,
-                        },
-                        model: "organization",
+            const createdOrg = await ctx.runMutation(components.betterAuth.adapter.create, {
+                input: {
+                    data: {
+                        name: args.name,
+                        slug: slug,
+                        description: args.description,
+                        createdAt: now,
                     },
-                }
-            );
+                    model: 'organization',
+                },
+            });
 
             orgId =
                 typeof createdOrg === 'string'
                     ? createdOrg
-                    : (createdOrg as { _id?: string })?._id ?? null;
+                    : ((createdOrg as { _id?: string })?._id ?? null);
 
             if (!orgId) {
                 throw new Error('Failed to create organization');
             }
 
             // Add creator as owner (better-auth uses "owner" as the default role for creators)
-            await ctx.runMutation(
-                components.betterAuth.adapter.create,
-                {
-                    input: {
-                        data: {
-                            organizationId: String(orgId),
-                            userId: userId,
-                            role: 'owner',
-                            createdAt: now,
-                        },
-                        model: "member",
+            await ctx.runMutation(components.betterAuth.adapter.create, {
+                input: {
+                    data: {
+                        organizationId: String(orgId),
+                        userId: userId,
+                        role: 'owner',
+                        createdAt: now,
                     },
-                }
-            );
+                    model: 'member',
+                },
+            });
 
             if (createdOrg && typeof createdOrg === 'object' && (createdOrg as any)._id) {
-                return createdOrg as BetterAuthDataModel["organization"]["document"];
+                return createdOrg as BetterAuthDataModel['organization']['document'];
             }
 
-            return await ctx.runQuery(
-                components.betterAuth.adapter.findOne,
-                {
-                    model: "organization",
-                    where: [{ field: "_id", value: orgId }],
-                }
-            ) as BetterAuthDataModel["organization"]["document"];
+            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'organization',
+                where: [{ field: '_id', value: orgId }],
+            })) as BetterAuthDataModel['organization']['document'];
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, return a mock organization
                 return {
                     _id: `test-organization-${now}` as any,
@@ -118,7 +109,7 @@ export const createTeam = mutationWithRLS({
                     slug: slug,
                     description: args.description,
                     createdAt: now,
-                } as BetterAuthDataModel["organization"]["document"];
+                } as BetterAuthDataModel['organization']['document'];
             }
             throw error;
         }
@@ -131,43 +122,38 @@ export const getTeams = queryWithRLS({
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
         const identityUserId = String(ctx.identity?.subject);
         if (!identityUserId) throw new Error('User not authenticated');
-        
+
         // In tests, betterAuth may not be available, so use identity
         if (!user || !user._id) {
             // In test mode, return empty array
             try {
                 // Try to use betterAuth if available
                 const userId = identityUserId;
-                const memberships = await ctx.runQuery(
-                    components.betterAuth.adapter.findMany,
-                    {
-                        model: "member",
-                        where: [{ field: "userId", value: userId }],
-                        paginationOpts: {
-                            cursor: null,
-                            numItems: 10,
-                        },
-                    }
-                ) as BetterAuthDataModel["member"]["document"][];
+                const memberships = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+                    model: 'member',
+                    where: [{ field: 'userId', value: userId }],
+                    paginationOpts: {
+                        cursor: null,
+                        numItems: 10,
+                    },
+                })) as BetterAuthDataModel['member']['document'][];
 
-                const allOrgs = await ctx.runQuery(
-                    components.betterAuth.adapter.findMany,
-                    {
-                        model: "organization",
-                        paginationOpts: {
-                            cursor: null,
-                            numItems: 10,
-                        },
-                    }
-                ) as BetterAuthDataModel["organization"]["document"][];
+                const allOrgs = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+                    model: 'organization',
+                    paginationOpts: {
+                        cursor: null,
+                        numItems: 10,
+                    },
+                })) as BetterAuthDataModel['organization']['document'][];
 
                 const orgIds = new Set(memberships.map(m => String(m.organizationId)));
                 return allOrgs.filter(org => orgIds.has(String(org._id)));
             } catch (error) {
-                if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+                if (
+                    error instanceof Error &&
+                    (error.message.includes('not registered') ||
+                        error.message.includes('Cannot read properties of undefined'))
+                ) {
                     return [];
                 }
                 throw error;
@@ -177,29 +163,23 @@ export const getTeams = queryWithRLS({
         const userId = user.userId || String(user._id);
 
         // Get all organizations where user is a member
-        const memberships = await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-                model: "member",
-                where: [{ field: "userId", value: userId }],
-                paginationOpts: {
-                    cursor: null,
-                    numItems: 10,
-                },
-            }
-        ) as BetterAuthDataModel["member"]["document"][];
+        const memberships = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+            model: 'member',
+            where: [{ field: 'userId', value: userId }],
+            paginationOpts: {
+                cursor: null,
+                numItems: 10,
+            },
+        })) as BetterAuthDataModel['member']['document'][];
 
         // Get all organizations - the RLS will filter based on membership
-        const allOrgs = await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-                model: "organization",
-                paginationOpts: {
-                    cursor: null,
-                    numItems: 10,
-                },
-            }
-        ) as BetterAuthDataModel["organization"]["document"][];
+        const allOrgs = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+            model: 'organization',
+            paginationOpts: {
+                cursor: null,
+                numItems: 10,
+            },
+        })) as BetterAuthDataModel['organization']['document'][];
 
         // Filter to only organizations where user is a member
         const orgIds = new Set(memberships.map(m => String(m.organizationId)));
@@ -211,19 +191,17 @@ export const getTeamById = queryWithRLS({
     args: { _id: v.id('organization') },
     handler: async (ctx, args) => {
         try {
-            return await ctx.runQuery(
-                components.betterAuth.adapter.findOne,
-                {
-                    model: "organization",
-                    where: [{ field: "_id", value: args._id }],
-                }
-            ) as BetterAuthDataModel["organization"]["document"];
+            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'organization',
+                where: [{ field: '_id', value: args._id }],
+            })) as BetterAuthDataModel['organization']['document'];
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, return a mock organization
                 return {
                     _id: args._id,
@@ -231,7 +209,7 @@ export const getTeamById = queryWithRLS({
                     slug: '',
                     description: '',
                     createdAt: Date.now(),
-                } as BetterAuthDataModel["organization"]["document"];
+                } as BetterAuthDataModel['organization']['document'];
             }
             throw error;
         }
@@ -247,32 +225,27 @@ export const updateTeam = mutationWithRLS({
     handler: async (ctx, args) => {
         const { _id, ...rest } = args;
         try {
-            await ctx.runMutation(
-                components.betterAuth.adapter.updateOne,
-                {
-                    input: {
-                        model: "organization",
-                        update: {
-                            name: rest.name,
-                            description: rest.description,
-                        },
-                        where: [{ field: "_id", value: _id }],
+            await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+                input: {
+                    model: 'organization',
+                    update: {
+                        name: rest.name,
+                        description: rest.description,
                     },
-                }
-            );
-            return await ctx.runQuery(
-                components.betterAuth.adapter.findOne,
-                {
-                    model: "organization",
-                    where: [{ field: "_id", value: _id }],
-                }
-            ) as BetterAuthDataModel["organization"]["document"];
+                    where: [{ field: '_id', value: _id }],
+                },
+            });
+            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'organization',
+                where: [{ field: '_id', value: _id }],
+            })) as BetterAuthDataModel['organization']['document'];
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, return a mock updated organization
                 return {
                     _id: _id,
@@ -280,7 +253,7 @@ export const updateTeam = mutationWithRLS({
                     description: rest.description,
                     slug: '',
                     createdAt: Date.now(),
-                } as BetterAuthDataModel["organization"]["document"];
+                } as BetterAuthDataModel['organization']['document'];
             }
             throw error;
         }
@@ -292,36 +265,31 @@ export const deleteTeam = mutationWithRLS({
     handler: async (ctx, args) => {
         // Delete all members first
         try {
-            await ctx.runMutation(
-                components.betterAuth.adapter.deleteMany,
-                {
-                    input: {
-                        model: "member",
-                        where: [{ field: "organizationId", value: String(args._id) }],
-                    },
-                    paginationOpts: {
-                        cursor: null,
-                        numItems: 1000,
-                    },
-                }
-            );
+            await ctx.runMutation(components.betterAuth.adapter.deleteMany, {
+                input: {
+                    model: 'member',
+                    where: [{ field: 'organizationId', value: String(args._id) }],
+                },
+                paginationOpts: {
+                    cursor: null,
+                    numItems: 1000,
+                },
+            });
 
             // Delete the organization
-            await ctx.runMutation(
-                components.betterAuth.adapter.deleteOne,
-                {
-                    input: {
-                        model: "organization",
-                        where: [{ field: "_id", value: args._id }],
-                    },
-                }
-            );
+            await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
+                input: {
+                    model: 'organization',
+                    where: [{ field: '_id', value: args._id }],
+                },
+            });
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, just return success without deleting
             } else {
                 throw error;

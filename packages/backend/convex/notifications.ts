@@ -67,7 +67,7 @@ export const createNotification = mutationWithRLS({
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
         const userId = String(ctx.identity?.subject);
         if (!userId) throw new Error('User not authenticated');
-        
+
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new Error('User not authenticated');
 

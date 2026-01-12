@@ -1,6 +1,5 @@
 import { v } from 'convex/values';
-import { Id } from './_generated/dataModel';
-import { query, mutation, QueryCtx, MutationCtx } from './_generated/server';
+import { QueryCtx } from './_generated/server';
 import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { components } from './_generated/api';
 
@@ -82,7 +81,7 @@ export function hasPermissionInList(
     if (!permissionList || !Array.isArray(permissionList)) {
         return false;
     }
-    
+
     const [resource, action] = permission.split(':');
 
     for (const perm of permissionList) {
@@ -150,10 +149,11 @@ export async function checkPermission(
             })) as BetterAuthDataModel['member']['document'] | null;
         } catch (error) {
             // In tests, betterAuth component may not be registered or partially initialized
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // For tests, we can't query betterAuth tables directly
                 // Return false as we can't verify team membership
                 return false;
@@ -296,7 +296,7 @@ export const getTeamRole = queryWithRLS({
 
         // organizationId se guarda como string en la tabla member
         const teamIdString = String(args.teamId);
-        
+
         // Try to get member from betterAuth, but fall back for tests
         let member: BetterAuthDataModel['member']['document'] | null = null;
         try {
@@ -309,10 +309,11 @@ export const getTeamRole = queryWithRLS({
             })) as BetterAuthDataModel['member']['document'] | null;
         } catch (error) {
             // In tests, betterAuth component may not be registered or partially initialized
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // For tests, return null as we can't query betterAuth tables
                 return null;
             }

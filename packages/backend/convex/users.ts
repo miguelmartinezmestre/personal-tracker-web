@@ -67,7 +67,7 @@ export const getUserRole = queryWithRLS({
         const identityUserId = String(ctx.identity?.subject);
 
         // Buscar el usuario en la tabla user de betterAuth para obtener el rol
-        const userId = user ? (user.userId || String(user._id)) : identityUserId;
+        const userId = user ? user.userId || String(user._id) : identityUserId;
         if (userId) {
             try {
                 const userRecord = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
@@ -77,23 +77,26 @@ export const getUserRole = queryWithRLS({
 
                 if (userRecord) {
                     return {
-                        role: ((userRecord as Record<string, unknown>)?.role as string | null) || null,
+                        role:
+                            ((userRecord as Record<string, unknown>)?.role as string | null) ||
+                            null,
                         userId: userId,
                     };
                 }
             } catch (error) {
                 // In tests, betterAuth component may not be registered
-                if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+                if (
+                    error instanceof Error &&
+                    (error.message.includes('not registered') ||
+                        error.message.includes('Cannot read properties of undefined'))
+                ) {
                     // Fall through to identity-based fallback
                 } else {
                     throw error;
                 }
             }
         }
-        
+
         // Fall back to identity for tests
         if (!identityUserId) return null;
         const role = String(ctx.identity?.role ?? 'user');
@@ -114,13 +117,13 @@ export const updateAccountDetails = mutationWithRLS({
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
         const identityUserId = String(ctx.identity?.subject);
         if (!identityUserId) throw new ConvexError('Unauthorized');
-        
+
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new ConvexError('Unauthorized');
 
         // Determine userId - use betterAuth user if available, otherwise use identity
-        const userId = user ? (user.userId || String(user._id)) : identityUserId;
-        
+        const userId = user ? user.userId || String(user._id) : identityUserId;
+
         // Try to get user record from betterAuth if available
         let userRecord: BetterAuthDataModel['user']['document'] | null = null;
         try {
@@ -130,10 +133,11 @@ export const updateAccountDetails = mutationWithRLS({
             })) as BetterAuthDataModel['user']['document'] | null;
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // Fall through - userRecord will be null, we'll skip email check in tests
             } else {
                 throw error;
@@ -161,10 +165,11 @@ export const updateAccountDetails = mutationWithRLS({
                 });
             } catch (error) {
                 // In tests, betterAuth component may not be registered
-                if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+                if (
+                    error instanceof Error &&
+                    (error.message.includes('not registered') ||
+                        error.message.includes('Cannot read properties of undefined'))
+                ) {
                     // In tests, just return success without updating
                 } else {
                     throw error;

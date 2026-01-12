@@ -4,7 +4,6 @@ import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
 import { createTestUser } from '../test_helpers';
-import type { Id } from './_generated/dataModel';
 import { register } from '../better-auth.helper';
 
 describe('convex RLS (Row-Level Security)', async () => {

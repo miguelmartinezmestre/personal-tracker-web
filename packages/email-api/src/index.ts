@@ -18,19 +18,24 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Middleware
 app.use('*', logger());
-app.use('*', cors({
-    origin: (origin) => {
-        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'];
-        return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-    },
-    credentials: true,
-}));
+app.use(
+    '*',
+    cors({
+        origin: origin => {
+            const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? [
+                'http://localhost:3000',
+            ];
+            return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+        },
+        credentials: true,
+    })
+);
 
 // Mount routes
 app.route('/api/email', routes);
 
 // Root endpoint
-app.get('/', (c) => {
+app.get('/', c => {
     return c.json({
         name: '@repo/email-api',
         version: '1.0.0',

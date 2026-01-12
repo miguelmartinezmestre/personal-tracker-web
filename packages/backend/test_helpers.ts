@@ -174,10 +174,7 @@ export async function createTestSession(
     });
 }
 
-export async function getBetterAuthDoc<T>(
-    t: ComponentRunner,
-    id: string
-): Promise<T | null> {
+export async function getBetterAuthDoc<T>(t: ComponentRunner, id: string): Promise<T | null> {
     return runInBetterAuth(t, async ctx => {
         return (await ctx.db.get(id)) as T | null;
     });

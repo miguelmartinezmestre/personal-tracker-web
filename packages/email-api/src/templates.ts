@@ -70,7 +70,9 @@ The ${APP_NAME} Team
     return sendEmail({ to, subject, text, html });
 }
 
-export async function sendPasswordResetEmail(data: PasswordResetEmailData): Promise<SendEmailResult> {
+export async function sendPasswordResetEmail(
+    data: PasswordResetEmailData
+): Promise<SendEmailResult> {
     const { to, username, resetUrl } = data;
 
     const subject = `Reset your ${APP_NAME} password`;
@@ -119,7 +121,9 @@ The ${APP_NAME} Team
     return sendEmail({ to, subject, text, html });
 }
 
-export async function sendDeadlineReminderEmail(data: DeadlineReminderEmailData): Promise<SendEmailResult> {
+export async function sendDeadlineReminderEmail(
+    data: DeadlineReminderEmailData
+): Promise<SendEmailResult> {
     const { to, username, objectiveTitle, deadline, daysRemaining } = data;
     const { siteUrl } = getEmailConfig();
     const deadlineDate = new Date(deadline).toLocaleDateString();

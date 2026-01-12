@@ -14,7 +14,7 @@ export const createTeamMember = mutationWithRLS({
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
         const userId = String(ctx.identity?.subject);
         if (!userId) throw new Error('User not authenticated');
-        
+
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new Error('User not authenticated');
 
@@ -22,21 +22,22 @@ export const createTeamMember = mutationWithRLS({
         const organizationId = String(args.team);
 
         // Check if member already exists
-        let existing: BetterAuthDataModel["member"]["document"] | null = null;
+        let existing: BetterAuthDataModel['member']['document'] | null = null;
         try {
-            existing = (await ctx.runQuery(
-                components.betterAuth.adapter.findOne,
-                {
-                  model: "member",
-                  where: [{ field: "organizationId", value: organizationId }, { field: "userId", value: args.user }],
-                }
-            )) as BetterAuthDataModel["member"]["document"] | null;
+            existing = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'member',
+                where: [
+                    { field: 'organizationId', value: organizationId },
+                    { field: 'userId', value: args.user },
+                ],
+            })) as BetterAuthDataModel['member']['document'] | null;
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, skip the check and continue
             } else {
                 throw error;
@@ -51,28 +52,23 @@ export const createTeamMember = mutationWithRLS({
         const betterAuthRole = args.role === 'MANAGER' ? 'admin' : 'member';
 
         try {
-            const created = await ctx.runMutation(
-                components.betterAuth.adapter.create,
-                {
-                    input: {
-                        data: {
-                            organizationId: organizationId,
-                            userId: args.user,
-                            role: betterAuthRole,
-                            createdAt: now,
-                        },
-                        model: "member",
+            const created = await ctx.runMutation(components.betterAuth.adapter.create, {
+                input: {
+                    data: {
+                        organizationId: organizationId,
+                        userId: args.user,
+                        role: betterAuthRole,
+                        createdAt: now,
                     },
-                }
-            );
+                    model: 'member',
+                },
+            });
 
             const createdId =
-                typeof created === 'string'
-                    ? created
-                    : (created as { _id?: string })?._id;
+                typeof created === 'string' ? created : (created as { _id?: string })?._id;
 
             if (created && typeof created === 'object' && (created as any)._id) {
-                return created as BetterAuthDataModel["member"]["document"];
+                return created as BetterAuthDataModel['member']['document'];
             }
 
             if (!createdId) {
@@ -80,15 +76,16 @@ export const createTeamMember = mutationWithRLS({
             }
 
             return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
-                model: "member",
-                where: [{ field: "_id", value: createdId }],
-            })) as BetterAuthDataModel["member"]["document"];
+                model: 'member',
+                where: [{ field: '_id', value: createdId }],
+            })) as BetterAuthDataModel['member']['document'];
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, return a mock member object
                 return {
                     _id: `test-member-${now}` as any,
@@ -96,7 +93,7 @@ export const createTeamMember = mutationWithRLS({
                     userId: args.user,
                     role: betterAuthRole,
                     createdAt: now,
-                } as BetterAuthDataModel["member"]["document"];
+                } as BetterAuthDataModel['member']['document'];
             }
             throw error;
         }
@@ -108,25 +105,23 @@ export const getTeamMembersByTeamId = queryWithRLS({
     handler: async (ctx, args) => {
         const organizationId = String(args.team);
 
-        let members: BetterAuthDataModel["member"]["document"][] = [];
+        let members: BetterAuthDataModel['member']['document'][] = [];
         try {
-            members = (await ctx.runQuery(
-                components.betterAuth.adapter.findMany,
-                {
-                  model: "member",
-                  where: [{ field: "organizationId", value: organizationId }],
-                  paginationOpts: {
+            members = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+                model: 'member',
+                where: [{ field: 'organizationId', value: organizationId }],
+                paginationOpts: {
                     cursor: null,
                     numItems: 10,
-                  },
-                }
-            )) as BetterAuthDataModel["member"]["document"][];
+                },
+            })) as BetterAuthDataModel['member']['document'][];
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // Return empty array in tests
                 return [];
             }
@@ -136,21 +131,19 @@ export const getTeamMembersByTeamId = queryWithRLS({
         const withUser = await Promise.all(
             members.map(async m => {
                 // Buscar el usuario por userId en la tabla user
-                let user: BetterAuthDataModel["user"]["document"] | null = null;
+                let user: BetterAuthDataModel['user']['document'] | null = null;
                 try {
-                    user = (await ctx.runQuery(
-                        components.betterAuth.adapter.findOne,
-                        {
-                            model: "user",
-                            where: [{ field: "userId", value: m.userId }],
-                        }
-                    )) as BetterAuthDataModel["user"]["document"] | null;
+                    user = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                        model: 'user',
+                        where: [{ field: 'userId', value: m.userId }],
+                    })) as BetterAuthDataModel['user']['document'] | null;
                 } catch (error) {
                     // In tests, betterAuth component may not be registered
-                    if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+                    if (
+                        error instanceof Error &&
+                        (error.message.includes('not registered') ||
+                            error.message.includes('Cannot read properties of undefined'))
+                    ) {
                         // Skip user lookup in tests
                     } else {
                         throw error;
@@ -178,29 +171,24 @@ export const updateTeamMember = mutationWithRLS({
         // Map frontend roles to better-auth roles
         const betterAuthRole = role === 'MANAGER' ? 'admin' : 'member';
         try {
-            await ctx.runMutation(
-                components.betterAuth.adapter.updateOne,
-                {
-                    input: {
-                        model: "member",
-                        update: { role: betterAuthRole },
-                        where: [{ field: "_id", value: id }],
-                    },
-                }
-            );
-            return await ctx.runQuery(
-                components.betterAuth.adapter.findOne,
-                {
-                    model: "member",
-                    where: [{ field: "_id", value: id }],
-                }
-            ) as BetterAuthDataModel["member"]["document"];
+            await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+                input: {
+                    model: 'member',
+                    update: { role: betterAuthRole },
+                    where: [{ field: '_id', value: id }],
+                },
+            });
+            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'member',
+                where: [{ field: '_id', value: id }],
+            })) as BetterAuthDataModel['member']['document'];
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, return a mock member object
                 return {
                     _id: id,
@@ -208,7 +196,7 @@ export const updateTeamMember = mutationWithRLS({
                     organizationId: '',
                     userId: '',
                     createdAt: Date.now(),
-                } as BetterAuthDataModel["member"]["document"];
+                } as BetterAuthDataModel['member']['document'];
             }
             throw error;
         }
@@ -219,21 +207,19 @@ export const deleteTeamMember = mutationWithRLS({
     args: { _id: v.id('member') },
     handler: async (ctx, args) => {
         try {
-            await ctx.runMutation(
-                components.betterAuth.adapter.deleteOne,
-                {
-                    input: {
-                        model: "member",
-                        where: [{ field: "_id", value: args._id }],
-                    },
-                }
-            );
+            await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
+                input: {
+                    model: 'member',
+                    where: [{ field: '_id', value: args._id }],
+                },
+            });
         } catch (error) {
             // In tests, betterAuth component may not be registered
-            if (error instanceof Error && (
-                error.message.includes('not registered') ||
-                error.message.includes('Cannot read properties of undefined')
-            )) {
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
                 // In tests, just return success without deleting
             } else {
                 throw error;
