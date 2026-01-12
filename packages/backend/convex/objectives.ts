@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { Doc } from './_generated/dataModel';
 import { internal } from './_generated/api';
+import { MutationCtx } from './_generated/server';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -62,30 +63,42 @@ const isEventBasedObjective = (objectiveType?: string, period?: string) => {
 const sumUpdates = (updates: { updatedValue: number }[]) =>
     updates.reduce((total, update) => total + update.updatedValue, 0);
 
-const formatStatusLabel = (status: string) => {
-    switch (status) {
-        case 'completed':
-            return 'completed';
-        case 'paused':
-            return 'paused';
-        case 'archived':
-            return 'archived';
-        case 'in_progress':
-            return 'in progress';
-        default:
-            return status;
-    }
+const formatStatusLabel = (status: string): string =>
+    status === 'in_progress' ? 'in progress' : status;
+
+interface StatusNotificationParams {
+    objectiveId: Doc<'objectives'>['_id'];
+    userId: string;
+    title: string;
+    status: string;
+    now: number;
+}
+
+const insertStatusNotification = async (
+    ctx: MutationCtx,
+    { objectiveId, userId, title, status, now }: StatusNotificationParams
+): Promise<void> => {
+    await ctx.db.insert('notifications', {
+        user: userId,
+        objective: objectiveId,
+        read: false,
+        notificationType: 'status',
+        notificationDate: now,
+        message: `Objective "${title}" marked as ${formatStatusLabel(status)}.`,
+        createdAt: now,
+        updatedAt: now,
+    });
 };
 
 const maybeNotifyDeadline = async (
-    ctx: { db: any },
+    ctx: MutationCtx,
     {
         objectiveId,
         userId,
         title,
         deadline,
         now,
-    }: { objectiveId: any; userId: string; title: string; deadline: number; now: number }
+    }: { objectiveId: Doc<'objectives'>['_id']; userId: string; title: string; deadline: number; now: number }
 ) => {
     const daysUntil = Math.ceil((deadline - now) / DAY_MS);
     const formattedDate = new Date(deadline).toLocaleDateString();
@@ -97,7 +110,7 @@ const maybeNotifyDeadline = async (
             read: false,
             notificationType: 'deadline',
             notificationDate: now,
-            message: `Objective \"${title}\" is overdue since ${formattedDate}.`,
+            message: `Objective "${title}" is overdue since ${formattedDate}.`,
             createdAt: now,
             updatedAt: now,
         });
@@ -111,7 +124,7 @@ const maybeNotifyDeadline = async (
             read: false,
             notificationType: 'deadline',
             notificationDate: now,
-            message: `Objective \"${title}\" is due in ${daysUntil} day${
+            message: `Objective "${title}" is due in ${daysUntil} day${
                 daysUntil === 1 ? '' : 's'
             } (${formattedDate}).`,
             createdAt: now,
@@ -345,15 +358,12 @@ export const updateObjectiveStatus = mutationWithRLS({
             updatedAt: now,
         });
 
-        await ctx.db.insert('notifications', {
-            user: objective.user,
-            objective: id,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Objective \"${objective.title}\" marked as ${formatStatusLabel(status)}.`,
-            createdAt: now,
-            updatedAt: now,
+        await insertStatusNotification(ctx, {
+            objectiveId: id,
+            userId: objective.user,
+            title: objective.title,
+            status,
+            now,
         });
 
         return updated;
@@ -377,15 +387,12 @@ export const completeObjective = mutationWithRLS({
             updatedAt: now,
         });
 
-        await ctx.db.insert('notifications', {
-            user: objective.user,
-            objective: args.id,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Objective \"${objective.title}\" marked as completed.`,
-            createdAt: now,
-            updatedAt: now,
+        await insertStatusNotification(ctx, {
+            objectiveId: args.id,
+            userId: objective.user,
+            title: objective.title,
+            status: 'completed',
+            now,
         });
 
         // Check for achievements
@@ -416,15 +423,12 @@ export const archiveObjective = mutationWithRLS({
             updatedAt: now,
         });
 
-        await ctx.db.insert('notifications', {
-            user: objective.user,
-            objective: args.id,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Objective \"${objective.title}\" marked as archived.`,
-            createdAt: now,
-            updatedAt: now,
+        await insertStatusNotification(ctx, {
+            objectiveId: args.id,
+            userId: objective.user,
+            title: objective.title,
+            status: 'archived',
+            now,
         });
 
         return updated;
@@ -447,15 +451,12 @@ export const pauseObjective = mutationWithRLS({
             updatedAt: now,
         });
 
-        await ctx.db.insert('notifications', {
-            user: objective.user,
-            objective: args.id,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Objective \"${objective.title}\" marked as paused.`,
-            createdAt: now,
-            updatedAt: now,
+        await insertStatusNotification(ctx, {
+            objectiveId: args.id,
+            userId: objective.user,
+            title: objective.title,
+            status: 'paused',
+            now,
         });
 
         return updated;

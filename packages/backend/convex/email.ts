@@ -19,10 +19,7 @@ type SendEmailResult = { success: boolean; message: string; messageId?: string }
 /**
  * Internal helper function to call the email API.
  */
-async function callEmailApi(
-    endpoint: string,
-    data: unknown
-): Promise<SendEmailResult> {
+async function callEmailApi(endpoint: string, data: unknown): Promise<SendEmailResult> {
     const apiUrl = getEmailApiUrl();
     const url = `${apiUrl}/api/email/${endpoint}`;
 

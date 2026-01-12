@@ -3,7 +3,12 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestMember, createTestOrganization, createTestUser, getBetterAuthDoc } from '../test_helpers';
+import {
+    createTestMember,
+    createTestOrganization,
+    createTestUser,
+    getBetterAuthDoc,
+} from '../test_helpers';
 import { register, runInBetterAuth } from '../better-auth.helper';
 import { Id } from './_generated/dataModel';
 
@@ -41,7 +46,11 @@ describe('convex teams', () => {
             role: 'owner',
         });
 
-        const team = await getBetterAuthDoc<{name: string; slug: string; description: string | null}>(t, orgId);
+        const team = await getBetterAuthDoc<{
+            name: string;
+            slug: string;
+            description: string | null;
+        }>(t, orgId);
 
         expect(team).toBeDefined();
         expect(team?.name).toBe('Engineering Team');
@@ -64,9 +73,7 @@ describe('convex teams', () => {
         const members = await runInBetterAuth(t, async ctx => {
             return await ctx.db
                 .query('member')
-                .withIndex('organizationId', (q: any) =>
-                    q.eq('organizationId', String(orgId))
-                )
+                .withIndex('organizationId', (q: any) => q.eq('organizationId', String(orgId)))
                 .collect();
         });
 
