@@ -1,9 +1,10 @@
 export enum Role {
-    ADMIN = 'ADMIN',
-    USER = 'USER',
+    ADMIN = 'admin',
+    USER = 'user',
 }
 
 export enum TeamRole {
-    MANAGER = 'MANAGER',
-    MEMBER = 'MEMBER',
+    OWNER = 'owner',
+    ADMIN = 'admin',
+    MEMBER = 'member',
 }

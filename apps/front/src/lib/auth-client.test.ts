@@ -42,7 +42,10 @@ describe('auth-client', () => {
             },
         });
 
-        const options = vi.mocked(createAuthClient).mock.calls[0][0];
+        const options = vi.mocked(createAuthClient).mock.calls[0]?.[0];
+        if (!options) {
+            throw new Error('Expected createAuthClient to be called with options.');
+        }
         const convexPlugin = vi.mocked(convexClient).mock.results[0].value;
         const adminPlugin = vi.mocked(adminClient).mock.results[0].value;
         const orgPlugin = vi.mocked(organizationClient).mock.results[0].value;

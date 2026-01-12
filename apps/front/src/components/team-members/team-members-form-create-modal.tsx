@@ -43,7 +43,8 @@ export default function CreateTeamMemberFormModal() {
     const createTeamMember = useCreateTeamMember();
 
     const roleOptions = [
-        { value: TeamRole.MANAGER, label: t('roles.manager') },
+        { value: TeamRole.OWNER, label: t('roles.owner') },
+        { value: TeamRole.ADMIN, label: t('roles.admin') },
         { value: TeamRole.MEMBER, label: t('roles.member') },
     ];
 
@@ -51,7 +52,7 @@ export default function CreateTeamMemberFormModal() {
     const form = useForm<CreateTeamMember>({
         defaultValues: {
             email: '',
-            role: TeamRole.MEMBER,
+            role: 'member',
             organizationId: teamId ?? '',
         },
         validators: {
@@ -125,7 +126,7 @@ export default function CreateTeamMemberFormModal() {
                                     <FormLabel>{t('role')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
-                                        value={field.value || TeamRole.MEMBER}
+                                        value={field.value || 'member'}
                                     >
                                         <FormControl>
                                             <SelectTrigger>

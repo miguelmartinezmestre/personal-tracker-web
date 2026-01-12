@@ -39,7 +39,8 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
     const t = useTranslations('TeamMembers');
 
     const roleOptions = [
-        { value: TeamRole.MANAGER, label: t('roles.manager') },
+        { value: TeamRole.OWNER, label: t('roles.owner') },
+        { value: TeamRole.ADMIN, label: t('roles.admin') },
         { value: TeamRole.MEMBER, label: t('roles.member') },
     ];
     const updateTeamMember = useUpdateTeamMember();
@@ -59,7 +60,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
         const updateData = {
             memberId: values.id,
             organizationId: values.organizationId,
-            role: values.role as 'MANAGER' | 'MEMBER',
+            role: values.role as 'owner' | 'admin' | 'member',
         };
 
         await updateTeamMember.mutateAsync(updateData);
@@ -119,7 +120,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                     <FormLabel>{t('role')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
-                                        value={field.value || TeamRole.MEMBER}
+                                        value={field.value || 'member'}
                                     >
                                         <FormControl>
                                             <SelectTrigger>

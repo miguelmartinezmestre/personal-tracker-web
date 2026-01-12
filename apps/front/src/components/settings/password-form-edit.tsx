@@ -16,11 +16,12 @@ import { Input } from '@repo/ui/components/input';
 import { updatePasswordSchema } from '@/schemas/update-password';
 import { DialogFooter } from '@repo/ui/components/dialog';
 import { useTranslations } from 'next-intl';
+import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
 
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
-    // TODO: Implement password update via Convex Auth if needed
-    // const updatePassword = useMutation({ mutationFn: async () => ({ message: 'Not implemented', error: true }) });
+    const [isLoading, setIsLoading] = useState(false);
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -40,26 +41,45 @@ export default function PasswordFormEdit() {
     });
 
     const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
-        if (values.password !== values.confirmPassword) return;
+        // Validate that password confirmation matches
+        if (values.password !== values.confirmPassword) {
+            setError(t('passwordMismatch'));
+            return;
+        }
 
-        const _updateData = {
-            password: values.password,
-            newPassword: values.newPassword,
-            confirmPassword: values.confirmPassword,
-        };
+        // Validate that new password is different from current
+        if (values.password === values.newPassword) {
+            setError(t('passwordSameAsOld'));
+            return;
+        }
 
-        // const result = await updatePassword.mutateAsync(updateData);
-
-        // if (result.error) {
-        //     setError(result.message);
-        // } else {
-        //     setMessage(result.message);
-        // }
-
-        setOpen(false);
-        form.reset();
+        setIsLoading(true);
         setError('');
         setMessage('');
+
+        try {
+            const result = await authClient.changePassword({
+                currentPassword: values.password,
+                newPassword: values.newPassword,
+                revokeOtherSessions: false, // Keep other sessions active
+            });
+
+            if (result.error) {
+                setError(result.error.message || t('passwordUpdateFailed'));
+                toast.error(result.error.message || t('passwordUpdateFailed'));
+            } else {
+                setMessage(t('passwordUpdated'));
+                toast.success(t('passwordUpdated'));
+                setOpen(false);
+                form.reset();
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : t('passwordUpdateFailed');
+            setError(errorMessage);
+            toast.error(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -111,10 +131,17 @@ export default function PasswordFormEdit() {
                 />
 
                 <DialogFooter className="pt-4">
-                    <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        disabled={isLoading}
+                    >
                         {t('cancel')}
                     </Button>
-                    <Button type="submit">{t('savePassword')}</Button>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? t('saving') : t('savePassword')}
+                    </Button>
                 </DialogFooter>
                 {error && <p className="text-red-500">{error}</p>}
                 {message && <p className="text-green-500">{message}</p>}

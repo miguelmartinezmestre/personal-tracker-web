@@ -5,7 +5,7 @@ describe('teamMemberSchema', () => {
     it('should validate a valid team member', () => {
         const validMember = {
             email: 'member@example.com',
-            role: 'MEMBER' as const,
+            role: 'member' as const,
             organizationId: 'org-123',
         };
 
@@ -13,29 +13,43 @@ describe('teamMemberSchema', () => {
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.email).toBe('member@example.com');
-            expect(result.data.role).toBe('MEMBER');
+            expect(result.data.role).toBe('member');
             expect(result.data.organizationId).toBe('org-123');
         }
     });
 
-    it('should validate a manager role', () => {
-        const validManager = {
-            email: 'manager@example.com',
-            role: 'MANAGER' as const,
+    it('should validate an owner role', () => {
+        const validOwner = {
+            email: 'owner@example.com',
+            role: 'owner' as const,
             organizationId: 'org-123',
         };
 
-        const result = teamMemberSchema.safeParse(validManager);
+        const result = teamMemberSchema.safeParse(validOwner);
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.role).toBe('MANAGER');
+            expect(result.data.role).toBe('owner');
+        }
+    });
+
+    it('should validate an admin role', () => {
+        const validAdmin = {
+            email: 'admin@example.com',
+            role: 'admin' as const,
+            organizationId: 'org-123',
+        };
+
+        const result = teamMemberSchema.safeParse(validAdmin);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.role).toBe('admin');
         }
     });
 
     it('should reject invalid role', () => {
         const invalidMember = {
             email: 'member@example.com',
-            role: 'ADMIN',
+            role: 'invalid',
             organizationId: 'org-123',
         };
 
@@ -49,7 +63,7 @@ describe('teamMemberSchema', () => {
 
     it('should require email', () => {
         const invalidMember = {
-            role: 'MEMBER',
+            role: 'member',
             organizationId: 'org-123',
         };
 
@@ -64,7 +78,7 @@ describe('teamMemberSchema', () => {
     it('should validate email format', () => {
         const invalidMember = {
             email: 'not-an-email',
-            role: 'MEMBER',
+            role: 'member',
             organizationId: 'org-123',
         };
 
@@ -75,7 +89,7 @@ describe('teamMemberSchema', () => {
     it('should require organizationId', () => {
         const invalidMember = {
             email: 'member@example.com',
-            role: 'MEMBER',
+            role: 'member',
         };
 
         const result = teamMemberSchema.safeParse(invalidMember);
@@ -96,7 +110,7 @@ describe('savedTeamMemberSchema', () => {
             createdAt: new Date(),
             email: 'member@example.com',
             userId: 'user-123',
-            role: 'MEMBER' as const,
+            role: 'member' as const,
             organizationId: 'org-123',
         };
 
@@ -113,7 +127,7 @@ describe('savedTeamMemberSchema', () => {
             createdAt: new Date(),
             email: 'member@example.com',
             userId: 'user-123',
-            role: 'MEMBER',
+            role: 'member',
             organizationId: 'org-123',
         };
 
@@ -126,7 +140,7 @@ describe('savedTeamMemberSchema', () => {
             id: 'member-id-123',
             email: 'member@example.com',
             userId: 'user-123',
-            role: 'MEMBER',
+            role: 'member',
             organizationId: 'org-123',
         };
 
