@@ -21,8 +21,19 @@ test('language switching: toggle between languages', async ({ page }) => {
         // Get initial language text
         const initialText = await languageSwitcher.textContent();
 
-        // Click language switcher
+        // Click language switcher to open the dropdown
         await languageSwitcher.click();
+
+        // Wait for dropdown to appear
+        await page.waitForTimeout(300);
+
+        // Click on the opposite language option
+        // If current is English, click Spanish; if Spanish, click English
+        if (initialText?.includes('English')) {
+            await page.getByTestId('language-option-es').click();
+        } else {
+            await page.getByTestId('language-option-en').click();
+        }
 
         // Wait for language change to apply
         await page.waitForTimeout(1000);
@@ -30,13 +41,6 @@ test('language switching: toggle between languages', async ({ page }) => {
         // Verify language changed (text should be different)
         const newText = await languageSwitcher.textContent();
         expect(newText).not.toBe(initialText);
-    }
-
-    // Check for language toggle in header/footer
-    const langToggle = page.getByRole('button', { name: /language|lang/i });
-    if (await langToggle.isVisible()) {
-        await langToggle.click();
-        await page.waitForTimeout(500);
     }
 });
 
@@ -56,18 +60,30 @@ test('language switching: verify localized content', async ({ page }) => {
 
     // Navigate to objectives page
     await page.goto('/dashboard/objectives');
+    await page.waitForLoadState('networkidle');
 
-    // Check if objectives heading is localized
-    const objectivesHeading = page.getByRole('heading', { name: /objectives|objetivos/i });
+    // Check if objectives heading is visible (h1 with "Objectives" or "Objetivos")
+    const objectivesHeading = page.locator('h1');
     await expect(objectivesHeading).toBeVisible();
+    const initialHeadingText = await objectivesHeading.textContent();
 
     // Try language switching and verify content changes
     const languageSwitcher = page.getByTestId('language-switcher');
     if (await languageSwitcher.isVisible()) {
+        // Open dropdown
         await languageSwitcher.click();
+        await page.waitForTimeout(300);
+
+        // Click on the opposite language option
+        if (initialHeadingText?.toLowerCase().includes('objectives')) {
+            await page.getByTestId('language-option-es').click();
+        } else {
+            await page.getByTestId('language-option-en').click();
+        }
         await page.waitForTimeout(1000);
 
-        // Verify objectives heading is still visible (in different language)
-        await expect(objectivesHeading).toBeVisible();
+        // Verify heading text changed
+        const newHeadingText = await objectivesHeading.textContent();
+        expect(newHeadingText).not.toBe(initialHeadingText);
     }
 });
