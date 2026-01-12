@@ -7,7 +7,7 @@ export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
     // retries: 2,
-    workers: 16,
+    workers: 4,
     reporter: 'html',
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
