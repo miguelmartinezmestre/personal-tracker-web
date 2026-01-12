@@ -49,7 +49,10 @@ test('login with existing user', async ({ page }) => {
 test('register redirects to login link works', async ({ page }) => {
     await page.goto('/register');
     await takeScreenshot(page, 'register-redirects-to-login', 'register-page');
-    await page.getByRole('link', { name: /already have an account/i }).click();
+    const link = page.getByRole('link', { name: /already have an account/i });
+    await link.click();
+    // Wait for navigation with timeout
+    await page.waitForURL(/\/login$/, { timeout: 10000 });
     await expect(page).toHaveURL(/\/login$/);
     await takeScreenshot(page, 'register-redirects-to-login', 'login-page-after-redirect');
 });
@@ -57,7 +60,10 @@ test('register redirects to login link works', async ({ page }) => {
 test('login redirects to register link works', async ({ page }) => {
     await page.goto('/login');
     await takeScreenshot(page, 'login-redirects-to-register', 'login-page');
-    await page.getByRole('link', { name: /don't have an account/i }).click();
+    const link = page.getByRole('link', { name: /don't have an account/i });
+    await link.click();
+    // Wait for navigation with timeout
+    await page.waitForURL(/\/register$/, { timeout: 10000 });
     await expect(page).toHaveURL(/\/register$/);
     await takeScreenshot(page, 'login-redirects-to-register', 'register-page-after-redirect');
 });

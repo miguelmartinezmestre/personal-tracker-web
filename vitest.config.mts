@@ -23,6 +23,8 @@ export default defineConfig({
       exclude: [
         "node_modules/",
         "convex/_generated/",
+        "packages/backend/convex/_generated/",
+        "packages/backend/convex/betterAuth/_generated/",
         "**/*.d.ts",
         "**/*.config.{ts,js,mjs}",
         "**/setupTests.ts",
@@ -39,7 +41,7 @@ export default defineConfig({
         "build/",
         "scripts/",
         "tests/",
-        "packages/backend/**",
+        "packages/backend/convex/test_helpers.ts",
         "packages/ui/**",
       ],
       thresholds: {

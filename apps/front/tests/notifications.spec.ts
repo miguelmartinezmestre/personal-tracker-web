@@ -22,12 +22,31 @@ async function createNotification(
     message: string
 ) {
     await page.goto('/dashboard/notifications');
+    await page.waitForLoadState('networkidle');
+
+    // Open the create notification modal
     await page.getByTestId('notification-create-open').click();
+
+    // Wait for the dialog to be visible and objectives to load
+    await page.waitForTimeout(500);
+
+    // Open the objective select dropdown
     await page.getByTestId('notification-objective-select').click();
-    await page.getByRole('option', { name: objectiveTitle }).click();
+
+    // Wait for the option to be visible before clicking
+    const option = page.getByRole('option', { name: objectiveTitle });
+    await expect(option).toBeVisible({ timeout: 10000 });
+    await option.click();
+
+    // Fill in the notification details
     await page.getByTestId('notification-type-input').fill('reminder');
     await page.getByTestId('notification-message-input').fill(message);
+
+    // Save the notification
     await page.getByTestId('notification-save-button').click();
+
+    // Wait for the notification to appear in the list
+    await page.waitForTimeout(1000);
     await expect(page.getByText(message)).toBeVisible({ timeout: 10000 });
 }
 
@@ -53,13 +72,20 @@ test('notifications: create, mark read/unread, delete', async ({ page }) => {
     await expect(row).toBeVisible({ timeout: 10000 });
     await expect(row).toContainText(/unread|no le[ií]d[oa]/i);
 
-    const markRead = row.getByRole('button', { name: /mark read|marcar.*le[ií]d[oa]/i });
-    await markRead.click();
-    await expect(row).toContainText(/read|le[ií]d[oa]/i);
+    // Button text is "Mark as read" or "Marcar como leído"
+    const markReadButton = row.getByRole('button', { name: /mark.*read|marcar.*le[ií]d[oa]/i });
+    await markReadButton.click();
+    await page.waitForTimeout(500);
 
-    const markUnread = row.getByRole('button', { name: /mark unread|no le[ií]d[oa]/i });
-    await markUnread.click();
-    await expect(row).toContainText(/unread|no le[ií]d[oa]/i);
+    // After clicking, the button should now say "Mark as unread"
+    const markUnreadButton = row.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i });
+    await expect(markUnreadButton).toBeVisible();
+
+    // Click again to mark as unread
+    await markUnreadButton.click();
+    await page.waitForTimeout(500);
+    // After clicking, the button should be back to "Mark as read"
+    await expect(row.getByRole('button', { name: /mark.*read|marcar.*le[ií]d[oa]/i })).toBeVisible();
 
     await row.getByRole('button', { name: /delete|eliminar/i }).click();
     const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
@@ -85,14 +111,22 @@ test('notifications: mark all as read', async ({ page }) => {
     await createNotification(page, objectiveTitle, message2);
     await createNotification(page, objectiveTitle, message3);
 
-    // Verify all notifications are unread
+    // Verify all notifications are unread - they should already be visible from the last createNotification
+    // But reload to ensure we have a clean state
     await page.goto('/dashboard/notifications');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
 
     const row1 = page.locator('tr', { hasText: message1 }).first();
     const row2 = page.locator('tr', { hasText: message2 }).first();
     const row3 = page.locator('tr', { hasText: message3 }).first();
 
+    // First verify the rows are visible
+    await expect(row1).toBeVisible({ timeout: 10000 });
+    await expect(row2).toBeVisible({ timeout: 10000 });
+    await expect(row3).toBeVisible({ timeout: 10000 });
+
+    // Then verify they contain "Unread" text
     await expect(row1).toContainText(/unread|no le[ií]d[oa]/i);
     await expect(row2).toContainText(/unread|no le[ií]d[oa]/i);
     await expect(row3).toContainText(/unread|no le[ií]d[oa]/i);
@@ -111,13 +145,21 @@ test('notifications: mark all as read', async ({ page }) => {
     await page.waitForLoadState('networkidle');
 
     // Verify all notifications are now read
+    // When a notification is read, the button says "Mark as unread"
     const updatedRow1 = page.locator('tr', { hasText: message1 }).first();
     const updatedRow2 = page.locator('tr', { hasText: message2 }).first();
     const updatedRow3 = page.locator('tr', { hasText: message3 }).first();
 
-    await expect(updatedRow1).not.toContainText(/unread|no le[ií]d[oa]/i);
-    await expect(updatedRow2).not.toContainText(/unread|no le[ií]d[oa]/i);
-    await expect(updatedRow3).not.toContainText(/unread|no le[ií]d[oa]/i);
+    // Check that "Mark as unread" button is visible (meaning the notification is read)
+    await expect(
+        updatedRow1.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
+    await expect(
+        updatedRow2.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
+    await expect(
+        updatedRow3.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
 
     // Verify the mark all button is now disabled (no unread notifications)
     const markAllButtonAfter = page.getByRole('button', {
@@ -144,17 +186,25 @@ test('notifications: mark all as read with mixed read/unread', async ({ page }) 
 
     await page.goto('/dashboard/notifications');
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
+
+    // First verify all rows are visible
+    const row1 = page.locator('tr', { hasText: message1 }).first();
+    const row2 = page.locator('tr', { hasText: message2 }).first();
+    const row3 = page.locator('tr', { hasText: message3 }).first();
+    await expect(row1).toBeVisible({ timeout: 10000 });
+    await expect(row2).toBeVisible({ timeout: 10000 });
+    await expect(row3).toBeVisible({ timeout: 10000 });
 
     // Mark the first one as read manually
-    const row1 = page.locator('tr', { hasText: message1 }).first();
-    const markReadButton = row1.getByRole('button', { name: /mark read|marcar.*le[ií]d[oa]/i });
+    // Button text is "Mark as read" or "Marcar como leído" (not "Mark as unread")
+    const markReadButton = row1.getByRole('button', { name: /mark as read|marcar como le[ií]d[oa]/i });
+    await expect(markReadButton).toBeVisible({ timeout: 5000 });
     await markReadButton.click();
     await page.waitForTimeout(500);
 
-    // Verify we have mixed read/unread
-    await expect(row1).not.toContainText(/unread|no le[ií]d[oa]/i);
-    const row2 = page.locator('tr', { hasText: message2 }).first();
-    const row3 = page.locator('tr', { hasText: message3 }).first();
+    // Verify we have mixed read/unread - row1 should now have "Mark as unread" button
+    await expect(row1.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })).toBeVisible();
     await expect(row2).toContainText(/unread|no le[ií]d[oa]/i);
     await expect(row3).toContainText(/unread|no le[ií]d[oa]/i);
 
@@ -171,7 +221,14 @@ test('notifications: mark all as read with mixed read/unread', async ({ page }) 
     const updatedRow2 = page.locator('tr', { hasText: message2 }).first();
     const updatedRow3 = page.locator('tr', { hasText: message3 }).first();
 
-    await expect(updatedRow1).not.toContainText(/unread|no le[ií]d[oa]/i);
-    await expect(updatedRow2).not.toContainText(/unread|no le[ií]d[oa]/i);
-    await expect(updatedRow3).not.toContainText(/unread|no le[ií]d[oa]/i);
+    // Verify all notifications are read by checking that "Mark as unread" button is visible
+    await expect(
+        updatedRow1.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
+    await expect(
+        updatedRow2.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
+    await expect(
+        updatedRow3.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
 });

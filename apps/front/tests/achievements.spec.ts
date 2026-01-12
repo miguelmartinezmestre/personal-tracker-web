@@ -185,14 +185,18 @@ test.describe('Achievements - Earning Flow', () => {
     test('creating first objective triggers achievement check', async ({ page }) => {
         await createTestUser(page);
 
-        // First, initialize achievements
+        // First, initialize achievements if needed
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
 
         const initButton = page.getByTestId('achievements-seed-button');
-        await expect(initButton).toBeVisible();
-        await initButton.click();
-        await expect(initButton).not.toBeVisible({ timeout: 15000 });
+        const isButtonVisible = await initButton.isVisible({ timeout: 3000 }).catch(() => false);
+
+        if (isButtonVisible) {
+            await initButton.click();
+            await expect(initButton).not.toBeVisible({ timeout: 15000 });
+        }
+        // If button is not visible, achievements were already seeded in a previous test
 
         // Navigate to objectives and create one
         await page.goto('/dashboard/objectives');
@@ -270,8 +274,8 @@ test.describe('Achievements - Internationalization', () => {
 
                 await takeScreenshot(page, 'achievements', 'spanish-language');
 
-                // Verify Spanish text is displayed
-                await expect(page.getByText(/logros/i)).toBeVisible();
+                // Verify Spanish text is displayed - use testId to avoid strict mode violations
+                await expect(page.getByTestId('achievements-title')).toContainText(/logros/i);
             }
         }
     });

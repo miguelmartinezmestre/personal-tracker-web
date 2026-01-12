@@ -17,7 +17,9 @@ test('debug: check if pages load properly', async ({ page }) => {
     await expect(page.getByTestId('password-input')).toBeVisible();
     await expect(page.getByTestId('login-button')).toBeVisible();
 
-    // Test dashboard home redirects to login
+    // Test dashboard home redirects to login (client-side redirect)
     await page.goto('/dashboard/home');
+    // Wait for client-side redirect to happen
+    await page.waitForURL(/\/login$/, { timeout: 10000 });
     await expect(page).toHaveURL(/\/login$/);
 });

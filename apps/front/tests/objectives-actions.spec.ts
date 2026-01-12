@@ -16,6 +16,11 @@ async function createObjective(
     await page.getByTestId('objective-target-input').fill('100');
     await page.getByTestId('objective-unit-input').fill('units');
     await page.getByTestId('objective-current-input').fill('50');
+    // Select the status - default is 'not_started', we need 'in_progress' for most tests
+    if (status === 'in_progress') {
+        await page.getByTestId('objective-status-select').click();
+        await page.getByRole('option', { name: /in progress|en progreso/i }).click();
+    }
     await page.getByTestId('objective-save-button').click();
     await expect(page.getByText(title)).toBeVisible({ timeout: 10000 });
 }
@@ -164,7 +169,8 @@ test.describe('Objective Status Actions', () => {
         await expect(page.getByText(/marked as completed|marcado como completado/i)).toBeVisible({
             timeout: 10000,
         });
-        await expect(page.getByText(objectiveTitle)).toBeVisible();
+        // Use first() because the objective title appears twice (in the notification text and as a link)
+        await expect(page.getByText(objectiveTitle).first()).toBeVisible();
     });
 
     test('multiple status changes persist correctly', async ({ page }) => {

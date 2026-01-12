@@ -25,7 +25,15 @@ test('landing page: displays main content and navigation links', async ({ page }
 test('landing page: Get Started link navigates to register', async ({ page }) => {
     await page.goto('/');
     await takeScreenshot(page, 'landing-page-get-started', 'landing-page');
-    await page.getByRole('link', { name: /get started/i }).click();
+    const link = page.getByRole('link', { name: /get started/i }).first();
+
+    // Wait for navigation using Promise.all to handle client-side routing
+    await Promise.all([
+        page.waitForURL(/\/register$/, { timeout: 15000 }),
+        link.click(),
+    ]);
+
+    // Wait for the register page to be fully loaded
     await expect(page).toHaveURL(/\/register$/);
     await takeScreenshot(page, 'landing-page-get-started', 'register-page');
 });
@@ -34,7 +42,16 @@ test('landing page: Login link navigates to login', async ({ page }) => {
     await page.goto('/');
     await takeScreenshot(page, 'landing-page-login', 'landing-page');
     // Use first() to avoid strict mode violation (there are 2 Login links)
-    await page.getByRole('link', { name: /login/i }).first().click();
+    const link = page.getByRole('link', { name: /login/i }).first();
+
+    // Wait for navigation using Promise.all to handle client-side routing
+    await Promise.all([
+        page.waitForURL(/\/login$/, { timeout: 15000 }),
+        link.click(),
+    ]);
+
+    // Wait for the login page to be fully loaded by checking for login form
+    await expect(page.getByRole('heading', { name: /login/i })).toBeVisible({ timeout: 10000 });
     await expect(page).toHaveURL(/\/login$/);
     await takeScreenshot(page, 'landing-page-login', 'login-page');
 });

@@ -3,15 +3,59 @@ import { randomUUID } from 'crypto';
 
 export const DEFAULT_PASSWORD = '12345678';
 
+// Nombres presentables para capturas de TFG
+const PRESENTABLE_NAMES = [
+    'Miguel García',
+    'Ana Martínez',
+    'Carlos López',
+    'Laura Sánchez',
+    'David Fernández',
+];
+
+/**
+ * Creates a test user with options for TFG documentation screenshots.
+ * When usePresentableName is true, uses a realistic name instead of UUID.
+ */
 export async function createTestUser(
     page: Page,
     options?: {
         password?: string;
+        /** Use a presentable name for TFG documentation screenshots */
+        usePresentableName?: boolean;
+        /** Custom username to use */
+        customUsername?: string;
+        /** Custom email to use */
+        customEmail?: string;
     }
 ) {
     const uuid = randomUUID();
-    const username = `usernametest-${uuid}`;
-    const email = `useremail-${uuid}@useremail.com`;
+    const shortId = uuid.substring(0, 8);
+
+    let username: string;
+    let email: string;
+
+    // Helper to normalize names for email (remove accents and special chars)
+    const normalizeForEmail = (name: string) =>
+        name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
+            .replace(/\s+/g, '.')
+            .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
+
+    if (options?.customUsername) {
+        username = options.customUsername;
+        email = options?.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
+    } else if (options?.usePresentableName) {
+        // Use a presentable name for TFG screenshots
+        const randomName = PRESENTABLE_NAMES[Math.floor(Math.random() * PRESENTABLE_NAMES.length)];
+        username = randomName;
+        email = `${normalizeForEmail(randomName)}.${shortId}@example.com`;
+    } else {
+        username = `usernametest-${uuid}`;
+        email = `useremail-${uuid}@useremail.com`;
+    }
+
     const password = options?.password ?? DEFAULT_PASSWORD;
 
     await page.goto('/register');
@@ -28,12 +72,22 @@ export async function createTestUser(
     // Submit registration
     await page.getByTestId('register-button').click();
 
-    // Wait for either success or redirect to login
-    await page.waitForLoadState('networkidle');
+    // Wait for either success or redirect to login with increased timeout
+    await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     // Check where we ended up
     let currentUrl = page.url();
     console.log('After registration, current URL:', currentUrl);
+
+    // Check for error messages first
+    const errorMessage = await page
+        .locator('.text-destructive, [role="alert"], .alert-destructive')
+        .first()
+        .textContent()
+        .catch(() => null);
+    if (errorMessage) {
+        console.log('Found error message after registration:', errorMessage);
+    }
 
     if (currentUrl.includes('/dashboard/home')) {
         // Registration successful
@@ -239,4 +293,79 @@ export async function takeScreenshot(page: Page, testName: string, step: string,
     //     fullPage: true,
     //     animations: 'disabled', // Disable animations for consistent screenshots
     // });
+}
+
+/**
+ * Promotes the current logged-in user to admin role.
+ * This calls the Convex mutation from the browser context.
+ * User must already be logged in.
+ */
+export async function promoteToAdmin(page: Page): Promise<void> {
+    // Navigate to dashboard to ensure we're in an authenticated context
+    await page.goto('/dashboard/home');
+    await page.waitForLoadState('networkidle');
+
+    // Call the promoteToAdmin mutation via the browser's Convex client
+    const result = await page.evaluate(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const win = window as any;
+        const convexClient = win.__CONVEX_CLIENT__;
+        const api = win.__CONVEX_API__;
+
+        if (!convexClient || !api) {
+            throw new Error('Convex client or API not found on window');
+        }
+
+        return await convexClient.mutation(api.users.promoteToAdmin, {});
+    });
+
+    console.log('✅ User promoted to admin:', result);
+
+    // Wait for the database to sync the new role
+    await page.waitForTimeout(2000);
+
+    // Reload to refresh user context with new role
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait a bit more for the session to update
+    await page.waitForTimeout(1000);
+
+    // Verify admin access by checking if admin menu is visible
+    const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]').first();
+    try {
+        await adminMenuItem.waitFor({ state: 'visible', timeout: 5000 });
+        console.log('✅ Admin menu item is now visible');
+    } catch {
+        console.log('⚠️ Admin menu item not found, attempting another reload...');
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
+    }
+}
+
+/**
+ * Creates a test user specifically for TFG documentation with presentable name.
+ * Adds a short UUID to make the user unique for each test run.
+ */
+export async function createTFGTestUser(
+    page: Page,
+    name: string = 'Miguel Garcia'
+): Promise<{ username: string; email: string; password: string }> {
+    // Add a short unique suffix to avoid collisions with existing users
+    const shortId = randomUUID().slice(0, 8);
+
+    // Normalize email: remove accents and special characters
+    const normalizedEmail = name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
+
+    return createTestUser(page, {
+        usePresentableName: false,
+        customUsername: name,
+        customEmail: `${normalizedEmail}.${shortId}@example.com`,
+    });
 }

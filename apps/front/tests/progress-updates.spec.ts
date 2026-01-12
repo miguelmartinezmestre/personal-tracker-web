@@ -47,7 +47,8 @@ test('progress updates: create, edit, delete progress entry', async ({ page }) =
     await page.getByTestId('progress-save-button').click();
 
     // Verify progress update appears in table
-    await expect(page.getByText('5')).toBeVisible();
+    // Use locator with td context and first() to avoid strict mode violations
+    await expect(page.locator('td', { hasText: '5' }).first()).toBeVisible();
     await expect(page.getByText('Test progress comment')).toBeVisible();
     await takeScreenshot(page, 'progress-updates-create', 'progress-created-in-table');
 

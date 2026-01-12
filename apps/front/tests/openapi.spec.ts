@@ -40,9 +40,9 @@ test.describe('OpenAPI/Swagger Endpoints', () => {
         expect(spec.components).toBeDefined();
         expect(spec.components.securitySchemes).toBeDefined();
 
-        // Verify Bearer JWT auth is configured
+        // Verify Bearer JWT auth is configured (the key is 'bearerAuth' in the actual response)
         const securitySchemes = spec.components.securitySchemes;
-        expect(securitySchemes).toHaveProperty('Bearer');
+        expect(Object.keys(securitySchemes)).toContain('bearerAuth');
     });
 
     test('/api/ui serves Swagger UI interface', async ({ page }) => {
