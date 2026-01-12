@@ -25,6 +25,16 @@ interface QuickActionsProps {
     className?: string;
 }
 
+function createMutationOptions(successMessage: string, errorMessage: string) {
+    return {
+        onSuccess: () => toast.success(successMessage),
+        onError: (error: Error) => {
+            toast.error(errorMessage);
+            console.error(error);
+        },
+    };
+}
+
 const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
     ({ objectiveId, currentStatus, className }, ref) => {
         const t = useTranslations('Objectives');
@@ -37,66 +47,35 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         const handleComplete = () => {
             completeObjective.mutate(
                 { id: objectiveId },
-                {
-                    onSuccess: () => {
-                        toast.success(t('toast.completedSuccess'));
-                    },
-                    onError: (error: Error) => {
-                        toast.error(t('toast.completeFailed'));
-                        console.error(error);
-                    },
-                }
+                createMutationOptions(t('toast.completedSuccess'), t('toast.completeFailed'))
             );
         };
 
         const handlePause = () => {
             pauseObjective.mutate(
                 { id: objectiveId },
-                {
-                    onSuccess: () => {
-                        toast.success(t('toast.pausedSuccess'));
-                    },
-                    onError: (error: Error) => {
-                        toast.error(t('toast.pauseFailed'));
-                        console.error(error);
-                    },
-                }
+                createMutationOptions(t('toast.pausedSuccess'), t('toast.pauseFailed'))
             );
         };
 
         const handleArchive = () => {
             archiveObjective.mutate(
                 { id: objectiveId },
-                {
-                    onSuccess: () => {
-                        toast.success(t('toast.archivedSuccess'));
-                    },
-                    onError: (error: Error) => {
-                        toast.error(t('toast.archiveFailed'));
-                        console.error(error);
-                    },
-                }
+                createMutationOptions(t('toast.archivedSuccess'), t('toast.archiveFailed'))
             );
         };
 
         const handleResume = () => {
             resumeObjective.mutate(
                 { id: objectiveId, status: 'in_progress' },
-                {
-                    onSuccess: () => {
-                        toast.success(t('toast.resumedSuccess'));
-                    },
-                    onError: (error: Error) => {
-                        toast.error(t('toast.resumeFailed'));
-                        console.error(error);
-                    },
-                }
+                createMutationOptions(t('toast.resumedSuccess'), t('toast.resumeFailed'))
             );
         };
 
-        const isCompleted = currentStatus.toLowerCase() === 'completed';
-        const isPaused = currentStatus.toLowerCase() === 'paused';
-        const isArchived = currentStatus.toLowerCase() === 'archived';
+        const status = currentStatus.toLowerCase();
+        const isCompleted = status === 'completed';
+        const isPaused = status === 'paused';
+        const isArchived = status === 'archived';
 
         return (
             <div ref={ref} className={`flex items-center space-x-1 ${className}`}>

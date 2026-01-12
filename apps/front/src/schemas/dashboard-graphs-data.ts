@@ -24,4 +24,3 @@ export const dashboardGraphsDataSchema = z.object({
         })
     ),
 });
-

@@ -78,14 +78,18 @@ test('notifications: create, mark read/unread, delete', async ({ page }) => {
     await page.waitForTimeout(500);
 
     // After clicking, the button should now say "Mark as unread"
-    const markUnreadButton = row.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i });
+    const markUnreadButton = row.getByRole('button', {
+        name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i,
+    });
     await expect(markUnreadButton).toBeVisible();
 
     // Click again to mark as unread
     await markUnreadButton.click();
     await page.waitForTimeout(500);
     // After clicking, the button should be back to "Mark as read"
-    await expect(row.getByRole('button', { name: /mark.*read|marcar.*le[ií]d[oa]/i })).toBeVisible();
+    await expect(
+        row.getByRole('button', { name: /mark.*read|marcar.*le[ií]d[oa]/i })
+    ).toBeVisible();
 
     await row.getByRole('button', { name: /delete|eliminar/i }).click();
     const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
@@ -198,13 +202,17 @@ test('notifications: mark all as read with mixed read/unread', async ({ page }) 
 
     // Mark the first one as read manually
     // Button text is "Mark as read" or "Marcar como leído" (not "Mark as unread")
-    const markReadButton = row1.getByRole('button', { name: /mark as read|marcar como le[ií]d[oa]/i });
+    const markReadButton = row1.getByRole('button', {
+        name: /mark as read|marcar como le[ií]d[oa]/i,
+    });
     await expect(markReadButton).toBeVisible({ timeout: 5000 });
     await markReadButton.click();
     await page.waitForTimeout(500);
 
     // Verify we have mixed read/unread - row1 should now have "Mark as unread" button
-    await expect(row1.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })).toBeVisible();
+    await expect(
+        row1.getByRole('button', { name: /mark.*unread|marcar.*no.*le[ií]d[oa]/i })
+    ).toBeVisible();
     await expect(row2).toContainText(/unread|no le[ií]d[oa]/i);
     await expect(row3).toContainText(/unread|no le[ií]d[oa]/i);
 

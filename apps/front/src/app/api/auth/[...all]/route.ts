@@ -1,3 +1,3 @@
-import { handler } from "../../../../server/auth-server";
+import { handler } from '../../../../server/auth-server';
 
 export const { GET, POST } = handler;

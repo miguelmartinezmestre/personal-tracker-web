@@ -63,9 +63,14 @@ test('team members: add, edit role, and delete team members', async ({ page, bro
     await page.waitForTimeout(2000);
 
     // Try to verify the new team appears - if it doesn't, skip test
-    const teamVisible = await page.getByText(teamName).isVisible({ timeout: 5000 }).catch(() => false);
+    const teamVisible = await page
+        .getByText(teamName)
+        .isVisible({ timeout: 5000 })
+        .catch(() => false);
     if (!teamVisible) {
-        console.log('Team creation may have failed - Better Auth component may not be fully functional in test environment');
+        console.log(
+            'Team creation may have failed - Better Auth component may not be fully functional in test environment'
+        );
         return;
     }
 

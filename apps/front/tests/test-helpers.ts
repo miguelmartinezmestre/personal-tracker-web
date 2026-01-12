@@ -3,6 +3,18 @@ import { randomUUID } from 'crypto';
 
 export const DEFAULT_PASSWORD = '12345678';
 
+/**
+ * Normalizes a name for use in email addresses by removing accents and special characters.
+ */
+function normalizeForEmail(name: string): string {
+    return name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
+        .replace(/\s+/g, '.')
+        .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
+}
+
 // Nombres presentables para capturas de TFG
 const PRESENTABLE_NAMES = [
     'Miguel García',
@@ -33,15 +45,6 @@ export async function createTestUser(
 
     let username: string;
     let email: string;
-
-    // Helper to normalize names for email (remove accents and special chars)
-    const normalizeForEmail = (name: string) =>
-        name
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
-            .replace(/\s+/g, '.')
-            .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
 
     if (options?.customUsername) {
         username = options.customUsername;
@@ -352,20 +355,11 @@ export async function createTFGTestUser(
     page: Page,
     name: string = 'Miguel Garcia'
 ): Promise<{ username: string; email: string; password: string }> {
-    // Add a short unique suffix to avoid collisions with existing users
     const shortId = randomUUID().slice(0, 8);
-
-    // Normalize email: remove accents and special characters
-    const normalizedEmail = name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
-        .replace(/\s+/g, '.')
-        .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
 
     return createTestUser(page, {
         usePresentableName: false,
         customUsername: name,
-        customEmail: `${normalizedEmail}.${shortId}@example.com`,
+        customEmail: `${normalizeForEmail(name)}.${shortId}@example.com`,
     });
 }

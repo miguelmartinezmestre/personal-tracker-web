@@ -28,9 +28,14 @@ test('teams end-to-end: create, edit, delete team', async ({ page }) => {
     await page.waitForTimeout(2000);
 
     // Try to verify the new team appears - if it doesn't, Better Auth may not be fully functional in test env
-    const teamVisible = await page.getByText(originalTeamName).isVisible({ timeout: 5000 }).catch(() => false);
+    const teamVisible = await page
+        .getByText(originalTeamName)
+        .isVisible({ timeout: 5000 })
+        .catch(() => false);
     if (!teamVisible) {
-        console.log('Team creation may have failed - Better Auth component may not be fully functional in test environment');
+        console.log(
+            'Team creation may have failed - Better Auth component may not be fully functional in test environment'
+        );
         // Skip rest of test since team creation failed
         return;
     }
@@ -80,9 +85,14 @@ test('teams: navigate to team detail page', async ({ page }) => {
     await page.waitForTimeout(2000);
 
     // Try to verify the new team appears - if it doesn't, skip test
-    const teamVisible = await page.getByText(teamName).isVisible({ timeout: 5000 }).catch(() => false);
+    const teamVisible = await page
+        .getByText(teamName)
+        .isVisible({ timeout: 5000 })
+        .catch(() => false);
     if (!teamVisible) {
-        console.log('Team creation may have failed - Better Auth component may not be fully functional in test environment');
+        console.log(
+            'Team creation may have failed - Better Auth component may not be fully functional in test environment'
+        );
         return;
     }
 

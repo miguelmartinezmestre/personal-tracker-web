@@ -8,7 +8,7 @@ test('achievements seeding initializes definitions for new user', async ({ page 
 
     // Check if seed button is visible (only shown when no achievements exist)
     const seedButton = page.getByTestId('achievements-seed-button');
-    const isSeedButtonVisible = await seedButton.count() > 0;
+    const isSeedButtonVisible = (await seedButton.count()) > 0;
 
     if (isSeedButtonVisible) {
         // Click seed button if achievements don't exist yet

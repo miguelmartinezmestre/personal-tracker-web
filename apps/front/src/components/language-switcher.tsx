@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react';
 
 const locales = [
     { value: 'es', label: 'Español' },
-    { value: 'en', label: 'English'},
+    { value: 'en', label: 'English' },
 ] as const;
 
 export function LanguageSwitcher() {
@@ -37,7 +37,7 @@ export function LanguageSwitcher() {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    {locales.map((locale) => (
+                    {locales.map(locale => (
                         <DropdownMenuItem key={locale.value}>
                             <span className="ml-2">{locale.label}</span>
                         </DropdownMenuItem>
@@ -56,22 +56,18 @@ export function LanguageSwitcher() {
         router.refresh();
     };
 
-    const currentLocaleData = locales.find((l) => l.value === currentLocale) || locales[0];
+    const currentLocaleData = locales.find(l => l.value === currentLocale) || locales[0];
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button
-                    variant="outline"
-                    data-testid="language-switcher"
-                    className="min-w-[100px]"
-                >
+                <Button variant="outline" data-testid="language-switcher" className="min-w-[100px]">
                     <span className="hidden sm:inline">{currentLocaleData.label}</span>
                     <span className="sr-only">{t('label')}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-                {locales.map((locale) => (
+                {locales.map(locale => (
                     <DropdownMenuItem
                         key={locale.value}
                         onClick={() => handleLanguageChange(locale.value)}
