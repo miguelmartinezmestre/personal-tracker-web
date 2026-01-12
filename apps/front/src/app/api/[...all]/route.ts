@@ -67,7 +67,7 @@ const getUserRoute = createRoute({
 
 // Workaround: current @hono/zod-openapi types sometimes infer `never` for the handler return
 // when used through the Next.js/Vercel adapter, even though runtime behavior is correct.
-app.openapi(getUserRoute, (async c => {
+app.openapi(getUserRoute, (async (c: any) => {
     const { id } = c.req.valid('param');
     return c.json(
         {

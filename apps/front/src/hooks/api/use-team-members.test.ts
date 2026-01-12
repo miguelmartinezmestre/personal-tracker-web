@@ -169,26 +169,35 @@ describe('use-team-members types', () => {
         const params: import('./use-team-members').CreateTeamMemberParams = {
             organizationId: 'org-123',
             email: 'member@example.com',
-            role: 'MEMBER',
+            role: 'member',
         };
-        expect(params.role).toBe('MEMBER');
+        expect(params.role).toBe('member');
     });
 
-    it('should export CreateTeamMemberParams with MANAGER role', async () => {
+    it('should export CreateTeamMemberParams with ADMIN role', async () => {
         const params: import('./use-team-members').CreateTeamMemberParams = {
             organizationId: 'org-123',
-            email: 'manager@example.com',
-            role: 'MANAGER',
+            email: 'admin@example.com',
+            role: 'admin',
         };
-        expect(params.role).toBe('MANAGER');
+        expect(params.role).toBe('admin');
+    });
+
+    it('should export CreateTeamMemberParams with OWNER role', async () => {
+        const params: import('./use-team-members').CreateTeamMemberParams = {
+            organizationId: 'org-123',
+            email: 'owner@example.com',
+            role: 'owner',
+        };
+        expect(params.role).toBe('owner');
     });
 
     it('should export UpdateTeamMemberParams type', async () => {
         const params: import('./use-team-members').UpdateTeamMemberParams = {
             memberId: 'member-123',
             organizationId: 'org-123',
-            role: 'MANAGER',
+            role: 'admin',
         };
-        expect(params.role).toBe('MANAGER');
+        expect(params.role).toBe('admin');
     });
 });
