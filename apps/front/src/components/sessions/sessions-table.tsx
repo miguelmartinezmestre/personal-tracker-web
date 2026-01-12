@@ -1,24 +1,50 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-// import { Button } from '@repo/ui/components/button';
-import type { Doc } from '@repo/backend/convex/_generated/dataModel';
+import { Button } from '@repo/ui/components/button';
 import { UserAgentIcon } from '../user-agent';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { BetterAuthDataModel } from '@repo/backend/convex/rls';
+import { Badge } from '@repo/ui/components/badge';
+import { toast } from 'sonner';
+import { authClient } from '@/lib/auth-client';
 
 export default function SessionsTable() {
     const t = useTranslations('Sessions');
+    const queryClient = useQueryClient();
     const sessions = useSuspenseQuery(convexQuery(api.sessions.getSessionsByUser, {}));
-    const _invalidateSession = useMutation({
+
+    // Get current session to prevent revoking it
+    const currentSession = authClient.useSession();
+
+    const invalidateSession = useMutation({
         mutationFn: useConvexMutation(api.sessions.invalidateSession),
+        onSuccess: () => {
+            toast.success(t('sessionRevoked'));
+            queryClient.invalidateQueries({ queryKey: ['sessions'] });
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || t('sessionRevokeFailed'));
+        },
     });
-    const _router = useRouter();
+
+    const getSessionStatus = (session: BetterAuthDataModel['session']['document']) => {
+        const now = Date.now();
+        const isExpired = session.expiresAt < now;
+        const isCurrentSession = currentSession.data?.session?.token === session.token;
+
+        if (isCurrentSession) {
+            return { status: 'current', label: t('currentSession'), variant: 'default' as const };
+        }
+        if (isExpired) {
+            return { status: 'expired', label: t('expired'), variant: 'secondary' as const };
+        }
+        return { status: 'active', label: t('active'), variant: 'outline' as const };
+    };
 
     const columns: ColumnDef<BetterAuthDataModel['session']['document']>[] = [
         {
@@ -36,27 +62,44 @@ export default function SessionsTable() {
             },
         },
         {
-            accessorKey: 'status',
+            accessorKey: 'expiresAt',
+            header: t('expiresAt'),
+            cell: ({ row }) => {
+                return new Date(row.original.expiresAt).toLocaleDateString();
+            },
+        },
+        {
+            id: 'status',
             header: t('status'),
+            cell: ({ row }) => {
+                const { label, variant } = getSessionStatus(row.original);
+                return <Badge variant={variant}>{label}</Badge>;
+            },
         },
         {
             header: '',
             id: 'close-session',
             cell: ({ row }) => {
-                const _objetiveRow = row.original;
-                // if (objetiveRow.status === 'active') {
-                //     return (
-                //         <Button
-                //             onClick={async () => {
-                //                 await invalidateSession.mutateAsync({ _id: objetiveRow._id });
-                //                 router.refresh();
-                //             }}
-                //         >
-                //             {t('closeSession')}
-                //         </Button>
-                //     );
-                // }
-                return null;
+                const session = row.original;
+                const { status } = getSessionStatus(session);
+
+                // Don't show revoke button for current session or expired sessions
+                if (status === 'current' || status === 'expired') {
+                    return null;
+                }
+
+                return (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={invalidateSession.isPending}
+                        onClick={async () => {
+                            await invalidateSession.mutateAsync({ _id: session._id });
+                        }}
+                    >
+                        {invalidateSession.isPending ? t('revoking') : t('revoke')}
+                    </Button>
+                );
             },
         },
     ];
