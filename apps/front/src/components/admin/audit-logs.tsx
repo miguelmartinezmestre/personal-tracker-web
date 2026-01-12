@@ -11,7 +11,7 @@ import { useRequireAdmin } from '@/hooks/use-user-role';
 import { ShieldAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-export function AuditLogs() {
+export function AuditLogs({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
     const t = useTranslations('Admin');
 
     const logs = useSuspenseQuery(convexQuery(api.auditLogs.getAuditLogs, {}));
@@ -61,7 +61,7 @@ export function AuditLogs() {
     ];
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" {...props}>
             <div>
                 <h3 className="text-lg font-semibold mb-2">{t('auditLogsTable.title')}</h3>
                 <p className="text-sm text-muted-foreground mb-4">

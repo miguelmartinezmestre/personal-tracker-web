@@ -149,7 +149,7 @@ export default function CreateObjectiveFormModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2" data-testid="objective-create-open">
+                <Button className="gap-2" data-testid="objective-create-open" data-tour="create-objective-btn">
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>

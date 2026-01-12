@@ -75,18 +75,7 @@ export const createTeam = mutationWithRLS({
                 throw new Error('Failed to create organization');
             }
 
-            // Add creator as owner (better-auth uses "owner" as the default role for creators)
-            await ctx.runMutation(components.betterAuth.adapter.create, {
-                input: {
-                    data: {
-                        organizationId: String(orgId),
-                        userId: userId,
-                        role: 'owner',
-                        createdAt: now,
-                    },
-                    model: 'member',
-                },
-            });
+            // Teams are created empty - admin will invite members later
 
             if (createdOrg && typeof createdOrg === 'object' && (createdOrg as any)._id) {
                 // Audit log
@@ -130,6 +119,7 @@ export const createTeam = mutationWithRLS({
                 // In tests, return a mock organization
                 return {
                     _id: `test-organization-${now}` as any,
+                    _creationTime: now,
                     name: args.name,
                     slug: slug,
                     description: args.description,
@@ -144,71 +134,55 @@ export const createTeam = mutationWithRLS({
 export const getTeams = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const user = await authComponent.getAuthUser(ctx).catch(() => null);
-        const identityUserId = String(ctx.identity?.subject);
-        if (!identityUserId) throw new Error('User not authenticated');
+        const userId = String(ctx.identity?.subject);
+        if (!userId || userId === 'undefined') throw new Error('User not authenticated');
 
-        // In tests, betterAuth may not be available, so use identity
-        if (!user || !user._id) {
-            // In test mode, return empty array
-            try {
-                // Try to use betterAuth if available
-                const userId = identityUserId;
-                const memberships = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-                    model: 'member',
-                    where: [{ field: 'userId', value: userId }],
-                    paginationOpts: {
-                        cursor: null,
-                        numItems: 10,
-                    },
-                })) as BetterAuthDataModel['member']['document'][];
+        // Check if user is a global admin (role comes from identity set by RLS)
+        const userRole = String((ctx.identity as { role?: string })?.role || 'user').toLowerCase();
+        const isGlobalAdmin = userRole === 'admin';
 
-                const allOrgs = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-                    model: 'organization',
-                    paginationOpts: {
-                        cursor: null,
-                        numItems: 10,
-                    },
-                })) as BetterAuthDataModel['organization']['document'][];
+        try {
+            // Get all organizations (findMany returns paginated result with .page array)
+            const orgsResult = await ctx.runQuery(components.betterAuth.adapter.findMany, {
+                model: 'organization',
+                paginationOpts: {
+                    cursor: null,
+                    numItems: 100,
+                },
+            });
+            const allOrgs = ((orgsResult as { page?: unknown[] })?.page ??
+                orgsResult) as BetterAuthDataModel['organization']['document'][];
 
-                const orgIds = new Set(memberships.map(m => String(m.organizationId)));
-                return allOrgs.filter(org => orgIds.has(String(org._id)));
-            } catch (error) {
-                if (
-                    error instanceof Error &&
-                    (error.message.includes('not registered') ||
-                        error.message.includes('Cannot read properties of undefined'))
-                ) {
-                    return [];
-                }
-                throw error;
+            // Admins see all teams
+            if (isGlobalAdmin) {
+                return allOrgs;
             }
+
+            // Non-admins only see teams where they are members
+            const membersResult = await ctx.runQuery(components.betterAuth.adapter.findMany, {
+                model: 'member',
+                where: [{ field: 'userId', value: userId }],
+                paginationOpts: {
+                    cursor: null,
+                    numItems: 100,
+                },
+            });
+            const memberships = ((membersResult as { page?: unknown[] })?.page ??
+                membersResult) as BetterAuthDataModel['member']['document'][];
+
+            const orgIds = new Set(memberships.map(m => String(m.organizationId)));
+            return allOrgs.filter(org => orgIds.has(String(org._id)));
+        } catch (error) {
+            // In tests, betterAuth component may not be registered
+            if (
+                error instanceof Error &&
+                (error.message.includes('not registered') ||
+                    error.message.includes('Cannot read properties of undefined'))
+            ) {
+                return [];
+            }
+            throw error;
         }
-
-        const userId = user.userId || String(user._id);
-
-        // Get all organizations where user is a member
-        const memberships = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'member',
-            where: [{ field: 'userId', value: userId }],
-            paginationOpts: {
-                cursor: null,
-                numItems: 10,
-            },
-        })) as BetterAuthDataModel['member']['document'][];
-
-        // Get all organizations - the RLS will filter based on membership
-        const allOrgs = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'organization',
-            paginationOpts: {
-                cursor: null,
-                numItems: 10,
-            },
-        })) as BetterAuthDataModel['organization']['document'][];
-
-        // Filter to only organizations where user is a member
-        const orgIds = new Set(memberships.map(m => String(m.organizationId)));
-        return allOrgs.filter(org => orgIds.has(String(org._id)));
     },
 });
 
@@ -228,12 +202,14 @@ export const getTeamById = queryWithRLS({
                     error.message.includes('Cannot read properties of undefined'))
             ) {
                 // In tests, return a mock organization
+                const now = Date.now();
                 return {
                     _id: args._id,
+                    _creationTime: now,
                     name: '',
                     slug: '',
-                    description: '',
-                    createdAt: Date.now(),
+                    description: null,
+                    createdAt: now,
                 } as BetterAuthDataModel['organization']['document'];
             }
             throw error;
@@ -295,12 +271,14 @@ export const updateTeam = mutationWithRLS({
                     error.message.includes('Cannot read properties of undefined'))
             ) {
                 // In tests, return a mock updated organization
+                const now = Date.now();
                 return {
                     _id: _id,
+                    _creationTime: now,
                     name: rest.name,
                     description: rest.description,
                     slug: '',
-                    createdAt: Date.now(),
+                    createdAt: now,
                 } as BetterAuthDataModel['organization']['document'];
             }
             throw error;

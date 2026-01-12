@@ -56,7 +56,7 @@ export default function AdminPage() {
                             <CardDescription>{t('userManagementDescription')}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <UsersTable />
+                            <UsersTable data-tour="admin-users-table" />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -80,7 +80,7 @@ export default function AdminPage() {
                             <CardDescription>{t('auditLogManagementDescription')}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <AuditLogs />
+                            <AuditLogs data-tour="admin-audit-logs" />
                         </CardContent>
                     </Card>
                 </TabsContent>

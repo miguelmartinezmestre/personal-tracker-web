@@ -1,5 +1,6 @@
 import '@repo/ui/globals.css';
 
+import { TextSelectionToolbar } from '@/components/text-selection-toolbar';
 import { ConvexClientProvider } from '@/providers/convex-provider';
 import { ThemeProvider } from '@/providers/theme';
 import type { Metadata } from 'next';
@@ -34,6 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <Suspense fallback={null}>
                             <NextIntlClientProvider locale={locale} messages={messages}>
                                 <ConvexClientProvider>{children}</ConvexClientProvider>
+                                <TextSelectionToolbar />
                             </NextIntlClientProvider>
                         </Suspense>
                     </main>

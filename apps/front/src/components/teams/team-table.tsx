@@ -91,7 +91,7 @@ export default function TeamsTable() {
 
     return (
         <div>
-            <DataTable columns={columns} data={teams.data!} isLoading={teams.isLoading} />
+            <DataTable columns={columns} data={teams.data ?? []} isLoading={teams.isLoading} />
         </div>
     );
 }
