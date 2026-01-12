@@ -77,7 +77,7 @@ export async function createTestUser(
 
     // Check where we ended up
     let currentUrl = page.url();
-    console.log('After registration, current URL:', currentUrl);
+    // console.log('After registration, current URL:', currentUrl);
 
     // Check for error messages first
     const errorMessage = await page

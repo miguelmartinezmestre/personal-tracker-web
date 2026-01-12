@@ -123,7 +123,6 @@ const maybeNotifyDeadline = async (
 export const getObjectivesByUser = queryWithRLS({
     args: {},
     handler: async ctx => {
-        console.log('getObjectivesByUser');
         const objectives = (await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('user', String(ctx.identity?.subject)))
