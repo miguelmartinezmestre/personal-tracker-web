@@ -996,5 +996,8 @@
             "deletedSuccess": "Member deleted successfully",
             "deleteFailed": "Failed to delete member"
         }
+    },
+    "TextSelection": {
+        "openIn": "Open in {provider}"
     }
 }

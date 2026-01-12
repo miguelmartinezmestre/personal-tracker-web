@@ -996,5 +996,8 @@
             "deletedSuccess": "Miembro eliminado exitosamente",
             "deleteFailed": "Error al eliminar miembro"
         }
+    },
+    "TextSelection": {
+        "openIn": "Abrir en {provider}"
     }
 }
