@@ -11,13 +11,13 @@ import { TeamRole } from '@/schemas/roles';
 export interface CreateTeamMemberParams {
     organizationId: string;
     email: string;
-    role: 'MANAGER' | 'MEMBER';
+    role: 'owner' | 'admin' | 'member';
 }
 
 export interface UpdateTeamMemberParams {
     memberId: string;
     organizationId?: string;
-    role: 'MANAGER' | 'MEMBER';
+    role: 'owner' | 'admin' | 'member';
 }
 
 export interface DeleteTeamMemberParams {
@@ -27,11 +27,9 @@ export interface DeleteTeamMemberParams {
 
 const TEAM_MEMBERS_QUERY_KEY = (teamId: string | null) => ['organization-members', teamId];
 
-const mapTeamRoleToOrganizationRole = (role: TeamRole | 'MANAGER' | 'MEMBER') =>
-    role === TeamRole.MANAGER ? 'admin' : 'member';
+const mapTeamRoleToOrganizationRole = (role: 'owner' | 'admin' | 'member') => role;
 
-const mapOrganizationRoleToTeamRole = (role: string) =>
-    role === 'owner' || role === 'admin' ? 'MANAGER' : 'MEMBER';
+const mapOrganizationRoleToTeamRole = (role: string) => role;
 
 const normalizeMember = (member: {
     id: string;
@@ -46,7 +44,7 @@ const normalizeMember = (member: {
         organizationId: member.organizationId,
         userId: member.userId,
         email: member.user?.email ?? '',
-        role: mapOrganizationRoleToTeamRole(member.role),
+        role: mapOrganizationRoleToTeamRole(member.role) as 'owner' | 'admin' | 'member',
         createdAt: member.createdAt,
     }) satisfies TeamMember;
 
