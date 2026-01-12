@@ -632,10 +632,7 @@ export const checkUserAchievements = internalMutation({
 });
 
 // Internal helper for streak calculation (without RLS context)
-async function calculateUserStreakInternal(
-    ctx: MutationCtx,
-    userId: string
-): Promise<number> {
+async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
         .withIndex('by_user', q => q.eq('user', userId))

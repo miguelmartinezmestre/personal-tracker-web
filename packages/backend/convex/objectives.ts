@@ -98,7 +98,13 @@ const maybeNotifyDeadline = async (
         title,
         deadline,
         now,
-    }: { objectiveId: Doc<'objectives'>['_id']; userId: string; title: string; deadline: number; now: number }
+    }: {
+        objectiveId: Doc<'objectives'>['_id'];
+        userId: string;
+        title: string;
+        deadline: number;
+        now: number;
+    }
 ) => {
     const daysUntil = Math.ceil((deadline - now) / DAY_MS);
     const formattedDate = new Date(deadline).toLocaleDateString();
