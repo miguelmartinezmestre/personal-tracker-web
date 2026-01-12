@@ -1,50 +1,103 @@
-// import * as nodemailer from 'nodemailer';
+import { internalAction } from './_generated/server';
+import { v } from 'convex/values';
 
-// type SendEmailArgs = {
-//     to: string;
-//     subject: string;
-//     text?: string;
-//     html?: string;
-// };
+/**
+ * Email API configuration.
+ *
+ * The email service is provided by @repo/email-api (Hono + Nodemailer).
+ *
+ * Required env var:
+ * - EMAIL_API_URL: URL of the email API service (default: http://localhost:3001)
+ */
 
-// function getSmtpConfig() {
-//     const host = process.env.SMTP_HOST;
-//     const portRaw = process.env.SMTP_PORT;
-//     const port = portRaw ? Number(portRaw) : undefined;
-//     const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-//     const user = process.env.SMTP_USER;
-//     const pass = process.env.SMTP_PASS;
-//     const from = process.env.EMAIL_FROM ?? 'no-reply@metricas.local';
+function getEmailApiUrl(): string {
+    return process.env.EMAIL_API_URL ?? 'http://localhost:3001';
+}
 
-//     return { host, port, secure, user, pass, from };
-// }
+type SendEmailResult = { success: boolean; message: string; messageId?: string };
 
-// export async function sendEmail({ to, subject, text, html }: SendEmailArgs): Promise<void> {
-//     const { host, port, secure, user, pass, from } = getSmtpConfig();
+/**
+ * Internal helper function to call the email API.
+ */
+async function callEmailApi(
+    endpoint: string,
+    data: unknown
+): Promise<SendEmailResult> {
+    const apiUrl = getEmailApiUrl();
+    const url = `${apiUrl}/api/email/${endpoint}`;
 
-//     if (!host || !port) {
-//         // In dev/test environments we allow running without SMTP configured.
-//         if (process.env.NODE_ENV !== 'production') {
-//             console.warn('[email] SMTP not configured (SMTP_HOST/SMTP_PORT). Email not sent:', {
-//                 to,
-//                 subject,
-//             });
-//         }
-//         return;
-//     }
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
 
-//     const transporter = nodemailer.createTransport({
-//         host,
-//         port,
-//         secure,
-//         auth: user && pass ? { user, pass } : undefined,
-//     });
+        const result = (await response.json()) as SendEmailResult;
+        return result;
+    } catch (error) {
+        console.error('[email] Failed to call email API:', error);
+        throw new Error(
+            `Failed to call email API: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+    }
+}
 
-//     await transporter.sendMail({
-//         from,
-//         to,
-//         subject,
-//         text,
-//         html,
-//     });
-// }
+/**
+ * Send an email using the email API service.
+ * This is an internal Convex action that makes HTTP calls to the email service.
+ */
+export const sendEmail = internalAction({
+    args: {
+        to: v.string(),
+        subject: v.string(),
+        text: v.optional(v.string()),
+        html: v.optional(v.string()),
+    },
+    handler: async (_, args): Promise<SendEmailResult> => {
+        return callEmailApi('send', args);
+    },
+});
+
+/**
+ * Send a welcome email to a new user.
+ */
+export const sendWelcomeEmail = internalAction({
+    args: {
+        to: v.string(),
+        username: v.string(),
+    },
+    handler: async (_, args): Promise<SendEmailResult> => {
+        return callEmailApi('welcome', args);
+    },
+});
+
+/**
+ * Send a password reset email.
+ */
+export const sendPasswordResetEmail = internalAction({
+    args: {
+        to: v.string(),
+        username: v.string(),
+        resetUrl: v.string(),
+    },
+    handler: async (_, args): Promise<SendEmailResult> => {
+        return callEmailApi('password-reset', args);
+    },
+});
+
+/**
+ * Send a deadline reminder email.
+ */
+export const sendDeadlineReminderEmail = internalAction({
+    args: {
+        to: v.string(),
+        username: v.string(),
+        objectiveTitle: v.string(),
+        deadline: v.number(),
+        daysRemaining: v.number(),
+    },
+    handler: async (_, args): Promise<SendEmailResult> => {
+        return callEmailApi('deadline-reminder', args);
+    },
+});
