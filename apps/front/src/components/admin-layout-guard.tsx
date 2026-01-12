@@ -13,10 +13,7 @@ export function AdminLayoutGuard({ children }: { children: React.ReactNode }) {
     const user = useUser();
 
     const userRole = user.role;
-    const isAdmin =
-        userRole === 'admin' ||
-        userRole === 'ADMIN' ||
-        (Array.isArray(userRole) && (userRole.includes('admin') || userRole.includes('ADMIN')));
+    const isAdmin = userRole === 'admin' || (Array.isArray(userRole) && userRole.includes('admin'));
 
     useEffect(() => {
         if (!isAdmin) {
