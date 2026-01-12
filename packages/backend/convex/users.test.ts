@@ -3,10 +3,12 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestUser } from '../test_helpers';
+import { register, runInBetterAuth } from '../better-auth.helper';
 
 describe('convex users', () => {
     const t = convexTest(schema, modules);
+    register(t);
     let userId: string;
 
     const userIdentity = t.withIdentity({
@@ -16,15 +18,13 @@ describe('convex users', () => {
 
     beforeEach(async () => {
         // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-123',
-                email: 'test@example.com',
-                name: 'Test User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        const result = await createTestUser(t, {
+            userId: 'test-user-123',
+            email: 'test@example.com',
+            name: 'Test User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
         userId = result.userId;
     });
@@ -53,34 +53,25 @@ describe('convex users', () => {
     });
 
     test('getUserRole returns role when user has role', async () => {
-        await userIdentity.run(async ctx => {
-            const userRecord = await ctx.db
-                .query('user')
-                .withIndex('userId', q => q.eq('userId', userId))
-                .first();
-            if (userRecord) {
-                await ctx.db.patch(userRecord._id, { role: 'admin' } as Record<string, unknown>);
-            }
-        });
-
         const role = await userIdentity.query(api.users.getUserRole, {});
         expect(role?.role).toBe('admin');
         expect(role?.userId).toBe(userId);
     });
 
     test('getUserRole returns null when user has no role', async () => {
-        // Remove role from user for this test
-        await userIdentity.run(async ctx => {
-            const userRecord = await ctx.db
-                .query('user')
-                .withIndex('userId', q => q.eq('userId', userId))
-                .first();
-            if (userRecord) {
-                await ctx.db.patch(userRecord._id, { role: null } as Record<string, unknown>);
-            }
+        const noRoleIdentity = t.withIdentity({
+            subject: 'test-user-no-role',
+            role: '',
+        });
+        await createTestUser(t, {
+            userId: 'test-user-no-role',
+            email: 'norole@example.com',
+            name: 'No Role User',
+            password: 'test-password',
+            emailVerified: false,
         });
 
-        const role = await userIdentity.query(api.users.getUserRole, {});
+        const role = await noRoleIdentity.query(api.users.getUserRole, {});
         expect(role?.role).toBeNull();
     });
 
@@ -123,10 +114,10 @@ describe('convex users', () => {
     });
 
     test('updateAccountDetails updates updatedAt timestamp', async () => {
-        const initialUser = await userIdentity.run(async ctx => {
+        const initialUser = await runInBetterAuth<any>(t, async ctx => {
             return await ctx.db
                 .query('user')
-                .withIndex('userId', q => q.eq('userId', userId))
+                .withIndex('userId', (q: any) => q.eq('userId', userId))
                 .first();
         });
 
@@ -137,10 +128,10 @@ describe('convex users', () => {
             username: 'Updated',
         });
 
-        const updatedUser = await userIdentity.run(async ctx => {
+        const updatedUser = await runInBetterAuth<any>(t, async ctx => {
             return await ctx.db
                 .query('user')
-                .withIndex('userId', q => q.eq('userId', userId))
+                .withIndex('userId', (q: any) => q.eq('userId', userId))
                 .first();
         });
 
