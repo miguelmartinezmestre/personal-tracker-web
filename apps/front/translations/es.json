@@ -145,6 +145,7 @@
         }
     },
     "Sidebar": {
+        "appName": "Métricas",
         "home": "Inicio",
         "dashboard": "Dashboard",
         "objectives": "Objetivos",
