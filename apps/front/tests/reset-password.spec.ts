@@ -19,7 +19,10 @@ test('reset password: invalid token shows error', async ({ page }) => {
     await page.goto('/reset-password?token=invalid-token');
 
     // Use first() to target the password field (not confirm password)
-    await page.getByLabel(/password|contrase/i).first().fill('newpassword123');
+    await page
+        .getByLabel(/password|contrase/i)
+        .first()
+        .fill('newpassword123');
     await page.getByLabel(/confirm|confirmar/i).fill('newpassword123');
     await page.getByRole('button', { name: /reset|restablecer/i }).click();
 

@@ -3,7 +3,8 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestUser } from '../test_helpers';
+import { register } from '../better-auth.helper';
 
 describe('convex categories', async () => {
     let t: ReturnType<typeof convexTest>;
@@ -13,6 +14,7 @@ describe('convex categories', async () => {
 
     beforeEach(async () => {
         t = convexTest(schema, modules);
+        register(t);
         userIdentity = t.withIdentity({
             subject: 'test-user-categories',
             role: 'user',
@@ -23,27 +25,23 @@ describe('convex categories', async () => {
             role: 'admin',
         });
 
-        const result = await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-categories',
-                email: 'categories-test@example.com',
-                name: 'Categories Test User',
-                password: 'test-password',
-                role: 'user',
-                emailVerified: false,
-            });
+        const result = await createTestUser(t, {
+            userId: 'test-user-categories',
+            email: 'categories-test@example.com',
+            name: 'Categories Test User',
+            password: 'test-password',
+            role: 'user',
+            emailVerified: false,
         });
         userId = result.userId;
 
-        await adminIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-admin-categories',
-                email: 'categories-admin@example.com',
-                name: 'Categories Admin User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        await createTestUser(t, {
+            userId: 'test-admin-categories',
+            email: 'categories-admin@example.com',
+            name: 'Categories Admin User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
     });
 

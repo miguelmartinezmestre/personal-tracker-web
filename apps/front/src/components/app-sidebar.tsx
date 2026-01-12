@@ -120,16 +120,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             href={item.url}
                                             prefetch={false}
                                             className={cn(
-                                                "relative transition-all duration-200",
+                                                'relative transition-all duration-200',
                                                 isActive
-                                                    ? "bg-accent text-accent-foreground font-medium"
-                                                    : "hover:bg-accent/50 hover:text-accent-foreground"
+                                                    ? 'bg-accent text-accent-foreground font-medium'
+                                                    : 'hover:bg-accent/50 hover:text-accent-foreground'
                                             )}
                                         >
-                                            <item.icon className={cn(
-                                                "h-4 w-4 transition-all",
-                                                isActive && "text-primary"
-                                            )} />
+                                            <item.icon
+                                                className={cn(
+                                                    'h-4 w-4 transition-all',
+                                                    isActive && 'text-primary'
+                                                )}
+                                            />
                                             {t(item.name)}
                                             {isActive && (
                                                 <span className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-r-full bg-primary" />

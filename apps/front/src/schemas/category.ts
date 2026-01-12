@@ -10,4 +10,3 @@ export const categorySchema = z.object({
 export const savedCategorySchema = categorySchema.extend({
     _id: z.string(),
 });
-

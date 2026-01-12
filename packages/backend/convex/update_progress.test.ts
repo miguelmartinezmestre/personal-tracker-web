@@ -3,10 +3,12 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestUser } from '../test_helpers';
+import { register } from '../better-auth.helper';
 
 describe('convex update_progress', () => {
     const t = convexTest(schema, modules);
+    register(t);
     let userId: string;
     let objectiveId: string;
 
@@ -17,15 +19,13 @@ describe('convex update_progress', () => {
 
     beforeEach(async () => {
         // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-123',
-                email: 'test@example.com',
-                name: 'Test User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        const result = await createTestUser(t, {
+            userId: 'test-user-123',
+            email: 'test@example.com',
+            name: 'Test User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
         userId = result.userId;
 

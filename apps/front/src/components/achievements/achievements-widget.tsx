@@ -134,7 +134,8 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
                                                 `definitions.${achievement.definition?.code}.name`,
                                                 {
                                                     defaultValue:
-                                                        achievement.definition?.code ?? 'Achievement',
+                                                        achievement.definition?.code ??
+                                                        'Achievement',
                                                 }
                                             )}
                                             earned={true}

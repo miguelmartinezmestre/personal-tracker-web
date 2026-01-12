@@ -80,16 +80,20 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
             (el as HTMLElement).style.display = 'none';
         });
         // Hide any error overlays
-        document.querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]').forEach(el => {
-            (el as HTMLElement).style.display = 'none';
-        });
-        // Hide debug badges (red badges with numbers)
-        document.querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]').forEach(el => {
-            const text = el.textContent || '';
-            if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
+        document
+            .querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]')
+            .forEach(el => {
                 (el as HTMLElement).style.display = 'none';
-            }
-        });
+            });
+        // Hide debug badges (red badges with numbers)
+        document
+            .querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]')
+            .forEach(el => {
+                const text = el.textContent || '';
+                if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
+                    (el as HTMLElement).style.display = 'none';
+                }
+            });
     });
 
     // Wait for any animations to settle
@@ -374,7 +378,9 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
 
         // Click on the objective row to see details
-        const objectiveLink = page.locator('tr:has-text("Learn TypeScript") a, a:has-text("Learn TypeScript")').first();
+        const objectiveLink = page
+            .locator('tr:has-text("Learn TypeScript") a, a:has-text("Learn TypeScript")')
+            .first();
         if (await objectiveLink.isVisible({ timeout: 2000 }).catch(() => false)) {
             await objectiveLink.click();
         } else {
@@ -581,7 +587,12 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         // Check if achievements need seeding - Initialize BEFORE taking screenshots
         const seedButton = page.getByTestId('achievements-seed-button');
         const initButton = page.locator('button:has-text("Initialize")').or(seedButton);
-        if (await initButton.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (
+            await initButton
+                .first()
+                .isVisible({ timeout: 2000 })
+                .catch(() => false)
+        ) {
             console.log('📝 Initializing achievements...');
             await initButton.first().click();
             // Wait for achievements to be created in the database

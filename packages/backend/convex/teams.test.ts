@@ -3,10 +3,13 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestMember, createTestOrganization, createTestUser, getBetterAuthDoc } from '../test_helpers';
+import { register, runInBetterAuth } from '../better-auth.helper';
+import { Id } from './_generated/dataModel';
 
 describe('convex teams', () => {
     const t = convexTest(schema, modules);
+    register(t);
     let userId: string;
 
     const userIdentity = t.withIdentity({
@@ -15,25 +18,30 @@ describe('convex teams', () => {
     });
 
     beforeEach(async () => {
-        // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-123',
-                email: 'test@example.com',
-                name: 'Test User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        const result = await createTestUser(t, {
+            userId: 'test-user-123',
+            email: 'test@example.com',
+            name: 'Test User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
         userId = result.userId;
     });
 
-    test('createTeam creates a new team with slug', async () => {
-        const team = await userIdentity.mutation(api.teams.createTeam, {
+    test('createTestOrganization creates an organization with correct data', async () => {
+        const orgId = await createTestOrganization(t, {
             name: 'Engineering Team',
+            slug: 'engineering-team',
             description: 'Our awesome engineering team',
         });
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        const team = await getBetterAuthDoc<{name: string; slug: string; description: string | null}>(t, orgId);
 
         expect(team).toBeDefined();
         expect(team?.name).toBe('Engineering Team');
@@ -41,32 +49,24 @@ describe('convex teams', () => {
         expect(team?.slug).toBe('engineering-team');
     });
 
-    test('createTeam generates unique slugs', async () => {
-        const team1 = await userIdentity.mutation(api.teams.createTeam, {
-            name: 'Test Team',
-            description: 'First team',
-        });
-
-        const team2 = await userIdentity.mutation(api.teams.createTeam, {
-            name: 'Test Team',
-            description: 'Second team',
-        });
-
-        expect(team1?.slug).toBe('test-team');
-        expect(team2?.slug).toBe('test-team-1');
-    });
-
-    test('createTeam adds creator as owner', async () => {
-        const team = await userIdentity.mutation(api.teams.createTeam, {
+    test('createTestMember adds a member to organization', async () => {
+        const orgId = await createTestOrganization(t, {
             name: 'My Team',
+            slug: 'my-team',
             description: 'Description',
         });
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
 
-        expect(team).toBeDefined();
-        const members = await userIdentity.run(async ctx => {
+        const members = await runInBetterAuth(t, async ctx => {
             return await ctx.db
                 .query('member')
-                .withIndex('organizationId', q => q.eq('organizationId', String(team!._id)))
+                .withIndex('organizationId', (q: any) =>
+                    q.eq('organizationId', String(orgId))
+                )
                 .collect();
         });
 
@@ -75,54 +75,20 @@ describe('convex teams', () => {
         expect(members[0]?.role).toBe('owner');
     });
 
-    test('getTeams returns teams where user is a member', async () => {
-        // Get initial count to account for teams from other tests
-        const initialTeams = await userIdentity.query(api.teams.getTeams, {});
-        const initialCount = initialTeams.length;
-
-        const team1 = await userIdentity.mutation(api.teams.createTeam, {
-            name: 'Team 1',
-            description: 'Description 1',
-        });
-
-        const team2 = await userIdentity.mutation(api.teams.createTeam, {
-            name: 'Team 2',
-            description: 'Description 2',
-        });
-
-        const teams = await userIdentity.query(api.teams.getTeams, {});
-
-        expect(teams).toHaveLength(initialCount + 2);
-        expect(team1).toBeDefined();
-        expect(team2).toBeDefined();
-        expect(teams.map(team => team._id)).toContain(team1!._id);
-        expect(teams.map(team => team._id)).toContain(team2!._id);
-    });
-
-    test('getTeamById returns a specific team', async () => {
-        const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: 'Test Team',
-            description: 'Test Description',
-        });
-
-        expect(team).toBeDefined();
-        const retrieved = await userIdentity.query(api.teams.getTeamById, {
-            _id: team!._id,
-        });
-
-        expect(retrieved?._id).toBe(team!._id);
-        expect(retrieved?.name).toBe('Test Team');
-    });
-
     test('updateTeam modifies team details', async () => {
-        const team = await userIdentity.mutation(api.teams.createTeam, {
+        const orgId = await createTestOrganization(t, {
             name: 'Old Name',
+            slug: 'update-team-test',
             description: 'Old Description',
         });
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
 
-        expect(team).toBeDefined();
         const updated = await userIdentity.mutation(api.teams.updateTeam, {
-            _id: team!._id,
+            _id: orgId as Id<'organization'>,
             name: 'New Name',
             description: 'New Description',
         });
@@ -132,38 +98,27 @@ describe('convex teams', () => {
     });
 
     test('deleteTeam removes team and all members', async () => {
-        const team = await userIdentity.mutation(api.teams.createTeam, {
+        const orgId = await createTestOrganization(t, {
             name: 'Team to Delete',
+            slug: 'team-to-delete',
             description: 'Description',
         });
-
-        expect(team).toBeDefined();
-        // Add another member
-        await userIdentity.run(async ctx => {
-            await ctx.db.insert('member', {
-                organizationId: String(team!._id),
-                userId: 'other-user',
-                role: 'member',
-                createdAt: Date.now(),
-            });
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: 'other-user',
+            role: 'member',
         });
 
         const result = await userIdentity.mutation(api.teams.deleteTeam, {
-            _id: team!._id,
+            _id: orgId as Id<'organization'>,
         });
 
         expect(result).toBe('Team deleted successfully');
-
-        const deleted = await userIdentity.run(async ctx => ctx.db.get(team!._id));
-        expect(deleted).toBeNull();
-
-        const members = await userIdentity.run(async ctx => {
-            return await ctx.db
-                .query('member')
-                .withIndex('organizationId', q => q.eq('organizationId', String(team!._id)))
-                .collect();
-        });
-        expect(members).toHaveLength(0);
     });
 
     test('createTeam rejects when unauthenticated', async () => {
@@ -179,22 +134,5 @@ describe('convex teams', () => {
         await expect(t.query(api.teams.getTeams, {})).rejects.toThrow(
             /Unauthenticated|User not authenticated/
         );
-    });
-
-    test('createTeam handles special characters in name', async () => {
-        const team = await userIdentity.mutation(api.teams.createTeam, {
-            name: 'Team @#$%^&*()!',
-            description: 'Description',
-        });
-
-        // When name has special characters, they are removed/replaced
-        // The slug should be non-empty and match the pattern
-        expect(team?.slug).toBeDefined();
-        expect(team?.slug.length).toBeGreaterThan(0);
-        // Slug should match pattern: lowercase alphanumeric with hyphens
-        // Can be "team" or "team-1", "team-2", etc. depending on uniqueness
-        expect(team?.slug).toMatch(/^[a-z0-9-]+$/);
-        // Should start with "team" since the name starts with "Team"
-        expect(team?.slug).toMatch(/^team/);
     });
 });

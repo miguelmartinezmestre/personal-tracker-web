@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import { X, Menu } from 'lucide-react';
 import NavBar from '@/components/navbar';

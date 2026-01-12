@@ -11,4 +11,3 @@ export const auditLogSchema = z.object({
 export const savedAuditLogSchema = auditLogSchema.extend({
     _id: z.string(),
 });
-

@@ -28,10 +28,7 @@ test('landing page: Get Started link navigates to register', async ({ page }) =>
     const link = page.getByRole('link', { name: /get started/i }).first();
 
     // Wait for navigation using Promise.all to handle client-side routing
-    await Promise.all([
-        page.waitForURL(/\/register$/, { timeout: 15000 }),
-        link.click(),
-    ]);
+    await Promise.all([page.waitForURL(/\/register$/, { timeout: 15000 }), link.click()]);
 
     // Wait for the register page to be fully loaded
     await expect(page).toHaveURL(/\/register$/);
@@ -45,10 +42,7 @@ test('landing page: Login link navigates to login', async ({ page }) => {
     const link = page.getByRole('link', { name: /login/i }).first();
 
     // Wait for navigation using Promise.all to handle client-side routing
-    await Promise.all([
-        page.waitForURL(/\/login$/, { timeout: 15000 }),
-        link.click(),
-    ]);
+    await Promise.all([page.waitForURL(/\/login$/, { timeout: 15000 }), link.click()]);
 
     // Wait for the login page to be fully loaded by checking for login form
     await expect(page.getByRole('heading', { name: /login/i })).toBeVisible({ timeout: 10000 });

@@ -89,7 +89,9 @@ test('sessions: multiple browser contexts create multiple sessions', async ({ br
 
     // If no sessions in first context, Better Auth may not be fully functional
     if (initialCount === 0) {
-        console.log('No sessions found - Better Auth component may not be fully functional in test environment');
+        console.log(
+            'No sessions found - Better Auth component may not be fully functional in test environment'
+        );
         await context1.close();
         return;
     }

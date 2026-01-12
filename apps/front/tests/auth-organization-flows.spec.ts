@@ -78,21 +78,24 @@ async function inviteMember(
  * Note: This functionality may not be fully implemented.
  */
 async function acceptInvitation(page: Page, invitationId: string) {
-    const result = await page.evaluate(async ({ invitationId: id }) => {
-        const win = window as any;
-        if (!win.authClient) {
-            return { error: 'authClient not found on window' };
-        }
+    const result = await page.evaluate(
+        async ({ invitationId: id }) => {
+            const win = window as any;
+            if (!win.authClient) {
+                return { error: 'authClient not found on window' };
+            }
 
-        try {
-            const response = await win.authClient.organization.acceptInvitation({
-                invitationId: id,
-            });
-            return { success: true, data: response };
-        } catch (error: any) {
-            return { error: error.message || 'Unknown error' };
-        }
-    }, { invitationId });
+            try {
+                const response = await win.authClient.organization.acceptInvitation({
+                    invitationId: id,
+                });
+                return { success: true, data: response };
+            } catch (error: any) {
+                return { error: error.message || 'Unknown error' };
+            }
+        },
+        { invitationId }
+    );
 
     if (result.error) {
         throw new Error(`acceptInvitation failed: ${result.error}`);
@@ -109,21 +112,24 @@ async function acceptInvitation(page: Page, invitationId: string) {
  * Note: This functionality may not be fully implemented.
  */
 async function listMembers(page: Page, organizationId: string) {
-    const result = await page.evaluate(async ({ organizationId: orgId }) => {
-        const win = window as any;
-        if (!win.authClient) {
-            return { error: 'authClient not found on window' };
-        }
+    const result = await page.evaluate(
+        async ({ organizationId: orgId }) => {
+            const win = window as any;
+            if (!win.authClient) {
+                return { error: 'authClient not found on window' };
+            }
 
-        try {
-            const response = await win.authClient.organization.listMembers({
-                organizationId: orgId,
-            });
-            return { success: true, data: response };
-        } catch (error: any) {
-            return { error: error.message || 'Unknown error' };
-        }
-    }, { organizationId });
+            try {
+                const response = await win.authClient.organization.listMembers({
+                    organizationId: orgId,
+                });
+                return { success: true, data: response };
+            } catch (error: any) {
+                return { error: error.message || 'Unknown error' };
+            }
+        },
+        { organizationId }
+    );
 
     if (result.error) {
         throw new Error(`listMembers failed: ${result.error}`);
@@ -137,7 +143,9 @@ async function listMembers(page: Page, organizationId: string) {
     return data.members;
 }
 
-test.skip('admin invita a un usuario y el invitado invita a otros miembros', async ({ browser }) => {
+test.skip('admin invita a un usuario y el invitado invita a otros miembros', async ({
+    browser,
+}) => {
     test.skip(true, 'Organization functionality not fully implemented yet');
     const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 
@@ -198,21 +206,24 @@ test.skip('usuario puede borrar su cuenta', async ({ page }) => {
     test.skip(true, 'User deletion endpoint not implemented yet');
     const { email } = await createTestUser(page);
 
-    const result = await page.evaluate(async ({ password }) => {
-        const win = window as any;
-        if (!win.authClient) {
-            return { error: 'authClient not found on window' };
-        }
+    const result = await page.evaluate(
+        async ({ password }) => {
+            const win = window as any;
+            if (!win.authClient) {
+                return { error: 'authClient not found on window' };
+            }
 
-        try {
-            const response = await win.authClient.deleteUser({
-                password,
-            });
-            return { success: true, data: response };
-        } catch (error: any) {
-            return { error: error.message || 'Unknown error' };
-        }
-    }, { password: PASSWORD });
+            try {
+                const response = await win.authClient.deleteUser({
+                    password,
+                });
+                return { success: true, data: response };
+            } catch (error: any) {
+                return { error: error.message || 'Unknown error' };
+            }
+        },
+        { password: PASSWORD }
+    );
 
     if (result.error) {
         throw new Error(`deleteUser failed: ${result.error}`);

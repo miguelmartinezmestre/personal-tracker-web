@@ -1,7 +1,6 @@
 import { queryWithRLS } from './rls';
 import { v } from 'convex/values';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
 
 /**
  * Obtiene estadísticas generales del dashboard del usuario
@@ -131,9 +130,9 @@ export const getUpcomingDeadlines = queryWithRLS({
     },
     handler: async ctx => {
         const userId = String(ctx.identity?.subject);
-        const daysAhead = 7;
+        const daysAhead = DASHBOARD.DEADLINE_DAYS_AHEAD;
         const now = Date.now();
-        const futureLimit = now + daysAhead * DAY_MS;
+        const futureLimit = now + daysAhead * TIME.DAY_MS;
 
         const objectives = await ctx.db
             .query('objectives')
@@ -147,7 +146,7 @@ export const getUpcomingDeadlines = queryWithRLS({
                 return o.deadline >= now && o.deadline <= futureLimit;
             })
             .map(o => {
-                const daysRemaining = Math.ceil((o.deadline! - now) / DAY_MS);
+                const daysRemaining = Math.ceil((o.deadline! - now) / TIME.DAY_MS);
                 return {
                     id: o._id,
                     title: o.title,
@@ -171,8 +170,8 @@ export const getRecentActivity = queryWithRLS({
     },
     handler: async ctx => {
         const userId = String(ctx.identity?.subject);
-        const daysBack = 30;
-        const startDate = Date.now() - daysBack * DAY_MS;
+        const daysBack = DASHBOARD.ACTIVITY_DAYS_BACK;
+        const startDate = Date.now() - daysBack * TIME.DAY_MS;
 
         // Objetivos del usuario
         const objectives = await ctx.db

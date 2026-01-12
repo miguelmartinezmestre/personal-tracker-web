@@ -24,8 +24,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
         const t = useTranslations('ObjectiveCard');
         const targetValue = objective.targetValue ?? 0;
         const currentValue = objective.currentValue ?? 0;
-        const progress =
-            targetValue > 0 ? (currentValue / targetValue) * 100 : 0;
+        const progress = targetValue > 0 ? (currentValue / targetValue) * 100 : 0;
         const isOverdue = objective.deadline && objective.deadline < Date.now();
 
         const getPeriodLabel = (period?: string | null) => {
@@ -58,8 +57,8 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
             <Card
                 ref={ref}
                 className={cn(
-                    "group mb-4 hover:shadow-lg transition-all duration-300 border-border/50",
-                    isOverdue && "border-destructive/50 hover:border-destructive/70"
+                    'group mb-4 hover:shadow-lg transition-all duration-300 border-border/50',
+                    isOverdue && 'border-destructive/50 hover:border-destructive/70'
                 )}
             >
                 <CardHeader className="pb-3">
@@ -91,10 +90,12 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
 
                 <CardContent className="space-y-4">
                     {/* Progress Section */}
-                    <div className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br transition-all duration-300",
-                        getProgressBg(progress)
-                    )}>
+                    <div
+                        className={cn(
+                            'flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br transition-all duration-300',
+                            getProgressBg(progress)
+                        )}
+                    >
                         <div className="relative">
                             <CircularProgress
                                 value={objective.currentValue ?? 0}
@@ -105,10 +106,12 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                                <span className={cn(
-                                    "text-sm font-medium transition-colors",
-                                    getProgressColor(progress)
-                                )}>
+                                <span
+                                    className={cn(
+                                        'text-sm font-medium transition-colors',
+                                        getProgressColor(progress)
+                                    )}
+                                >
                                     {Math.round(progress)}
                                     {t('percentComplete')}
                                 </span>
@@ -140,7 +143,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                         {objective.deadline && (
                             <div
                                 className={cn(
-                                    "flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors",
+                                    'flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors',
                                     isOverdue ? 'text-destructive' : 'text-muted-foreground'
                                 )}
                             >
@@ -153,14 +156,10 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
 
                         {/* Progress Trend */}
                         <div className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                            <TrendingUp className={cn(
-                                "h-4 w-4 flex-shrink-0",
-                                getProgressColor(progress)
-                            )} />
-                            <span className={cn(
-                                "font-medium",
-                                getProgressColor(progress)
-                            )}>
+                            <TrendingUp
+                                className={cn('h-4 w-4 flex-shrink-0', getProgressColor(progress))}
+                            />
+                            <span className={cn('font-medium', getProgressColor(progress))}>
                                 {progress >= 75
                                     ? t('onTrack')
                                     : progress >= 50

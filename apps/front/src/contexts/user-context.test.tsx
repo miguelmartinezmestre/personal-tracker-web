@@ -33,7 +33,7 @@ describe('UserContext', () => {
 
     it('should throw error when useUser is used outside provider', () => {
         // Suppress console.error for this test
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         const TestComponent = () => {
             useUser();

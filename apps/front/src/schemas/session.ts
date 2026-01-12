@@ -12,4 +12,3 @@ export const sessionSchema = z.object({
 export const savedSessionSchema = sessionSchema.extend({
     _id: z.string(),
 });
-

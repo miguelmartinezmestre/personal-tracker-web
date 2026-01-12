@@ -3,7 +3,8 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api, internal } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestUser } from '../test_helpers';
+import { register } from '../better-auth.helper';
 import type { Id } from './_generated/dataModel';
 
 describe('convex notifications', async () => {
@@ -17,6 +18,7 @@ describe('convex notifications', async () => {
 
     beforeEach(async () => {
         t = convexTest(schema, modules);
+        register(t);
         userIdentity = t.withIdentity({
             subject: 'test-user-notifications',
             role: 'user',
@@ -27,27 +29,23 @@ describe('convex notifications', async () => {
             role: 'admin',
         });
 
-        const result = await userIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-user-notifications',
-                email: 'notifications-test@example.com',
-                name: 'Notifications Test User',
-                password: 'test-password',
-                role: 'user',
-                emailVerified: false,
-            });
+        const result = await createTestUser(t, {
+            userId: 'test-user-notifications',
+            email: 'notifications-test@example.com',
+            name: 'Notifications Test User',
+            password: 'test-password',
+            role: 'user',
+            emailVerified: false,
         });
         userId = result.userId;
 
-        await adminIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'test-admin-notifications',
-                email: 'notifications-admin@example.com',
-                name: 'Notifications Admin User',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        await createTestUser(t, {
+            userId: 'test-admin-notifications',
+            email: 'notifications-admin@example.com',
+            name: 'Notifications Admin User',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
 
         // Create a test objective for notifications

@@ -317,11 +317,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
     const moveColumn = (columnId: string, direction: 'up' | 'down') => {
         const currentIndex = orderableOrder.indexOf(columnId);
         const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (
-            currentIndex === -1 ||
-            targetIndex < 0 ||
-            targetIndex >= orderableOrder.length
-        ) {
+        if (currentIndex === -1 || targetIndex < 0 || targetIndex >= orderableOrder.length) {
             return;
         }
         const nextOrder = [...orderableOrder];

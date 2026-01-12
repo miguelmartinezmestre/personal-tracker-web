@@ -3,11 +3,13 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { api } from './_generated/api';
 import schema from './schema';
 import { modules } from '../test.setup';
-import { createTestUser } from './test_helpers';
+import { createTestUser } from '../test_helpers';
 import type { Id } from './_generated/dataModel';
+import { register } from '../better-auth.helper';
 
 describe('convex RLS (Row-Level Security)', async () => {
     const t = convexTest(schema, modules);
+    register(t);
 
     // User 1 - Regular user
     const user1Identity = t.withIdentity({
@@ -32,39 +34,33 @@ describe('convex RLS (Row-Level Security)', async () => {
     let adminId: string;
 
     beforeEach(async () => {
-        const result1 = await user1Identity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'rls-user-1',
-                email: 'rls-user1@example.com',
-                name: 'RLS User 1',
-                password: 'test-password',
-                role: 'user',
-                emailVerified: false,
-            });
+        const result1 = await createTestUser(t, {
+            userId: 'rls-user-1',
+            email: 'rls-user1@example.com',
+            name: 'RLS User 1',
+            password: 'test-password',
+            role: 'user',
+            emailVerified: false,
         });
         user1Id = result1.userId;
 
-        const result2 = await user2Identity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'rls-user-2',
-                email: 'rls-user2@example.com',
-                name: 'RLS User 2',
-                password: 'test-password',
-                role: 'user',
-                emailVerified: false,
-            });
+        const result2 = await createTestUser(t, {
+            userId: 'rls-user-2',
+            email: 'rls-user2@example.com',
+            name: 'RLS User 2',
+            password: 'test-password',
+            role: 'user',
+            emailVerified: false,
         });
         user2Id = result2.userId;
 
-        const resultAdmin = await adminIdentity.run(async ctx => {
-            return await createTestUser(ctx, {
-                userId: 'rls-admin',
-                email: 'rls-admin@example.com',
-                name: 'RLS Admin',
-                password: 'test-password',
-                role: 'admin',
-                emailVerified: false,
-            });
+        const resultAdmin = await createTestUser(t, {
+            userId: 'rls-admin',
+            email: 'rls-admin@example.com',
+            name: 'RLS Admin',
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
         });
         adminId = resultAdmin.userId;
     });
