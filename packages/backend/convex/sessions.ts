@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { authComponent } from './auth';
 import { components } from './_generated/api';
+import { createAuditLog } from './utils/auditLog';
 
 export const getSessionsByUser = queryWithRLS({
     args: {},
@@ -41,6 +42,8 @@ export const getSessionsByUser = queryWithRLS({
 export const invalidateSession = mutationWithRLS({
     args: { _id: v.id('session') },
     handler: async (ctx, args) => {
+        const userId = String(ctx.identity?.subject);
+
         try {
             await ctx.runMutation(components.betterAuth.adapter.updateOne, {
                 input: {
@@ -48,6 +51,18 @@ export const invalidateSession = mutationWithRLS({
                     update: { updatedAt: Date.now() },
                     where: [{ field: '_id', value: args._id }],
                 },
+            });
+
+            // Audit log
+            await createAuditLog(ctx, {
+                userId,
+                action: 'session.invalidated',
+                resourceType: 'session',
+                resourceId: String(args._id),
+                metadata: {
+                    context: 'User invalidated a session',
+                },
+                severity: 'warning',
             });
         } catch (error) {
             // In tests, betterAuth component may not be registered

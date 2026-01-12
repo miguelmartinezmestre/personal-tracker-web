@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { authComponent } from './auth';
 import { components } from './_generated/api';
+import { createAuditLog } from './utils/auditLog';
 
 export const createTeam = mutationWithRLS({
     args: {
@@ -88,13 +89,37 @@ export const createTeam = mutationWithRLS({
             });
 
             if (createdOrg && typeof createdOrg === 'object' && (createdOrg as any)._id) {
+                // Audit log
+                await createAuditLog(ctx, {
+                    userId,
+                    action: 'team.created',
+                    resourceType: 'team',
+                    resourceId: String((createdOrg as any)._id),
+                    metadata: {
+                        after: { name: args.name, slug, description: args.description },
+                    },
+                });
+
                 return createdOrg as BetterAuthDataModel['organization']['document'];
             }
 
-            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+            const result = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
                 model: 'organization',
                 where: [{ field: '_id', value: orgId }],
             })) as BetterAuthDataModel['organization']['document'];
+
+            // Audit log
+            await createAuditLog(ctx, {
+                userId,
+                action: 'team.created',
+                resourceType: 'team',
+                resourceId: String(orgId),
+                metadata: {
+                    after: { name: args.name, slug, description: args.description },
+                },
+            });
+
+            return result;
         } catch (error) {
             // In tests, betterAuth component may not be registered
             if (
@@ -224,7 +249,15 @@ export const updateTeam = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { _id, ...rest } = args;
+        const userId = String(ctx.identity?.subject);
+
         try {
+            // Get existing team for audit log
+            const existing = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'organization',
+                where: [{ field: '_id', value: _id }],
+            })) as BetterAuthDataModel['organization']['document'] | null;
+
             await ctx.runMutation(components.betterAuth.adapter.updateOne, {
                 input: {
                     model: 'organization',
@@ -235,10 +268,25 @@ export const updateTeam = mutationWithRLS({
                     where: [{ field: '_id', value: _id }],
                 },
             });
-            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+
+            const result = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
                 model: 'organization',
                 where: [{ field: '_id', value: _id }],
             })) as BetterAuthDataModel['organization']['document'];
+
+            // Audit log
+            await createAuditLog(ctx, {
+                userId,
+                action: 'team.updated',
+                resourceType: 'team',
+                resourceId: String(_id),
+                metadata: {
+                    before: existing ? { name: existing.name, description: existing.description } : undefined,
+                    after: { name: rest.name, description: rest.description },
+                },
+            });
+
+            return result;
         } catch (error) {
             // In tests, betterAuth component may not be registered
             if (
@@ -263,8 +311,16 @@ export const updateTeam = mutationWithRLS({
 export const deleteTeam = mutationWithRLS({
     args: { _id: v.id('organization') },
     handler: async (ctx, args) => {
+        const userId = String(ctx.identity?.subject);
+
         // Delete all members first
         try {
+            // Get existing team for audit log
+            const existing = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'organization',
+                where: [{ field: '_id', value: args._id }],
+            })) as BetterAuthDataModel['organization']['document'] | null;
+
             await ctx.runMutation(components.betterAuth.adapter.deleteMany, {
                 input: {
                     model: 'member',
@@ -282,6 +338,19 @@ export const deleteTeam = mutationWithRLS({
                     model: 'organization',
                     where: [{ field: '_id', value: args._id }],
                 },
+            });
+
+            // Audit log
+            await createAuditLog(ctx, {
+                userId,
+                action: 'team.deleted',
+                resourceType: 'team',
+                resourceId: String(args._id),
+                metadata: {
+                    before: existing ? { name: existing.name, slug: existing.slug } : undefined,
+                    context: existing ? `Deleted team: ${existing.name}` : undefined,
+                },
+                severity: 'critical',
             });
         } catch (error) {
             // In tests, betterAuth component may not be registered

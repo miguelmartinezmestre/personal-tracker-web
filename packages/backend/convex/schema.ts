@@ -48,11 +48,22 @@ export default defineSchema({
     auditLogs: defineTable({
         user: v.string(),
         action: v.string(),
+        resourceType: v.string(), // 'objective' | 'progress_update' | 'team' | 'team_member' | 'category' | 'user' | 'session' | 'permission'
+        resourceId: v.optional(v.string()), // ID of the affected resource
+        metadata: v.optional(
+            v.object({
+                before: v.optional(v.any()), // State before change (for updates/deletes)
+                after: v.optional(v.any()), // State after change (for creates/updates)
+                context: v.optional(v.string()), // Additional context
+            })
+        ),
+        severity: v.string(), // 'info' | 'warning' | 'critical'
         createdAt: v.number(),
-        updatedAt: v.number(),
     })
         .index('by_user', ['user'])
-        .index('by_createdAt', ['createdAt']),
+        .index('by_createdAt', ['createdAt'])
+        .index('by_resourceType', ['resourceType'])
+        .index('by_action', ['action']),
 
     categories: defineTable({
         user: v.string(),
