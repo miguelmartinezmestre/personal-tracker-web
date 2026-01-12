@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useUserAchievementStats, useRecentAchievements } from '@/hooks/api/use-achievements';
 import { AchievementBadge } from './achievement-badge';
 import type { AchievementTier } from '@/schemas/achievement';
+import { cn } from '@repo/ui/lib/utils';
 
 interface AchievementsWidgetProps {
     limit?: number;
@@ -24,10 +25,10 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
 
     if (isLoading) {
         return (
-            <Card>
+            <Card className="border-border/50">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5" />
+                        <Trophy className="h-5 w-5 animate-pulse" />
                         <Skeleton className="h-5 w-32" />
                     </CardTitle>
                 </CardHeader>
@@ -49,17 +50,28 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
     }
 
     return (
-        <Card data-testid="achievements-widget">
+        <Card
+            data-testid="achievements-widget"
+            className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20"
+        >
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-yellow-500" />
+                    <div className="relative">
+                        <Trophy className="h-5 w-5 text-yellow-500" />
+                        <div className="absolute inset-0 blur-xl bg-yellow-500/20 group-hover:bg-yellow-500/30 transition-all" />
+                    </div>
                     {t('widget.title')}
                 </CardTitle>
                 <CardAction>
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="hover:bg-primary/10 hover:text-primary transition-all"
+                    >
                         <Link href="/dashboard/achievements">
                             {t('widget.viewAll')}
-                            <ChevronRight className="h-4 w-4 ml-1" />
+                            <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
                         </Link>
                     </Button>
                 </CardAction>
@@ -68,19 +80,27 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
                 <div className="space-y-4">
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                            <Star className="h-8 w-8 text-yellow-500" />
+                        <div className="group/stat flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 hover:from-yellow-500/20 hover:to-yellow-500/10 transition-all duration-300">
+                            <div className="relative">
+                                <Star className="h-8 w-8 text-yellow-500 group-hover/stat:scale-110 transition-transform" />
+                                <div className="absolute inset-0 blur-lg bg-yellow-500/20" />
+                            </div>
                             <div>
-                                <p className="text-2xl font-bold">{stats?.totalPoints ?? 0}</p>
+                                <p className="text-2xl font-bold group-hover/stat:scale-105 transition-transform origin-left">
+                                    {stats?.totalPoints ?? 0}
+                                </p>
                                 <p className="text-xs text-muted-foreground">
                                     {t('stats.totalPoints')}
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                            <Award className="h-8 w-8 text-primary" />
+                        <div className="group/stat flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 transition-all duration-300">
+                            <div className="relative">
+                                <Award className="h-8 w-8 text-primary group-hover/stat:scale-110 transition-transform" />
+                                <div className="absolute inset-0 blur-lg bg-primary/20" />
+                            </div>
                             <div>
-                                <p className="text-2xl font-bold">
+                                <p className="text-2xl font-bold group-hover/stat:scale-105 transition-transform origin-left">
                                     {stats?.earnedCount ?? 0}
                                     <span className="text-sm font-normal text-muted-foreground">
                                         /{stats?.totalAvailable ?? 0}
@@ -93,36 +113,46 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
 
                     {/* Recent Achievements */}
                     {recentAchievements && recentAchievements.length > 0 ? (
-                        <div>
-                            <p className="text-xs text-muted-foreground mb-2">
+                        <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground font-medium">
                                 {t('widget.recentlyEarned')}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                {recentAchievements.map(achievement => (
-                                    <AchievementBadge
+                                {recentAchievements.map((achievement, index) => (
+                                    <div
                                         key={achievement._id}
-                                        icon={achievement.definition?.icon ?? 'Trophy'}
-                                        tier={
-                                            (achievement.definition?.tier as AchievementTier) ??
-                                            'bronze'
-                                        }
-                                        name={t(
-                                            `definitions.${achievement.definition?.code}.name`,
-                                            {
-                                                defaultValue:
-                                                    achievement.definition?.code ?? 'Achievement',
+                                        className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                        style={{ animationDelay: `${index * 50}ms` }}
+                                    >
+                                        <AchievementBadge
+                                            icon={achievement.definition?.icon ?? 'Trophy'}
+                                            tier={
+                                                (achievement.definition?.tier as AchievementTier) ??
+                                                'bronze'
                                             }
-                                        )}
-                                        earned={true}
-                                        size="md"
-                                    />
+                                            name={t(
+                                                `definitions.${achievement.definition?.code}.name`,
+                                                {
+                                                    defaultValue:
+                                                        achievement.definition?.code ?? 'Achievement',
+                                                }
+                                            )}
+                                            earned={true}
+                                            size="md"
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            {t('widget.noAchievements')}
-                        </p>
+                        <div className="text-center py-6">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
+                                <Trophy className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {t('widget.noAchievements')}
+                            </p>
+                        </div>
                     )}
                 </div>
             </CardContent>
