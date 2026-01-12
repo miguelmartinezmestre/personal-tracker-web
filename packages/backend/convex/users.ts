@@ -2,6 +2,7 @@ import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { ConvexError, v } from 'convex/values';
 import { authComponent } from './auth';
 import { components } from './_generated/api';
+import { createAuditLog } from './utils/auditLog';
 
 export const getUser = queryWithRLS({
     args: {},
@@ -155,6 +156,7 @@ export const updateAccountDetails = mutationWithRLS({
 
         // Update user record if betterAuth is available
         if (userRecord) {
+            const previousName = userRecord.name;
             try {
                 await ctx.runMutation(components.betterAuth.adapter.updateOne, {
                     input: {
@@ -163,6 +165,20 @@ export const updateAccountDetails = mutationWithRLS({
                         where: [{ field: 'userId', value: userId }],
                     },
                 });
+
+                // Audit log
+                if (previousName !== args.username) {
+                    await createAuditLog(ctx, {
+                        userId,
+                        action: 'user.account_updated',
+                        resourceType: 'user',
+                        resourceId: userId,
+                        metadata: {
+                            before: { username: previousName },
+                            after: { username: args.username },
+                        },
+                    });
+                }
             } catch (error) {
                 // In tests, betterAuth component may not be registered
                 if (
@@ -216,6 +232,21 @@ export const promoteToAdmin = mutationWithRLS({
                 where: [{ field: '_id', value: userRecord._id }],
             },
         });
+
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: user.userId || String(user._id),
+            action: 'user.promoted_to_admin',
+            resourceType: 'user',
+            resourceId: user.userId || String(user._id),
+            metadata: {
+                before: { role: (userRecord as Record<string, unknown>)?.role || 'user' },
+                after: { role: 'admin' },
+                context: `Promoted user ${user.email} to admin`,
+            },
+            severity: 'critical',
+        });
+
         return { message: 'User promoted to admin', email: user.email } as const;
     },
 });

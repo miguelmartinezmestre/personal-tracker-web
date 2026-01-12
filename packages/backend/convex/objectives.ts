@@ -3,6 +3,7 @@ import { queryWithRLS, mutationWithRLS } from './rls';
 import { Doc } from './_generated/dataModel';
 import { internal } from './_generated/api';
 import { MutationCtx } from './_generated/server';
+import { createAuditLog, sanitizeForAudit, createChangeDiff } from './utils/auditLog';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -289,6 +290,23 @@ export const createObjective = mutationWithRLS({
             });
         }
 
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: String(ctx.identity?.subject),
+            action: 'objective.created',
+            resourceType: 'objective',
+            resourceId: objectiveId,
+            metadata: {
+                after: {
+                    title: args.title,
+                    targetValue: args.targetValue,
+                    status: args.status,
+                    category: args.category,
+                    deadline: args.deadline,
+                },
+            },
+        });
+
         return objectiveId;
     },
 });
@@ -330,6 +348,22 @@ export const updateObjective = mutationWithRLS({
             });
         }
 
+        // Audit log
+        const changes = createChangeDiff(sanitizeForAudit(existing), rest);
+        if (Object.keys(changes.after).length > 0) {
+            await createAuditLog(ctx, {
+                userId: existing.user,
+                action: 'objective.updated',
+                resourceType: 'objective',
+                resourceId: id,
+                metadata: {
+                    before: changes.before,
+                    after: changes.after,
+                    context: `Updated objective: ${existing.title}`,
+                },
+            });
+        }
+
         return updated;
     },
 });
@@ -339,7 +373,26 @@ export const deleteObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.delete(args.id);
+        const existing = await ctx.db.get(args.id);
+
+        const result = await ctx.db.delete(args.id);
+
+        // Audit log
+        if (existing) {
+            await createAuditLog(ctx, {
+                userId: existing.user,
+                action: 'objective.deleted',
+                resourceType: 'objective',
+                resourceId: args.id,
+                metadata: {
+                    before: sanitizeForAudit(existing),
+                    context: `Deleted objective: ${existing.title}`,
+                },
+                severity: 'critical',
+            });
+        }
+
+        return result;
     },
 });
 
@@ -358,6 +411,7 @@ export const updateObjectiveStatus = mutationWithRLS({
             return objective;
         }
 
+        const previousStatus = objective.status;
         const now = Date.now();
         const updated = await ctx.db.patch(id, {
             status,
@@ -370,6 +424,20 @@ export const updateObjectiveStatus = mutationWithRLS({
             title: objective.title,
             status,
             now,
+        });
+
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: objective.user,
+            action: 'objective.status_changed',
+            resourceType: 'objective',
+            resourceId: id,
+            metadata: {
+                before: { status: previousStatus },
+                after: { status },
+                context: `Status changed for objective: ${objective.title}`,
+            },
+            severity: 'warning',
         });
 
         return updated;
@@ -386,6 +454,8 @@ export const completeObjective = mutationWithRLS({
             throw new Error('Objective not found');
         }
 
+        const previousStatus = objective.status;
+        const previousValue = objective.currentValue;
         const now = Date.now();
         const updated = await ctx.db.patch(args.id, {
             status: 'completed',
@@ -409,6 +479,20 @@ export const completeObjective = mutationWithRLS({
             });
         }
 
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: objective.user,
+            action: 'objective.completed',
+            resourceType: 'objective',
+            resourceId: args.id,
+            metadata: {
+                before: { status: previousStatus, currentValue: previousValue },
+                after: { status: 'completed', currentValue: objective.targetValue },
+                context: `Completed objective: ${objective.title}`,
+            },
+            severity: 'warning',
+        });
+
         return updated;
     },
 });
@@ -423,6 +507,7 @@ export const archiveObjective = mutationWithRLS({
             throw new Error('Objective not found');
         }
 
+        const previousStatus = objective.status;
         const now = Date.now();
         const updated = await ctx.db.patch(args.id, {
             status: 'archived',
@@ -435,6 +520,20 @@ export const archiveObjective = mutationWithRLS({
             title: objective.title,
             status: 'archived',
             now,
+        });
+
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: objective.user,
+            action: 'objective.archived',
+            resourceType: 'objective',
+            resourceId: args.id,
+            metadata: {
+                before: { status: previousStatus },
+                after: { status: 'archived' },
+                context: `Archived objective: ${objective.title}`,
+            },
+            severity: 'warning',
         });
 
         return updated;
@@ -451,6 +550,7 @@ export const pauseObjective = mutationWithRLS({
             throw new Error('Objective not found');
         }
 
+        const previousStatus = objective.status;
         const now = Date.now();
         const updated = await ctx.db.patch(args.id, {
             status: 'paused',
@@ -463,6 +563,20 @@ export const pauseObjective = mutationWithRLS({
             title: objective.title,
             status: 'paused',
             now,
+        });
+
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: objective.user,
+            action: 'objective.paused',
+            resourceType: 'objective',
+            resourceId: args.id,
+            metadata: {
+                before: { status: previousStatus },
+                after: { status: 'paused' },
+                context: `Paused objective: ${objective.title}`,
+            },
+            severity: 'warning',
         });
 
         return updated;

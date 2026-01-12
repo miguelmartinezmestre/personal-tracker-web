@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
+import { createAuditLog, sanitizeForAudit, createChangeDiff } from './utils/auditLog';
 
 export const getCategoriesByUser = queryWithRLS({
     args: {},
@@ -19,14 +20,28 @@ export const createCategory = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const now = Date.now();
-        return await ctx.db.insert('categories', {
-            user: String(ctx.identity?.subject),
+        const userId = String(ctx.identity?.subject);
+        const categoryId = await ctx.db.insert('categories', {
+            user: userId,
             name: args.name,
             color: args.color,
             icon: args.icon,
             createdAt: now,
             updatedAt: now,
         });
+
+        // Audit log
+        await createAuditLog(ctx, {
+            userId,
+            action: 'category.created',
+            resourceType: 'category',
+            resourceId: categoryId,
+            metadata: {
+                after: { name: args.name, color: args.color, icon: args.icon },
+            },
+        });
+
+        return categoryId;
     },
 });
 
@@ -39,7 +54,30 @@ export const updateCategory = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
-        return await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+        const existing = await ctx.db.get(id);
+        if (!existing) {
+            throw new Error('Category not found');
+        }
+
+        const result = await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+
+        // Audit log
+        const changes = createChangeDiff(sanitizeForAudit(existing), rest);
+        if (Object.keys(changes.after).length > 0) {
+            await createAuditLog(ctx, {
+                userId: existing.user,
+                action: 'category.updated',
+                resourceType: 'category',
+                resourceId: id,
+                metadata: {
+                    before: changes.before,
+                    after: changes.after,
+                    context: `Updated category: ${existing.name}`,
+                },
+            });
+        }
+
+        return result;
     },
 });
 
@@ -48,7 +86,26 @@ export const deleteCategory = mutationWithRLS({
         id: v.id('categories'),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.delete(args.id);
+        const existing = await ctx.db.get(args.id);
+
+        const result = await ctx.db.delete(args.id);
+
+        // Audit log
+        if (existing) {
+            await createAuditLog(ctx, {
+                userId: existing.user,
+                action: 'category.deleted',
+                resourceType: 'category',
+                resourceId: args.id,
+                metadata: {
+                    before: sanitizeForAudit(existing),
+                    context: `Deleted category: ${existing.name}`,
+                },
+                severity: 'critical',
+            });
+        }
+
+        return result;
     },
 });
 
@@ -82,6 +139,18 @@ export const createDefaultCategories = mutationWithRLS({
             });
             results.push(await ctx.db.get(id));
         }
+
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: user,
+            action: 'category.defaults_created',
+            resourceType: 'category',
+            metadata: {
+                after: { count: defaultCategories.length },
+                context: `Created ${defaultCategories.length} default categories`,
+            },
+        });
+
         return results;
     },
 });

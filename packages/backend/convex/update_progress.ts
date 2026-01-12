@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { authComponent } from './auth';
 import { internal } from './_generated/api';
+import { createAuditLog, sanitizeForAudit, createChangeDiff } from './utils/auditLog';
 
 export const createUpdateProgress = mutationWithRLS({
     args: {
@@ -54,6 +55,23 @@ export const createUpdateProgress = mutationWithRLS({
             });
         }
 
+        // Audit log
+        await createAuditLog(ctx, {
+            userId: objective.user,
+            action: 'progress_update.created',
+            resourceType: 'progress_update',
+            resourceId: id,
+            metadata: {
+                after: {
+                    objective: args.objective,
+                    updatedValue: args.updatedValue,
+                    updateDate: args.updateDate,
+                    comment: args.comment,
+                },
+                context: `Progress update for objective: ${objective.title}`,
+            },
+        });
+
         return await ctx.db.get(id);
     },
 });
@@ -77,7 +95,30 @@ export const updateUpdateProgress = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
+        const existing = await ctx.db.get(id);
+        if (!existing) {
+            throw new Error('Progress update not found');
+        }
+
+        const objective = await ctx.db.get(existing.objective);
         await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+
+        // Audit log
+        const changes = createChangeDiff(sanitizeForAudit(existing), rest);
+        if (Object.keys(changes.after).length > 0) {
+            await createAuditLog(ctx, {
+                userId: objective?.user ?? String(ctx.identity?.subject),
+                action: 'progress_update.updated',
+                resourceType: 'progress_update',
+                resourceId: id,
+                metadata: {
+                    before: changes.before,
+                    after: changes.after,
+                    context: objective ? `Updated progress for objective: ${objective.title}` : undefined,
+                },
+            });
+        }
+
         return await ctx.db.get(id);
     },
 });
@@ -85,7 +126,26 @@ export const updateUpdateProgress = mutationWithRLS({
 export const deleteUpdateProgress = mutationWithRLS({
     args: { _id: v.id('progressUpdates') },
     handler: async (ctx, args) => {
+        const existing = await ctx.db.get(args._id);
+        const objective = existing ? await ctx.db.get(existing.objective) : null;
+
         await ctx.db.delete(args._id);
+
+        // Audit log
+        if (existing) {
+            await createAuditLog(ctx, {
+                userId: objective?.user ?? String(ctx.identity?.subject),
+                action: 'progress_update.deleted',
+                resourceType: 'progress_update',
+                resourceId: args._id,
+                metadata: {
+                    before: sanitizeForAudit(existing),
+                    context: objective ? `Deleted progress update for objective: ${objective.title}` : undefined,
+                },
+                severity: 'critical',
+            });
+        }
+
         return 'Update progress deleted successfully' as const;
     },
 });

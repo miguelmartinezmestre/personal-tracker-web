@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { QueryCtx } from './_generated/server';
+import { query, QueryCtx } from './_generated/server';
 import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { components } from './_generated/api';
 

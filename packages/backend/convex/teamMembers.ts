@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { authComponent } from './auth';
 import { components } from './_generated/api';
+import { createAuditLog } from './utils/auditLog';
 
 export const createTeamMember = mutationWithRLS({
     args: {
@@ -68,6 +69,21 @@ export const createTeamMember = mutationWithRLS({
                 typeof created === 'string' ? created : (created as { _id?: string })?._id;
 
             if (created && typeof created === 'object' && (created as any)._id) {
+                // Audit log
+                await createAuditLog(ctx, {
+                    userId,
+                    action: 'team_member.added',
+                    resourceType: 'team_member',
+                    resourceId: String((created as any)._id),
+                    metadata: {
+                        after: {
+                            teamId: organizationId,
+                            memberId: args.user,
+                            role: args.role,
+                        },
+                    },
+                });
+
                 return created as BetterAuthDataModel['member']['document'];
             }
 
@@ -75,10 +91,27 @@ export const createTeamMember = mutationWithRLS({
                 throw new Error('Failed to create team member');
             }
 
-            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+            const result = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
                 model: 'member',
                 where: [{ field: '_id', value: createdId }],
             })) as BetterAuthDataModel['member']['document'];
+
+            // Audit log
+            await createAuditLog(ctx, {
+                userId,
+                action: 'team_member.added',
+                resourceType: 'team_member',
+                resourceId: String(createdId),
+                metadata: {
+                    after: {
+                        teamId: organizationId,
+                        memberId: args.user,
+                        role: args.role,
+                    },
+                },
+            });
+
+            return result;
         } catch (error) {
             // In tests, betterAuth component may not be registered
             if (
@@ -168,9 +201,17 @@ export const updateTeamMember = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, role } = args;
+        const userId = String(ctx.identity?.subject);
         // Map frontend roles to better-auth roles
         const betterAuthRole = role === 'MANAGER' ? 'admin' : 'member';
+
         try {
+            // Get existing member for audit log
+            const existing = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'member',
+                where: [{ field: '_id', value: id }],
+            })) as BetterAuthDataModel['member']['document'] | null;
+
             await ctx.runMutation(components.betterAuth.adapter.updateOne, {
                 input: {
                     model: 'member',
@@ -178,10 +219,26 @@ export const updateTeamMember = mutationWithRLS({
                     where: [{ field: '_id', value: id }],
                 },
             });
-            return (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+
+            const result = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
                 model: 'member',
                 where: [{ field: '_id', value: id }],
             })) as BetterAuthDataModel['member']['document'];
+
+            // Audit log
+            await createAuditLog(ctx, {
+                userId,
+                action: 'team_member.updated',
+                resourceType: 'team_member',
+                resourceId: String(id),
+                metadata: {
+                    before: existing ? { role: existing.role } : undefined,
+                    after: { role },
+                    context: existing ? `Updated member role in team: ${existing.organizationId}` : undefined,
+                },
+            });
+
+            return result;
         } catch (error) {
             // In tests, betterAuth component may not be registered
             if (
@@ -206,13 +263,40 @@ export const updateTeamMember = mutationWithRLS({
 export const deleteTeamMember = mutationWithRLS({
     args: { _id: v.id('member') },
     handler: async (ctx, args) => {
+        const userId = String(ctx.identity?.subject);
+
         try {
+            // Get existing member for audit log
+            const existing = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                model: 'member',
+                where: [{ field: '_id', value: args._id }],
+            })) as BetterAuthDataModel['member']['document'] | null;
+
             await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
                 input: {
                     model: 'member',
                     where: [{ field: '_id', value: args._id }],
                 },
             });
+
+            // Audit log
+            if (existing) {
+                await createAuditLog(ctx, {
+                    userId,
+                    action: 'team_member.removed',
+                    resourceType: 'team_member',
+                    resourceId: String(args._id),
+                    metadata: {
+                        before: {
+                            teamId: existing.organizationId,
+                            memberId: existing.userId,
+                            role: existing.role,
+                        },
+                        context: `Removed member from team: ${existing.organizationId}`,
+                    },
+                    severity: 'critical',
+                });
+            }
         } catch (error) {
             // In tests, betterAuth component may not be registered
             if (
