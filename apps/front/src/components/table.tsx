@@ -49,16 +49,18 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-const textFilter: FilterFn<unknown> = (row, columnId, filterValue) => {
-    const searchValue = String(filterValue ?? '').toLowerCase();
-    if (!searchValue) {
-        return true;
-    }
-    const value = row.getValue(columnId);
-    if (value === null || value === undefined) {
-        return false;
-    }
-    return String(value).toLowerCase().includes(searchValue);
+const createTextFilter = <TData extends RowData>(): FilterFn<TData> => {
+    return (row, columnId, filterValue) => {
+        const searchValue = String(filterValue ?? '').toLowerCase();
+        if (!searchValue) {
+            return true;
+        }
+        const value = row.getValue(columnId);
+        if (value === null || value === undefined) {
+            return false;
+        }
+        return String(value).toLowerCase().includes(searchValue);
+    };
 };
 
 type ColumnMeta = {
@@ -71,7 +73,7 @@ type ColumnMeta = {
 const getColumnMeta = (column: { columnDef?: { meta?: unknown } }) =>
     column.columnDef?.meta as ColumnMeta | undefined;
 
-const formatExportValue = (value: unknown) => {
+const formatExportValue = (value: unknown): string => {
     if (value === null || value === undefined) {
         return '';
     }
@@ -266,6 +268,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
 
+    const textFilter = createTextFilter<TData>();
     const table = useReactTable<TData>({
         data,
         columns,
