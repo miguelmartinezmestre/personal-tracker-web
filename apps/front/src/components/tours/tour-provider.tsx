@@ -11,6 +11,26 @@ import {
     useRef,
     useSyncExternalStore,
 } from 'react';
+import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { ACTIONS, EVENTS, STATUS } from 'react-joyride';
+import type { CallPropsAction } from '@/types/tour';
+import type {
+    TourContextValue,
+    TourState,
+    TourId,
+    TourAnalyticsEvent,
+} from '@/types/tour';
+import { useUser } from '@/contexts/user-context';
+import { getTourDefinition, getAllTourIds, MAX_TARGET_RETRIES, RETRY_DELAY_MS } from '@/config/tours';
+import { TourTooltip, tourStyles } from './tour-tooltip';
+import { recordTourStart } from '@/lib/tour-storage';
+import { useTourProgress } from '@/hooks/api/use-tours';
+
+const Joyride = dynamic(() => import('react-joyride').then(mod => mod.default), {
+    ssr: false,
+});
 
 /**
  * Hook to check if the component has hydrated on the client
@@ -23,25 +43,6 @@ function useHasMounted(): boolean {
         () => false
     );
 }
-import Joyride, {
-    ACTIONS,
-    EVENTS,
-    STATUS,
-} from 'react-joyride';
-import type { CallPropsAction } from '@/types/tour';
-import { usePathname } from 'next/navigation';
-import { useUser } from '@/contexts/user-context';
-import { useTranslations } from 'next-intl';
-import type {
-    TourContextValue,
-    TourState,
-    TourId,
-    TourAnalyticsEvent,
-} from '@/types/tour';
-import { getTourDefinition, getAllTourIds, MAX_TARGET_RETRIES, RETRY_DELAY_MS } from '@/config/tours';
-import { TourTooltip, tourStyles } from './tour-tooltip';
-import { recordTourStart } from '@/lib/tour-storage';
-import { useTourProgress } from '@/hooks/api/use-tours';
 
 /**
  * Tour Provider Context
