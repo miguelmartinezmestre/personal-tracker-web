@@ -25,7 +25,7 @@ export const tables = {
     banReason: v.optional(v.union(v.null(), v.string())),
     banExpires: v.optional(v.union(v.null(), v.number())),
   })
-    .index("email_name", ["email","name"])
+    .index("email_name", ["email", "name"])
     .index("name", ["name"])
     .index("userId", ["userId"]),
   session: defineTable({
@@ -40,7 +40,7 @@ export const tables = {
     activeOrganizationId: v.optional(v.union(v.null(), v.string())),
   })
     .index("expiresAt", ["expiresAt"])
-    .index("expiresAt_userId", ["expiresAt","userId"])
+    .index("expiresAt_userId", ["expiresAt", "userId"])
     .index("token", ["token"])
     .index("userId", ["userId"]),
   account: defineTable({
@@ -58,8 +58,8 @@ export const tables = {
     updatedAt: v.number(),
   })
     .index("accountId", ["accountId"])
-    .index("accountId_providerId", ["accountId","providerId"])
-    .index("providerId_userId", ["providerId","userId"])
+    .index("accountId_providerId", ["accountId", "providerId"])
+    .index("providerId_userId", ["providerId", "userId"])
     .index("userId", ["userId"]),
   verification: defineTable({
     identifier: v.string(),
@@ -94,6 +94,7 @@ export const tables = {
   })
     .index("organizationId", ["organizationId"])
     .index("userId", ["userId"])
+    .index("organizationId_userId", ["organizationId", "userId"])
     .index("role", ["role"]),
   invitation: defineTable({
     organizationId: v.string(),
