@@ -92,7 +92,7 @@ export default function AchievementsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="achievements-stats">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="achievements-stats" data-tour="achievement-stats">
                 <Card data-testid="achievements-points-card">
                     <CardContent className="flex items-center gap-4 p-6">
                         <Star className="h-10 w-10 text-yellow-500" />
@@ -149,7 +149,7 @@ export default function AchievementsPage() {
             </div>
 
             {/* Filter buttons */}
-            <div className="flex gap-2" data-testid="achievements-filters">
+            <div className="flex gap-2" data-testid="achievements-filters" data-tour="achievement-filters">
                 <Button
                     variant={filter === 'all' ? 'default' : 'outline'}
                     size="sm"
@@ -206,6 +206,7 @@ export default function AchievementsPage() {
                         <div
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                             data-testid="achievements-grid-individual"
+                            data-tour="achievements-grid"
                         >
                             {individualAchievements.map(achievement => (
                                 <AchievementCard
