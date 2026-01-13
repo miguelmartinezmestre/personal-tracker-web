@@ -72,7 +72,7 @@ export default function HomePage() {
         <div className="container mx-auto p-4 space-y-6">
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
-                <p data-testid="welcome-message" className="text-muted-foreground">
+                <p data-testid="welcome-message" data-tour="welcome-message" className="text-muted-foreground">
                     {t('welcome', { name: user.name })}
                 </p>
             </div>

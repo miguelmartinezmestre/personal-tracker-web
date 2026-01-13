@@ -52,6 +52,7 @@ export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
     return (
         <Card
             data-testid="achievements-widget"
+            data-tour="achievements-widget"
             className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/20"
         >
             <CardHeader>

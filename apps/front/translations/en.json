@@ -3,6 +3,120 @@
         "title": "Metricas",
         "description": "Metricas"
     },
+    "Tours": {
+        "common": {
+            "next": "Next",
+            "prev": "Back",
+            "skip": "Skip",
+            "close": "Close",
+            "finish": "Finish",
+            "gotIt": "Got it!"
+        },
+        "onboarding": {
+            "title": "Welcome to Metricas!",
+            "steps": [
+                {
+                    "title": "Welcome to Metricas! 🎉",
+                    "content": "Let's take a quick tour to help you get started with tracking your goals and achievements."
+                },
+                {
+                    "title": "Objectives",
+                    "content": "Click here to go to the objectives page where you can create and manage your goals."
+                },
+                {
+                    "title": "Create Objectives",
+                    "content": "Click this button to create new objectives and track your progress towards your goals."
+                },
+                {
+                    "title": "Your Objectives",
+                    "content": "View all your objectives here. You can filter, sort, and update your progress."
+                },
+                {
+                    "title": "Achievements",
+                    "content": "Click here to view your achievements and track your progress towards earning badges."
+                },
+                {
+                    "title": "Earn Badges 🏆",
+                    "content": "Complete objectives to unlock achievements and earn badges. Keep up the great work!"
+                },
+                {
+                    "title": "Settings",
+                    "content": "In Settings, you can manage your account, restart this tour, or explore other options."
+                }
+            ]
+        },
+        "objectives-feature": {
+            "title": "Objectives Tour",
+            "steps": [
+                {
+                    "title": "Objectives Page",
+                    "content": "Welcome to the objectives page. Here you can manage all your personal and professional goals."
+                },
+                {
+                    "title": "Create Objective",
+                    "content": "Click this button to create a new objective. You can set targets, deadlines, and track progress."
+                },
+                {
+                    "title": "Your Objectives",
+                    "content": "View all your objectives in one place. Filter, sort, and update your progress here."
+                },
+                {
+                    "title": "Filter Objectives",
+                    "content": "Use these filters to find specific objectives by status, category, or deadline."
+                }
+            ]
+        },
+        "achievements-feature": {
+            "title": "Achievements Tour",
+            "steps": [
+                {
+                    "title": "Achievements Page",
+                    "content": "Here you can see all available achievements and your progress towards unlocking them."
+                },
+                {
+                    "title": "Achievement Badges",
+                    "content": "Browse achievements by category. Earn badges by completing objectives and maintaining streaks!"
+                },
+                {
+                    "title": "Filter Achievements",
+                    "content": "Use these tabs to view earned, locked, or all achievements."
+                },
+                {
+                    "title": "Your Stats",
+                    "content": "Track your total points, completion rate, and overall achievement progress here."
+                }
+            ]
+        },
+        "teams-feature": {
+            "title": "Admin Panel Tour",
+            "steps": [
+                {
+                    "title": "Admin Panel",
+                    "content": "As an administrator, you have access to additional tools for managing users and monitoring the system."
+                },
+                {
+                    "title": "User Management",
+                    "content": "View and manage all users in the system. You can update roles and handle account actions."
+                },
+                {
+                    "title": "Audit Logs",
+                    "content": "Review system activity and audit logs to track changes and ensure security."
+                }
+            ]
+        },
+        "settings": {
+            "toursSection": "Guided Tours",
+            "toursDescription": "Take interactive tours to learn about the app's features.",
+            "restartTour": "Restart Tour",
+            "startTour": "Start Tour",
+            "tourCompleted": "Completed",
+            "tourNotStarted": "Not started",
+            "onboardingLabel": "Welcome Tour",
+            "objectivesLabel": "Objectives Guide",
+            "achievementsLabel": "Achievements Guide",
+            "teamsLabel": "Admin Panel Guide"
+        }
+    },
     "Emails": {
         "register": {
             "preview": "Welcome to {app}",
@@ -642,7 +756,8 @@
         "device": "Device",
         "date": "Date",
         "status": "Status",
-        "closeSession": "Close Session"
+        "closeSession": "Close Session",
+        "expiresAt": "Expires"
     },
     "Teams": {
         "title": "Teams",
