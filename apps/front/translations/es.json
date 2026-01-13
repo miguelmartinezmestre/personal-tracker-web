@@ -838,7 +838,9 @@
             "empty": "No se encontraron usuarios.",
             "emptyWithSearch": "No hay usuarios que coincidan con la busqueda.",
             "roles": {
-                "user": "Usuario"
+                "admin": "Administrador",
+                "member": "Miembro",
+                "owner": "Propietario"
             },
             "defaults": {
                 "banReason": "Banned by administrator"
@@ -854,6 +856,7 @@
                 "next": "Siguiente"
             },
             "columns": {
+                "id": "ID",
                 "email": "Email",
                 "name": "Nombre",
                 "role": "Rol",
@@ -889,8 +892,10 @@
             "title": "Editar usuario",
             "description": "Modifica la información del usuario",
             "roles": {
-                "user": "Usuario",
-                "admin": "Administrador"
+                "admin": "Administrador",
+                "member": "Miembro",
+                "owner": "Propietario",
+                "user": "Usuario"
             }
         },
         "userSessions": {
@@ -1083,8 +1088,10 @@
         "userIdDescription": "Ingresa el ID del usuario para agregarlo al equipo",
         "selectRole": "Selecciona un rol",
         "roles": {
-            "manager": "Administrador",
-            "member": "Miembro"
+            "admin": "Administrador",
+            "member": "Miembro",
+            "owner": "Propietario",
+            "user": "Usuario"
         },
         "createNewTeamMemberDescription": "Llena el formulario a continuación para crear un nuevo miembro del equipo. Haz clic en guardar cuando hayas terminado.",
         "email": "Correo electrónico",

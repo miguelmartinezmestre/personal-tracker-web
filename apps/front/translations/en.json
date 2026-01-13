@@ -851,6 +851,7 @@
                 "next": "Next"
             },
             "columns": {
+                "id": "ID",
                 "email": "Email",
                 "name": "Name",
                 "role": "Role",
@@ -858,6 +859,9 @@
                 "actions": "Actions"
             },
             "roles": {
+                "admin": "Admin",
+                "member": "Member",
+                "owner": "Owner",
                 "user": "User"
             },
             "status": {
@@ -889,8 +893,10 @@
             "title": "Edit user",
             "description": "Update the user's information",
             "roles": {
-                "user": "User",
-                "admin": "Admin"
+                "admin": "Admin",
+                "member": "Member",
+                "owner": "Owner",
+                "user": "User"
             }
         },
         "userSessions": {
@@ -1083,8 +1089,10 @@
         "userIdDescription": "Enter the ID of the user to add to the team",
         "selectRole": "Select a role",
         "roles": {
-            "manager": "Manager",
-            "member": "Member"
+            "admin": "Admin",
+            "member": "Member",
+            "owner": "Owner",
+            "user": "User"
         },
         "createNewTeamMemberDescription": "Fill out the form below to create a new team member. Click save when you're done.",
         "email": "Email",

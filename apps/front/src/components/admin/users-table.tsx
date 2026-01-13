@@ -103,6 +103,15 @@ export function UsersTable() {
 
     const columns: ColumnDef<User>[] = [
         {
+            accessorKey: 'id',
+            header: t('usersTable.columns.id'),
+            cell: ({ row }) => (
+                <span className="font-mono text-xs text-muted-foreground">
+                    {row.original.id}
+                </span>
+            ),
+        },
+        {
             accessorKey: 'email',
             header: t('usersTable.columns.email'),
         },
@@ -201,6 +210,8 @@ export function UsersTable() {
 
     const users = (userData as { users?: User[]; total?: number })?.users || [];
     const _total = (userData as { users?: User[]; total?: number })?.total || 0;
+
+    console.log(users);
 
     return (
         <div className="space-y-4">
