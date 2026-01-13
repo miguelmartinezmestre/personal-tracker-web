@@ -10,8 +10,9 @@ import {
 } from '@repo/ui/components/card';
 import AccountSettingsFormEdit from '@/components/settings/account-settings-form-edit';
 import PasswordFormEdit from '@/components/settings/password-form-edit';
+import { ToursSettings } from '@/components/settings/tours-settings';
 import { useTranslations } from 'next-intl';
-import { User, Key } from 'lucide-react';
+import { User, Key, Map } from 'lucide-react';
 
 export default function SettingsPage() {
     const t = useTranslations('Settings');
@@ -24,7 +25,7 @@ export default function SettingsPage() {
             </div>
 
             <Tabs defaultValue="account" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full max-w-md grid-cols-3">
                     <TabsTrigger value="account" className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         {t('account')}
@@ -33,10 +34,14 @@ export default function SettingsPage() {
                         <Key className="h-4 w-4" />
                         {t('password')}
                     </TabsTrigger>
+                    <TabsTrigger value="tours" className="flex items-center gap-2">
+                        <Map className="h-4 w-4" />
+                        Tours
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="account">
-                    <Card>
+                    <Card className="max-w-2xl">
                         <CardHeader>
                             <CardTitle>{t('accountSettings')}</CardTitle>
                             <CardDescription>{t('accountSettingsDescription')}</CardDescription>
@@ -48,7 +53,7 @@ export default function SettingsPage() {
                 </TabsContent>
 
                 <TabsContent value="password">
-                    <Card>
+                    <Card className="max-w-2xl">
                         <CardHeader>
                             <CardTitle>{t('passwordSettings')}</CardTitle>
                             <CardDescription>{t('passwordSettingsDescription')}</CardDescription>
@@ -57,6 +62,10 @@ export default function SettingsPage() {
                             <PasswordFormEdit />
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="tours">
+                    <ToursSettings />
                 </TabsContent>
             </Tabs>
         </div>
