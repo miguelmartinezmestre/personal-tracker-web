@@ -7,21 +7,20 @@ import { Button } from '@repo/ui/components/button';
 import { Badge } from '@repo/ui/components/badge';
 import { authClient } from '@/lib/auth-client';
 import { useState } from 'react';
-import { Ban, UserCheck, Trash2, ShieldAlert } from 'lucide-react';
+import { Ban, UserCheck, Trash2 } from 'lucide-react';
 import { EditUserModal } from './edit-user-modal';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { useRequireAdmin } from '@/hooks/use-user-role';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 
 type User = {
     id: string;
     email: string;
     name: string;
-    role?: string | string[];
-    banned?: boolean;
-    banExpires?: number;
-    banReason?: string;
+    role?: string | string[] | null;
+    banned?: boolean | null;
+    banExpires?: number | null;
+    banReason?: string | null;
     createdAt?: number;
 };
 
@@ -34,7 +33,7 @@ export function UsersTable() {
     const limit = 10;
     const queryClient = useQueryClient();
 
-    // Listar usuarios
+    // Listar usuarios usando BetterAuth client
     const {
         data: userData,
         isLoading: isLoadingUsers,
@@ -42,25 +41,18 @@ export function UsersTable() {
     } = useQuery({
         queryKey: ['admin-users', searchValue, page, limit],
         queryFn: async () => {
-            try {
-                const result = await authClient.admin.listUsers({
-                    query: {
-                        searchValue: searchValue || undefined,
-                        searchField: 'email',
-                        limit,
-                        offset: page * limit,
-                        sortBy: 'createdAt',
-                        sortDirection: 'desc',
-                    },
-                });
-                // El resultado puede estar envuelto en un tipo Data, extraer los datos reales
-                const data = (result as { data?: unknown })?.data || result;
-                return data || { users: [], total: 0 };
-            } catch (err: unknown) {
-                console.error('Error fetching users:', err);
-                // Si hay un error de permisos, retornar estructura vacía
-                return { users: [], total: 0 };
-            }
+            const result = await authClient.admin.listUsers({
+                query: {
+                    searchValue: searchValue || undefined,
+                    searchField: 'email',
+                    limit,
+                    offset: page * limit,
+                    sortBy: 'createdAt',
+                    sortDirection: 'desc',
+                },
+            });
+            const data = (result as { data?: unknown })?.data || result;
+            return data || { users: [], total: 0 };
         },
     });
 
@@ -108,23 +100,6 @@ export function UsersTable() {
             toast.error(t('usersTable.toast.deleteFailed', { message: error.message }));
         },
     });
-
-    // Verify admin role
-    try {
-        useRequireAdmin();
-    } catch {
-        return (
-            <div className="rounded-md border border-red-200 bg-red-50 p-6">
-                <div className="flex items-center gap-3">
-                    <ShieldAlert className="h-5 w-5 text-red-600" />
-                    <div>
-                        <h3 className="font-semibold text-red-800">{t('accessDeniedTitle')}</h3>
-                        <p className="text-sm text-red-600">{t('accessDeniedDescription')}</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     const columns: ColumnDef<User>[] = [
         {

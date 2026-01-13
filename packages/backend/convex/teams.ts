@@ -130,6 +130,7 @@ export const createTeam = mutationWithRLS({
                 // In tests, return a mock organization
                 return {
                     _id: `test-organization-${now}` as any,
+                    _creationTime: now,
                     name: args.name,
                     slug: slug,
                     description: args.description,
@@ -228,12 +229,14 @@ export const getTeamById = queryWithRLS({
                     error.message.includes('Cannot read properties of undefined'))
             ) {
                 // In tests, return a mock organization
+                const now = Date.now();
                 return {
                     _id: args._id,
+                    _creationTime: now,
                     name: '',
                     slug: '',
-                    description: '',
-                    createdAt: Date.now(),
+                    description: null,
+                    createdAt: now,
                 } as BetterAuthDataModel['organization']['document'];
             }
             throw error;
@@ -295,12 +298,14 @@ export const updateTeam = mutationWithRLS({
                     error.message.includes('Cannot read properties of undefined'))
             ) {
                 // In tests, return a mock updated organization
+                const now = Date.now();
                 return {
                     _id: _id,
+                    _creationTime: now,
                     name: rest.name,
                     description: rest.description,
                     slug: '',
-                    createdAt: Date.now(),
+                    createdAt: now,
                 } as BetterAuthDataModel['organization']['document'];
             }
             throw error;
