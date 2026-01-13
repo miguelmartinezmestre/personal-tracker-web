@@ -18,7 +18,6 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/contexts/user-context';
 import { useUserRole } from '@/hooks/use-user-role';
-import AccountSettingsFormModal from '@/components/settings/account-settings-modal';
 import { usePathname } from 'next/navigation';
 import { cn } from '@repo/ui/lib/utils';
 
@@ -53,6 +52,11 @@ const baseProjects: ProjectNavItem[] = [
         name: 'sessions',
         url: '/dashboard/sessions',
         icon: Frame,
+    },
+    {
+        name: 'settings',
+        url: '/dashboard/settings',
+        icon: Settings,
     },
 ];
 
@@ -97,7 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }, [isAdmin]);
 
     return (
-        <Sidebar collapsible="icon" data-testid="app-sidebar" {...props}>
+        <Sidebar collapsible="icon" data-testid="app-sidebar" data-tour="sidebar-menu" {...props}>
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -113,12 +117,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenu data-testid="sidebar-menu">
                         {projects.map(item => {
                             const isActive = pathname === item.url;
+                            // Add data-tour attribute for specific menu items
+                            const tourAttr = item.name === 'home'
+                                ? 'sidebar-home'
+                                : item.name === 'objectives'
+                                    ? 'sidebar-objectives'
+                                    : item.name === 'achievements'
+                                        ? 'sidebar-achievements'
+                                        : item.name === 'settings'
+                                            ? 'sidebar-settings'
+                                            : item.name === 'admin'
+                                                ? 'sidebar-admin'
+                                                : undefined;
                             return (
                                 <SidebarMenuItem key={item.name}>
                                     <SidebarMenuButton asChild>
                                         <Link
                                             href={item.url}
                                             prefetch={false}
+                                            data-tour={tourAttr}
                                             className={cn(
                                                 'relative transition-all duration-200',
                                                 isActive
@@ -134,17 +151,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             />
                                             {t(item.name)}
                                             {isActive && (
-                                                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-r-full bg-primary" />
+                                                <span className="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-primary" />
                                             )}
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             );
                         })}
-                        {/* User is always authenticated here (inside AuthenticatedView) */}
-                        <SidebarMenuItem key="settings">
-                            <AccountSettingsFormModal />
-                        </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>
