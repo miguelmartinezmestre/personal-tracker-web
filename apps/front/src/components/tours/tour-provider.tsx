@@ -9,7 +9,20 @@ import {
     useEffect,
     type ReactNode,
     useRef,
+    useSyncExternalStore,
 } from 'react';
+
+/**
+ * Hook to check if the component has hydrated on the client
+ * Uses useSyncExternalStore for React 19 compatibility
+ */
+function useHasMounted(): boolean {
+    return useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
+}
 import Joyride, {
     ACTIONS,
     EVENTS,
@@ -79,6 +92,7 @@ function getStepContentKey(tourId: TourId, stepIndex: number): string {
  * Integrates with Convex for persistence and handles multi-page tours.
  */
 export function TourProvider({ children }: TourProviderProps) {
+    const hasMounted = useHasMounted();
     const pathname = usePathname();
     const user = useUser();
     const tCommon = useTranslations('Tours.common');
@@ -425,6 +439,11 @@ export function TourProvider({ children }: TourProviderProps) {
      * The completion check is done in startTour() via useTour hook
      */
     useEffect(() => {
+        // Wait for client-side hydration to complete before auto-starting tours
+        if (!hasMounted) {
+            return;
+        }
+
         // Only run auto-start when no tour is currently active
         if (state.currentTourId) {
             return;
@@ -475,7 +494,7 @@ export function TourProvider({ children }: TourProviderProps) {
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [pathname, state.currentTourId, startTour]);
+    }, [hasMounted, pathname, state.currentTourId, startTour]);
 
     /**
      * Handle clicks on tour targets during active tour
@@ -557,7 +576,7 @@ export function TourProvider({ children }: TourProviderProps) {
     return (
         <TourContext.Provider value={contextValue}>
             {children}
-            {state.currentTourId && (
+            {hasMounted && state.currentTourId && (
                 <Joyride
                     key={state.currentTourId}
                     steps={joyrideSteps}
