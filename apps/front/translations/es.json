@@ -267,7 +267,8 @@
         "notifications": "Notificaciones",
         "sessions": "Sesiones",
         "settings": "Configuración",
-        "admin": "Administrar"
+        "admin": "Administrar",
+        "teams": "Equipos"
     },
     "Achievements": {
         "title": "Logros",

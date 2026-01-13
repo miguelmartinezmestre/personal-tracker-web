@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Shield, Trophy, Settings } from 'lucide-react';
+import { Bell, Frame, Goal, Home, Shield, Trophy, Settings, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -57,6 +57,11 @@ const baseProjects: ProjectNavItem[] = [
         name: 'settings',
         url: '/dashboard/settings',
         icon: Settings,
+    },
+    {
+        name: 'teams',
+        url: '/dashboard/teams',
+        icon: Users,
     },
 ];
 

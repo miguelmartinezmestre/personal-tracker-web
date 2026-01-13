@@ -1,7 +1,8 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { authClient } from '@/lib/auth-client';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 import type { CreateTeam, Team } from '@/schemas/team';
 
 /**
@@ -18,101 +19,66 @@ export interface UpdateTeamParams {
     description: string;
 }
 
-const TEAMS_QUERY_KEY = ['organizations'];
+const TEAMS_QUERY_KEY = ['teams'];
 
-const slugify = (value: string) => {
-    const trimmed = value.trim().toLowerCase();
-    const slug = trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    return slug || 'team';
+// Organization is a BetterAuth table, so we use a generic type
+type OrganizationDoc = {
+    _id: string;
+    name: string;
+    slug?: string | null;
+    description?: string | null;
 };
 
-const normalizeTeam = (team: {
-    id: string;
-    name: string;
-    slug?: string;
-    description?: string | null;
-}) =>
+const normalizeTeam = (team: OrganizationDoc) =>
     ({
-        id: team.id,
+        id: String(team._id),
         name: team.name,
-        slug: team.slug,
+        slug: team.slug ?? '',
         description: team.description ?? '',
     }) satisfies Team;
 
-const ensureUniqueSlug = async (name: string) => {
-    const baseSlug = slugify(name);
-    let slug = baseSlug;
-    let counter = 1;
-
-    while (counter < 100) {
-        try {
-            const result = await authClient.organization.checkSlug({ slug });
-            if (result && typeof result === 'object' && 'data' in result && result.data?.status) {
-                return slug;
-            }
-        } catch {
-            // Slug ocupado u otro error: intentar con el siguiente
-        }
-        slug = `${baseSlug}-${counter}`;
-        counter += 1;
-    }
-
-    return slug;
-};
-
 /**
- * Hook para obtener todos los equipos del usuario actual
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ * Hook para obtener todos los equipos
+ * Los admins ven todos los equipos, los usuarios solo los suyos
  */
 export function useTeams() {
-    return useSuspenseQuery({
-        queryKey: TEAMS_QUERY_KEY,
-        queryFn: async () => {
-            const result = await authClient.organization.list();
-            const teams =
-                result && typeof result === 'object' && 'data' in result ? result.data : [];
-            return (teams ?? []).map(normalizeTeam);
+    return useQuery({
+        ...convexQuery(api.teams.getTeams, {}),
+        select: data => {
+            // Handle both array and paginated response formats
+            const teams = Array.isArray(data) ? data : [];
+            return teams.map(team => normalizeTeam(team as OrganizationDoc));
         },
     });
 }
 
 /**
  * Hook para obtener un equipo por su ID
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useTeam(teamId: string | null) {
     return useQuery({
-        queryKey: ['organization', teamId],
-        enabled: !!teamId,
-        queryFn: async () => {
-            if (!teamId) return null;
-            const result = await authClient.organization.list();
-            const teams =
-                result && typeof result === 'object' && 'data' in result ? result.data : [];
-            const team = (teams ?? []).find(t => t.id === teamId);
-            return team ? normalizeTeam(team) : null;
-        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...convexQuery(api.teams.getTeamById, teamId ? { _id: teamId as any } : 'skip'),
+        select: data => (data ? normalizeTeam(data as OrganizationDoc) : null),
     });
 }
 
 /**
  * Hook para crear un nuevo equipo
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
+ * Los equipos se crean vacíos - el admin invita miembros después
  */
 export function useCreateTeam() {
     const queryClient = useQueryClient();
+    const mutationFn = useConvexMutation(api.teams.createTeam);
 
     return useMutation({
         mutationFn: async (values: CreateTeamParams | CreateTeam) => {
-            const slug = await ensureUniqueSlug(values.name);
-            return await authClient.organization.create({
+            return await mutationFn({
                 name: values.name,
-                slug,
                 description: values.description,
             });
         },
         onSuccess: () => {
-            // Invalidar la query de equipos para refrescar la lista
             queryClient.invalidateQueries({
                 queryKey: TEAMS_QUERY_KEY,
             });
@@ -122,23 +88,21 @@ export function useCreateTeam() {
 
 /**
  * Hook para actualizar un equipo
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useUpdateTeam() {
     const queryClient = useQueryClient();
+    const mutationFn = useConvexMutation(api.teams.updateTeam);
 
     return useMutation({
         mutationFn: async (values: UpdateTeamParams | Team) => {
-            return await authClient.organization.update({
-                organizationId: values.id,
-                data: {
-                    name: values.name,
-                    description: values.description,
-                },
+            return await mutationFn({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                _id: values.id as any,
+                name: values.name,
+                description: values.description,
             });
         },
         onSuccess: () => {
-            // Invalidar las queries relacionadas
             queryClient.invalidateQueries({
                 queryKey: TEAMS_QUERY_KEY,
             });
@@ -148,19 +112,19 @@ export function useUpdateTeam() {
 
 /**
  * Hook para eliminar un equipo
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
  */
 export function useDeleteTeam() {
     const queryClient = useQueryClient();
+    const mutationFn = useConvexMutation(api.teams.deleteTeam);
 
     return useMutation({
         mutationFn: async (values: { id: string }) => {
-            return await authClient.organization.delete({
-                organizationId: values.id,
+            return await mutationFn({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                _id: values.id as any,
             });
         },
         onSuccess: () => {
-            // Invalidar la query de equipos para refrescar la lista
             queryClient.invalidateQueries({
                 queryKey: TEAMS_QUERY_KEY,
             });
