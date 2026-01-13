@@ -24,7 +24,7 @@ type User = {
     createdAt?: number;
 };
 
-export function UsersTable() {
+export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
 
@@ -214,7 +214,7 @@ export function UsersTable() {
     console.log(users);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" {...props}>
             <DataTable columns={columns} data={users} isLoading={isLoadingUsers} />
             {users.length === 0 && !isLoadingUsers && (
                 <p className="text-center text-muted-foreground py-8">

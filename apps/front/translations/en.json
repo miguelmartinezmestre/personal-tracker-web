@@ -14,95 +14,95 @@
         },
         "onboarding": {
             "title": "Welcome to Metricas!",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Welcome to Metricas! 🎉",
-                    "content": "Let's take a quick tour to help you get started with tracking your goals and achievements."
+                    "content": "Let's take a quick tour to help you get started. You can navigate your app using this sidebar menu."
                 },
-                {
+                "1": {
                     "title": "Objectives",
                     "content": "Click here to go to the objectives page where you can create and manage your goals."
                 },
-                {
+                "2": {
                     "title": "Create Objectives",
                     "content": "Click this button to create new objectives and track your progress towards your goals."
                 },
-                {
+                "3": {
                     "title": "Your Objectives",
                     "content": "View all your objectives here. You can filter, sort, and update your progress."
                 },
-                {
+                "4": {
                     "title": "Achievements",
                     "content": "Click here to view your achievements and track your progress towards earning badges."
                 },
-                {
+                "5": {
                     "title": "Earn Badges 🏆",
                     "content": "Complete objectives to unlock achievements and earn badges. Keep up the great work!"
                 },
-                {
+                "6": {
                     "title": "Settings",
                     "content": "In Settings, you can manage your account, restart this tour, or explore other options."
                 }
-            ]
+            }
         },
         "objectives-feature": {
             "title": "Objectives Tour",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Objectives Page",
                     "content": "Welcome to the objectives page. Here you can manage all your personal and professional goals."
                 },
-                {
+                "1": {
                     "title": "Create Objective",
                     "content": "Click this button to create a new objective. You can set targets, deadlines, and track progress."
                 },
-                {
+                "2": {
                     "title": "Your Objectives",
                     "content": "View all your objectives in one place. Filter, sort, and update your progress here."
                 },
-                {
+                "3": {
                     "title": "Filter Objectives",
                     "content": "Use these filters to find specific objectives by status, category, or deadline."
                 }
-            ]
+            }
         },
         "achievements-feature": {
             "title": "Achievements Tour",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Achievements Page",
                     "content": "Here you can see all available achievements and your progress towards unlocking them."
                 },
-                {
+                "1": {
                     "title": "Achievement Badges",
                     "content": "Browse achievements by category. Earn badges by completing objectives and maintaining streaks!"
                 },
-                {
+                "2": {
                     "title": "Filter Achievements",
                     "content": "Use these tabs to view earned, locked, or all achievements."
                 },
-                {
+                "3": {
                     "title": "Your Stats",
                     "content": "Track your total points, completion rate, and overall achievement progress here."
                 }
-            ]
+            }
         },
         "teams-feature": {
             "title": "Admin Panel Tour",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Admin Panel",
                     "content": "As an administrator, you have access to additional tools for managing users and monitoring the system."
                 },
-                {
+                "1": {
                     "title": "User Management",
                     "content": "View and manage all users in the system. You can update roles and handle account actions."
                 },
-                {
+                "2": {
                     "title": "Audit Logs",
                     "content": "Review system activity and audit logs to track changes and ensure security."
                 }
-            ]
+            }
         },
         "settings": {
             "toursSection": "Guided Tours",

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Tour, TourId } from '@/types/tour';
+import type { Tour, TourId, TourStep } from '@/types/tour';
 
 /**
  * Maximum number of retries when a target element is not found.
@@ -8,18 +8,133 @@ import type { Tour, TourId } from '@/types/tour';
 export const MAX_TARGET_RETRIES = 10;
 
 /**
- * Delay between retries in milliseconds (requestAnimationFrame timing).
+ * Delay between retries in milliseconds.
  */
 export const RETRY_DELAY_MS = 100;
 
 /**
+ * Helper to create a tour step with consistent configuration.
+ */
+function createStep(
+    selector: string,
+    options?: {
+        side?: 'top' | 'bottom' | 'left' | 'right';
+        route?: string;
+        showControls?: boolean;
+        showSkip?: boolean;
+        disableBeacon?: boolean;
+        pointerPadding?: number;
+        pointerRadius?: number;
+        icon?: string;
+    }
+): TourStep {
+    return {
+        selector,
+        side: options?.side ?? 'bottom',
+        showControls: options?.showControls ?? true,
+        showSkip: options?.showSkip ?? true,
+        disableBeacon: options?.disableBeacon ?? false,
+        ...options,
+    };
+}
+
+/**
+ * Onboarding tour steps.
+ */
+const onboardingSteps: readonly TourStep[] = [
+    // Step 0: Welcome on dashboard - use the sidebar menu which is visible
+    createStep('[data-tour="sidebar-menu"]', {
+        side: 'right',
+        icon: '🎉',
+    }),
+    // Step 1: Point to sidebar objectives link - click to navigate
+    createStep('[data-tour="sidebar-objectives"]', {
+        side: 'right',
+        route: '/dashboard/objectives',
+    }),
+    // Step 2: After navigation, show create button (on objectives page)
+    createStep('[data-tour="create-objective-btn"]', {
+        side: 'bottom',
+    }),
+    // Step 3: Explain the objectives list area
+    createStep('[data-tour="objectives-list"]', {
+        side: 'top',
+    }),
+    // Step 4: Back to sidebar - show achievements
+    createStep('[data-tour="sidebar-achievements"]', {
+        side: 'right',
+        route: '/dashboard/achievements',
+    }),
+    // Step 5: After navigation, show achievements widget
+    createStep('[data-tour="achievements-widget"]', {
+        side: 'left',
+        icon: '🏆',
+    }),
+    // Step 6: Show settings
+    createStep('[data-tour="sidebar-settings"]', {
+        side: 'right',
+    }),
+] as const;
+
+/**
+ * Objectives feature tour steps.
+ */
+const objectivesFeatureSteps: readonly TourStep[] = [
+    createStep('[data-tour="sidebar-objectives"]', {
+        side: 'right',
+        route: '/dashboard/objectives',
+    }),
+    createStep('[data-tour="create-objective-btn"]', {
+        side: 'bottom',
+    }),
+    createStep('[data-tour="objectives-list"]', {
+        side: 'top',
+    }),
+    createStep('[data-tour="objective-filters"]', {
+        side: 'bottom',
+    }),
+] as const;
+
+/**
+ * Achievements feature tour steps.
+ */
+const achievementsFeatureSteps: readonly TourStep[] = [
+    createStep('[data-tour="sidebar-achievements"]', {
+        side: 'right',
+        route: '/dashboard/achievements',
+    }),
+    createStep('[data-tour="achievements-grid"]', {
+        side: 'top',
+    }),
+    createStep('[data-tour="achievement-filters"]', {
+        side: 'bottom',
+    }),
+    createStep('[data-tour="achievement-stats"]', {
+        side: 'left',
+    }),
+] as const;
+
+/**
+ * Teams feature tour steps (admin only).
+ */
+const teamsFeatureSteps: readonly TourStep[] = [
+    createStep('[data-tour="sidebar-admin"]', {
+        side: 'right',
+        route: '/dashboard/admin-panel',
+    }),
+    createStep('[data-tour="admin-users-table"]', {
+        side: 'top',
+    }),
+    createStep('[data-tour="admin-audit-logs"]', {
+        side: 'left',
+    }),
+] as const;
+
+/**
  * Tour definitions for the application.
  * Each tour has a unique ID, ordered steps, and metadata.
- *
- * Steps use data-tour attributes for stable targeting.
- * Example: <button data-tour="create-objective-btn" />
  */
-export const TOUR_DEFINITIONS: Record<TourId, Tour> = {
+export const TOUR_DEFINITIONS = {
     /**
      * Onboarding Tour - Complete interactive tutorial
      * Guides new users through the app basics
@@ -29,48 +144,7 @@ export const TOUR_DEFINITIONS: Record<TourId, Tour> = {
         autoStart: true,
         runOnce: true,
         startDelay: 1500,
-        steps: [
-            // Step 0: Welcome on dashboard
-            {
-                target: '[data-tour="welcome-message"]',
-                disableBeacon: true,
-                placement: 'bottom',
-            },
-            // Step 1: Point to sidebar objectives link - click to navigate
-            {
-                target: '[data-tour="sidebar-objectives"]',
-                placement: 'right',
-            },
-            // Step 2: After navigation, show create button (on objectives page)
-            {
-                target: '[data-tour="create-objective-btn"]',
-                route: '/dashboard/objectives',
-                placement: 'bottom',
-            },
-            // Step 3: Explain the objectives list area
-            {
-                target: '[data-tour="objectives-list"]',
-                route: '/dashboard/objectives',
-                placement: 'top',
-            },
-            // Step 4: Back to sidebar - show achievements
-            {
-                target: '[data-tour="sidebar-achievements"]',
-                route: '/dashboard/objectives',
-                placement: 'right',
-            },
-            // Step 5: After navigation, show achievements widget
-            {
-                target: '[data-tour="achievements-widget"]',
-                route: '/dashboard/achievements',
-                placement: 'left',
-            },
-            // Step 6: Show settings
-            {
-                target: '[data-tour="sidebar-settings"]',
-                placement: 'right',
-            },
-        ],
+        steps: onboardingSteps,
     },
 
     /**
@@ -81,28 +155,7 @@ export const TOUR_DEFINITIONS: Record<TourId, Tour> = {
         id: 'objectives-feature',
         autoStart: false,
         runOnce: false,
-        steps: [
-            {
-                target: '[data-tour="sidebar-objectives"]',
-                route: '/dashboard/objectives',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="create-objective-btn"]',
-                route: '/dashboard/objectives',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="objectives-list"]',
-                route: '/dashboard/objectives',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="objective-filters"]',
-                route: '/dashboard/objectives',
-                placement: 'bottom',
-            },
-        ],
+        steps: objectivesFeatureSteps,
     },
 
     /**
@@ -113,28 +166,7 @@ export const TOUR_DEFINITIONS: Record<TourId, Tour> = {
         id: 'achievements-feature',
         autoStart: false,
         runOnce: false,
-        steps: [
-            {
-                target: '[data-tour="sidebar-achievements"]',
-                route: '/dashboard/achievements',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="achievements-grid"]',
-                route: '/dashboard/achievements',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="achievement-filters"]',
-                route: '/dashboard/achievements',
-                placement: 'bottom',
-            },
-            {
-                target: '[data-tour="achievement-stats"]',
-                route: '/dashboard/achievements',
-                placement: 'left',
-            },
-        ],
+        steps: achievementsFeatureSteps,
     },
 
     /**
@@ -146,31 +178,15 @@ export const TOUR_DEFINITIONS: Record<TourId, Tour> = {
         autoStart: false,
         runOnce: false,
         requiredRole: 'admin',
-        steps: [
-            {
-                target: '[data-tour="sidebar-admin"]',
-                route: '/dashboard/admin-panel',
-                placement: 'right',
-            },
-            {
-                target: '[data-tour="admin-users-table"]',
-                route: '/dashboard/admin-panel',
-                placement: 'top',
-            },
-            {
-                target: '[data-tour="admin-audit-logs"]',
-                route: '/dashboard/admin-panel',
-                placement: 'left',
-            },
-        ],
+        steps: teamsFeatureSteps,
     },
-};
+} as const;
 
 /**
  * Get a tour definition by ID.
  */
 export function getTourDefinition(tourId: TourId): Tour {
-    return TOUR_DEFINITIONS[tourId];
+    return TOUR_DEFINITIONS[tourId] as Tour;
 }
 
 /**
@@ -185,4 +201,27 @@ export function getAllTourIds(): TourId[] {
  */
 export function tourExists(tourId: string): tourId is TourId {
     return tourId in TOUR_DEFINITIONS;
+}
+
+/**
+ * Get the translation key for a step's title.
+ * Format: Tours.{tourId}.steps.{stepIndex}.title
+ */
+export function getStepTitleKey(tourId: TourId, stepIndex: number): string {
+    return `Tours.${tourId}.steps.${stepIndex}.title`;
+}
+
+/**
+ * Get the translation key for a step's content.
+ * Format: Tours.{tourId}.steps.{stepIndex}.content
+ */
+export function getStepContentKey(tourId: TourId, stepIndex: number): string {
+    return `Tours.${tourId}.steps.${stepIndex}.content`;
+}
+
+/**
+ * Get the full translation key for a step.
+ */
+export function getStepKey(tourId: TourId, stepIndex: number): string {
+    return `Tours.${tourId}.steps.${stepIndex}`;
 }

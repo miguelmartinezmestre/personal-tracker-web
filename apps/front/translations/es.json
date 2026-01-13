@@ -14,95 +14,95 @@
         },
         "onboarding": {
             "title": "¡Bienvenido a Métricas!",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "¡Bienvenido a Métricas! 🎉",
-                    "content": "Tomemos un recorrido rápido para ayudarte a comenzar a hacer seguimiento de tus metas y logros."
+                    "content": "Tomemos un recorrido rápido para ayudarte a comenzar. Puedes navegar tu aplicación usando este menú lateral."
                 },
-                {
+                "1": {
                     "title": "Objetivos",
                     "content": "Haz clic aquí para ir a la página de objetivos donde puedes crear y gestionar tus metas."
                 },
-                {
+                "2": {
                     "title": "Crear Objetivos",
                     "content": "Haz clic en este botón para crear nuevos objetivos y hacer seguimiento de tu progreso."
                 },
-                {
+                "3": {
                     "title": "Tus Objetivos",
                     "content": "Ve todos tus objetivos aquí. Puedes filtrar, ordenar y actualizar tu progreso."
                 },
-                {
+                "4": {
                     "title": "Logros",
                     "content": "Haz clic aquí para ver tus logros y hacer seguimiento de tu progreso para ganar insignias."
                 },
-                {
+                "5": {
                     "title": "Gana Insignias 🏆",
                     "content": "Completa objetivos para desbloquear logros y ganar insignias. ¡Continúa con el buen trabajo!"
                 },
-                {
+                "6": {
                     "title": "Configuración",
                     "content": "En Configuración puedes gestionar tu cuenta, reiniciar este tour o explorar otras opciones."
                 }
-            ]
+            }
         },
         "objectives-feature": {
             "title": "Tour de Objetivos",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Página de Objetivos",
                     "content": "Bienvenido a la página de objetivos. Aquí puedes gestionar todas tus metas personales y profesionales."
                 },
-                {
+                "1": {
                     "title": "Crear Objetivo",
                     "content": "Haz clic en este botón para crear un nuevo objetivo. Puedes establecer metas, fechas límite y hacer seguimiento del progreso."
                 },
-                {
+                "2": {
                     "title": "Tus Objetivos",
                     "content": "Ve todos tus objetivos en un solo lugar. Filtra, ordena y actualiza tu progreso aquí."
                 },
-                {
+                "3": {
                     "title": "Filtrar Objetivos",
                     "content": "Usa estos filtros para encontrar objetivos específicos por estado, categoría o fecha límite."
                 }
-            ]
+            }
         },
         "achievements-feature": {
             "title": "Tour de Logros",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Página de Logros",
                     "content": "Aquí puedes ver todos los logros disponibles y tu progreso para desbloquearlos."
                 },
-                {
+                "1": {
                     "title": "Insignias de Logros",
                     "content": "Explora los logros por categoría. ¡Gana insignias completando objetivos y manteniendo rachas!"
                 },
-                {
+                "2": {
                     "title": "Filtrar Logros",
                     "content": "Usa estas pestañas para ver logros obtenidos, bloqueados o todos los logros."
                 },
-                {
+                "3": {
                     "title": "Tus Estadísticas",
                     "content": "Haz seguimiento de tus puntos totales, tasa de finalización y progreso general de logros aquí."
                 }
-            ]
+            }
         },
         "teams-feature": {
             "title": "Tour del Panel de Administración",
-            "steps": [
-                {
+            "steps": {
+                "0": {
                     "title": "Panel de Administración",
                     "content": "Como administrador, tienes acceso a herramientas adicionales para gestionar usuarios y monitorear el sistema."
                 },
-                {
+                "1": {
                     "title": "Gestión de Usuarios",
                     "content": "Ve y gestiona todos los usuarios del sistema. Puedes actualizar roles y manejar acciones de cuenta."
                 },
-                {
+                "2": {
                     "title": "Registros de Auditoría",
                     "content": "Revisa la actividad del sistema y los registros de auditoría para rastrear cambios y garantizar la seguridad."
                 }
-            ]
+            }
         },
         "settings": {
             "toursSection": "Tours Guiados",
