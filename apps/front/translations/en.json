@@ -101,6 +101,10 @@
                 "2": {
                     "title": "Audit Logs",
                     "content": "Review system activity and audit logs to track changes and ensure security."
+                },
+                "3": {
+                    "title": "Audit Log Records",
+                    "content": "View detailed audit records of all system actions, including who made changes and when."
                 }
             }
         },
@@ -682,9 +686,12 @@
                 "create": "Create",
                 "creating": "Creating...",
                 "update": "Update",
-                "updating": "Updating..."
+                "updating": "Updating...",
+                "delete": "Delete",
+                "confirm": "Confirm"
             },
             "confirmDelete": "Are you sure you want to delete this category?",
+            "confirmDeleteDescription": "This action cannot be undone. This will permanently delete the category.",
             "toast": {
                 "createSuccess": "Category created successfully",
                 "createFailed": "Failed to create category",

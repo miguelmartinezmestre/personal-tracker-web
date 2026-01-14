@@ -101,6 +101,10 @@
                 "2": {
                     "title": "Registros de Auditoría",
                     "content": "Revisa la actividad del sistema y los registros de auditoría para rastrear cambios y garantizar la seguridad."
+                },
+                "3": {
+                    "title": "Registros de Auditoría Detallados",
+                    "content": "Ve registros de auditoría detallados de todas las acciones del sistema, incluyendo quién realizó cambios y cuándo."
                 }
             }
         },
@@ -266,6 +270,7 @@
         "home": "Inicio",
         "dashboard": "Dashboard",
         "objectives": "Objetivos",
+        "categories": "Categorías",
         "achievements": "Logros",
         "notifications": "Notificaciones",
         "sessions": "Sesiones",
