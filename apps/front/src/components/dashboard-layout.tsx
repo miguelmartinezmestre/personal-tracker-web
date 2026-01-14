@@ -3,6 +3,7 @@ import { ThemeToggle } from '@/components/theme-switcher';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@repo/ui/components/sidebar';
 import CommandMenu from '@/components/command';
 import { LanguageSwitcher } from './language-switcher';
+import { OrganizationSwitcher } from './organization-switcher';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -18,6 +19,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
+                        <OrganizationSwitcher />
                         <ThemeToggle />
                         <LanguageSwitcher />
                     </div>

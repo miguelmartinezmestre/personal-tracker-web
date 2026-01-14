@@ -9,6 +9,33 @@ import authConfig from './auth.config';
 import authSchema from './betterAuth/schema';
 
 const siteUrl = process.env.SITE_URL!;
+const emailApiUrl = process.env.EMAIL_API_URL ?? 'http://localhost:3001';
+
+/**
+ * Send team invitation email via the email API
+ */
+async function sendTeamInvitationEmail(data: {
+    to: string;
+    organizationName: string;
+    inviterName: string;
+    inviterEmail: string;
+    invitationLink: string;
+}): Promise<void> {
+    const url = `${emailApiUrl}/api/email/team-invitation`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[sendTeamInvitationEmail] Failed to send email:', errorText);
+        }
+    } catch (error) {
+        console.error('[sendTeamInvitationEmail] Error sending email:', error);
+    }
+}
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     return {
@@ -23,7 +50,24 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
             // The Convex plugin is required for Convex compatibility
             convex({ authConfig }),
             admin(),
-            organization(),
+            organization({
+                // Invitations never expire
+                invitationExpiry: false,
+                // Default role for invited members
+                defaultRole: 'member',
+                // Configure custom email sending for invitations
+                sendInvitationEmail: async (data) => {
+                    const inviteLink = `${siteUrl}/invitations/${data.id}`;
+                    console.log('[sendTeamInvitationEmail] Invite link:', inviteLink);
+                    // await sendTeamInvitationEmail({
+                    //     to: data.email,
+                    //     organizationName: data.organization.name,
+                    //     inviterName: data.inviter.user.name,
+                    //     inviterEmail: data.inviter.user.email,
+                    //     invitationLink: inviteLink,
+                    // });
+                },
+            }),
         ],
     } satisfies BetterAuthOptions;
 };

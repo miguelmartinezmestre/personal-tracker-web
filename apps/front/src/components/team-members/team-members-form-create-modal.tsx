@@ -23,7 +23,6 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { useParams } from 'next/navigation';
 import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
 import {
     Select,
@@ -36,10 +35,12 @@ import { TeamRole } from '@/schemas/roles';
 import { useTranslations } from 'next-intl';
 import { useCreateTeamMember } from '@/hooks/api/use-team-members';
 
-export default function CreateTeamMemberFormModal() {
+interface CreateTeamMemberFormModalProps {
+    teamId: string;
+}
+
+export default function CreateTeamMemberFormModal({ teamId }: CreateTeamMemberFormModalProps) {
     const t = useTranslations('TeamMembers');
-    const { id } = useParams();
-    const teamId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : null;
     const createTeamMember = useCreateTeamMember();
 
     const roleOptions = [
@@ -53,7 +54,7 @@ export default function CreateTeamMemberFormModal() {
         defaultValues: {
             email: '',
             role: 'member',
-            organizationId: teamId ?? '',
+            organizationId: teamId,
         },
         validators: {
             onChange: teamMemberSchema,
@@ -65,9 +66,8 @@ export default function CreateTeamMemberFormModal() {
     });
 
     const onSubmit = async (values: CreateTeamMember) => {
-        if (!values.organizationId) return;
         await createTeamMember.mutateAsync({
-            organizationId: values.organizationId,
+            organizationId: teamId,
             email: values.email,
             role: values.role,
         });

@@ -27,7 +27,7 @@ export interface EmailConfig {
 export function getEmailConfig(): EmailConfig {
     return {
         smtpHost: process.env.SMTP_HOST ?? 'localhost',
-        smtpPort: Number(process.env.SMTP_PORT) ?? 587,
+        smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
         smtpSecure: process.env.SMTP_SECURE === 'true',
         smtpUser: process.env.SMTP_USER ?? null,
         smtpPass: process.env.SMTP_PASS ?? null,

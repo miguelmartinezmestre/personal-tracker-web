@@ -18,14 +18,19 @@ import { useState } from 'react';
 import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 
 export default function RegisterForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [registerError, setRegisterError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Get invitation token from URL if coming from an invitation link
+    const invitationToken = searchParams.get('invitation');
 
     const form = useForm<z.infer<typeof registerSchema>>({
         defaultValues: {
@@ -33,6 +38,7 @@ export default function RegisterForm() {
             password: '',
             confirmPassword: '',
             username: '',
+            organizationSlug: invitationToken ? undefined : '',
         },
         validators: {
             onChange: registerSchema,
@@ -44,26 +50,76 @@ export default function RegisterForm() {
     });
 
     async function onSubmit(values: z.infer<typeof registerSchema>) {
-        if (values.password !== values.confirmPassword) {
-            setRegisterError(t('errors.passwordsDontMatch'));
+        // Clear any previous error
+        setRegisterError('');
+
+        // Require organizationSlug if NOT coming from an invitation
+        if (!invitationToken && !values.organizationSlug) {
+            setRegisterError(tCommon('fields.organizationSlug') + ' is required');
             return;
         }
 
-        await authClient.signUp.email(
-            {
-                name: values.username,
-                email: values.email,
-                password: values.password,
-            },
-            {
-                onSuccess: () => {
-                    router.push('/dashboard/home');
+        setIsSubmitting(true);
+
+        try {
+            await authClient.signUp.email(
+                {
+                    name: values.username,
+                    email: values.email,
+                    password: values.password,
                 },
-                onError: ctx => {
-                    setRegisterError(ctx.error.message || t('errors.registerFallback'));
-                },
-            }
-        );
+                {
+                    onSuccess: async () => {
+                        try {
+                            // If coming from an invitation, accept it and set as active
+                            if (invitationToken) {
+                                await authClient.organization.acceptInvitation({
+                                    invitationId: invitationToken,
+                                });
+
+                                // Get all organizations to find the invited one and set it as active
+                                const orgsResult = await authClient.organization.list();
+                                const organizations = (orgsResult as any)?.data || [];
+
+                                // Set the first organization as active (the invited one)
+                                if (organizations.length > 0) {
+                                    await authClient.organization.setActive({
+                                        organizationId: organizations[0].id,
+                                    });
+                                }
+                            } else {
+                                // No invitation - create user's own organization
+                                const createOrgResult = await authClient.organization.create({
+                                    name: `${values.username}'s Organization`,
+                                    slug: values.organizationSlug as string,
+                                });
+
+                                const ownOrganizationId = (createOrgResult as any)?.data?.id || (createOrgResult as any)?.id;
+
+                                if (ownOrganizationId) {
+                                    await authClient.organization.setActive({
+                                        organizationId: ownOrganizationId,
+                                    });
+                                }
+                            }
+
+                            router.push('/dashboard/home');
+                        } catch (error: any) {
+                            console.error('Error after registration:', error);
+                            setRegisterError(error.message || 'Error during registration');
+                            setIsSubmitting(false);
+                        }
+                    },
+                    onError: ctx => {
+                        setRegisterError(ctx.error.message || t('errors.registerFallback'));
+                        setIsSubmitting(false);
+                    },
+                }
+            );
+        } catch (error: any) {
+            setRegisterError(error.message || t('errors.registerFallback'));
+            setIsSubmitting(false);
+        }
     }
 
     return (
@@ -166,12 +222,39 @@ export default function RegisterForm() {
                     )}
                 />
 
+                {/* Only show organizationSlug field if NOT coming from an invitation */}
+                {!invitationToken && (
+                    <FormField
+                        name="organizationSlug"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">
+                                    {tCommon('fields.organizationSlug')}
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        placeholder={tCommon('placeholders.organizationSlug')}
+                                        className="focus:ring-2 focus:ring-primary/20"
+                                        data-testid="register-organization-slug-input"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {tCommon('fields.organizationSlugHint')}
+                                </p>
+                            </FormItem>
+                        )}
+                    />
+                )}
+
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
                     data-testid="register-button"
+                    disabled={isSubmitting}
                 >
-                    {t('register')}
+                    {isSubmitting ? tCommon('loading') : t('register')}
                 </Button>
 
                 <div className="text-center mt-4">

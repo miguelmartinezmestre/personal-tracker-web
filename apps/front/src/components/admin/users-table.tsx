@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import { Badge } from '@repo/ui/components/badge';
@@ -12,17 +12,8 @@ import { EditUserModal } from './edit-user-modal';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
-
-type User = {
-    id: string;
-    email: string;
-    name: string;
-    role?: string | string[] | null;
-    banned?: boolean | null;
-    banExpires?: number | null;
-    banReason?: string | null;
-    createdAt?: number;
-};
+import { useAdminUsers } from '@/hooks/api/use-admin';
+import type { BetterAuthUser } from '@repo/backend/convex/admin';
 
 export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
     const t = useTranslations('Admin');
@@ -38,21 +29,11 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
         data: userData,
         isLoading: isLoadingUsers,
         refetch,
-    } = useQuery({
-        queryKey: ['admin-users', searchValue, page, limit],
-        queryFn: async () => {
-            const result = await authClient.admin.listUsers({
-                query: {
-                    searchValue: searchValue || undefined,
-                    searchField: 'email',
-                    limit,
-                    offset: page * limit,
-                    sortBy: 'createdAt',
-                    sortDirection: 'desc',
-                },
-            });
-            const data = (result as { data?: unknown })?.data || result;
-            return data || { users: [], total: 0 };
+    } = useAdminUsers({
+        searchValue,
+        paginationOpts: {
+            numItems: limit,
+            cursor: null,
         },
     });
 
@@ -101,13 +82,13 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
         },
     });
 
-    const columns: ColumnDef<User>[] = [
+    const columns: ColumnDef<BetterAuthUser>[] = [
         {
             accessorKey: 'id',
             header: t('usersTable.columns.id'),
             cell: ({ row }) => (
                 <span className="font-mono text-xs text-muted-foreground">
-                    {row.original.id}
+                    {row.original._id}
                 </span>
             ),
         },
@@ -165,7 +146,7 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => unbanUser.mutate({ userId: user.id })}
+                                onClick={() => unbanUser.mutate({ userId: user._id })}
                                 disabled={unbanUser.isPending}
                                 data-testid="user-unban-button"
                             >
@@ -175,7 +156,7 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => banUser.mutate({ userId: user.id })}
+                                onClick={() => banUser.mutate({ userId: user._id })}
                                 disabled={banUser.isPending}
                                 data-testid="user-ban-button"
                             >
@@ -184,7 +165,7 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
                         )}
                         <DeleteConfirmationDialog
                             onConfirm={async () => {
-                                await deleteUser.mutateAsync({ userId: user.id });
+                                await deleteUser.mutateAsync({ userId: user._id });
                             }}
                             title={t('usersTable.confirm.deleteUser')}
                             description={t('usersTable.confirm.deleteUserDescription')}
@@ -208,15 +189,12 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
         },
     ];
 
-    const users = (userData as { users?: User[]; total?: number })?.users || [];
-    const _total = (userData as { users?: User[]; total?: number })?.total || 0;
-
-    console.log(users);
+    console.log(userData);
 
     return (
         <div className="space-y-4" {...props}>
-            <DataTable columns={columns} data={users} isLoading={isLoadingUsers} />
-            {users.length === 0 && !isLoadingUsers && (
+            <DataTable columns={columns} data={userData?.page || []} isLoading={isLoadingUsers} />
+            {userData?.page?.length === 0 && !isLoadingUsers && (
                 <p className="text-center text-muted-foreground py-8">
                     {searchValue ? t('usersTable.emptyWithSearch') : t('usersTable.empty')}
                 </p>

@@ -8,6 +8,8 @@ test('objectives end-to-end: register, validate, create, progress, edit, delete'
     const uuid = randomUUID();
     const username = `usernametest-${uuid}`;
     const email = `useremail-${uuid}@useremail.com`;
+    const shortId = uuid.substring(0, 8);
+    const organizationSlug = `org-${shortId}`;
 
     // Register a new user
     await page.goto('/register');
@@ -15,6 +17,7 @@ test('objectives end-to-end: register, validate, create, progress, edit, delete'
     await page.getByTestId('register-email-input').fill(email);
     await page.getByTestId('register-password-input').fill('12345678');
     await page.getByTestId('register-confirm-password-input').fill('12345678');
+    await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
     await page.getByTestId('register-button').click();
 
     await expect(page).toHaveURL(/\/dashboard\/home$/);
@@ -92,6 +95,8 @@ test('objectives: validation for required fields', async ({ page }) => {
     const uuid = randomUUID();
     const username = `usernametest-${uuid}`;
     const email = `useremail-${uuid}@useremail.com`;
+    const shortId = uuid.substring(0, 8);
+    const organizationSlug = `org-${shortId}`;
 
     // Register and login
     await page.goto('/register');
@@ -99,6 +104,7 @@ test('objectives: validation for required fields', async ({ page }) => {
     await page.getByTestId('register-email-input').fill(email);
     await page.getByTestId('register-password-input').fill('12345678');
     await page.getByTestId('register-confirm-password-input').fill('12345678');
+    await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
 

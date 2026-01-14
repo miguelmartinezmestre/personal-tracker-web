@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Shield, Trophy, Settings, Users } from 'lucide-react';
+import { Bell, FileText, Frame, Goal, Home, Shield, Trophy, Settings, Users, Activity, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -37,6 +37,11 @@ const baseProjects: ProjectNavItem[] = [
         name: 'objectives',
         url: '/dashboard/objectives',
         icon: Goal,
+    },
+    {
+        name: 'categories',
+        url: '/dashboard/categories',
+        icon: Tag,
     },
     {
         name: 'achievements',
@@ -96,11 +101,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const projects = useMemo(() => {
         const items = [...baseProjects];
         if (isAdmin) {
-            items.push({
-                name: 'admin',
-                url: '/dashboard/admin-panel' as Route,
-                icon: Shield,
-            });
+            items.push(
+                {
+                    name: 'users',
+                    url: '/dashboard/admin/users' as Route,
+                    icon: Users,
+                },
+                {
+                    name: 'adminSessions',
+                    url: '/dashboard/admin/sessions' as Route,
+                    icon: Activity,
+                },
+                {
+                    name: 'adminAudit',
+                    url: '/dashboard/admin/audit' as Route,
+                    icon: FileText,
+                }
+            );
         }
         return items;
     }, [isAdmin]);
@@ -131,9 +148,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         ? 'sidebar-achievements'
                                         : item.name === 'settings'
                                             ? 'sidebar-settings'
-                                            : item.name === 'admin'
-                                                ? 'sidebar-admin'
-                                                : undefined;
+                                            : item.name === 'adminSessions'
+                                                ? 'sidebar-admin-sessions'
+                                                : item.name === 'adminAudit'
+                                                    ? 'sidebar-admin-audit'
+                                                    : undefined;
                             return (
                                 <SidebarMenuItem key={item.name}>
                                     <SidebarMenuButton asChild>

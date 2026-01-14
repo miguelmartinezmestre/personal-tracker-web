@@ -3,6 +3,7 @@ import { queryWithRLS, mutationWithRLS } from './rls';
 import { authComponent } from './auth';
 import { internal } from './_generated/api';
 import { createAuditLog, sanitizeForAudit, createChangeDiff } from './utils/auditLog';
+import { paginationOptsValidator } from 'convex/server';
 
 export const createUpdateProgress = mutationWithRLS({
     args: {
@@ -77,12 +78,22 @@ export const createUpdateProgress = mutationWithRLS({
 });
 
 export const getUpdateProgressByObjectiveId = queryWithRLS({
-    args: { objectiveId: v.id('objectives') },
+    args: {
+        objectiveId: v.id('objectives'),
+        paginationOpts: paginationOptsValidator,
+    },
     handler: async (ctx, args) => {
-        return await ctx.db
+        const results = await ctx.db
             .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-            .collect();
+            .withIndex('by_objective_date', q => q.eq('objective', args.objectiveId))
+            .order('desc')
+            .paginate(args.paginationOpts);
+
+        return {
+            page: results.page,
+            continueCursor: results.continueCursor,
+            isDone: results.isDone,
+        };
     },
 });
 

@@ -13,7 +13,7 @@ export default defineConfig({
     setupFiles: ["./apps/front/vitest.setup.ts"],
     server: { deps: { inline: ["convex-test", "@repo/ui", new RegExp("^@radix-ui/")] } },
     include: [
-      "packages/backend/convex/**/*.test.ts",
+      "packages/backend/convex/tests/**/*.test.ts",
       "apps/front/src/**/*.test.{ts,tsx}",
       "apps/front/src/**/*.spec.{ts,tsx}",
     ],

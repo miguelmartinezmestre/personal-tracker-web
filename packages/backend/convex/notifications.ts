@@ -3,6 +3,7 @@ import { queryWithRLS, mutationWithRLS } from './rls';
 import { authComponent } from './auth';
 import { internalMutation } from './_generated/server';
 import type { Doc } from './_generated/dataModel';
+import { paginationOptsValidator } from 'convex/server';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -44,14 +45,22 @@ const buildDeadlineMessage = (
 };
 
 export const getNotificationsByUser = queryWithRLS({
-    args: {},
-    handler: async ctx => {
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, { paginationOpts }) => {
         const userId = String(ctx.identity?.subject);
-        return await ctx.db
+        const results = await ctx.db
             .query('notifications')
             .withIndex('by_user_date', q => q.eq('user', userId))
             .order('desc')
-            .collect();
+            .paginate(paginationOpts);
+
+        return {
+            page: results.page,
+            continueCursor: results.continueCursor,
+            isDone: results.isDone,
+        };
     },
 });
 

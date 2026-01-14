@@ -1,64 +1,50 @@
 import { v } from 'convex/values';
 import { query, mutation } from './_generated/server';
 import { components } from './_generated/api';
-import { authComponent } from './auth';
+import { authComponent, createAuth } from './auth';
+import { paginationOptsValidator } from 'convex/server';
+
+export type BetterAuthUser = {
+    _id: string;
+    _creationTime: number;
+    name: string;
+    email: string;
+    emailVerified: boolean;
+    image: string | null;
+    createdAt: number;
+    updatedAt: number;
+    userId: string | null;
+    role: string | null;
+    banned: boolean | null;
+    banReason: string | null;
+    banExpires: number | null;
+};
+
+export type PaginationResult<T> = {
+    continueCursor: string | null;
+    isDone: boolean;
+    page: T[];
+};
+
+export type AdminUsersResult = PaginationResult<BetterAuthUser>;
 
 /**
  * List all users (admin only)
  */
 export const listUsers = query({
     args: {
-        limit: v.optional(v.number()),
-        offset: v.optional(v.number()),
+        paginationOpts: paginationOptsValidator,
         searchValue: v.optional(v.string()),
     },
-    handler: async (ctx, args) => {
-        // Verify admin role
-        const currentUser = await authComponent.getAuthUser(ctx);
-        if (!currentUser || currentUser.role !== 'admin') {
-            throw new Error('Admin access required');
-        }
-
-        const limit = args.limit ?? 10;
-        const offset = args.offset ?? 0;
+    handler: async (ctx, args): Promise<PaginationResult<BetterAuthUser>> => {
 
         // Get all users from BetterAuth user table
-        let users = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+        const users = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
             model: 'user',
-            paginationOpts: {
-                numItems: 1000,
-                cursor: null,
-            },
-        })) as Array<Record<string, unknown>>;
+            paginationOpts: args.paginationOpts,
+        })) as PaginationResult<BetterAuthUser>;
 
-        // Filter by search value if provided
-        if (args.searchValue) {
-            const search = args.searchValue.toLowerCase();
-            users = users.filter(
-                (user: { email?: string; name?: string }) =>
-                    user.email?.toLowerCase().includes(search) ||
-                    user.name?.toLowerCase().includes(search)
-            );
-        }
-
-        const total = users.length;
-
-        // Apply pagination
-        const paginatedUsers = users.slice(offset, offset + limit);
-
-        return {
-            users: paginatedUsers.map((user: Record<string, unknown>) => ({
-                id: user._id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-                banned: user.banned,
-                banReason: user.banReason,
-                banExpires: user.banExpires,
-                createdAt: user.createdAt,
-            })),
-            total,
-        };
+        return users;
     },
 });
 
@@ -72,23 +58,22 @@ export const banUser = mutation({
         banExpires: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
+
         // Verify admin role
         const currentUser = await authComponent.getAuthUser(ctx);
         if (!currentUser || currentUser.role !== 'admin') {
             throw new Error('Admin access required');
         }
 
-        // Update user to banned
-        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-            input: {
-                model: 'user',
-                where: [{ field: '_id', value: args.userId }],
-                update: {
-                    banned: true,
-                    banReason: args.banReason ?? 'Banned by administrator',
-                    banExpires: args.banExpires ?? null,
-                },
+        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+
+        await auth.api.banUser({
+            body: {
+                userId: args.userId,
+                banReason: args.banReason,
+                banExpiresIn: args.banExpires,
             },
+            headers,
         });
 
         return { success: true };
@@ -109,17 +94,13 @@ export const unbanUser = mutation({
             throw new Error('Admin access required');
         }
 
-        // Update user to unbanned
-        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-            input: {
-                model: 'user',
-                where: [{ field: '_id', value: args.userId }],
-                update: {
-                    banned: false,
-                    banReason: null,
-                    banExpires: null,
-                },
+        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+
+        await auth.api.unbanUser({
+            body: {
+                userId: args.userId,
             },
+            headers,
         });
 
         return { success: true };
@@ -180,50 +161,13 @@ export const deleteUser = mutation({
             throw new Error('Cannot delete your own account');
         }
 
-        // Delete user sessions first
-        const sessions = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'session',
-            paginationOpts: {
-                numItems: 1000,
-                cursor: null,
+        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+
+        await auth.api.removeUser({
+            body: {
+                userId: args.userId,
             },
-            where: [{ field: 'userId', value: args.userId }],
-        })) as Array<{ _id: string }>;
-
-        for (const session of sessions) {
-            await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
-                input: {
-                    model: 'session',
-                    where: [{ field: '_id', value: session._id }],
-                },
-            });
-        }
-
-        // Delete user accounts
-        const accounts = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'account',
-            paginationOpts: {
-                numItems: 1000,
-                cursor: null,
-            },
-            where: [{ field: 'userId', value: args.userId }],
-        })) as Array<{ _id: string }>;
-
-        for (const account of accounts) {
-            await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
-                input: {
-                    model: 'account',
-                    where: [{ field: '_id', value: account._id }],
-                },
-            });
-        }
-
-        // Delete user
-        await ctx.runMutation(components.betterAuth.adapter.deleteOne, {
-            input: {
-                model: 'user',
-                where: [{ field: '_id', value: args.userId }],
-            },
+            headers,
         });
 
         return { success: true };

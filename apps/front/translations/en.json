@@ -101,6 +101,10 @@
                 "2": {
                     "title": "Audit Logs",
                     "content": "Review system activity and audit logs to track changes and ensure security."
+                },
+                "3": {
+                    "title": "Audit Log Records",
+                    "content": "View detailed audit records of all system actions, including who made changes and when."
                 }
             }
         },
@@ -158,7 +162,9 @@
             "password": "Password",
             "confirmPassword": "Confirm password",
             "role": "Role",
-            "userId": "User ID"
+            "userId": "User ID",
+            "organizationSlug": "Organization Slug",
+            "organizationSlugHint": "Unique identifier for your organization (lowercase letters, numbers, and hyphens only)"
         },
         "placeholders": {
             "email": "name@email.com",
@@ -166,6 +172,7 @@
             "username": "username",
             "min8Chars": "At least 8 characters",
             "confirmPassword": "Confirm password",
+            "organizationSlug": "my-organization",
             "searchByEmail": "Search by email...",
             "userIdForSessions": "User ID to view sessions...",
             "searchDocs": "Search the docs...",
@@ -263,12 +270,16 @@
         "home": "Home",
         "dashboard": "Dashboard",
         "objectives": "Objectives",
+        "categories": "Categories",
         "achievements": "Achievements",
         "notifications": "Notifications",
         "sessions": "Sessions",
         "settings": "Settings",
-        "admin": "Admin",
-        "teams": "Teams"
+        "users": "Users",
+        "adminSessions": "Sessions Management",
+        "adminAudit": "Audit Logs",
+        "teams": "Teams",
+        "admin": "Admin"
     },
     "Achievements": {
         "title": "Achievements",
@@ -478,6 +489,14 @@
         "spanish": "Español",
         "english": "English"
     },
+    "OrganizationSwitcher": {
+        "label": "Organization",
+        "organizations": "Organizations",
+        "loading": "Loading...",
+        "noOrganization": "No organization",
+        "noOrganizations": "No organizations",
+        "manageTeams": "Manage teams"
+    },
     "ThemeSwitcher": {
         "toggle": "Change theme",
         "light": "Light",
@@ -667,9 +686,12 @@
                 "create": "Create",
                 "creating": "Creating...",
                 "update": "Update",
-                "updating": "Updating..."
+                "updating": "Updating...",
+                "delete": "Delete",
+                "confirm": "Confirm"
             },
             "confirmDelete": "Are you sure you want to delete this category?",
+            "confirmDeleteDescription": "This action cannot be undone. This will permanently delete the category.",
             "toast": {
                 "createSuccess": "Category created successfully",
                 "createFailed": "Failed to create category",
@@ -1082,7 +1104,17 @@
         "export": "Export",
         "exportCsv": "Export CSV",
         "exportExcel": "Export Excel",
-        "exportSheetName": "Data"
+        "exportSheetName": "Data",
+        "showing": "Showing",
+        "to": "to",
+        "ofTotal": "of",
+        "rows": "rows",
+        "page": "Page",
+        "of": "of",
+        "first": "First",
+        "last": "Last",
+        "previous": "Previous",
+        "next": "Next"
     },
     "TeamMembers": {
         "createNewTeamMember": "Create New Team Member",
@@ -1120,6 +1152,33 @@
             "deletedSuccess": "Member deleted successfully",
             "deleteFailed": "Failed to delete member"
         }
+    },
+    "Invitations": {
+        "title": "Invitations",
+        "description": "Manage your organization invitations.",
+        "loading": "Loading invitations...",
+        "errorLoading": "Error loading invitations",
+        "noPendingTitle": "No pending invitations",
+        "noPendingDescription": "You don't have any pending invitations at the moment.",
+        "invitedBy": "Invited by",
+        "accept": "Accept",
+        "reject": "Reject",
+        "accepting": "Accepting...",
+        "errorTitle": "Error",
+        "errorDescription": "An error occurred while processing the invitation.",
+        "errorAccepting": "Failed to accept the invitation. It may have been cancelled or expired.",
+        "acceptedTitle": "Invitation Accepted!",
+        "acceptedDescription": "You have successfully joined the organization.",
+        "redirecting": "Redirecting to dashboard...",
+        "goToDashboard": "Go to Dashboard",
+        "loginRequiredTitle": "Login Required",
+        "loginRequiredDescription": "Please login to accept this invitation.",
+        "login": "Login",
+        "noAccount": "Don't have an account?",
+        "register": "Register",
+        "acceptTitle": "Accept Invitation",
+        "acceptDescription": "You've been invited to join an organization. Click accept to join.",
+        "cancel": "Cancel"
     },
     "TextSelection": {
         "openIn": "Open in {provider}"

@@ -8,6 +8,7 @@ describe('registerSchema', () => {
             email: 'john@example.com',
             password: 'password123',
             confirmPassword: 'password123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(validRegister);
@@ -15,6 +16,7 @@ describe('registerSchema', () => {
         if (result.success) {
             expect(result.data.username).toBe('johndoe');
             expect(result.data.email).toBe('john@example.com');
+            expect(result.data.organizationSlug).toBe('my-organization');
         }
     });
 
@@ -23,6 +25,7 @@ describe('registerSchema', () => {
             email: 'test@example.com',
             password: 'password123',
             confirmPassword: 'password123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -35,6 +38,7 @@ describe('registerSchema', () => {
             email: 'test@example.com',
             password: 'password123',
             confirmPassword: 'password123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -46,6 +50,7 @@ describe('registerSchema', () => {
             username: 'johndoe',
             password: 'password123',
             confirmPassword: 'password123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -57,6 +62,7 @@ describe('registerSchema', () => {
             username: 'johndoe',
             email: 'test@example.com',
             confirmPassword: 'password123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -68,6 +74,7 @@ describe('registerSchema', () => {
             username: 'johndoe',
             email: 'test@example.com',
             password: 'password123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -80,6 +87,7 @@ describe('registerSchema', () => {
             email: 'test@example.com',
             password: 'short',
             confirmPassword: 'short',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -92,6 +100,7 @@ describe('registerSchema', () => {
             email: 'test@example.com',
             password: 'password123',
             confirmPassword: 'different123',
+            organizationSlug: 'my-organization',
         };
 
         const result = registerSchema.safeParse(invalidRegister);
@@ -110,6 +119,32 @@ describe('registerSchema', () => {
             email: 'not-an-email',
             password: 'password123',
             confirmPassword: 'password123',
+            organizationSlug: 'my-organization',
+        };
+
+        const result = registerSchema.safeParse(invalidRegister);
+        expect(result.success).toBe(false);
+    });
+
+    it('should require organizationSlug', () => {
+        const invalidRegister = {
+            username: 'johndoe',
+            email: 'test@example.com',
+            password: 'password123',
+            confirmPassword: 'password123',
+        };
+
+        const result = registerSchema.safeParse(invalidRegister);
+        expect(result.success).toBe(false);
+    });
+
+    it('should validate organizationSlug format', () => {
+        const invalidRegister = {
+            username: 'johndoe',
+            email: 'test@example.com',
+            password: 'password123',
+            confirmPassword: 'password123',
+            organizationSlug: 'Invalid_Slug', // Contains uppercase and underscore
         };
 
         const result = registerSchema.safeParse(invalidRegister);

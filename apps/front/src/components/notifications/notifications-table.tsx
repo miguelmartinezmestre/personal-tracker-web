@@ -1,9 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
@@ -13,6 +14,9 @@ import { Button } from '@repo/ui/components/button';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/table';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { useServerPagination } from '@/hooks/use-server-pagination';
+
+const DEFAULT_PAGE_SIZE = 20;
 
 const typeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     reminder: 'secondary',
@@ -25,16 +29,37 @@ export default function NotificationsTable() {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
 
-    const notifications = useSuspenseQuery(
-        convexQuery(api.notifications.getNotificationsByUser, {})
-    );
-    const objectives = useSuspenseQuery(convexQuery(api.objectives.getObjectivesByUser, {}));
+    // Pagination state
+    const { currentPage, cursors, isDone, getPaginationOpts, updateCursor, nextPage, previousPage, goToPage, hasNextPage, hasPreviousPage, reset } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
+
+    // Fetch notifications with pagination
+    const notifications = useQuery({
+        ...convexQuery(api.notifications.getNotificationsByUser, {
+            paginationOpts: getPaginationOpts(currentPage),
+        }),
+    });
+
+    // Fetch objectives once (for mapping, doesn't need pagination)
+    const objectives = useQuery({
+        ...convexQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 100, cursor: null },
+        }),
+    });
+
+    // Update cursor when data changes
+    useEffect(() => {
+        if (notifications.data) {
+            updateCursor(currentPage, notifications.data.continueCursor, notifications.data.isDone);
+        }
+    }, [notifications.data, currentPage, updateCursor]);
 
     const setNotificationRead = useMutation({
         mutationFn: useConvexMutation(api.notifications.setNotificationRead),
         onSuccess: () => {
+            reset();
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.notifications.getNotificationsByUser, {}).queryKey,
+                queryKey: ['notifications'],
             });
             toast.success(t('toast.updated'));
         },
@@ -46,8 +71,9 @@ export default function NotificationsTable() {
     const deleteNotification = useMutation({
         mutationFn: useConvexMutation(api.notifications.deleteNotification),
         onSuccess: () => {
+            reset();
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.notifications.getNotificationsByUser, {}).queryKey,
+                queryKey: ['notifications'],
             });
             toast.success(t('toast.deleted'));
         },
@@ -59,8 +85,9 @@ export default function NotificationsTable() {
     const markAllRead = useMutation({
         mutationFn: useConvexMutation(api.notifications.markAllNotificationsRead),
         onSuccess: () => {
+            reset();
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.notifications.getNotificationsByUser, {}).queryKey,
+                queryKey: ['notifications'],
             });
             toast.success(t('toast.markAll'));
         },
@@ -70,10 +97,10 @@ export default function NotificationsTable() {
     });
 
     const objectiveMap = new Map(
-        (objectives.data ?? []).map(objective => [String(objective._id), objective])
+        (objectives.data?.page ?? []).map((objective: Doc<'objectives'>) => [String(objective._id), objective])
     );
 
-    const data = (notifications.data ?? []) as Doc<'notifications'>[];
+    const data = (notifications.data?.page ?? []) as Doc<'notifications'>[];
     const unreadCount = data.filter(notification => !notification.read).length;
 
     const typeLabels: Record<string, string> = {
@@ -189,6 +216,9 @@ export default function NotificationsTable() {
         },
     ];
 
+    // Calculate total pages (estimate, since we don't know the exact total)
+    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
+
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -203,8 +233,20 @@ export default function NotificationsTable() {
                     {t('markAllRead')}
                 </Button>
             </div>
-            <DataTable columns={columns} data={data} isLoading={notifications.isLoading} />
-            {data.length === 0 && (
+            <DataTable
+                columns={columns}
+                data={data}
+                isLoading={notifications.isLoading}
+                pagination={{
+                    currentPage,
+                    totalPages,
+                    onPageChange: goToPage,
+                    hasNextPage,
+                    hasPreviousPage,
+                    pageSize: DEFAULT_PAGE_SIZE,
+                }}
+            />
+            {data.length === 0 && !notifications.isLoading && (
                 <p className="text-center text-muted-foreground py-6">{t('empty')}</p>
             )}
         </div>

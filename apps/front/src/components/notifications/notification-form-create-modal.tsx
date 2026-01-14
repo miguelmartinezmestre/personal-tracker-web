@@ -42,6 +42,14 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
 
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGINATION_OPTS = {
+    paginationOpts: {
+        numItems: DEFAULT_PAGE_SIZE,
+        cursor: null,
+    },
+};
+
 const defaultValues: CreateNotification = {
     objective: '',
     notificationType: 'reminder',
@@ -54,13 +62,13 @@ export default function CreateNotificationFormModal() {
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
 
-    const objectives = useQuery(convexQuery(api.objectives.getObjectivesByUser, {}));
+    const objectives = useQuery(convexQuery(api.objectives.getObjectivesByUser, DEFAULT_PAGINATION_OPTS));
 
     const createNotification = useMutation({
         mutationFn: useConvexMutation(api.notifications.createNotification),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.notifications.getNotificationsByUser, {}).queryKey,
+                queryKey: convexQuery(api.notifications.getNotificationsByUser, DEFAULT_PAGINATION_OPTS).queryKey,
             });
             toast.success(t('toast.created'));
         },
@@ -91,7 +99,7 @@ export default function CreateNotificationFormModal() {
         form.reset();
     };
 
-    const objectiveOptions = (objectives.data ?? []) as Doc<'objectives'>[];
+    const objectiveOptions = (objectives.data?.page ?? []) as Doc<'objectives'>[];
     const isObjectiveLoading = objectives.isLoading;
     const hasObjectives = objectiveOptions.length > 0;
 

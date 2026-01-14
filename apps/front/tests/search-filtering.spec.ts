@@ -2,11 +2,14 @@
 import { randomUUID } from 'crypto';
 
 async function registerUser(page: Page, uuid: string) {
+    const shortId = uuid.substring(0, 8);
+    const organizationSlug = `org-${shortId}`;
     await page.goto('/register');
     await page.getByTestId('register-username-input').fill(`usernametest-${uuid}`);
     await page.getByTestId('register-email-input').fill(`useremail-${uuid}@useremail.com`);
     await page.getByTestId('register-password-input').fill('12345678');
     await page.getByTestId('register-confirm-password-input').fill('12345678');
+    await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
 }

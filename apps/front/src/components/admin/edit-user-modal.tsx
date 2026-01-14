@@ -26,20 +26,13 @@ import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useRequireAdmin } from '@/hooks/use-user-role';
-
-type User = {
-    id: string;
-    email: string;
-    name: string;
-    role?: string | string[];
-    banned?: boolean;
-};
+import type { BetterAuthUser } from '@repo/backend/convex/admin';
 
 export function EditUserModal({
     user,
     onSuccessAction,
 }: {
-    user: User;
+    user: BetterAuthUser;
     onSuccessAction?: () => void;
 }) {
     const t = useTranslations('Admin');
@@ -48,13 +41,13 @@ export function EditUserModal({
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState(user.email);
     const [name, setName] = useState(user.name);
-    const [role, setRole] = useState(Array.isArray(user.role) ? user.role[0] : user.role || 'user');
+    const [role, setRole] = useState(user.role || 'user');
     const queryClient = useQueryClient();
 
     const updateUser = useMutation({
         mutationFn: async () => {
             return await authClient.admin.updateUser({
-                userId: user.id,
+                userId: user._id,
                 data: {
                     email,
                     name,

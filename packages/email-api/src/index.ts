@@ -51,7 +51,7 @@ app.get('/', c => {
 });
 
 // Start server if this file is run directly
-const PORT = Number(process.env.PORT) ?? 3001;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 // Dynamic import for server startup (only when run directly)
 const startServer = async () => {

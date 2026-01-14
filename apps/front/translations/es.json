@@ -101,6 +101,10 @@
                 "2": {
                     "title": "Registros de Auditoría",
                     "content": "Revisa la actividad del sistema y los registros de auditoría para rastrear cambios y garantizar la seguridad."
+                },
+                "3": {
+                    "title": "Registros de Auditoría Detallados",
+                    "content": "Ve registros de auditoría detallados de todas las acciones del sistema, incluyendo quién realizó cambios y cuándo."
                 }
             }
         },
@@ -158,7 +162,9 @@
             "password": "Contraseña",
             "confirmPassword": "Confirmar contraseña",
             "role": "Rol",
-            "userId": "ID de usuario"
+            "userId": "ID de usuario",
+            "organizationSlug": "Slug de organización",
+            "organizationSlugHint": "Identificador único para tu organización (solo letras minúsculas, números y guiones)"
         },
         "placeholders": {
             "email": "nombre@correo.com",
@@ -166,6 +172,7 @@
             "username": "username",
             "min8Chars": "Mínimo 8 caracteres",
             "confirmPassword": "Confirmar contraseña",
+            "organizationSlug": "mi-organizacion",
             "searchByEmail": "Buscar por email...",
             "userIdForSessions": "ID del usuario para ver sus sesiones...",
             "searchDocs": "Buscar en la documentación...",
@@ -263,12 +270,16 @@
         "home": "Inicio",
         "dashboard": "Dashboard",
         "objectives": "Objetivos",
+        "categories": "Categorías",
         "achievements": "Logros",
         "notifications": "Notificaciones",
         "sessions": "Sesiones",
         "settings": "Configuración",
-        "admin": "Administrar",
-        "teams": "Equipos"
+        "users": "Usuarios",
+        "adminSessions": "Gestión de Sesiones",
+        "adminAudit": "Logs de Auditoría",
+        "teams": "Equipos",
+        "admin": "Admin"
     },
     "Achievements": {
         "title": "Logros",
@@ -478,6 +489,14 @@
         "spanish": "Español",
         "english": "English"
     },
+    "OrganizationSwitcher": {
+        "label": "Organización",
+        "organizations": "Organizaciones",
+        "loading": "Cargando...",
+        "noOrganization": "Sin organización",
+        "noOrganizations": "Sin organizaciones",
+        "manageTeams": "Gestionar equipos"
+    },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
         "light": "Claro",
@@ -667,9 +686,12 @@
                 "create": "Crear",
                 "creating": "Creando...",
                 "update": "Actualizar",
-                "updating": "Actualizando..."
+                "updating": "Actualizando...",
+                "delete": "Eliminar",
+                "confirm": "Confirmar"
             },
             "confirmDelete": "¿Estás seguro de que quieres eliminar esta categoría?",
+            "confirmDeleteDescription": "Esta acción no se puede deshacer. Esto eliminará permanentemente la categoría.",
             "toast": {
                 "createSuccess": "Categoría creada exitosamente",
                 "createFailed": "Error al crear categoría",
@@ -1081,7 +1103,17 @@
         "export": "Exportar",
         "exportCsv": "Exportar CSV",
         "exportExcel": "Exportar Excel",
-        "exportSheetName": "Datos"
+        "exportSheetName": "Datos",
+        "showing": "Mostrando",
+        "to": "a",
+        "ofTotal": "de",
+        "rows": "filas",
+        "page": "Página",
+        "of": "de",
+        "first": "Primera",
+        "last": "Última",
+        "previous": "Anterior",
+        "next": "Siguiente"
     },
     "TeamMembers": {
         "createNewTeamMember": "Crear nuevo miembro del equipo",
@@ -1119,6 +1151,33 @@
             "deletedSuccess": "Miembro eliminado exitosamente",
             "deleteFailed": "Error al eliminar miembro"
         }
+    },
+    "Invitations": {
+        "title": "Invitaciones",
+        "description": "Gestiona las invitaciones de tu organización.",
+        "loading": "Cargando invitaciones...",
+        "errorLoading": "Error al cargar invitaciones",
+        "noPendingTitle": "No hay invitaciones pendientes",
+        "noPendingDescription": "No tienes invitaciones pendientes en este momento.",
+        "invitedBy": "Invitado por",
+        "accept": "Aceptar",
+        "reject": "Rechazar",
+        "accepting": "Aceptando...",
+        "errorTitle": "Error",
+        "errorDescription": "Ocurrió un error al procesar la invitación.",
+        "errorAccepting": "Error al aceptar la invitación. Puede haber sido cancelada o expirada.",
+        "acceptedTitle": "¡Invitación Aceptada!",
+        "acceptedDescription": "Te has unido exitosamente a la organización.",
+        "redirecting": "Redirigiendo al panel...",
+        "goToDashboard": "Ir al Panel",
+        "loginRequiredTitle": "Se Requiere Iniciar Sesión",
+        "loginRequiredDescription": "Por favor inicia sesión para aceptar esta invitación.",
+        "login": "Iniciar sesión",
+        "noAccount": "¿No tienes una cuenta?",
+        "register": "Registrarse",
+        "acceptTitle": "Aceptar Invitación",
+        "acceptDescription": "Has sido invitado a unirte a una organización. Haz clic en aceptar para unirte.",
+        "cancel": "Cancelar"
     },
     "TextSelection": {
         "openIn": "Abrir en {provider}"

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Hono } from 'hono';
 import type { Env } from './index';
 import { sendEmail, verifyConnection } from './mailer';
-import { sendWelcomeEmail, sendPasswordResetEmail, sendDeadlineReminderEmail } from './templates';
+import { sendWelcomeEmail, sendPasswordResetEmail, sendDeadlineReminderEmail, sendTeamInvitationEmail } from './templates';
 import { isEmailConfigured } from './config';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -32,6 +32,14 @@ const deadlineReminderEmailSchema = z.object({
     objectiveTitle: z.string(),
     deadline: z.number(),
     daysRemaining: z.number(),
+});
+
+const teamInvitationEmailSchema = z.object({
+    to: z.string().email(),
+    organizationName: z.string(),
+    inviterName: z.string(),
+    inviterEmail: z.string().optional(),
+    invitationLink: z.string().url(),
 });
 
 // Health check endpoint
@@ -97,6 +105,20 @@ app.post('/deadline-reminder', async c => {
     }
 
     const emailResult = await sendDeadlineReminderEmail(result.data);
+    const status = emailResult.success ? 200 : 500;
+    return c.json(emailResult, status);
+});
+
+// Send team invitation email
+app.post('/team-invitation', async c => {
+    const body = await c.req.json();
+    const result = teamInvitationEmailSchema.safeParse(body);
+
+    if (!result.success) {
+        return c.json({ error: 'Invalid request', details: result.error.flatten() }, 400);
+    }
+
+    const emailResult = await sendTeamInvitationEmail(result.data);
     const status = emailResult.success ? 200 : 500;
     return c.json(emailResult, status);
 });

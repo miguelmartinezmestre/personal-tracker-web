@@ -15,6 +15,21 @@ function normalizeForEmail(name: string): string {
         .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
 }
 
+/**
+ * Normalizes a name for use in organization slugs.
+ * Only allows lowercase letters, numbers, and hyphens (per organizationSlug schema validation).
+ */
+function normalizeForSlug(name: string): string {
+    return name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/[^a-z0-9-]/g, '') // Keep only alphanumeric and hyphens
+        .replace(/-+/g, '-') // Collapse multiple hyphens to one
+        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+}
+
 // Nombres presentables para capturas de TFG
 const PRESENTABLE_NAMES = [
     'Miguel García',
@@ -38,6 +53,8 @@ export async function createTestUser(
         customUsername?: string;
         /** Custom email to use */
         customEmail?: string;
+        /** Custom organization slug to use */
+        customOrganizationSlug?: string;
     }
 ) {
     const uuid = randomUUID();
@@ -45,18 +62,22 @@ export async function createTestUser(
 
     let username: string;
     let email: string;
+    let organizationSlug: string;
 
     if (options?.customUsername) {
         username = options.customUsername;
         email = options?.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
+        organizationSlug = options?.customOrganizationSlug ?? `${normalizeForSlug(options.customUsername)}-${shortId}`;
     } else if (options?.usePresentableName) {
         // Use a presentable name for TFG screenshots
         const randomName = PRESENTABLE_NAMES[Math.floor(Math.random() * PRESENTABLE_NAMES.length)];
         username = randomName;
         email = `${normalizeForEmail(randomName)}.${shortId}@example.com`;
+        organizationSlug = `${normalizeForSlug(randomName)}-${shortId}`;
     } else {
         username = `usernametest-${uuid}`;
         email = `useremail-${uuid}@useremail.com`;
+        organizationSlug = `org-${shortId}`;
     }
 
     const password = options?.password ?? DEFAULT_PASSWORD;
@@ -71,6 +92,7 @@ export async function createTestUser(
     await page.getByTestId('register-email-input').fill(email);
     await page.getByTestId('register-password-input').fill(password);
     await page.getByTestId('register-confirm-password-input').fill(password);
+    await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
 
     // Submit registration
     await page.getByTestId('register-button').click();
@@ -248,7 +270,8 @@ export async function createNotification(
 }
 
 /**
- * Helper function to create an organization/team
+ * Helper function to create an organization/team.
+ * Note: Slug is auto-generated from the name by BetterAuth.
  * @param page - Playwright page object
  * @param options - Organization options
  */
@@ -256,21 +279,21 @@ export async function createOrganization(
     page: Page,
     options?: {
         name?: string;
-        slug?: string;
+        description?: string;
     }
 ) {
     const uuid = randomUUID();
     const name = options?.name ?? `test-org-${uuid}`;
-    const slug = options?.slug ?? `test-org-${uuid}`;
+    const description = options?.description ?? 'Test organization description';
 
     await page.goto('/dashboard/teams');
     await page.getByTestId('team-create-open').click();
     await page.getByTestId('team-name-input').fill(name);
-    await page.getByTestId('team-slug-input').fill(slug);
+    await page.getByTestId('team-description-input').fill(description);
     await page.getByTestId('team-save-button').click();
     await expect(page.getByText(name)).toBeVisible({ timeout: 10000 });
 
-    return { name, slug };
+    return { name, description };
 }
 
 /**
@@ -361,5 +384,6 @@ export async function createTFGTestUser(
         usePresentableName: false,
         customUsername: name,
         customEmail: `${normalizeForEmail(name)}.${shortId}@example.com`,
+        customOrganizationSlug: `org-${shortId}`, // Use simple org slug to avoid validation issues
     });
 }

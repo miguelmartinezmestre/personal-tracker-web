@@ -24,6 +24,13 @@ export interface DeadlineReminderEmailData extends EmailData {
     daysRemaining: number;
 }
 
+export interface TeamInvitationEmailData extends EmailData {
+    organizationName: string;
+    inviterName: string;
+    inviterEmail?: string;
+    invitationLink: string;
+}
+
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<SendEmailResult> {
     const { to, username } = data;
     const { siteUrl } = getEmailConfig();
@@ -168,6 +175,56 @@ The ${APP_NAME} Team
         </a>
     </p>
     <p>Best regards,<br>The ${APP_NAME} Team</p>
+</body>
+</html>
+    `.trim();
+
+    return sendEmail({ to, subject, text, html });
+}
+
+export async function sendTeamInvitationEmail(
+    data: TeamInvitationEmailData
+): Promise<SendEmailResult> {
+    const { to, organizationName, inviterName, invitationLink } = data;
+
+    const subject = `You're invited to join ${organizationName}`;
+    const text = `
+Hi,
+
+${inviterName} has invited you to join their organization "${organizationName}" on ${APP_NAME}.
+
+Click the following link to accept the invitation:
+${invitationLink}
+
+If you don't have an account yet, you'll be able to create one after clicking the link.
+
+Best regards,
+The ${APP_NAME} Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Team Invitation</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #10b981;">You're invited to join ${organizationName}!</h1>
+    <p>Hi,</p>
+    <p><strong>${inviterName}</strong> has invited you to join their organization <strong>${organizationName}</strong> on ${APP_NAME}.</p>
+    <p>Click the button below to accept the invitation:</p>
+    <p style="margin: 30px 0;">
+        <a href="${invitationLink}"
+           style="background-color: #10b981; color: white; padding: 14px 28px;
+                  text-decoration: none; border-radius: 6px; display: inline-block; font-size: 16px;">
+            Accept Invitation
+        </a>
+    </p>
+    <p style="color: #666; font-size: 14px;">
+        If you don't have an account yet, you'll be able to create one after clicking the link.
+    </p>
+    <p style="margin-top: 30px;">Best regards,<br>The ${APP_NAME} Team</p>
 </body>
 </html>
     `.trim();

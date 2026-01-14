@@ -17,16 +17,6 @@ export default async function ResetPasswordPage({
         redirect('/');
     }
 
-    // const user = await prisma.user.findFirst({
-    //     where: {
-    //         resetPasswordKey: resetPasswordKey as string,
-    //     },
-    // });
-
-    // if (!user) {
-    //     redirect('/');
-    // }
-
     const t = await getTranslations('HomePage');
 
     return (

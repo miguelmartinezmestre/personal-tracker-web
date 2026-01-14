@@ -1,9 +1,12 @@
 'use client';
 
-import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery, useQueryClient, useQuery } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
+import { usePaginationState } from '@/hooks/use-pagination';
+
+const DEFAULT_PAGE_SIZE = 20;
 
 /**
  * Tipos para las operaciones de actualización de progreso
@@ -30,9 +33,50 @@ export function useUpdateProgressByObjective(objectiveId: Id<'objectives'> | nul
     return useSuspenseQuery(
         convexQuery(
             api.update_progress.getUpdateProgressByObjectiveId,
-            objectiveId ? { objectiveId } : 'skip'
+            objectiveId
+                ? {
+                    objectiveId,
+                    paginationOpts: {
+                        numItems: DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
+                }
+                : 'skip'
         )
     );
+}
+
+/**
+ * Hook para obtener las actualizaciones de progreso de un objetivo con paginación
+ */
+export function useUpdateProgressByObjectivePaginated(objectiveId: Id<'objectives'> | null, totalItems?: number) {
+    const { currentPage, totalPages, nextPage, previousPage, goToPage, resetPage } = usePaginationState(totalItems, DEFAULT_PAGE_SIZE);
+
+    const query = useQuery({
+        ...convexQuery(
+            api.update_progress.getUpdateProgressByObjectiveId,
+            objectiveId
+                ? {
+                    objectiveId,
+                    paginationOpts: {
+                        numItems: DEFAULT_PAGE_SIZE,
+                        cursor: currentPage === 0 ? null : currentPage.toString(),
+                    },
+                }
+                : 'skip'
+        ),
+        enabled: !!objectiveId,
+    });
+
+    return {
+        ...query,
+        currentPage,
+        totalPages,
+        nextPage,
+        previousPage,
+        goToPage,
+        resetPage,
+    };
 }
 
 /**
@@ -50,6 +94,10 @@ export function useCreateUpdateProgress() {
             queryClient.invalidateQueries({
                 queryKey: convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
                     objectiveId: variables.objective,
+                    paginationOpts: {
+                        numItems: DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
                 }).queryKey,
             });
             // También invalidar la query del objetivo para actualizar el currentValue
@@ -59,7 +107,12 @@ export function useCreateUpdateProgress() {
                 }).queryKey,
             });
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.objectives.getObjectivesByUser, {}).queryKey,
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: {
+                        numItems: DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
+                }).queryKey,
             });
         },
     });
