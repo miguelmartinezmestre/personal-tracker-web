@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
 }
 
 const convexQueryClient = new ConvexQueryClient(convex);
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             queryKeyHashFn: convexQueryClient.hashFn(),
