@@ -266,12 +266,16 @@
         "home": "Home",
         "dashboard": "Dashboard",
         "objectives": "Objectives",
+        "categories": "Categories",
         "achievements": "Achievements",
         "notifications": "Notifications",
         "sessions": "Sessions",
         "settings": "Settings",
-        "admin": "Admin",
-        "teams": "Teams"
+        "users": "Users",
+        "adminSessions": "Admin Sessions",
+        "adminAudit": "Audit Logs",
+        "teams": "Teams",
+        "admin": "Admin"
     },
     "Achievements": {
         "title": "Achievements",

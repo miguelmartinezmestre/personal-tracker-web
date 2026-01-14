@@ -1,24 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { categorySchema, savedCategorySchema } from './category';
+import { categorySchema, savedCategorySchema, categoryIconSchema } from './category';
 
 describe('categorySchema', () => {
     it('should validate a valid category', () => {
         const validCategory = {
             name: 'Work',
-            objectives: [1, 2, 3],
+            color: '#3b82f6',
+            icon: 'briefcase',
         };
 
         const result = categorySchema.safeParse(validCategory);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.name).toBe('Work');
-            expect(result.data.objectives).toEqual([1, 2, 3]);
+            expect(result.data.color).toBe('#3b82f6');
+            expect(result.data.icon).toBe('briefcase');
+        }
+    });
+
+    it('should validate a category without icon', () => {
+        const validCategory = {
+            name: 'Personal',
+            color: '#22c55e',
+        };
+
+        const result = categorySchema.safeParse(validCategory);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.name).toBe('Personal');
+            expect(result.data.color).toBe('#22c55e');
+            expect(result.data.icon).toBeUndefined();
         }
     });
 
     it('should require name', () => {
         const invalidCategory = {
-            objectives: [1, 2],
+            color: '#3b82f6',
         };
 
         const result = categorySchema.safeParse(invalidCategory);
@@ -29,7 +46,7 @@ describe('categorySchema', () => {
         }
     });
 
-    it('should require objectives', () => {
+    it('should require color', () => {
         const invalidCategory = {
             name: 'Work',
         };
@@ -37,70 +54,68 @@ describe('categorySchema', () => {
         const result = categorySchema.safeParse(invalidCategory);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const objectivesError = result.error.issues.find(issue =>
-                issue.path.includes('objectives')
-            );
-            expect(objectivesError).toBeDefined();
+            const colorError = result.error.issues.find(issue => issue.path.includes('color'));
+            expect(colorError).toBeDefined();
         }
     });
 
-    it('should accept empty objectives array', () => {
-        const validCategory = {
-            name: 'Personal',
-            objectives: [],
-        };
-
-        const result = categorySchema.safeParse(validCategory);
-        expect(result.success).toBe(true);
-    });
-
-    it('should validate objectives as array of numbers', () => {
+    it('should validate color as hex code', () => {
         const invalidCategory = {
             name: 'Work',
-            objectives: ['one', 'two'],
+            color: 'blue',
         };
 
         const result = categorySchema.safeParse(invalidCategory);
         expect(result.success).toBe(false);
     });
 
-    it('should accept empty name string', () => {
-        const validCategory = {
-            name: '',
-            objectives: [1],
+    it('should validate name max length', () => {
+        const invalidCategory = {
+            name: 'a'.repeat(51),
+            color: '#3b82f6',
         };
 
-        const result = categorySchema.safeParse(validCategory);
-        expect(result.success).toBe(true);
+        const result = categorySchema.safeParse(invalidCategory);
+        expect(result.success).toBe(false);
+    });
+
+    it('should validate valid icons', () => {
+        const validIcons = categoryIconSchema.options;
+        expect(validIcons).toContain('heart');
+        expect(validIcons).toContain('briefcase');
+        expect(validIcons).toContain('book');
+        expect(validIcons).toContain('user');
+        expect(validIcons).toContain('dollar-sign');
     });
 });
 
 describe('savedCategorySchema', () => {
-    it('should validate a saved category with _id', () => {
+    it('should validate a saved category with id', () => {
         const savedCategory = {
-            _id: 'abc123',
+            id: 'abc123' as const,
             name: 'Health',
-            objectives: [1, 2],
+            color: '#ef4444',
+            icon: 'heart',
         };
 
         const result = savedCategorySchema.safeParse(savedCategory);
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data._id).toBe('abc123');
+            expect(result.data.id).toBe('abc123');
             expect(result.data.name).toBe('Health');
         }
     });
 
-    it('should require _id for saved category', () => {
+    it('should require id for saved category', () => {
         const invalidSavedCategory = {
             name: 'Work',
-            objectives: [1],
+            color: '#3b82f6',
         };
 
         const result = savedCategorySchema.safeParse(invalidSavedCategory);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const idError = result.error.issues.find(issue => issue.path.includes('_id'));
+            const idError = result.error.issues.find(issue => issue.path.includes('id'));
             expect(idError).toBeDefined();
         }
     });

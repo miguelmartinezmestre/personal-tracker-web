@@ -39,6 +39,11 @@ const baseProjects: ProjectNavItem[] = [
         icon: Goal,
     },
     {
+        name: 'categories',
+        url: '/dashboard/categories',
+        icon: Tag,
+    },
+    {
         name: 'achievements',
         url: '/dashboard/achievements',
         icon: Trophy,

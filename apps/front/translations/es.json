@@ -271,8 +271,10 @@
         "sessions": "Sesiones",
         "settings": "Configuración",
         "users": "Usuarios",
-        "admin": "Administrar",
-        "teams": "Equipos"
+        "adminSessions": "Sesiones de Admin",
+        "adminAudit": "Logs de Auditoría",
+        "teams": "Equipos",
+        "admin": "Admin"
     },
     "Achievements": {
         "title": "Logros",
@@ -679,9 +681,12 @@
                 "create": "Crear",
                 "creating": "Creando...",
                 "update": "Actualizar",
-                "updating": "Actualizando..."
+                "updating": "Actualizando...",
+                "delete": "Eliminar",
+                "confirm": "Confirmar"
             },
             "confirmDelete": "¿Estás seguro de que quieres eliminar esta categoría?",
+            "confirmDeleteDescription": "Esta acción no se puede deshacer. Esto eliminará permanentemente la categoría.",
             "toast": {
                 "createSuccess": "Categoría creada exitosamente",
                 "createFailed": "Error al crear categoría",
