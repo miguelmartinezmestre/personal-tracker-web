@@ -58,13 +58,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
                 // Configure custom email sending for invitations
                 sendInvitationEmail: async (data) => {
                     const inviteLink = `${siteUrl}/invitations/${data.id}`;
-                    await sendTeamInvitationEmail({
-                        to: data.email,
-                        organizationName: data.organization.name,
-                        inviterName: data.inviter.user.name,
-                        inviterEmail: data.inviter.user.email,
-                        invitationLink: inviteLink,
-                    });
+                    console.log('[sendTeamInvitationEmail] Invite link:', inviteLink);
+                    // await sendTeamInvitationEmail({
+                    //     to: data.email,
+                    //     organizationName: data.organization.name,
+                    //     inviterName: data.inviter.user.name,
+                    //     inviterEmail: data.inviter.user.email,
+                    //     invitationLink: inviteLink,
+                    // });
                 },
             }),
         ],

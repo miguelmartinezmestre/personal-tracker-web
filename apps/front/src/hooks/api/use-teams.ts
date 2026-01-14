@@ -65,9 +65,9 @@ export function useTeams() {
                 result && typeof result === 'object' && 'data' in result
                     ? ((result.data as unknown) as Organization[])
                     : [];
-            console.log('[useTeams] Organizations:', organizations.map(o => ({ id: o.id, slug: o.slug, name: o.name })));
+            // console.log('[useTeams] Organizations:', organizations.map(o => ({ id: o.id, slug: o.slug, name: o.name })));
             const normalized = organizations.map(normalizeTeam);
-            console.log('[useTeams] Normalized teams:', normalized.map(t => ({ id: t.id, slug: t.slug, name: t.name })));
+            // console.log('[useTeams] Normalized teams:', normalized.map(t => ({ id: t.id, slug: t.slug, name: t.name })));
             return normalized;
         },
     });

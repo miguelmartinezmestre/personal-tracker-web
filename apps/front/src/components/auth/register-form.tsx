@@ -66,23 +66,52 @@ export default function RegisterForm() {
             {
                 onSuccess: async () => {
                     try {
-                        // If coming from an invitation, accept it first
+                        let invitedOrganizationId: string | null = null;
+
+                        // 1. If coming from an invitation, accept it FIRST
                         if (invitationToken) {
-                            await authClient.organization.acceptInvitation({
-                                invitationId: invitationToken,
-                            });
+                            try {
+                                const acceptResult = await authClient.organization.acceptInvitation({
+                                    invitationId: invitationToken,
+                                });
+                                // Check response structure for organizationId
+                                if (acceptResult && typeof acceptResult === 'object') {
+                                    if ('data' in acceptResult && acceptResult.data) {
+                                        invitedOrganizationId = (acceptResult.data as any).organizationId || (acceptResult.data as any).id;
+                                    } else if ('organizationId' in acceptResult) {
+                                        invitedOrganizationId = (acceptResult as any).organizationId;
+                                    } else if ('id' in acceptResult) {
+                                        invitedOrganizationId = (acceptResult as any).id;
+                                    }
+                                }
+                            } catch (inviteError: any) {
+                                console.error('Error accepting invitation:', inviteError);
+                                // Continue with registration
+                            }
                         }
 
-                        // Create default organization for the user
-                        await authClient.organization.create({
+                        // 2. Create the user's own organization
+                        const createOrgResult = await authClient.organization.create({
                             name: `${values.username}'s Organization`,
                             slug: values.organizationSlug,
                         });
 
+                        const ownOrganizationId = (createOrgResult as any)?.data?.id || (createOrgResult as any)?.id;
+
+                        // 3. Set active organization (invited org takes priority)
+                        if (invitedOrganizationId) {
+                            await authClient.organization.setActive({
+                                organizationId: invitedOrganizationId,
+                            });
+                        } else if (ownOrganizationId) {
+                            await authClient.organization.setActive({
+                                organizationId: ownOrganizationId,
+                            });
+                        }
+
                         router.push('/dashboard/home');
-                    } catch (error) {
+                    } catch (error: any) {
                         console.error('Error after registration:', error);
-                        // Still redirect to home even if organization creation fails
                         router.push('/dashboard/home');
                     }
                 },

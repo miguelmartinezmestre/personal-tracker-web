@@ -481,6 +481,14 @@
         "spanish": "Español",
         "english": "English"
     },
+    "OrganizationSwitcher": {
+        "label": "Organización",
+        "organizations": "Organizaciones",
+        "loading": "Cargando...",
+        "noOrganization": "Sin organización",
+        "noOrganizations": "Sin organizaciones",
+        "manageTeams": "Gestionar equipos"
+    },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
         "light": "Claro",
