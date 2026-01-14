@@ -6,6 +6,9 @@ import { api } from '@repo/backend/convex/_generated/api';
 import type { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
 import type { Objective } from '@/schemas/objective';
 import { objectiveTypeSchema, periodSchema, savedObjectiveSchema } from '@/schemas/objective';
+import { usePaginationState } from '@/hooks/use-pagination';
+
+const DEFAULT_PAGE_SIZE = 20;
 
 export interface CreateObjectiveParams {
     title: string;
@@ -61,13 +64,25 @@ const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
     });
 };
 
-const OBJECTIVES_QUERY_KEY = convexQuery(api.objectives.getObjectivesByUser, {}).queryKey;
+export { normalizeObjective };
+
+const OBJECTIVES_QUERY_KEY = convexQuery(api.objectives.getObjectivesByUser, {
+    paginationOpts: {
+        numItems: DEFAULT_PAGE_SIZE,
+        cursor: null,
+    },
+}).queryKey;
 
 /** Hook to fetch all objectives for the current user */
 export function useObjectives() {
     return useQuery({
-        ...convexQuery(api.objectives.getObjectivesByUser, {}),
-        select: objectives => objectives.map(normalizeObjective),
+        ...convexQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: {
+                numItems: DEFAULT_PAGE_SIZE,
+                cursor: null,
+            },
+        }),
+        select: data => data.page.map(normalizeObjective),
     });
 }
 
@@ -161,4 +176,33 @@ export function useUpdateObjectiveStatus() {
             queryClient.invalidateQueries({ queryKey: OBJECTIVES_QUERY_KEY });
         },
     });
+}
+
+/** Hook to fetch paginated objectives for the current user */
+export function useObjectivesPaginated(totalItems?: number) {
+    const { currentPage, totalPages, nextPage, previousPage, goToPage, resetPage } = usePaginationState(totalItems, DEFAULT_PAGE_SIZE);
+
+    const query = useQuery({
+        ...convexQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: {
+                numItems: DEFAULT_PAGE_SIZE,
+                cursor: currentPage === 0 ? null : currentPage.toString(),
+            },
+        }),
+        select: data => ({
+            page: data.page.map(normalizeObjective),
+            continueCursor: data.continueCursor,
+            isDone: data.isDone,
+        }),
+    });
+
+    return {
+        ...query,
+        currentPage,
+        totalPages,
+        nextPage,
+        previousPage,
+        goToPage,
+        resetPage,
+    };
 }

@@ -96,11 +96,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const projects = useMemo(() => {
         const items = [...baseProjects];
         if (isAdmin) {
-            items.push({
-                name: 'admin',
-                url: '/dashboard/admin-panel' as Route,
-                icon: Shield,
-            });
+            items.push(
+                {
+                    name: 'users',
+                    url: '/dashboard/admin/users' as Route,
+                    icon: Users,
+                },
+                {
+                    name: 'admin',
+                    url: '/dashboard/admin-panel' as Route,
+                    icon: Shield,
+                }
+            );
         }
         return items;
     }, [isAdmin]);

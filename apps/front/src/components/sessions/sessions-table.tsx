@@ -13,10 +13,18 @@ import { Badge } from '@repo/ui/components/badge';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGINATION_OPTS = {
+    paginationOpts: {
+        numItems: DEFAULT_PAGE_SIZE,
+        cursor: null,
+    },
+};
+
 export default function SessionsTable() {
     const t = useTranslations('Sessions');
     const queryClient = useQueryClient();
-    const sessions = useSuspenseQuery(convexQuery(api.sessions.getSessionsByUser, {}));
+    const sessions = useSuspenseQuery(convexQuery(api.sessions.getSessionsByUser, DEFAULT_PAGINATION_OPTS));
 
     // Get current session to prevent revoking it
     const currentSession = authClient.useSession();

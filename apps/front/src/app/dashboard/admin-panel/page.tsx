@@ -9,20 +9,19 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import { UsersTable } from '@/components/admin/users-table';
 import { UserSessions } from '@/components/admin/user-sessions';
 import { AuditLogs } from '@/components/admin/audit-logs';
 import { useTranslations } from 'next-intl';
-import { Users, FileText, Activity } from 'lucide-react';
+import { FileText, Activity } from 'lucide-react';
 
-const allowedTabs = new Set(['users', 'sessions', 'audit']);
+const allowedTabs = new Set(['sessions', 'audit']);
 
 export default function AdminPage() {
     const t = useTranslations('Admin');
     const searchParams = useSearchParams();
 
     const tabParam = searchParams.get('tab');
-    const defaultTab = tabParam && allowedTabs.has(tabParam) ? tabParam : 'users';
+    const defaultTab = tabParam && allowedTabs.has(tabParam) ? tabParam : 'sessions';
 
     return (
         <div className="space-y-6">
@@ -34,11 +33,7 @@ export default function AdminPage() {
             </div>
 
             <Tabs defaultValue={defaultTab} className="space-y-4" key={defaultTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="users" className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        {t('users')}
-                    </TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="sessions" className="flex items-center gap-2">
                         <Activity className="h-4 w-4" />
                         {t('sessions')}
@@ -48,18 +43,6 @@ export default function AdminPage() {
                         {t('auditLogs')}
                     </TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="users">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('userManagement')}</CardTitle>
-                            <CardDescription>{t('userManagementDescription')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <UsersTable data-tour="admin-users-table" />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
 
                 <TabsContent value="sessions">
                     <Card>

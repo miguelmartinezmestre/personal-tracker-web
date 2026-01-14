@@ -5,6 +5,14 @@ import { convexQuery } from '@convex-dev/react-query';
 import { useConvex } from 'convex/react';
 import { api } from '@repo/backend/convex/_generated/api';
 
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGINATION_OPTS = {
+    paginationOpts: {
+        numItems: DEFAULT_PAGE_SIZE,
+        cursor: null,
+    },
+};
+
 /**
  * Hook para obtener los logs de auditoría
  */
@@ -16,19 +24,19 @@ export function useAuditLogs() {
  * Hook to list all users (admin only)
  */
 export function useAdminUsers(options?: {
-    limit?: number;
-    offset?: number;
     searchValue?: string;
+    paginationOpts?: {
+        numItems: number;
+        cursor: string | null;
+    };
 }) {
-    const { limit = 10, offset = 0, searchValue } = options ?? {};
+    const { searchValue, paginationOpts = DEFAULT_PAGINATION_OPTS.paginationOpts } = options ?? {};
 
     return useQuery({
         ...convexQuery(api.admin.listUsers, {
-            limit,
-            offset,
             searchValue: searchValue || undefined,
+            paginationOpts,
         }),
-        queryKey: ['admin-users', limit, offset, searchValue],
     });
 }
 

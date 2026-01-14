@@ -4,6 +4,7 @@ import { Doc } from './_generated/dataModel';
 import { internal } from './_generated/api';
 import { MutationCtx } from './_generated/server';
 import { createAuditLog, sanitizeForAudit, createChangeDiff } from './utils/auditLog';
+import { paginationOptsValidator } from 'convex/server';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -141,17 +142,20 @@ const maybeNotifyDeadline = async (
 };
 
 export const getObjectivesByUser = queryWithRLS({
-    args: {},
-    handler: async ctx => {
-        const objectives = (await ctx.db
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, { paginationOpts }) => {
+        const results = await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('user', String(ctx.identity?.subject)))
-            .collect()) as ObjectiveWithPeriod[];
+            .order('desc')
+            .paginate(paginationOpts);
 
         const now = Date.now();
 
-        return await Promise.all(
-            objectives.map(async objective => {
+        const pageWithCurrentValue = await Promise.all(
+            results.page.map(async objective => {
                 const objectiveType = objective.objectiveType ?? 'value';
                 const period = objective.period ?? 'none';
 
@@ -187,6 +191,12 @@ export const getObjectivesByUser = queryWithRLS({
                 };
             })
         );
+
+        return {
+            page: pageWithCurrentValue,
+            continueCursor: results.continueCursor,
+            isDone: results.isDone,
+        };
     },
 });
 

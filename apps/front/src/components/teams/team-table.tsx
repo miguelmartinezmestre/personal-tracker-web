@@ -77,23 +77,6 @@ export default function TeamsTable() {
                 const teamId = teamRow.id;
                 const teamSlug = teamRow.slug;
                 
-                // Safety check: if id equals slug, something is wrong with the data
-                if (teamId === teamSlug && teamSlug) {
-                    console.warn('[TeamsTable] WARNING: Team ID equals slug, this might indicate a data mapping issue:', {
-                        id: teamId,
-                        slug: teamSlug,
-                        name: teamRow.name
-                    });
-                }
-                
-                console.log('[TeamsTable] Team row:', { 
-                    id: teamId, 
-                    slug: teamSlug, 
-                    name: teamRow.name,
-                    idType: typeof teamId,
-                    slugType: typeof teamSlug
-                });
-                
                 // Ensure we have a valid ID (not empty, not the slug)
                 if (teamId && teamId !== teamSlug) {
                     return (

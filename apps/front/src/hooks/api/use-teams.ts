@@ -35,14 +35,6 @@ const normalizeTeam = (org: Organization): Team => {
     const teamId = String(org.id);
     const teamSlug = org.slug ?? '';
     
-    // Debug log to verify mapping
-    console.log('[normalizeTeam] Mapping org:', { 
-        orgId: org.id, 
-        orgSlug: org.slug, 
-        mappedId: teamId, 
-        mappedSlug: teamSlug 
-    });
-    
     return {
         id: teamId,
         name: org.name,
@@ -60,14 +52,11 @@ export function useTeams() {
         queryKey: TEAMS_QUERY_KEY,
         queryFn: async () => {
             const result = await authClient.organization.list();
-            console.log('[useTeams] Raw result:', result);
             const organizations =
                 result && typeof result === 'object' && 'data' in result
                     ? ((result.data as unknown) as Organization[])
                     : [];
-            // console.log('[useTeams] Organizations:', organizations.map(o => ({ id: o.id, slug: o.slug, name: o.name })));
             const normalized = organizations.map(normalizeTeam);
-            // console.log('[useTeams] Normalized teams:', normalized.map(t => ({ id: t.id, slug: t.slug, name: t.name })));
             return normalized;
         },
     });
@@ -104,16 +93,11 @@ export function useTeamBySlug(slug: string | null) {
             if (!slug) return null;
             // Fetch all organizations and find by slug
             const result = await authClient.organization.list();
-            console.log('[useTeamBySlug] Looking for slug:', slug);
-            console.log('[useTeamBySlug] API result:', result);
             const organizations =
                 result && typeof result === 'object' && 'data' in result
                     ? ((result.data as unknown) as Organization[])
                     : [];
-            console.log('[useTeamBySlug] Parsed organizations:', organizations);
-            console.log('[useTeamBySlug] Org slugs:', organizations.map(o => o.slug));
             const org = organizations.find(o => o.slug === slug);
-            console.log('[useTeamBySlug] Found org:', org);
             return org ? normalizeTeam(org) : null;
         },
         enabled: !!slug,
@@ -132,9 +116,6 @@ export function useTeamByIdentifier(identifier: string | null) {
             if (!identifier) return null;
             // Fetch all organizations
             const result = await authClient.organization.list();
-            console.log('[useTeamByIdentifier] Looking for identifier:', identifier);
-            console.log('[useTeamByIdentifier] Raw API result:', JSON.stringify(result, null, 2));
-            console.log('[useTeamByIdentifier] Result type:', typeof result, Array.isArray(result));
             
             // Handle different response structures
             let organizations: Organization[] = [];
@@ -150,15 +131,6 @@ export function useTeamByIdentifier(identifier: string | null) {
                 }
             }
             
-            console.log('[useTeamByIdentifier] Parsed organizations count:', organizations.length);
-            console.log('[useTeamByIdentifier] Org details:', organizations.map(o => ({ 
-                id: o.id, 
-                name: o.name,
-                slug: o.slug, 
-                slugType: typeof o.slug,
-                slugValue: String(o.slug ?? 'null/undefined')
-            })));
-            
             // First try to find by slug (handle null/undefined cases)
             let org = organizations.find(o => {
                 const slug = o.slug;
@@ -169,12 +141,10 @@ export function useTeamByIdentifier(identifier: string | null) {
                 return slugStr === identifierStr;
             });
             
-            console.log('[useTeamByIdentifier] Found by slug:', org ? { id: org.id, name: org.name, slug: org.slug } : null);
             
             // If not found by slug, try to find by ID
             if (!org) {
                 org = organizations.find(o => String(o.id).trim() === String(identifier).trim());
-                console.log('[useTeamByIdentifier] Found by ID:', org ? { id: org.id, name: org.name, slug: org.slug } : null);
             }
             
             return org ? normalizeTeam(org) : null;

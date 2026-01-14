@@ -3,10 +3,13 @@ import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { authComponent } from './auth';
 import { components } from './_generated/api';
 import { createAuditLog } from './utils/auditLog';
+import { paginationOptsValidator } from 'convex/server';
 
 export const getSessionsByUser = queryWithRLS({
-    args: {},
-    handler: async ctx => {
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, { paginationOpts }) => {
         // Try to get user from betterAuth, but fall back to identity for tests
         const user = await authComponent.getAuthUser(ctx).catch(() => null);
         const userId = user ? user.userId || String(user._id) : String(ctx.identity?.subject);
@@ -16,14 +19,13 @@ export const getSessionsByUser = queryWithRLS({
         if (user && !user._id) throw new Error('User not authenticated');
 
         try {
-            return (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+            const results = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
                 model: 'session',
                 where: [{ field: 'userId', value: userId }],
-                paginationOpts: {
-                    cursor: null,
-                    numItems: 10,
-                },
+                paginationOpts,
             })) as BetterAuthDataModel['session']['document'][];
+
+            return results;
         } catch (error) {
             // In tests, betterAuth component may not be registered
             if (
