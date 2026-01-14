@@ -38,7 +38,7 @@ export default function RegisterForm() {
             password: '',
             confirmPassword: '',
             username: '',
-            organizationSlug: '',
+            organizationSlug: invitationToken ? undefined : '',
         },
         validators: {
             onChange: registerSchema,
@@ -50,77 +50,76 @@ export default function RegisterForm() {
     });
 
     async function onSubmit(values: z.infer<typeof registerSchema>) {
-        if (values.password !== values.confirmPassword) {
-            setRegisterError(t('errors.passwordsDontMatch'));
+        // Clear any previous error
+        setRegisterError('');
+
+        // Require organizationSlug if NOT coming from an invitation
+        if (!invitationToken && !values.organizationSlug) {
+            setRegisterError(tCommon('fields.organizationSlug') + ' is required');
             return;
         }
 
         setIsSubmitting(true);
 
-        await authClient.signUp.email(
-            {
-                name: values.username,
-                email: values.email,
-                password: values.password,
-            },
-            {
-                onSuccess: async () => {
-                    try {
-                        let invitedOrganizationId: string | null = null;
-
-                        // 1. If coming from an invitation, accept it FIRST
-                        if (invitationToken) {
-                            try {
-                                const acceptResult = await authClient.organization.acceptInvitation({
+        try {
+            await authClient.signUp.email(
+                {
+                    name: values.username,
+                    email: values.email,
+                    password: values.password,
+                },
+                {
+                    onSuccess: async () => {
+                        try {
+                            // If coming from an invitation, accept it and set as active
+                            if (invitationToken) {
+                                await authClient.organization.acceptInvitation({
                                     invitationId: invitationToken,
                                 });
-                                // Check response structure for organizationId
-                                if (acceptResult && typeof acceptResult === 'object') {
-                                    if ('data' in acceptResult && acceptResult.data) {
-                                        invitedOrganizationId = (acceptResult.data as any).organizationId || (acceptResult.data as any).id;
-                                    } else if ('organizationId' in acceptResult) {
-                                        invitedOrganizationId = (acceptResult as any).organizationId;
-                                    } else if ('id' in acceptResult) {
-                                        invitedOrganizationId = (acceptResult as any).id;
-                                    }
+
+                                // Get all organizations to find the invited one and set it as active
+                                const orgsResult = await authClient.organization.list();
+                                const organizations = (orgsResult as any)?.data || [];
+
+                                // Set the first organization as active (the invited one)
+                                if (organizations.length > 0) {
+                                    await authClient.organization.setActive({
+                                        organizationId: organizations[0].id,
+                                    });
                                 }
-                            } catch (inviteError: any) {
-                                console.error('Error accepting invitation:', inviteError);
-                                // Continue with registration
+                            } else {
+                                // No invitation - create user's own organization
+                                const createOrgResult = await authClient.organization.create({
+                                    name: `${values.username}'s Organization`,
+                                    slug: values.organizationSlug as string,
+                                });
+
+                                const ownOrganizationId = (createOrgResult as any)?.data?.id || (createOrgResult as any)?.id;
+
+                                if (ownOrganizationId) {
+                                    await authClient.organization.setActive({
+                                        organizationId: ownOrganizationId,
+                                    });
+                                }
                             }
+
+                            router.push('/dashboard/home');
+                        } catch (error: any) {
+                            console.error('Error after registration:', error);
+                            setRegisterError(error.message || 'Error during registration');
+                            setIsSubmitting(false);
                         }
-
-                        // 2. Create the user's own organization
-                        const createOrgResult = await authClient.organization.create({
-                            name: `${values.username}'s Organization`,
-                            slug: values.organizationSlug,
-                        });
-
-                        const ownOrganizationId = (createOrgResult as any)?.data?.id || (createOrgResult as any)?.id;
-
-                        // 3. Set active organization (invited org takes priority)
-                        if (invitedOrganizationId) {
-                            await authClient.organization.setActive({
-                                organizationId: invitedOrganizationId,
-                            });
-                        } else if (ownOrganizationId) {
-                            await authClient.organization.setActive({
-                                organizationId: ownOrganizationId,
-                            });
-                        }
-
-                        router.push('/dashboard/home');
-                    } catch (error: any) {
-                        console.error('Error after registration:', error);
-                        router.push('/dashboard/home');
-                    }
-                },
-                onError: ctx => {
-                    setRegisterError(ctx.error.message || t('errors.registerFallback'));
-                    setIsSubmitting(false);
-                },
-            }
-        );
+                    },
+                    onError: ctx => {
+                        setRegisterError(ctx.error.message || t('errors.registerFallback'));
+                        setIsSubmitting(false);
+                    },
+                }
+            );
+        } catch (error: any) {
+            setRegisterError(error.message || t('errors.registerFallback'));
+            setIsSubmitting(false);
+        }
     }
 
     return (
@@ -223,28 +222,31 @@ export default function RegisterForm() {
                     )}
                 />
 
-                <FormField
-                    name="organizationSlug"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">
-                                {tCommon('fields.organizationSlug')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    placeholder={tCommon('placeholders.organizationSlug')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="register-organization-slug-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                            <p className="text-xs text-gray-500 mt-1">
-                                {tCommon('fields.organizationSlugHint')}
-                            </p>
-                        </FormItem>
-                    )}
-                />
+                {/* Only show organizationSlug field if NOT coming from an invitation */}
+                {!invitationToken && (
+                    <FormField
+                        name="organizationSlug"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-gray-700">
+                                    {tCommon('fields.organizationSlug')}
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        placeholder={tCommon('placeholders.organizationSlug')}
+                                        className="focus:ring-2 focus:ring-primary/20"
+                                        data-testid="register-organization-slug-input"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {tCommon('fields.organizationSlugHint')}
+                                </p>
+                            </FormItem>
+                        )}
+                    />
+                )}
 
                 <Button
                     type="submit"

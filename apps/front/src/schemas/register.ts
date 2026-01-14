@@ -13,7 +13,8 @@ export const registerSchema = z
             .regex(
                 /^[a-z0-9-]+$/,
                 'Organization slug can only contain lowercase letters, numbers, and hyphens'
-            ),
+            )
+            .optional(),
     })
     .superRefine((values, ctx) => {
         if (values.password !== values.confirmPassword) {
