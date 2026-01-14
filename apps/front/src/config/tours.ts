@@ -118,12 +118,16 @@ const achievementsFeatureSteps: readonly TourStep[] = [
  * Teams feature tour steps (admin only).
  */
 const teamsFeatureSteps: readonly TourStep[] = [
-    createStep('[data-tour="sidebar-admin"]', {
+    createStep('[data-tour="sidebar-admin-sessions"]', {
         side: 'right',
-        route: '/dashboard/admin-panel',
+        route: '/dashboard/admin/sessions',
     }),
-    createStep('[data-tour="admin-users-table"]', {
+    createStep('[data-tour="admin-sessions"]', {
         side: 'top',
+    }),
+    createStep('[data-tour="sidebar-admin-audit"]', {
+        side: 'right',
+        route: '/dashboard/admin/audit',
     }),
     createStep('[data-tour="admin-audit-logs"]', {
         side: 'left',
