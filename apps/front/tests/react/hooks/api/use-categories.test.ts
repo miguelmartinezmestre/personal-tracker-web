@@ -54,13 +54,13 @@ describe('use-categories hooks', () => {
 
     describe('useCategories', () => {
         it('should be a function', async () => {
-            const { useCategories } = await import('./use-categories');
+            const { useCategories } = await import('../../../../src/hooks/api/use-categories');
             expect(typeof useCategories).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useCategories } = await import('./use-categories');
+            const { useCategories } = await import('../../../../src/hooks/api/use-categories');
 
             useCategories();
 
@@ -68,7 +68,7 @@ describe('use-categories hooks', () => {
         });
 
         it('should return query result', async () => {
-            const { useCategories } = await import('./use-categories');
+            const { useCategories } = await import('../../../../src/hooks/api/use-categories');
 
             const result = useCategories();
 
@@ -79,12 +79,12 @@ describe('use-categories hooks', () => {
 
     describe('useCreateCategory', () => {
         it('should be a function', async () => {
-            const { useCreateCategory } = await import('./use-categories');
+            const { useCreateCategory } = await import('../../../../src/hooks/api/use-categories');
             expect(typeof useCreateCategory).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCreateCategory } = await import('./use-categories');
+            const { useCreateCategory } = await import('../../../../src/hooks/api/use-categories');
 
             const result = useCreateCategory();
 
@@ -93,7 +93,7 @@ describe('use-categories hooks', () => {
         });
 
         it('invalidates categories query on success', async () => {
-            const { useCreateCategory } = await import('./use-categories');
+            const { useCreateCategory } = await import('../../../../src/hooks/api/use-categories');
 
             useCreateCategory();
 
@@ -107,12 +107,12 @@ describe('use-categories hooks', () => {
 
     describe('useUpdateCategory', () => {
         it('should be a function', async () => {
-            const { useUpdateCategory } = await import('./use-categories');
+            const { useUpdateCategory } = await import('../../../../src/hooks/api/use-categories');
             expect(typeof useUpdateCategory).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useUpdateCategory } = await import('./use-categories');
+            const { useUpdateCategory } = await import('../../../../src/hooks/api/use-categories');
 
             const result = useUpdateCategory();
 
@@ -120,7 +120,7 @@ describe('use-categories hooks', () => {
         });
 
         it('invalidates categories query on success', async () => {
-            const { useUpdateCategory } = await import('./use-categories');
+            const { useUpdateCategory } = await import('../../../../src/hooks/api/use-categories');
 
             useUpdateCategory();
 
@@ -134,12 +134,12 @@ describe('use-categories hooks', () => {
 
     describe('useDeleteCategory', () => {
         it('should be a function', async () => {
-            const { useDeleteCategory } = await import('./use-categories');
+            const { useDeleteCategory } = await import('../../../../src/hooks/api/use-categories');
             expect(typeof useDeleteCategory).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useDeleteCategory } = await import('./use-categories');
+            const { useDeleteCategory } = await import('../../../../src/hooks/api/use-categories');
 
             const result = useDeleteCategory();
 
@@ -147,7 +147,7 @@ describe('use-categories hooks', () => {
         });
 
         it('invalidates categories query on success', async () => {
-            const { useDeleteCategory } = await import('./use-categories');
+            const { useDeleteCategory } = await import('../../../../src/hooks/api/use-categories');
 
             useDeleteCategory();
 
@@ -161,12 +161,12 @@ describe('use-categories hooks', () => {
 
     describe('useCreateDefaultCategories', () => {
         it('should be a function', async () => {
-            const { useCreateDefaultCategories } = await import('./use-categories');
+            const { useCreateDefaultCategories } = await import('../../../../src/hooks/api/use-categories');
             expect(typeof useCreateDefaultCategories).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCreateDefaultCategories } = await import('./use-categories');
+            const { useCreateDefaultCategories } = await import('../../../../src/hooks/api/use-categories');
 
             const result = useCreateDefaultCategories();
 
@@ -174,7 +174,7 @@ describe('use-categories hooks', () => {
         });
 
         it('invalidates categories query on success', async () => {
-            const { useCreateDefaultCategories } = await import('./use-categories');
+            const { useCreateDefaultCategories } = await import('../../../../src/hooks/api/use-categories');
 
             useCreateDefaultCategories();
 
@@ -189,7 +189,7 @@ describe('use-categories hooks', () => {
 
 describe('use-categories types', () => {
     it('should export CreateCategoryParams type', async () => {
-        const params: import('./use-categories').CreateCategoryParams = {
+        const params: import('../../../../src/hooks/api/use-categories').CreateCategoryParams = {
             name: 'Work',
             color: '#FF0000',
         };
@@ -198,7 +198,7 @@ describe('use-categories types', () => {
     });
 
     it('should export CreateCategoryParams with optional icon', async () => {
-        const params: import('./use-categories').CreateCategoryParams = {
+        const params: import('../../../../src/hooks/api/use-categories').CreateCategoryParams = {
             name: 'Health',
             color: '#00FF00',
             icon: 'heart',
@@ -207,7 +207,7 @@ describe('use-categories types', () => {
     });
 
     it('should export UpdateCategoryParams type', async () => {
-        const params: import('./use-categories').UpdateCategoryParams = {
+        const params: import('../../../../src/hooks/api/use-categories').UpdateCategoryParams = {
             id: 'category-id' as any,
             name: 'Updated Category',
         };

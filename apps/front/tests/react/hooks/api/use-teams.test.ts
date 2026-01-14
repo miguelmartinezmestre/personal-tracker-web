@@ -46,13 +46,13 @@ describe('use-teams hooks', () => {
 
     describe('useTeams', () => {
         it('should be a function', async () => {
-            const { useTeams } = await import('./use-teams');
+            const { useTeams } = await import('../../../../src/hooks/api/use-teams');
             expect(typeof useTeams).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useTeams } = await import('./use-teams');
+            const { useTeams } = await import('../../../../src/hooks/api/use-teams');
 
             useTeams();
 
@@ -60,7 +60,7 @@ describe('use-teams hooks', () => {
         });
 
         it('should return query result', async () => {
-            const { useTeams } = await import('./use-teams');
+            const { useTeams } = await import('../../../../src/hooks/api/use-teams');
 
             const result = useTeams();
 
@@ -71,13 +71,13 @@ describe('use-teams hooks', () => {
 
     describe('useTeam', () => {
         it('should be a function', async () => {
-            const { useTeam } = await import('./use-teams');
+            const { useTeam } = await import('../../../../src/hooks/api/use-teams');
             expect(typeof useTeam).toBe('function');
         });
 
         it('should call useQuery with disabled when teamId is null', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useTeam } = await import('./use-teams');
+            const { useTeam } = await import('../../../../src/hooks/api/use-teams');
 
             useTeam(null);
 
@@ -86,7 +86,7 @@ describe('use-teams hooks', () => {
 
         it('should call useQuery with teamId when teamId is provided', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useTeam } = await import('./use-teams');
+            const { useTeam } = await import('../../../../src/hooks/api/use-teams');
 
             const teamId = 'team-123';
             useTeam(teamId);
@@ -99,12 +99,12 @@ describe('use-teams hooks', () => {
 
     describe('useCreateTeam', () => {
         it('should be a function', async () => {
-            const { useCreateTeam } = await import('./use-teams');
+            const { useCreateTeam } = await import('../../../../src/hooks/api/use-teams');
             expect(typeof useCreateTeam).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCreateTeam } = await import('./use-teams');
+            const { useCreateTeam } = await import('../../../../src/hooks/api/use-teams');
 
             const result = useCreateTeam();
 
@@ -113,7 +113,7 @@ describe('use-teams hooks', () => {
         });
 
         it('invalidates teams query on success', async () => {
-            const { useCreateTeam } = await import('./use-teams');
+            const { useCreateTeam } = await import('../../../../src/hooks/api/use-teams');
 
             useCreateTeam();
 
@@ -127,12 +127,12 @@ describe('use-teams hooks', () => {
 
     describe('useUpdateTeam', () => {
         it('should be a function', async () => {
-            const { useUpdateTeam } = await import('./use-teams');
+            const { useUpdateTeam } = await import('../../../../src/hooks/api/use-teams');
             expect(typeof useUpdateTeam).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useUpdateTeam } = await import('./use-teams');
+            const { useUpdateTeam } = await import('../../../../src/hooks/api/use-teams');
 
             const result = useUpdateTeam();
 
@@ -140,7 +140,7 @@ describe('use-teams hooks', () => {
         });
 
         it('invalidates teams query on success', async () => {
-            const { useUpdateTeam } = await import('./use-teams');
+            const { useUpdateTeam } = await import('../../../../src/hooks/api/use-teams');
 
             useUpdateTeam();
 
@@ -154,12 +154,12 @@ describe('use-teams hooks', () => {
 
     describe('useDeleteTeam', () => {
         it('should be a function', async () => {
-            const { useDeleteTeam } = await import('./use-teams');
+            const { useDeleteTeam } = await import('../../../../src/hooks/api/use-teams');
             expect(typeof useDeleteTeam).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useDeleteTeam } = await import('./use-teams');
+            const { useDeleteTeam } = await import('../../../../src/hooks/api/use-teams');
 
             const result = useDeleteTeam();
 
@@ -167,7 +167,7 @@ describe('use-teams hooks', () => {
         });
 
         it('invalidates teams query on success', async () => {
-            const { useDeleteTeam } = await import('./use-teams');
+            const { useDeleteTeam } = await import('../../../../src/hooks/api/use-teams');
 
             useDeleteTeam();
 
@@ -182,7 +182,7 @@ describe('use-teams hooks', () => {
 
 describe('use-teams types', () => {
     it('should export CreateTeamParams type', async () => {
-        const params: import('./use-teams').CreateTeamParams = {
+        const params: import('../../../../src/hooks/api/use-teams').CreateTeamParams = {
             name: 'Test Team',
             description: 'A test team',
         };
@@ -190,7 +190,7 @@ describe('use-teams types', () => {
     });
 
     it('should export UpdateTeamParams type', async () => {
-        const params: import('./use-teams').UpdateTeamParams = {
+        const params: import('../../../../src/hooks/api/use-teams').UpdateTeamParams = {
             id: 'team-id',
             name: 'Updated Team',
             description: 'Updated description',

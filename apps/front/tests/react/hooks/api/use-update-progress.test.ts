@@ -57,13 +57,13 @@ describe('use-update-progress hooks', () => {
 
     describe('useUpdateProgressByObjective', () => {
         it('should be a function', async () => {
-            const { useUpdateProgressByObjective } = await import('./use-update-progress');
+            const { useUpdateProgressByObjective } = await import('../../../../src/hooks/api/use-update-progress');
             expect(typeof useUpdateProgressByObjective).toBe('function');
         });
 
         it('should call convexQuery with skip when objectiveId is null', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useUpdateProgressByObjective } = await import('./use-update-progress');
+            const { useUpdateProgressByObjective } = await import('../../../../src/hooks/api/use-update-progress');
 
             useUpdateProgressByObjective(null);
 
@@ -72,7 +72,7 @@ describe('use-update-progress hooks', () => {
 
         it('should call convexQuery with objectiveId when provided', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useUpdateProgressByObjective } = await import('./use-update-progress');
+            const { useUpdateProgressByObjective } = await import('../../../../src/hooks/api/use-update-progress');
 
             const objectiveId = 'objective-123' as any;
             useUpdateProgressByObjective(objectiveId);
@@ -83,7 +83,7 @@ describe('use-update-progress hooks', () => {
         });
 
         it('should return query result', async () => {
-            const { useUpdateProgressByObjective } = await import('./use-update-progress');
+            const { useUpdateProgressByObjective } = await import('../../../../src/hooks/api/use-update-progress');
 
             const result = useUpdateProgressByObjective(null);
 
@@ -93,12 +93,12 @@ describe('use-update-progress hooks', () => {
 
     describe('useCreateUpdateProgress', () => {
         it('should be a function', async () => {
-            const { useCreateUpdateProgress } = await import('./use-update-progress');
+            const { useCreateUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
             expect(typeof useCreateUpdateProgress).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCreateUpdateProgress } = await import('./use-update-progress');
+            const { useCreateUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
 
             const result = useCreateUpdateProgress();
 
@@ -107,7 +107,7 @@ describe('use-update-progress hooks', () => {
         });
 
         it('invalidates related queries on success', async () => {
-            const { useCreateUpdateProgress } = await import('./use-update-progress');
+            const { useCreateUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
 
             useCreateUpdateProgress();
 
@@ -127,12 +127,12 @@ describe('use-update-progress hooks', () => {
 
     describe('useUpdateUpdateProgress', () => {
         it('should be a function', async () => {
-            const { useUpdateUpdateProgress } = await import('./use-update-progress');
+            const { useUpdateUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
             expect(typeof useUpdateUpdateProgress).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useUpdateUpdateProgress } = await import('./use-update-progress');
+            const { useUpdateUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
 
             const result = useUpdateUpdateProgress();
 
@@ -140,7 +140,7 @@ describe('use-update-progress hooks', () => {
         });
 
         it('invalidates update progress queries with predicate', async () => {
-            const { useUpdateUpdateProgress } = await import('./use-update-progress');
+            const { useUpdateUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
 
             useUpdateUpdateProgress();
 
@@ -155,12 +155,12 @@ describe('use-update-progress hooks', () => {
 
     describe('useDeleteUpdateProgress', () => {
         it('should be a function', async () => {
-            const { useDeleteUpdateProgress } = await import('./use-update-progress');
+            const { useDeleteUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
             expect(typeof useDeleteUpdateProgress).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useDeleteUpdateProgress } = await import('./use-update-progress');
+            const { useDeleteUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
 
             const result = useDeleteUpdateProgress();
 
@@ -168,7 +168,7 @@ describe('use-update-progress hooks', () => {
         });
 
         it('invalidates update progress queries with predicate', async () => {
-            const { useDeleteUpdateProgress } = await import('./use-update-progress');
+            const { useDeleteUpdateProgress } = await import('../../../../src/hooks/api/use-update-progress');
 
             useDeleteUpdateProgress();
 
@@ -184,7 +184,7 @@ describe('use-update-progress hooks', () => {
 
 describe('use-update-progress types', () => {
     it('should export CreateUpdateProgressParams type', async () => {
-        const params: import('./use-update-progress').CreateUpdateProgressParams = {
+        const params: import('../../../../src/hooks/api/use-update-progress').CreateUpdateProgressParams = {
             objective: 'objective-123' as any,
             updatedValue: 50,
             updateDate: Date.now(),
@@ -193,7 +193,7 @@ describe('use-update-progress types', () => {
     });
 
     it('should export CreateUpdateProgressParams with optional comment', async () => {
-        const params: import('./use-update-progress').CreateUpdateProgressParams = {
+        const params: import('../../../../src/hooks/api/use-update-progress').CreateUpdateProgressParams = {
             objective: 'objective-123' as any,
             updatedValue: 75,
             updateDate: Date.now(),
@@ -203,7 +203,7 @@ describe('use-update-progress types', () => {
     });
 
     it('should export UpdateUpdateProgressParams type', async () => {
-        const params: import('./use-update-progress').UpdateUpdateProgressParams = {
+        const params: import('../../../../src/hooks/api/use-update-progress').UpdateUpdateProgressParams = {
             id: 'progress-123' as any,
             updatedValue: 100,
             updateDate: Date.now(),
@@ -212,7 +212,7 @@ describe('use-update-progress types', () => {
     });
 
     it('should export UpdateUpdateProgressParams with optional comment', async () => {
-        const params: import('./use-update-progress').UpdateUpdateProgressParams = {
+        const params: import('../../../../src/hooks/api/use-update-progress').UpdateUpdateProgressParams = {
             id: 'progress-123' as any,
             updatedValue: 100,
             updateDate: Date.now(),

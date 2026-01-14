@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock the external dependencies
 vi.mock('@tanstack/react-query', () => ({
     useQuery: vi.fn(() => ({
-        data: null,
+        data: [],
         isLoading: false,
         isError: false,
     })),
@@ -18,37 +18,40 @@ vi.mock('@convex-dev/react-query', () => ({
 
 vi.mock('@repo/backend/convex/_generated/api', () => ({
     api: {
-        users: {
-            getUserRole: 'getUserRole',
+        auditLogs: {
+            getAuditLogs: 'getAuditLogs',
         },
     },
 }));
 
-describe('use-users hooks', () => {
+describe('use-admin hooks', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    describe('useUserRole', () => {
+    describe('useAuditLogs', () => {
         it('should be a function', async () => {
-            const { useUserRole } = await import('./use-users');
-            expect(typeof useUserRole).toBe('function');
+            const { useAuditLogs } = await import('../../../../src/hooks/api/use-admin');
+            expect(typeof useAuditLogs).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useUserRole } = await import('./use-users');
+            const { useAuditLogs } = await import('../../../../src/hooks/api/use-admin');
 
-            useUserRole();
+            useAuditLogs();
 
             expect(useQuery).toHaveBeenCalled();
         });
 
         it('should return query result', async () => {
-            const { useUserRole } = await import('./use-users');
-            const result = useUserRole();
+            const { useAuditLogs } = await import('../../../../src/hooks/api/use-admin');
+
+            const result = useAuditLogs();
+
             expect(result).toHaveProperty('data');
             expect(result).toHaveProperty('isLoading');
+            expect(result).toHaveProperty('isError');
         });
     });
 });

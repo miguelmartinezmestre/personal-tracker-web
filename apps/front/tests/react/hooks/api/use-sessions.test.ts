@@ -51,13 +51,13 @@ describe('use-sessions hooks', () => {
 
     describe('useSessions', () => {
         it('should be a function', async () => {
-            const { useSessions } = await import('./use-sessions');
+            const { useSessions } = await import('../../../../src/hooks/api/use-sessions');
             expect(typeof useSessions).toBe('function');
         });
 
         it('should call useSuspenseQuery', async () => {
             const { useSuspenseQuery } = await import('@tanstack/react-query');
-            const { useSessions } = await import('./use-sessions');
+            const { useSessions } = await import('../../../../src/hooks/api/use-sessions');
 
             useSessions();
 
@@ -65,7 +65,7 @@ describe('use-sessions hooks', () => {
         });
 
         it('should return query result', async () => {
-            const { useSessions } = await import('./use-sessions');
+            const { useSessions } = await import('../../../../src/hooks/api/use-sessions');
 
             const result = useSessions();
 
@@ -76,12 +76,12 @@ describe('use-sessions hooks', () => {
 
     describe('useInvalidateSession', () => {
         it('should be a function', async () => {
-            const { useInvalidateSession } = await import('./use-sessions');
+            const { useInvalidateSession } = await import('../../../../src/hooks/api/use-sessions');
             expect(typeof useInvalidateSession).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useInvalidateSession } = await import('./use-sessions');
+            const { useInvalidateSession } = await import('../../../../src/hooks/api/use-sessions');
 
             const result = useInvalidateSession();
 
@@ -90,7 +90,7 @@ describe('use-sessions hooks', () => {
         });
 
         it('invalidates sessions query on success', async () => {
-            const { useInvalidateSession } = await import('./use-sessions');
+            const { useInvalidateSession } = await import('../../../../src/hooks/api/use-sessions');
 
             useInvalidateSession();
 

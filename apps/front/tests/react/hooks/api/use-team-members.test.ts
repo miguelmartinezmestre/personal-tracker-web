@@ -45,13 +45,13 @@ describe('use-team-members hooks', () => {
 
     describe('useTeamMembers', () => {
         it('should be a function', async () => {
-            const { useTeamMembers } = await import('./use-team-members');
+            const { useTeamMembers } = await import('../../../../src/hooks/api/use-team-members');
             expect(typeof useTeamMembers).toBe('function');
         });
 
         it('should call useSuspenseQuery with teamId when provided', async () => {
             const { useSuspenseQuery } = await import('@tanstack/react-query');
-            const { useTeamMembers } = await import('./use-team-members');
+            const { useTeamMembers } = await import('../../../../src/hooks/api/use-team-members');
 
             const teamId = 'team-123';
             useTeamMembers(teamId);
@@ -63,7 +63,7 @@ describe('use-team-members hooks', () => {
 
         it('should call useSuspenseQuery with null when teamId is null', async () => {
             const { useSuspenseQuery } = await import('@tanstack/react-query');
-            const { useTeamMembers } = await import('./use-team-members');
+            const { useTeamMembers } = await import('../../../../src/hooks/api/use-team-members');
 
             useTeamMembers(null);
 
@@ -73,7 +73,7 @@ describe('use-team-members hooks', () => {
         });
 
         it('should return query result', async () => {
-            const { useTeamMembers } = await import('./use-team-members');
+            const { useTeamMembers } = await import('../../../../src/hooks/api/use-team-members');
 
             const result = useTeamMembers(null);
 
@@ -83,12 +83,12 @@ describe('use-team-members hooks', () => {
 
     describe('useCreateTeamMember', () => {
         it('should be a function', async () => {
-            const { useCreateTeamMember } = await import('./use-team-members');
+            const { useCreateTeamMember } = await import('../../../../src/hooks/api/use-team-members');
             expect(typeof useCreateTeamMember).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCreateTeamMember } = await import('./use-team-members');
+            const { useCreateTeamMember } = await import('../../../../src/hooks/api/use-team-members');
 
             const result = useCreateTeamMember();
 
@@ -97,7 +97,7 @@ describe('use-team-members hooks', () => {
         });
 
         it('invalidates team members query on success', async () => {
-            const { useCreateTeamMember } = await import('./use-team-members');
+            const { useCreateTeamMember } = await import('../../../../src/hooks/api/use-team-members');
 
             useCreateTeamMember();
 
@@ -111,12 +111,12 @@ describe('use-team-members hooks', () => {
 
     describe('useUpdateTeamMember', () => {
         it('should be a function', async () => {
-            const { useUpdateTeamMember } = await import('./use-team-members');
+            const { useUpdateTeamMember } = await import('../../../../src/hooks/api/use-team-members');
             expect(typeof useUpdateTeamMember).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useUpdateTeamMember } = await import('./use-team-members');
+            const { useUpdateTeamMember } = await import('../../../../src/hooks/api/use-team-members');
 
             const result = useUpdateTeamMember();
 
@@ -124,7 +124,7 @@ describe('use-team-members hooks', () => {
         });
 
         it('invalidates team member queries on success', async () => {
-            const { useUpdateTeamMember } = await import('./use-team-members');
+            const { useUpdateTeamMember } = await import('../../../../src/hooks/api/use-team-members');
 
             useUpdateTeamMember();
 
@@ -138,12 +138,12 @@ describe('use-team-members hooks', () => {
 
     describe('useDeleteTeamMember', () => {
         it('should be a function', async () => {
-            const { useDeleteTeamMember } = await import('./use-team-members');
+            const { useDeleteTeamMember } = await import('../../../../src/hooks/api/use-team-members');
             expect(typeof useDeleteTeamMember).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useDeleteTeamMember } = await import('./use-team-members');
+            const { useDeleteTeamMember } = await import('../../../../src/hooks/api/use-team-members');
 
             const result = useDeleteTeamMember();
 
@@ -151,7 +151,7 @@ describe('use-team-members hooks', () => {
         });
 
         it('invalidates team member queries on success', async () => {
-            const { useDeleteTeamMember } = await import('./use-team-members');
+            const { useDeleteTeamMember } = await import('../../../../src/hooks/api/use-team-members');
 
             useDeleteTeamMember();
 
@@ -166,7 +166,7 @@ describe('use-team-members hooks', () => {
 
 describe('use-team-members types', () => {
     it('should export CreateTeamMemberParams type', async () => {
-        const params: import('./use-team-members').CreateTeamMemberParams = {
+        const params: import('../../../../src/hooks/api/use-team-members').CreateTeamMemberParams = {
             organizationId: 'org-123',
             email: 'member@example.com',
             role: 'member',
@@ -175,7 +175,7 @@ describe('use-team-members types', () => {
     });
 
     it('should export CreateTeamMemberParams with ADMIN role', async () => {
-        const params: import('./use-team-members').CreateTeamMemberParams = {
+        const params: import('../../../../src/hooks/api/use-team-members').CreateTeamMemberParams = {
             organizationId: 'org-123',
             email: 'admin@example.com',
             role: 'admin',
@@ -184,7 +184,7 @@ describe('use-team-members types', () => {
     });
 
     it('should export CreateTeamMemberParams with OWNER role', async () => {
-        const params: import('./use-team-members').CreateTeamMemberParams = {
+        const params: import('../../../../src/hooks/api/use-team-members').CreateTeamMemberParams = {
             organizationId: 'org-123',
             email: 'owner@example.com',
             role: 'owner',
@@ -193,7 +193,7 @@ describe('use-team-members types', () => {
     });
 
     it('should export UpdateTeamMemberParams type', async () => {
-        const params: import('./use-team-members').UpdateTeamMemberParams = {
+        const params: import('../../../../src/hooks/api/use-team-members').UpdateTeamMemberParams = {
             memberId: 'member-123',
             organizationId: 'org-123',
             role: 'admin',

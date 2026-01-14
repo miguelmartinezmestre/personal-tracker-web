@@ -54,13 +54,13 @@ describe('use-objectives hooks', () => {
 
     describe('useObjectives', () => {
         it('should be a function', async () => {
-            const { useObjectives } = await import('./use-objectives');
+            const { useObjectives } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useObjectives).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useObjectives } = await import('./use-objectives');
+            const { useObjectives } = await import('../../../../src/hooks/api/use-objectives');
 
             useObjectives();
 
@@ -70,13 +70,13 @@ describe('use-objectives hooks', () => {
 
     describe('useObjective', () => {
         it('should be a function', async () => {
-            const { useObjective } = await import('./use-objectives');
+            const { useObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useObjective).toBe('function');
         });
 
         it('should call useQuery with skip when objectiveId is null', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useObjective } = await import('./use-objectives');
+            const { useObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             useObjective(null);
 
@@ -85,7 +85,7 @@ describe('use-objectives hooks', () => {
 
         it('should call useQuery with id when objectiveId is provided', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useObjective } = await import('./use-objectives');
+            const { useObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const objectiveId = 'test-id' as any;
             useObjective(objectiveId);
@@ -96,12 +96,12 @@ describe('use-objectives hooks', () => {
 
     describe('useCreateObjective', () => {
         it('should be a function', async () => {
-            const { useCreateObjective } = await import('./use-objectives');
+            const { useCreateObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useCreateObjective).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCreateObjective } = await import('./use-objectives');
+            const { useCreateObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = useCreateObjective();
 
@@ -110,7 +110,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { useCreateObjective } = await import('./use-objectives');
+            const { useCreateObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             useCreateObjective();
 
@@ -124,12 +124,12 @@ describe('use-objectives hooks', () => {
 
     describe('useUpdateObjective', () => {
         it('should be a function', async () => {
-            const { useUpdateObjective } = await import('./use-objectives');
+            const { useUpdateObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useUpdateObjective).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useUpdateObjective } = await import('./use-objectives');
+            const { useUpdateObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = useUpdateObjective();
 
@@ -137,7 +137,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { useUpdateObjective } = await import('./use-objectives');
+            const { useUpdateObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             useUpdateObjective();
 
@@ -151,12 +151,12 @@ describe('use-objectives hooks', () => {
 
     describe('useDeleteObjective', () => {
         it('should be a function', async () => {
-            const { useDeleteObjective } = await import('./use-objectives');
+            const { useDeleteObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useDeleteObjective).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useDeleteObjective } = await import('./use-objectives');
+            const { useDeleteObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = useDeleteObjective();
 
@@ -164,7 +164,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { useDeleteObjective } = await import('./use-objectives');
+            const { useDeleteObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             useDeleteObjective();
 
@@ -178,12 +178,12 @@ describe('use-objectives hooks', () => {
 
     describe('useCompleteObjective', () => {
         it('should be a function', async () => {
-            const { useCompleteObjective } = await import('./use-objectives');
+            const { useCompleteObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useCompleteObjective).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useCompleteObjective } = await import('./use-objectives');
+            const { useCompleteObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = useCompleteObjective();
 
@@ -191,7 +191,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { useCompleteObjective } = await import('./use-objectives');
+            const { useCompleteObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             useCompleteObjective();
 
@@ -205,12 +205,12 @@ describe('use-objectives hooks', () => {
 
     describe('usePauseObjective', () => {
         it('should be a function', async () => {
-            const { usePauseObjective } = await import('./use-objectives');
+            const { usePauseObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof usePauseObjective).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { usePauseObjective } = await import('./use-objectives');
+            const { usePauseObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = usePauseObjective();
 
@@ -218,7 +218,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { usePauseObjective } = await import('./use-objectives');
+            const { usePauseObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             usePauseObjective();
 
@@ -232,12 +232,12 @@ describe('use-objectives hooks', () => {
 
     describe('useArchiveObjective', () => {
         it('should be a function', async () => {
-            const { useArchiveObjective } = await import('./use-objectives');
+            const { useArchiveObjective } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useArchiveObjective).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useArchiveObjective } = await import('./use-objectives');
+            const { useArchiveObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = useArchiveObjective();
 
@@ -245,7 +245,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { useArchiveObjective } = await import('./use-objectives');
+            const { useArchiveObjective } = await import('../../../../src/hooks/api/use-objectives');
 
             useArchiveObjective();
 
@@ -259,12 +259,12 @@ describe('use-objectives hooks', () => {
 
     describe('useUpdateObjectiveStatus', () => {
         it('should be a function', async () => {
-            const { useUpdateObjectiveStatus } = await import('./use-objectives');
+            const { useUpdateObjectiveStatus } = await import('../../../../src/hooks/api/use-objectives');
             expect(typeof useUpdateObjectiveStatus).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useUpdateObjectiveStatus } = await import('./use-objectives');
+            const { useUpdateObjectiveStatus } = await import('../../../../src/hooks/api/use-objectives');
 
             const result = useUpdateObjectiveStatus();
 
@@ -272,7 +272,7 @@ describe('use-objectives hooks', () => {
         });
 
         it('invalidates objectives query on success', async () => {
-            const { useUpdateObjectiveStatus } = await import('./use-objectives');
+            const { useUpdateObjectiveStatus } = await import('../../../../src/hooks/api/use-objectives');
 
             useUpdateObjectiveStatus();
 
@@ -287,9 +287,9 @@ describe('use-objectives hooks', () => {
 
 describe('use-objectives types', () => {
     it('should export CreateObjectiveParams type', async () => {
-        const module = await import('./use-objectives');
+        const module = await import('../../../../src/hooks/api/use-objectives');
         // Type check - if this compiles, the type exists
-        const params: import('./use-objectives').CreateObjectiveParams = {
+        const params: import('../../../../src/hooks/api/use-objectives').CreateObjectiveParams = {
             title: 'Test',
             targetValue: 100,
             currentValue: 0,
@@ -299,9 +299,9 @@ describe('use-objectives types', () => {
     });
 
     it('should export UpdateObjectiveParams type', async () => {
-        const module = await import('./use-objectives');
+        const module = await import('../../../../src/hooks/api/use-objectives');
         // Type check
-        const params: import('./use-objectives').UpdateObjectiveParams = {
+        const params: import('../../../../src/hooks/api/use-objectives').UpdateObjectiveParams = {
             id: 'test-id' as any,
             title: 'Updated',
         };

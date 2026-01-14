@@ -57,13 +57,13 @@ describe('use-achievements hooks', () => {
 
     describe('useAchievementDefinitions', () => {
         it('should be a function', async () => {
-            const { useAchievementDefinitions } = await import('./use-achievements');
+            const { useAchievementDefinitions } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useAchievementDefinitions).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useAchievementDefinitions } = await import('./use-achievements');
+            const { useAchievementDefinitions } = await import('../../../../src/hooks/api/use-achievements');
 
             useAchievementDefinitions();
 
@@ -72,7 +72,7 @@ describe('use-achievements hooks', () => {
 
         it('should call convexQuery with empty object when no type provided', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useAchievementDefinitions } = await import('./use-achievements');
+            const { useAchievementDefinitions } = await import('../../../../src/hooks/api/use-achievements');
 
             useAchievementDefinitions();
 
@@ -81,7 +81,7 @@ describe('use-achievements hooks', () => {
 
         it('should call convexQuery with type when provided', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useAchievementDefinitions } = await import('./use-achievements');
+            const { useAchievementDefinitions } = await import('../../../../src/hooks/api/use-achievements');
 
             useAchievementDefinitions('individual');
 
@@ -92,7 +92,7 @@ describe('use-achievements hooks', () => {
 
         it('should accept team type', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useAchievementDefinitions } = await import('./use-achievements');
+            const { useAchievementDefinitions } = await import('../../../../src/hooks/api/use-achievements');
 
             useAchievementDefinitions('team');
 
@@ -102,13 +102,13 @@ describe('use-achievements hooks', () => {
 
     describe('useUserAchievements', () => {
         it('should be a function', async () => {
-            const { useUserAchievements } = await import('./use-achievements');
+            const { useUserAchievements } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useUserAchievements).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useUserAchievements } = await import('./use-achievements');
+            const { useUserAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             useUserAchievements();
 
@@ -116,7 +116,7 @@ describe('use-achievements hooks', () => {
         });
 
         it('should return query result', async () => {
-            const { useUserAchievements } = await import('./use-achievements');
+            const { useUserAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             const result = useUserAchievements();
 
@@ -126,13 +126,13 @@ describe('use-achievements hooks', () => {
 
     describe('useTeamAchievements', () => {
         it('should be a function', async () => {
-            const { useTeamAchievements } = await import('./use-achievements');
+            const { useTeamAchievements } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useTeamAchievements).toBe('function');
         });
 
         it('should call convexQuery with skip when teamId is null', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useTeamAchievements } = await import('./use-achievements');
+            const { useTeamAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             useTeamAchievements(null);
 
@@ -141,7 +141,7 @@ describe('use-achievements hooks', () => {
 
         it('should call convexQuery with teamId when provided', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useTeamAchievements } = await import('./use-achievements');
+            const { useTeamAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             useTeamAchievements('team-123');
 
@@ -151,13 +151,13 @@ describe('use-achievements hooks', () => {
 
     describe('useUserAchievementStats', () => {
         it('should be a function', async () => {
-            const { useUserAchievementStats } = await import('./use-achievements');
+            const { useUserAchievementStats } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useUserAchievementStats).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useUserAchievementStats } = await import('./use-achievements');
+            const { useUserAchievementStats } = await import('../../../../src/hooks/api/use-achievements');
 
             useUserAchievementStats();
 
@@ -167,13 +167,13 @@ describe('use-achievements hooks', () => {
 
     describe('useRecentAchievements', () => {
         it('should be a function', async () => {
-            const { useRecentAchievements } = await import('./use-achievements');
+            const { useRecentAchievements } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useRecentAchievements).toBe('function');
         });
 
         it('should use default limit of 5', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useRecentAchievements } = await import('./use-achievements');
+            const { useRecentAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             useRecentAchievements();
 
@@ -182,7 +182,7 @@ describe('use-achievements hooks', () => {
 
         it('should accept custom limit', async () => {
             const { convexQuery } = await import('@convex-dev/react-query');
-            const { useRecentAchievements } = await import('./use-achievements');
+            const { useRecentAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             useRecentAchievements(10);
 
@@ -192,13 +192,13 @@ describe('use-achievements hooks', () => {
 
     describe('useUserAchievementProgress', () => {
         it('should be a function', async () => {
-            const { useUserAchievementProgress } = await import('./use-achievements');
+            const { useUserAchievementProgress } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useUserAchievementProgress).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useUserAchievementProgress } = await import('./use-achievements');
+            const { useUserAchievementProgress } = await import('../../../../src/hooks/api/use-achievements');
 
             useUserAchievementProgress();
 
@@ -208,13 +208,13 @@ describe('use-achievements hooks', () => {
 
     describe('useUnviewedAchievementsCount', () => {
         it('should be a function', async () => {
-            const { useUnviewedAchievementsCount } = await import('./use-achievements');
+            const { useUnviewedAchievementsCount } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useUnviewedAchievementsCount).toBe('function');
         });
 
         it('should call useQuery', async () => {
             const { useQuery } = await import('@tanstack/react-query');
-            const { useUnviewedAchievementsCount } = await import('./use-achievements');
+            const { useUnviewedAchievementsCount } = await import('../../../../src/hooks/api/use-achievements');
 
             useUnviewedAchievementsCount();
 
@@ -224,12 +224,12 @@ describe('use-achievements hooks', () => {
 
     describe('useSeedAchievements', () => {
         it('should be a function', async () => {
-            const { useSeedAchievements } = await import('./use-achievements');
+            const { useSeedAchievements } = await import('../../../../src/hooks/api/use-achievements');
             expect(typeof useSeedAchievements).toBe('function');
         });
 
         it('should return mutation result', async () => {
-            const { useSeedAchievements } = await import('./use-achievements');
+            const { useSeedAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             const result = useSeedAchievements();
 
@@ -238,7 +238,7 @@ describe('use-achievements hooks', () => {
         });
 
         it('invalidates achievement definitions on success', async () => {
-            const { useSeedAchievements } = await import('./use-achievements');
+            const { useSeedAchievements } = await import('../../../../src/hooks/api/use-achievements');
 
             useSeedAchievements();
 
