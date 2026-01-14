@@ -1,7 +1,7 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import { Badge } from '@repo/ui/components/badge';
@@ -12,7 +12,8 @@ import { EditUserModal } from './edit-user-modal';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
-import { useAdminUsers } from '@/hooks/api/use-admin';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 import type { BetterAuthUser } from '@repo/backend/convex/admin';
 
 export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -24,18 +25,18 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
     const limit = 10;
     const queryClient = useQueryClient();
 
-    // Listar usuarios usando BetterAuth client
+    // Listar usuarios usando Convex
     const {
         data: userData,
         isLoading: isLoadingUsers,
         refetch,
-    } = useAdminUsers({
-        searchValue,
+    } = useQuery(convexQuery(api.admin.listUsers, {
+        searchValue: searchValue || undefined,
         paginationOpts: {
             numItems: limit,
             cursor: null,
         },
-    });
+    }));
 
     // Ban usuario
     const banUser = useMutation({

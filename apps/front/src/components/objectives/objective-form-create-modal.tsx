@@ -41,7 +41,10 @@ import {
     objectiveTypeSchema,
     periodSchema,
 } from '@/schemas/objective';
-import { useCreateObjective } from '@/hooks/api/use-objectives';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { OBJECTIVES_DEFAULT_PAGE_SIZE } from '@/lib/objectives-utils';
 import { useTranslations } from 'next-intl';
 import { useUser } from '@/contexts/user-context';
 
@@ -65,7 +68,22 @@ const defaultValues: CreateObjective = {
 export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
-    const user = useUser(); // Ejemplo: obtener el usuario del context
+    const queryClient = useQueryClient();
+    const user = useUser();
+
+    const createObjective = useMutation({
+        mutationFn: useConvexMutation(api.objectives.createObjective),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: {
+                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
+                }).queryKey,
+            });
+        },
+    });
 
     const statusOptions = [
         { value: 'not_started', label: t('statusOptions.notStarted') },
@@ -110,7 +128,6 @@ export default function CreateObjectiveFormModal() {
         { value: 'education', label: t('categoryOptions.education') },
     ];
 
-    const createObjective = useCreateObjective();
     const [open, setOpen] = useState(false);
 
     const form = useForm<z.infer<typeof objectiveSchema>>({

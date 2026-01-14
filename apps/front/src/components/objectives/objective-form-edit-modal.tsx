@@ -41,7 +41,10 @@ import {
     objectiveTypeSchema,
     periodSchema,
 } from '@/schemas/objective';
-import { useUpdateObjective } from '@/hooks/api/use-objectives';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { OBJECTIVES_DEFAULT_PAGE_SIZE } from '@/lib/objectives-utils';
 import { useTranslations } from 'next-intl';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 const statusOptions = [
@@ -60,8 +63,22 @@ const categoryOptions = [
 
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
-    const updateObjective = useUpdateObjective();
+    const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
+
+    const updateObjective = useMutation({
+        mutationFn: useConvexMutation(api.objectives.updateObjective),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: {
+                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
+                }).queryKey,
+            });
+        },
+    });
 
     const objectiveTypeOptions = [
         { value: 'value', label: t('objectiveTypeOptions.value') },

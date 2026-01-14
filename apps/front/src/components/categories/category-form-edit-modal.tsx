@@ -35,7 +35,9 @@ import {
 } from '@repo/ui/components/select';
 import { savedCategorySchema, Category } from '@/schemas/category';
 import { useTranslations } from 'next-intl';
-import { useUpdateCategory } from '@/hooks/api/use-categories';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 import { categoryIconSchema } from '@/schemas/category';
 
 const colorOptions = [
@@ -55,8 +57,17 @@ const iconOptions = categoryIconSchema.options;
 export default function EditCategoryFormModal({ defaultValues }: { defaultValues: Category }) {
     const t = useTranslations('Objectives.categories');
     const tCommon = useTranslations('Common');
-    const updateCategory = useUpdateCategory();
+    const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
+
+    const updateCategory = useMutation({
+        mutationFn: useConvexMutation(api.categories.updateCategory),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
+            });
+        },
+    });
     const form = useForm<z.infer<typeof savedCategorySchema>>({
         defaultValues: {
             id: defaultValues.id,

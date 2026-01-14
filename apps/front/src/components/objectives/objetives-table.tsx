@@ -13,7 +13,10 @@ import { useTranslations } from 'next-intl';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import { useObjectives, useDeleteObjective } from '@/hooks/api/use-objectives';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { normalizeObjective, OBJECTIVES_DEFAULT_PAGE_SIZE } from '@/lib/objectives-utils';
 
 interface ObjetivesTableProps {
     objectives?: Objective[];
@@ -26,8 +29,31 @@ export default function ObjetivesTable({
 }: ObjetivesTableProps) {
     const t = useTranslations('Objectives');
     const tCard = useTranslations('ObjectiveCard');
-    const { data: fetchedObjectives, isLoading: fetchedIsLoading } = useObjectives();
-    const deleteObjectiveMutation = useDeleteObjective();
+    const queryClient = useQueryClient();
+
+    const { data: fetchedObjectives, isLoading: fetchedIsLoading } = useQuery({
+        ...convexQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: {
+                numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                cursor: null,
+            },
+        }),
+        select: data => data.page.map(normalizeObjective),
+    });
+
+    const deleteObjectiveMutation = useMutation({
+        mutationFn: useConvexMutation(api.objectives.deleteObjective),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: {
+                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
+                }).queryKey,
+            });
+        },
+    });
 
     const getPeriodLabel = (period?: string | null) => {
         switch (period) {

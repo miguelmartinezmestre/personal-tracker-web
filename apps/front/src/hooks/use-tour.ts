@@ -3,17 +3,11 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTour as useTourContext, useTourOptional } from '@/components/tours';
-import type { TourId } from '@/types/tour';
-import {
-    useCompletedTours,
-    useIsTourCompleted,
-    useStartTour,
-    useUpdateTourProgress,
-    useCompleteTour,
-    useSkipTour,
-    useResetTour,
-    useTourResumeStep,
-} from './api/use-tours';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import type { TourId, TourProgress } from '@/types/tour';
+import { useUser } from '@/contexts/user-context';
 import { getTourDefinition } from '@/config/tours';
 
 /**
@@ -25,14 +19,45 @@ import { getTourDefinition } from '@/config/tours';
 export function useTour() {
     const router = useRouter();
     const context = useTourContext();
+    const queryClient = useQueryClient();
+    const user = useUser();
 
-    // API hooks
-    const { completedTours } = useCompletedTours();
-    const { mutate: startTourMutation } = useStartTour();
-    const { mutate: updateProgressMutation } = useUpdateTourProgress();
-    const { mutate: completeTourMutation } = useCompleteTour();
-    const { mutate: skipTourMutation } = useSkipTour();
-    const { mutate: resetTourMutation } = useResetTour();
+    // API hooks - directly using Convex
+    const { data: progressData } = useQuery({
+        ...convexQuery(api.tours.getTourProgress, {}),
+        enabled: !!user,
+    });
+
+    const completedTours = useMemo(() => {
+        return new Set<TourId>(
+            progressData?.filter(p => p.completed).map(p => p.tourId as TourId) ?? []
+        );
+    }, [progressData]);
+
+    const startTourMutation = useMutation({
+        mutationFn: useConvexMutation(api.tours.startTour),
+        onSuccess: () => queryClient.invalidateQueries(),
+    });
+
+    const updateProgressMutation = useMutation({
+        mutationFn: useConvexMutation(api.tours.updateTourProgress),
+        onSuccess: () => queryClient.invalidateQueries(),
+    });
+
+    const completeTourMutation = useMutation({
+        mutationFn: useConvexMutation(api.tours.completeTour),
+        onSuccess: () => queryClient.invalidateQueries(),
+    });
+
+    const skipTourMutation = useMutation({
+        mutationFn: useConvexMutation(api.tours.skipTour),
+        onSuccess: () => queryClient.invalidateQueries(),
+    });
+
+    const resetTourMutation = useMutation({
+        mutationFn: useConvexMutation(api.tours.resetTour),
+        onSuccess: () => queryClient.invalidateQueries(),
+    });
 
     /**
      * Start a tour with backend initialization
@@ -51,7 +76,7 @@ export function useTour() {
             }
 
             // Initialize the tour in backend
-            startTourMutation({ tourId });
+            startTourMutation.mutate({ tourId });
 
             // Navigate to the tour's starting route if needed
             const firstStep = tour.steps[startIndex ?? 0];
@@ -83,7 +108,7 @@ export function useTour() {
 
         if (currentTourId) {
             // Update progress in backend
-            updateProgressMutation({ tourId: currentTourId, stepIndex: stepIndex + 1 });
+            updateProgressMutation.mutate({ tourId: currentTourId, stepIndex: stepIndex + 1 });
         }
 
         context.nextStep();
@@ -97,7 +122,7 @@ export function useTour() {
 
         if (currentTourId && stepIndex > 0) {
             // Update progress in backend
-            updateProgressMutation({ tourId: currentTourId, stepIndex: stepIndex - 1 });
+            updateProgressMutation.mutate({ tourId: currentTourId, stepIndex: stepIndex - 1 });
         }
 
         context.prevStep();
@@ -112,7 +137,7 @@ export function useTour() {
 
             if (currentTourId) {
                 // Update progress in backend
-                updateProgressMutation({ tourId: currentTourId, stepIndex: index });
+                updateProgressMutation.mutate({ tourId: currentTourId, stepIndex: index });
             }
 
             context.goToStep(index);
@@ -128,7 +153,7 @@ export function useTour() {
 
         if (currentTourId) {
             // Record skip in backend
-            skipTourMutation({ tourId: currentTourId, stepIndex });
+            skipTourMutation.mutate({ tourId: currentTourId, stepIndex });
         }
 
         context.skipTour();
@@ -140,7 +165,7 @@ export function useTour() {
     const resetTour = useCallback(
         (tourId: TourId) => {
             // Reset in backend
-            resetTourMutation({ tourId });
+            resetTourMutation.mutate({ tourId });
 
             // Update local provider state
             context.resetTour(tourId);
@@ -181,7 +206,7 @@ export function useTour() {
 
         if (currentTourId) {
             // Mark as completed in backend
-            completeTourMutation({ tourId: currentTourId });
+            completeTourMutation.mutate({ tourId: currentTourId });
         }
     }, [context, completeTourMutation]);
 
@@ -205,7 +230,11 @@ export function useTour() {
  * Hook to get tour completion status for a specific tour
  */
 export function useTourCompletion(tourId: TourId) {
-    const { data: isCompleted } = useIsTourCompleted(tourId);
+    const user = useUser();
+    const { data: isCompleted } = useQuery({
+        ...convexQuery(api.tours.isTourCompleted, { tourId }),
+        enabled: !!user,
+    });
 
     return {
         isCompleted: isCompleted ?? false,
@@ -214,12 +243,31 @@ export function useTourCompletion(tourId: TourId) {
 }
 
 /**
+ * Helper hook to get the current step index for a tour.
+ * Returns the step to resume from, or 0 if not started.
+ */
+export function useTourResumeStep(tourId: TourId): number {
+    const user = useUser();
+    const { data: tourData } = useQuery({
+        ...convexQuery(api.tours.getTour, { tourId }),
+        enabled: !!user && !!tourId,
+    });
+
+    // If tour is completed, return 0 (restart from beginning)
+    if (tourData?.completed) {
+        return 0;
+    }
+
+    // Return the saved step index, or 0 if not available
+    return tourData?.currentStep ?? 0;
+}
+
+/**
  * Hook to auto-start a tour on first visit
  * Use this in page components to trigger tours when the page loads
  */
 export function useAutoStartTour(tourId: TourId, enabled: boolean = true) {
     const completion = useTourCompletion(tourId);
-    const { isTourCompleted: isProviderCompleted } = useTourContext();
     const { startTour } = useTour();
     const resumeStep = useTourResumeStep(tourId);
 

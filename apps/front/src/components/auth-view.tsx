@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { UserProvider } from '@/contexts/user-context';
-import { useCurrentUser } from '@/hooks/api/use-auth';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 
 export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
     const tCommon = useTranslations('Common');
@@ -18,7 +20,8 @@ export default function AuthenticatedView({ children }: { children: React.ReactN
     const isSessionLoading = Boolean(sessionQuery?.isPending);
 
     // Only query for the current user once we have a session.
-    const user = useCurrentUser(!session?.user);
+    const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, session?.user ? {} : 'skip'));
+    const user = userQuery.data;
 
     useEffect(() => {
         if (isSessionLoading) return;

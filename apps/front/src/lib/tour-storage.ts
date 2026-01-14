@@ -1,6 +1,7 @@
 'use client';
 
 import type { TourId, TourStorage } from '@/types/tour';
+export type { TourStorage };
 
 /**
  * LocalStorage keys for tour persistence.

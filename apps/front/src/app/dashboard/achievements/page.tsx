@@ -7,21 +7,42 @@ import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ca
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
 import { Button } from '@repo/ui/components/button';
 import { Skeleton } from '@repo/ui/components/skeleton';
-import {
-    useUserAchievementStats,
-    useUserAchievementProgress,
-    useSeedAchievements,
-} from '@/hooks/api/use-achievements';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { achievementProgressSchema, type AchievementProgress } from '@/schemas/achievement';
 import { AchievementCard } from '@/components/achievements/achievement-card';
 import type { AchievementTier } from '@/schemas/achievement';
 
 export default function AchievementsPage() {
     const t = useTranslations('Achievements');
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
+    const queryClient = useQueryClient();
 
-    const { data: stats, isLoading: statsLoading } = useUserAchievementStats();
-    const { data: progress, isLoading: progressLoading } = useUserAchievementProgress();
-    const seedMutation = useSeedAchievements();
+    const { data: stats, isLoading: statsLoading } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
+    const { data: progress, isLoading: progressLoading } = useQuery({
+        ...convexQuery(api.achievements.getUserAchievementProgress, {}),
+        select: (data): AchievementProgress[] =>
+            data.map(item => achievementProgressSchema.parse(item)),
+    });
+
+    const seedMutation = useMutation({
+        mutationFn: useConvexMutation(api.achievements.seedAchievementDefinitions),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getAchievementDefinitions, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievementProgress, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievementStats, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievements, {}).queryKey,
+            });
+        },
+    });
 
     const isLoading = statsLoading || progressLoading;
 

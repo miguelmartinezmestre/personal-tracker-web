@@ -6,7 +6,9 @@ import { Skeleton } from '@repo/ui/components/skeleton';
 import { Trophy, ChevronRight, Star, Award } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useUserAchievementStats, useRecentAchievements } from '@/hooks/api/use-achievements';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
 import type { AchievementTier } from '@/schemas/achievement';
 import { cn } from '@repo/ui/lib/utils';
@@ -17,9 +19,8 @@ interface AchievementsWidgetProps {
 
 export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
     const t = useTranslations('Achievements');
-    const { data: stats, isLoading: statsLoading } = useUserAchievementStats();
-    const { data: recentAchievements, isLoading: achievementsLoading } =
-        useRecentAchievements(limit);
+    const { data: stats, isLoading: statsLoading } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
+    const { data: recentAchievements, isLoading: achievementsLoading } = useQuery(convexQuery(api.achievements.getRecentAchievements, { limit }));
 
     const isLoading = statsLoading || achievementsLoading;
 

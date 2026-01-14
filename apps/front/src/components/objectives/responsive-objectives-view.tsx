@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { QuickActions } from './quick-actions';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { normalizeObjective } from '@/hooks/api/use-objectives';
+import { normalizeObjective } from '@/lib/objectives-utils';
 import type { Doc } from '@repo/backend/convex/_generated/dataModel';
 
 const DEFAULT_FILTERS: FilterOptions = {

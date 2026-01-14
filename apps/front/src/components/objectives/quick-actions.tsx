@@ -12,12 +12,10 @@ import {
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import {
-    useCompleteObjective,
-    usePauseObjective,
-    useArchiveObjective,
-    useUpdateObjectiveStatus,
-} from '@/hooks/api/use-objectives';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { OBJECTIVES_DEFAULT_PAGE_SIZE } from '@/lib/objectives-utils';
 
 interface QuickActionsProps {
     objectiveId: Id<'objectives'>;
@@ -25,51 +23,85 @@ interface QuickActionsProps {
     className?: string;
 }
 
-function createMutationOptions(successMessage: string, errorMessage: string) {
-    return {
-        onSuccess: () => toast.success(successMessage),
-        onError: (error: Error) => {
-            toast.error(errorMessage);
-            console.error(error);
-        },
-    };
-}
-
 const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
     ({ objectiveId, currentStatus, className }, ref) => {
         const t = useTranslations('Objectives');
+        const queryClient = useQueryClient();
 
-        const completeObjective = useCompleteObjective();
-        const pauseObjective = usePauseObjective();
-        const archiveObjective = useArchiveObjective();
-        const resumeObjective = useUpdateObjectiveStatus();
+        const completeObjective = useMutation({
+            mutationFn: useConvexMutation(api.objectives.completeObjective),
+            onSuccess: () => {
+                toast.success(t('toast.completedSuccess'));
+                queryClient.invalidateQueries({
+                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                        paginationOpts: {
+                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                            cursor: null,
+                        },
+                    }).queryKey,
+                });
+            },
+        });
+
+        const pauseObjective = useMutation({
+            mutationFn: useConvexMutation(api.objectives.pauseObjective),
+            onSuccess: () => {
+                toast.success(t('toast.pausedSuccess'));
+                queryClient.invalidateQueries({
+                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                        paginationOpts: {
+                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                            cursor: null,
+                        },
+                    }).queryKey,
+                });
+            },
+        });
+
+        const archiveObjective = useMutation({
+            mutationFn: useConvexMutation(api.objectives.archiveObjective),
+            onSuccess: () => {
+                toast.success(t('toast.archivedSuccess'));
+                queryClient.invalidateQueries({
+                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                        paginationOpts: {
+                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                            cursor: null,
+                        },
+                    }).queryKey,
+                });
+            },
+        });
+
+        const resumeObjective = useMutation({
+            mutationFn: useConvexMutation(api.objectives.updateObjectiveStatus),
+            onSuccess: () => {
+                toast.success(t('toast.resumedSuccess'));
+                queryClient.invalidateQueries({
+                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                        paginationOpts: {
+                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                            cursor: null,
+                        },
+                    }).queryKey,
+                });
+            },
+        });
 
         const handleComplete = () => {
-            completeObjective.mutate(
-                { id: objectiveId },
-                createMutationOptions(t('toast.completedSuccess'), t('toast.completeFailed'))
-            );
+            completeObjective.mutate({ id: objectiveId });
         };
 
         const handlePause = () => {
-            pauseObjective.mutate(
-                { id: objectiveId },
-                createMutationOptions(t('toast.pausedSuccess'), t('toast.pauseFailed'))
-            );
+            pauseObjective.mutate({ id: objectiveId });
         };
 
         const handleArchive = () => {
-            archiveObjective.mutate(
-                { id: objectiveId },
-                createMutationOptions(t('toast.archivedSuccess'), t('toast.archiveFailed'))
-            );
+            archiveObjective.mutate({ id: objectiveId });
         };
 
         const handleResume = () => {
-            resumeObjective.mutate(
-                { id: objectiveId, status: 'in_progress' },
-                createMutationOptions(t('toast.resumedSuccess'), t('toast.resumeFailed'))
-            );
+            resumeObjective.mutate({ id: objectiveId, status: 'in_progress' });
         };
 
         const status = currentStatus.toLowerCase();

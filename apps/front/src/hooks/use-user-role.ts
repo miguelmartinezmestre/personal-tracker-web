@@ -3,8 +3,9 @@
 import { useMemo } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useUser } from '@/contexts/user-context';
-import { useCurrentUser } from './api/use-auth';
-import { useUserRole as useUserRoleQuery } from './api/use-users';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 
 // Helper to check if a role is admin
 function isAdminRole(role: string | string[] | undefined): boolean {
@@ -27,8 +28,9 @@ export function useUserRole() {
     }
 
     // Only query if context user is not available
-    const authUser = useCurrentUser(!!contextUser);
-    const userRoleQuery = useUserRoleQuery();
+    const authUserQuery = useQuery(convexQuery(api.auth.getCurrentUser, contextUser ? 'skip' : {}));
+    const authUser = authUserQuery.data;
+    const userRoleQuery = useQuery(convexQuery(api.users.getUserRole, {}));
     const userRole = contextUser ? null : (userRoleQuery.data ?? null);
     const { data: session } = authClient.useSession();
 

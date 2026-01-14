@@ -1,7 +1,9 @@
 'use client';
 
 import { DataTable } from '@/components/table';
-import { useCategories, useDeleteCategory } from '@/hooks/api/use-categories';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import EditCategoryFormModal from '@/components/categories/category-form-edit-modal';
@@ -36,8 +38,18 @@ function mapConvexCategoryToCategory(convexCategory: ConvexCategory): Category {
 
 export default function CategoriesTable() {
     const t = useTranslations('Objectives.categories');
-    const categories = useCategories();
-    const deleteCategory = useDeleteCategory();
+    const queryClient = useQueryClient();
+
+    const categories = useQuery(convexQuery(api.categories.getCategoriesByUser, {}));
+
+    const deleteCategory = useMutation({
+        mutationFn: useConvexMutation(api.categories.deleteCategory),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
+            });
+        },
+    });
 
     const renderIcon = (iconName: string | undefined) => {
         if (!iconName) return null;

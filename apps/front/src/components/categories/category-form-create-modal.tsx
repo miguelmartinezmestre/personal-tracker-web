@@ -35,7 +35,9 @@ import {
 } from '@repo/ui/components/select';
 import { categorySchema, CreateCategory } from '@/schemas/category';
 import { useTranslations } from 'next-intl';
-import { useCreateCategory } from '@/hooks/api/use-categories';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 import { categoryIconSchema } from '@/schemas/category';
 
 const defaultValues: CreateCategory = {
@@ -61,8 +63,17 @@ const iconOptions = categoryIconSchema.options;
 export default function CreateCategoryFormModal() {
     const t = useTranslations('Objectives.categories');
     const tCommon = useTranslations('Common');
-    const createCategory = useCreateCategory();
+    const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
+
+    const createCategory = useMutation({
+        mutationFn: useConvexMutation(api.categories.createCategory),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
+            });
+        },
+    });
     const form = useForm<z.infer<typeof categorySchema>>({
         defaultValues: defaultValues,
         validators: {
