@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resetPasswordSchema } from './reset-password';
+import { resetPasswordSchema } from '@/schemas/reset-password';
 
 describe('resetPasswordSchema', () => {
     it('should validate valid reset password data', () => {
@@ -27,7 +27,7 @@ describe('resetPasswordSchema', () => {
         const result = resetPasswordSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const passwordError = result.error.issues.find(issue =>
+            const passwordError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('password')
             );
             expect(passwordError).toBeDefined();
@@ -43,7 +43,7 @@ describe('resetPasswordSchema', () => {
         const result = resetPasswordSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const confirmError = result.error.issues.find(issue =>
+            const confirmError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('confirmPassword')
             );
             expect(confirmError).toBeDefined();
@@ -59,7 +59,7 @@ describe('resetPasswordSchema', () => {
         const result = resetPasswordSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const keyError = result.error.issues.find(issue =>
+            const keyError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('resetPasswordKey')
             );
             expect(keyError).toBeDefined();
@@ -88,7 +88,7 @@ describe('resetPasswordSchema', () => {
         expect(result.success).toBe(false);
         if (!result.success) {
             const mismatchError = result.error.issues.find(
-                issue => issue.message === 'Las contraseñas no coinciden'
+                (issue: { message: string }) => issue.message === 'Las contraseñas no coinciden'
             );
             expect(mismatchError).toBeDefined();
         }

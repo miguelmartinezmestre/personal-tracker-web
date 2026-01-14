@@ -121,7 +121,7 @@ test.skip('team members: add, edit role, and delete team members', async ({ page
     const invitedUser = await createTestUser(invitedPage);
 
     // Invite the user using BetterAuth
-    const invitation = await inviteMember(page, teamId, invitedUser.email, 'member');
+    const invitation = await inviteMember(page, { organizationId: teamId, email: invitedUser.email, role: 'member' });
 
     // Accept invitation
     await acceptInvitation(invitedPage, invitation.id);

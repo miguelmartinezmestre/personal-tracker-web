@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import StatsHeader from './stats-header';
+import StatsHeader from '@/components/stats-header';
 
 // Mock @repo/ui components
 vi.mock('@repo/ui/components/card', () => ({

@@ -22,7 +22,7 @@ describe('auth-client', () => {
     });
 
     it('creates the auth client with expected plugins and schema', async () => {
-        const { authClient } = await import('./auth-client');
+        const { authClient } = await import('@/lib/auth-client');
         const { createAuthClient } = await import('better-auth/react');
         const { convexClient } = await import('@convex-dev/better-auth/client/plugins');
         const { adminClient, organizationClient } = await import('better-auth/client/plugins');

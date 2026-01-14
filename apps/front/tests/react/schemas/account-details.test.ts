@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { accountDetailsSchema } from './account-details';
+import { accountDetailsSchema } from '@/schemas/account-details';
 
 describe('accountDetailsSchema', () => {
     it('should validate valid account details', () => {
@@ -24,7 +24,7 @@ describe('accountDetailsSchema', () => {
         const result = accountDetailsSchema.safeParse(invalidDetails);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const emailError = result.error.issues.find(issue => issue.path.includes('email'));
+            const emailError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('email'));
             expect(emailError).toBeDefined();
         }
     });
@@ -37,7 +37,7 @@ describe('accountDetailsSchema', () => {
         const result = accountDetailsSchema.safeParse(invalidDetails);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const usernameError = result.error.issues.find(issue =>
+            const usernameError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('username')
             );
             expect(usernameError).toBeDefined();
@@ -63,7 +63,7 @@ describe('accountDetailsSchema', () => {
         const result = accountDetailsSchema.safeParse(invalidDetails);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const usernameError = result.error.issues.find(issue =>
+            const usernameError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('username')
             );
             expect(usernameError).toBeDefined();

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sessionSchema, savedSessionSchema } from './session';
+import { sessionSchema, savedSessionSchema } from '@/schemas/session';
 
 describe('sessionSchema', () => {
     it('should validate a valid session', () => {
@@ -68,7 +68,7 @@ describe('sessionSchema', () => {
         const result = sessionSchema.safeParse(invalidSession);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const userIdError = result.error.issues.find(issue => issue.path.includes('userId'));
+            const userIdError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('userId'));
             expect(userIdError).toBeDefined();
         }
     });
@@ -82,7 +82,7 @@ describe('sessionSchema', () => {
         const result = sessionSchema.safeParse(invalidSession);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const valueError = result.error.issues.find(issue => issue.path.includes('value'));
+            const valueError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('value'));
             expect(valueError).toBeDefined();
         }
     });
@@ -96,7 +96,7 @@ describe('sessionSchema', () => {
         const result = sessionSchema.safeParse(invalidSession);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const statusError = result.error.issues.find(issue => issue.path.includes('status'));
+            const statusError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('status'));
             expect(statusError).toBeDefined();
         }
     });
@@ -139,7 +139,7 @@ describe('savedSessionSchema', () => {
         const result = savedSessionSchema.safeParse(invalidSavedSession);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const idError = result.error.issues.find(issue => issue.path.includes('_id'));
+            const idError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('_id'));
             expect(idError).toBeDefined();
         }
     });

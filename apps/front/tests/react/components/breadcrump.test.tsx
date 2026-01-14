@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BreadcrumbNav } from './breadcrump';
+import { BreadcrumbNav } from '@/components/breadcrump';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({

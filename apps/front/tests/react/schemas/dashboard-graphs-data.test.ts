@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dashboardGraphsDataSchema } from './dashboard-graphs-data';
+import { dashboardGraphsDataSchema } from '@/schemas/dashboard-graphs-data';
 
 describe('dashboardGraphsDataSchema', () => {
     const validData = {

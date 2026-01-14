@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { loginSchema } from './login';
+import { loginSchema } from '@/schemas/login';
 
 describe('loginSchema', () => {
     it('should validate a valid login', () => {
@@ -24,7 +24,7 @@ describe('loginSchema', () => {
         const result = loginSchema.safeParse(invalidLogin);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const emailError = result.error.issues.find(issue => issue.path.includes('email'));
+            const emailError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('email'));
             expect(emailError).toBeDefined();
         }
     });

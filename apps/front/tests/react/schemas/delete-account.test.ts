@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formSchema } from './delete-account';
+import { formSchema } from '@/schemas/delete-account';
 
 describe('deleteAccountSchema (formSchema)', () => {
     it('should validate a valid delete account request', () => {
@@ -20,7 +20,7 @@ describe('deleteAccountSchema (formSchema)', () => {
         const result = formSchema.safeParse(invalidData);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const idError = result.error.issues.find(issue => issue.path.includes('id'));
+            const idError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('id'));
             expect(idError).toBeDefined();
         }
     });

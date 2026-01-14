@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { SearchForm } from './search-form';
+import { SearchForm } from '@/components/search-form';
 
 // Mock next-intl
 vi.mock('next-intl', () => ({

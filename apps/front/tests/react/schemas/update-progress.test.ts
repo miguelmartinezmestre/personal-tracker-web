@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { updateProgressSchema } from './update-progress';
+import { updateProgressSchema } from '@/schemas/update-progress';
 
 describe('updateProgressSchema', () => {
     it('should validate a valid progress update', () => {

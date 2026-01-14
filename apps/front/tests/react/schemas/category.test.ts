@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { categorySchema, savedCategorySchema, categoryIconSchema } from './category';
+import { categorySchema, savedCategorySchema, categoryIconSchema } from '@/schemas/category';
 
 describe('categorySchema', () => {
     it('should validate a valid category', () => {
@@ -41,7 +41,7 @@ describe('categorySchema', () => {
         const result = categorySchema.safeParse(invalidCategory);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const nameError = result.error.issues.find(issue => issue.path.includes('name'));
+            const nameError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('name'));
             expect(nameError).toBeDefined();
         }
     });
@@ -54,7 +54,7 @@ describe('categorySchema', () => {
         const result = categorySchema.safeParse(invalidCategory);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const colorError = result.error.issues.find(issue => issue.path.includes('color'));
+            const colorError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('color'));
             expect(colorError).toBeDefined();
         }
     });
@@ -115,7 +115,7 @@ describe('savedCategorySchema', () => {
         const result = savedCategorySchema.safeParse(invalidSavedCategory);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const idError = result.error.issues.find(issue => issue.path.includes('id'));
+            const idError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('id'));
             expect(idError).toBeDefined();
         }
     });

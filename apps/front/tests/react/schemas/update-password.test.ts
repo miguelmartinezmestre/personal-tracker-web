@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { updatePasswordSchema } from './update-password';
+import { updatePasswordSchema } from '@/schemas/update-password';
 
 describe('updatePasswordSchema', () => {
     it('validates correct password data', () => {
@@ -57,7 +57,7 @@ describe('updatePasswordSchema', () => {
         expect(result.success).toBe(false);
 
         if (!result.success) {
-            const confirmPasswordError = result.error.issues.find(issue =>
+            const confirmPasswordError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('confirmPassword')
             );
             expect(confirmPasswordError).toBeDefined();

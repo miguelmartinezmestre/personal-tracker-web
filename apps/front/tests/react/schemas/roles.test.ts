@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Role, TeamRole } from './roles';
+import { Role, TeamRole } from '@/schemas/roles';
 
 describe('Role enum', () => {
     it('should have ADMIN value', () => {

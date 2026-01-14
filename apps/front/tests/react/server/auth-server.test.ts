@@ -18,7 +18,7 @@ describe('auth-server', () => {
     });
 
     it('delegates to getTokenNextjs with the auth config', async () => {
-        const { getToken } = await import('./auth-server');
+        const { getToken } = await import('@/server/auth-server');
         const { createAuth } = await import('@repo/backend/convex/auth');
 
         mockGetToken.mockResolvedValue('token-result');

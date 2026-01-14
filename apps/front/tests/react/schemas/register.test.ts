@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { registerSchema } from './register';
+import { registerSchema } from '@/schemas/register';
 
 describe('registerSchema', () => {
     it('should validate a valid registration', () => {
@@ -106,7 +106,7 @@ describe('registerSchema', () => {
         const result = registerSchema.safeParse(invalidRegister);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const confirmPasswordError = result.error.issues.find(issue =>
+            const confirmPasswordError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) =>
                 issue.path.includes('confirmPassword')
             );
             expect(confirmPasswordError?.message).toMatch(/coinciden/i);

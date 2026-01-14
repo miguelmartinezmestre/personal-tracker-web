@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildLLMDeepLink } from './llm-links';
+import { buildLLMDeepLink } from '@/lib/llm-links';
 
 describe('buildLLMDeepLink', () => {
     const message = 'hola mundo';

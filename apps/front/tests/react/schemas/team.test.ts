@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { teamSchema } from './team';
+import { teamSchema } from '@/schemas/team';
 
 describe('teamSchema', () => {
     it('should validate a valid team', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { teamMemberSchema, savedTeamMemberSchema } from './team-member';
+import { teamMemberSchema, savedTeamMemberSchema } from '@/schemas/team-member';
 
 describe('teamMemberSchema', () => {
     it('should validate a valid team member', () => {
@@ -56,7 +56,7 @@ describe('teamMemberSchema', () => {
         const result = teamMemberSchema.safeParse(invalidMember);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const roleError = result.error.issues.find(issue => issue.path.includes('role'));
+            const roleError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('role'));
             expect(roleError).toBeDefined();
         }
     });
@@ -70,7 +70,7 @@ describe('teamMemberSchema', () => {
         const result = teamMemberSchema.safeParse(invalidMember);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const emailError = result.error.issues.find(issue => issue.path.includes('email'));
+            const emailError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('email'));
             expect(emailError).toBeDefined();
         }
     });

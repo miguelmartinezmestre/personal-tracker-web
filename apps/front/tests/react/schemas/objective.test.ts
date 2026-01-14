@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { objectiveSchema, savedObjectiveSchema } from './objective';
+import { objectiveSchema, savedObjectiveSchema } from '@/schemas/objective';
 
 describe('objectiveSchema', () => {
     it('should validate a valid objective', () => {
@@ -33,7 +33,7 @@ describe('objectiveSchema', () => {
         const result = objectiveSchema.safeParse(invalidObjective);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const titleError = result.error.issues.find(issue => issue.path.includes('title'));
+            const titleError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('title'));
             expect(titleError).toBeDefined();
         }
     });

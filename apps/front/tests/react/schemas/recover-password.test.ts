@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formSchema } from './recover-password';
+import { formSchema } from '@/schemas/recover-password';
 
 describe('recoverPasswordSchema (formSchema)', () => {
     it('should validate a valid email', () => {
@@ -20,7 +20,7 @@ describe('recoverPasswordSchema (formSchema)', () => {
         const result = formSchema.safeParse(invalidForm);
         expect(result.success).toBe(false);
         if (!result.success) {
-            const emailError = result.error.issues.find(issue => issue.path.includes('email'));
+            const emailError = result.error.issues.find((issue: { path: (string | number | symbol)[] }) => issue.path.includes('email'));
             expect(emailError).toBeDefined();
         }
     });

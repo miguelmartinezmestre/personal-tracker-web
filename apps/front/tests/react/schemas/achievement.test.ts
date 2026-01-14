@@ -8,7 +8,7 @@ import {
     teamAchievementSchema,
     achievementProgressSchema,
     achievementStatsSchema,
-} from './achievement';
+} from '@/schemas/achievement';
 
 describe('achievementTypeSchema', () => {
     it('accepts valid achievement types', () => {

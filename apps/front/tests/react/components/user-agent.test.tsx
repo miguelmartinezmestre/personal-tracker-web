@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { UserAgentIcon } from './user-agent';
+import { UserAgentIcon } from '@/components/user-agent';
 
 describe('UserAgentIcon', () => {
     it('renders with a user agent string', () => {

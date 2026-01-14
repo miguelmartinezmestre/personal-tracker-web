@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import Section from './section';
+import Section from '@/components/section';
 
 describe('Section', () => {
     it('renders with title and content', () => {

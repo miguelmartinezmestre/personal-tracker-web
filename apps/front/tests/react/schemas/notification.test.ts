@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { notificationSchema, savedNotificationSchema } from './notification';
+import { notificationSchema, savedNotificationSchema } from '@/schemas/notification';
 
 describe('notificationSchema', () => {
     const validNotification = {

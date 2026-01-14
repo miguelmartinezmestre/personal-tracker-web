@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { AchievementCard } from './achievement-card';
+import { AchievementCard } from '@/components/achievements/achievement-card';
 import type { AchievementDefinition } from '@/schemas/achievement';
 
 // Mock the AchievementBadge component
-vi.mock('./achievement-badge', () => ({
+vi.mock('@/components/achievements/achievement-badge', () => ({
     AchievementBadge: ({ name, earned }: { name: string; earned: boolean }) => (
         <div data-testid="achievement-badge" data-earned={earned}>
             {name}

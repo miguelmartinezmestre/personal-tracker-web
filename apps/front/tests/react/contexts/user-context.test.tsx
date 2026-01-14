@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { UserProvider, useUser } from './user-context';
+import { UserProvider, useUser } from '@/contexts/user-context';
 
 // Mock user data - must match the type from api.auth.getCurrentUser
 const mockUser = {
