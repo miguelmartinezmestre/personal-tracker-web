@@ -10,10 +10,10 @@ export const authClient = createAuthClient({
         organizationClient({
             schema: {
                 organization: {
-                    fields: {
-                        slug: 'slug',
-                        description: 'description',
-                        logo: 'logo',
+                    additionalFields: {
+                        slug: { type: 'string' },
+                        description: { type: 'string' },
+                        logo: { type: 'string' },
                     },
                 },
             },
