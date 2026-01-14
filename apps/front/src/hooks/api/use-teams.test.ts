@@ -5,15 +5,11 @@ const invalidateQueriesMock = vi.fn();
 
 // Mock the external dependencies
 vi.mock('@tanstack/react-query', () => ({
-    useSuspenseQuery: vi.fn(() => ({
-        data: [],
-        isLoading: false,
-        isError: false,
-    })),
     useQuery: vi.fn(() => ({
         data: null,
         isLoading: false,
         isError: false,
+        enabled: true,
     })),
     useMutation: vi.fn(options => {
         lastMutationOptions = options;
@@ -33,11 +29,10 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@/lib/auth-client', () => ({
     authClient: {
         organization: {
-            list: vi.fn(async () => []),
+            list: vi.fn(async () => ({ data: [] })),
             create: vi.fn(async () => ({})),
             update: vi.fn(async () => ({})),
             delete: vi.fn(async () => ({})),
-            checkSlug: vi.fn(async () => ({ status: true })),
         },
     },
 }));
@@ -55,13 +50,13 @@ describe('use-teams hooks', () => {
             expect(typeof useTeams).toBe('function');
         });
 
-        it('should call useSuspenseQuery', async () => {
-            const { useSuspenseQuery } = await import('@tanstack/react-query');
+        it('should call useQuery', async () => {
+            const { useQuery } = await import('@tanstack/react-query');
             const { useTeams } = await import('./use-teams');
 
             useTeams();
 
-            expect(useSuspenseQuery).toHaveBeenCalled();
+            expect(useQuery).toHaveBeenCalled();
         });
 
         it('should return query result', async () => {
@@ -97,7 +92,7 @@ describe('use-teams hooks', () => {
             useTeam(teamId);
 
             expect(useQuery).toHaveBeenCalledWith(
-                expect.objectContaining({ queryKey: ['organization', teamId] })
+                expect.objectContaining({ queryKey: ['teams', 'team-123'] })
             );
         });
     });
@@ -125,7 +120,7 @@ describe('use-teams hooks', () => {
             lastMutationOptions?.onSuccess?.();
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['organizations'],
+                queryKey: ['teams'],
             });
         });
     });
@@ -152,7 +147,7 @@ describe('use-teams hooks', () => {
             lastMutationOptions?.onSuccess?.();
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['organizations'],
+                queryKey: ['teams'],
             });
         });
     });
@@ -179,7 +174,7 @@ describe('use-teams hooks', () => {
             lastMutationOptions?.onSuccess?.();
 
             expect(invalidateQueriesMock).toHaveBeenCalledWith({
-                queryKey: ['organizations'],
+                queryKey: ['teams'],
             });
         });
     });

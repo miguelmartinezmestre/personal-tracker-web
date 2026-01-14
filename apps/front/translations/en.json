@@ -158,7 +158,9 @@
             "password": "Password",
             "confirmPassword": "Confirm password",
             "role": "Role",
-            "userId": "User ID"
+            "userId": "User ID",
+            "organizationSlug": "Organization Slug",
+            "organizationSlugHint": "Unique identifier for your organization (lowercase letters, numbers, and hyphens only)"
         },
         "placeholders": {
             "email": "name@email.com",
@@ -166,6 +168,7 @@
             "username": "username",
             "min8Chars": "At least 8 characters",
             "confirmPassword": "Confirm password",
+            "organizationSlug": "my-organization",
             "searchByEmail": "Search by email...",
             "userIdForSessions": "User ID to view sessions...",
             "searchDocs": "Search the docs...",
@@ -1120,6 +1123,33 @@
             "deletedSuccess": "Member deleted successfully",
             "deleteFailed": "Failed to delete member"
         }
+    },
+    "Invitations": {
+        "title": "Invitations",
+        "description": "Manage your organization invitations.",
+        "loading": "Loading invitations...",
+        "errorLoading": "Error loading invitations",
+        "noPendingTitle": "No pending invitations",
+        "noPendingDescription": "You don't have any pending invitations at the moment.",
+        "invitedBy": "Invited by",
+        "accept": "Accept",
+        "reject": "Reject",
+        "accepting": "Accepting...",
+        "errorTitle": "Error",
+        "errorDescription": "An error occurred while processing the invitation.",
+        "errorAccepting": "Failed to accept the invitation. It may have been cancelled or expired.",
+        "acceptedTitle": "Invitation Accepted!",
+        "acceptedDescription": "You have successfully joined the organization.",
+        "redirecting": "Redirecting to dashboard...",
+        "goToDashboard": "Go to Dashboard",
+        "loginRequiredTitle": "Login Required",
+        "loginRequiredDescription": "Please login to accept this invitation.",
+        "login": "Login",
+        "noAccount": "Don't have an account?",
+        "register": "Register",
+        "acceptTitle": "Accept Invitation",
+        "acceptDescription": "You've been invited to join an organization. Click accept to join.",
+        "cancel": "Cancel"
     },
     "TextSelection": {
         "openIn": "Open in {provider}"

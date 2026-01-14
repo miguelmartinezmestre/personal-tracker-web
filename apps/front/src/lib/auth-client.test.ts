@@ -33,10 +33,10 @@ describe('auth-client', () => {
         expect(organizationClient).toHaveBeenCalledWith({
             schema: {
                 organization: {
-                    additionalFields: {
-                        description: {
-                            type: 'string',
-                        },
+                    fields: {
+                        slug: 'slug',
+                        description: 'description',
+                        logo: 'logo',
                     },
                 },
             },

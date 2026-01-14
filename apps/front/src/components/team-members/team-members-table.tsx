@@ -5,16 +5,17 @@ import { useDeleteTeamMember, useTeamMembers } from '@/hooks/api/use-team-member
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import { TeamMember } from '@/schemas/team-member';
-import { useParams } from 'next/navigation';
 import TeamMemberEditFormModal from '@/components/team-members/team-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
 
-export default function TeamMembersTable() {
+interface TeamMembersTableProps {
+    teamId: string;
+}
+
+export default function TeamMembersTable({ teamId }: TeamMembersTableProps) {
     const t = useTranslations('TeamMembers');
-    const { id } = useParams();
-    const teamId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : null;
     const teamMembers = useTeamMembers(teamId);
     const deleteTeamMember = useDeleteTeamMember();
 
@@ -45,7 +46,7 @@ export default function TeamMembersTable() {
                             try {
                                 await deleteTeamMember.mutateAsync({
                                     memberId: row.original.id,
-                                    organizationId: teamId ?? undefined,
+                                    organizationId: teamId,
                                 });
                                 toast.success(t('toast.deletedSuccess'));
                             } catch {

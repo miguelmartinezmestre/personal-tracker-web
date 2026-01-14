@@ -1,8 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+import { authClient } from '@/lib/auth-client';
 import type { CreateTeam, Team } from '@/schemas/team';
 
 /**
@@ -21,33 +20,55 @@ export interface UpdateTeamParams {
 
 const TEAMS_QUERY_KEY = ['teams'];
 
-// Organization is a BetterAuth table, so we use a generic type
-type OrganizationDoc = {
-    _id: string;
+// Organization type from BetterAuth
+type Organization = {
+    id: string;
     name: string;
     slug?: string | null;
     description?: string | null;
+    logo?: string | null;
+    createdAt?: Date | number;
 };
 
-const normalizeTeam = (team: OrganizationDoc) =>
-    ({
-        id: String(team._id),
-        name: team.name,
-        slug: team.slug ?? '',
-        description: team.description ?? '',
-    }) satisfies Team;
+const normalizeTeam = (org: Organization): Team => {
+    // Ensure we're using the actual ID, not the slug
+    const teamId = String(org.id);
+    const teamSlug = org.slug ?? '';
+    
+    // Debug log to verify mapping
+    console.log('[normalizeTeam] Mapping org:', { 
+        orgId: org.id, 
+        orgSlug: org.slug, 
+        mappedId: teamId, 
+        mappedSlug: teamSlug 
+    });
+    
+    return {
+        id: teamId,
+        name: org.name,
+        slug: teamSlug,
+        description: org.description ?? '',
+    };
+};
 
 /**
- * Hook para obtener todos los equipos
- * Los admins ven todos los equipos, los usuarios solo los suyos
+ * Hook para obtener todos los equipos (organizaciones)
+ * Usa BetterAuth directamente
  */
 export function useTeams() {
     return useQuery({
-        ...convexQuery(api.teams.getTeams, {}),
-        select: data => {
-            // Handle both array and paginated response formats
-            const teams = Array.isArray(data) ? data : [];
-            return teams.map(team => normalizeTeam(team as OrganizationDoc));
+        queryKey: TEAMS_QUERY_KEY,
+        queryFn: async () => {
+            const result = await authClient.organization.list();
+            console.log('[useTeams] Raw result:', result);
+            const organizations =
+                result && typeof result === 'object' && 'data' in result
+                    ? ((result.data as unknown) as Organization[])
+                    : [];
+            console.log('[useTeams] Organizations:', organizations.map(o => ({ id: o.id, slug: o.slug, name: o.name })));
+            const normalized = organizations.map(normalizeTeam);
+            console.log('[useTeams] Normalized teams:', normalized.map(t => ({ id: t.id, slug: t.slug, name: t.name })));
+            return normalized;
         },
     });
 }
@@ -57,25 +78,128 @@ export function useTeams() {
  */
 export function useTeam(teamId: string | null) {
     return useQuery({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...convexQuery(api.teams.getTeamById, teamId ? { _id: teamId as any } : 'skip'),
-        select: data => (data ? normalizeTeam(data as OrganizationDoc) : null),
+        queryKey: TEAMS_QUERY_KEY.concat(teamId ?? 'null'),
+        queryFn: async () => {
+            if (!teamId) return null;
+            // BetterAuth doesn't have a get method, we can use list and filter
+            const result = await authClient.organization.list();
+            const organizations =
+                result && typeof result === 'object' && 'data' in result
+                    ? ((result.data as unknown) as Organization[])
+                    : [];
+            const org = organizations.find(o => o.id === teamId);
+            return org ? normalizeTeam(org) : null;
+        },
+        enabled: !!teamId,
+    });
+}
+
+/**
+ * Hook para obtener un equipo por su slug
+ */
+export function useTeamBySlug(slug: string | null) {
+    return useQuery({
+        queryKey: TEAMS_QUERY_KEY.concat('slug', slug ?? 'null'),
+        queryFn: async () => {
+            if (!slug) return null;
+            // Fetch all organizations and find by slug
+            const result = await authClient.organization.list();
+            console.log('[useTeamBySlug] Looking for slug:', slug);
+            console.log('[useTeamBySlug] API result:', result);
+            const organizations =
+                result && typeof result === 'object' && 'data' in result
+                    ? ((result.data as unknown) as Organization[])
+                    : [];
+            console.log('[useTeamBySlug] Parsed organizations:', organizations);
+            console.log('[useTeamBySlug] Org slugs:', organizations.map(o => o.slug));
+            const org = organizations.find(o => o.slug === slug);
+            console.log('[useTeamBySlug] Found org:', org);
+            return org ? normalizeTeam(org) : null;
+        },
+        enabled: !!slug,
+    });
+}
+
+/**
+ * Hook para obtener un equipo por slug o ID
+ * Intenta buscar primero por slug, y si no encuentra, busca por ID
+ * Esto permite que las rutas funcionen tanto con slugs como con IDs
+ */
+export function useTeamByIdentifier(identifier: string | null) {
+    return useQuery({
+        queryKey: TEAMS_QUERY_KEY.concat('identifier', identifier ?? 'null'),
+        queryFn: async () => {
+            if (!identifier) return null;
+            // Fetch all organizations
+            const result = await authClient.organization.list();
+            console.log('[useTeamByIdentifier] Looking for identifier:', identifier);
+            console.log('[useTeamByIdentifier] Raw API result:', JSON.stringify(result, null, 2));
+            console.log('[useTeamByIdentifier] Result type:', typeof result, Array.isArray(result));
+            
+            // Handle different response structures
+            let organizations: Organization[] = [];
+            if (Array.isArray(result)) {
+                // Direct array response
+                organizations = result as unknown as Organization[];
+            } else if (result && typeof result === 'object') {
+                // Object with data property
+                if ('data' in result && Array.isArray(result.data)) {
+                    organizations = result.data as unknown as Organization[];
+                } else if ('organizations' in result && Array.isArray(result.organizations)) {
+                    organizations = result.organizations as unknown as Organization[];
+                }
+            }
+            
+            console.log('[useTeamByIdentifier] Parsed organizations count:', organizations.length);
+            console.log('[useTeamByIdentifier] Org details:', organizations.map(o => ({ 
+                id: o.id, 
+                name: o.name,
+                slug: o.slug, 
+                slugType: typeof o.slug,
+                slugValue: String(o.slug ?? 'null/undefined')
+            })));
+            
+            // First try to find by slug (handle null/undefined cases)
+            let org = organizations.find(o => {
+                const slug = o.slug;
+                // Compare slug, handling null/undefined/empty string cases
+                if (slug === null || slug === undefined || slug === '') return false;
+                const slugStr = String(slug).trim();
+                const identifierStr = String(identifier).trim();
+                return slugStr === identifierStr;
+            });
+            
+            console.log('[useTeamByIdentifier] Found by slug:', org ? { id: org.id, name: org.name, slug: org.slug } : null);
+            
+            // If not found by slug, try to find by ID
+            if (!org) {
+                org = organizations.find(o => String(o.id).trim() === String(identifier).trim());
+                console.log('[useTeamByIdentifier] Found by ID:', org ? { id: org.id, name: org.name, slug: org.slug } : null);
+            }
+            
+            return org ? normalizeTeam(org) : null;
+        },
+        enabled: !!identifier,
     });
 }
 
 /**
  * Hook para crear un nuevo equipo
- * Los equipos se crean vacíos - el admin invita miembros después
+ * Usa BetterAuth directamente
  */
 export function useCreateTeam() {
     const queryClient = useQueryClient();
-    const mutationFn = useConvexMutation(api.teams.createTeam);
 
     return useMutation({
         mutationFn: async (values: CreateTeamParams | CreateTeam) => {
-            return await mutationFn({
+            return await authClient.organization.create({
                 name: values.name,
                 description: values.description,
+                // BetterAuth generará el slug automáticamente si no se proporciona
+                slug: values.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, ''),
             });
         },
         onSuccess: () => {
@@ -91,15 +215,15 @@ export function useCreateTeam() {
  */
 export function useUpdateTeam() {
     const queryClient = useQueryClient();
-    const mutationFn = useConvexMutation(api.teams.updateTeam);
 
     return useMutation({
         mutationFn: async (values: UpdateTeamParams | Team) => {
-            return await mutationFn({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                _id: values.id as any,
-                name: values.name,
-                description: values.description,
+            return await authClient.organization.update({
+                data: {
+                    name: values.name,
+                    description: values.description,
+                },
+                organizationId: values.id,
             });
         },
         onSuccess: () => {
@@ -115,13 +239,11 @@ export function useUpdateTeam() {
  */
 export function useDeleteTeam() {
     const queryClient = useQueryClient();
-    const mutationFn = useConvexMutation(api.teams.deleteTeam);
 
     return useMutation({
         mutationFn: async (values: { id: string }) => {
-            return await mutationFn({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                _id: values.id as any,
+            return await authClient.organization.delete({
+                organizationId: values.id,
             });
         },
         onSuccess: () => {

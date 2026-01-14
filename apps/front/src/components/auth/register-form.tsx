@@ -18,14 +18,19 @@ import { useState } from 'react';
 import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 
 export default function RegisterForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [registerError, setRegisterError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Get invitation token from URL if coming from an invitation link
+    const invitationToken = searchParams.get('invitation');
 
     const form = useForm<z.infer<typeof registerSchema>>({
         defaultValues: {
@@ -33,6 +38,7 @@ export default function RegisterForm() {
             password: '',
             confirmPassword: '',
             username: '',
+            organizationSlug: '',
         },
         validators: {
             onChange: registerSchema,
@@ -49,6 +55,8 @@ export default function RegisterForm() {
             return;
         }
 
+        setIsSubmitting(true);
+
         await authClient.signUp.email(
             {
                 name: values.username,
@@ -56,11 +64,31 @@ export default function RegisterForm() {
                 password: values.password,
             },
             {
-                onSuccess: () => {
-                    router.push('/dashboard/home');
+                onSuccess: async () => {
+                    try {
+                        // If coming from an invitation, accept it first
+                        if (invitationToken) {
+                            await authClient.organization.acceptInvitation({
+                                invitationId: invitationToken,
+                            });
+                        }
+
+                        // Create default organization for the user
+                        await authClient.organization.create({
+                            name: `${values.username}'s Organization`,
+                            slug: values.organizationSlug,
+                        });
+
+                        router.push('/dashboard/home');
+                    } catch (error) {
+                        console.error('Error after registration:', error);
+                        // Still redirect to home even if organization creation fails
+                        router.push('/dashboard/home');
+                    }
                 },
                 onError: ctx => {
                     setRegisterError(ctx.error.message || t('errors.registerFallback'));
+                    setIsSubmitting(false);
                 },
             }
         );
@@ -166,12 +194,36 @@ export default function RegisterForm() {
                     )}
                 />
 
+                <FormField
+                    name="organizationSlug"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.organizationSlug')}
+                            </FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    placeholder={tCommon('placeholders.organizationSlug')}
+                                    className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="register-organization-slug-input"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-gray-500 mt-1">
+                                {tCommon('fields.organizationSlugHint')}
+                            </p>
+                        </FormItem>
+                    )}
+                />
+
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
                     data-testid="register-button"
+                    disabled={isSubmitting}
                 >
-                    {t('register')}
+                    {isSubmitting ? tCommon('loading') : t('register')}
                 </Button>
 
                 <div className="text-center mt-4">

@@ -158,7 +158,9 @@
             "password": "Contraseña",
             "confirmPassword": "Confirmar contraseña",
             "role": "Rol",
-            "userId": "ID de usuario"
+            "userId": "ID de usuario",
+            "organizationSlug": "Slug de organización",
+            "organizationSlugHint": "Identificador único para tu organización (solo letras minúsculas, números y guiones)"
         },
         "placeholders": {
             "email": "nombre@correo.com",
@@ -166,6 +168,7 @@
             "username": "username",
             "min8Chars": "Mínimo 8 caracteres",
             "confirmPassword": "Confirmar contraseña",
+            "organizationSlug": "mi-organizacion",
             "searchByEmail": "Buscar por email...",
             "userIdForSessions": "ID del usuario para ver sus sesiones...",
             "searchDocs": "Buscar en la documentación...",
@@ -1119,6 +1122,33 @@
             "deletedSuccess": "Miembro eliminado exitosamente",
             "deleteFailed": "Error al eliminar miembro"
         }
+    },
+    "Invitations": {
+        "title": "Invitaciones",
+        "description": "Gestiona las invitaciones de tu organización.",
+        "loading": "Cargando invitaciones...",
+        "errorLoading": "Error al cargar invitaciones",
+        "noPendingTitle": "No hay invitaciones pendientes",
+        "noPendingDescription": "No tienes invitaciones pendientes en este momento.",
+        "invitedBy": "Invitado por",
+        "accept": "Aceptar",
+        "reject": "Rechazar",
+        "accepting": "Aceptando...",
+        "errorTitle": "Error",
+        "errorDescription": "Ocurrió un error al procesar la invitación.",
+        "errorAccepting": "Error al aceptar la invitación. Puede haber sido cancelada o expirada.",
+        "acceptedTitle": "¡Invitación Aceptada!",
+        "acceptedDescription": "Te has unido exitosamente a la organización.",
+        "redirecting": "Redirigiendo al panel...",
+        "goToDashboard": "Ir al Panel",
+        "loginRequiredTitle": "Se Requiere Iniciar Sesión",
+        "loginRequiredDescription": "Por favor inicia sesión para aceptar esta invitación.",
+        "login": "Iniciar sesión",
+        "noAccount": "¿No tienes una cuenta?",
+        "register": "Registrarse",
+        "acceptTitle": "Aceptar Invitación",
+        "acceptDescription": "Has sido invitado a unirte a una organización. Haz clic en aceptar para unirte.",
+        "cancel": "Cancelar"
     },
     "TextSelection": {
         "openIn": "Abrir en {provider}"

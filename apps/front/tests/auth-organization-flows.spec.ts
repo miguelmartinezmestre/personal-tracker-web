@@ -6,8 +6,7 @@ const PASSWORD = '12345678';
 
 /**
  * Creates an organization using BetterAuth client methods.
- * Note: Organization functionality may not be fully implemented in the current setup.
- * This test is skipped until organization features are properly configured.
+ * Note: Organization functionality is implemented but requires authClient on window.
  */
 async function createOrganization(
     page: Page,
@@ -41,8 +40,8 @@ async function createOrganization(
 }
 
 /**
- * Invites a member to an organization.
- * Note: This functionality may not be fully implemented.
+ * Invites a member to an organization using BetterAuth.
+ * Note: This functionality requires authClient on window.
  */
 async function inviteMember(
     page: Page,
@@ -74,8 +73,8 @@ async function inviteMember(
 }
 
 /**
- * Accepts an organization invitation.
- * Note: This functionality may not be fully implemented.
+ * Accepts an organization invitation using BetterAuth.
+ * Note: This functionality requires authClient on window.
  */
 async function acceptInvitation(page: Page, invitationId: string) {
     const result = await page.evaluate(
@@ -108,8 +107,8 @@ async function acceptInvitation(page: Page, invitationId: string) {
 }
 
 /**
- * Lists members of an organization.
- * Note: This functionality may not be fully implemented.
+ * Lists members of an organization using BetterAuth.
+ * Note: This functionality requires authClient on window.
  */
 async function listMembers(page: Page, organizationId: string) {
     const result = await page.evaluate(
@@ -146,7 +145,7 @@ async function listMembers(page: Page, organizationId: string) {
 test.skip('admin invita a un usuario y el invitado invita a otros miembros', async ({
     browser,
 }) => {
-    test.skip(true, 'Organization functionality not fully implemented yet');
+    test.skip(true, 'Requires authClient to be exposed on window for BetterAuth organization methods');
     const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 
     const adminContext = await browser.newContext({ baseURL });
@@ -203,7 +202,7 @@ test.skip('admin invita a un usuario y el invitado invita a otros miembros', asy
 });
 
 test.skip('usuario puede borrar su cuenta', async ({ page }) => {
-    test.skip(true, 'User deletion endpoint not implemented yet');
+    test.skip(true, 'User deletion via BetterAuth requires further implementation');
     const { email } = await createTestUser(page);
 
     const result = await page.evaluate(

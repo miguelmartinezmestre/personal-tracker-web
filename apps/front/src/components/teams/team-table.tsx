@@ -72,10 +72,33 @@ export default function TeamsTable() {
             id: 'go-to-activity',
             cell: ({ row }) => {
                 const teamRow = row.original;
-                if (teamRow.id) {
+                // Use ID for the URL - ensure we're using the actual ID, not slug
+                // Explicitly check that we're not accidentally using the slug
+                const teamId = teamRow.id;
+                const teamSlug = teamRow.slug;
+                
+                // Safety check: if id equals slug, something is wrong with the data
+                if (teamId === teamSlug && teamSlug) {
+                    console.warn('[TeamsTable] WARNING: Team ID equals slug, this might indicate a data mapping issue:', {
+                        id: teamId,
+                        slug: teamSlug,
+                        name: teamRow.name
+                    });
+                }
+                
+                console.log('[TeamsTable] Team row:', { 
+                    id: teamId, 
+                    slug: teamSlug, 
+                    name: teamRow.name,
+                    idType: typeof teamId,
+                    slugType: typeof teamSlug
+                });
+                
+                // Ensure we have a valid ID (not empty, not the slug)
+                if (teamId && teamId !== teamSlug) {
                     return (
                         <Link
-                            href={`/dashboard/teams/${String(teamRow.id)}`}
+                            href={`/dashboard/teams/${String(teamId)}`}
                             prefetch={false}
                             data-testid="team-detail-link"
                         >
@@ -83,6 +106,13 @@ export default function TeamsTable() {
                         </Link>
                     );
                 }
+
+                // Fallback: if ID is missing or equals slug, log error but don't render link
+                console.error('[TeamsTable] Cannot create link - invalid team ID:', {
+                    id: teamId,
+                    slug: teamSlug,
+                    name: teamRow.name
+                });
 
                 return null;
             },
