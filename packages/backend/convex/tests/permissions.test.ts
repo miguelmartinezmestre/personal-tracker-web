@@ -1,18 +1,18 @@
 import { convexTest } from 'convex-test';
 import { describe, expect, test, beforeEach } from 'vitest';
-import { api } from './_generated/api';
-import schema from './schema';
-import { modules } from '../test.setup';
-import { createTestMember, createTestOrganization, createTestUser } from '../test_helpers';
-import { register } from '../better-auth.helper';
+import { api } from '../_generated/api';
+import schema from '../schema';
+import { modules } from '../../test.setup';
+import { createTestMember, createTestOrganization, createTestUser } from '../../test_helpers';
+import { register } from '../../better-auth.helper';
 import {
     hasPermissionInList,
     matchesPermission,
     ROLE_PERMISSIONS,
     TEAM_ROLE_PERMISSIONS,
     checkPermission,
-} from './permissions';
-import type { Id } from './_generated/dataModel';
+} from '../permissions';
+import type { Id } from '../_generated/dataModel';
 
 describe('Permission System', () => {
     describe('hasPermissionInList', () => {

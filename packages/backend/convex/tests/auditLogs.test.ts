@@ -1,11 +1,11 @@
 import { convexTest } from 'convex-test';
 import { describe, expect, test, beforeEach } from 'vitest';
-import { api } from './_generated/api';
-import schema from './schema';
-import { modules } from '../test.setup';
-import { createTestUser } from '../test_helpers';
-import { register } from '../better-auth.helper';
-import { Doc, Id } from './_generated/dataModel';
+import { api } from '../_generated/api';
+import schema from '../schema';
+import { modules } from '../../test.setup';
+import { createTestUser } from '../../test_helpers';
+import { register } from '../../better-auth.helper';
+import { Doc, Id } from '../_generated/dataModel';
 
 describe('convex auditLogs', () => {
     const t = convexTest(schema, modules);

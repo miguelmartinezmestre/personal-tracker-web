@@ -1,10 +1,10 @@
 import { convexTest } from 'convex-test';
 import { describe, expect, test, beforeEach } from 'vitest';
-import { api } from './_generated/api';
-import schema from './schema';
-import { modules } from '../test.setup';
-import { createTestUser } from '../test_helpers';
-import { register } from '../better-auth.helper';
+import { api } from '../_generated/api';
+import schema from '../schema';
+import { modules } from '../../test.setup';
+import { createTestUser } from '../../test_helpers';
+import { register } from '../../better-auth.helper';
 
 describe('convex objectives', async () => {
     const t = convexTest(schema, modules);
