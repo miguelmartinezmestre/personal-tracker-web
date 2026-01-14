@@ -1093,7 +1093,17 @@
         "export": "Export",
         "exportCsv": "Export CSV",
         "exportExcel": "Export Excel",
-        "exportSheetName": "Data"
+        "exportSheetName": "Data",
+        "showing": "Showing",
+        "to": "to",
+        "ofTotal": "of",
+        "rows": "rows",
+        "page": "Page",
+        "of": "of",
+        "first": "First",
+        "last": "Last",
+        "previous": "Previous",
+        "next": "Next"
     },
     "TeamMembers": {
         "createNewTeamMember": "Create New Team Member",

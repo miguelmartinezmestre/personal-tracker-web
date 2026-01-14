@@ -270,6 +270,7 @@
         "notifications": "Notificaciones",
         "sessions": "Sesiones",
         "settings": "Configuración",
+        "users": "Usuarios",
         "admin": "Administrar",
         "teams": "Equipos"
     },
@@ -1092,7 +1093,17 @@
         "export": "Exportar",
         "exportCsv": "Exportar CSV",
         "exportExcel": "Exportar Excel",
-        "exportSheetName": "Datos"
+        "exportSheetName": "Datos",
+        "showing": "Mostrando",
+        "to": "a",
+        "ofTotal": "de",
+        "rows": "filas",
+        "page": "Página",
+        "of": "de",
+        "first": "Primera",
+        "last": "Última",
+        "previous": "Anterior",
+        "next": "Siguiente"
     },
     "TeamMembers": {
         "createNewTeamMember": "Crear nuevo miembro del equipo",
