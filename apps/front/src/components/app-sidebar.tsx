@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Frame, Goal, Home, Shield, Trophy, Settings, Users } from 'lucide-react';
+import { Bell, FileText, Frame, Goal, Home, Shield, Trophy, Settings, Users, Activity, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -108,9 +108,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     icon: Users,
                 },
                 {
-                    name: 'admin',
-                    url: '/dashboard/admin-panel' as Route,
-                    icon: Shield,
+                    name: 'adminSessions',
+                    url: '/dashboard/admin/sessions' as Route,
+                    icon: Activity,
+                },
+                {
+                    name: 'adminAudit',
+                    url: '/dashboard/admin/audit' as Route,
+                    icon: FileText,
                 }
             );
         }
@@ -143,9 +148,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         ? 'sidebar-achievements'
                                         : item.name === 'settings'
                                             ? 'sidebar-settings'
-                                            : item.name === 'admin'
-                                                ? 'sidebar-admin'
-                                                : undefined;
+                                            : item.name === 'adminSessions'
+                                                ? 'sidebar-admin-sessions'
+                                                : item.name === 'adminAudit'
+                                                    ? 'sidebar-admin-audit'
+                                                    : undefined;
                             return (
                                 <SidebarMenuItem key={item.name}>
                                     <SidebarMenuButton asChild>
