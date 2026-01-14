@@ -8,9 +8,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import AccountSettingsFormEdit from '@/components/settings/account-settings-form-edit';
-import PasswordFormEdit from '@/components/settings/password-form-edit';
-import { ToursSettings } from '@/components/settings/tours-settings';
+import AccountSettingsFormEdit from '@/features/settings/components/account-settings-form-edit';
+import PasswordFormEdit from '@/features/settings/components/password-form-edit';
 import { useTranslations } from 'next-intl';
 import { User, Key, Map } from 'lucide-react';
 
@@ -64,9 +63,9 @@ export default function SettingsPage() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="tours">
+                {/* <TabsContent value="tours">
                     <ToursSettings />
-                </TabsContent>
+                </TabsContent> */}
             </Tabs>
         </div>
     );

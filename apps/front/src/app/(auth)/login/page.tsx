@@ -1,6 +1,6 @@
-import Footer from '@/components/footer';
-import Header from '@/components/header';
-import LoginForm from '@/components/auth/login-form';
+import Footer from '@/features/landing/components/footer';
+import Header from '@/features/landing/components/header';
+import LoginForm from '@/features/auth/components/login-form';
 import { useTranslations } from 'next-intl';
 
 export default function Login() {

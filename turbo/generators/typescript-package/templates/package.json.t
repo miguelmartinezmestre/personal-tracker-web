@@ -11,8 +11,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "test": "jest",
-    "clean": "node ../../scripts/clean.mjs node_modules .next .turbo"
+    "test": "jest"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

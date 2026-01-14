@@ -1,6 +1,5 @@
 'use client';
 
-import { useUser } from '@/contexts/user-context';
 import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
@@ -8,10 +7,14 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AchievementsWidget } from '@/components/achievements/achievements-widget';
+import { AchievementsWidget } from '@/features/achievements/components/achievements-widget';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 
 export default function HomePage() {
-    const user = useUser();
+    const { data: user, isLoading: isUserLoading } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    console.log(user);
     const searchParams = useSearchParams();
     const [showAlert, setShowAlert] = useState(false);
 
@@ -28,21 +31,25 @@ export default function HomePage() {
     const error = searchParams.get('error');
     const redirect = searchParams.get('redirect');
 
+    if (isUserLoading) {
+        return <div>Loading...</div>;
+    }
+
     if (error && showAlert) {
         const alertContent =
             error === 'unauthorized'
                 ? {
-                      icon: ShieldAlert,
-                      title: t('accessDeniedTitle'),
-                      description: t('accessDeniedDescription'),
-                      variant: 'destructive' as const,
-                  }
+                    icon: ShieldAlert,
+                    title: t('accessDeniedTitle'),
+                    description: t('accessDeniedDescription'),
+                    variant: 'destructive' as const,
+                }
                 : {
-                      icon: AlertTriangle,
-                      title: t('genericErrorTitle'),
-                      description: t('genericErrorDescription'),
-                      variant: 'destructive' as const,
-                  };
+                    icon: AlertTriangle,
+                    title: t('genericErrorTitle'),
+                    description: t('genericErrorDescription'),
+                    variant: 'destructive' as const,
+                };
 
         return (
             <div className="flex items-center justify-center min-h-screen p-4">
@@ -73,7 +80,7 @@ export default function HomePage() {
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
                 <p data-testid="welcome-message" data-tour="welcome-message" className="text-muted-foreground">
-                    {t('welcome', { name: user.name })}
+                    {/* {t('welcome', { name: user.name })} */}
                 </p>
             </div>
 

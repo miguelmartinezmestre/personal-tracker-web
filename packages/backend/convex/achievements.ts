@@ -138,10 +138,10 @@ const ACHIEVEMENT_DEFINITIONS = [
         icon: 'Clock',
         points: 40,
     },
-    // Team achievements
+    // Organization achievements
     {
-        code: 'team_first_objective',
-        type: 'team',
+        code: 'organization_first_objective',
+        type: 'organization',
         category: 'milestone',
         tier: 'bronze',
         threshold: 1,
@@ -149,8 +149,8 @@ const ACHIEVEMENT_DEFINITIONS = [
         points: 15,
     },
     {
-        code: 'team_completed_5',
-        type: 'team',
+        code: 'organization_completed_5',
+        type: 'organization',
         category: 'completion',
         tier: 'bronze',
         threshold: 5,
@@ -158,8 +158,8 @@ const ACHIEVEMENT_DEFINITIONS = [
         points: 50,
     },
     {
-        code: 'team_completed_15',
-        type: 'team',
+        code: 'organization_completed_15',
+        type: 'organization',
         category: 'completion',
         tier: 'silver',
         threshold: 15,
@@ -167,8 +167,8 @@ const ACHIEVEMENT_DEFINITIONS = [
         points: 100,
     },
     {
-        code: 'team_completed_30',
-        type: 'team',
+        code: 'organization_completed_30',
+        type: 'organization',
         category: 'completion',
         tier: 'gold',
         threshold: 30,
@@ -176,8 +176,8 @@ const ACHIEVEMENT_DEFINITIONS = [
         points: 200,
     },
     {
-        code: 'team_streak_7',
-        type: 'team',
+        code: 'organization_streak_7',
+        type: 'organization',
         category: 'streak',
         tier: 'silver',
         threshold: 7,
@@ -233,21 +233,21 @@ export const getUserAchievements = queryWithRLS({
     },
 });
 
-export const getTeamAchievements = queryWithRLS({
+export const getOrganizationAchievements = queryWithRLS({
     args: {
-        teamId: v.string(),
+        organizationId: v.string(),
     },
     handler: async (ctx, args) => {
-        const teamAchievements = await ctx.db
-            .query('teamAchievements')
-            .withIndex('by_team', q => q.eq('team', args.teamId))
+        const organizationAchievements = await ctx.db
+            .query('organizationAchievements')
+            .withIndex('by_organization', q => q.eq('organization', args.organizationId))
             .collect();
 
         const achievementsWithDetails = await Promise.all(
-            teamAchievements.map(async ta => {
-                const definition = await ctx.db.get(ta.achievement);
+            organizationAchievements.map(async oa => {
+                const definition = await ctx.db.get(oa.achievement);
                 return {
-                    ...ta,
+                    ...oa,
                     definition,
                 };
             })
@@ -685,29 +685,29 @@ async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Pr
     return streak;
 }
 
-// Check team achievements
-export const checkTeamAchievements = internalMutation({
+// Check organization achievements
+export const checkOrganizationAchievements = internalMutation({
     args: {
-        teamId: v.string(),
+        organizationId: v.string(),
         userId: v.string(),
         trigger: v.string(),
     },
     handler: async (ctx, args) => {
-        const { teamId, userId, trigger } = args;
+        const { organizationId, userId, trigger } = args;
         const now = Date.now();
 
-        // Get team achievement definitions
+        // Get organization achievement definitions
         const definitions = await ctx.db
             .query('achievementDefinitions')
-            .withIndex('by_type', q => q.eq('type', 'team'))
+            .withIndex('by_type', q => q.eq('type', 'organization'))
             .collect();
 
         const activeDefinitions = definitions.filter(d => d.isActive);
 
-        // Get team's already earned achievements
+        // Get organization's already earned achievements
         const earnedAchievements = await ctx.db
-            .query('teamAchievements')
-            .withIndex('by_team', q => q.eq('team', teamId))
+            .query('organizationAchievements')
+            .withIndex('by_organization', q => q.eq('organization', organizationId))
             .collect();
 
         const earnedCodes = new Set(
@@ -719,10 +719,10 @@ export const checkTeamAchievements = internalMutation({
             )
         );
 
-        // Get team members
+        // Get organization members
         const members = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
             model: 'member',
-            where: [{ field: 'organizationId', value: teamId }],
+            where: [{ field: 'organizationId', value: organizationId }],
             paginationOpts: {
                 cursor: null,
                 numItems: 10,
@@ -731,10 +731,10 @@ export const checkTeamAchievements = internalMutation({
 
         const memberUserIds = members.map(m => m.userId);
 
-        // Get all objectives from team members
+        // Get all objectives from organization members
         const allObjectives = await ctx.db.query('objectives').collect();
-        const teamObjectives = allObjectives.filter(o => memberUserIds.includes(o.user));
-        const completedTeamObjectives = teamObjectives.filter(o => o.status === 'completed');
+        const organizationObjectives = allObjectives.filter(o => memberUserIds.includes(o.user));
+        const completedOrganizationObjectives = organizationObjectives.filter(o => o.status === 'completed');
 
         const newAchievements: string[] = [];
 
@@ -744,32 +744,32 @@ export const checkTeamAchievements = internalMutation({
             let shouldAward = false;
 
             switch (def.code) {
-                case 'team_first_objective':
-                    shouldAward = trigger === 'objective_created' && teamObjectives.length >= 1;
+                case 'organization_first_objective':
+                    shouldAward = trigger === 'objective_created' && organizationObjectives.length >= 1;
                     break;
-                case 'team_completed_5':
+                case 'organization_completed_5':
                     shouldAward =
-                        trigger === 'objective_completed' && completedTeamObjectives.length >= 5;
+                        trigger === 'objective_completed' && completedOrganizationObjectives.length >= 5;
                     break;
-                case 'team_completed_15':
+                case 'organization_completed_15':
                     shouldAward =
-                        trigger === 'objective_completed' && completedTeamObjectives.length >= 15;
+                        trigger === 'objective_completed' && completedOrganizationObjectives.length >= 15;
                     break;
-                case 'team_completed_30':
+                case 'organization_completed_30':
                     shouldAward =
-                        trigger === 'objective_completed' && completedTeamObjectives.length >= 30;
+                        trigger === 'objective_completed' && completedOrganizationObjectives.length >= 30;
                     break;
-                case 'team_streak_7': {
-                    // Check if team has had activity for 7 consecutive days
-                    const teamStreak = await calculateTeamStreak(ctx, memberUserIds);
-                    shouldAward = trigger === 'progress_update' && teamStreak >= 7;
+                case 'organization_streak_7': {
+                    // Check if organization has had activity for 7 consecutive days
+                    const organizationStreak = await calculateOrganizationStreak(ctx, memberUserIds);
+                    shouldAward = trigger === 'progress_update' && organizationStreak >= 7;
                     break;
                 }
             }
 
             if (shouldAward) {
-                await ctx.db.insert('teamAchievements', {
-                    team: teamId,
+                await ctx.db.insert('organizationAchievements', {
+                    organization: organizationId,
                     achievement: def._id,
                     earnedAt: now,
                     contributingUsers: [userId],
@@ -777,7 +777,7 @@ export const checkTeamAchievements = internalMutation({
                     updatedAt: now,
                 });
 
-                // Notify all team members
+                // Notify all organization members
                 for (const member of members) {
                     await ctx.db.insert('notifications', {
                         user: member.userId,
@@ -785,7 +785,7 @@ export const checkTeamAchievements = internalMutation({
                         read: false,
                         notificationType: 'achievement',
                         notificationDate: now,
-                        message: `Team achievement unlocked: "${def.code}"! The team earned ${def.points} points.`,
+                        message: `Organization achievement unlocked: "${def.code}"! The organization earned ${def.points} points.`,
                         createdAt: now,
                         updatedAt: now,
                     });
@@ -799,30 +799,30 @@ export const checkTeamAchievements = internalMutation({
     },
 });
 
-async function calculateTeamStreak(ctx: QueryCtx, memberUserIds: string[]): Promise<number> {
+async function calculateOrganizationStreak(ctx: QueryCtx, memberUserIds: string[]): Promise<number> {
     const allObjectives = await ctx.db.query('objectives').collect();
-    const teamObjectives = allObjectives.filter((o: Doc<'objectives'>) =>
+    const organizationObjectives = allObjectives.filter((o: Doc<'objectives'>) =>
         memberUserIds.includes(o.user)
     );
-    const objectiveIds = teamObjectives.map((o: Doc<'objectives'>) => o._id);
+    const objectiveIds = organizationObjectives.map((o: Doc<'objectives'>) => o._id);
 
     if (objectiveIds.length === 0) return 0;
 
     const allUpdates = await ctx.db.query('progressUpdates').collect();
-    const teamUpdates = allUpdates
+    const organizationUpdates = allUpdates
         .filter((pu: Doc<'progressUpdates'>) => objectiveIds.includes(pu.objective))
         .sort(
             (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
         );
 
-    if (teamUpdates.length === 0) return 0;
+    if (organizationUpdates.length === 0) return 0;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayMs = today.getTime();
 
     const activityDays = new Set<number>();
-    for (const update of teamUpdates) {
+    for (const update of organizationUpdates) {
         const dayStart = new Date(update.updateDate);
         dayStart.setHours(0, 0, 0, 0);
         activityDays.add(dayStart.getTime());

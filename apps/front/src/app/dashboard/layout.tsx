@@ -1,15 +1,7 @@
-import AuthenticatedView from '@/components/auth-view';
-import { DashboardLayout } from '@/components/dashboard-layout';
-import { NextStepWrapper, TourProvider } from '@/components/tours';
+import { DashboardLayout } from '@/features/dashboard/components/dashboard-layout';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     return (
-        <AuthenticatedView>
-            <NextStepWrapper>
-                <TourProvider>
-                    <DashboardLayout>{children}</DashboardLayout>
-                </TourProvider>
-            </NextStepWrapper>
-        </AuthenticatedView>
+        <DashboardLayout>{children}</DashboardLayout>
     );
 }

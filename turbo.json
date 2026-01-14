@@ -22,6 +22,8 @@
                 "$TURBO_DEFAULT$",
                 "src/**/*.ts",
                 "src/**/*.tsx",
+                "tests/**/*.ts",
+                "tests/**/*.tsx",
                 "**/*.test.ts",
                 "**/*.test.tsx",
                 "**/*.spec.ts",
@@ -30,9 +32,6 @@
                 "tsconfig.json"
             ],
             "outputs": ["coverage/**"]
-        },
-        "clean": {
-            "cache": false
         },
         "dev": {
             "cache": false,

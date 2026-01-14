@@ -16,8 +16,8 @@ test('redirects unauthenticated users from dashboard sessions to login', async (
     await expect(page).toHaveURL(/\/login$/);
 });
 
-test('redirects unauthenticated users from dashboard teams to login', async ({ page }) => {
-    await page.goto('/dashboard/teams');
+test('redirects unauthenticated users from dashboard organizations to login', async ({ page }) => {
+    await page.goto('/dashboard/organizations');
     await expect(page).toHaveURL(/\/login$/);
 });
 

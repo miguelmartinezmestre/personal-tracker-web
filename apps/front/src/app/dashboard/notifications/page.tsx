@@ -2,8 +2,8 @@
 
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import NotificationsTable from '@/components/notifications/notifications-table';
-import CreateNotificationFormModal from '@/components/notifications/notification-form-create-modal';
+import NotificationsTable from '@/features/notifications/components/notifications-table';
+import CreateNotificationFormModal from '@/features/notifications/components/notification-form-create-modal';
 
 export default function NotificationsPage() {
     const t = useTranslations('Notifications');

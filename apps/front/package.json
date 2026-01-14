@@ -15,8 +15,7 @@
     "test:coverage": "cross-env PLAYWRIGHT_COVERAGE=true playwright test",
     "check-types": "tsc --noEmit",
     "check-translations": "node scripts/check-translations.js",
-    "create-user": "tsx scripts/create-user.ts",
-    "clean": "node ../../scripts/clean.mjs node_modules .next .turbo"
+    "create-user": "tsx scripts/create-user.ts"
   },
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",

@@ -270,7 +270,7 @@ export async function createNotification(
 }
 
 /**
- * Helper function to create an organization/team.
+ * Helper function to create an organization.
  * Note: Slug is auto-generated from the name by BetterAuth.
  * @param page - Playwright page object
  * @param options - Organization options
@@ -286,11 +286,11 @@ export async function createOrganization(
     const name = options?.name ?? `test-org-${uuid}`;
     const description = options?.description ?? 'Test organization description';
 
-    await page.goto('/dashboard/teams');
-    await page.getByTestId('team-create-open').click();
-    await page.getByTestId('team-name-input').fill(name);
-    await page.getByTestId('team-description-input').fill(description);
-    await page.getByTestId('team-save-button').click();
+    await page.goto('/dashboard/organizations');
+    await page.getByTestId('organization-create-open').click();
+    await page.getByTestId('organization-name-input').fill(name);
+    await page.getByTestId('organization-description-input').fill(description);
+    await page.getByTestId('organization-save-button').click();
     await expect(page.getByText(name)).toBeVisible({ timeout: 10000 });
 
     return { name, description };

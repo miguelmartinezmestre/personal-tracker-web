@@ -6,8 +6,8 @@ import { MutationCtx } from '../_generated/server';
 export type AuditResourceType =
     | 'objective'
     | 'progress_update'
-    | 'team'
-    | 'team_member'
+    | 'organization'
+    | 'organization_member'
     | 'category'
     | 'user'
     | 'session'
@@ -29,14 +29,14 @@ export type AuditAction =
     | 'progress_update.created'
     | 'progress_update.updated'
     | 'progress_update.deleted'
-    // Team actions
-    | 'team.created'
-    | 'team.updated'
-    | 'team.deleted'
-    // Team member actions
-    | 'team_member.added'
-    | 'team_member.updated'
-    | 'team_member.removed'
+    // Organization actions
+    | 'organization.created'
+    | 'organization.updated'
+    | 'organization.deleted'
+    // Organization member actions
+    | 'organization_member.added'
+    | 'organization_member.updated'
+    | 'organization_member.removed'
     // Category actions
     | 'category.created'
     | 'category.updated'

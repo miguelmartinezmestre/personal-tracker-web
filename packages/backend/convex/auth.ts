@@ -12,16 +12,16 @@ const siteUrl = process.env.SITE_URL!;
 const emailApiUrl = process.env.EMAIL_API_URL ?? 'http://localhost:3001';
 
 /**
- * Send team invitation email via the email API
+ * Send organization invitation email via the email API
  */
-async function sendTeamInvitationEmail(data: {
+async function sendOrganizationInvitationEmail(data: {
     to: string;
     organizationName: string;
     inviterName: string;
     inviterEmail: string;
     invitationLink: string;
 }): Promise<void> {
-    const url = `${emailApiUrl}/api/email/team-invitation`;
+    const url = `${emailApiUrl}/api/email/organization-invitation`;
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -30,10 +30,10 @@ async function sendTeamInvitationEmail(data: {
         });
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('[sendTeamInvitationEmail] Failed to send email:', errorText);
+            console.error('[sendOrganizationInvitationEmail] Failed to send email:', errorText);
         }
     } catch (error) {
-        console.error('[sendTeamInvitationEmail] Error sending email:', error);
+        console.error('[sendOrganizationInvitationEmail] Error sending email:', error);
     }
 }
 
@@ -58,8 +58,8 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
                 // Configure custom email sending for invitations
                 sendInvitationEmail: async (data) => {
                     const inviteLink = `${siteUrl}/invitations/${data.id}`;
-                    console.log('[sendTeamInvitationEmail] Invite link:', inviteLink);
-                    // await sendTeamInvitationEmail({
+                    console.log('[sendOrganizationInvitationEmail] Invite link:', inviteLink);
+                    // await sendOrganizationInvitationEmail({
                     //     to: data.email,
                     //     organizationName: data.organization.name,
                     //     inviterName: data.inviter.user.name,

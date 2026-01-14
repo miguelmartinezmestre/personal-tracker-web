@@ -7,21 +7,42 @@ import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/components/ca
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
 import { Button } from '@repo/ui/components/button';
 import { Skeleton } from '@repo/ui/components/skeleton';
-import {
-    useUserAchievementStats,
-    useUserAchievementProgress,
-    useSeedAchievements,
-} from '@/hooks/api/use-achievements';
-import { AchievementCard } from '@/components/achievements/achievement-card';
-import type { AchievementTier } from '@/schemas/achievement';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { achievementProgressSchema, type AchievementProgress } from '@/features/achievements/schemas/achievement';
+import { AchievementCard } from '@/features/achievements/components/achievement-card';
+import type { AchievementTier } from '@/features/achievements/schemas/achievement';
 
 export default function AchievementsPage() {
     const t = useTranslations('Achievements');
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
+    const queryClient = useQueryClient();
 
-    const { data: stats, isLoading: statsLoading } = useUserAchievementStats();
-    const { data: progress, isLoading: progressLoading } = useUserAchievementProgress();
-    const seedMutation = useSeedAchievements();
+    const { data: stats, isLoading: statsLoading } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
+    const { data: progress, isLoading: progressLoading } = useQuery({
+        ...convexQuery(api.achievements.getUserAchievementProgress, {}),
+        select: (data): AchievementProgress[] =>
+            data.map(item => achievementProgressSchema.parse(item)),
+    });
+
+    const seedMutation = useMutation({
+        mutationFn: useConvexMutation(api.achievements.seedAchievementDefinitions),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getAchievementDefinitions, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievementProgress, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievementStats, {}).queryKey,
+            });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.achievements.getUserAchievements, {}).queryKey,
+            });
+        },
+    });
 
     const isLoading = statsLoading || progressLoading;
 
@@ -32,11 +53,11 @@ export default function AchievementsPage() {
         return true;
     });
 
-    // Separate individual and team achievements
+    // Separate individual and organization achievements
     const individualAchievements = filteredProgress?.filter(
         p => p.definition.type === 'individual'
     );
-    const teamAchievements = filteredProgress?.filter(p => p.definition.type === 'team');
+    const organizationAchievements = filteredProgress?.filter(p => p.definition.type === 'organization');
 
     const handleSeedAchievements = async () => {
         try {
@@ -132,8 +153,8 @@ export default function AchievementsPage() {
                             <span className="text-lg font-bold text-primary">
                                 {stats?.totalAvailable
                                     ? Math.round(
-                                          ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
-                                      )
+                                        ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
+                                    )
                                     : 0}
                                 %
                             </span>
@@ -188,12 +209,12 @@ export default function AchievementsPage() {
                         {t('types.individual')}
                     </TabsTrigger>
                     <TabsTrigger
-                        value="team"
+                        value="organization"
                         className="flex items-center gap-2"
-                        data-testid="achievements-tab-team"
+                        data-testid="achievements-tab-organization"
                     >
                         <Users className="h-4 w-4" />
-                        {t('types.team')}
+                        {t('types.organization')}
                     </TabsTrigger>
                 </TabsList>
 
@@ -226,21 +247,21 @@ export default function AchievementsPage() {
                                     {filter === 'earned'
                                         ? t('empty.noEarned')
                                         : filter === 'locked'
-                                          ? t('empty.noLocked')
-                                          : t('empty.noAchievements')}
+                                            ? t('empty.noLocked')
+                                            : t('empty.noAchievements')}
                                 </p>
                             </CardContent>
                         </Card>
                     )}
                 </TabsContent>
 
-                <TabsContent value="team" className="mt-6" data-testid="achievements-content-team">
-                    {teamAchievements && teamAchievements.length > 0 ? (
+                <TabsContent value="organization" className="mt-6" data-testid="achievements-content-organization">
+                    {organizationAchievements && organizationAchievements.length > 0 ? (
                         <div
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                            data-testid="achievements-grid-team"
+                            data-testid="achievements-grid-organization"
                         >
-                            {teamAchievements.map(achievement => (
+                            {organizationAchievements.map(achievement => (
                                 <AchievementCard
                                     key={String(achievement.definition._id)}
                                     definition={achievement.definition}
@@ -255,7 +276,7 @@ export default function AchievementsPage() {
                             <CardContent className="flex flex-col items-center justify-center py-12">
                                 <Users className="h-12 w-12 text-muted-foreground mb-4" />
                                 <p className="text-muted-foreground">
-                                    {t('empty.noTeamAchievements')}
+                                    {t('empty.noOrganizationAchievements')}
                                 </p>
                             </CardContent>
                         </Card>

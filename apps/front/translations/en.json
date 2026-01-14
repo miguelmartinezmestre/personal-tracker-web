@@ -87,12 +87,12 @@
                 }
             }
         },
-        "teams-feature": {
-            "title": "Admin Panel Tour",
+        "organizations-feature": {
+            "title": "Organizations Tour",
             "steps": {
                 "0": {
-                    "title": "Admin Panel",
-                    "content": "As an administrator, you have access to additional tools for managing users and monitoring the system."
+                    "title": "Organizations Page",
+                    "content": "Here you can manage all your organizations and their members."
                 },
                 "1": {
                     "title": "User Management",
@@ -118,7 +118,7 @@
             "onboardingLabel": "Welcome Tour",
             "objectivesLabel": "Objectives Guide",
             "achievementsLabel": "Achievements Guide",
-            "teamsLabel": "Admin Panel Guide"
+            "organizationsLabel": "Organizations Guide"
         }
     },
     "Emails": {
@@ -278,7 +278,7 @@
         "users": "Users",
         "adminSessions": "Sessions Management",
         "adminAudit": "Audit Logs",
-        "teams": "Teams",
+        "organizations": "Organizations",
         "admin": "Admin"
     },
     "Achievements": {
@@ -303,7 +303,7 @@
         },
         "types": {
             "individual": "Individual",
-            "team": "Team"
+            "organization": "Organization"
         },
         "tiers": {
             "bronze": "Bronze",
@@ -380,32 +380,32 @@
                 "name": "Early Bird",
                 "description": "Complete an objective before its deadline"
             },
-            "team_first_objective": {
-                "name": "Team Kickoff",
-                "description": "Team creates their first objective"
+            "organization_first_objective": {
+                "name": "Organization Kickoff",
+                "description": "Organization creates their first objective"
             },
-            "team_completed_5": {
-                "name": "Winning Team",
-                "description": "Team completes {threshold} objectives"
+            "organization_completed_5": {
+                "name": "Winning Organization",
+                "description": "Organization completes {threshold} objectives"
             },
-            "team_completed_15": {
+            "organization_completed_15": {
                 "name": "Elite Squad",
-                "description": "Team completes {threshold} objectives"
+                "description": "Organization completes {threshold} objectives"
             },
-            "team_completed_30": {
-                "name": "Dream Team",
-                "description": "Team completes {threshold} objectives"
+            "organization_completed_30": {
+                "name": "Dream Organization",
+                "description": "Organization completes {threshold} objectives"
             },
-            "team_streak_7": {
-                "name": "Team Momentum",
-                "description": "Team logs progress for {threshold} consecutive days"
+            "organization_streak_7": {
+                "name": "Organization Momentum",
+                "description": "Organization logs progress for {threshold} consecutive days"
             }
         },
         "empty": {
             "noAchievements": "No achievements available.",
             "noEarned": "You haven't earned any achievements yet.",
             "noLocked": "You've earned all available achievements!",
-            "noTeamAchievements": "No team achievements available. Join a team to unlock team achievements."
+            "noOrganizationAchievements": "No organization achievements available. Join an organization to unlock organization achievements."
         },
         "toast": {
             "unlocked": "Achievement Unlocked!",
@@ -495,7 +495,7 @@
         "loading": "Loading...",
         "noOrganization": "No organization",
         "noOrganizations": "No organizations",
-        "manageTeams": "Manage teams"
+        "manageOrganizations": "Manage organizations"
     },
     "ThemeSwitcher": {
         "toggle": "Change theme",
@@ -782,36 +782,36 @@
         "closeSession": "Close Session",
         "expiresAt": "Expires"
     },
-    "Teams": {
-        "title": "Teams",
-        "description": "Manage your teams to keep track of your progress.",
-        "createTeam": "Create Team",
-        "editTeam": "Edit Team",
-        "deleteTeam": "Delete Team",
-        "teamList": "Team List",
-        "teamDetails": "Team Details",
-        "createTeamDescription": "Fill out the form below to create a new team. Click save when you're done.",
-        "saveTeam": "Save Team",
+    "Organizations": {
+        "title": "Organizations",
+        "description": "Manage your organizations to keep track of your progress.",
+        "createOrganization": "Create Organization",
+        "editOrganization": "Edit Organization",
+        "deleteOrganization": "Delete Organization",
+        "organizationList": "Organization List",
+        "organizationDetails": "Organization Details",
+        "createOrganizationDescription": "Fill out the form below to create a new organization. Click save when you're done.",
+        "saveOrganization": "Save Organization",
         "name": "Name",
         "tableDescription": "Description",
-        "editTeamDescription": "Fill out the form below to edit your team. Click save when you're done.",
-        "enterTeamName": "Enter team name",
-        "describeTeamInDetail": "Describe your team in detail",
-        "giveYourTeamAClearConciseTitle": "Give your team a clear, concise title.",
-        "giveYourTeamAClearConciseName": "Give your team a clear, concise title.",
-        "optionalAddDetailsAboutYourTeam": "Optional: Add details about your team.",
+        "editOrganizationDescription": "Fill out the form below to edit your organization. Click save when you're done.",
+        "enterOrganizationName": "Enter organization name",
+        "describeOrganizationInDetail": "Describe your organization in detail",
+        "giveYourOrganizationAClearConciseTitle": "Give your organization a clear, concise title.",
+        "giveYourOrganizationAClearConciseName": "Give your organization a clear, concise title.",
+        "optionalAddDetailsAboutYourOrganization": "Optional: Add details about your organization.",
         "cancel": "Cancel",
-        "goToTeam": "Go to Team",
-        "giveYourTeamMemberAClearConciseEmail": "Give your team member a clear, concise email.",
+        "goToOrganization": "Go to Organization",
+        "giveYourOrganizationMemberAClearConciseEmail": "Give your organization member a clear, concise email.",
         "confirm": {
-            "deleteTeam": "Are you sure you want to delete this team?",
-            "deleteTeamDescription": "This action cannot be undone. This will permanently delete the team and all its members.",
+            "deleteOrganization": "Are you sure you want to delete this organization?",
+            "deleteOrganizationDescription": "This action cannot be undone. This will permanently delete the organization and all its members.",
             "deleteConfirm": "Delete",
             "cancel": "Cancel"
         },
         "toast": {
-            "deletedSuccess": "Team deleted successfully",
-            "deleteFailed": "Failed to delete team"
+            "deletedSuccess": "Organization deleted successfully",
+            "deleteFailed": "Failed to delete organization"
         }
     },
     "Settings": {
@@ -1116,10 +1116,10 @@
         "previous": "Previous",
         "next": "Next"
     },
-    "TeamMembers": {
-        "createNewTeamMember": "Create New Team Member",
+    "OrganizationMembers": {
+        "createNewOrganizationMember": "Create New Organization Member",
         "enterUserId": "Enter user ID",
-        "userIdDescription": "Enter the ID of the user to add to the team",
+        "userIdDescription": "Enter the ID of the user to add to the organization",
         "selectRole": "Select a role",
         "roles": {
             "admin": "Admin",
@@ -1127,24 +1127,24 @@
             "owner": "Owner",
             "user": "User"
         },
-        "createNewTeamMemberDescription": "Fill out the form below to create a new team member. Click save when you're done.",
+        "createNewOrganizationMemberDescription": "Fill out the form below to create a new organization member. Click save when you're done.",
         "email": "Email",
         "enterEmail": "Enter email",
         "role": "Role",
-        "currentRoleOfYourTeamMember": "Current role of your team member.",
-        "saveTeamMember": "Save Team Member",
+        "currentRoleOfYourOrganizationMember": "Current role of your organization member.",
+        "saveOrganizationMember": "Save Organization Member",
         "cancel": "Cancel",
         "edit": "Edit",
         "delete": "Delete",
-        "title": "Team Members",
-        "editTeamMemberDescription": "Fill out the form below to edit your team member. Click save when you're done.",
-        "editTeamMember": "Edit Team Member",
-        "editTeamMemberTitle": "Edit Team Member",
-        "editTeamMemberCancel": "Edit Team Member Cancel",
-        "giveYourTeamMemberAClearConciseEmail": "Give your team member a clear, concise email.",
+        "title": "Organization Members",
+        "editOrganizationMemberDescription": "Fill out the form below to edit your organization member. Click save when you're done.",
+        "editOrganizationMember": "Edit Organization Member",
+        "editOrganizationMemberTitle": "Edit Organization Member",
+        "editOrganizationMemberCancel": "Edit Organization Member Cancel",
+        "giveYourOrganizationMemberAClearConciseEmail": "Give your organization member a clear, concise email.",
         "confirm": {
             "deleteTitle": "Are you sure you want to delete this member?",
-            "deleteDescription": "This action cannot be undone. This will permanently delete this team member.",
+            "deleteDescription": "This action cannot be undone. This will permanently delete this organization member.",
             "deleteConfirm": "Delete",
             "cancel": "Cancel"
         },

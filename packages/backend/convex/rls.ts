@@ -59,11 +59,11 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
         return !!member;
     };
 
-    // Helper para verificar si un usuario es owner o admin de una organización (team manager)
+    // Helper para verificar si un usuario es owner o admin de una organización (organization manager)
     const isOrganizationAdmin = async (organizationId: string) => {
         if (!userId) return false;
-        // NOTE: Do NOT grant automatic team management to global admins by default.
-        // The intended policy is that being a global admin does NOT imply team manager
+        // NOTE: Do NOT grant automatic organization management to global admins by default.
+        // The intended policy is that being a global admin does NOT imply organization manager
         // unless explicitly required. If policy changes, update tests & docs.
 
         // Find the member record for the user in the organization
@@ -215,13 +215,13 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return false;
             },
         },
-        teamAchievements: {
+        organizationAchievements: {
             read: async (_, achievement) => {
                 if (!userId) return false;
-                // Los admins pueden leer todos los logros de equipo
+                // Los admins pueden leer todos los logros de organización
                 if (isAdmin) return true;
-                // Miembros del equipo pueden ver los logros
-                return await isOrganizationMember(achievement.team);
+                // Miembros de la organización pueden ver los logros
+                return await isOrganizationMember(achievement.organization);
             },
             insert: async () => {
                 // Solo el sistema puede otorgar logros
@@ -239,9 +239,9 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 if (isAdmin) return true;
                 // Los usuarios pueden ver su propio progreso
                 if (progress.user === userId) return true;
-                // Miembros del equipo pueden ver el progreso del equipo
-                if (progress.team) {
-                    return await isOrganizationMember(progress.team);
+                // Miembros de la organización pueden ver el progreso de la organización
+                if (progress.organization) {
+                    return await isOrganizationMember(progress.organization);
                 }
                 return false;
             },
@@ -278,9 +278,9 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 if (isAdmin) return true;
                 // Los usuarios pueden ver sus propios permisos
                 if (permission.userId === userId) return true;
-                // Los managers de equipo pueden ver permisos de su equipo
-                if (permission.scope?.type === 'team' && permission.scope.teamId) {
-                    return await isOrganizationAdmin(permission.scope.teamId);
+                // Los managers de organización pueden ver permisos de su organización
+                if (permission.scope?.type === 'organization' && permission.scope.organizationId) {
+                    return await isOrganizationAdmin(permission.scope.organizationId);
                 }
                 return false;
             },
@@ -288,9 +288,9 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 if (!userId) return false;
                 // Los admins pueden crear cualquier permiso
                 if (isAdmin) return true;
-                // Los managers de equipo pueden crear permisos de su equipo
-                if (permission.scope?.type === 'team' && permission.scope.teamId) {
-                    return await isOrganizationAdmin(permission.scope.teamId);
+                // Los managers de organización pueden crear permisos de su organización
+                if (permission.scope?.type === 'organization' && permission.scope.organizationId) {
+                    return await isOrganizationAdmin(permission.scope.organizationId);
                 }
                 return false;
             },
@@ -298,9 +298,9 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 if (!userId) return false;
                 // Los admins pueden modificar cualquier permiso
                 if (isAdmin) return true;
-                // Los managers de equipo pueden modificar permisos de su equipo
-                if (permission.scope?.type === 'team' && permission.scope.teamId) {
-                    return await isOrganizationAdmin(permission.scope.teamId);
+                // Los managers de organización pueden modificar permisos de su organización
+                if (permission.scope?.type === 'organization' && permission.scope.organizationId) {
+                    return await isOrganizationAdmin(permission.scope.organizationId);
                 }
                 return false;
             },

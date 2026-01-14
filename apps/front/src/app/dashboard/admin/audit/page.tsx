@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import { AuditLogs } from '@/components/admin/audit-logs';
+import { AuditLogs } from '@/features/admin/components/audit-logs';
 import { useTranslations } from 'next-intl';
 
 export default function AdminAuditPage() {
