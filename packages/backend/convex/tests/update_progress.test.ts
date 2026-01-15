@@ -98,12 +98,13 @@ describe('convex update_progress', () => {
             api.update_progress.getUpdateProgressByObjectiveId,
             {
                 objectiveId,
+                paginationOpts: { numItems: 10, cursor: null }
             }
         );
 
-        expect(updates).toHaveLength(2);
-        expect(updates.map(u => u.updatedValue)).toContain(60);
-        expect(updates.map(u => u.updatedValue)).toContain(70);
+        expect(updates.page).toHaveLength(2);
+        expect(updates.page.map(u => u.updatedValue)).toContain(60);
+        expect(updates.page.map(u => u.updatedValue)).toContain(70);
     });
 
     test('updateUpdateProgress modifies an existing update', async () => {

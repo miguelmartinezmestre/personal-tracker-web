@@ -61,7 +61,7 @@ describe('convex sessions', () => {
     });
 
     test('getSessionsByUser rejects when unauthenticated', async () => {
-        await expect(t.query(api.sessions.getSessionsByUser, {})).rejects.toThrow(
+        await expect(t.query(api.sessions.getSessionsByUser, { paginationOpts: { numItems: 10, cursor: null } })).rejects.toThrow(
             /Unauthenticated|User not authenticated/
         );
     });

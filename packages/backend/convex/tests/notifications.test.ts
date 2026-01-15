@@ -137,9 +137,9 @@ describe('convex notifications', async () => {
         test('returns empty array when user has no notifications', async () => {
             const notifications = await userIdentity.query(
                 api.notifications.getNotificationsByUser,
-                {}
+                { paginationOpts: { numItems: 10, cursor: null } }
             );
-            expect(notifications).toEqual([]);
+            expect(notifications.page).toEqual([]);
         });
 
         test('returns user notifications ordered by date descending', async () => {
@@ -159,12 +159,12 @@ describe('convex notifications', async () => {
 
             const notifications = await userIdentity.query(
                 api.notifications.getNotificationsByUser,
-                {}
+                { paginationOpts: { numItems: 10, cursor: null } }
             );
 
-            expect(notifications).toHaveLength(2);
-            expect(notifications[0].message).toBe('Second');
-            expect(notifications[1].message).toBe('First');
+            expect(notifications.page).toHaveLength(2);
+            expect(notifications.page[0]?.message).toBe('Second');
+            expect(notifications.page[1]?.message).toBe('First');
         });
 
         test('returns only user own notifications', async () => {
@@ -190,14 +190,14 @@ describe('convex notifications', async () => {
 
             const userNotifications = await userIdentity.query(
                 api.notifications.getNotificationsByUser,
-                {}
+                { paginationOpts: { numItems: 10, cursor: null } }
             );
-            expect(userNotifications).toHaveLength(1);
-            expect(userNotifications[0].message).toBe('User notification');
+            expect(userNotifications.page).toHaveLength(1);
+            expect(userNotifications.page[0]?.message).toBe('User notification');
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(t.query(api.notifications.getNotificationsByUser, {})).rejects.toThrow(
+            await expect(t.query(api.notifications.getNotificationsByUser, { paginationOpts: { numItems: 10, cursor: null } })).rejects.toThrow(
                 /Unauthenticated|User not authenticated/
             );
         });
@@ -302,9 +302,9 @@ describe('convex notifications', async () => {
 
             const notifications = await userIdentity.query(
                 api.notifications.getNotificationsByUser,
-                {}
+                { paginationOpts: { numItems: 10, cursor: null } }
             );
-            expect(notifications.every(n => n.read)).toBe(true);
+            expect(notifications.page.every(n => n.read)).toBe(true);
         });
 
         test('returns zero when all notifications already read', async () => {
