@@ -1,7 +1,7 @@
 import '@repo/ui/globals.css';
 
 import { TextSelectionToolbar } from '@/features/text-selection-toolbar-llm/text-selection-toolbar';
-import { ConvexClientProvider } from '@/features/convex/convex-provider';
+import { ConvexClientProvider } from '@/features/convex/providers/convex-provider';
 import { ThemeProvider } from '@/features/theme/theme';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider, useLocale, useMessages } from 'next-intl';

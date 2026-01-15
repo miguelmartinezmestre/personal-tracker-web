@@ -1,8 +1,8 @@
 'use client';
 
-import Header from '@/features/landing/header';
-import Footer from '@/features/landing/footer';
-import RegisterForm from '@/features/auth/register-form';
+import Header from '@/features/landing/components/header';
+import Footer from '@/features/landing/components/footer';
+import RegisterForm from '@/features/auth/components/register-form';
 import { useTranslations } from 'next-intl';
 
 export default function Register() {

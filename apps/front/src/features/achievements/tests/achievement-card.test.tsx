@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { AchievementCard } from '@/features/achievements/achievement-card';
-import type { AchievementDefinition } from '@/features/achievements/achievement';
+import { AchievementCard } from '@/features/achievements/components/achievement-card';
+import type { AchievementDefinition } from '@/features/achievements/schemas/achievement';
 
 // Mock the AchievementBadge component
 vi.mock('@/components/achievements/achievement-badge', () => ({

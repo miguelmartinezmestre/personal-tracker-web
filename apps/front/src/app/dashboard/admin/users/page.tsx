@@ -5,7 +5,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import { UsersTable } from '@/features/admin/users-table';
+import { UsersTable } from '@/features/admin/components/users-table';
 import { useTranslations } from 'next-intl';
 
 export default function AdminUsersPage() {

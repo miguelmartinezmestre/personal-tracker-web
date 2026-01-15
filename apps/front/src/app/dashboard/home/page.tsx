@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AchievementsWidget } from '@/features/achievements/achievements-widget';
+import { AchievementsWidget } from '@/features/achievements/components/achievements-widget';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';

@@ -8,8 +8,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import AccountSettingsFormEdit from '@/features/settings/account-settings-form-edit';
-import PasswordFormEdit from '@/features/settings/password-form-edit';
+import AccountSettingsFormEdit from '@/features/settings/components/account-settings-form-edit';
+import PasswordFormEdit from '@/features/settings/components/password-form-edit';
 import { useTranslations } from 'next-intl';
 import { User, Key, Map } from 'lucide-react';
 

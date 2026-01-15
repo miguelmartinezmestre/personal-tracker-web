@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Modal } from '@/features/dashboard/modal';
+import { Modal } from '@/features/dashboard/components/modal';
 
 // Mock @repo/ui components
 vi.mock('@repo/ui/components/button', () => ({

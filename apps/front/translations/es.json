@@ -863,7 +863,8 @@
             "roles": {
                 "admin": "Administrador",
                 "member": "Miembro",
-                "owner": "Propietario"
+                "owner": "Propietario",
+                "user": "Usuario"
             },
             "defaults": {
                 "banReason": "Banned by administrator"

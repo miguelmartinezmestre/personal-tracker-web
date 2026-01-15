@@ -2,8 +2,8 @@
 
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import CreateObjectiveFormModal from '@/features/objectives/objective-form-create-modal';
-import { ResponsiveObjectivesView } from '@/features/objectives/responsive-objectives-view';
+import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
+import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
 
 export default function ObjectivesPage() {
     const t = useTranslations('Objectives');

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import Footer from '@/features/landing/footer';
+import Footer from '@/features/landing/components/footer';
 
 // Mock next-intl is already set up in vitest.setup.ts
 

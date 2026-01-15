@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import CreateTeamFormModal from '@/features/teams/team-form-create-modal';
-import TeamsTable from '@/features/teams/team-table';
+import CreateTeamFormModal from '@/features/organizations/components/team-form-create-modal';
+import TeamsTable from '@/features/organizations/components/team-table';
 
 export default async function Teams() {
     const t = await getTranslations('Teams');
