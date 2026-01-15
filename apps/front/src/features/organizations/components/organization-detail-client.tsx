@@ -1,6 +1,6 @@
 'use client';
 
-import { useOrganizations } from '@/features/organizations/hooks/use-organizations';
+import { useOrganizationByIdentifier, useOrganizations } from '@/features/organizations/hooks/use-organizations';
 import CreateOrganizationMemberFormModal from '@/features/organizations/components/organization-members-form-create-modal';
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
 import { Skeleton } from '@repo/ui/components/skeleton';
@@ -13,7 +13,7 @@ export default function OrganizationDetailClient({
     organizationId,
 }: OrganizationDetailClientProps) {
     // Use organization hook to get organization by ID
-    const { data: organization, isLoading } = useOrganization(organizationId);
+    const { data: organization, isLoading } = useOrganizationByIdentifier(organizationId);
 
     if (isLoading) {
         return (
