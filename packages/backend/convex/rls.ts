@@ -35,11 +35,20 @@ async function safeBetterAuthQuery<T>(ctx: QueryCtx, queryFn: () => Promise<T>):
 async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
     const normalizedRole = role.toLowerCase();
     // Helper para verificar si un usuario es admin global
+    // Verifies the user actually exists in the database and has admin role
     const isGlobalAdmin = async () => {
         if (normalizedRole !== 'admin') return false;
         try {
-            // If not found, try to find by _id
-            return true;
+            // Verify admin status by checking the user record in the database
+            const userRecord = await safeBetterAuthQuery(
+                ctx,
+                async () =>
+                    (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+                        model: 'user',
+                        where: [{ field: 'userId', value: userId }],
+                    })) as BetterAuthDataModel['user']['document'] | null
+            );
+            return String(userRecord?.role || '').toLowerCase() === 'admin';
         } catch {
             return false;
         }
@@ -53,7 +62,10 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
             async () =>
                 (await ctx.runQuery(components.betterAuth.adapter.findOne, {
                     model: 'member',
-                    where: [{ field: 'organizationId', value: organizationId }],
+                    where: [
+                        { field: 'organizationId', value: organizationId },
+                        { field: 'userId', value: userId },
+                    ],
                 })) as BetterAuthDataModel['member']['document'] | null
         );
         return !!member;
@@ -82,7 +94,7 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
         if (!member) return false;
 
         // Only members with role 'owner' or 'admin' are considered organization admins (managers)
-        const memberRole = String((member as any).role || '').toLowerCase();
+        const memberRole = String(member?.role || '').toLowerCase();
         return memberRole === 'owner' || memberRole === 'admin';
     };
 
@@ -177,7 +189,8 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return auditLog.user === userId;
             },
             modify: async () => {
-                // Los logs de auditoría no deben modificarse (ni siquiera por admins)
+                // Los logs de auditoría no deben modificarse ni eliminarse (ni siquiera por admins)
+                // modify en Convex RLS cubre tanto update como delete
                 return false;
             },
         },
