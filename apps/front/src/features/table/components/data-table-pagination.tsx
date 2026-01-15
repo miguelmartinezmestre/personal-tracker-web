@@ -69,7 +69,9 @@ export function DataTablePagination({
 
     // Calculate showing info
     const startItem = currentPage * pageSize + 1;
-    const endItem = totalItems ? Math.min((currentPage + 1) * pageSize, totalItems) : (currentPage + 1) * pageSize;
+    const endItem = totalItems
+        ? Math.min((currentPage + 1) * pageSize, totalItems)
+        : (currentPage + 1) * pageSize;
 
     return (
         <div className="flex items-center justify-between px-2">
@@ -107,7 +109,10 @@ export function DataTablePagination({
                 </Button>
                 {pageNumbers.map((page, index) =>
                     page === 'ellipsis' ? (
-                        <div key={`ellipsis-${index}`} className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground">
+                        <div
+                            key={`ellipsis-${index}`}
+                            className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground"
+                        >
                             ...
                         </div>
                     ) : (

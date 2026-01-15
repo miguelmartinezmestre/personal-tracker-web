@@ -165,7 +165,11 @@ export default function CreateObjectiveFormModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2" data-testid="objective-create-open" data-tour="create-objective-btn">
+                <Button
+                    className="gap-2"
+                    data-testid="objective-create-open"
+                    data-tour="create-objective-btn"
+                >
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>
@@ -394,7 +398,7 @@ export default function CreateObjectiveFormModal() {
                                                             className={cn(
                                                                 'w-full pl-3 text-left font-normal',
                                                                 !field.value &&
-                                                                'text-muted-foreground'
+                                                                    'text-muted-foreground'
                                                             )}
                                                         >
                                                             {field.value ? (
@@ -449,9 +453,9 @@ export default function CreateObjectiveFormModal() {
                                                             e.target.value === ''
                                                                 ? null
                                                                 : Number.parseInt(
-                                                                    e.target.value,
-                                                                    10
-                                                                )
+                                                                      e.target.value,
+                                                                      10
+                                                                  )
                                                         )
                                                     }
                                                 />

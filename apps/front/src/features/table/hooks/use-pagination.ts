@@ -39,13 +39,19 @@ export function usePagination(pageSize: number = DEFAULT_PAGE_SIZE) {
     };
 }
 
-export function usePaginationState(totalItems: number | undefined, pageSize: number = DEFAULT_PAGE_SIZE) {
+export function usePaginationState(
+    totalItems: number | undefined,
+    pageSize: number = DEFAULT_PAGE_SIZE
+) {
     const [currentPage, setCurrentPage] = useState(0);
     const totalPages = totalItems ? Math.ceil(totalItems / pageSize) : 0;
 
-    const goToPage = useCallback((page: number) => {
-        setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
-    }, [totalPages]);
+    const goToPage = useCallback(
+        (page: number) => {
+            setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+        },
+        [totalPages]
+    );
 
     const nextPage = useCallback(() => {
         setCurrentPage(prev => Math.min(prev + 1, totalPages - 1));

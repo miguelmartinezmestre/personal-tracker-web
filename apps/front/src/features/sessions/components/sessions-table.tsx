@@ -24,7 +24,9 @@ const DEFAULT_PAGINATION_OPTS = {
 export default function SessionsTable() {
     const t = useTranslations('Sessions');
     const queryClient = useQueryClient();
-    const sessions = useSuspenseQuery(convexQuery(api.sessions.getSessionsByUser, DEFAULT_PAGINATION_OPTS));
+    const sessions = useSuspenseQuery(
+        convexQuery(api.sessions.getSessionsByUser, DEFAULT_PAGINATION_OPTS)
+    );
 
     // Get current session to prevent revoking it
     const currentSession = authClient.useSession();

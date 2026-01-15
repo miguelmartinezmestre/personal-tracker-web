@@ -63,7 +63,9 @@ export function OrganizationSwitcher() {
         );
     }
 
-    const activeOrganization = organizations?.find(organization => organization.id === activeOrganizationId);
+    const activeOrganization = organizations?.find(
+        organization => organization.id === activeOrganizationId
+    );
     const displayName = activeOrganization?.name || t('noOrganization');
 
     const handleOrganizationChange = (organizationId: string) => {

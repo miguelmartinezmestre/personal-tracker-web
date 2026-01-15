@@ -381,7 +381,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                             className={cn(
                                                                 'w-full pl-3 text-left font-normal',
                                                                 !field.value &&
-                                                                'text-muted-foreground'
+                                                                    'text-muted-foreground'
                                                             )}
                                                         >
                                                             {field.value ? (
@@ -436,9 +436,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                             e.target.value === ''
                                                                 ? null
                                                                 : Number.parseInt(
-                                                                    e.target.value,
-                                                                    10
-                                                                )
+                                                                      e.target.value,
+                                                                      10
+                                                                  )
                                                         )
                                                     }
                                                 />

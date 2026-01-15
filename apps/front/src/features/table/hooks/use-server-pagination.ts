@@ -13,10 +13,13 @@ export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE)
     const [cursors, setCursors] = useState<(string | null)[]>([null]); // cursor for each page
     const [isDone, setIsDone] = useState(false);
 
-    const getPaginationOpts = useCallback((page: number) => ({
-        numItems: initialPageSize,
-        cursor: cursors[page] ?? null,
-    }), [cursors, initialPageSize]);
+    const getPaginationOpts = useCallback(
+        (page: number) => ({
+            numItems: initialPageSize,
+            cursor: cursors[page] ?? null,
+        }),
+        [cursors, initialPageSize]
+    );
 
     const updateCursor = useCallback((page: number, cursor: string | null, done: boolean) => {
         setCursors(prev => {

@@ -667,7 +667,11 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         if (await organizationAchievementsTab.isVisible()) {
             await organizationAchievementsTab.click();
             await page.waitForTimeout(300);
-            await takeTFGScreenshot(page, 'achievements-organization-tab', 'Organization achievements');
+            await takeTFGScreenshot(
+                page,
+                'achievements-organization-tab',
+                'Organization achievements'
+            );
         }
 
         // ============================================================
@@ -678,14 +682,22 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
-        await takeTFGScreenshot(page, 'organizations-empty-state', 'Organizations list - empty state');
+        await takeTFGScreenshot(
+            page,
+            'organizations-empty-state',
+            'Organizations list - empty state'
+        );
 
         // Create an organization
         const createOrganizationButton = page.getByTestId('organization-create-open');
         if (await createOrganizationButton.isVisible()) {
             await createOrganizationButton.click();
             await page.waitForTimeout(300);
-            await takeTFGScreenshot(page, 'organizations-create-modal', 'Create organization modal');
+            await takeTFGScreenshot(
+                page,
+                'organizations-create-modal',
+                'Create organization modal'
+            );
 
             // Fill organization form
             const organizationNameInput = page.getByTestId('organization-name-input');
@@ -700,7 +712,11 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 await organizationDescInput.fill('Main development organization for the project');
             }
 
-            await takeTFGScreenshot(page, 'organizations-form-filled', 'Organization creation form filled');
+            await takeTFGScreenshot(
+                page,
+                'organizations-form-filled',
+                'Organization creation form filled'
+            );
 
             // Save organization
             const saveOrganizationBtn = page.getByTestId('organization-save-button');
@@ -719,7 +735,11 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                     await organizationLink.click();
                     await page.waitForLoadState('networkidle');
                     await page.waitForTimeout(500);
-                    await takeTFGScreenshot(page, 'organization-detail-view', 'Organization detail view');
+                    await takeTFGScreenshot(
+                        page,
+                        'organization-detail-view',
+                        'Organization detail view'
+                    );
 
                     // ============================================================
                     // SECTION 11: ORGANIZATION MEMBERS

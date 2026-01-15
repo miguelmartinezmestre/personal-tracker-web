@@ -249,7 +249,10 @@ export function DataTable<TData extends RowData, TValue>({
                                 >
                                     {row.getVisibleCells().map(cell => (
                                         <TableCell key={cell.id} data-testid="table-cell">
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
                                         </TableCell>
                                     ))}
                                 </TableRow>

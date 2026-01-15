@@ -734,7 +734,9 @@ export const checkOrganizationAchievements = internalMutation({
         // Get all objectives from organization members
         const allObjectives = await ctx.db.query('objectives').collect();
         const organizationObjectives = allObjectives.filter(o => memberUserIds.includes(o.user));
-        const completedOrganizationObjectives = organizationObjectives.filter(o => o.status === 'completed');
+        const completedOrganizationObjectives = organizationObjectives.filter(
+            o => o.status === 'completed'
+        );
 
         const newAchievements: string[] = [];
 
@@ -745,23 +747,30 @@ export const checkOrganizationAchievements = internalMutation({
 
             switch (def.code) {
                 case 'organization_first_objective':
-                    shouldAward = trigger === 'objective_created' && organizationObjectives.length >= 1;
+                    shouldAward =
+                        trigger === 'objective_created' && organizationObjectives.length >= 1;
                     break;
                 case 'organization_completed_5':
                     shouldAward =
-                        trigger === 'objective_completed' && completedOrganizationObjectives.length >= 5;
+                        trigger === 'objective_completed' &&
+                        completedOrganizationObjectives.length >= 5;
                     break;
                 case 'organization_completed_15':
                     shouldAward =
-                        trigger === 'objective_completed' && completedOrganizationObjectives.length >= 15;
+                        trigger === 'objective_completed' &&
+                        completedOrganizationObjectives.length >= 15;
                     break;
                 case 'organization_completed_30':
                     shouldAward =
-                        trigger === 'objective_completed' && completedOrganizationObjectives.length >= 30;
+                        trigger === 'objective_completed' &&
+                        completedOrganizationObjectives.length >= 30;
                     break;
                 case 'organization_streak_7': {
                     // Check if organization has had activity for 7 consecutive days
-                    const organizationStreak = await calculateOrganizationStreak(ctx, memberUserIds);
+                    const organizationStreak = await calculateOrganizationStreak(
+                        ctx,
+                        memberUserIds
+                    );
                     shouldAward = trigger === 'progress_update' && organizationStreak >= 7;
                     break;
                 }
@@ -799,7 +808,10 @@ export const checkOrganizationAchievements = internalMutation({
     },
 });
 
-async function calculateOrganizationStreak(ctx: QueryCtx, memberUserIds: string[]): Promise<number> {
+async function calculateOrganizationStreak(
+    ctx: QueryCtx,
+    memberUserIds: string[]
+): Promise<number> {
     const allObjectives = await ctx.db.query('objectives').collect();
     const organizationObjectives = allObjectives.filter((o: Doc<'objectives'>) =>
         memberUserIds.includes(o.user)

@@ -56,7 +56,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
                 // Default role for invited members
                 defaultRole: 'member',
                 // Configure custom email sending for invitations
-                sendInvitationEmail: async (data) => {
+                sendInvitationEmail: async data => {
                     const inviteLink = `${siteUrl}/invitations/${data.id}`;
                     console.log('[sendOrganizationInvitationEmail] Invite link:', inviteLink);
                     // await sendOrganizationInvitationEmail({

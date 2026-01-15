@@ -1,7 +1,10 @@
 'use client';
 
 import { DataTable } from '@/features/table/components/table';
-import { useDeleteOrganizationMember, useOrganizationMembers } from '@/features/organizations/hooks/use-organization-members';
+import {
+    useDeleteOrganizationMember,
+    useOrganizationMembers,
+} from '@/features/organizations/hooks/use-organization-members';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import { OrganizationMember } from '@/features/organizations/schemas/organization-member';
@@ -14,7 +17,9 @@ interface OrganizationMembersTableProps {
     organizationId: string;
 }
 
-export default function OrganizationMembersTable({ organizationId }: OrganizationMembersTableProps) {
+export default function OrganizationMembersTable({
+    organizationId,
+}: OrganizationMembersTableProps) {
     const t = useTranslations('OrganizationMembers');
     const organizationMembers = useOrganizationMembers(organizationId);
     const deleteOrganizationMember = useDeleteOrganizationMember();

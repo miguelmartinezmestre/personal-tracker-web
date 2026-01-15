@@ -2,7 +2,13 @@
 
 import { Mail, Building2, User, Check, X } from 'lucide-react';
 import { Button } from '@repo/ui/components/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@repo/ui/components/card';
 import { Badge } from '@repo/ui/components/badge';
 import type { Invitation } from '@/features/organizations/hooks/use-invitations';
 import { useTranslations } from 'next-intl';
@@ -49,9 +55,7 @@ export function InvitationCard({
                             {invitation.email}
                         </CardDescription>
                     </div>
-                    <Badge variant={getRoleBadgeVariant(invitation.role)}>
-                        {invitation.role}
-                    </Badge>
+                    <Badge variant={getRoleBadgeVariant(invitation.role)}>{invitation.role}</Badge>
                 </div>
             </CardHeader>
             <CardContent>

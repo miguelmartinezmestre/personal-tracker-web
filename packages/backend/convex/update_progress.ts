@@ -125,7 +125,9 @@ export const updateUpdateProgress = mutationWithRLS({
                 metadata: {
                     before: changes.before,
                     after: changes.after,
-                    context: objective ? `Updated progress for objective: ${objective.title}` : undefined,
+                    context: objective
+                        ? `Updated progress for objective: ${objective.title}`
+                        : undefined,
                 },
             });
         }
@@ -151,7 +153,9 @@ export const deleteUpdateProgress = mutationWithRLS({
                 resourceId: args._id,
                 metadata: {
                     before: sanitizeForAudit(existing),
-                    context: objective ? `Deleted progress update for objective: ${objective.title}` : undefined,
+                    context: objective
+                        ? `Deleted progress update for objective: ${objective.title}`
+                        : undefined,
                 },
                 severity: 'critical',
             });

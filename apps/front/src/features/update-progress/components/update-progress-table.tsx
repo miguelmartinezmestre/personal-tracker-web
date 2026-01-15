@@ -161,28 +161,28 @@ export default function UpdateProgressTable() {
     const updates = updateProgress.data?.page ?? [];
     const objectiveDoc = objective.data as
         | (Doc<'objectives'> & {
-            objectiveType?: string;
-            period?: string;
-            periodStart?: number;
-            periodLengthDays?: number;
-        })
+              objectiveType?: string;
+              period?: string;
+              periodStart?: number;
+              periodLengthDays?: number;
+          })
         | undefined;
     const objectiveType = objectiveDoc?.objectiveType ?? 'value';
     const period = objectiveDoc?.period ?? 'none';
     const isEventBased = objectiveType !== 'value' || (period && period !== 'none');
     const range = objectiveDoc
         ? getPeriodRange(
-            period,
-            Date.now(),
-            objectiveDoc.periodStart,
-            objectiveDoc.periodLengthDays
-        )
+              period,
+              Date.now(),
+              objectiveDoc.periodStart,
+              objectiveDoc.periodLengthDays
+          )
         : null;
     const sortedUpdates = [...updates].sort((a, b) => a.updateDate - b.updateDate);
     const relevantUpdates = range
         ? sortedUpdates.filter(
-            update => update.updateDate >= range.start && update.updateDate < range.end
-        )
+              update => update.updateDate >= range.start && update.updateDate < range.end
+          )
         : sortedUpdates;
 
     type ProgressPoint = { date: number; currentValue: number; objective: number };

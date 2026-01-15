@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/features/theme/theme';
 
 // Mock next-themes
 vi.mock('next-themes', () => ({
-    ThemeProvider: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+    ThemeProvider: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
         <div data-testid="theme-provider" data-props={JSON.stringify(props)}>
             {children}
         </div>

@@ -2,7 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/auth-client';
-import type { CreateOrganization, Organization } from '@/features/organizations/schemas/organization';
+import type {
+    CreateOrganization,
+    Organization,
+} from '@/features/organizations/schemas/organization';
 
 /**
  * Tipos para las operaciones de organizaciones
@@ -54,7 +57,7 @@ export function useOrganizations() {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
-                    ? ((result.data as unknown) as Organization[])
+                    ? (result.data as unknown as Organization[])
                     : [];
             const normalized = organizations.map(normalizeOrganization);
             return normalized;
@@ -74,7 +77,7 @@ export function useOrganization(organizationId: string | null) {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
-                    ? ((result.data as unknown) as Organization[])
+                    ? (result.data as unknown as Organization[])
                     : [];
             const org = organizations.find(o => o.id === organizationId);
             return org ? normalizeOrganization(org) : null;
@@ -95,7 +98,7 @@ export function useOrganizationBySlug(slug: string | null) {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
-                    ? ((result.data as unknown) as Organization[])
+                    ? (result.data as unknown as Organization[])
                     : [];
             const org = organizations.find(o => o.slug === slug);
             return org ? normalizeOrganization(org) : null;
@@ -140,7 +143,6 @@ export function useOrganizationByIdentifier(identifier: string | null) {
                 const identifierStr = String(identifier).trim();
                 return slugStr === identifierStr;
             });
-
 
             // If not found by slug, try to find by ID
             if (!org) {

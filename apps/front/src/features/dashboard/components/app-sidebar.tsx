@@ -1,6 +1,18 @@
 'use client';
 
-import { Bell, FileText, Frame, Goal, Home, Shield, Trophy, Settings, Users, Activity, Tag } from 'lucide-react';
+import {
+    Bell,
+    FileText,
+    Frame,
+    Goal,
+    Home,
+    Shield,
+    Trophy,
+    Settings,
+    Users,
+    Activity,
+    Tag,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,

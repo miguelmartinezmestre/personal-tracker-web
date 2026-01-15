@@ -37,7 +37,6 @@ export const listUsers = query({
         searchValue: v.optional(v.string()),
     },
     handler: async (ctx, args): Promise<PaginationResult<BetterAuthUser>> => {
-
         // Get all users from BetterAuth user table
         const users = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
             model: 'user',
@@ -58,7 +57,6 @@ export const banUser = mutation({
         banExpires: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-
         // Verify admin role
         const currentUser = await authComponent.getAuthUser(ctx);
         if (!currentUser || currentUser.role !== 'admin') {

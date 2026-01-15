@@ -25,7 +25,10 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { CreateOrganization, organizationSchema } from '@/features/organizations/schemas/organization';
+import {
+    CreateOrganization,
+    organizationSchema,
+} from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
 

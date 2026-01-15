@@ -67,7 +67,9 @@ export async function createTestUser(
     if (options?.customUsername) {
         username = options.customUsername;
         email = options?.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
-        organizationSlug = options?.customOrganizationSlug ?? `${normalizeForSlug(options.customUsername)}-${shortId}`;
+        organizationSlug =
+            options?.customOrganizationSlug ??
+            `${normalizeForSlug(options.customUsername)}-${shortId}`;
     } else if (options?.usePresentableName) {
         // Use a presentable name for TFG screenshots
         const randomName = PRESENTABLE_NAMES[Math.floor(Math.random() * PRESENTABLE_NAMES.length)];

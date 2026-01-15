@@ -25,11 +25,18 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { Organization, savedOrganizationSchema } from '@/features/organizations/schemas/organization';
+import {
+    Organization,
+    savedOrganizationSchema,
+} from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
 import { useUpdateOrganization } from '@/features/organizations/hooks/use-organizations';
 
-export default function EditOrganizationFormModal({ defaultValues }: { defaultValues: Organization }) {
+export default function EditOrganizationFormModal({
+    defaultValues,
+}: {
+    defaultValues: Organization;
+}) {
     const t = useTranslations('Organizations');
     const updateOrganization = useUpdateOrganization();
     const [open, setOpen] = useState(false);

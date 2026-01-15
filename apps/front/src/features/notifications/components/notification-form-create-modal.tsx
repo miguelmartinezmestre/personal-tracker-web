@@ -37,7 +37,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@repo/ui/components/popover';
 import { Calendar } from '@repo/ui/components/calendar';
 import { cn } from '@repo/ui/lib/utils';
-import { CreateNotification, notificationSchema } from '@/features/notifications/schemas/notification';
+import {
+    CreateNotification,
+    notificationSchema,
+} from '@/features/notifications/schemas/notification';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
@@ -62,13 +65,18 @@ export default function CreateNotificationFormModal() {
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
 
-    const objectives = useQuery(convexQuery(api.objectives.getObjectivesByUser, DEFAULT_PAGINATION_OPTS));
+    const objectives = useQuery(
+        convexQuery(api.objectives.getObjectivesByUser, DEFAULT_PAGINATION_OPTS)
+    );
 
     const createNotification = useMutation({
         mutationFn: useConvexMutation(api.notifications.createNotification),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.notifications.getNotificationsByUser, DEFAULT_PAGINATION_OPTS).queryKey,
+                queryKey: convexQuery(
+                    api.notifications.getNotificationsByUser,
+                    DEFAULT_PAGINATION_OPTS
+                ).queryKey,
             });
             toast.success(t('toast.created'));
         },
