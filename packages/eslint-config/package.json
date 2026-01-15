@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
-  "scripts": {
-    "clean": "node ../../scripts/clean.mjs node_modules .next .turbo"
-  },
   "exports": {
     "./base": "./base.js",
     "./next-js": "./next.js",

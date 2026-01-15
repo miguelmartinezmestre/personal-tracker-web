@@ -16,7 +16,6 @@
     "test:react:coverage": "vitest run --coverage apps/front/src/features",
     "test:all": "pnpm run test:convex & pnpm run test:react & pnpm run test:playwright",
     "test:all:coverage": "vitest run --coverage packages/backend/convex apps/front/src/features; pnpm run test:playwright:coverage",
-    "clean": "turbo run clean && node scripts/clean.mjs node_modules .next .turbo",
     "gen:typescript-package": "turbo gen typescript-package",
     "gen": "turbo gen",
     "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",

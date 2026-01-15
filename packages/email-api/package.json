@@ -13,8 +13,7 @@
     "start": "node --import tsx/esm src/index.ts",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "test": "jest",
-    "clean": "node ../../scripts/clean.mjs node_modules .next .turbo"
+    "test": "jest"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
