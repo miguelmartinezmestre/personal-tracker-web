@@ -64,56 +64,56 @@ async function acceptInvitation(page: Page, invitationId: string) {
     return result.data;
 }
 
-test.skip('team members: add, edit role, and delete team members', async ({ page, browser }) => {
-    test.skip(true, 'Team member UI not implemented - needs BetterAuth integration in team detail page');
+test.skip('organization members: add, edit role, and delete organization members', async ({ page, browser }) => {
+    test.skip(true, 'Organization member UI not implemented - needs BetterAuth integration in organization detail page');
     const uuid = randomUUID();
     const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 
-    // Create main user (team owner)
+    // Create main user (organization owner)
     await createTestUser(page);
 
-    // Create a team
-    await page.goto('/dashboard/teams');
+    // Create an organization
+    await page.goto('/dashboard/organizations');
     await page.waitForLoadState('networkidle');
 
-    const createButton = page.getByTestId('team-create-open');
+    const createButton = page.getByTestId('organization-create-open');
     await expect(createButton).toBeVisible({ timeout: 10000 });
 
-    const teamName = `testteam-${uuid}`;
+    const organizationName = `testorganization-${uuid}`;
     await createButton.click();
-    await expect(page.getByTestId('team-name-input')).toBeVisible();
-    await page.getByTestId('team-name-input').fill(teamName);
-    await page.getByTestId('team-description-input').fill('Test team description');
-    await expect(page.getByTestId('team-save-button')).toBeEnabled();
-    await page.getByTestId('team-save-button').click();
+    await expect(page.getByTestId('organization-name-input')).toBeVisible();
+    await page.getByTestId('organization-name-input').fill(organizationName);
+    await page.getByTestId('organization-description-input').fill('Test organization description');
+    await expect(page.getByTestId('organization-save-button')).toBeEnabled();
+    await page.getByTestId('organization-save-button').click();
 
-    // Wait for team to be created
+    // Wait for organization to be created
     await page.waitForTimeout(2000);
 
-    // Try to verify the new team appears - if it doesn't, skip test
-    const teamVisible = await page
-        .getByText(teamName)
+    // Try to verify the new organization appears - if it doesn't, skip test
+    const organizationVisible = await page
+        .getByText(organizationName)
         .isVisible({ timeout: 5000 })
         .catch(() => false);
-    if (!teamVisible) {
+    if (!organizationVisible) {
         console.log(
-            'Team creation may have failed - Better Auth component may not be fully functional in test environment'
+            'Organization creation may have failed - Better Auth component may not be fully functional in test environment'
         );
         return;
     }
 
-    // Navigate to team detail
-    const teamRow = page.locator('tr', { hasText: teamName }).first();
-    await teamRow.getByTestId('team-detail-link').click();
+    // Navigate to organization detail
+    const organizationRow = page.locator('tr', { hasText: organizationName }).first();
+    await organizationRow.getByTestId('organization-detail-link').click();
 
-    // Extract team ID from URL
+    // Extract organization ID from URL
     await page.waitForLoadState('networkidle');
     const url = page.url();
-    const teamIdMatch = url.match(/\/dashboard\/teams\/([^/]+)/);
-    if (!teamIdMatch) {
-        throw new Error('Could not extract team ID from URL');
+    const organizationIdMatch = url.match(/\/dashboard\/organizations\/([^/]+)/);
+    if (!organizationIdMatch) {
+        throw new Error('Could not extract organization ID from URL');
     }
-    const teamId = teamIdMatch[1];
+    const organizationId = organizationIdMatch[1];
 
     // Create a second user and invite them
     const invitedContext = await browser.newContext({ baseURL });
@@ -121,17 +121,17 @@ test.skip('team members: add, edit role, and delete team members', async ({ page
     const invitedUser = await createTestUser(invitedPage);
 
     // Invite the user using BetterAuth
-    const invitation = await inviteMember(page, { organizationId: teamId, email: invitedUser.email, role: 'member' });
+    const invitation = await inviteMember(page, { organizationId: organizationId, email: invitedUser.email, role: 'member' });
 
     // Accept invitation
     await acceptInvitation(invitedPage, invitation.id);
     await invitedContext.close();
 
-    // Navigate to team members page
-    await page.goto(`/dashboard/teams/${teamId}`);
+    // Navigate to organization members page
+    await page.goto(`/dashboard/organizations/${organizationId}`);
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: /team members|miembros/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /organization members|miembros/i })).toBeVisible({
         timeout: 10000,
     });
     await expect(page.getByText(invitedUser.email)).toBeVisible({ timeout: 10000 });

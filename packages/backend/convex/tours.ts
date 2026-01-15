@@ -16,7 +16,7 @@ export const getTourProgress = queryWithRLS({
             .collect();
 
         return tours.map(tour => ({
-            tourId: tour.tourId as 'onboarding' | 'objectives-feature' | 'achievements-feature' | 'teams-feature',
+            tourId: tour.tourId as 'onboarding' | 'objectives-feature' | 'achievements-feature' | 'organizations-feature',
             completed: tour.completed,
             currentStep: tour.currentStep,
             lastSeenAt: tour.lastSeenAt,
@@ -47,7 +47,7 @@ export const getTour = queryWithRLS({
         }
 
         return {
-            tourId: tour.tourId as 'onboarding' | 'objectives-feature' | 'achievements-feature' | 'teams-feature',
+            tourId: tour.tourId as 'onboarding' | 'objectives-feature' | 'achievements-feature' | 'organizations-feature',
             completed: tour.completed,
             currentStep: tour.currentStep,
             lastSeenAt: tour.lastSeenAt,

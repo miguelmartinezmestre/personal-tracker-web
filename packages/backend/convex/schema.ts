@@ -48,7 +48,7 @@ export default defineSchema({
     auditLogs: defineTable({
         user: v.string(),
         action: v.string(),
-        resourceType: v.string(), // 'objective' | 'progress_update' | 'team' | 'team_member' | 'category' | 'user' | 'session' | 'permission'
+        resourceType: v.string(), // 'objective' | 'progress_update' | 'organization' | 'organization_member' | 'category' | 'user' | 'session' | 'permission'
         resourceId: v.optional(v.string()), // ID of the affected resource
         metadata: v.optional(
             v.object({
@@ -77,7 +77,7 @@ export default defineSchema({
     // Achievement definitions - what achievements exist
     achievementDefinitions: defineTable({
         code: v.string(),
-        type: v.string(), // 'individual' | 'team'
+        type: v.string(), // 'individual' | 'organization'
         category: v.string(), // 'milestone' | 'streak' | 'completion' | 'activity'
         tier: v.string(), // 'bronze' | 'silver' | 'gold' | 'platinum'
         threshold: v.number(),
@@ -103,30 +103,30 @@ export default defineSchema({
         .index('by_user_achievement', ['user', 'achievement'])
         .index('by_earned_at', ['earnedAt']),
 
-    // Team achievements - which teams earned which achievements
-    teamAchievements: defineTable({
-        team: v.string(),
+    // Organization achievements - which organizations earned which achievements
+    organizationAchievements: defineTable({
+        organization: v.string(),
         achievement: v.id('achievementDefinitions'),
         earnedAt: v.number(),
         contributingUsers: v.array(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index('by_team', ['team'])
-        .index('by_team_achievement', ['team', 'achievement'])
+        .index('by_organization', ['organization'])
+        .index('by_organization_achievement', ['organization', 'achievement'])
         .index('by_earned_at', ['earnedAt']),
 
     // Achievement progress tracking
     achievementProgress: defineTable({
         user: v.string(),
-        team: v.optional(v.string()),
+        organization: v.optional(v.string()),
         achievement: v.id('achievementDefinitions'),
         currentProgress: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
         .index('by_user', ['user'])
-        .index('by_team', ['team'])
+        .index('by_organization', ['organization'])
         .index('by_user_achievement', ['user', 'achievement']),
 
     // User permissions - permisos adicionales por usuario
@@ -138,8 +138,8 @@ export default defineSchema({
         expiresAt: v.optional(v.number()),
         scope: v.optional(
             v.object({
-                type: v.union(v.literal('global'), v.literal('team')),
-                teamId: v.optional(v.id('organization')),
+                type: v.union(v.literal('global'), v.literal('organization')),
+                organizationId: v.optional(v.id('organization')),
             })
         ),
     })

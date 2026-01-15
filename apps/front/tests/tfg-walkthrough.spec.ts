@@ -16,9 +16,9 @@
  * 5. Progress Updates (Add, Edit, History)
  * 6. Categories (Create, Edit, Color/Icon selection)
  * 7. Notifications (List, Mark Read, Filters)
- * 8. Achievements (Individual, Team, Progress, Filters)
- * 9. Teams Management (Create, Members, Roles)
- * 10. Team Members (Add, Role management)
+ * 8. Achievements (Individual, Organization, Progress, Filters)
+ * 9. Organizations Management (Create, Members, Roles)
+ * 10. Organization Members (Add, Role management)
  * 11. Sessions (Active sessions, Device info)
  * 12. Settings (Account, Password)
  * 13. Admin Panel (Users, Sessions, Audit Logs)
@@ -576,7 +576,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         }
 
         // ============================================================
-        // SECTION 9: ACHIEVEMENTS (Individual & Team)
+        // SECTION 9: ACHIEVEMENTS (Individual & Organization)
         // ============================================================
         console.log('\n🏆 SECTION 9: Achievements\n');
 
@@ -662,69 +662,69 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // Tab switching - Team achievements
-        const teamAchievementsTab = page.getByTestId('achievements-tab-team');
-        if (await teamAchievementsTab.isVisible()) {
-            await teamAchievementsTab.click();
+        // Tab switching - Organization achievements
+        const organizationAchievementsTab = page.getByTestId('achievements-tab-organization');
+        if (await organizationAchievementsTab.isVisible()) {
+            await organizationAchievementsTab.click();
             await page.waitForTimeout(300);
-            await takeTFGScreenshot(page, 'achievements-team-tab', 'Team achievements');
+            await takeTFGScreenshot(page, 'achievements-organization-tab', 'Organization achievements');
         }
 
         // ============================================================
-        // SECTION 10: TEAMS MANAGEMENT
+        // SECTION 10: ORGANIZATIONS MANAGEMENT
         // ============================================================
-        console.log('\n👥 SECTION 10: Teams Management\n');
+        console.log('\n👥 SECTION 10: Organizations Management\n');
 
-        await page.goto('/dashboard/teams');
+        await page.goto('/dashboard/organizations');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
-        await takeTFGScreenshot(page, 'teams-empty-state', 'Teams list - empty state');
+        await takeTFGScreenshot(page, 'organizations-empty-state', 'Organizations list - empty state');
 
-        // Create a team
-        const createTeamButton = page.getByTestId('team-create-open');
-        if (await createTeamButton.isVisible()) {
-            await createTeamButton.click();
+        // Create an organization
+        const createOrganizationButton = page.getByTestId('organization-create-open');
+        if (await createOrganizationButton.isVisible()) {
+            await createOrganizationButton.click();
             await page.waitForTimeout(300);
-            await takeTFGScreenshot(page, 'teams-create-modal', 'Create team modal');
+            await takeTFGScreenshot(page, 'organizations-create-modal', 'Create organization modal');
 
-            // Fill team form
-            const teamNameInput = page.getByTestId('team-name-input');
-            const teamDescInput = page
-                .getByTestId('team-description-input')
-                .or(page.getByTestId('team-slug-input'));
+            // Fill organization form
+            const organizationNameInput = page.getByTestId('organization-name-input');
+            const organizationDescInput = page
+                .getByTestId('organization-description-input')
+                .or(page.getByTestId('organization-slug-input'));
 
-            if (await teamNameInput.isVisible()) {
-                await teamNameInput.fill('Development Team');
+            if (await organizationNameInput.isVisible()) {
+                await organizationNameInput.fill('Development Organization');
             }
-            if (await teamDescInput.isVisible()) {
-                await teamDescInput.fill('Main development team for the project');
+            if (await organizationDescInput.isVisible()) {
+                await organizationDescInput.fill('Main development organization for the project');
             }
 
-            await takeTFGScreenshot(page, 'teams-form-filled', 'Team creation form filled');
+            await takeTFGScreenshot(page, 'organizations-form-filled', 'Organization creation form filled');
 
-            // Save team
-            const saveTeamBtn = page.getByTestId('team-save-button');
-            if (await saveTeamBtn.isVisible()) {
-                await saveTeamBtn.click();
+            // Save organization
+            const saveOrganizationBtn = page.getByTestId('organization-save-button');
+            if (await saveOrganizationBtn.isVisible()) {
+                await saveOrganizationBtn.click();
                 await page.waitForTimeout(1000);
                 await takeTFGScreenshot(
                     page,
-                    'teams-list-with-team',
-                    'Teams list with created team'
+                    'organizations-list-with-organization',
+                    'Organizations list with created organization'
                 );
 
-                // Navigate to team detail
-                const teamLink = page.getByText('Development Team');
-                if (await teamLink.isVisible()) {
-                    await teamLink.click();
+                // Navigate to organization detail
+                const organizationLink = page.getByText('Development Organization');
+                if (await organizationLink.isVisible()) {
+                    await organizationLink.click();
                     await page.waitForLoadState('networkidle');
                     await page.waitForTimeout(500);
-                    await takeTFGScreenshot(page, 'team-detail-view', 'Team detail view');
+                    await takeTFGScreenshot(page, 'organization-detail-view', 'Organization detail view');
 
                     // ============================================================
-                    // SECTION 11: TEAM MEMBERS
+                    // SECTION 11: ORGANIZATION MEMBERS
                     // ============================================================
-                    console.log('\n👤 SECTION 11: Team Members\n');
+                    console.log('\n👤 SECTION 11: Organization Members\n');
 
                     // Look for add member button
                     const addMemberBtn = page
@@ -739,8 +739,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                         await page.waitForTimeout(300);
                         await takeTFGScreenshot(
                             page,
-                            'team-add-member-modal',
-                            'Add team member modal'
+                            'organization-add-member-modal',
+                            'Add organization member modal'
                         );
                         await page.keyboard.press('Escape');
                     }
@@ -748,8 +748,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                     // Show current members list
                     await takeTFGScreenshot(
                         page,
-                        'team-members-list',
-                        'Team members list with roles'
+                        'organization-members-list',
+                        'Organization members list with roles'
                     );
                 }
             }
@@ -1081,9 +1081,9 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         console.log('  6. Progress Updates');
         console.log('  7. Table Features (Search, Filter, Export)');
         console.log('  8. Notifications');
-        console.log('  9. Achievements (Individual, Team, Filters)');
-        console.log(' 10. Teams');
-        console.log(' 11. Team Members');
+        console.log('  9. Achievements (Individual, Organization, Filters)');
+        console.log(' 10. Organizations');
+        console.log(' 11. Organization Members');
         console.log(' 12. Sessions');
         console.log(' 13. Settings');
         console.log(' 14. Admin Panel');

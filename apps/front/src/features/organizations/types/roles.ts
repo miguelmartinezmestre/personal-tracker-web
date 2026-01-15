@@ -3,8 +3,7 @@ export enum Role {
     USER = 'user',
 }
 
-export enum TeamRole {
+export enum OrganizationRole {
     OWNER = 'owner',
-    ADMIN = 'admin',
     MEMBER = 'member',
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const achievementTypeSchema = z.enum(['individual', 'team']);
+export const achievementTypeSchema = z.enum(['individual', 'organization']);
 export const achievementCategorySchema = z.enum(['milestone', 'streak', 'completion', 'activity']);
 export const achievementTierSchema = z.enum(['bronze', 'silver', 'gold', 'platinum']);
 
@@ -28,9 +28,9 @@ export const userAchievementSchema = z.object({
     definition: achievementDefinitionSchema.optional().nullable(),
 });
 
-export const teamAchievementSchema = z.object({
+export const organizationAchievementSchema = z.object({
     _id: z.string(),
-    team: z.string(),
+    organization: z.string(),
     achievement: z.string(),
     earnedAt: z.number(),
     contributingUsers: z.array(z.string()),

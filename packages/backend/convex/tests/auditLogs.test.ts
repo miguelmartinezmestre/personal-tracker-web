@@ -132,9 +132,9 @@ describe('convex auditLogs', () => {
                 });
                 await ctx.db.insert('auditLogs', {
                     user: 'test-admin-123',
-                    action: 'team.created',
-                    resourceType: 'team',
-                    resourceId: 'team-1',
+                    action: 'organization.created',
+                    resourceType: 'organization',
+                    resourceId: 'organization-1',
                     severity: 'info',
                     createdAt: now,
                 });

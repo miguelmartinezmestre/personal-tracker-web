@@ -1,25 +1,25 @@
 'use client';
 
 import { DataTable } from '@/features/table/components/table';
-import { useDeleteTeamMember, useTeamMembers } from '@/features/organizations/hooks/use-team-members';
+import { useDeleteOrganizationMember, useOrganizationMembers } from '@/features/organizations/hooks/use-organization-members';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
-import { TeamMember } from '@/features/organizations/schemas/team-member';
-import TeamMemberEditFormModal from '@/features/organizations/components/team-members-form-edit-modal';
+import { OrganizationMember } from '@/features/organizations/schemas/organization-member';
+import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
 
-interface TeamMembersTableProps {
-    teamId: string;
+interface OrganizationMembersTableProps {
+    organizationId: string;
 }
 
-export default function TeamMembersTable({ teamId }: TeamMembersTableProps) {
-    const t = useTranslations('TeamMembers');
-    const teamMembers = useTeamMembers(teamId);
-    const deleteTeamMember = useDeleteTeamMember();
+export default function OrganizationMembersTable({ organizationId }: OrganizationMembersTableProps) {
+    const t = useTranslations('OrganizationMembers');
+    const organizationMembers = useOrganizationMembers(organizationId);
+    const deleteOrganizationMember = useDeleteOrganizationMember();
 
-    const columns: ColumnDef<TeamMember>[] = [
+    const columns: ColumnDef<OrganizationMember>[] = [
         {
             accessorKey: 'email',
             header: t('email'),
@@ -32,8 +32,8 @@ export default function TeamMembersTable({ teamId }: TeamMembersTableProps) {
             header: t('edit'),
             id: 'edit',
             cell: ({ row }) => {
-                const teamMemberRow = row.original;
-                return <TeamMemberEditFormModal defaultValues={teamMemberRow} />;
+                const organizationMemberRow = row.original;
+                return <OrganizationMemberEditFormModal defaultValues={organizationMemberRow} />;
             },
         },
         {
@@ -44,9 +44,9 @@ export default function TeamMembersTable({ teamId }: TeamMembersTableProps) {
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
                             try {
-                                await deleteTeamMember.mutateAsync({
+                                await deleteOrganizationMember.mutateAsync({
                                     memberId: row.original.id,
-                                    organizationId: teamId,
+                                    organizationId: organizationId,
                                 });
                                 toast.success(t('toast.deletedSuccess'));
                             } catch {
@@ -58,7 +58,7 @@ export default function TeamMembersTable({ teamId }: TeamMembersTableProps) {
                         triggerLabel={t('delete')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
-                        isLoading={deleteTeamMember.isPending}
+                        isLoading={deleteOrganizationMember.isPending}
                         trigger={
                             <Button variant="destructive" size="sm">
                                 {t('delete')}
@@ -74,8 +74,8 @@ export default function TeamMembersTable({ teamId }: TeamMembersTableProps) {
         <div>
             <DataTable
                 columns={columns}
-                data={teamMembers.data!}
-                isLoading={teamMembers.isLoading}
+                data={organizationMembers.data!}
+                isLoading={organizationMembers.isLoading}
             />
         </div>
     );

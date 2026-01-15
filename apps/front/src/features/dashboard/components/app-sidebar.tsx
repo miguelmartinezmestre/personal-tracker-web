@@ -62,8 +62,8 @@ const baseProjects: ProjectNavItem[] = [
         icon: Settings,
     },
     {
-        name: 'teams',
-        url: '/dashboard/teams',
+        name: 'organizations',
+        url: '/dashboard/organizations',
         icon: Users,
     },
 ];

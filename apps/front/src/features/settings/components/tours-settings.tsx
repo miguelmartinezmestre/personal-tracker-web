@@ -37,8 +37,8 @@
 //             description: 'Explore the achievements system and track your badges.',
 //         },
 //         {
-//             id: 'teams-feature',
-//             labelKey: 'teamsLabel',
+//             id: 'organizations-feature',
+//             labelKey: 'organizationsLabel',
 //             description: 'For admins: learn about user management and audit logs.',
 //         },
 //     ];
@@ -72,7 +72,7 @@
 //                 <div className="space-y-3">
 //                     {TOURS_CONFIG.map(tour => {
 //                         // Hide admin tour for non-admin users
-//                         // if (tour.id === 'teams-feature' && !isAdmin) {
+//                         // if (tour.id === 'organizations-feature' && !isAdmin) {
 //                         //     return null;
 //                         // }
 

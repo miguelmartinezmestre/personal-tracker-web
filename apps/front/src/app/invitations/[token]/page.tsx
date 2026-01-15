@@ -76,7 +76,7 @@ export default function InvitationPage() {
 
             // Redirect after 2 seconds
             setTimeout(() => {
-                router.push('/dashboard/teams');
+                router.push('/dashboard/organizations');
             }, 2000);
         } catch (error) {
             console.error('Error accepting invitation:', error);

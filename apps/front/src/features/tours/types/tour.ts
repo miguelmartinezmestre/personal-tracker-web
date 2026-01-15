@@ -5,7 +5,7 @@
 // /**
 //  * Unique identifiers for all available tours in the application.
 //  */
-// export type TourId = 'onboarding' | 'objectives-feature' | 'achievements-feature' | 'teams-feature';
+// export type TourId = 'onboarding' | 'objectives-feature' | 'achievements-feature' | 'organizations-feature';
 
 // /**
 //  * Extended step configuration that includes route awareness for multi-page tours.

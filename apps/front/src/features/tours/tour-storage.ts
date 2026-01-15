@@ -99,7 +99,7 @@
 //         const completed = new Set<TourId>();
 
 //         // Check known tour IDs
-//         const tourIds: TourId[] = ['onboarding', 'objectives-feature', 'achievements-feature', 'teams-feature'];
+//         const tourIds: TourId[] = ['onboarding', 'objectives-feature', 'achievements-feature', 'organizations-feature'];
 
 //         for (const tourId of tourIds) {
 //             const flag = safeGetItem(STORAGE_KEYS.completed(tourId));
@@ -193,7 +193,7 @@
 //  * Clear all tour data (for testing or logout).
 //  */
 // export function clearAllTourData(): void {
-//     const tourIds: TourId[] = ['onboarding', 'objectives-feature', 'achievements-feature', 'teams-feature'];
+//     const tourIds: TourId[] = ['onboarding', 'objectives-feature', 'achievements-feature', 'organizations-feature'];
 //     for (const tourId of tourIds) {
 //         safeRemoveItem(STORAGE_KEYS.completed(tourId));
 //         safeRemoveItem(STORAGE_KEYS.stepIndex(tourId));

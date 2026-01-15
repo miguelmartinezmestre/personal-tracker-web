@@ -115,9 +115,9 @@
 // ] as const;
 
 // /**
-//  * Teams feature tour steps (admin only).
+//  * Organizations feature tour steps (admin only).
 //  */
-// const teamsFeatureSteps: readonly TourStep[] = [
+// const organizationsFeatureSteps: readonly TourStep[] = [
 //     createStep('[data-tour="sidebar-admin-sessions"]', {
 //         side: 'right',
 //         route: '/dashboard/admin/sessions',
@@ -174,15 +174,15 @@
 //     },
 
 //     /**
-//      * Teams Feature Tour
-//      * Demonstrates team management functionality (admin only)
+//      * Organizations Feature Tour
+//      * Demonstrates organization management functionality (admin only)
 //      */
-//     'teams-feature': {
-//         id: 'teams-feature',
+//     'organizations-feature': {
+//         id: 'organizations-feature',
 //         autoStart: false,
 //         runOnce: false,
 //         requiredRole: 'admin',
-//         steps: teamsFeatureSteps,
+//         steps: organizationsFeatureSteps,
 //     },
 // } as const;
 

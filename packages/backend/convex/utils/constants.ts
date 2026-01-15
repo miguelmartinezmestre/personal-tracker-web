@@ -90,7 +90,7 @@ export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICAT
  */
 export const ACHIEVEMENT_TYPE = {
     INDIVIDUAL: 'individual',
-    TEAM: 'team',
+    ORGANIZATION: 'organization',
 } as const;
 
 export type AchievementType = (typeof ACHIEVEMENT_TYPE)[keyof typeof ACHIEVEMENT_TYPE];
@@ -130,12 +130,12 @@ export const USER_ROLE = {
 export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
 
 /**
- * Team roles
+ * Organization roles
  */
-export const TEAM_ROLE = {
+export const ORGANIZATION_ROLE = {
     OWNER: 'owner',
     ADMIN: 'admin',
     MEMBER: 'member',
 } as const;
 
-export type TeamRole = (typeof TEAM_ROLE)[keyof typeof TEAM_ROLE];
+export type OrganizationRole = (typeof ORGANIZATION_ROLE)[keyof typeof ORGANIZATION_ROLE];

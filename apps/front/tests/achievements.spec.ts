@@ -26,7 +26,7 @@ test.describe('Achievements', () => {
 
         // Verify tabs are visible
         await expect(page.getByTestId('achievements-tab-individual')).toBeVisible();
-        await expect(page.getByTestId('achievements-tab-team')).toBeVisible();
+        await expect(page.getByTestId('achievements-tab-organization')).toBeVisible();
 
         await takeScreenshot(page, 'achievements', 'page-loaded');
     });
@@ -80,16 +80,16 @@ test.describe('Achievements', () => {
         await takeScreenshot(page, 'achievements', 'filter-all');
     });
 
-    test('tabs switch between individual and team achievements', async ({ page }) => {
+    test('tabs switch between individual and organization achievements', async ({ page }) => {
         await createTestUser(page);
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
 
-        // Click on Team tab
-        await page.getByTestId('achievements-tab-team').click();
+        // Click on Organization tab
+        await page.getByTestId('achievements-tab-organization').click();
         await page.waitForTimeout(500); // Wait for tab content to load
-        await expect(page.getByTestId('achievements-content-team')).toBeVisible();
-        await takeScreenshot(page, 'achievements', 'tab-team');
+        await expect(page.getByTestId('achievements-content-organization')).toBeVisible();
+        await takeScreenshot(page, 'achievements', 'tab-organization');
 
         // Click back on Individual tab
         await page.getByTestId('achievements-tab-individual').click();

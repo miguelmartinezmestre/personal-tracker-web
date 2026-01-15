@@ -24,7 +24,7 @@ export interface DeadlineReminderEmailData extends EmailData {
     daysRemaining: number;
 }
 
-export interface TeamInvitationEmailData extends EmailData {
+export interface OrganizationInvitationEmailData extends EmailData {
     organizationName: string;
     inviterName: string;
     inviterEmail?: string;
@@ -182,8 +182,8 @@ The ${APP_NAME} Team
     return sendEmail({ to, subject, text, html });
 }
 
-export async function sendTeamInvitationEmail(
-    data: TeamInvitationEmailData
+export async function sendOrganizationInvitationEmail(
+    data: OrganizationInvitationEmailData
 ): Promise<SendEmailResult> {
     const { to, organizationName, inviterName, invitationLink } = data;
 
@@ -207,7 +207,7 @@ The ${APP_NAME} Team
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Team Invitation</title>
+    <title>Organization Invitation</title>
 </head>
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
     <h1 style="color: #10b981;">You're invited to join ${organizationName}!</h1>

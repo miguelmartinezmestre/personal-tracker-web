@@ -23,7 +23,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { TeamMember, savedTeamMemberSchema } from '@/features/organizations/schemas/team-member';
+import { OrganizationMember, savedOrganizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -31,39 +31,39 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@repo/ui/components/select';
-import { TeamRole } from '../types/roles';
+import { OrganizationRole } from '../types/roles';
 import { useTranslations } from 'next-intl';
-import { useUpdateTeamMember } from '@/features/organizations/hooks/use-team-members';
+import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 
-export default function TeamMemberEditFormModal({ defaultValues }: { defaultValues: TeamMember }) {
-    const t = useTranslations('TeamMembers');
+export default function OrganizationMemberEditFormModal({ defaultValues }: { defaultValues: OrganizationMember }) {
+    const t = useTranslations('OrganizationMembers');
 
     const roleOptions = [
-        { value: TeamRole.OWNER, label: t('roles.owner') },
-        { value: TeamRole.ADMIN, label: t('roles.admin') },
-        { value: TeamRole.MEMBER, label: t('roles.member') },
+        { value: OrganizationRole.OWNER, label: t('roles.owner') },
+        { value: OrganizationRole.ADMIN, label: t('roles.admin') },
+        { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
-    const updateTeamMember = useUpdateTeamMember();
+    const updateOrganizationMember = useUpdateOrganizationMember();
     const [open, setOpen] = useState(false);
-    const form = useForm<TeamMember>({
+    const form = useForm<OrganizationMember>({
         defaultValues: defaultValues,
         validators: {
-            onChange: savedTeamMemberSchema,
-            onSubmit: savedTeamMemberSchema,
+            onChange: savedOrganizationMemberSchema,
+            onSubmit: savedOrganizationMemberSchema,
         },
-        onSubmit: async ({ value }: { value: TeamMember }) => {
+        onSubmit: async ({ value }: { value: OrganizationMember }) => {
             await onSubmit(value);
         },
     });
 
-    const onSubmit = async (values: TeamMember) => {
+    const onSubmit = async (values: OrganizationMember) => {
         const updateData = {
             memberId: values.id,
             organizationId: values.organizationId,
             role: values.role as 'owner' | 'admin' | 'member',
         };
 
-        await updateTeamMember.mutateAsync(updateData);
+        await updateOrganizationMember.mutateAsync(updateData);
 
         setOpen(false);
         form.reset();
@@ -80,7 +80,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('edit')}</DialogTitle>
-                    <DialogDescription>{t('editTeamMemberDescription')}</DialogDescription>
+                    <DialogDescription>{t('editOrganizationMemberDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -106,7 +106,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('giveYourTeamMemberAClearConciseEmail')}
+                                        {t('giveYourOrganizationMemberAClearConciseEmail')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -136,7 +136,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        {t('currentRoleOfYourTeamMember')}
+                                        {t('currentRoleOfYourOrganizationMember')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -146,7 +146,7 @@ export default function TeamMemberEditFormModal({ defaultValues }: { defaultValu
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveTeamMember')}</Button>
+                            <Button type="submit">{t('saveOrganizationMember')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

@@ -25,37 +25,37 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { Team, savedTeamSchema } from '@/features/organizations/schemas/team';
+import { Organization, savedOrganizationSchema } from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
-import { useUpdateTeam } from '@/features/organizations/hooks/use-teams';
+import { useUpdateOrganization } from '@/features/organizations/hooks/use-organizations';
 
-export default function EditTeamFormModal({ defaultValues }: { defaultValues: Team }) {
-    const t = useTranslations('Teams');
-    const updateTeam = useUpdateTeam();
+export default function EditOrganizationFormModal({ defaultValues }: { defaultValues: Organization }) {
+    const t = useTranslations('Organizations');
+    const updateOrganization = useUpdateOrganization();
     const [open, setOpen] = useState(false);
-    const form = useForm<z.infer<typeof savedTeamSchema>>({
+    const form = useForm<z.infer<typeof savedOrganizationSchema>>({
         defaultValues: {
             id: defaultValues.id,
             name: defaultValues.name,
             description: defaultValues.description ?? '',
         },
         validators: {
-            onChange: savedTeamSchema,
-            onSubmit: savedTeamSchema,
+            onChange: savedOrganizationSchema,
+            onSubmit: savedOrganizationSchema,
         },
-        onSubmit: async ({ value }: { value: Team }) => {
+        onSubmit: async ({ value }: { value: Organization }) => {
             await onSubmit(value);
         },
     });
 
-    const onSubmit = async (values: Team) => {
+    const onSubmit = async (values: Organization) => {
         const updateData = {
             id: values.id,
             name: values.name,
             description: values.description ?? undefined,
         };
 
-        await updateTeam.mutateAsync(updateData);
+        await updateOrganization.mutateAsync(updateData);
 
         setOpen(false);
         form.reset();
@@ -64,15 +64,15 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Te
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2" data-testid="team-edit-open">
+                <Button className="gap-2" data-testid="organization-edit-open">
                     <PlusCircle className="h-4 w-4" />
-                    {t('editTeam')}
+                    {t('editOrganization')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{t('editTeam')}</DialogTitle>
-                    <DialogDescription>{t('editTeamDescription')}</DialogDescription>
+                    <DialogTitle>{t('editOrganization')}</DialogTitle>
+                    <DialogDescription>{t('editOrganizationDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -90,13 +90,13 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Te
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder={t('enterTeamName')}
+                                            placeholder={t('enterOrganizationName')}
                                             {...field}
-                                            data-testid="team-edit-name-input"
+                                            data-testid="organization-edit-name-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('giveYourTeamAClearConciseName')}
+                                        {t('giveYourOrganizationAClearConciseName')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -110,15 +110,15 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Te
                                     <FormLabel>{t('tableDescription')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder={t('describeTeamInDetail')}
+                                            placeholder={t('describeOrganizationInDetail')}
                                             className="resize-none min-h-[80px]"
                                             {...field}
                                             value={field.value || ''}
-                                            data-testid="team-edit-description-input"
+                                            data-testid="organization-edit-description-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('optionalAddDetailsAboutYourTeam')}
+                                        {t('optionalAddDetailsAboutYourOrganization')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -130,12 +130,12 @@ export default function EditTeamFormModal({ defaultValues }: { defaultValues: Te
                                 variant="outline"
                                 type="button"
                                 onClick={() => setOpen(false)}
-                                data-testid="team-edit-cancel-button"
+                                data-testid="organization-edit-cancel-button"
                             >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit" data-testid="team-edit-save-button">
-                                {t('saveTeam')}
+                            <Button type="submit" data-testid="organization-edit-save-button">
+                                {t('saveOrganization')}
                             </Button>
                         </DialogFooter>
                     </form>

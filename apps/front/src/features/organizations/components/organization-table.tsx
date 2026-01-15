@@ -1,22 +1,22 @@
 'use client';
 
 import { DataTable } from '@/features/table/components/table';
-import { useTeams, useDeleteTeam } from '@/features/organizations/hooks/use-teams';
+import { useOrganizations, useDeleteOrganization } from '@/features/organizations/hooks/use-organizations';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
-import EditTeamFormModal from '@/features/organizations/components/team-form-edit-modal';
+import EditOrganizationFormModal from '@/features/organizations/components/organization-form-edit-modal';
 import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import type { Team } from '@/features/organizations/schemas/team';
+import type { Organization } from '@/features/organizations/schemas/organization';
 
-export default function TeamsTable() {
-    const t = useTranslations('Teams');
-    const teams = useTeams();
-    const deleteTeam = useDeleteTeam();
+export default function OrganizationsTable() {
+    const t = useTranslations('Organizations');
+    const organizations = useOrganizations();
+    const deleteOrganization = useDeleteOrganization();
 
-    const columns: ColumnDef<Team>[] = [
+    const columns: ColumnDef<Organization>[] = [
         {
             accessorKey: 'name',
             header: t('name'),
@@ -27,40 +27,40 @@ export default function TeamsTable() {
         },
         {
             header: '',
-            id: 'update-team',
+            id: 'update-organization',
             cell: ({ row }) => {
-                const teamRow = row.original;
-                return <EditTeamFormModal defaultValues={teamRow} />;
+                const organizationRow = row.original;
+                return <EditOrganizationFormModal defaultValues={organizationRow} />;
             },
         },
         {
             header: '',
             id: 'delete',
             cell: ({ row }) => {
-                const teamRow = row.original;
+                const organizationRow = row.original;
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
                             try {
-                                await deleteTeam.mutateAsync({ id: teamRow.id });
+                                await deleteOrganization.mutateAsync({ id: organizationRow.id });
                                 toast.success(t('toast.deletedSuccess'));
                             } catch {
                                 toast.error(t('toast.deleteFailed'));
                             }
                         }}
-                        title={t('confirm.deleteTeam')}
-                        description={t('confirm.deleteTeamDescription')}
-                        triggerLabel={t('deleteTeam')}
+                        title={t('confirm.deleteOrganization')}
+                        description={t('confirm.deleteOrganizationDescription')}
+                        triggerLabel={t('deleteOrganization')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
-                        isLoading={deleteTeam.isPending}
+                        isLoading={deleteOrganization.isPending}
                         trigger={
                             <Button
-                                data-testid="team-delete-button"
+                                data-testid="organization-delete-button"
                                 variant="destructive"
                                 size="sm"
                             >
-                                {t('deleteTeam')}
+                                {t('deleteOrganization')}
                             </Button>
                         }
                     />
@@ -71,30 +71,30 @@ export default function TeamsTable() {
             header: '',
             id: 'go-to-activity',
             cell: ({ row }) => {
-                const teamRow = row.original;
+                const organizationRow = row.original;
                 // Use ID for the URL - ensure we're using the actual ID, not slug
                 // Explicitly check that we're not accidentally using the slug
-                const teamId = teamRow.id;
-                const teamSlug = teamRow.slug;
+                const organizationId = row.original.id;
+                const organizationSlug = row.original.slug;
 
                 // Ensure we have a valid ID (not empty, not the slug)
-                if (teamId && teamId !== teamSlug) {
+                if (organizationId && organizationId !== organizationSlug) {
                     return (
                         <Link
-                            href={`/dashboard/teams/${String(teamId)}`}
+                            href={`/dashboard/organizations/${String(organizationId)}`}
                             prefetch={false}
-                            data-testid="team-detail-link"
+                            data-testid="organization-detail-link"
                         >
-                            {t('goToTeam')}
+                            {t('goToOrganization')}
                         </Link>
                     );
                 }
 
                 // Fallback: if ID is missing or equals slug, log error but don't render link
-                console.error('[TeamsTable] Cannot create link - invalid team ID:', {
-                    id: teamId,
-                    slug: teamSlug,
-                    name: teamRow.name
+                console.error('[OrganizationsTable] Cannot create link - invalid organization ID:', {
+                    id: organizationId,
+                    slug: organizationSlug,
+                    name: row.original.name
                 });
 
                 return null;
@@ -104,7 +104,7 @@ export default function TeamsTable() {
 
     return (
         <div>
-            <DataTable columns={columns} data={teams.data ?? []} isLoading={teams.isLoading} />
+            <DataTable columns={columns} data={organizations.data ?? []} isLoading={organizations.isLoading} />
         </div>
     );
 }

@@ -2,23 +2,23 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/auth-client';
-import type { CreateTeam, Team } from '@/features/organizations/schemas/team';
+import type { CreateOrganization, Organization } from '@/features/organizations/schemas/organization';
 
 /**
- * Tipos para las operaciones de equipos
+ * Tipos para las operaciones de organizaciones
  */
-export interface CreateTeamParams {
+export interface CreateOrganizationParams {
     name: string;
     description: string;
 }
 
-export interface UpdateTeamParams {
+export interface UpdateOrganizationParams {
     id: string;
     name: string;
     description: string;
 }
 
-const TEAMS_QUERY_KEY = ['teams'];
+const ORGANIZATIONS_QUERY_KEY = ['organizations'];
 
 // Organization type from BetterAuth
 type Organization = {
@@ -30,65 +30,65 @@ type Organization = {
     createdAt?: Date | number;
 };
 
-const normalizeTeam = (org: Organization): Team => {
+const normalizeOrganization = (org: Organization): Organization => {
     // Ensure we're using the actual ID, not the slug
-    const teamId = String(org.id);
-    const teamSlug = org.slug ?? '';
+    const organizationId = String(org.id);
+    const organizationSlug = org.slug ?? '';
 
     return {
-        id: teamId,
+        id: organizationId,
         name: org.name,
-        slug: teamSlug,
+        slug: organizationSlug,
         description: org.description ?? '',
     };
 };
 
 /**
- * Hook para obtener todos los equipos (organizaciones)
+ * Hook para obtener todas las organizaciones
  * Usa BetterAuth directamente
  */
-export function useTeams() {
+export function useOrganizations() {
     return useQuery({
-        queryKey: TEAMS_QUERY_KEY,
+        queryKey: ORGANIZATIONS_QUERY_KEY,
         queryFn: async () => {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
                     ? ((result.data as unknown) as Organization[])
                     : [];
-            const normalized = organizations.map(normalizeTeam);
+            const normalized = organizations.map(normalizeOrganization);
             return normalized;
         },
     });
 }
 
 /**
- * Hook para obtener un equipo por su ID
+ * Hook para obtener una organización por su ID
  */
-export function useTeam(teamId: string | null) {
+export function useOrganization(organizationId: string | null) {
     return useQuery({
-        queryKey: TEAMS_QUERY_KEY.concat(teamId ?? 'null'),
+        queryKey: ORGANIZATIONS_QUERY_KEY.concat(organizationId ?? 'null'),
         queryFn: async () => {
-            if (!teamId) return null;
+            if (!organizationId) return null;
             // BetterAuth doesn't have a get method, we can use list and filter
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
                     ? ((result.data as unknown) as Organization[])
                     : [];
-            const org = organizations.find(o => o.id === teamId);
-            return org ? normalizeTeam(org) : null;
+            const org = organizations.find(o => o.id === organizationId);
+            return org ? normalizeOrganization(org) : null;
         },
-        enabled: !!teamId,
+        enabled: !!organizationId,
     });
 }
 
 /**
- * Hook para obtener un equipo por su slug
+ * Hook para obtener una organización por su slug
  */
-export function useTeamBySlug(slug: string | null) {
+export function useOrganizationBySlug(slug: string | null) {
     return useQuery({
-        queryKey: TEAMS_QUERY_KEY.concat('slug', slug ?? 'null'),
+        queryKey: ORGANIZATIONS_QUERY_KEY.concat('slug', slug ?? 'null'),
         queryFn: async () => {
             if (!slug) return null;
             // Fetch all organizations and find by slug
@@ -98,20 +98,20 @@ export function useTeamBySlug(slug: string | null) {
                     ? ((result.data as unknown) as Organization[])
                     : [];
             const org = organizations.find(o => o.slug === slug);
-            return org ? normalizeTeam(org) : null;
+            return org ? normalizeOrganization(org) : null;
         },
         enabled: !!slug,
     });
 }
 
 /**
- * Hook para obtener un equipo por slug o ID
+ * Hook para obtener una organización por slug o ID
  * Intenta buscar primero por slug, y si no encuentra, busca por ID
  * Esto permite que las rutas funcionen tanto con slugs como con IDs
  */
-export function useTeamByIdentifier(identifier: string | null) {
+export function useOrganizationByIdentifier(identifier: string | null) {
     return useQuery({
-        queryKey: TEAMS_QUERY_KEY.concat('identifier', identifier ?? 'null'),
+        queryKey: ORGANIZATIONS_QUERY_KEY.concat('identifier', identifier ?? 'null'),
         queryFn: async () => {
             if (!identifier) return null;
             // Fetch all organizations
@@ -147,21 +147,21 @@ export function useTeamByIdentifier(identifier: string | null) {
                 org = organizations.find(o => String(o.id).trim() === String(identifier).trim());
             }
 
-            return org ? normalizeTeam(org) : null;
+            return org ? normalizeOrganization(org) : null;
         },
         enabled: !!identifier,
     });
 }
 
 /**
- * Hook para crear un nuevo equipo
+ * Hook para crear una nueva organización
  * Usa BetterAuth directamente
  */
-export function useCreateTeam() {
+export function useCreateOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (values: CreateTeamParams | CreateTeam) => {
+        mutationFn: async (values: CreateOrganizationParams | CreateOrganization) => {
             return await authClient.organization.create({
                 name: values.name,
                 description: values.description,
@@ -174,20 +174,20 @@ export function useCreateTeam() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: TEAMS_QUERY_KEY,
+                queryKey: ORGANIZATIONS_QUERY_KEY,
             });
         },
     });
 }
 
 /**
- * Hook para actualizar un equipo
+ * Hook para actualizar una organización
  */
-export function useUpdateTeam() {
+export function useUpdateOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (values: UpdateTeamParams | Team) => {
+        mutationFn: async (values: UpdateOrganizationParams | Organization) => {
             return await authClient.organization.update({
                 data: {
                     name: values.name,
@@ -198,16 +198,16 @@ export function useUpdateTeam() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: TEAMS_QUERY_KEY,
+                queryKey: ORGANIZATIONS_QUERY_KEY,
             });
         },
     });
 }
 
 /**
- * Hook para eliminar un equipo
+ * Hook para eliminar una organización
  */
-export function useDeleteTeam() {
+export function useDeleteOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -218,7 +218,7 @@ export function useDeleteTeam() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: TEAMS_QUERY_KEY,
+                queryKey: ORGANIZATIONS_QUERY_KEY,
             });
         },
     });

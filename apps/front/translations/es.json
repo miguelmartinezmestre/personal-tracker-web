@@ -87,11 +87,11 @@
                 }
             }
         },
-        "teams-feature": {
-            "title": "Tour del Panel de Administración",
+        "organizations-feature": {
+            "title": "Tour de Organizaciones",
             "steps": {
                 "0": {
-                    "title": "Panel de Administración",
+                    "title": "Página de Organizaciones",
                     "content": "Como administrador, tienes acceso a herramientas adicionales para gestionar usuarios y monitorear el sistema."
                 },
                 "1": {
@@ -118,7 +118,7 @@
             "onboardingLabel": "Tour de Bienvenida",
             "objectivesLabel": "Guía de Objetivos",
             "achievementsLabel": "Guía de Logros",
-            "teamsLabel": "Guía del Panel de Administración"
+            "organizationsLabel": "Guía de Organizaciones"
         }
     },
     "Emails": {
@@ -278,7 +278,7 @@
         "users": "Usuarios",
         "adminSessions": "Gestión de Sesiones",
         "adminAudit": "Logs de Auditoría",
-        "teams": "Equipos",
+        "organizations": "Organizaciones",
         "admin": "Admin"
     },
     "Achievements": {
@@ -303,7 +303,7 @@
         },
         "types": {
             "individual": "Individual",
-            "team": "Equipo"
+            "organization": "Organización"
         },
         "tiers": {
             "bronze": "Bronce",
@@ -380,32 +380,32 @@
                 "name": "Madrugador",
                 "description": "Completa un objetivo antes de su fecha límite"
             },
-            "team_first_objective": {
-                "name": "Despegue del equipo",
-                "description": "El equipo crea su primer objetivo"
+            "organization_first_objective": {
+                "name": "Despegue de la organización",
+                "description": "La organización crea su primer objetivo"
             },
-            "team_completed_5": {
-                "name": "Equipo ganador",
-                "description": "El equipo completa {threshold} objetivos"
+            "organization_completed_5": {
+                "name": "Organización ganadora",
+                "description": "La organización completa {threshold} objetivos"
             },
-            "team_completed_15": {
+            "organization_completed_15": {
                 "name": "Escuadrón élite",
-                "description": "El equipo completa {threshold} objetivos"
+                "description": "La organización completa {threshold} objetivos"
             },
-            "team_completed_30": {
-                "name": "Equipo de ensueño",
-                "description": "El equipo completa {threshold} objetivos"
+            "organization_completed_30": {
+                "name": "Organización de ensueño",
+                "description": "La organización completa {threshold} objetivos"
             },
-            "team_streak_7": {
-                "name": "Momentum del equipo",
-                "description": "El equipo registra progreso durante {threshold} días consecutivos"
+            "organization_streak_7": {
+                "name": "Momentum de la organización",
+                "description": "La organización registra progreso durante {threshold} días consecutivos"
             }
         },
         "empty": {
             "noAchievements": "No hay logros disponibles.",
             "noEarned": "Aún no has obtenido ningún logro.",
             "noLocked": "¡Has obtenido todos los logros disponibles!",
-            "noTeamAchievements": "No hay logros de equipo disponibles. Únete a un equipo para desbloquear logros de equipo."
+            "noOrganizationAchievements": "No hay logros de organización disponibles. Únete a una organización para desbloquear logros de organización."
         },
         "toast": {
             "unlocked": "¡Logro desbloqueado!",
@@ -495,7 +495,7 @@
         "loading": "Cargando...",
         "noOrganization": "Sin organización",
         "noOrganizations": "Sin organizaciones",
-        "manageTeams": "Gestionar equipos"
+        "manageOrganizations": "Gestionar organizaciones"
     },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
@@ -782,36 +782,36 @@
         "closeSession": "Cerrar sesión",
         "expiresAt": "Expira"
     },
-    "Teams": {
-        "title": "Equipos",
-        "description": "Gestiona tus equipos para mantener un seguimiento de tu progreso.",
-        "createTeam": "Crear equipo",
-        "editTeam": "Editar equipo",
-        "deleteTeam": "Eliminar equipo",
-        "teamList": "Lista de equipos",
-        "teamDetails": "Detalles del equipo",
-        "createTeamDescription": "Llena el formulario a continuación para crear un nuevo equipo. Haz clic en guardar cuando hayas terminado.",
-        "saveTeam": "Guardar equipo",
+    "Organizations": {
+        "title": "Organizaciones",
+        "description": "Gestiona tus organizaciones para mantener un seguimiento de tu progreso.",
+        "createOrganization": "Crear organización",
+        "editOrganization": "Editar organización",
+        "deleteOrganization": "Eliminar organización",
+        "organizationList": "Lista de organizaciones",
+        "organizationDetails": "Detalles de la organización",
+        "createOrganizationDescription": "Llena el formulario a continuación para crear una nueva organización. Haz clic en guardar cuando hayas terminado.",
+        "saveOrganization": "Guardar organización",
         "name": "Nombre",
         "tableDescription": "Descripción",
-        "editTeamDescription": "Llena el formulario a continuación para editar tu equipo. Haz clic en guardar cuando hayas terminado.",
-        "enterTeamName": "Ingresa el nombre del equipo",
-        "describeTeamInDetail": "Describe tu equipo en detalle",
-        "giveYourTeamAClearConciseTitle": "Dale a tu equipo un nombre claro y conciso.",
-        "optionalAddDetailsAboutYourTeam": "Opcional: Agrega detalles sobre tu equipo.",
+        "editOrganizationDescription": "Llena el formulario a continuación para editar tu organización. Haz clic en guardar cuando hayas terminado.",
+        "enterOrganizationName": "Ingresa el nombre de la organización",
+        "describeOrganizationInDetail": "Describe tu organización en detalle",
+        "giveYourOrganizationAClearConciseTitle": "Dale a tu organización un nombre claro y conciso.",
+        "optionalAddDetailsAboutYourOrganization": "Opcional: Agrega detalles sobre tu organización.",
         "cancel": "Cancelar",
-        "giveYourTeamAClearConciseName": "Dale a tu equipo un nombre claro y conciso.",
-        "giveYourTeamMemberAClearConciseEmail": "Dale a tu miembro del equipo un correo electrónico claro y conciso.",
-        "goToTeam": "Ir al equipo",
+        "giveYourOrganizationAClearConciseName": "Dale a tu organización un nombre claro y conciso.",
+        "giveYourOrganizationMemberAClearConciseEmail": "Dale a tu miembro de la organización un correo electrónico claro y conciso.",
+        "goToOrganization": "Ir a la organización",
         "confirm": {
-            "deleteTeam": "¿Estás seguro de que quieres eliminar este equipo?",
-            "deleteTeamDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el equipo y todos sus miembros.",
+            "deleteOrganization": "¿Estás seguro de que quieres eliminar esta organización?",
+            "deleteOrganizationDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente la organización y todos sus miembros.",
             "deleteConfirm": "Eliminar",
             "cancel": "Cancelar"
         },
         "toast": {
-            "deletedSuccess": "Equipo eliminado exitosamente",
-            "deleteFailed": "Error al eliminar equipo"
+            "deletedSuccess": "Organización eliminada exitosamente",
+            "deleteFailed": "Error al eliminar organización"
         }
     },
     "Settings": {
@@ -1116,10 +1116,10 @@
         "previous": "Anterior",
         "next": "Siguiente"
     },
-    "TeamMembers": {
-        "createNewTeamMember": "Crear nuevo miembro del equipo",
+    "OrganizationMembers": {
+        "createNewOrganizationMember": "Crear nuevo miembro de la organización",
         "enterUserId": "Ingresa el ID del usuario",
-        "userIdDescription": "Ingresa el ID del usuario para agregarlo al equipo",
+        "userIdDescription": "Ingresa el ID del usuario para agregarlo a la organización",
         "selectRole": "Selecciona un rol",
         "roles": {
             "admin": "Administrador",
@@ -1127,24 +1127,24 @@
             "owner": "Propietario",
             "user": "Usuario"
         },
-        "createNewTeamMemberDescription": "Llena el formulario a continuación para crear un nuevo miembro del equipo. Haz clic en guardar cuando hayas terminado.",
+        "createNewOrganizationMemberDescription": "Llena el formulario a continuación para crear un nuevo miembro de la organización. Haz clic en guardar cuando hayas terminado.",
         "email": "Correo electrónico",
         "enterEmail": "Ingresa el correo electrónico",
         "role": "Rol",
-        "currentRoleOfYourTeamMember": "Rol actual de tu miembro del equipo.",
-        "saveTeamMember": "Guardar miembro del equipo",
+        "currentRoleOfYourOrganizationMember": "Rol actual de tu miembro de la organización.",
+        "saveOrganizationMember": "Guardar miembro de la organización",
         "cancel": "Cancelar",
         "edit": "Editar",
         "delete": "Eliminar",
-        "title": "Miembros del equipo",
-        "editTeamMemberDescription": "Llena el formulario a continuación para editar tu miembro del equipo. Haz clic en guardar cuando hayas terminado.",
-        "editTeamMember": "Editar miembro del equipo",
-        "editTeamMemberTitle": "Editar miembro del equipo",
-        "editTeamMemberCancel": "Editar miembro del equipo Cancelar",
-        "giveYourTeamMemberAClearConciseEmail": "Dale a tu miembro del equipo un correo electrónico claro y conciso.",
+        "title": "Miembros de la organización",
+        "editOrganizationMemberDescription": "Llena el formulario a continuación para editar tu miembro de la organización. Haz clic en guardar cuando hayas terminado.",
+        "editOrganizationMember": "Editar miembro de la organización",
+        "editOrganizationMemberTitle": "Editar miembro de la organización",
+        "editOrganizationMemberCancel": "Editar miembro de la organización Cancelar",
+        "giveYourOrganizationMemberAClearConciseEmail": "Dale a tu miembro de la organización un correo electrónico claro y conciso.",
         "confirm": {
             "deleteTitle": "¿Estás seguro de que quieres eliminar este miembro?",
-            "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente este miembro del equipo.",
+            "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente este miembro de la organización.",
             "deleteConfirm": "Eliminar",
             "cancel": "Cancelar"
         },

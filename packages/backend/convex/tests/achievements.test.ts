@@ -82,12 +82,12 @@ describe('convex achievements', async () => {
                 { type: 'individual' }
             );
 
-            const teamDefs = await userIdentity.query(api.achievements.getAchievementDefinitions, {
-                type: 'team',
+            const organizationDefs = await userIdentity.query(api.achievements.getAchievementDefinitions, {
+                type: 'organization',
             });
 
             expect(individualDefs.every(d => d.type === 'individual')).toBe(true);
-            expect(teamDefs.every(d => d.type === 'team')).toBe(true);
+            expect(organizationDefs.every(d => d.type === 'organization')).toBe(true);
         });
     });
 
@@ -472,12 +472,12 @@ describe('convex achievements', async () => {
         });
     });
 
-    describe('team achievements', () => {
-        test('getTeamAchievements returns empty for new team', async () => {
-            // Create a team/organization
+    describe('organization achievements', () => {
+        test('getOrganizationAchievements returns empty for new organization', async () => {
+            // Create an organization
             const orgId = await createTestOrganization(t, {
-                name: 'Test Team',
-                slug: 'test-team',
+                name: 'Test Organization',
+                slug: 'test-organization',
             });
 
             // Add user as member
@@ -487,14 +487,14 @@ describe('convex achievements', async () => {
                 role: 'owner',
             });
 
-            const teamId = String(orgId);
+            const organizationId = String(orgId);
 
-            const teamAchievements = await userIdentity.query(
-                api.achievements.getTeamAchievements,
-                { teamId }
+            const organizationAchievements = await userIdentity.query(
+                api.achievements.getOrganizationAchievements,
+                { organizationId }
             );
 
-            expect(teamAchievements).toEqual([]);
+            expect(organizationAchievements).toEqual([]);
         });
     });
 });

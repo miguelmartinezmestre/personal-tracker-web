@@ -53,11 +53,11 @@ export default function AchievementsPage() {
         return true;
     });
 
-    // Separate individual and team achievements
+    // Separate individual and organization achievements
     const individualAchievements = filteredProgress?.filter(
         p => p.definition.type === 'individual'
     );
-    const teamAchievements = filteredProgress?.filter(p => p.definition.type === 'team');
+    const organizationAchievements = filteredProgress?.filter(p => p.definition.type === 'organization');
 
     const handleSeedAchievements = async () => {
         try {
@@ -209,12 +209,12 @@ export default function AchievementsPage() {
                         {t('types.individual')}
                     </TabsTrigger>
                     <TabsTrigger
-                        value="team"
+                        value="organization"
                         className="flex items-center gap-2"
-                        data-testid="achievements-tab-team"
+                        data-testid="achievements-tab-organization"
                     >
                         <Users className="h-4 w-4" />
-                        {t('types.team')}
+                        {t('types.organization')}
                     </TabsTrigger>
                 </TabsList>
 
@@ -255,13 +255,13 @@ export default function AchievementsPage() {
                     )}
                 </TabsContent>
 
-                <TabsContent value="team" className="mt-6" data-testid="achievements-content-team">
-                    {teamAchievements && teamAchievements.length > 0 ? (
+                <TabsContent value="organization" className="mt-6" data-testid="achievements-content-organization">
+                    {organizationAchievements && organizationAchievements.length > 0 ? (
                         <div
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                            data-testid="achievements-grid-team"
+                            data-testid="achievements-grid-organization"
                         >
-                            {teamAchievements.map(achievement => (
+                            {organizationAchievements.map(achievement => (
                                 <AchievementCard
                                     key={String(achievement.definition._id)}
                                     definition={achievement.definition}
@@ -276,7 +276,7 @@ export default function AchievementsPage() {
                             <CardContent className="flex flex-col items-center justify-center py-12">
                                 <Users className="h-12 w-12 text-muted-foreground mb-4" />
                                 <p className="text-muted-foreground">
-                                    {t('empty.noTeamAchievements')}
+                                    {t('empty.noOrganizationAchievements')}
                                 </p>
                             </CardContent>
                         </Card>

@@ -23,7 +23,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { CreateTeamMember, teamMemberSchema } from '@/features/organizations/schemas/team-member';
+import { CreateOrganizationMember, organizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -32,42 +32,42 @@ import {
     SelectValue,
 } from '@repo/ui/components/select';
 import { useTranslations } from 'next-intl';
-import { useCreateTeamMember } from '@/features/organizations/hooks/use-team-members';
-import { TeamRole } from '../types/roles';
+import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
+import { OrganizationRole } from '../types/roles';
 
-interface CreateTeamMemberFormModalProps {
-    teamId: string;
+interface CreateOrganizationMemberFormModalProps {
+    organizationId: string;
 }
 
-export default function CreateTeamMemberFormModal({ teamId }: CreateTeamMemberFormModalProps) {
-    const t = useTranslations('TeamMembers');
-    const createTeamMember = useCreateTeamMember();
+export default function CreateOrganizationMemberFormModal({ organizationId }: CreateOrganizationMemberFormModalProps) {
+    const t = useTranslations('OrganizationMembers');
+    const createOrganizationMember = useCreateOrganizationMember();
 
     const roleOptions = [
-        { value: TeamRole.OWNER, label: t('roles.owner') },
-        { value: TeamRole.ADMIN, label: t('roles.admin') },
-        { value: TeamRole.MEMBER, label: t('roles.member') },
+        { value: OrganizationRole.OWNER, label: t('roles.owner') },
+        { value: OrganizationRole.ADMIN, label: t('roles.admin') },
+        { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
 
     const [open, setOpen] = useState(false);
-    const form = useForm<CreateTeamMember>({
+    const form = useForm<CreateOrganizationMember>({
         defaultValues: {
             email: '',
             role: 'member',
-            organizationId: teamId,
+            organizationId: organizationId,
         },
         validators: {
-            onChange: teamMemberSchema,
-            onSubmit: teamMemberSchema,
+            onChange: organizationMemberSchema,
+            onSubmit: organizationMemberSchema,
         },
-        onSubmit: async ({ value }: { value: CreateTeamMember }) => {
+        onSubmit: async ({ value }: { value: CreateOrganizationMember }) => {
             await onSubmit(value);
         },
     });
 
-    const onSubmit = async (values: CreateTeamMember) => {
-        await createTeamMember.mutateAsync({
-            organizationId: teamId,
+    const onSubmit = async (values: CreateOrganizationMember) => {
+        await createOrganizationMember.mutateAsync({
+            organizationId: organizationId,
             email: values.email,
             role: values.role,
         });
@@ -80,13 +80,13 @@ export default function CreateTeamMemberFormModal({ teamId }: CreateTeamMemberFo
             <DialogTrigger asChild>
                 <Button className="gap-2">
                     <PlusCircle className="h-4 w-4" />
-                    {t('createNewTeamMember')}
+                    {t('createNewOrganizationMember')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{t('createNewTeamMember')}</DialogTitle>
-                    <DialogDescription>{t('createNewTeamMemberDescription')}</DialogDescription>
+                    <DialogTitle>{t('createNewOrganizationMember')}</DialogTitle>
+                    <DialogDescription>{t('createNewOrganizationMemberDescription')}</DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -112,7 +112,7 @@ export default function CreateTeamMemberFormModal({ teamId }: CreateTeamMemberFo
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('giveYourTeamMemberAClearConciseEmail')}
+                                        {t('giveYourOrganizationMemberAClearConciseEmail')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -142,7 +142,7 @@ export default function CreateTeamMemberFormModal({ teamId }: CreateTeamMemberFo
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        {t('currentRoleOfYourTeamMember')}
+                                        {t('currentRoleOfYourOrganizationMember')}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -152,7 +152,7 @@ export default function CreateTeamMemberFormModal({ teamId }: CreateTeamMemberFo
                             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveTeamMember')}</Button>
+                            <Button type="submit">{t('saveOrganizationMember')}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
