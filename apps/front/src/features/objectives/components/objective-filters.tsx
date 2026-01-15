@@ -88,7 +88,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
         };
 
         return (
-            <div ref={ref} className={cn('space-y-4', className)} data-tour="objective-filters">
+            <div ref={ref} className={cn('space-y-4', className)}>
                 {/* Search Bar */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

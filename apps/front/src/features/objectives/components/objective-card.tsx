@@ -56,7 +56,6 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
         return (
             <Card
                 ref={ref}
-                data-tour="objective-card"
                 className={cn(
                     'group mb-4 hover:shadow-lg transition-all duration-300 border-border/50',
                     isOverdue && 'border-destructive/50 hover:border-destructive/70'
@@ -188,7 +187,6 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                             size="sm"
                             onClick={() => onEdit?.(objective)}
                             className="flex-1 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all"
-                            data-tour="objective-edit-btn"
                         >
                             {t('edit')}
                         </Button>
@@ -197,7 +195,6 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                             size="sm"
                             onClick={() => onDelete?.(objective._id as Id<'objectives'>)}
                             className="flex-1 hover:opacity-90 transition-opacity"
-                            data-tour="objective-delete-btn"
                         >
                             {t('delete')}
                         </Button>

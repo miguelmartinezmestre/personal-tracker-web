@@ -6,18 +6,17 @@ import {
     Frame,
     Goal,
     Home,
-    Shield,
     Trophy,
     Settings,
     Users,
     Activity,
     Tag,
+    Loader2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarGroup,
     SidebarHeader,
     SidebarMenu,
@@ -30,6 +29,11 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@repo/ui/lib/utils';
+import { convexQuery } from '@convex-dev/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
+import { Preloaded } from 'convex/react';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 
 type ProjectNavItem = {
     name: string;
@@ -80,60 +84,45 @@ const baseProjects: ProjectNavItem[] = [
     },
 ];
 
-// Helper to check if a role is admin
-function isAdminRole(role: string | string[] | undefined): boolean {
-    if (!role) return false;
-    if (role === 'admin') return true;
-    if (Array.isArray(role)) {
-        return role.includes('admin');
-    }
-    return false;
-}
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+    preloadedUserQuery,
+}: {
+    preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
+}) {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
 
-    // Use context user first (more efficient), fallback to useUserRole if needed
-    // let user: ReturnType<typeof useUser> | null = null;
-    // let isAdmin = false;
-    // try {
-    //     user = useUser();
-    //     // User is authenticated if we have context user
-    //     isAdmin = isAdminRole((user as { role?: string | string[] })?.role);
-    // } catch {
-    //     // Fallback to useUserRole if context not available (shouldn't happen in dashboard)
-    //     const userRole = useUserRole();
-    //     isAdmin = userRole.isAdmin;
-    // }
+    const user = usePreloadedAuthQuery(preloadedUserQuery);
+
+    const isAdmin = user?.role === 'admin';
 
     // Construir la lista de proyectos incluyendo admin si es necesario
-    // const projects = useMemo(() => {
-    //     const items = [...baseProjects];
-    //     if (isAdmin) {
-    //         items.push(
-    //             {
-    //                 name: 'users',
-    //                 url: '/dashboard/admin/users' as Route,
-    //                 icon: Users,
-    //             },
-    //             {
-    //                 name: 'adminSessions',
-    //                 url: '/dashboard/admin/sessions' as Route,
-    //                 icon: Activity,
-    //             },
-    //             {
-    //                 name: 'adminAudit',
-    //                 url: '/dashboard/admin/audit' as Route,
-    //                 icon: FileText,
-    //             }
-    //         );
-    //     }
-    //     return items;
-    // }, [isAdmin]);
+    const projects = useMemo(() => {
+        const items = [...baseProjects];
+        if (isAdmin) {
+            items.push(
+                {
+                    name: 'users',
+                    url: '/dashboard/admin/users' as Route,
+                    icon: Users,
+                },
+                {
+                    name: 'adminSessions',
+                    url: '/dashboard/admin/sessions' as Route,
+                    icon: Activity,
+                },
+                {
+                    name: 'adminAudit',
+                    url: '/dashboard/admin/audit' as Route,
+                    icon: FileText,
+                }
+            );
+        }
+        return items;
+    }, [isAdmin]);
 
     return (
-        <Sidebar collapsible="icon" data-testid="app-sidebar" data-tour="sidebar-menu" {...props}>
+        <Sidebar collapsible="icon" data-testid="app-sidebar">
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -147,29 +136,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <SidebarMenu data-testid="sidebar-menu">
-                        {/* {projects.map(item => {
+                        {projects.map(item => {
                             const isActive = pathname === item.url;
-                            // Add data-tour attribute for specific menu items
-                            const tourAttr = item.name === 'home'
-                                ? 'sidebar-home'
-                                : item.name === 'objectives'
-                                    ? 'sidebar-objectives'
-                                    : item.name === 'achievements'
-                                        ? 'sidebar-achievements'
-                                        : item.name === 'settings'
-                                            ? 'sidebar-settings'
-                                            : item.name === 'adminSessions'
-                                                ? 'sidebar-admin-sessions'
-                                                : item.name === 'adminAudit'
-                                                    ? 'sidebar-admin-audit'
-                                                    : undefined;
                             return (
                                 <SidebarMenuItem key={item.name}>
                                     <SidebarMenuButton asChild>
                                         <Link
                                             href={item.url}
                                             prefetch={false}
-                                            data-tour={tourAttr}
                                             className={cn(
                                                 'relative transition-all duration-200',
                                                 isActive
@@ -184,26 +158,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                 )}
                                             />
                                             {t(item.name)}
-                                            {isActive && (
-                                                <span className="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-primary" />
-                                            )}
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             );
-                        })} */}
+                        })}
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
-                {/* <NavUser
-                    user={{
-                        email: accountDetails.data?.email,
-                        name: accountDetails.data?.username,
-                        avatar: '',
-                    }}
-                /> */}
-            </SidebarFooter>
         </Sidebar>
     );
 }

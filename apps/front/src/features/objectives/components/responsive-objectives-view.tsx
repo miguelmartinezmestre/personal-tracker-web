@@ -352,7 +352,7 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
     }
 
     return (
-        <div ref={ref} className="space-y-4" data-tour="objectives-list">
+        <div ref={ref} className="space-y-4">
             <ObjectivesFilters
                 filters={filters}
                 onFiltersChange={setFilters}

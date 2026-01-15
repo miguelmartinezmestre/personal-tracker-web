@@ -168,7 +168,6 @@ export default function CreateObjectiveFormModal() {
                 <Button
                     className="gap-2"
                     data-testid="objective-create-open"
-                    data-tour="create-objective-btn"
                 >
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}

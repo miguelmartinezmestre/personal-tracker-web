@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import CreateOrganizationFormModal from '@/features/organizations/components/organization-form-create-modal';
-import OrganizationsTable from '@/features/organizations/components/organizations-table';
+import OrganizationsTable from '@/features/organizations/components/organization-table';
 
 export default async function Organizations() {
     const t = await getTranslations('Organizations');

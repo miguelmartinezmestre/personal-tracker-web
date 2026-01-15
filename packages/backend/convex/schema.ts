@@ -145,18 +145,4 @@ export default defineSchema({
     })
         .index('by_user', ['userId'])
         .index('by_user_permission', ['userId', 'permission']),
-
-    // User tours - track guided tour progress and completion
-    userTours: defineTable({
-        user: v.string(), // User ID
-        tourId: v.string(), // Tour identifier (e.g., 'onboarding', 'objectives-feature')
-        completed: v.boolean(), // Whether the tour is completed
-        currentStep: v.optional(v.number()), // Resume point for incomplete tours
-        lastSeenAt: v.number(), // Timestamp when tour was last viewed
-        completedAt: v.optional(v.number()), // Timestamp when tour was completed
-        startedAt: v.optional(v.number()), // Timestamp when tour was first started
-    })
-        .index('by_user', ['user'])
-        .index('by_user_tour', ['user', 'tourId'])
-        .index('by_tourId', ['tourId']),
 });

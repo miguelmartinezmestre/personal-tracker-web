@@ -33,10 +33,6 @@ export default function SettingsPage() {
                         <Key className="h-4 w-4" />
                         {t('password')}
                     </TabsTrigger>
-                    <TabsTrigger value="tours" className="flex items-center gap-2">
-                        <Map className="h-4 w-4" />
-                        Tours
-                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="account">
@@ -62,10 +58,6 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-
-                {/* <TabsContent value="tours">
-                    <ToursSettings />
-                </TabsContent> */}
             </Tabs>
         </div>
     );

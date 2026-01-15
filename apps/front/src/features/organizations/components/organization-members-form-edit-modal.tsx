@@ -47,7 +47,6 @@ export default function OrganizationMemberEditFormModal({
 
     const roleOptions = [
         { value: OrganizationRole.OWNER, label: t('roles.owner') },
-        { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
     const updateOrganizationMember = useUpdateOrganizationMember();

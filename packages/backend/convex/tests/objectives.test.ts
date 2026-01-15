@@ -98,8 +98,8 @@ describe('convex objectives', async () => {
 
     test("getObjectivesByUser returns user's objectives", async () => {
         // Get initial count to account for objectives from previous tests
-        const initialObjectives = await userIdentity.query(api.objectives.getObjectivesByUser, {});
-        const initialCount = initialObjectives.length;
+        const initialObjectives = await userIdentity.query(api.objectives.getObjectivesByUser, { paginationOpts: { numItems: 10, cursor: null } });
+        const initialCount = initialObjectives.page.length;
 
         // Create multiple objectives
         const obj1 = await userIdentity.mutation(api.objectives.createObjective, {
@@ -116,11 +116,11 @@ describe('convex objectives', async () => {
             status: 'not_started',
         });
 
-        const objectives = await userIdentity.query(api.objectives.getObjectivesByUser, {});
+        const objectives = await userIdentity.query(api.objectives.getObjectivesByUser, { paginationOpts: { numItems: 10, cursor: null } });
 
-        expect(objectives).toHaveLength(initialCount + 2);
-        expect(objectives.map(o => o._id)).toContain(obj1);
-        expect(objectives.map(o => o._id)).toContain(obj2);
+        expect(objectives.page.length).toBe(initialCount + 2);
+        expect(objectives.page.some(o => o._id === obj1)).toBe(true);
+        expect(objectives.page.some(o => o._id === obj2)).toBe(true);
     });
 
     test('getObjectiveById returns a specific objective', async () => {
@@ -255,7 +255,7 @@ describe('convex objectives', async () => {
     });
 
     test('getObjectivesByUser rejects when unauthenticated', async () => {
-        await expect(t.query(api.objectives.getObjectivesByUser, {})).rejects.toThrow(
+        await expect(t.query(api.objectives.getObjectivesByUser, { paginationOpts: { numItems: 10, cursor: null } })).rejects.toThrow(
             /Unauthenticated|User not authenticated/
         );
     });

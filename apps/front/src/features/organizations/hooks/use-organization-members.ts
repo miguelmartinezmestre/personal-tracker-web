@@ -30,10 +30,6 @@ const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
     organizationId,
 ];
 
-const mapOrganizationRoleToOrganizationRole = (role: 'owner' | 'admin' | 'member') => role;
-
-const mapOrganizationRoleToOrganizationRole = (role: string) => role;
-
 const normalizeMember = (member: {
     id: string;
     organizationId: string;
@@ -47,7 +43,7 @@ const normalizeMember = (member: {
         organizationId: member.organizationId,
         userId: member.userId,
         email: member.user?.email ?? '',
-        role: mapOrganizationRoleToOrganizationRole(member.role) as 'owner' | 'admin' | 'member',
+        role: member.role as OrganizationRole,
         createdAt: member.createdAt,
     }) satisfies OrganizationMember;
 
@@ -81,7 +77,7 @@ export function useCreateOrganizationMember() {
         mutationFn: async (values: CreateOrganizationMemberParams) => {
             return await authClient.organization.inviteMember({
                 email: values.email,
-                role: mapOrganizationRoleToOrganizationRole(values.role),
+                role: values.role,
                 organizationId: values.organizationId,
             });
         },
@@ -104,7 +100,7 @@ export function useUpdateOrganizationMember() {
         mutationFn: async (values: UpdateOrganizationMemberParams) => {
             return await authClient.organization.updateMemberRole({
                 memberId: values.memberId,
-                role: mapOrganizationRoleToOrganizationRole(values.role),
+                role: values.role,
                 organizationId: values.organizationId,
             });
         },

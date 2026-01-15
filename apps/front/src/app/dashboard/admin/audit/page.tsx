@@ -28,7 +28,7 @@ export default function AdminAuditPage() {
                     <CardDescription>{t('auditLogManagementDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <AuditLogs data-tour="admin-audit-logs" />
+                    <AuditLogs />
                 </CardContent>
             </Card>
         </div>
