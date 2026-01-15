@@ -1,12 +1,22 @@
-'use client';
 
 import { Suspense } from 'react';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
+import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { api } from '@repo/backend/convex/_generated/api';
 
-export default function ObjectivesPage() {
-    const t = useTranslations('Objectives');
+export default async function ObjectivesPage() {
+    // Start all promises in parallel
+    const [t, preloadedObjectivesQuery] = await Promise.all([
+        getTranslations('Objectives'),
+        preloadAuthQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: {
+                numItems: 1000,
+                cursor: null,
+            },
+        }),
+    ]);
 
     return (
         <div className="space-y-6">
@@ -18,7 +28,7 @@ export default function ObjectivesPage() {
                 <CreateObjectiveFormModal />
             </div>
             <Suspense fallback={<div>{t('loadingObjectives')}</div>}>
-                <ResponsiveObjectivesView />
+                <ResponsiveObjectivesView preloadedObjectivesQuery={preloadedObjectivesQuery} />
             </Suspense>
         </div>
     );

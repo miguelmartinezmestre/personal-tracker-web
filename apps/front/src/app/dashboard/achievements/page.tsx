@@ -17,6 +17,10 @@ import {
 import { AchievementCard } from '@/features/achievements/components/achievement-card';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
 
+// Hoist static arrays outside component to avoid recreation on every render
+const SKELETON_STATS = [1, 2, 3];
+const SKELETON_CARDS = [1, 2, 3, 4, 5, 6];
+
 export default function AchievementsPage() {
     const t = useTranslations('Achievements');
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
@@ -82,12 +86,12 @@ export default function AchievementsPage() {
                     <Skeleton className="h-8 w-48" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {[1, 2, 3].map(i => (
+                    {SKELETON_STATS.map(i => (
                         <Skeleton key={i} className="h-24" />
                     ))}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
+                    {SKELETON_CARDS.map(i => (
                         <Skeleton key={i} className="h-40" />
                     ))}
                 </div>

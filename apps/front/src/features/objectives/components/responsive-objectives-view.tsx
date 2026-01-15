@@ -22,7 +22,10 @@ import { QuickActions } from './quick-actions';
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { normalizeObjective } from './objectives-utils';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { Preloaded } from 'convex/react';
 
+// Hoist static constants outside component to avoid recreation on every render
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',
     status: 'all',
@@ -36,7 +39,10 @@ const ITEMS_PER_PAGE = 10;
 // Load more items at once for objectives (no backend limit)
 const LARGE_PAGE_SIZE = 1000;
 
-const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
+// Static skeleton array for loading state
+const SKELETON_PLACEHOLDERS = [1, 2, 3];
+
+const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser> }>(({ preloadedObjectivesQuery }, ref) => {
     const isMobile = useIsMobile();
     const t = useTranslations('Objectives');
     const tCard = useTranslations('ObjectiveCard');
@@ -45,15 +51,7 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
     const [currentPage, setCurrentPage] = React.useState(0);
 
     // Fetch ALL objectives for client-side filtering
-    const { data: fetchedObjectives, isLoading } = useQuery({
-        ...convexQuery(api.objectives.getObjectivesByUser, {
-            paginationOpts: {
-                numItems: LARGE_PAGE_SIZE,
-                cursor: null,
-            },
-        }),
-        select: data => data.page.map(normalizeObjective),
-    });
+    const fetchedObjectives = usePreloadedAuthQuery(preloadedObjectivesQuery);
 
     const queryClient = useQueryClient();
     const deleteObjectiveMutation = useMutation({
@@ -88,11 +86,10 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
     };
 
     const categories = React.useMemo(() => {
-        const values = objectives
-            .map(objective => objective.category)
+        const values = fetchedObjectives?.page.map(objective => objective.category)
             .filter((category): category is string => Boolean(category));
         return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
-    }, [objectives]);
+    }, [fetchedObjectives]);
 
     const filteredObjectives = React.useMemo(() => {
         const normalizedSearch = filters.search.trim().toLowerCase();
@@ -123,12 +120,12 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
             }
         };
 
-        const filtered = objectives.filter(objective => {
+        const filtered = fetchedObjectives?.page.filter(objective => {
             if (normalizedSearch) {
                 const haystack = [
-                    objective.title,
+                    objective.title ?? '',
                     objective.description ?? '',
-                    objective.category ?? '',
+                    objective.category ?? ''
                 ]
                     .join(' ')
                     .toLowerCase();
@@ -156,8 +153,8 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
     }, [objectives, filters]);
 
     // Client-side pagination
-    const totalPages = Math.ceil(filteredObjectives.length / ITEMS_PER_PAGE) || 1;
-    const paginatedObjectives = filteredObjectives.slice(
+    const totalPages = Math.ceil(filteredObjectives?.length ?? 0 / ITEMS_PER_PAGE) || 1;
+    const paginatedObjectives = filteredObjectives?.slice(
         currentPage * ITEMS_PER_PAGE,
         (currentPage + 1) * ITEMS_PER_PAGE
     );
@@ -325,21 +322,21 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
                     onFiltersChange={setFilters}
                     categories={categories}
                 />
-                {isLoading ? (
+                {!fetchedObjectives ? (
                     <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
+                        {SKELETON_PLACEHOLDERS.map(i => (
                             <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
                         ))}
                     </div>
-                ) : filteredObjectives.length === 0 ? (
+                ) : filteredObjectives?.length === 0 ? (
                     <div className="text-center py-8">
                         <p className="text-muted-foreground">{t('empty.noObjectivesFound')}</p>
                     </div>
                 ) : (
-                    paginatedObjectives.map(objective => (
+                    paginatedObjectives?.map(objective => (
                         <ObjectiveCard
                             key={objective._id}
-                            objective={objective}
+                            objective={normalizeObjective(objective)}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
                         />
@@ -360,8 +357,8 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
             />
             <DataTableAdvanced
                 columns={columns}
-                data={paginatedObjectives}
-                isLoading={isLoading}
+                data={paginatedObjectives?.map(normalizeObjective) ?? []}
+                isLoading={!fetchedObjectives}
                 enableGlobalSearch={false}
                 enableColumnFilters={false}
                 enableSorting={true}
@@ -374,7 +371,7 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement>((_, ref) => {
                               hasNextPage: currentPage < totalPages - 1,
                               hasPreviousPage: currentPage > 0,
                               pageSize: ITEMS_PER_PAGE,
-                              totalItems: filteredObjectives.length,
+                              totalItems: filteredObjectives?.length ?? 0,
                           }
                         : undefined
                 }

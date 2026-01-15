@@ -14,7 +14,7 @@ export function AdminLayoutGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { data: user } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
 
-    const userRole = user.role;
+    const userRole = user?.role;
     const isAdmin = userRole === 'admin' || (Array.isArray(userRole) && userRole.includes('admin'));
 
     useEffect(() => {

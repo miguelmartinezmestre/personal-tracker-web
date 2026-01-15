@@ -347,13 +347,17 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
 
-        const progressUpdates = await ctx.db.query('progressUpdates').collect();
-
-        // Filter progress updates for user's objectives
-        const userObjectiveIds = new Set(objectivesCount.map(o => String(o._id)));
-        const userProgressUpdates = progressUpdates.filter(pu =>
-            userObjectiveIds.has(String(pu.objective))
-        );
+        // Collect progress updates for each objective using indexed queries
+        const userObjectiveIds = objectivesCount.map(o => o._id);
+        const userProgressUpdates = await Promise.all(
+            userObjectiveIds.map(async objectiveId => {
+                const updates = await ctx.db
+                    .query('progressUpdates')
+                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .collect();
+                return updates;
+            })
+        ).then(results => results.flat());
 
         // Calculate streak (simplified - consecutive days with progress)
         const streak = await calculateUserStreak(ctx, userId);
@@ -419,13 +423,19 @@ async function calculateUserStreak(ctx: QueryCtx, userId: string): Promise<numbe
 
     if (objectiveIds.length === 0) return 0;
 
-    const allUpdates = await ctx.db.query('progressUpdates').collect();
-
-    const userUpdates = allUpdates
-        .filter((pu: Doc<'progressUpdates'>) => objectiveIds.includes(pu.objective))
-        .sort(
+    // Fetch progress updates for each objective using indexed queries
+    const userUpdates = await Promise.all(
+        objectiveIds.map(async objectiveId => {
+            const updates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                .collect();
+            return updates;
+        })
+    ).then(results => results.flat())
+        .then(updates => updates.sort(
             (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
-        );
+        ));
 
     if (userUpdates.length === 0) return 0;
 
@@ -642,13 +652,19 @@ async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Pr
 
     if (objectiveIds.length === 0) return 0;
 
-    const allUpdates = await ctx.db.query('progressUpdates').collect();
-
-    const userUpdates = allUpdates
-        .filter((pu: Doc<'progressUpdates'>) => objectiveIds.includes(pu.objective))
-        .sort(
+    // Fetch progress updates for each objective using indexed queries
+    const userUpdates = await Promise.all(
+        objectiveIds.map(async objectiveId => {
+            const updates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                .collect();
+            return updates;
+        })
+    ).then(results => results.flat())
+        .then(updates => updates.sort(
             (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
-        );
+        ));
 
     if (userUpdates.length === 0) return 0;
 
@@ -731,9 +747,17 @@ export const checkOrganizationAchievements = internalMutation({
 
         const memberUserIds = members.map(m => m.userId);
 
-        // Get all objectives from organization members
-        const allObjectives = await ctx.db.query('objectives').collect();
-        const organizationObjectives = allObjectives.filter(o => memberUserIds.includes(o.user));
+        // Get objectives from organization members using indexed queries per user
+        const organizationObjectives = await Promise.all(
+            memberUserIds.map(async userId => {
+                const userObjectives = await ctx.db
+                    .query('objectives')
+                    .withIndex('by_user', q => q.eq('user', userId))
+                    .collect();
+                return userObjectives;
+            })
+        ).then(results => results.flat());
+
         const completedOrganizationObjectives = organizationObjectives.filter(
             o => o.status === 'completed'
         );
@@ -812,20 +836,34 @@ async function calculateOrganizationStreak(
     ctx: QueryCtx,
     memberUserIds: string[]
 ): Promise<number> {
-    const allObjectives = await ctx.db.query('objectives').collect();
-    const organizationObjectives = allObjectives.filter((o: Doc<'objectives'>) =>
-        memberUserIds.includes(o.user)
-    );
+    // Get organization objectives using indexed queries per user
+    const organizationObjectives = await Promise.all(
+        memberUserIds.map(async userId => {
+            const userObjectives = await ctx.db
+                .query('objectives')
+                .withIndex('by_user', q => q.eq('user', userId))
+                .collect();
+            return userObjectives;
+        })
+    ).then(results => results.flat());
+
     const objectiveIds = organizationObjectives.map((o: Doc<'objectives'>) => o._id);
 
     if (objectiveIds.length === 0) return 0;
 
-    const allUpdates = await ctx.db.query('progressUpdates').collect();
-    const organizationUpdates = allUpdates
-        .filter((pu: Doc<'progressUpdates'>) => objectiveIds.includes(pu.objective))
-        .sort(
+    // Fetch progress updates for each objective using indexed queries
+    const organizationUpdates = await Promise.all(
+        objectiveIds.map(async objectiveId => {
+            const updates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                .collect();
+            return updates;
+        })
+    ).then(results => results.flat())
+        .then(updates => updates.sort(
             (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
-        );
+        ));
 
     if (organizationUpdates.length === 0) return 0;
 
@@ -871,13 +909,11 @@ export const getUnviewedAchievementsCount = queryWithRLS({
         // Get unread achievement notifications
         const notifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user_type_read', q =>
+                q.eq('user', userId).eq('notificationType', 'achievement').eq('read', false)
+            )
             .collect();
 
-        const unreadAchievementNotifications = notifications.filter(
-            n => n.notificationType === 'achievement' && !n.read
-        );
-
-        return unreadAchievementNotifications.length;
+        return notifications.length;
     },
 });

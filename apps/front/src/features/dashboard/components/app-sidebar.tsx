@@ -84,6 +84,24 @@ const baseProjects: ProjectNavItem[] = [
     },
 ];
 
+const adminProjects: ProjectNavItem[] = [
+    {
+        name: 'users',
+        url: '/dashboard/admin/users' as Route,
+        icon: Users,
+    },
+    {
+        name: 'adminSessions',
+        url: '/dashboard/admin/sessions' as Route,
+        icon: Activity,
+    },
+    {
+        name: 'adminAudit',
+        url: '/dashboard/admin/audit' as Route,
+        icon: FileText,
+    },
+];
+
 export function AppSidebar({
     preloadedUserQuery,
 }: {
@@ -98,27 +116,7 @@ export function AppSidebar({
 
     // Construir la lista de proyectos incluyendo admin si es necesario
     const projects = useMemo(() => {
-        const items = [...baseProjects];
-        if (isAdmin) {
-            items.push(
-                {
-                    name: 'users',
-                    url: '/dashboard/admin/users' as Route,
-                    icon: Users,
-                },
-                {
-                    name: 'adminSessions',
-                    url: '/dashboard/admin/sessions' as Route,
-                    icon: Activity,
-                },
-                {
-                    name: 'adminAudit',
-                    url: '/dashboard/admin/audit' as Route,
-                    icon: FileText,
-                }
-            );
-        }
-        return items;
+        return isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
     }, [isAdmin]);
 
     return (

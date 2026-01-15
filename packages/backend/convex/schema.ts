@@ -43,6 +43,8 @@ export default defineSchema({
     })
         .index('by_user', ['user'])
         .index('by_user_date', ['user', 'notificationDate'])
+        .index('by_user_read', ['user', 'read'])
+        .index('by_user_type_read', ['user', 'notificationType', 'read'])
         .index('by_objective', ['objective']),
 
     auditLogs: defineTable({
@@ -89,7 +91,9 @@ export default defineSchema({
     })
         .index('by_code', ['code'])
         .index('by_type', ['type'])
-        .index('by_category', ['category']),
+        .index('by_category', ['category'])
+        .index('by_isActive', ['isActive'])
+        .index('by_type_active', ['type', 'isActive']),
 
     // User achievements - which users earned which achievements
     userAchievements: defineTable({
