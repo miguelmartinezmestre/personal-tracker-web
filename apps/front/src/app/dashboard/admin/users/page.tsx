@@ -1,33 +1,18 @@
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@repo/ui/components/card';
-import { UsersTable } from '@/features/admin/components/users-table';
-import { useTranslations } from 'next-intl';
+import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { api } from '@repo/backend/convex/_generated/api';
+import UsersLayout from '@/features/admin/components/users/users-layout';
+import { requireAdmin } from '@/features/admin/utils/requiredAdmin';
 
-export default function AdminUsersPage() {
-    const t = useTranslations('Admin');
+export default async function UsersPage() {
 
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight" role="heading" aria-level={1}>
-                    {t('userManagement')}
-                </h1>
-                <p className="text-muted-foreground">{t('userManagementDescription')}</p>
-            </div>
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('userManagement')}</CardTitle>
-                    <CardDescription>{t('userManagementDescription')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <UsersTable />
-                </CardContent>
-            </Card>
-        </div>
-    );
+    requireAdmin();
+
+    const preloadedUsersQuery = await preloadAuthQuery(api.admin.listUsers, {
+        paginationOpts: {
+            numItems: 10,
+            cursor: null,
+        },
+    });
+
+    return <UsersLayout preloadedUsersQuery={preloadedUsersQuery} />;
 }

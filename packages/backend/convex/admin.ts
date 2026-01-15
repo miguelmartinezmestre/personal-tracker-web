@@ -3,6 +3,7 @@ import { query, mutation } from './_generated/server';
 import { components } from './_generated/api';
 import { authComponent, createAuth } from './auth';
 import { paginationOptsValidator } from 'convex/server';
+import { requireAdmin } from './utils/requiredAdmin';
 
 export type BetterAuthUser = {
     _id: string;
@@ -18,6 +19,20 @@ export type BetterAuthUser = {
     banned: boolean | null;
     banReason: string | null;
     banExpires: number | null;
+};
+
+export type UserSession = {
+    _id: string;
+    _creationTime: number;
+    expiresAt: number,
+    token: string,
+    createdAt: number,
+    updatedAt: number,
+    ipAddress?: string | null | undefined,
+    userAgent?: string | null | undefined,
+    userId: string,
+    impersonatedBy?: string | null | undefined,
+    activeOrganizationId?: string | null | undefined,
 };
 
 export type PaginationResult<T> = {
@@ -37,6 +52,9 @@ export const listUsers = query({
         searchValue: v.optional(v.string()),
     },
     handler: async (ctx, args): Promise<PaginationResult<BetterAuthUser>> => {
+
+        await requireAdmin(ctx);
+
         // Get all users from BetterAuth user table
         const users = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
             model: 'user',
@@ -57,11 +75,8 @@ export const banUser = mutation({
         banExpires: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        // Verify admin role
-        const currentUser = await authComponent.getAuthUser(ctx);
-        if (!currentUser || currentUser.role !== 'admin') {
-            throw new Error('Admin access required');
-        }
+
+        await requireAdmin(ctx);
 
         const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
@@ -86,11 +101,8 @@ export const unbanUser = mutation({
         userId: v.string(),
     },
     handler: async (ctx, args) => {
-        // Verify admin role
-        const currentUser = await authComponent.getAuthUser(ctx);
-        if (!currentUser || currentUser.role !== 'admin') {
-            throw new Error('Admin access required');
-        }
+
+        await requireAdmin(ctx);
 
         const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
@@ -114,16 +126,8 @@ export const updateUserRole = mutation({
         role: v.string(),
     },
     handler: async (ctx, args) => {
-        // Verify admin role
-        const currentUser = await authComponent.getAuthUser(ctx);
-        if (!currentUser || currentUser.role !== 'admin') {
-            throw new Error('Admin access required');
-        }
-
-        // Prevent self-demotion
-        if (String(currentUser._id) === args.userId && args.role !== 'admin') {
-            throw new Error('Cannot remove your own admin role');
-        }
+        
+        await requireAdmin(ctx);
 
         // Update user role
         await ctx.runMutation(components.betterAuth.adapter.updateOne, {
@@ -148,16 +152,8 @@ export const deleteUser = mutation({
         userId: v.string(),
     },
     handler: async (ctx, args) => {
-        // Verify admin role
-        const currentUser = await authComponent.getAuthUser(ctx);
-        if (!currentUser || currentUser.role !== 'admin') {
-            throw new Error('Admin access required');
-        }
-
-        // Prevent self-deletion
-        if (String(currentUser._id) === args.userId) {
-            throw new Error('Cannot delete your own account');
-        }
+        
+        await requireAdmin(ctx);
 
         const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
@@ -169,5 +165,24 @@ export const deleteUser = mutation({
         });
 
         return { success: true };
+    },
+});
+
+export const listUserSessions = query({
+    args: {
+        userId: v.string(),
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, args) => {
+        await requireAdmin(ctx);
+        
+        // Get all users from BetterAuth user table
+        const sessions = await ctx.runQuery(components.betterAuth.adapter.findMany, {
+            model: 'session',
+            where: [{ field: 'userId', value: args.userId, operator: 'eq' }],
+            paginationOpts: args.paginationOpts,
+        }) as PaginationResult<UserSession>;
+
+        return sessions;
     },
 });

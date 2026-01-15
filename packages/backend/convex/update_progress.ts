@@ -21,7 +21,7 @@ export const createUpdateProgress = mutationWithRLS({
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new Error('User not authenticated');
 
-        const objective = await ctx.db.get(args.objective);
+        const objective = await ctx.db.get('objectives', args.objective);
         if (!objective) {
             throw new Error('Objective not found');
         }
@@ -73,7 +73,7 @@ export const createUpdateProgress = mutationWithRLS({
             },
         });
 
-        return await ctx.db.get(id);
+        return await ctx.db.get('progressUpdates', id);
     },
 });
 
@@ -106,13 +106,13 @@ export const updateUpdateProgress = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
-        const existing = await ctx.db.get(id);
+        const existing = await ctx.db.get('progressUpdates', id);
         if (!existing) {
             throw new Error('Progress update not found');
         }
 
-        const objective = await ctx.db.get(existing.objective);
-        await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
+        const objective = await ctx.db.get('objectives', existing.objective);
+        await ctx.db.patch('progressUpdates', id, { ...rest, updatedAt: Date.now() });
 
         // Audit log
         const changes = createChangeDiff(sanitizeForAudit(existing), rest);
@@ -132,17 +132,17 @@ export const updateUpdateProgress = mutationWithRLS({
             });
         }
 
-        return await ctx.db.get(id);
+        return await ctx.db.get('progressUpdates', id);
     },
 });
 
 export const deleteUpdateProgress = mutationWithRLS({
     args: { _id: v.id('progressUpdates') },
     handler: async (ctx, args) => {
-        const existing = await ctx.db.get(args._id);
-        const objective = existing ? await ctx.db.get(existing.objective) : null;
+        const existing = await ctx.db.get('progressUpdates', args._id);
+        const objective = existing ? await ctx.db.get('objectives', existing.objective) : null;
 
-        await ctx.db.delete(args._id);
+        await ctx.db.delete('progressUpdates', args._id);
 
         // Audit log
         if (existing) {

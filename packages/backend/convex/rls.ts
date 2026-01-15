@@ -130,7 +130,7 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 // Los admins pueden leer todos los progress updates
                 if (isAdmin) return true;
                 // Verificar que el objetivo pertenece al usuario
-                const objective = await ctx.db.get(progressUpdate.objective);
+                const objective = await ctx.db.get('objectives', progressUpdate.objective);
                 return objective?.user === userId;
             },
             insert: async (_, progressUpdate) => {
@@ -138,7 +138,7 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 // Los admins pueden crear progress updates para cualquier objetivo
                 if (isAdmin) return true;
                 // Verificar que el objetivo pertenece al usuario
-                const objective = await ctx.db.get(progressUpdate.objective);
+                const objective = await ctx.db.get('objectives', progressUpdate.objective);
                 return objective?.user === userId;
             },
             modify: async (_, progressUpdate) => {
@@ -146,7 +146,7 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 // Los admins pueden modificar todos los progress updates
                 if (isAdmin) return true;
                 // Verificar que el objetivo pertenece al usuario
-                const objective = await ctx.db.get(progressUpdate.objective);
+                const objective = await ctx.db.get('objectives', progressUpdate.objective);
                 return objective?.user === userId;
             },
         },

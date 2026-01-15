@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import { UserSessions } from '@/features/admin/components/user-sessions';
+import { UserSessions } from '@/features/admin/components/user-sessions/user-sessions-table';
 import { useTranslations } from 'next-intl';
 
 export default function AdminSessionsPage() {
