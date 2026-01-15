@@ -190,8 +190,6 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
         },
     ];
 
-    console.log(userData);
-
     return (
         <div className="space-y-4" {...props}>
             <DataTable columns={columns} data={userData?.page || []} isLoading={isLoadingUsers} />
