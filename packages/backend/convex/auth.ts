@@ -8,8 +8,12 @@ import { admin, organization } from 'better-auth/plugins';
 import authConfig from './auth.config';
 import authSchema from './betterAuth/schema';
 
-const siteUrl = process.env.SITE_URL!;
+const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
 const emailApiUrl = process.env.EMAIL_API_URL ?? 'http://localhost:3001';
+
+// Only require email verification in production when email service is configured
+const isProduction = process.env.NODE_ENV === 'production';
+const requireEmailVerification: boolean = !!(isProduction && process.env.EMAIL_API_URL);
 
 /**
  * Send organization invitation email via the email API
@@ -41,10 +45,11 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     return {
         baseURL: siteUrl,
         database: authComponent.adapter(ctx),
-        // Configure simple, non-verified email/password to get started
+        // Configure email/password with verification for security
+        // Email verification is only required in production when email service is configured
         emailAndPassword: {
             enabled: true,
-            requireEmailVerification: false,
+            requireEmailVerification,
         },
         plugins: [
             // The Convex plugin is required for Convex compatibility
