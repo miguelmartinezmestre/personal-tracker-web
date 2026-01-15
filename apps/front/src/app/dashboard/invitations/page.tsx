@@ -3,7 +3,11 @@
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
-import { usePendingInvitations, useAcceptInvitation, useRejectInvitation } from '@/features/organizations/hooks/use-invitations';
+import {
+    usePendingInvitations,
+    useAcceptInvitation,
+    useRejectInvitation,
+} from '@/features/organizations/hooks/use-invitations';
 import { InvitationCard } from '@/features/organizations/components/invitation-card';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@repo/ui/components/alert';

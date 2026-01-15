@@ -5,12 +5,26 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { Button } from '@repo/ui/components/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@repo/ui/components/card';
 import { Alert, AlertDescription } from '@repo/ui/components/alert';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-type InvitationStatus = 'loading' | 'fetching' | 'not_found' | 'already_accepted' | 'ready' | 'accepting' | 'accepted' | 'error';
+type InvitationStatus =
+    | 'loading'
+    | 'fetching'
+    | 'not_found'
+    | 'already_accepted'
+    | 'ready'
+    | 'accepting'
+    | 'accepted'
+    | 'error';
 
 interface InvitationData {
     id: string;
@@ -158,7 +172,11 @@ export default function InvitationPage() {
                         </Button>
                         <div className="text-center text-sm">
                             <span className="text-muted-foreground">{t('noAccount')} </span>
-                            <Button variant="link" className="h-auto p-0" onClick={handleGoToRegister}>
+                            <Button
+                                variant="link"
+                                className="h-auto p-0"
+                                onClick={handleGoToRegister}
+                            >
                                 {t('register')}
                             </Button>
                         </div>

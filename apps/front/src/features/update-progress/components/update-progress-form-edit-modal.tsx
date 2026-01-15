@@ -31,7 +31,10 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { UpdateProgress, savedUpdateProgressSchema } from '@/features/update-progress/schemas/update-progress';
+import {
+    UpdateProgress,
+    savedUpdateProgressSchema,
+} from '@/features/update-progress/schemas/update-progress';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
 

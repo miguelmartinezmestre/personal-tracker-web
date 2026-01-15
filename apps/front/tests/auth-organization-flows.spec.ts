@@ -145,7 +145,10 @@ async function listMembers(page: Page, organizationId: string) {
 test.skip('admin invita a un usuario y el invitado invita a otros miembros', async ({
     browser,
 }) => {
-    test.skip(true, 'Requires authClient to be exposed on window for BetterAuth organization methods');
+    test.skip(
+        true,
+        'Requires authClient to be exposed on window for BetterAuth organization methods'
+    );
     const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 
     const adminContext = await browser.newContext({ baseURL });

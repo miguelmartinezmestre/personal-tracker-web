@@ -82,9 +82,12 @@ describe('convex achievements', async () => {
                 { type: 'individual' }
             );
 
-            const organizationDefs = await userIdentity.query(api.achievements.getAchievementDefinitions, {
-                type: 'organization',
-            });
+            const organizationDefs = await userIdentity.query(
+                api.achievements.getAchievementDefinitions,
+                {
+                    type: 'organization',
+                }
+            );
 
             expect(individualDefs.every(d => d.type === 'individual')).toBe(true);
             expect(organizationDefs.every(d => d.type === 'organization')).toBe(true);

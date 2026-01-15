@@ -23,7 +23,10 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { OrganizationMember, savedOrganizationMemberSchema } from '@/features/organizations/schemas/organization-member';
+import {
+    OrganizationMember,
+    savedOrganizationMemberSchema,
+} from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -35,7 +38,11 @@ import { OrganizationRole } from '../types/roles';
 import { useTranslations } from 'next-intl';
 import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 
-export default function OrganizationMemberEditFormModal({ defaultValues }: { defaultValues: OrganizationMember }) {
+export default function OrganizationMemberEditFormModal({
+    defaultValues,
+}: {
+    defaultValues: OrganizationMember;
+}) {
     const t = useTranslations('OrganizationMembers');
 
     const roleOptions = [

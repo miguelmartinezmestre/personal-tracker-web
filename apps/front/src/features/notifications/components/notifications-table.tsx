@@ -30,8 +30,19 @@ export default function NotificationsTable() {
     const queryClient = useQueryClient();
 
     // Pagination state
-    const { currentPage, cursors, isDone, getPaginationOpts, updateCursor, nextPage, previousPage, goToPage, hasNextPage, hasPreviousPage, reset } =
-        useServerPagination(DEFAULT_PAGE_SIZE);
+    const {
+        currentPage,
+        cursors,
+        isDone,
+        getPaginationOpts,
+        updateCursor,
+        nextPage,
+        previousPage,
+        goToPage,
+        hasNextPage,
+        hasPreviousPage,
+        reset,
+    } = useServerPagination(DEFAULT_PAGE_SIZE);
 
     // Fetch notifications with pagination
     const notifications = useQuery({
@@ -97,7 +108,10 @@ export default function NotificationsTable() {
     });
 
     const objectiveMap = new Map(
-        (objectives.data?.page ?? []).map((objective: Doc<'objectives'>) => [String(objective._id), objective])
+        (objectives.data?.page ?? []).map((objective: Doc<'objectives'>) => [
+            String(objective._id),
+            objective,
+        ])
     );
 
     const data = (notifications.data?.page ?? []) as Doc<'notifications'>[];

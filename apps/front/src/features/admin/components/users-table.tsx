@@ -30,13 +30,15 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
         data: userData,
         isLoading: isLoadingUsers,
         refetch,
-    } = useQuery(convexQuery(api.admin.listUsers, {
-        searchValue: searchValue || undefined,
-        paginationOpts: {
-            numItems: limit,
-            cursor: null,
-        },
-    }));
+    } = useQuery(
+        convexQuery(api.admin.listUsers, {
+            searchValue: searchValue || undefined,
+            paginationOpts: {
+                numItems: limit,
+                cursor: null,
+            },
+        })
+    );
 
     // Ban usuario
     const banUser = useMutation({
@@ -88,9 +90,7 @@ export function UsersTable({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
             accessorKey: 'id',
             header: t('usersTable.columns.id'),
             cell: ({ row }) => (
-                <span className="font-mono text-xs text-muted-foreground">
-                    {row.original._id}
-                </span>
+                <span className="font-mono text-xs text-muted-foreground">{row.original._id}</span>
             ),
         },
         {

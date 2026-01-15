@@ -99,7 +99,10 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
     };
 
     const renderIcon = (iconName: string) => {
-        const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+        const icons = LucideIcons as unknown as Record<
+            string,
+            React.ComponentType<{ className?: string }>
+        >;
         const IconComponent = icons[iconName];
         return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
     };
@@ -163,7 +166,9 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
                                                     <div className="flex items-center gap-2">
                                                         <div
                                                             className="h-4 w-4 rounded border"
-                                                            style={{ backgroundColor: option.value }}
+                                                            style={{
+                                                                backgroundColor: option.value,
+                                                            }}
                                                         />
                                                         {option.label}
                                                     </div>
@@ -187,11 +192,16 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="category-edit-icon-select">
-                                                <SelectValue placeholder={t('placeholders.selectIcon')} />
+                                                <SelectValue
+                                                    placeholder={t('placeholders.selectIcon')}
+                                                />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="" data-testid="category-edit-icon-none">
+                                            <SelectItem
+                                                value=""
+                                                data-testid="category-edit-icon-none"
+                                            >
                                                 {tCommon('icons.tag')}
                                             </SelectItem>
                                             {iconOptions.map(icon => (
@@ -222,8 +232,14 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
                             >
                                 {t('buttons.cancel')}
                             </Button>
-                            <Button type="submit" data-testid="category-edit-save-button" disabled={updateCategory.isPending}>
-                                {updateCategory.isPending ? t('buttons.updating') : t('buttons.update')}
+                            <Button
+                                type="submit"
+                                data-testid="category-edit-save-button"
+                                disabled={updateCategory.isPending}
+                            >
+                                {updateCategory.isPending
+                                    ? t('buttons.updating')
+                                    : t('buttons.update')}
                             </Button>
                         </DialogFooter>
                     </form>

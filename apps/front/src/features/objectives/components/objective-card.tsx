@@ -164,8 +164,8 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                 {progress >= 75
                                     ? t('onTrack')
                                     : progress >= 50
-                                        ? t('goodProgress')
-                                        : t('needsAttention')}
+                                      ? t('goodProgress')
+                                      : t('needsAttention')}
                             </span>
                         </div>
 

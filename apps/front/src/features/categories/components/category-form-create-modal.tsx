@@ -92,7 +92,10 @@ export default function CreateCategoryFormModal() {
     };
 
     const renderIcon = (iconName: string) => {
-        const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+        const icons = LucideIcons as unknown as Record<
+            string,
+            React.ComponentType<{ className?: string }>
+        >;
         const IconComponent = icons[iconName];
         return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
     };
@@ -156,7 +159,9 @@ export default function CreateCategoryFormModal() {
                                                     <div className="flex items-center gap-2">
                                                         <div
                                                             className="h-4 w-4 rounded border"
-                                                            style={{ backgroundColor: option.value }}
+                                                            style={{
+                                                                backgroundColor: option.value,
+                                                            }}
                                                         />
                                                         {option.label}
                                                     </div>
@@ -165,7 +170,12 @@ export default function CreateCategoryFormModal() {
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
-                                        {tCommon('colors.' + colorOptions.find(c => c.value === field.value)?.label.toLowerCase())}
+                                        {tCommon(
+                                            'colors.' +
+                                                colorOptions
+                                                    .find(c => c.value === field.value)
+                                                    ?.label.toLowerCase()
+                                        )}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -183,7 +193,9 @@ export default function CreateCategoryFormModal() {
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="category-icon-select">
-                                                <SelectValue placeholder={t('placeholders.selectIcon')} />
+                                                <SelectValue
+                                                    placeholder={t('placeholders.selectIcon')}
+                                                />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -218,8 +230,14 @@ export default function CreateCategoryFormModal() {
                             >
                                 {t('buttons.cancel')}
                             </Button>
-                            <Button type="submit" data-testid="category-save-button" disabled={createCategory.isPending}>
-                                {createCategory.isPending ? t('buttons.creating') : t('buttons.create')}
+                            <Button
+                                type="submit"
+                                data-testid="category-save-button"
+                                disabled={createCategory.isPending}
+                            >
+                                {createCategory.isPending
+                                    ? t('buttons.creating')
+                                    : t('buttons.create')}
                             </Button>
                         </DialogFooter>
                     </form>

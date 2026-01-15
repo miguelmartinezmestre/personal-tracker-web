@@ -94,7 +94,9 @@ export default function RegisterForm() {
                                     slug: values.organizationSlug as string,
                                 });
 
-                                const ownOrganizationId = (createOrgResult as any)?.data?.id || (createOrgResult as any)?.id;
+                                const ownOrganizationId =
+                                    (createOrgResult as any)?.data?.id ||
+                                    (createOrgResult as any)?.id;
 
                                 if (ownOrganizationId) {
                                     await authClient.organization.setActive({

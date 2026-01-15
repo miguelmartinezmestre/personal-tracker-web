@@ -9,7 +9,9 @@ interface OrganizationDetailClientProps {
     organizationId: string;
 }
 
-export default function OrganizationDetailClient({ organizationId }: OrganizationDetailClientProps) {
+export default function OrganizationDetailClient({
+    organizationId,
+}: OrganizationDetailClientProps) {
     // Use organization hook to get organization by ID
     const { data: organization, isLoading } = useOrganization(organizationId);
 

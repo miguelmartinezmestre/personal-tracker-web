@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { Hono } from 'hono';
 import type { Env } from './index';
 import { sendEmail, verifyConnection } from './mailer';
-import { sendWelcomeEmail, sendPasswordResetEmail, sendDeadlineReminderEmail, sendOrganizationInvitationEmail } from './templates';
+import {
+    sendWelcomeEmail,
+    sendPasswordResetEmail,
+    sendDeadlineReminderEmail,
+    sendOrganizationInvitationEmail,
+} from './templates';
 import { isEmailConfigured } from './config';
 
 const app = new Hono<{ Bindings: Env }>();

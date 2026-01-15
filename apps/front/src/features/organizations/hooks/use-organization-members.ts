@@ -25,7 +25,10 @@ export interface DeleteOrganizationMemberParams {
     organizationId?: string;
 }
 
-const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => ['organization-members', organizationId];
+const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
+    'organization-members',
+    organizationId,
+];
 
 const mapOrganizationRoleToOrganizationRole = (role: 'owner' | 'admin' | 'member') => role;
 

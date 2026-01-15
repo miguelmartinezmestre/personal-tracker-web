@@ -1,7 +1,10 @@
 'use client';
 
 import { DataTable } from '@/features/table/components/table';
-import { useOrganizations, useDeleteOrganization } from '@/features/organizations/hooks/use-organizations';
+import {
+    useOrganizations,
+    useDeleteOrganization,
+} from '@/features/organizations/hooks/use-organizations';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
@@ -91,11 +94,14 @@ export default function OrganizationsTable() {
                 }
 
                 // Fallback: if ID is missing or equals slug, log error but don't render link
-                console.error('[OrganizationsTable] Cannot create link - invalid organization ID:', {
-                    id: organizationId,
-                    slug: organizationSlug,
-                    name: row.original.name
-                });
+                console.error(
+                    '[OrganizationsTable] Cannot create link - invalid organization ID:',
+                    {
+                        id: organizationId,
+                        slug: organizationSlug,
+                        name: row.original.name,
+                    }
+                );
 
                 return null;
             },
@@ -104,7 +110,11 @@ export default function OrganizationsTable() {
 
     return (
         <div>
-            <DataTable columns={columns} data={organizations.data ?? []} isLoading={organizations.isLoading} />
+            <DataTable
+                columns={columns}
+                data={organizations.data ?? []}
+                isLoading={organizations.isLoading}
+            />
         </div>
     );
 }

@@ -10,7 +10,10 @@ import { Skeleton } from '@repo/ui/components/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { achievementProgressSchema, type AchievementProgress } from '@/features/achievements/schemas/achievement';
+import {
+    achievementProgressSchema,
+    type AchievementProgress,
+} from '@/features/achievements/schemas/achievement';
 import { AchievementCard } from '@/features/achievements/components/achievement-card';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
 
@@ -19,7 +22,9 @@ export default function AchievementsPage() {
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
     const queryClient = useQueryClient();
 
-    const { data: stats, isLoading: statsLoading } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
+    const { data: stats, isLoading: statsLoading } = useQuery(
+        convexQuery(api.achievements.getUserAchievementStats, {})
+    );
     const { data: progress, isLoading: progressLoading } = useQuery({
         ...convexQuery(api.achievements.getUserAchievementProgress, {}),
         select: (data): AchievementProgress[] =>
@@ -57,7 +62,9 @@ export default function AchievementsPage() {
     const individualAchievements = filteredProgress?.filter(
         p => p.definition.type === 'individual'
     );
-    const organizationAchievements = filteredProgress?.filter(p => p.definition.type === 'organization');
+    const organizationAchievements = filteredProgress?.filter(
+        p => p.definition.type === 'organization'
+    );
 
     const handleSeedAchievements = async () => {
         try {
@@ -113,7 +120,11 @@ export default function AchievementsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="achievements-stats" data-tour="achievement-stats">
+            <div
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                data-testid="achievements-stats"
+                data-tour="achievement-stats"
+            >
                 <Card data-testid="achievements-points-card">
                     <CardContent className="flex items-center gap-4 p-6">
                         <Star className="h-10 w-10 text-yellow-500" />
@@ -153,8 +164,8 @@ export default function AchievementsPage() {
                             <span className="text-lg font-bold text-primary">
                                 {stats?.totalAvailable
                                     ? Math.round(
-                                        ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
-                                    )
+                                          ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
+                                      )
                                     : 0}
                                 %
                             </span>
@@ -170,7 +181,11 @@ export default function AchievementsPage() {
             </div>
 
             {/* Filter buttons */}
-            <div className="flex gap-2" data-testid="achievements-filters" data-tour="achievement-filters">
+            <div
+                className="flex gap-2"
+                data-testid="achievements-filters"
+                data-tour="achievement-filters"
+            >
                 <Button
                     variant={filter === 'all' ? 'default' : 'outline'}
                     size="sm"
@@ -247,15 +262,19 @@ export default function AchievementsPage() {
                                     {filter === 'earned'
                                         ? t('empty.noEarned')
                                         : filter === 'locked'
-                                            ? t('empty.noLocked')
-                                            : t('empty.noAchievements')}
+                                          ? t('empty.noLocked')
+                                          : t('empty.noAchievements')}
                                 </p>
                             </CardContent>
                         </Card>
                     )}
                 </TabsContent>
 
-                <TabsContent value="organization" className="mt-6" data-testid="achievements-content-organization">
+                <TabsContent
+                    value="organization"
+                    className="mt-6"
+                    data-testid="achievements-content-organization"
+                >
                     {organizationAchievements && organizationAchievements.length > 0 ? (
                         <div
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"

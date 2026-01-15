@@ -11,7 +11,10 @@ import {
     TooltipTrigger,
 } from '@repo/ui/components/tooltip';
 import { useTextSelection } from '@/features/text-selection-toolbar-llm/use-text-selection';
-import { buildLLMDeepLink, type LLMProvider } from '@/features/text-selection-toolbar-llm/llm-links';
+import {
+    buildLLMDeepLink,
+    type LLMProvider,
+} from '@/features/text-selection-toolbar-llm/llm-links';
 
 const LLM_PROVIDERS: Array<{
     id: LLMProvider;
@@ -19,11 +22,26 @@ const LLM_PROVIDERS: Array<{
     color: string;
     hoverColor: string;
 }> = [
-        { id: 'chatgpt', name: 'ChatGPT', color: 'text-[#10a37f]', hoverColor: 'hover:bg-[#10a37f]/10' },
-        { id: 'copilot', name: 'Copilot', color: 'text-[#0078d4]', hoverColor: 'hover:bg-[#0078d4]/10' },
-        { id: 'claude', name: 'Claude', color: 'text-[#d97706]', hoverColor: 'hover:bg-[#d97706]/10' },
-        { id: 'perplexity', name: 'Perplexity', color: 'text-[#20b2aa]', hoverColor: 'hover:bg-[#20b2aa]/10' },
-    ];
+    {
+        id: 'chatgpt',
+        name: 'ChatGPT',
+        color: 'text-[#10a37f]',
+        hoverColor: 'hover:bg-[#10a37f]/10',
+    },
+    {
+        id: 'copilot',
+        name: 'Copilot',
+        color: 'text-[#0078d4]',
+        hoverColor: 'hover:bg-[#0078d4]/10',
+    },
+    { id: 'claude', name: 'Claude', color: 'text-[#d97706]', hoverColor: 'hover:bg-[#d97706]/10' },
+    {
+        id: 'perplexity',
+        name: 'Perplexity',
+        color: 'text-[#20b2aa]',
+        hoverColor: 'hover:bg-[#20b2aa]/10',
+    },
+];
 
 function ChatGPTIcon({ className }: { className?: string }) {
     return (
@@ -52,7 +70,14 @@ function ClaudeIcon({ className }: { className?: string }) {
 function PerplexityIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+                d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
         </svg>
     );
 }

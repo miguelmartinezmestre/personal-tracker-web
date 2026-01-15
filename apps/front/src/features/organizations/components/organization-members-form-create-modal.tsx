@@ -23,7 +23,10 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { CreateOrganizationMember, organizationMemberSchema } from '@/features/organizations/schemas/organization-member';
+import {
+    CreateOrganizationMember,
+    organizationMemberSchema,
+} from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -39,7 +42,9 @@ interface CreateOrganizationMemberFormModalProps {
     organizationId: string;
 }
 
-export default function CreateOrganizationMemberFormModal({ organizationId }: CreateOrganizationMemberFormModalProps) {
+export default function CreateOrganizationMemberFormModal({
+    organizationId,
+}: CreateOrganizationMemberFormModalProps) {
     const t = useTranslations('OrganizationMembers');
     const createOrganizationMember = useCreateOrganizationMember();
 
@@ -86,7 +91,9 @@ export default function CreateOrganizationMemberFormModal({ organizationId }: Cr
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('createNewOrganizationMember')}</DialogTitle>
-                    <DialogDescription>{t('createNewOrganizationMemberDescription')}</DialogDescription>
+                    <DialogDescription>
+                        {t('createNewOrganizationMemberDescription')}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>

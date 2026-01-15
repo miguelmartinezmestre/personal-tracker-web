@@ -41,21 +41,24 @@ async function inviteMember(
  * Accepts an invitation using BetterAuth client methods.
  */
 async function acceptInvitation(page: Page, invitationId: string) {
-    const result = await page.evaluate(async ({ invitationId: id }) => {
-        const win = window as any;
-        if (!win.authClient) {
-            return { error: 'authClient not found on window' };
-        }
+    const result = await page.evaluate(
+        async ({ invitationId: id }) => {
+            const win = window as any;
+            if (!win.authClient) {
+                return { error: 'authClient not found on window' };
+            }
 
-        try {
-            const response = await win.authClient.organization.acceptInvitation({
-                invitationId: id,
-            });
-            return { success: true, data: response };
-        } catch (error: any) {
-            return { error: error.message || 'Unknown error' };
-        }
-    }, { invitationId });
+            try {
+                const response = await win.authClient.organization.acceptInvitation({
+                    invitationId: id,
+                });
+                return { success: true, data: response };
+            } catch (error: any) {
+                return { error: error.message || 'Unknown error' };
+            }
+        },
+        { invitationId }
+    );
 
     if (result.error) {
         throw new Error(`acceptInvitation failed: ${result.error}`);
@@ -64,8 +67,14 @@ async function acceptInvitation(page: Page, invitationId: string) {
     return result.data;
 }
 
-test.skip('organization members: add, edit role, and delete organization members', async ({ page, browser }) => {
-    test.skip(true, 'Organization member UI not implemented - needs BetterAuth integration in organization detail page');
+test.skip('organization members: add, edit role, and delete organization members', async ({
+    page,
+    browser,
+}) => {
+    test.skip(
+        true,
+        'Organization member UI not implemented - needs BetterAuth integration in organization detail page'
+    );
     const uuid = randomUUID();
     const baseURL = test.info().project.use.baseURL ?? 'http://localhost:3000';
 
@@ -121,7 +130,11 @@ test.skip('organization members: add, edit role, and delete organization members
     const invitedUser = await createTestUser(invitedPage);
 
     // Invite the user using BetterAuth
-    const invitation = await inviteMember(page, { organizationId: organizationId, email: invitedUser.email, role: 'member' });
+    const invitation = await inviteMember(page, {
+        organizationId: organizationId,
+        email: invitedUser.email,
+        role: 'member',
+    });
 
     // Accept invitation
     await acceptInvitation(invitedPage, invitation.id);
@@ -131,9 +144,11 @@ test.skip('organization members: add, edit role, and delete organization members
     await page.goto(`/dashboard/organizations/${organizationId}`);
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByRole('heading', { name: /organization members|miembros/i })).toBeVisible({
-        timeout: 10000,
-    });
+    await expect(page.getByRole('heading', { name: /organization members|miembros/i })).toBeVisible(
+        {
+            timeout: 10000,
+        }
+    );
     await expect(page.getByText(invitedUser.email)).toBeVisible({ timeout: 10000 });
 
     const memberRow = page.locator('tr', { hasText: invitedUser.email }).first();

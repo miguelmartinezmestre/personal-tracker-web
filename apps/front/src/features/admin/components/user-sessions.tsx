@@ -45,8 +45,8 @@ export function UserSessions() {
         sessions && 'data' in sessions && sessions.data
             ? sessions.data.sessions
             : sessions && 'sessions' in sessions
-                ? sessions.sessions
-                : [];
+              ? sessions.sessions
+              : [];
 
     const revokeSession = useMutation({
         mutationFn: async ({ sessionToken }: { sessionToken: string }) => {

@@ -19,8 +19,12 @@ interface AchievementsWidgetProps {
 
 export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
     const t = useTranslations('Achievements');
-    const { data: stats, isLoading: statsLoading } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
-    const { data: recentAchievements, isLoading: achievementsLoading } = useQuery(convexQuery(api.achievements.getRecentAchievements, { limit }));
+    const { data: stats, isLoading: statsLoading } = useQuery(
+        convexQuery(api.achievements.getUserAchievementStats, {})
+    );
+    const { data: recentAchievements, isLoading: achievementsLoading } = useQuery(
+        convexQuery(api.achievements.getRecentAchievements, { limit })
+    );
 
     const isLoading = statsLoading || achievementsLoading;
 
