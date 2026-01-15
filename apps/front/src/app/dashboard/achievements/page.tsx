@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { achievementProgressSchema, type AchievementProgress } from '@/schemas/achievement';
-import { AchievementCard } from '@/components/achievements/achievement-card';
+import { AchievementCard } from '@/features/achievements/achievement-card';
 import type { AchievementTier } from '@/schemas/achievement';
 
 export default function AchievementsPage() {
@@ -153,8 +153,8 @@ export default function AchievementsPage() {
                             <span className="text-lg font-bold text-primary">
                                 {stats?.totalAvailable
                                     ? Math.round(
-                                          ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
-                                      )
+                                        ((stats?.earnedCount ?? 0) / stats.totalAvailable) * 100
+                                    )
                                     : 0}
                                 %
                             </span>
@@ -247,8 +247,8 @@ export default function AchievementsPage() {
                                     {filter === 'earned'
                                         ? t('empty.noEarned')
                                         : filter === 'locked'
-                                          ? t('empty.noLocked')
-                                          : t('empty.noAchievements')}
+                                            ? t('empty.noLocked')
+                                            : t('empty.noAchievements')}
                                 </p>
                             </CardContent>
                         </Card>

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DashboardLayout } from '@/components/dashboard-layout';
+import { DashboardLayout } from '@/features/dashboard/dashboard-layout';
 
 // Mock app-sidebar
 vi.mock('@/components/app-sidebar', () => ({

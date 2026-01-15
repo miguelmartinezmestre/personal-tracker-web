@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import CreateCategoryFormModal from '@/components/categories/category-form-create-modal';
-import CategoriesTable from '@/components/categories/categories-table';
+import CreateCategoryFormModal from '@/features/categories/category-form-create-modal';
+import CategoriesTable from '@/features/categories/categories-table';
 
 export default async function Categories() {
     const t = await getTranslations('Objectives.categories');

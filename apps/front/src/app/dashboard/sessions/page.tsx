@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import SessionsTable from '@/components/sessions/sessions-table';
+import SessionsTable from '@/features/sessions/sessions-table';
 
 export default function SessionsPage() {
     const t = useTranslations('Sessions');

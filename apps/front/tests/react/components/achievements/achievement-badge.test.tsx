@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { AchievementBadge } from '@/components/achievements/achievement-badge';
+import { AchievementBadge } from '@/features/achievements/achievement-badge';
 
 // Mock the tooltip components
 vi.mock('@repo/ui/components/tooltip', () => ({

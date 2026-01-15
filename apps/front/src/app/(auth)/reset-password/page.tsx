@@ -1,6 +1,6 @@
-import ResetPassword from '@/components/auth/reset-password';
-import Footer from '@/components/footer';
-import Header from '@/components/header';
+import ResetPassword from '@/features/auth/reset-password';
+import Footer from '@/features/landing/footer';
+import Header from '@/features/landing/header';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

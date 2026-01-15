@@ -1,5 +1,5 @@
-import Header from '@/components/header';
-import Footer from '@/components/footer';
+import Header from '@/features/landing/header';
+import Footer from '@/features/landing/footer';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@repo/ui/components/card';
 import { Target, LineChart, CheckCircle, Users, Calendar, Lightbulb } from 'lucide-react';

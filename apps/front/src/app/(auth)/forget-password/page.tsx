@@ -1,6 +1,6 @@
-import Header from '@/components/header';
-import Footer from '@/components/footer';
-import ForgetPasswordForm from '@/components/auth/forget-password';
+import Header from '@/features/landing/header';
+import Footer from '@/features/landing/footer';
+import ForgetPasswordForm from '@/features/auth/forget-password';
 import { getTranslations } from 'next-intl/server';
 
 export default async function ManageInvitationPage() {

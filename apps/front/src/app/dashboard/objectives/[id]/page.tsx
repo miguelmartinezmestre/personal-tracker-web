@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import CreateUpdateProgressFormModal from '@/components/update-progress/update-progress-form-create-modal';
-import UpdateProgressTable from '@/components/update-progress/update-progress-table';
+import CreateUpdateProgressFormModal from '@/features/update-progress/update-progress-form-create-modal';
+import UpdateProgressTable from '@/features/update-progress/update-progress-table';
 
 export default async function ObjectiveDetailPage() {
     const tObjectives = await getTranslations('Objectives');

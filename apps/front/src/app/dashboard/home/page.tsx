@@ -1,6 +1,5 @@
 'use client';
 
-import { useUser } from '@/contexts/user-context';
 import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
@@ -8,10 +7,13 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AchievementsWidget } from '@/components/achievements/achievements-widget';
+import { AchievementsWidget } from '@/features/achievements/achievements-widget';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 
 export default function HomePage() {
-    const user = useUser();
+    const { data: user } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
     const searchParams = useSearchParams();
     const [showAlert, setShowAlert] = useState(false);
 
@@ -32,17 +34,17 @@ export default function HomePage() {
         const alertContent =
             error === 'unauthorized'
                 ? {
-                      icon: ShieldAlert,
-                      title: t('accessDeniedTitle'),
-                      description: t('accessDeniedDescription'),
-                      variant: 'destructive' as const,
-                  }
+                    icon: ShieldAlert,
+                    title: t('accessDeniedTitle'),
+                    description: t('accessDeniedDescription'),
+                    variant: 'destructive' as const,
+                }
                 : {
-                      icon: AlertTriangle,
-                      title: t('genericErrorTitle'),
-                      description: t('genericErrorDescription'),
-                      variant: 'destructive' as const,
-                  };
+                    icon: AlertTriangle,
+                    title: t('genericErrorTitle'),
+                    description: t('genericErrorDescription'),
+                    variant: 'destructive' as const,
+                };
 
         return (
             <div className="flex items-center justify-center min-h-screen p-4">

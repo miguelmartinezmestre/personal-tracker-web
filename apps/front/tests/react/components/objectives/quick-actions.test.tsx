@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { QuickActions } from '@/components/objectives/quick-actions';
+import { QuickActions } from '@/features/objectives/quick-actions';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 
 const objectiveMutations = vi.hoisted(() => ({

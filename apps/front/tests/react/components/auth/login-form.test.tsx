@@ -2,7 +2,7 @@ import * as React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import LoginForm from '@/components/auth/login-form';
+import LoginForm from '@/features/auth/login-form';
 
 // Mock next/navigation
 const mockPush = vi.fn();
@@ -127,7 +127,7 @@ vi.mock('@/components/ui/form', () => {
                                 // Also update the form if it exists
                                 form?.setFieldValue?.(name, newValue);
                             },
-                            onBlur: () => {},
+                            onBlur: () => { },
                         },
                     })}
                 </FormFieldContext.Provider>

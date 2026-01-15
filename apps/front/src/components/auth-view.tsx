@@ -1,76 +1,76 @@
-'use client';
+// 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
-import { UserProvider } from '@/contexts/user-context';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
-import { api } from '@repo/backend/convex/_generated/api';
+// import { useEffect, useMemo } from 'react';
+// import { useTranslations } from 'next-intl';
+// import { useRouter } from 'next/navigation';
+// import { authClient } from '@/lib/auth-client';
+// import { UserProvider } from '@/contexts/user-context';
+// import { useQuery } from '@tanstack/react-query';
+// import { convexQuery } from '@convex-dev/react-query';
+// import { api } from '@repo/backend/convex/_generated/api';
 
-export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
-    const tCommon = useTranslations('Common');
-    const router = useRouter();
+// export default function AuthenticatedView({ children }: { children: React.ReactNode }) {
+//     const tCommon = useTranslations('Common');
+//     const router = useRouter();
 
-    // `better-auth` exposes a `useSession()` hook via the client.
-    // Its return shape may differ slightly by version, so we read the common fields.
-    const sessionQuery = authClient.useSession();
-    const session = sessionQuery?.data;
-    const isSessionLoading = Boolean(sessionQuery?.isPending);
+//     // `better-auth` exposes a `useSession()` hook via the client.
+//     // Its return shape may differ slightly by version, so we read the common fields.
+//     const sessionQuery = authClient.useSession();
+//     const session = sessionQuery?.data;
+//     const isSessionLoading = Boolean(sessionQuery?.isPending);
 
-    // Only query for the current user once we have a session.
-    const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, session?.user ? {} : 'skip'));
-    const user = userQuery.data;
+//     // Only query for the current user once we have a session.
+//     const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, session?.user ? {} : 'skip'));
+//     const user = userQuery.data;
 
-    useEffect(() => {
-        if (isSessionLoading) return;
-        if (!session?.user) {
-            router.replace('/login');
-        }
-    }, [isSessionLoading, session, router]);
+//     useEffect(() => {
+//         if (isSessionLoading) return;
+//         if (!session?.user) {
+//             router.replace('/login');
+//         }
+//     }, [isSessionLoading, session, router]);
 
-    const fallbackUser = useMemo(() => {
-        if (!session?.user) return null;
-        return {
-            _id: session.user.id,
-            _creationTime: Date.now(),
-            email: session.user.email,
-            name: session.user.name ?? session.user.email,
-            role: session.user.role,
-        } as {
-            _id: string;
-            _creationTime: number;
-            email: string;
-            name: string;
-            role?: string | string[];
-        };
-    }, [session]);
+//     const fallbackUser = useMemo(() => {
+//         if (!session?.user) return null;
+//         return {
+//             _id: session.user.id,
+//             _creationTime: Date.now(),
+//             email: session.user.email,
+//             name: session.user.name ?? session.user.email,
+//             role: session.user.role,
+//         } as {
+//             _id: string;
+//             _creationTime: number;
+//             email: string;
+//             name: string;
+//             role?: string | string[];
+//         };
+//     }, [session]);
 
-    if (isSessionLoading) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <div>{tCommon('loading')}</div>
-            </div>
-        );
-    }
+//     if (isSessionLoading) {
+//         return (
+//             <div className="flex justify-center items-center h-screen">
+//                 <div>{tCommon('loading')}</div>
+//             </div>
+//         );
+//     }
 
-    if (!session?.user) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <div>{tCommon('redirectingToLogin')}</div>
-            </div>
-        );
-    }
+//     if (!session?.user) {
+//         return (
+//             <div className="flex justify-center items-center h-screen">
+//                 <div>{tCommon('redirectingToLogin')}</div>
+//             </div>
+//         );
+//     }
 
-    const userForProvider = user ?? fallbackUser;
-    if (!userForProvider) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <div>{tCommon('loadingUser')}</div>
-            </div>
-        );
-    }
+//     const userForProvider = user ?? fallbackUser;
+//     if (!userForProvider) {
+//         return (
+//             <div className="flex justify-center items-center h-screen">
+//                 <div>{tCommon('loadingUser')}</div>
+//             </div>
+//         );
+//     }
 
-    return <UserProvider user={userForProvider}>{children}</UserProvider>;
-}
+//     return <UserProvider user={userForProvider}>{children}</UserProvider>;
+// }
