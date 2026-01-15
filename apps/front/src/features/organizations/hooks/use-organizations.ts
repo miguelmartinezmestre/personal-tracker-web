@@ -24,7 +24,7 @@ export interface UpdateOrganizationParams {
 const ORGANIZATIONS_QUERY_KEY = ['organizations'];
 
 // Organization type from BetterAuth
-type Organization = {
+type BetterAuthOrganization = {
     id: string;
     name: string;
     slug?: string | null;
@@ -33,7 +33,7 @@ type Organization = {
     createdAt?: Date | number;
 };
 
-const normalizeOrganization = (org: Organization): Organization => {
+const normalizeOrganization = (org: BetterAuthOrganization): Organization => {
     // Ensure we're using the actual ID, not the slug
     const organizationId = String(org.id);
     const organizationSlug = org.slug ?? '';
@@ -57,7 +57,7 @@ export function useOrganizations() {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
-                    ? (result.data as unknown as Organization[])
+                    ? (result.data as unknown as BetterAuthOrganization[])
                     : [];
             const normalized = organizations.map(normalizeOrganization);
             return normalized;
@@ -77,7 +77,7 @@ export function useOrganization(organizationId: string | null) {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
-                    ? (result.data as unknown as Organization[])
+                    ? (result.data as unknown as BetterAuthOrganization[])
                     : [];
             const org = organizations.find(o => o.id === organizationId);
             return org ? normalizeOrganization(org) : null;
@@ -98,7 +98,7 @@ export function useOrganizationBySlug(slug: string | null) {
             const result = await authClient.organization.list();
             const organizations =
                 result && typeof result === 'object' && 'data' in result
-                    ? (result.data as unknown as Organization[])
+                    ? (result.data as unknown as BetterAuthOrganization[])
                     : [];
             const org = organizations.find(o => o.slug === slug);
             return org ? normalizeOrganization(org) : null;
@@ -121,16 +121,16 @@ export function useOrganizationByIdentifier(identifier: string | null) {
             const result = await authClient.organization.list();
 
             // Handle different response structures
-            let organizations: Organization[] = [];
+            let organizations: BetterAuthOrganization[] = [];
             if (Array.isArray(result)) {
                 // Direct array response
-                organizations = result as unknown as Organization[];
+                organizations = result as unknown as BetterAuthOrganization[];
             } else if (result && typeof result === 'object') {
                 // Object with data property
                 if ('data' in result && Array.isArray(result.data)) {
-                    organizations = result.data as unknown as Organization[];
+                    organizations = result.data as unknown as BetterAuthOrganization[];
                 } else if ('organizations' in result && Array.isArray(result.organizations)) {
-                    organizations = result.organizations as unknown as Organization[];
+                    organizations = result.organizations as unknown as BetterAuthOrganization[];
                 }
             }
 
@@ -193,7 +193,7 @@ export function useUpdateOrganization() {
             return await authClient.organization.update({
                 data: {
                     name: values.name,
-                    description: values.description,
+                    description: values.description ?? undefined,
                 },
                 organizationId: values.id,
             });

@@ -74,7 +74,6 @@ export default function OrganizationsTable() {
             header: '',
             id: 'go-to-activity',
             cell: ({ row }) => {
-                const organizationRow = row.original;
                 // Use ID for the URL - ensure we're using the actual ID, not slug
                 // Explicitly check that we're not accidentally using the slug
                 const organizationId = row.original.id;
