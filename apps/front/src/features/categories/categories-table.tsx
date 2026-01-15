@@ -8,10 +8,10 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
 import EditCategoryFormModal from '@/features/categories/category-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import * as LucideIcons from 'lucide-react';
-import type { Category } from '@/schemas/category';
+import type { Category } from '@/features/categories/category';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 
 // Tipo que viene de Convex

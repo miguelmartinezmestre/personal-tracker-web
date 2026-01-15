@@ -7,7 +7,7 @@ import { CircularProgress } from '@repo/ui/components/circular-progress';
 import { StatusIndicator } from '@repo/ui/components/status-indicator';
 import { QuickActions } from './quick-actions';
 import { Calendar, Target, TrendingUp, ChevronRight, AlertCircle } from 'lucide-react';
-import { Objective } from '@/schemas/objective';
+import { Objective } from '@/features/objectives/objective';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -164,8 +164,8 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                 {progress >= 75
                                     ? t('onTrack')
                                     : progress >= 50
-                                      ? t('goodProgress')
-                                      : t('needsAttention')}
+                                        ? t('goodProgress')
+                                        : t('needsAttention')}
                             </span>
                         </div>
 

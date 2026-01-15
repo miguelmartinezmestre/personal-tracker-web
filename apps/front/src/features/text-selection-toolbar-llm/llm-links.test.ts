@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildLLMDeepLink } from '@/lib/llm-links';
+import { buildLLMDeepLink } from '@/features/text-selection-toolbar-llm/llm-links';
 
 describe('buildLLMDeepLink', () => {
     const message = 'hola mundo';

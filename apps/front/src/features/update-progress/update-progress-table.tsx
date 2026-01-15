@@ -4,7 +4,7 @@ import { DataTable } from '@/features/data-table/table';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
-import { UpdateProgress } from '@/schemas/update-progress';
+import { UpdateProgress } from '@/features/update-progress/update-progress';
 import { ObjectiveProgressGraph } from '@/features/objectives/objetive-graph';
 import UpdateProgressFormModal from '@/features/update-progress/update-progress-form-edit-modal';
 import { useParams } from 'next/navigation';
@@ -12,7 +12,7 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { Doc, Id } from '@repo/backend/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
 import { toast } from 'sonner';
 
 const DEFAULT_PAGE_SIZE = 20;

@@ -11,7 +11,7 @@ import { api } from '@repo/backend/convex/_generated/api';
 import { BetterAuthDataModel } from '@repo/backend/convex/rls';
 import { Badge } from '@repo/ui/components/badge';
 import { toast } from 'sonner';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_PAGINATION_OPTS = {

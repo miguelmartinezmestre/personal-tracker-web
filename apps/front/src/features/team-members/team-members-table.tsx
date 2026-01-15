@@ -4,10 +4,10 @@ import { DataTable } from '@/features/data-table/table';
 import { useDeleteTeamMember, useTeamMembers } from '@/features/team-members/use-team-members';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@repo/ui/components/button';
-import { TeamMember } from '@/schemas/team-member';
+import { TeamMember } from '@/features/team-members/team-member';
 import TeamMemberEditFormModal from '@/features/team-members/team-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
 import { toast } from 'sonner';
 
 interface TeamMembersTableProps {

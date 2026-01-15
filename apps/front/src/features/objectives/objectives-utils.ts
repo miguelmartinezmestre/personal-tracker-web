@@ -1,6 +1,6 @@
 import type { Doc } from '@repo/backend/convex/_generated/dataModel';
-import type { Objective } from '@/schemas/objective';
-import { objectiveTypeSchema, periodSchema, savedObjectiveSchema } from '@/schemas/objective';
+import type { Objective } from '@/features/objectives/objective';
+import { objectiveTypeSchema, periodSchema, savedObjectiveSchema } from '@/features/objectives/objective';
 
 const DEFAULT_PAGE_SIZE = 20;
 

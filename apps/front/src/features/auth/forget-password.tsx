@@ -16,8 +16,8 @@ import { Input } from '@repo/ui/components/input';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
-import { forgetPasswordSchema } from '@/schemas/forget-password';
-import { authClient } from '@/lib/auth-client';
+import { forgetPasswordSchema } from '@/features/auth/forget-password';
+import { authClient } from '@/features/auth/auth-client';
 
 export default function ForgetPasswordForm() {
     const tCommon = useTranslations('Common');

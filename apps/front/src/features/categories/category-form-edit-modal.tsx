@@ -33,12 +33,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@repo/ui/components/select';
-import { savedCategorySchema, Category } from '@/schemas/category';
+import { savedCategorySchema, Category } from '@/features/categories/category';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { categoryIconSchema } from '@/schemas/category';
+import { categoryIconSchema } from '@/features/categories/category';
 
 const colorOptions = [
     { value: '#ef4444', label: 'Red' },

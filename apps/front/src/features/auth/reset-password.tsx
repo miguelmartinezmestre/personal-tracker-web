@@ -17,9 +17,9 @@ import { useState } from 'react';
 import { Button } from '@repo/ui/components/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { resetPasswordSchema } from '@/schemas/reset-password';
+import { resetPasswordSchema } from '@/features/auth/reset-password';
 import { useSearchParams } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 export default function ResetPassword() {
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');

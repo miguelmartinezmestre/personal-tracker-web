@@ -2,7 +2,7 @@
 
 import { cn } from '@repo/ui/lib/utils';
 import { Trophy, Target, CheckCircle, Flame, TrendingUp, Clock, Users, Lock } from 'lucide-react';
-import type { AchievementTier } from '@/schemas/achievement';
+import type { AchievementTier } from '@/features/achievements/achievement';
 import {
     Tooltip,
     TooltipContent,

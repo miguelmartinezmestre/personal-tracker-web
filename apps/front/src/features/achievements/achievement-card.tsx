@@ -6,7 +6,7 @@ import { Progress } from '@repo/ui/components/progress';
 import { cn } from '@repo/ui/lib/utils';
 import { useTranslations } from 'next-intl';
 import { AchievementBadge } from './achievement-badge';
-import type { AchievementDefinition, AchievementTier } from '@/schemas/achievement';
+import type { AchievementDefinition, AchievementTier } from '@/features/achievements/achievement';
 
 const TIER_LABELS: Record<AchievementTier, string> = {
     bronze: 'Bronze',

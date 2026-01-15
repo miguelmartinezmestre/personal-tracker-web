@@ -11,7 +11,7 @@ import {
 } from '@repo/ui/components/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 import { useTeams } from '@/features/teams/use-teams';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';

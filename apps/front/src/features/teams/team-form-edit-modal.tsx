@@ -25,7 +25,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { Team, savedTeamSchema } from '@/schemas/team';
+import { Team, savedTeamSchema } from '@/features/teams/team';
 import { useTranslations } from 'next-intl';
 import { useUpdateTeam } from '@/features/teams/use-teams';
 

@@ -14,10 +14,10 @@ import {
     FormMessage,
 } from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
-import { accountDetailsSchema } from '@/schemas/account-details';
+import { accountDetailsSchema } from '@/features/settings/account-details';
 import { DialogFooter } from '@repo/ui/components/dialog';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 
 export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');

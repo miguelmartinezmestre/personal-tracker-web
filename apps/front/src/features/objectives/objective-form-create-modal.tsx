@@ -40,7 +40,7 @@ import {
     objectiveSchema,
     objectiveTypeSchema,
     periodSchema,
-} from '@/schemas/objective';
+} from '@/features/objectives/objective';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';

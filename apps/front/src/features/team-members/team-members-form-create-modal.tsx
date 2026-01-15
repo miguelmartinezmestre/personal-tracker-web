@@ -23,7 +23,7 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@repo/ui/components/dialog';
-import { CreateTeamMember, teamMemberSchema } from '@/schemas/team-member';
+import { CreateTeamMember, teamMemberSchema } from '@/features/team-members/team-member';
 import {
     Select,
     SelectItem,
@@ -31,7 +31,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@repo/ui/components/select';
-import { TeamRole } from '@/schemas/roles';
+import { TeamRole } from '@/features/team-members/roles';
 import { useTranslations } from 'next-intl';
 import { useCreateTeamMember } from '@/features/team-members/use-team-members';
 

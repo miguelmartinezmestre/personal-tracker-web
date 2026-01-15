@@ -11,7 +11,7 @@ import {
     Form,
 } from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
-import { registerSchema } from '@/schemas/register';
+import { registerSchema } from '@/features/auth/register';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
@@ -19,7 +19,7 @@ import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 
 export default function RegisterForm() {
     const router = useRouter();

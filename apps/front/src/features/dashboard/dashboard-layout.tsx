@@ -2,7 +2,7 @@ import { AppSidebar } from '@/features/dashboard/app-sidebar';
 import { ThemeToggle } from '@/features/theme/theme-switcher';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@repo/ui/components/sidebar';
 import CommandMenu from '@/features/dashboard/command';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { LanguageSwitcher } from '@/features/landing/language-switcher';
 import { OrganizationSwitcher } from '@/features/teams/organization-switcher';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {

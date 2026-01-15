@@ -1,11 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@repo/ui/hooks/use-mobile';
 import { DataTableAdvanced } from '@/features/data-table/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { ObjectiveCard } from './objective-card';
-import { Objective } from '@/schemas/objective';
+import { Objective } from '@/features/objectives/objective';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -19,7 +19,7 @@ import { CircularProgress } from '@repo/ui/components/circular-progress';
 import { StatusIndicator } from '@repo/ui/components/status-indicator';
 import Link from 'next/link';
 import { QuickActions } from './quick-actions';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { normalizeObjective } from '@/features/objectives/objectives-utils';
 

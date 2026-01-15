@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import NavBar from '@/components/navbar';
+import NavBar from '@/features/landing/navbar';
 
 // Mock next-intl
 vi.mock('next-intl', () => ({

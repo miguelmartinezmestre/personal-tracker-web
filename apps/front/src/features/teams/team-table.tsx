@@ -7,9 +7,9 @@ import { Button } from '@repo/ui/components/button';
 import Link from 'next/link';
 import EditTeamFormModal from '@/features/teams/team-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import type { Team } from '@/schemas/team';
+import type { Team } from '@/features/teams/team';
 
 export default function TeamsTable() {
     const t = useTranslations('Teams');

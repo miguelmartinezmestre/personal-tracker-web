@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authClient } from '@/lib/auth-client';
-import type { CreateTeam, Team } from '@/schemas/team';
+import { authClient } from '@/features/auth/auth-client';
+import type { CreateTeam, Team } from '@/features/teams/team';
 
 /**
  * Tipos para las operaciones de equipos
@@ -34,7 +34,7 @@ const normalizeTeam = (org: Organization): Team => {
     // Ensure we're using the actual ID, not the slug
     const teamId = String(org.id);
     const teamSlug = org.slug ?? '';
-    
+
     return {
         id: teamId,
         name: org.name,
@@ -116,7 +116,7 @@ export function useTeamByIdentifier(identifier: string | null) {
             if (!identifier) return null;
             // Fetch all organizations
             const result = await authClient.organization.list();
-            
+
             // Handle different response structures
             let organizations: Organization[] = [];
             if (Array.isArray(result)) {
@@ -130,7 +130,7 @@ export function useTeamByIdentifier(identifier: string | null) {
                     organizations = result.organizations as unknown as Organization[];
                 }
             }
-            
+
             // First try to find by slug (handle null/undefined cases)
             let org = organizations.find(o => {
                 const slug = o.slug;
@@ -140,13 +140,13 @@ export function useTeamByIdentifier(identifier: string | null) {
                 const identifierStr = String(identifier).trim();
                 return slugStr === identifierStr;
             });
-            
-            
+
+
             // If not found by slug, try to find by ID
             if (!org) {
                 org = organizations.find(o => String(o.id).trim() === String(identifier).trim());
             }
-            
+
             return org ? normalizeTeam(org) : null;
         },
         enabled: !!identifier,

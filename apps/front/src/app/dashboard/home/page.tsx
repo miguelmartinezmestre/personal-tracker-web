@@ -13,7 +13,8 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 
 export default function HomePage() {
-    const { data: user } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const { data: user, isLoading: isUserLoading } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    console.log(user);
     const searchParams = useSearchParams();
     const [showAlert, setShowAlert] = useState(false);
 
@@ -29,6 +30,10 @@ export default function HomePage() {
 
     const error = searchParams.get('error');
     const redirect = searchParams.get('redirect');
+
+    if (isUserLoading) {
+        return <div>Loading...</div>;
+    }
 
     if (error && showAlert) {
         const alertContent =
@@ -75,7 +80,7 @@ export default function HomePage() {
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
                 <p data-testid="welcome-message" data-tour="welcome-message" className="text-muted-foreground">
-                    {t('welcome', { name: user.name })}
+                    {/* {t('welcome', { name: user.name })} */}
                 </p>
             </div>
 

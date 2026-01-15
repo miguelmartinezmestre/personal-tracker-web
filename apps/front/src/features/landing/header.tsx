@@ -1,7 +1,7 @@
 'use client';
 
 import { X, Menu } from 'lucide-react';
-import NavBar from '@/components/navbar';
+import NavBar from '@/features/landing/navbar';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';

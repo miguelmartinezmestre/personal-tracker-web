@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@repo/ui/components/select';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';

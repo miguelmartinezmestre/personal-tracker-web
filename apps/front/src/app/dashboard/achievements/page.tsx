@@ -10,9 +10,9 @@ import { Skeleton } from '@repo/ui/components/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { achievementProgressSchema, type AchievementProgress } from '@/schemas/achievement';
+import { achievementProgressSchema, type AchievementProgress } from '@/features/achievements/achievement';
 import { AchievementCard } from '@/features/achievements/achievement-card';
-import type { AchievementTier } from '@/schemas/achievement';
+import type { AchievementTier } from '@/features/achievements/achievement';
 
 export default function AchievementsPage() {
     const t = useTranslations('Achievements');

@@ -3,7 +3,7 @@ import { ThemeToggle } from '@/features/theme/theme-switcher';
 import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 import type { Route } from 'next';
 
 type LinkItem = { name: string; href: Route };

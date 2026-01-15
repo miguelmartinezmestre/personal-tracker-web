@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@repo/ui/components/button';
 import { Input } from '@repo/ui/components/input';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 import { DataTable } from '@/features/data-table/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@repo/ui/components/badge';
@@ -45,8 +45,8 @@ export function UserSessions() {
         sessions && 'data' in sessions && sessions.data
             ? sessions.data.sessions
             : sessions && 'sessions' in sessions
-              ? sessions.sessions
-              : [];
+                ? sessions.sessions
+                : [];
 
     const revokeSession = useMutation({
         mutationFn: async ({ sessionToken }: { sessionToken: string }) => {

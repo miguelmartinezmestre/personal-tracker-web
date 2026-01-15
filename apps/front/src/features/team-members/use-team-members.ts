@@ -1,9 +1,9 @@
 'use client';
 
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { authClient } from '@/lib/auth-client';
-import type { TeamMember } from '@/schemas/team-member';
-import { TeamRole } from '@/schemas/roles';
+import { authClient } from '@/features/auth/auth-client';
+import type { TeamMember } from '@/features/team-members/team-member';
+import { TeamRole } from '@/features/team-members/roles';
 
 /**
  * Tipos para las operaciones de miembros de equipo

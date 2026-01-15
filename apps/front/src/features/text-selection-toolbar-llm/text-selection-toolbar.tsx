@@ -10,8 +10,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@repo/ui/components/tooltip';
-import { useTextSelection } from '@/hooks/use-text-selection';
-import { buildLLMDeepLink, type LLMProvider } from '@/lib/llm-links';
+import { useTextSelection } from '@/features/text-selection-toolbar-llm/use-text-selection';
+import { buildLLMDeepLink, type LLMProvider } from '@/features/text-selection-toolbar-llm/llm-links';
 
 const LLM_PROVIDERS: Array<{
     id: LLMProvider;
@@ -19,11 +19,11 @@ const LLM_PROVIDERS: Array<{
     color: string;
     hoverColor: string;
 }> = [
-    { id: 'chatgpt', name: 'ChatGPT', color: 'text-[#10a37f]', hoverColor: 'hover:bg-[#10a37f]/10' },
-    { id: 'copilot', name: 'Copilot', color: 'text-[#0078d4]', hoverColor: 'hover:bg-[#0078d4]/10' },
-    { id: 'claude', name: 'Claude', color: 'text-[#d97706]', hoverColor: 'hover:bg-[#d97706]/10' },
-    { id: 'perplexity', name: 'Perplexity', color: 'text-[#20b2aa]', hoverColor: 'hover:bg-[#20b2aa]/10' },
-];
+        { id: 'chatgpt', name: 'ChatGPT', color: 'text-[#10a37f]', hoverColor: 'hover:bg-[#10a37f]/10' },
+        { id: 'copilot', name: 'Copilot', color: 'text-[#0078d4]', hoverColor: 'hover:bg-[#0078d4]/10' },
+        { id: 'claude', name: 'Claude', color: 'text-[#d97706]', hoverColor: 'hover:bg-[#d97706]/10' },
+        { id: 'perplexity', name: 'Perplexity', color: 'text-[#20b2aa]', hoverColor: 'hover:bg-[#20b2aa]/10' },
+    ];
 
 function ChatGPTIcon({ className }: { className?: string }) {
     return (

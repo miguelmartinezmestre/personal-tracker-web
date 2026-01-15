@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient, useSuspenseQuery, useQuery } from '@tanstack/react-query';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 
 const INVITATIONS_QUERY_KEY = ['user-invitations'];
 

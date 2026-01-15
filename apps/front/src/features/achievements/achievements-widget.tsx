@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
-import type { AchievementTier } from '@/schemas/achievement';
+import type { AchievementTier } from '@/features/achievements/achievement';
 import { cn } from '@repo/ui/lib/utils';
 
 interface AchievementsWidgetProps {

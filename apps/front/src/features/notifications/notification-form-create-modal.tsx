@@ -37,7 +37,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@repo/ui/components/popover';
 import { Calendar } from '@repo/ui/components/calendar';
 import { cn } from '@repo/ui/lib/utils';
-import { CreateNotification, notificationSchema } from '@/schemas/notification';
+import { CreateNotification, notificationSchema } from '@/features/notifications/notification';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import type { Doc, Id } from '@repo/backend/convex/_generated/dataModel';

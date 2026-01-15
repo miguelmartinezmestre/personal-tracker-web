@@ -28,7 +28,7 @@ import {
     DialogFooter,
 } from '@repo/ui/components/dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CreateUpdateProgress, updateProgressSchema } from '@/schemas/update-progress';
+import { CreateUpdateProgress, updateProgressSchema } from '@/features/update-progress/update-progress';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -57,18 +57,18 @@ export default function CreateUpdateProgressFormModal() {
         objectiveType === 'count'
             ? t('valueLabels.count')
             : objectiveType === 'money'
-              ? t('valueLabels.money')
-              : objectiveType === 'duration'
-                ? t('valueLabels.duration')
-                : t('valueLabels.value');
+                ? t('valueLabels.money')
+                : objectiveType === 'duration'
+                    ? t('valueLabels.duration')
+                    : t('valueLabels.value');
     const updatedValuePlaceholder =
         objectiveType === 'count'
             ? t('valuePlaceholders.count')
             : objectiveType === 'money'
-              ? t('valuePlaceholders.money')
-              : objectiveType === 'duration'
-                ? t('valuePlaceholders.duration')
-                : t('valuePlaceholders.value');
+                ? t('valuePlaceholders.money')
+                : objectiveType === 'duration'
+                    ? t('valuePlaceholders.duration')
+                    : t('valuePlaceholders.value');
     const form = useForm<CreateUpdateProgress>({
         defaultValues: {
             comment: '',

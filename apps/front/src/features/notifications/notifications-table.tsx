@@ -13,8 +13,8 @@ import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import { toast } from 'sonner';
 import { DataTable } from '@/features/data-table/table';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
-import { useServerPagination } from '@/hooks/use-server-pagination';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
+import { useServerPagination } from '@/features/data-table/hooks/use-server-pagination';
 
 const DEFAULT_PAGE_SIZE = 20;
 

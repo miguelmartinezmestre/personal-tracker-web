@@ -12,14 +12,14 @@ import {
     Form,
 } from '@repo/ui/components/form-tanstack';
 import { Input } from '@repo/ui/components/input';
-import { loginSchema } from '@/schemas/login';
+import { loginSchema } from '@/features/auth/login';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from '@/features/auth/auth-client';
 
 export default function LoginForm() {
     const router = useRouter();

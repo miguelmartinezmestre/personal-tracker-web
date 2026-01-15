@@ -2,7 +2,7 @@
 
 import { DataTableAdvanced } from '@/features/data-table/table';
 import { ColumnDef } from '@tanstack/react-table';
-import { Objective } from '@/schemas/objective';
+import { Objective } from '@/features/objectives/objective';
 import { Button } from '@repo/ui/components/button';
 import { CircularProgress } from '@repo/ui/components/circular-progress';
 import { StatusIndicator } from '@repo/ui/components/status-indicator';
@@ -11,7 +11,7 @@ import EditObjectiveFormModal from '@/features/objectives/objective-form-edit-mo
 import { QuickActions } from '@/features/objectives/quick-actions';
 import { useTranslations } from 'next-intl';
 import { Id } from '@repo/backend/convex/_generated/dataModel';
-import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/features/data-table/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
