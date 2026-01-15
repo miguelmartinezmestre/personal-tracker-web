@@ -13,6 +13,7 @@ export default defineConfig({
         setupFiles: ['./apps/front/vitest.setup.ts'],
         include: [
             'packages/backend/convex/tests/**/*.test.ts',
+            'apps/front/src/features/**/*.test.{ts,tsx}',
             'apps/front/tests/**/*.test.{ts,tsx}',
             'apps/front/tests/**/*.spec.{ts,tsx}',
         ],
