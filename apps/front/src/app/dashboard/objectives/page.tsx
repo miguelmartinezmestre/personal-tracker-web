@@ -7,14 +7,16 @@ import { preloadAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@repo/backend/convex/_generated/api';
 
 export default async function ObjectivesPage() {
-    const t = await getTranslations('Objectives');
-
-    const preloadedObjectivesQuery=await preloadAuthQuery(api.objectives.getObjectivesByUser, {
-        paginationOpts: {
-            numItems: 1000,
-            cursor: null,
-        },
-    });
+    // Start all promises in parallel
+    const [t, preloadedObjectivesQuery] = await Promise.all([
+        getTranslations('Objectives'),
+        preloadAuthQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: {
+                numItems: 1000,
+                cursor: null,
+            },
+        }),
+    ]);
 
     return (
         <div className="space-y-6">
