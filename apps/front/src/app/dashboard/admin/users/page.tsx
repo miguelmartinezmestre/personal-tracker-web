@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
                     <CardDescription>{t('userManagementDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UsersTable data-tour="admin-users-table" />
+                    <UsersTable />
                 </CardContent>
             </Card>
         </div>

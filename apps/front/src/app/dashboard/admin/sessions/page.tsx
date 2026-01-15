@@ -28,7 +28,7 @@ export default function AdminSessionsPage() {
                     <CardDescription>{t('sessionManagementDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UserSessions data-tour="admin-sessions" />
+                    <UserSessions />
                 </CardContent>
             </Card>
         </div>

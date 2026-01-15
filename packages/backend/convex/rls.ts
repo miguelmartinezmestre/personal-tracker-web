@@ -305,23 +305,6 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return false;
             },
         },
-        userTours: {
-            read: async (_, tour) => {
-                if (!userId) return false;
-                if (isAdmin) return true;
-                return tour.user === userId;
-            },
-            insert: async (_, tour) => {
-                if (!userId) return false;
-                if (isAdmin) return true;
-                return tour.user === userId;
-            },
-            modify: async (_, tour) => {
-                if (!userId) return false;
-                if (isAdmin) return true;
-                return tour.user === userId;
-            },
-        },
     } satisfies Rules<QueryCtx, DataModel>;
 }
 

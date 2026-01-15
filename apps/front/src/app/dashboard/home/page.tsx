@@ -83,7 +83,6 @@ export default function HomePage() {
                 <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
                 <p
                     data-testid="welcome-message"
-                    data-tour="welcome-message"
                     className="text-muted-foreground"
                 >
                     {/* {t('welcome', { name: user.name })} */}

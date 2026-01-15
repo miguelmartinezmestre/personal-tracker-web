@@ -13,10 +13,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <header className="flex h-16 shrink-0 items-center px-4 justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ml-1" />
-                        {/* Hidden element for tour targeting - available on all dashboard pages */}
-                        <span data-tour="welcome-message" className="sr-only" aria-hidden="true">
-                            Dashboard welcome message
-                        </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <OrganizationSwitcher />

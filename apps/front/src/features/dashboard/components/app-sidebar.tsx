@@ -133,7 +133,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // }, [isAdmin]);
 
     return (
-        <Sidebar collapsible="icon" data-testid="app-sidebar" data-tour="sidebar-menu" {...props}>
+        <Sidebar collapsible="icon" data-testid="app-sidebar" {...props}>
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -149,27 +149,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenu data-testid="sidebar-menu">
                         {/* {projects.map(item => {
                             const isActive = pathname === item.url;
-                            // Add data-tour attribute for specific menu items
-                            const tourAttr = item.name === 'home'
-                                ? 'sidebar-home'
-                                : item.name === 'objectives'
-                                    ? 'sidebar-objectives'
-                                    : item.name === 'achievements'
-                                        ? 'sidebar-achievements'
-                                        : item.name === 'settings'
-                                            ? 'sidebar-settings'
-                                            : item.name === 'adminSessions'
-                                                ? 'sidebar-admin-sessions'
-                                                : item.name === 'adminAudit'
-                                                    ? 'sidebar-admin-audit'
-                                                    : undefined;
                             return (
                                 <SidebarMenuItem key={item.name}>
                                     <SidebarMenuButton asChild>
                                         <Link
                                             href={item.url}
                                             prefetch={false}
-                                            data-tour={tourAttr}
                                             className={cn(
                                                 'relative transition-all duration-200',
                                                 isActive
