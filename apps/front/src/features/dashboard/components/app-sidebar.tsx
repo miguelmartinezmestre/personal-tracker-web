@@ -6,18 +6,17 @@ import {
     Frame,
     Goal,
     Home,
-    Shield,
     Trophy,
     Settings,
     Users,
     Activity,
     Tag,
+    Loader2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarGroup,
     SidebarHeader,
     SidebarMenu,
@@ -30,6 +29,9 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@repo/ui/lib/utils';
+import { convexQuery } from '@convex-dev/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@repo/backend/convex/_generated/api';
 
 type ProjectNavItem = {
     name: string;
@@ -80,57 +82,42 @@ const baseProjects: ProjectNavItem[] = [
     },
 ];
 
-// Helper to check if a role is admin
-function isAdminRole(role: string | string[] | undefined): boolean {
-    if (!role) return false;
-    if (role === 'admin') return true;
-    if (Array.isArray(role)) {
-        return role.includes('admin');
-    }
-    return false;
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
 
-    // Use context user first (more efficient), fallback to useUserRole if needed
-    // let user: ReturnType<typeof useUser> | null = null;
-    // let isAdmin = false;
-    // try {
-    //     user = useUser();
-    //     // User is authenticated if we have context user
-    //     isAdmin = isAdminRole((user as { role?: string | string[] })?.role);
-    // } catch {
-    //     // Fallback to useUserRole if context not available (shouldn't happen in dashboard)
-    //     const userRole = useUserRole();
-    //     isAdmin = userRole.isAdmin;
-    // }
+    const { data: user, isLoading: isUserLoading } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+
+    const isAdmin = user?.role === 'admin';
 
     // Construir la lista de proyectos incluyendo admin si es necesario
-    // const projects = useMemo(() => {
-    //     const items = [...baseProjects];
-    //     if (isAdmin) {
-    //         items.push(
-    //             {
-    //                 name: 'users',
-    //                 url: '/dashboard/admin/users' as Route,
-    //                 icon: Users,
-    //             },
-    //             {
-    //                 name: 'adminSessions',
-    //                 url: '/dashboard/admin/sessions' as Route,
-    //                 icon: Activity,
-    //             },
-    //             {
-    //                 name: 'adminAudit',
-    //                 url: '/dashboard/admin/audit' as Route,
-    //                 icon: FileText,
-    //             }
-    //         );
-    //     }
-    //     return items;
-    // }, [isAdmin]);
+    const projects = useMemo(() => {
+        const items = [...baseProjects];
+        if (isAdmin) {
+            items.push(
+                {
+                    name: 'users',
+                    url: '/dashboard/admin/users' as Route,
+                    icon: Users,
+                },
+                {
+                    name: 'adminSessions',
+                    url: '/dashboard/admin/sessions' as Route,
+                    icon: Activity,
+                },
+                {
+                    name: 'adminAudit',
+                    url: '/dashboard/admin/audit' as Route,
+                    icon: FileText,
+                }
+            );
+        }
+        return items;
+    }, [isAdmin]);
+
+    if (isUserLoading) {
+        return <Loader2 className="animate-spin" />;
+    }
 
     return (
         <Sidebar collapsible="icon" data-testid="app-sidebar" {...props}>
@@ -147,7 +134,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <SidebarMenu data-testid="sidebar-menu">
-                        {/* {projects.map(item => {
+                        {projects.map(item => {
                             const isActive = pathname === item.url;
                             return (
                                 <SidebarMenuItem key={item.name}>
@@ -176,19 +163,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             );
-                        })} */}
+                        })}
                     </SidebarMenu>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
-                {/* <NavUser
-                    user={{
-                        email: accountDetails.data?.email,
-                        name: accountDetails.data?.username,
-                        avatar: '',
-                    }}
-                /> */}
-            </SidebarFooter>
         </Sidebar>
     );
 }
