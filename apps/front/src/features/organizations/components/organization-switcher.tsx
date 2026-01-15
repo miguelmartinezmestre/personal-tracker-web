@@ -10,23 +10,34 @@ import {
     DropdownMenuSeparator,
 } from '@repo/ui/components/dropdown-menu';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
 import { authClient } from '@/features/auth/auth-client';
-import { useOrganizations } from '@/features/organizations/hooks/use-organizations';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 
 export function OrganizationSwitcher() {
     const t = useTranslations('OrganizationSwitcher');
     const router = useRouter();
-    const [isClient, setIsClient] = useState(false);
+    const queryClient = useQueryClient();
+    const [{data: activeOrganizationData}, {data: organizationsData, isPending: isLoadingOrganizations}] = useQueries({
+        queries: [
+        {
+            queryKey: ['activeOrganization'],
+            queryFn: async () => {
+                const result = await authClient.organization.getActiveMember();
+                return result.data;
+            },
+        },
+        {
+            queryKey: ['organizations'],
+            queryFn: async () => {
+                const result = await authClient.organization.list();
+                return result.data;
+            },
+        },
+    ]});
 
-    // Get active organization using BetterAuth's hook
-    const activeOrganizationQuery = authClient.useActiveOrganization();
-    const activeOrganizationId = activeOrganizationQuery.data?.id as string | undefined;
-
-    // Get all user's organizations
-    const { data: organizations, isLoading: isLoadingOrganizations } = useOrganizations();
+    const activeOrganizationId = activeOrganizationData?.organizationId as string | undefined;
+    const organizations = organizationsData;
 
     // Set active organization mutation
     const setActiveMutation = useMutation({
@@ -38,30 +49,10 @@ export function OrganizationSwitcher() {
         onSuccess: () => {
             // Refresh to update the session
             router.refresh();
+            queryClient.invalidateQueries({ queryKey: ['activeOrganization'] });
+            queryClient.invalidateQueries({ queryKey: ['organizations'] });
         },
     });
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    if (!isClient) {
-        return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
-                        <Building className="h-4 w-4" />
-                        <span className="sr-only">{t('label')}</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                        <span className="ml-2">{t('loading')}</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        );
-    }
 
     const activeOrganization = organizations?.find(
         organization => organization.id === activeOrganizationId
