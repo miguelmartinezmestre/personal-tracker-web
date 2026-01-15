@@ -11,22 +11,23 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
-import { cn } from '@repo/ui/lib/utils';
+import { Preloaded } from 'convex/react';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 
-interface AchievementsWidgetProps {
-    limit?: number;
-}
+export function AchievementsWidget({
+    preloadedUserAchievementStatsQuery,
+    preloadedUserRecentAchievementsQuery,
+}: {
+    preloadedUserAchievementStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
+    preloadedUserRecentAchievementsQuery: Preloaded<typeof api.achievements.getRecentAchievements>;
+}) {
 
-export function AchievementsWidget({ limit = 4 }: AchievementsWidgetProps) {
+    const stats = usePreloadedAuthQuery(preloadedUserAchievementStatsQuery);
+    const recentAchievements = usePreloadedAuthQuery(preloadedUserRecentAchievementsQuery);
+
     const t = useTranslations('Achievements');
-    const { data: stats, isLoading: statsLoading } = useQuery(
-        convexQuery(api.achievements.getUserAchievementStats, {})
-    );
-    const { data: recentAchievements, isLoading: achievementsLoading } = useQuery(
-        convexQuery(api.achievements.getRecentAchievements, { limit })
-    );
 
-    const isLoading = statsLoading || achievementsLoading;
+    const isLoading = !stats || !recentAchievements;
 
     if (isLoading) {
         return (

@@ -32,6 +32,8 @@ import { cn } from '@repo/ui/lib/utils';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
+import { Preloaded } from 'convex/react';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 
 type ProjectNavItem = {
     name: string;
@@ -82,11 +84,15 @@ const baseProjects: ProjectNavItem[] = [
     },
 ];
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+    preloadedUserQuery,
+}: {
+    preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
+}) {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
 
-    const { data: user, isLoading: isUserLoading } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const user = usePreloadedAuthQuery(preloadedUserQuery);
 
     const isAdmin = user?.role === 'admin';
 
@@ -115,12 +121,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         return items;
     }, [isAdmin]);
 
-    if (isUserLoading) {
-        return <Loader2 className="animate-spin" />;
-    }
-
     return (
-        <Sidebar collapsible="icon" data-testid="app-sidebar" {...props}>
+        <Sidebar collapsible="icon" data-testid="app-sidebar">
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -156,9 +158,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                 )}
                                             />
                                             {t(item.name)}
-                                            {isActive && (
-                                                <span className="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-primary" />
-                                            )}
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
