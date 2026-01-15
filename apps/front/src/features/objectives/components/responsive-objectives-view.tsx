@@ -25,6 +25,7 @@ import { normalizeObjective } from './objectives-utils';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { Preloaded } from 'convex/react';
 
+// Hoist static constants outside component to avoid recreation on every render
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',
     status: 'all',
@@ -37,6 +38,9 @@ const ITEMS_PER_PAGE = 10;
 
 // Load more items at once for objectives (no backend limit)
 const LARGE_PAGE_SIZE = 1000;
+
+// Static skeleton array for loading state
+const SKELETON_PLACEHOLDERS = [1, 2, 3];
 
 const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser> }>(({ preloadedObjectivesQuery }, ref) => {
     const isMobile = useIsMobile();
@@ -320,11 +324,11 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObj
                 />
                 {!fetchedObjectives ? (
                     <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => (
+                        {SKELETON_PLACEHOLDERS.map(i => (
                             <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
                         ))}
                     </div>
-                ) : filteredObjectives?.page.length === 0 ? (
+                ) : filteredObjectives?.length === 0 ? (
                     <div className="text-center py-8">
                         <p className="text-muted-foreground">{t('empty.noObjectivesFound')}</p>
                     </div>
