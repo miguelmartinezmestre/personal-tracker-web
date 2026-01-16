@@ -59,7 +59,7 @@ export async function createTestUser(
             .first();
 
         if (existing) {
-            await ctx.db.patch(existing._id, {
+            await ctx.db.patch("user",existing._id, {
                 name,
                 email,
                 emailVerified: emailVerified ?? false,

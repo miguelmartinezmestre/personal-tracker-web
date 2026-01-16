@@ -221,7 +221,7 @@ export const getUserAchievements = queryWithRLS({
         // Get achievement definitions for each earned achievement
         const achievementsWithDetails = await Promise.all(
             userAchievements.map(async ua => {
-                const definition = await ctx.db.get(ua.achievement);
+                const definition = await ctx.db.get("achievementDefinitions", ua.achievement);
                 return {
                     ...ua,
                     definition,
@@ -245,7 +245,7 @@ export const getOrganizationAchievements = queryWithRLS({
 
         const achievementsWithDetails = await Promise.all(
             organizationAchievements.map(async oa => {
-                const definition = await ctx.db.get(oa.achievement);
+                const definition = await ctx.db.get("achievementDefinitions", oa.achievement);
                 return {
                     ...oa,
                     definition,
@@ -269,7 +269,7 @@ export const getUserAchievementStats = queryWithRLS({
 
         let totalPoints = 0;
         for (const ua of userAchievements) {
-            const definition = await ctx.db.get(ua.achievement);
+            const definition = await ctx.db.get("achievementDefinitions", ua.achievement);
             if (definition) {
                 totalPoints += definition.points;
             }
@@ -306,7 +306,7 @@ export const getRecentAchievements = queryWithRLS({
 
         const achievementsWithDetails = await Promise.all(
             userAchievements.map(async ua => {
-                const definition = await ctx.db.get(ua.achievement);
+                const definition = await ctx.db.get("achievementDefinitions", ua.achievement);
                 return {
                     ...ua,
                     definition,
@@ -530,7 +530,7 @@ export const checkUserAchievements = internalMutation({
         const earnedCodes = new Set(
             await Promise.all(
                 earnedAchievements.map(async ea => {
-                    const def = await ctx.db.get(ea.achievement);
+                    const def = await ctx.db.get("achievementDefinitions", ea.achievement);
                     return def?.code;
                 })
             )
@@ -729,7 +729,7 @@ export const checkOrganizationAchievements = internalMutation({
         const earnedCodes = new Set(
             await Promise.all(
                 earnedAchievements.map(async ea => {
-                    const def = await ctx.db.get(ea.achievement);
+                    const def = await ctx.db.get("achievementDefinitions", ea.achievement);
                     return def?.code;
                 })
             )

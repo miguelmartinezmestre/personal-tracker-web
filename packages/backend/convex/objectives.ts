@@ -205,7 +205,7 @@ export const getObjectiveById = queryWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        const objective = (await ctx.db.get(args.id)) as ObjectiveWithPeriod | null;
+        const objective = (await ctx.db.get("objectives", args.id)) as ObjectiveWithPeriod | null;
         if (!objective) return null;
 
         const objectiveType = objective.objectiveType ?? 'value';
@@ -339,13 +339,13 @@ export const updateObjective = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
-        const existing = await ctx.db.get(id);
+        const existing = await ctx.db.get("objectives", id);
         if (!existing) {
             throw new Error('Objective not found');
         }
 
         const now = Date.now();
-        const updated = await ctx.db.patch(id, { ...rest, updatedAt: now });
+        const updated = await ctx.db.patch("objectives", id, { ...rest, updatedAt: now });
 
         if (args.deadline !== undefined && args.deadline !== existing.deadline) {
             const updatedTitle = args.title ?? existing.title;
@@ -383,9 +383,9 @@ export const deleteObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        const existing = await ctx.db.get(args.id);
+        const existing = await ctx.db.get("objectives", args.id);
 
-        const result = await ctx.db.delete(args.id);
+        const result = await ctx.db.delete("objectives", args.id);
 
         // Audit log
         if (existing) {
@@ -413,7 +413,7 @@ export const updateObjectiveStatus = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, status } = args;
-        const objective = await ctx.db.get(id);
+        const objective = await ctx.db.get("objectives", id);
         if (!objective) {
             throw new Error('Objective not found');
         }
@@ -423,7 +423,7 @@ export const updateObjectiveStatus = mutationWithRLS({
 
         const previousStatus = objective.status;
         const now = Date.now();
-        const updated = await ctx.db.patch(id, {
+        const updated = await ctx.db.patch("objectives", id, {
             status,
             updatedAt: now,
         });
@@ -459,7 +459,7 @@ export const completeObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        const objective = await ctx.db.get(args.id);
+        const objective = await ctx.db.get("objectives", args.id);
         if (!objective) {
             throw new Error('Objective not found');
         }
@@ -467,7 +467,7 @@ export const completeObjective = mutationWithRLS({
         const previousStatus = objective.status;
         const previousValue = objective.currentValue;
         const now = Date.now();
-        const updated = await ctx.db.patch(args.id, {
+        const updated = await ctx.db.patch("objectives", args.id, {
             status: 'completed',
             currentValue: objective.targetValue,
             updatedAt: now,
@@ -512,14 +512,14 @@ export const archiveObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        const objective = await ctx.db.get(args.id);
+        const objective = await ctx.db.get("objectives", args.id);
         if (!objective) {
             throw new Error('Objective not found');
         }
 
         const previousStatus = objective.status;
         const now = Date.now();
-        const updated = await ctx.db.patch(args.id, {
+        const updated = await ctx.db.patch("objectives", args.id, {
             status: 'archived',
             updatedAt: now,
         });
@@ -555,14 +555,14 @@ export const pauseObjective = mutationWithRLS({
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        const objective = await ctx.db.get(args.id);
+        const objective = await ctx.db.get("objectives", args.id);
         if (!objective) {
             throw new Error('Objective not found');
         }
 
         const previousStatus = objective.status;
         const now = Date.now();
-        const updated = await ctx.db.patch(args.id, {
+        const updated = await ctx.db.patch("objectives", args.id, {
             status: 'paused',
             updatedAt: now,
         });

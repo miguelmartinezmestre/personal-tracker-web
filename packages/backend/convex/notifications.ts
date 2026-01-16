@@ -80,7 +80,7 @@ export const createNotification = mutationWithRLS({
         // Only check user._id if betterAuth is available (not in tests)
         if (user && !user._id) throw new Error('User not authenticated');
 
-        const objective = await ctx.db.get(args.objective);
+        const objective = await ctx.db.get("objectives", args.objective);
         if (!objective) throw new Error('Objective not found');
 
         const role = String(ctx.identity?.role ?? 'user');
@@ -103,7 +103,7 @@ export const createNotification = mutationWithRLS({
             updatedAt: now,
         });
 
-        return await ctx.db.get(id);
+        return await ctx.db.get("notifications", id);
     },
 });
 
@@ -113,8 +113,8 @@ export const setNotificationRead = mutationWithRLS({
         read: v.boolean(),
     },
     handler: async (ctx, args) => {
-        await ctx.db.patch(args.id, { read: args.read, updatedAt: Date.now() });
-        return await ctx.db.get(args.id);
+        await ctx.db.patch("notifications", args.id, { read: args.read, updatedAt: Date.now() });
+        return await ctx.db.get("notifications", args.id);
     },
 });
 
@@ -131,7 +131,7 @@ export const markAllNotificationsRead = mutationWithRLS({
 
         for (const notification of notifications) {
             if (!notification.read) {
-                await ctx.db.patch(notification._id, { read: true, updatedAt: now });
+                await ctx.db.patch("notifications", notification._id, { read: true, updatedAt: now });
                 updated += 1;
             }
         }
@@ -145,7 +145,7 @@ export const deleteNotification = mutationWithRLS({
         id: v.id('notifications'),
     },
     handler: async (ctx, args) => {
-        await ctx.db.delete(args.id);
+        await ctx.db.delete("notifications", args.id);
         return 'Notification deleted successfully' as const;
     },
 });
