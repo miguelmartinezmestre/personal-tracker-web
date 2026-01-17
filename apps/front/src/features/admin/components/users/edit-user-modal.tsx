@@ -65,17 +65,6 @@ export function EditUserModal({
         },
     });
 
-    // Verify admin role
-    // try {
-    //     useRequireAdmin();
-    // } catch {
-    //     return (
-    //         <Button size="sm" variant="outline" disabled>
-    //             <Edit className="h-4 w-4" />
-    //         </Button>
-    //     );
-    // }
-
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
