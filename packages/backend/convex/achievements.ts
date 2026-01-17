@@ -221,7 +221,7 @@ export const getUserAchievements = queryWithRLS({
         // Get achievement definitions for each earned achievement
         const achievementsWithDetails = await Promise.all(
             userAchievements.map(async ua => {
-                const definition = await ctx.db.get("achievementDefinitions", ua.achievement);
+                const definition = await ctx.db.get('achievementDefinitions', ua.achievement);
                 return {
                     ...ua,
                     definition,
@@ -245,7 +245,7 @@ export const getOrganizationAchievements = queryWithRLS({
 
         const achievementsWithDetails = await Promise.all(
             organizationAchievements.map(async oa => {
-                const definition = await ctx.db.get("achievementDefinitions", oa.achievement);
+                const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
                 return {
                     ...oa,
                     definition,
@@ -269,7 +269,7 @@ export const getUserAchievementStats = queryWithRLS({
 
         let totalPoints = 0;
         for (const ua of userAchievements) {
-            const definition = await ctx.db.get("achievementDefinitions", ua.achievement);
+            const definition = await ctx.db.get('achievementDefinitions', ua.achievement);
             if (definition) {
                 totalPoints += definition.points;
             }
@@ -306,7 +306,7 @@ export const getRecentAchievements = queryWithRLS({
 
         const achievementsWithDetails = await Promise.all(
             userAchievements.map(async ua => {
-                const definition = await ctx.db.get("achievementDefinitions", ua.achievement);
+                const definition = await ctx.db.get('achievementDefinitions', ua.achievement);
                 return {
                     ...ua,
                     definition,
@@ -432,10 +432,14 @@ async function calculateUserStreak(ctx: QueryCtx, userId: string): Promise<numbe
                 .collect();
             return updates;
         })
-    ).then(results => results.flat())
-        .then(updates => updates.sort(
-            (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
-        ));
+    )
+        .then(results => results.flat())
+        .then(updates =>
+            updates.sort(
+                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
+                    b.updateDate - a.updateDate
+            )
+        );
 
     if (userUpdates.length === 0) return 0;
 
@@ -530,7 +534,7 @@ export const checkUserAchievements = internalMutation({
         const earnedCodes = new Set(
             await Promise.all(
                 earnedAchievements.map(async ea => {
-                    const def = await ctx.db.get("achievementDefinitions", ea.achievement);
+                    const def = await ctx.db.get('achievementDefinitions', ea.achievement);
                     return def?.code;
                 })
             )
@@ -661,10 +665,14 @@ async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Pr
                 .collect();
             return updates;
         })
-    ).then(results => results.flat())
-        .then(updates => updates.sort(
-            (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
-        ));
+    )
+        .then(results => results.flat())
+        .then(updates =>
+            updates.sort(
+                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
+                    b.updateDate - a.updateDate
+            )
+        );
 
     if (userUpdates.length === 0) return 0;
 
@@ -729,7 +737,7 @@ export const checkOrganizationAchievements = internalMutation({
         const earnedCodes = new Set(
             await Promise.all(
                 earnedAchievements.map(async ea => {
-                    const def = await ctx.db.get("achievementDefinitions", ea.achievement);
+                    const def = await ctx.db.get('achievementDefinitions', ea.achievement);
                     return def?.code;
                 })
             )
@@ -860,10 +868,14 @@ async function calculateOrganizationStreak(
                 .collect();
             return updates;
         })
-    ).then(results => results.flat())
-        .then(updates => updates.sort(
-            (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) => b.updateDate - a.updateDate
-        ));
+    )
+        .then(results => results.flat())
+        .then(updates =>
+            updates.sort(
+                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
+                    b.updateDate - a.updateDate
+            )
+        );
 
     if (organizationUpdates.length === 0) return 0;
 

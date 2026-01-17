@@ -54,12 +54,12 @@ export const updateCategory = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
-        const existing = await ctx.db.get("categories", id);
+        const existing = await ctx.db.get('categories', id);
         if (!existing) {
             throw new Error('Category not found');
         }
 
-        const result = await ctx.db.patch("categories", id, { ...rest, updatedAt: Date.now() });
+        const result = await ctx.db.patch('categories', id, { ...rest, updatedAt: Date.now() });
 
         // Audit log
         const changes = createChangeDiff(sanitizeForAudit(existing), rest);
@@ -86,9 +86,9 @@ export const deleteCategory = mutationWithRLS({
         id: v.id('categories'),
     },
     handler: async (ctx, args) => {
-        const existing = await ctx.db.get("categories", args.id);
+        const existing = await ctx.db.get('categories', args.id);
 
-        const result = await ctx.db.delete("categories", args.id);
+        const result = await ctx.db.delete('categories', args.id);
 
         // Audit log
         if (existing) {
@@ -137,7 +137,7 @@ export const createDefaultCategories = mutationWithRLS({
                 createdAt: now,
                 updatedAt: now,
             });
-            results.push(await ctx.db.get("categories", id));
+            results.push(await ctx.db.get('categories', id));
         }
 
         // Audit log
