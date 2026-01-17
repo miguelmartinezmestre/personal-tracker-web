@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@repo/ui/components/card';
-import { AuditLogsTable } from '@/features/admin/components/audit-logs-table';
+import { AuditLogsTable } from '@/features/admin/components/audit-logs/audit-logs-table';
 import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
 import { api } from '@repo/backend/convex/_generated/api';
