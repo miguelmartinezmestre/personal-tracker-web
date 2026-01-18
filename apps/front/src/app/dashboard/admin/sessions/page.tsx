@@ -1,8 +1,12 @@
 import UserSessionsLayout from '@/features/admin/components/user-sessions/user-sessions-layout';
-import { requireAdmin } from '@/features/admin/utils/requiredAdmin';
+import { isAdmin } from '@/features/auth/current-user';
+import { redirect } from 'next/navigation';
 
 export default async function AdminSessionsPage() {
-    requireAdmin();
+    
+    if (!(await isAdmin())) {
+        redirect('/dashboard/home');
+    }
 
     return <UserSessionsLayout />;
 }
