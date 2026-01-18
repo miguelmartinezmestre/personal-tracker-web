@@ -5,18 +5,28 @@ import CreateObjectiveFormModal from '@/features/objectives/components/objective
 import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
 import { preloadAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@repo/backend/convex/_generated/api';
+import { redirect } from 'next/navigation';
+import { Preloaded } from 'convex/react';
+import { createTranslator } from 'next-intl';
 
 export default async function ObjectivesPage() {
+
+    let preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
+    let t: ReturnType<typeof createTranslator<Record<string, any>, "Objectives">>;
+
+    try{
+        [t, preloadedObjectivesQuery] = await Promise.all([
+            getTranslations('Objectives'),
+            preloadAuthQuery(api.objectives.getObjectivesByUser, {
+                paginationOpts: { numItems: 1000, cursor: null },
+            }),
+        ]);
+    }catch(error){
+        console.error(error);
+        redirect('/dashboard/home');
+    }
     // Start all promises in parallel
-    const [t, preloadedObjectivesQuery] = await Promise.all([
-        getTranslations('Objectives'),
-        preloadAuthQuery(api.objectives.getObjectivesByUser, {
-            paginationOpts: {
-                numItems: 1000,
-                cursor: null,
-            },
-        }),
-    ]);
+
 
     return (
         <div className="space-y-6">
