@@ -62,7 +62,11 @@ test('notifications: create, mark read/unread, delete', async ({ page }) => {
     await expect(page).toHaveURL(/\/dashboard\/notifications$/);
 
     await page.getByTestId('notification-create-open').click();
-    await page.getByTestId('notification-objective-select').click();
+
+    // Wait for objectives to load before clicking the select
+    const selectTrigger = page.getByTestId('notification-objective-select');
+    await expect(selectTrigger).toBeEnabled({ timeout: 10000 });
+    await selectTrigger.click();
     await page.getByRole('option', { name: objectiveTitle }).click();
     await page.getByTestId('notification-type-input').fill('reminder');
     await page.getByTestId('notification-message-input').fill(message);

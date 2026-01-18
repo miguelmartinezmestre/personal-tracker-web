@@ -27,6 +27,11 @@ export const config = [
     },
   },
   {
+    rules: {
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
     ignores: ["dist/**"],
   },
 ];

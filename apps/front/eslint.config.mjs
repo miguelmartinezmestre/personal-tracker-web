@@ -28,6 +28,7 @@ const eslintConfig = [
             // React rules
             'react/no-unescaped-entities': 'error',
             'react/void-dom-elements-no-children': 'error',
+            'react/no-multi-comp': ['error', { ignoreStateless: false }],
             // 'react/jsx-no-literals': ['error', { noStrings: true }],
 
             // Next.js specific rules

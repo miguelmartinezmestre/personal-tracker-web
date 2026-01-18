@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'crypto';
 import { createTestUser, takeScreenshot } from './test-helpers';
 
 test('register new user', async ({ page }) => {
@@ -80,4 +81,15 @@ test('logout clears auth session (cookie-based)', async ({ page }) => {
     // Navigate to a protected page; should redirect to login
     await page.goto('/dashboard/home');
     await expect(page).toHaveURL(/\/login$/);
+});
+
+test('login with invalid credentials shows error', async ({ page }) => {
+    const uuid = randomUUID();
+    await page.goto('/login');
+    await page.getByTestId('email-input').fill(`nouser-${uuid}@example.com`);
+    await page.getByTestId('password-input').fill('wrongpassword');
+    await page.getByTestId('login-button').click();
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByText('Error')).toBeVisible();
 });

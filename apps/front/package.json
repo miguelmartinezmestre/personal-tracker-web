@@ -13,6 +13,7 @@
     "test:debug": "playwright test --debug",
     "test:ui": "playwright test --ui",
     "test:coverage": "cross-env PLAYWRIGHT_COVERAGE=true playwright test",
+    "test:manual": "playwright test --config=tests-manual/playwright.manual.config.ts",
     "check-types": "tsc --noEmit",
     "check-translations": "node scripts/check-translations.js",
     "create-user": "tsx scripts/create-user.ts"

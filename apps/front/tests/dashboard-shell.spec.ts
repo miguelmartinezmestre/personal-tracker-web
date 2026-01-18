@@ -58,14 +58,6 @@ test('dashboard shell: command menu navigates to objectives', async ({ page }) =
     await expect(page).toHaveURL(/\/dashboard\/objectives$/);
 });
 
-test('dashboard shell: non-admin is redirected with unauthorized alert', async ({ page }) => {
-    await createTestUser(page);
-
-    await page.goto('/dashboard/admin-panel');
-    await expect(page).toHaveURL(/\/dashboard\/home\?error=unauthorized/);
-    await expect(page.getByText(/access denied/i)).toBeVisible();
-});
-
 test('dashboard shell: settings modal opens from sidebar', async ({ page }) => {
     await createTestUser(page);
 
