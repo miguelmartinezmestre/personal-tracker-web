@@ -12,4 +12,9 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   ...convexPlugin.configs.recommended,
+  {
+    rules: {
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ]);

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /**
  * TFG Walkthrough Test - COMPREHENSIVE FEATURE DOCUMENTATION
  *
@@ -6,7 +7,7 @@
  *
  * Screenshots are saved to: apps/front/test-results/screenshots/tfg/
  *
- * Run with: pnpm test -- tfg-walkthrough.spec.ts
+ * Run with: pnpm test:e2e:manual
  *
  * FEATURES COVERED:
  * 1. Landing Page & Public Pages
@@ -38,7 +39,7 @@ import {
     loginUser,
     promoteToAdmin,
     createTFGTestUser,
-} from './test-helpers';
+} from '../tests/test-helpers';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -866,13 +867,13 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await takeTFGScreenshot(page, 'admin-panel-users', 'Admin panel - Users tab');
 
             // Sessions tab
-            await page.goto('/dashboard/admin-panel?tab=sessions');
+            await page.goto('/dashboard/admin/sessions');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(300);
             await takeTFGScreenshot(page, 'admin-panel-sessions', 'Admin panel - Sessions tab');
 
             // Audit tab
-            await page.goto('/dashboard/admin-panel?tab=audit');
+            await page.goto('/dashboard/admin/audit');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(300);
             await takeTFGScreenshot(page, 'admin-panel-audit', 'Admin panel - Audit logs');

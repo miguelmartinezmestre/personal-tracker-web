@@ -52,6 +52,10 @@ export default function ObjectivesTable({
                     },
                 }).queryKey,
             });
+            toast.success(t('toast.deletedSuccess'));
+        },
+        onError: () => {
+            toast.error(t('toast.deleteFailed'));
         },
     });
 
@@ -167,17 +171,9 @@ export default function ObjectivesTable({
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
-                            await deleteObjectiveMutation.mutateAsync(
-                                { id: objetiveRow._id as Id<'objectives'> },
-                                {
-                                    onSuccess: () => {
-                                        toast.success(t('toast.deletedSuccess'));
-                                    },
-                                    onError: () => {
-                                        toast.error(t('toast.deleteFailed'));
-                                    },
-                                }
-                            );
+                            await deleteObjectiveMutation.mutateAsync({
+                                id: objetiveRow._id as Id<'objectives'>,
+                            });
                         }}
                         title={t('confirm.deleteObjective')}
                         description={t('confirm.deleteObjectiveDescription')}

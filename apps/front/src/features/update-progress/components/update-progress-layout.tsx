@@ -1,13 +1,25 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
+import { Preloaded } from 'convex/react';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { api } from '@repo/backend/convex/_generated/api';
 import CreateUpdateProgressFormModal from './update-progress-form-create-modal';
 import UpdateProgressTable from './update-progress-table';
 
-export default function UpdateProgressLayout() {
+interface UpdateProgressLayoutProps {
+    preloadedProgressQuery: Preloaded<typeof api.update_progress.getUpdateProgressByObjectiveId>;
+    preloadedObjectiveQuery: Preloaded<typeof api.objectives.getObjectiveById>;
+}
+
+export default function UpdateProgressLayout({
+    preloadedProgressQuery,
+    preloadedObjectiveQuery,
+}: UpdateProgressLayoutProps) {
     const tObjectives = useTranslations('Objectives');
     const tUpdateProgress = useTranslations('UpdateProgress');
+    const progress = usePreloadedAuthQuery(preloadedProgressQuery);
+    const objective = usePreloadedAuthQuery(preloadedObjectiveQuery);
 
     return (
         <div className="space-y-6">
@@ -21,9 +33,10 @@ export default function UpdateProgressLayout() {
                 <CreateUpdateProgressFormModal />
             </div>
 
-            <Suspense fallback={<div>{tUpdateProgress('loadingProgress')}</div>}>
-                <UpdateProgressTable />
-            </Suspense>
+            <UpdateProgressTable
+                initialProgress={progress ?? undefined}
+                initialObjective={objective ?? undefined}
+            />
         </div>
     );
 }

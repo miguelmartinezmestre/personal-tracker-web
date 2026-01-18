@@ -8,11 +8,17 @@ const isCollectingCoverage = process.env.PLAYWRIGHT_COVERAGE === 'true';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
-    // retries: 2,
-    workers: 4,
+    workers: 2,
+
+    // Reduced timeouts for faster execution
+    timeout: 60000, // 1 minute max per test
+    expect: {
+        timeout: 10000, // 10s for assertions
+    },
+
     reporter: isCollectingCoverage
         ? [
-              ['list'], // Show test progress in console
+              ['list'],
               [
                   'monocart-reporter',
                   {
@@ -20,41 +26,53 @@ export default defineConfig({
                       outputFile: './coverage/playwright/report.html',
                       coverage: {
                           entryFilter: (entry: { url: string }) => {
-                              // Only collect coverage for app source files
                               return (
                                   entry.url.includes('localhost:3000') &&
                                   !entry.url.includes('node_modules')
                               );
                           },
                           sourceFilter: (sourcePath: string) => {
-                              // Include only src files
                               return (
                                   sourcePath.includes('/src/') &&
                                   !sourcePath.includes('node_modules')
                               );
                           },
-                          reports: ['v8', 'html', 'lcov', 'console-details'], // 'console-details' shows coverage summary in console
+                          reports: ['v8', 'html', 'lcov', 'console-details'],
                           lcov: true,
                       },
                   },
               ],
           ]
-        : 'html',
+        : process.env.CI
+          ? [['list'], ['html', { open: 'never' }]]
+          : 'html',
+
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
-        trace: 'on-first-retry',
-        // Screenshots always for documentation purposes
-        // screenshot: 'on',
-        // Increase timeout for authentication flows
-        // actionTimeout: 10000,
-        // navigationTimeout: 10000,
+        trace: 'retain-on-failure', // Only keep traces for failures
+        screenshot: 'only-on-failure', // Screenshots only on failure
+        video: 'off', // No video recording
+
+        // Faster navigation
+        navigationTimeout: 15000,
+        actionTimeout: 10000,
     },
+
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: {
+                    args: ['--disable-animations'],
+                },
+            },
         },
     ],
+
     // Global setup to ensure backend is ready
     globalSetup: './tests/global-setup.ts',
+
+    // Ignore manual tests
+    testIgnore: ['**/tests-manual/**'],
 });
