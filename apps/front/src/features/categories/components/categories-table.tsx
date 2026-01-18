@@ -1,18 +1,13 @@
 'use client';
 
 import { DataTable } from '@/features/table/components/table';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@repo/ui/components/button';
-import EditCategoryFormModal from '@/features/categories/components/category-form-edit-modal';
-import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
-import { toast } from 'sonner';
-import * as LucideIcons from 'lucide-react';
 import type { Category } from '@/features/categories/schemas/category';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
+import { FunctionReturnType } from 'convex/server';
+import { useCategoriesTableColumns } from './categories-table-columns';
 
 // Tipo que viene de Convex
 type ConvexCategory = {
@@ -36,104 +31,20 @@ function mapConvexCategoryToCategory(convexCategory: ConvexCategory): Category {
     };
 }
 
-export default function CategoriesTable() {
-    const t = useTranslations('Objectives.categories');
-    const queryClient = useQueryClient();
+type CategoriesResult = FunctionReturnType<typeof api.categories.getCategoriesByUser>;
 
-    const categories = useQuery(convexQuery(api.categories.getCategoriesByUser, {}));
+interface CategoriesTableProps {
+    initialCategories: CategoriesResult | undefined;
+}
 
-    const deleteCategory = useMutation({
-        mutationFn: useConvexMutation(api.categories.deleteCategory),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
-            });
-        },
+export default function CategoriesTable({ initialCategories }: CategoriesTableProps) {
+    const categories = useQuery({
+        ...convexQuery(api.categories.getCategoriesByUser, {}),
+        initialData: initialCategories,
     });
 
-    const renderIcon = (iconName: string | undefined) => {
-        if (!iconName) return null;
-        const icons = LucideIcons as unknown as Record<
-            string,
-            React.ComponentType<{ className?: string }>
-        >;
-        const IconComponent = icons[iconName];
-        return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
-    };
-
-    const columns: ColumnDef<Category>[] = [
-        {
-            accessorKey: 'color',
-            header: t('fields.color'),
-            cell: ({ row }) => {
-                const category = row.original;
-                return (
-                    <div className="flex items-center gap-2">
-                        <div
-                            className="h-6 w-6 rounded border"
-                            style={{ backgroundColor: category.color }}
-                            data-testid={`category-color-${category.id}`}
-                        />
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: 'name',
-            header: t('fields.name'),
-            cell: ({ row }) => {
-                const category = row.original;
-                return (
-                    <div className="flex items-center gap-2">
-                        {renderIcon(category.icon)}
-                        <span>{category.name}</span>
-                    </div>
-                );
-            },
-        },
-        {
-            header: '',
-            id: 'update-category',
-            cell: ({ row }) => {
-                const categoryRow = row.original;
-                return <EditCategoryFormModal defaultValues={categoryRow} />;
-            },
-        },
-        {
-            header: '',
-            id: 'delete',
-            cell: ({ row }) => {
-                const categoryRow = row.original;
-                return (
-                    <DeleteConfirmationDialog
-                        onConfirm={async () => {
-                            try {
-                                await deleteCategory.mutateAsync({ id: categoryRow.id });
-                                toast.success(t('toast.deleteSuccess'));
-                            } catch {
-                                toast.error(t('toast.deleteFailed'));
-                            }
-                        }}
-                        title={t('confirmDelete')}
-                        description={t('confirmDeleteDescription')}
-                        triggerLabel={t('buttons.delete')}
-                        confirmLabel={t('buttons.confirm')}
-                        cancelLabel={t('buttons.cancel')}
-                        isLoading={deleteCategory.isPending}
-                        trigger={
-                            <Button
-                                data-testid="category-delete-button"
-                                variant="destructive"
-                                size="sm"
-                            >
-                                {t('buttons.delete')}
-                            </Button>
-                        }
-                    />
-                );
-            },
-        },
-    ];
+    // Columns
+    const columns = useCategoriesTableColumns();
 
     // Mapear los datos de Convex a Category
     const mappedData = (categories.data ?? []).map(mapConvexCategoryToCategory);
