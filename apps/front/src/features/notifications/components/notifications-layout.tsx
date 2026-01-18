@@ -1,12 +1,24 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
+import { Preloaded } from 'convex/react';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { api } from '@repo/backend/convex/_generated/api';
 import NotificationsTable from './notifications-table';
 import CreateNotificationFormModal from './notification-form-create-modal';
 
-export default function NotificationsLayout() {
+interface NotificationsLayoutProps {
+    preloadedNotificationsQuery: Preloaded<typeof api.notifications.getNotificationsByUser>;
+    preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
+}
+
+export default function NotificationsLayout({
+    preloadedNotificationsQuery,
+    preloadedObjectivesQuery,
+}: NotificationsLayoutProps) {
     const t = useTranslations('Notifications');
+    const notifications = usePreloadedAuthQuery(preloadedNotificationsQuery);
+    const objectives = usePreloadedAuthQuery(preloadedObjectivesQuery);
 
     return (
         <div className="space-y-6">
@@ -17,9 +29,10 @@ export default function NotificationsLayout() {
                 </div>
                 <CreateNotificationFormModal />
             </div>
-            <Suspense fallback={<div>{t('loading')}</div>}>
-                <NotificationsTable />
-            </Suspense>
+            <NotificationsTable
+                initialNotifications={notifications ?? undefined}
+                initialObjectives={objectives ?? undefined}
+            />
         </div>
     );
 }
