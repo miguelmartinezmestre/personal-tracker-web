@@ -1,56 +1,64 @@
-// 'use client';
+'use client';
 
-// import { Settings } from 'lucide-react';
-// import { SidebarProvider, SidebarInset } from '@repo/ui/components/sidebar';
-// import { AppSidebar } from '@/components/app-sidebar';
-// // import { Separator } from '@repo/ui/components/separator';
-// import {
-//     Breadcrumb,
-//     BreadcrumbItem,
-//     BreadcrumbLink,
-//     BreadcrumbList,
-//     BreadcrumbPage,
-//     BreadcrumbSeparator,
-// } from '@repo/ui/components/breadcrumb';
-// import { useTranslations } from 'next-intl';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@repo/ui/components/card';
+import AccountSettingsFormEdit from './account-settings-form-edit';
+import PasswordFormEdit from './password-form-edit';
+import { useTranslations } from 'next-intl';
+import { User, Key } from 'lucide-react';
 
-// interface SettingsLayoutProps {
-//     children: React.ReactNode;
-// }
+export default function SettingsLayout() {
+    const t = useTranslations('Settings');
 
-// export function SettingsLayout({ children }: SettingsLayoutProps) {
-//     const t = useTranslations('Settings');
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+                <p className="text-muted-foreground">{t('description')}</p>
+            </div>
 
-//     return (
-//         <SidebarProvider>
-//             <AppSidebar />
-//             <SidebarInset>
-//                 <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-//                     <div className="flex items-center gap-2 px-4">
-//                         <Settings className="h-6 w-6 text-blue-600" />
-//                         <Breadcrumb>
-//                             <BreadcrumbList>
-//                                 <BreadcrumbItem>
-//                                     <BreadcrumbLink href="/dashboard/home">
-//                                         {t('dashboard')}
-//                                     </BreadcrumbLink>
-//                                 </BreadcrumbItem>
-//                                 <BreadcrumbSeparator />
-//                                 <BreadcrumbItem>
-//                                     <BreadcrumbPage className="flex items-center gap-2">
-//                                         {t('settings')}
-//                                     </BreadcrumbPage>
-//                                 </BreadcrumbItem>
-//                             </BreadcrumbList>
-//                         </Breadcrumb>
-//                     </div>
-//                 </header>
-//                 <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-//                     <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6">
-//                         {children}
-//                     </div>
-//                 </div>
-//             </SidebarInset>
-//         </SidebarProvider>
-//     );
-// }
+            <Tabs defaultValue="account" className="space-y-4">
+                <TabsList className="grid w-full max-w-md grid-cols-3">
+                    <TabsTrigger value="account" className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {t('account')}
+                    </TabsTrigger>
+                    <TabsTrigger value="password" className="flex items-center gap-2">
+                        <Key className="h-4 w-4" />
+                        {t('password')}
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="account">
+                    <Card className="max-w-2xl">
+                        <CardHeader>
+                            <CardTitle>{t('accountSettings')}</CardTitle>
+                            <CardDescription>{t('accountSettingsDescription')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <AccountSettingsFormEdit />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="password">
+                    <Card className="max-w-2xl">
+                        <CardHeader>
+                            <CardTitle>{t('passwordSettings')}</CardTitle>
+                            <CardDescription>{t('passwordSettingsDescription')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PasswordFormEdit />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
