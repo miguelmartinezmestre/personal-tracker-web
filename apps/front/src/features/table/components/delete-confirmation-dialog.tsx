@@ -12,7 +12,7 @@ import {
     AlertDialogTrigger,
 } from '@repo/ui/components/alert-dialog';
 import { Button } from '@repo/ui/components/button';
-import { ReactNode } from 'react';
+import { ReactNode, useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface DeleteConfirmationDialogProps {
@@ -38,15 +38,28 @@ export function DeleteConfirmationDialog({
     cancelLabel,
     variant = 'destructive',
     size = 'sm',
-    isLoading = false,
+    isLoading: externalIsLoading = false,
 }: DeleteConfirmationDialogProps) {
     const t = useTranslations('DeleteConfirmation');
+    const [internalIsLoading, setInternalIsLoading] = useState(false);
+    const onConfirmRef = useRef(onConfirm);
 
+    // Keep the ref updated
+    onConfirmRef.current = onConfirm;
+
+    const isLoading = externalIsLoading || internalIsLoading;
     const resolvedConfirmLabel = confirmLabel ?? t('confirm');
     const resolvedCancelLabel = cancelLabel ?? t('cancel');
 
-    const handleConfirm = async () => {
-        await onConfirm();
+    const handleConfirm = async (e: React.MouseEvent) => {
+        setInternalIsLoading(true);
+        try {
+            await onConfirmRef.current();
+        } catch (error) {
+            // Don't re-throw - let the dialog close
+        } finally {
+            setInternalIsLoading(false);
+        }
     };
 
     return (
@@ -73,6 +86,7 @@ export function DeleteConfirmationDialog({
                         onClick={handleConfirm}
                         disabled={isLoading}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        data-testid="delete-confirm-button"
                     >
                         {isLoading ? t('deleting') : resolvedConfirmLabel}
                     </AlertDialogAction>
