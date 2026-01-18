@@ -1,10 +1,11 @@
 import { Button } from "@repo/ui/components/button";
+import { Badge } from "@repo/ui/components/badge";
 import { ColumnDef } from "@tanstack/react-table";
 import { UserSession } from "./user-sessions";
-import { Badge, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { useConfirmRevokeAllSessions, useRevokeSession } from "./user-sessions-table-actions";
+import { useRevokeSession } from "./user-sessions-table-actions";
 
 
 export function useUserSessionsTableColumns() {
@@ -28,7 +29,7 @@ export function useUserSessionsTableColumns() {
             header: t('userSessions.columns.expires'),
             cell: ({ row }) => {
                 const expiresAt = row.original.expiresAt;
-                const expiresAtDate = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
+                const expiresAtDate = new Date(expiresAt);
                 const isExpired = expiresAtDate.getTime() < Date.now();
                 return (
                     <div>

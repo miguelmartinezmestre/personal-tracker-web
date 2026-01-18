@@ -21,10 +21,6 @@ export function UserSessions() {
 
     const { data: sessions, isLoading } = useQuery(convexQuery(api.admin.listUserSessions, { userId, paginationOpts: { numItems: 10, cursor: null } }));
 
-    if(!isLoading) {
-        console.log(sessions);
-    }
-
     return (
         <div className="space-y-4">
             <div className="flex gap-2">
