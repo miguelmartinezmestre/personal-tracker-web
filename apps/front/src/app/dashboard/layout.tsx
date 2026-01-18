@@ -6,10 +6,19 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@repo/ui/componen
 import CommandMenu from '@/features/dashboard/components/command';
 import { LanguageSwitcher } from '@/features/landing/components/language-switcher';
 import { OrganizationSwitcher } from '@/features/organizations/components/organization-switcher';
+import { redirect } from 'next/navigation';
+import { Preloaded } from 'convex/react';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
 
-    const preloadedUserQuery = await preloadAuthQuery(api.auth.getCurrentUser);
+    let preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
+
+    try{
+        preloadedUserQuery = await preloadAuthQuery(api.auth.getCurrentUser);
+    } catch (error) {
+        console.error(error);
+        redirect('/login');
+    }
 
     return (
         <SidebarProvider>
