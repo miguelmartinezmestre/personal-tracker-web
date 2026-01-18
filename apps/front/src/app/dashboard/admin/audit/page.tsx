@@ -1,10 +1,15 @@
 import { preloadAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@repo/backend/convex/_generated/api';
 import AdminAuditLayout from '@/features/admin/components/audit-logs/audit-logs-layout';
-import { requireAdmin } from '@/features/admin/utils/requiredAdmin';
+import { isAdmin } from '@/features/auth/current-user';
+import { redirect } from 'next/navigation';
 
 export default async function AdminAuditPage() {
-    requireAdmin();
+    
+    if (!(await isAdmin())) {
+        redirect('/dashboard/home');
+    }
+
     const preloadedAuditLogsQuery = await preloadAuthQuery(api.auditLogs.getAuditLogs, {});
 
     return <AdminAuditLayout preloadedAuditLogsQuery={preloadedAuditLogsQuery} />;
