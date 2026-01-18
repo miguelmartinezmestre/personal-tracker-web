@@ -10,6 +10,8 @@ import { Skeleton } from '@repo/ui/components/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
+import { Preloaded } from 'convex/react';
+import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import {
     achievementProgressSchema,
     type AchievementProgress,
@@ -19,16 +21,29 @@ import { AchievementCard } from './achievement-card';
 const SKELETON_STATS = [1, 2, 3];
 const SKELETON_CARDS = [1, 2, 3, 4, 5, 6];
 
-export default function AchievementsLayout() {
+interface AchievementsLayoutProps {
+    preloadedStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
+    preloadedProgressQuery: Preloaded<typeof api.achievements.getUserAchievementProgress>;
+}
+
+export default function AchievementsLayout({
+    preloadedStatsQuery,
+    preloadedProgressQuery,
+}: AchievementsLayoutProps) {
     const t = useTranslations('Achievements');
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
     const queryClient = useQueryClient();
 
-    const { data: stats, isLoading: statsLoading } = useQuery(
-        convexQuery(api.achievements.getUserAchievementStats, {})
-    );
+    const initialStats = usePreloadedAuthQuery(preloadedStatsQuery);
+    const initialProgress = usePreloadedAuthQuery(preloadedProgressQuery);
+
+    const { data: stats, isLoading: statsLoading } = useQuery({
+        ...convexQuery(api.achievements.getUserAchievementStats, {}),
+        initialData: initialStats ?? undefined,
+    });
     const { data: progress, isLoading: progressLoading } = useQuery({
         ...convexQuery(api.achievements.getUserAchievementProgress, {}),
+        initialData: initialProgress ?? undefined,
         select: (data): AchievementProgress[] =>
             data.map(item => achievementProgressSchema.parse(item)),
     });
