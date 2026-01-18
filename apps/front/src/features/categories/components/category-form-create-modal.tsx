@@ -188,8 +188,10 @@ export default function CreateCategoryFormModal() {
                                 <FormItem>
                                     <FormLabel>{t('fields.icon')}</FormLabel>
                                     <Select
-                                        value={field.value ?? ''}
-                                        onValueChange={value => field.onChange(value || undefined)}
+                                        value={field.value ?? 'none'}
+                                        onValueChange={value =>
+                                            field.onChange(value === 'none' ? undefined : value)
+                                        }
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="category-icon-select">
@@ -199,7 +201,7 @@ export default function CreateCategoryFormModal() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="" data-testid="category-icon-none">
+                                            <SelectItem value="none" data-testid="category-icon-none">
                                                 {tCommon('icons.tag')}
                                             </SelectItem>
                                             {iconOptions.map(icon => (
