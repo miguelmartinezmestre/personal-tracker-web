@@ -76,7 +76,7 @@ export default function OrganizationMembersTable({
     ];
 
     return (
-        <div>
+        <div data-testid="organization-members-table">
             <DataTable
                 columns={columns}
                 data={organizationMembers.data!}

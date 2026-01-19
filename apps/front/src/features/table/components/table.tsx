@@ -581,18 +581,25 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                 {enableExport && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button type="button" variant="outline" size="sm" disabled={isLoading}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={isLoading}
+                                data-testid="table-export-trigger"
+                            >
                                 <Download className="h-4 w-4" />
                                 {t('export')}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" data-testid="table-export-menu">
                             <DropdownMenuLabel>{t('export')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <button
                                 type="button"
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                                 onClick={handleExportCsv}
+                                data-testid="table-export-csv"
                             >
                                 {t('exportCsv')}
                             </button>
@@ -600,6 +607,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                                 type="button"
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
                                 onClick={handleExportExcel}
+                                data-testid="table-export-xlsx"
                             >
                                 {t('exportExcel')}
                             </button>

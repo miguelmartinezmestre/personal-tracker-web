@@ -78,7 +78,7 @@ export default function OrganizationMemberEditFormModal({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="organization-member-edit-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('edit')}
                 </Button>
@@ -109,6 +109,7 @@ export default function OrganizationMemberEditFormModal({
                                             {...field}
                                             value={field.value || ''}
                                             onChange={e => field.onChange(e.target.value)}
+                                            data-testid="organization-member-edit-email-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -129,7 +130,7 @@ export default function OrganizationMemberEditFormModal({
                                         value={field.value || 'member'}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger data-testid="organization-member-edit-role-select">
                                                 <SelectValue placeholder={t('selectRole')} />
                                             </SelectTrigger>
                                         </FormControl>
@@ -149,10 +150,20 @@ export default function OrganizationMemberEditFormModal({
                             )}
                         />
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                data-testid="organization-member-edit-cancel-button"
+                            >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveOrganizationMember')}</Button>
+                            <Button
+                                type="submit"
+                                data-testid="organization-member-edit-save-button"
+                            >
+                                {t('saveOrganizationMember')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>
