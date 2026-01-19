@@ -16,7 +16,12 @@ export default function UserSessionsLayout() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight" role="heading" aria-level={1}>
+                <h1
+                    className="text-3xl font-bold tracking-tight"
+                    role="heading"
+                    aria-level={1}
+                    data-testid="admin-sessions-title"
+                >
                     {t('sessionManagement')}
                 </h1>
                 <p className="text-muted-foreground">{t('sessionManagementDescription')}</p>

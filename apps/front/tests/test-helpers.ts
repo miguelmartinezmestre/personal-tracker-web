@@ -335,16 +335,17 @@ export async function promoteToAdmin(page: Page): Promise<void> {
 
     // Call the promoteToAdmin mutation via the browser's Convex client
     const result = await page.evaluate(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = window as any;
-        const convexClient = win.__CONVEX_CLIENT__;
-        const api = win.__CONVEX_API__;
+        const response = await fetch('/api/test/promote-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
 
-        if (!convexClient || !api) {
-            throw new Error('Convex client or API not found on window');
+        if (!response.ok) {
+            const body = await response.text();
+            throw new Error(`Promote admin failed: ${response.status} ${body}`);
         }
 
-        return await convexClient.mutation(api.users.promoteToAdmin, {});
+        return await response.json();
     });
 
     console.log('✅ User promoted to admin:', result);

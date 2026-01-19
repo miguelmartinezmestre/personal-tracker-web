@@ -42,7 +42,10 @@ const LARGE_PAGE_SIZE = 1000;
 // Static skeleton array for loading state
 const SKELETON_PLACEHOLDERS = [1, 2, 3];
 
-const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser> }>(({ preloadedObjectivesQuery }, ref) => {
+const ResponsiveObjectivesView = React.forwardRef<
+    HTMLDivElement,
+    { preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser> }
+>(({ preloadedObjectivesQuery }, ref) => {
     const isMobile = useIsMobile();
     const t = useTranslations('Objectives');
     const tCard = useTranslations('ObjectiveCard');
@@ -86,7 +89,8 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObj
     };
 
     const categories = React.useMemo(() => {
-        const values = fetchedObjectives?.page.map(objective => objective.category)
+        const values = fetchedObjectives?.page
+            .map(objective => objective.category)
             .filter((category): category is string => Boolean(category));
         return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
     }, [fetchedObjectives]);
@@ -125,7 +129,7 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObj
                 const haystack = [
                     objective.title ?? '',
                     objective.description ?? '',
-                    objective.category ?? ''
+                    objective.category ?? '',
                 ]
                     .join(' ')
                     .toLowerCase();
@@ -153,7 +157,8 @@ const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, { preloadedObj
     }, [objectives, filters]);
 
     // Client-side pagination
-    const totalPages = Math.ceil(filteredObjectives?.length ?? 0 / ITEMS_PER_PAGE) || 1;
+    const totalPages = Math.ceil((filteredObjectives?.length ?? 0) / ITEMS_PER_PAGE) || 1;
+
     const paginatedObjectives = filteredObjectives?.slice(
         currentPage * ITEMS_PER_PAGE,
         (currentPage + 1) * ITEMS_PER_PAGE

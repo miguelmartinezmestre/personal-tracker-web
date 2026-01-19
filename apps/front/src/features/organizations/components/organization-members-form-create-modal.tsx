@@ -82,7 +82,7 @@ export default function CreateOrganizationMemberFormModal({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" data-testid="organization-member-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createNewOrganizationMember')}
                 </Button>
@@ -115,6 +115,7 @@ export default function CreateOrganizationMemberFormModal({
                                             {...field}
                                             value={field.value || ''}
                                             onChange={e => field.onChange(e.target.value)}
+                                            data-testid="organization-member-email-input"
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -135,7 +136,7 @@ export default function CreateOrganizationMemberFormModal({
                                         value={field.value || 'member'}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger data-testid="organization-member-role-select">
                                                 <SelectValue placeholder={t('selectRole')} />
                                             </SelectTrigger>
                                         </FormControl>
@@ -155,10 +156,17 @@ export default function CreateOrganizationMemberFormModal({
                             )}
                         />
                         <DialogFooter className="pt-4">
-                            <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                data-testid="organization-member-cancel-button"
+                            >
                                 {t('cancel')}
                             </Button>
-                            <Button type="submit">{t('saveOrganizationMember')}</Button>
+                            <Button type="submit" data-testid="organization-member-save-button">
+                                {t('saveOrganizationMember')}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

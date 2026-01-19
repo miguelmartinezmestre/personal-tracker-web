@@ -18,12 +18,16 @@ function InvitationsList() {
     const rejectInvitation = useRejectInvitation();
 
     if (isLoading) {
-        return <div className="text-center py-8">{t('loading')}</div>;
+        return (
+            <div className="text-center py-8" data-testid="invitations-loading">
+                {t('loading')}
+            </div>
+        );
     }
 
     if (error) {
         return (
-            <Alert variant="destructive">
+            <Alert variant="destructive" data-testid="invitations-error">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                     {t('errorLoading')}: {error.message}
@@ -36,7 +40,7 @@ function InvitationsList() {
 
     if (pendingInvitations.length === 0) {
         return (
-            <div className="text-center py-16">
+            <div className="text-center py-16" data-testid="invitations-empty">
                 <Mail className="mx-auto h-12 w-12 text-muted-foreground/50" />
                 <h3 className="mt-4 text-lg font-semibold">{t('noPendingTitle')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{t('noPendingDescription')}</p>
@@ -45,7 +49,7 @@ function InvitationsList() {
     }
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="invitations-list">
             {pendingInvitations.map(invitation => (
                 <InvitationCard
                     key={invitation.id}

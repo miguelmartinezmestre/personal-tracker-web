@@ -108,7 +108,7 @@ export default function OrganizationsTable() {
     ];
 
     return (
-        <div>
+        <div data-testid="organizations-table">
             <DataTable
                 columns={columns}
                 data={organizations.data ?? []}

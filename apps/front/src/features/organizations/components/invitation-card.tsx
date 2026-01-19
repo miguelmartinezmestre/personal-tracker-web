@@ -71,6 +71,7 @@ export function InvitationCard({
                             onClick={onAccept}
                             disabled={isAccepting || isRejecting}
                             className="flex-1"
+                            data-testid="invitation-accept-button"
                         >
                             <Check className="mr-2 h-4 w-4" />
                             {t('accept')}
@@ -80,6 +81,7 @@ export function InvitationCard({
                             disabled={isAccepting || isRejecting}
                             variant="outline"
                             className="flex-1"
+                            data-testid="invitation-reject-button"
                         >
                             <X className="mr-2 h-4 w-4" />
                             {t('reject')}
