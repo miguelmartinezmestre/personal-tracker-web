@@ -15,9 +15,6 @@ const emailApiUrl = process.env.EMAIL_API_URL ?? 'http://localhost:3001';
 const isProduction = process.env.NODE_ENV === 'production';
 const requireEmailVerification: boolean = !!(isProduction && process.env.EMAIL_API_URL);
 
-/**
- * Send organization invitation email via the email API
- */
 async function sendOrganizationInvitationEmail(data: {
     to: string;
     organizationName: string;
@@ -45,22 +42,16 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     return {
         baseURL: siteUrl,
         database: authComponent.adapter(ctx),
-        // Configure email/password with verification for security
-        // Email verification is only required in production when email service is configured
         emailAndPassword: {
             enabled: true,
             requireEmailVerification,
         },
         plugins: [
-            // The Convex plugin is required for Convex compatibility
             convex({ authConfig }),
             admin(),
             organization({
-                // Invitations never expire
                 invitationExpiry: false,
-                // Default role for invited members
                 defaultRole: 'member',
-                // Configure custom email sending for invitations
                 sendInvitationEmail: async data => {
                     const inviteLink = `${siteUrl}/invitations/${data.id}`;
                     console.log('[sendOrganizationInvitationEmail] Invite link:', inviteLink);
@@ -77,8 +68,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     } satisfies BetterAuthOptions;
 };
 
-// The component client has methods needed for integrating Convex with Better Auth,
-// as well as helper methods for general use.
 export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
     local: {
         schema: authSchema,
@@ -89,8 +78,6 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     return betterAuth(createAuthOptions(ctx));
 };
 
-// Example function for getting the current user
-// Feel free to edit, omit, etc.
 export const getCurrentUser = query({
     args: {},
     handler: async ctx => {
@@ -98,7 +85,6 @@ export const getCurrentUser = query({
     },
 });
 
-// Check if user is authenticated
 export const isAuthenticated = query({
     args: {},
     handler: async ctx => {
