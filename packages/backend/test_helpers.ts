@@ -1,8 +1,8 @@
-import { runInBetterAuth, type ComponentRunner } from './better-auth.helper';
+import { GenericMutationCtx, GenericQueryCtx, GenericSchema, SchemaDefinition } from 'convex/server';
+import { TestConvex } from 'convex-test';
+import { DataModel } from './convex/betterAuth/_generated/dataModel';
+import { components } from './convex/_generated/api';
 
-/**
- * Test user data returned by createTestUser
- */
 export interface TestUserData {
     userId: string;
     email: string;
@@ -10,36 +10,8 @@ export interface TestUserData {
     role?: string;
 }
 
-/**
- * Helper function to create a test user in the Better Auth component (tests).
- *
- * This seeds the Better Auth "user" table directly via `runInComponent`.
- *
- * For tests that need authentication, the identity's 'subject' field is used
- * as the user ID. This function also seeds the Better Auth "user" table so
- * queries can resolve email/name/role in tests.
- *
- * IMPORTANT: The userId must match the 'subject' in the identity used for testing.
- * For example, if you use `t.withIdentity({ subject: "test-user-123" })`,
- * then the userId should be "test-user-123".
- *
- * @example
- * ```typescript
- * const userIdentity = t.withIdentity({ subject: 'test-user-123', role: 'admin' });
- * register(t);
- *
- * beforeEach(async () => {
- *     const result = await createTestUser(userIdentity, {
- *         userId: 'test-user-123',
- *         email: 'test@example.com',
- *         name: 'Test User',
- *         role: 'admin',
- *     });
- * });
- * ```
- */
 export async function createTestUser(
-    t: ComponentRunner,
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
         userId: string;
         email: string;
@@ -50,33 +22,52 @@ export async function createTestUser(
     }
 ): Promise<TestUserData> {
     const { userId, email, name, role, emailVerified } = options;
-    const now = Date.now();
 
-    await runInBetterAuth(t, async ctx => {
+    await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         const existing = await ctx.db
             .query('user')
-            .withIndex('userId', (q: any) => q.eq('userId', userId))
+            .filter(q => q.eq(q.field('userId'), userId))
             .first();
 
         if (existing) {
-            await ctx.db.patch('user', existing._id, {
-                name,
-                email,
-                emailVerified: emailVerified ?? false,
-                role: role ?? null,
-                updatedAt: now,
+            await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+                input:{
+                    model:"user",
+                    where:[{ field: '_id', value: existing._id }],
+                    update:{
+                        name: name,
+                        email: email,
+                        role: role ?? null,
+                        emailVerified: emailVerified ?? false,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        userId: userId,
+                        image: "https://example.com/image.png",
+                        banExpires: null,
+                        banReason: null,
+                        banned: false,
+                    }
+                }
             });
-            return;
         }
 
-        await ctx.db.insert('user', {
-            name,
-            email,
-            emailVerified: emailVerified ?? false,
-            createdAt: now,
-            updatedAt: now,
-            userId: userId,
-            role: role ?? null,
+        await ctx.runMutation(components.betterAuth.adapter.create, {
+            input: {
+                model: "user",
+                data: {
+                    name: name,
+                    email: email,
+                    role: role ?? null,
+                    emailVerified: emailVerified ?? false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    userId: userId,
+                    image: "https://example.com/image.png",
+                    banExpires: null,
+                    banReason: null,
+                    banned: false,
+                }
+            }
         });
     });
 
@@ -88,11 +79,8 @@ export async function createTestUser(
     };
 }
 
-/**
- * Helper to create multiple test users at once.
- */
 export async function createTestUsers(
-    t: ComponentRunner,
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     users: Array<{
         userId: string;
         email: string;
@@ -111,7 +99,7 @@ export async function createTestUsers(
 }
 
 export async function createTestOrganization(
-    t: ComponentRunner,
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
         name: string;
         slug: string;
@@ -119,7 +107,7 @@ export async function createTestOrganization(
     }
 ): Promise<string> {
     const now = Date.now();
-    return runInBetterAuth(t, async ctx => {
+    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         return await ctx.db.insert('organization', {
             name: options.name,
             slug: options.slug,
@@ -132,7 +120,7 @@ export async function createTestOrganization(
 }
 
 export async function createTestMember(
-    t: ComponentRunner,
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
         organizationId: string;
         userId: string;
@@ -140,7 +128,7 @@ export async function createTestMember(
     }
 ): Promise<string> {
     const now = Date.now();
-    return runInBetterAuth(t, async ctx => {
+    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         return await ctx.db.insert('member', {
             organizationId: options.organizationId,
             userId: options.userId,
@@ -151,7 +139,7 @@ export async function createTestMember(
 }
 
 export async function createTestSession(
-    t: ComponentRunner,
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
         userId: string;
         token: string;
@@ -161,7 +149,7 @@ export async function createTestSession(
     }
 ): Promise<string> {
     const now = Date.now();
-    return runInBetterAuth(t, async ctx => {
+    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         return await ctx.db.insert('session', {
             userId: options.userId,
             expiresAt: options.expiresAt,
@@ -171,11 +159,5 @@ export async function createTestSession(
             createdAt: now,
             updatedAt: now,
         });
-    });
-}
-
-export async function getBetterAuthDoc<T>(t: ComponentRunner, id: string): Promise<T | null> {
-    return runInBetterAuth(t, async ctx => {
-        return (await ctx.db.get(id)) as T | null;
     });
 }
