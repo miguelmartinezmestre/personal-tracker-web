@@ -10,8 +10,7 @@ import { Id } from '@repo/backend/convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { ObjectivesFilters, type FilterOptions } from './objective-filters';
 import { Button } from '@repo/ui/components/button';
@@ -58,17 +57,13 @@ const ResponsiveObjectivesView = React.forwardRef<
 
     const queryClient = useQueryClient();
     const deleteObjectiveMutation = useMutation({
-        mutationFn: async (id: Id<'objectives'>) => {
-            const response = await fetch('/api/objectives', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            });
-            if (!response.ok) throw new Error('Failed to delete');
-            return response.json();
-        },
+        mutationFn: useConvexMutation(api.objectives.deleteObjective),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['objectives'] });
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: { numItems: LARGE_PAGE_SIZE, cursor: null },
+                }).queryKey,
+            });
             toast.success(t('toast.deletedSuccess'));
         },
         onError: () => {
@@ -84,7 +79,7 @@ const ResponsiveObjectivesView = React.forwardRef<
 
     const handleDelete = (id: Id<'objectives'>) => {
         if (confirm(t('confirm.deleteObjective'))) {
-            deleteObjectiveMutation.mutate(id);
+            deleteObjectiveMutation.mutate({ id });
         }
     };
 
@@ -229,7 +224,7 @@ const ResponsiveObjectivesView = React.forwardRef<
                 const objective = row.original;
                 return (
                     <StatusIndicator
-                        status={objective.status ?? 'not_started'}
+                        status={objective.status ?? 'active'}
                         deadline={objective.deadline ?? undefined}
                         currentValue={objective.currentValue ?? 0}
                         targetValue={objective.targetValue ?? 0}
@@ -247,7 +242,7 @@ const ResponsiveObjectivesView = React.forwardRef<
                 return (
                     <QuickActions
                         objectiveId={objetiveRow._id as Id<'objectives'>}
-                        currentStatus={objetiveRow.status ?? 'not_started'}
+                        currentStatus={objetiveRow.status ?? 'active'}
                     />
                 );
             },
@@ -272,9 +267,9 @@ const ResponsiveObjectivesView = React.forwardRef<
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
-                            await deleteObjectiveMutation.mutateAsync(
-                                objetiveRow._id as Id<'objectives'>
-                            );
+                            await deleteObjectiveMutation.mutateAsync({
+                                id: objetiveRow._id as Id<'objectives'>,
+                            });
                         }}
                         title={t('confirm.deleteObjective')}
                         description={t('confirm.deleteObjectiveDescription')}

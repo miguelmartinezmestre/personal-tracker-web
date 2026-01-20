@@ -466,8 +466,7 @@
         "goToProgress": "Go to progress",
         "statusOptions": {
             "all": "All Status",
-            "notStarted": "Not Started",
-            "inProgress": "In Progress",
+            "active": "Active",
             "completed": "Completed",
             "paused": "Paused",
             "archived": "Archived"

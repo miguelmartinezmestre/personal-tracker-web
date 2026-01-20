@@ -3,7 +3,8 @@ import { v } from 'convex/values';
 
 export default defineSchema({
     objectives: defineTable({
-        user: v.string(),
+        organizationId: v.string(),
+        userId: v.string(),
         title: v.string(),
         description: v.optional(v.string()),
         category: v.optional(v.string()),
@@ -18,7 +19,10 @@ export default defineSchema({
         periodLengthDays: v.optional(v.number()),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index('by_user', ['user']),
+    })
+    .index('by_user', ['userId'])
+    .index('by_organization', ['organizationId'])
+    .index('by_organization_user', ['organizationId', 'userId']),
 
     progressUpdates: defineTable({
         objective: v.id('objectives'),
@@ -32,7 +36,8 @@ export default defineSchema({
         .index('by_objective_date', ['objective', 'updateDate']),
 
     notifications: defineTable({
-        user: v.string(),
+        userId: v.string(),
+        organizationId: v.string(),
         objective: v.optional(v.id('objectives')),
         read: v.boolean(),
         notificationType: v.string(), // 'deadline' | 'progress' | 'status' | 'achievement'
@@ -41,14 +46,16 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index('by_user', ['user'])
-        .index('by_user_date', ['user', 'notificationDate'])
-        .index('by_user_read', ['user', 'read'])
-        .index('by_user_type_read', ['user', 'notificationType', 'read'])
+        .index('by_user', ['userId'])
+        .index('by_organization', ['organizationId'])
+        .index('by_user_date', ['userId', 'notificationDate'])
+        .index('by_user_read', ['userId', 'read'])
+        .index('by_user_type_read', ['userId', 'notificationType', 'read'])
         .index('by_objective', ['objective']),
 
     auditLogs: defineTable({
-        user: v.string(),
+        userId: v.string(),
+        organizationId: v.string(),
         action: v.string(),
         resourceType: v.string(), // 'objective' | 'progress_update' | 'organization' | 'organization_member' | 'category' | 'user' | 'session' | 'permission'
         resourceId: v.optional(v.string()), // ID of the affected resource
@@ -62,19 +69,23 @@ export default defineSchema({
         severity: v.string(), // 'info' | 'warning' | 'critical'
         createdAt: v.number(),
     })
-        .index('by_user', ['user'])
+        .index('by_user', ['userId'])
+        .index('by_organization', ['organizationId'])
         .index('by_createdAt', ['createdAt'])
         .index('by_resourceType', ['resourceType'])
         .index('by_action', ['action']),
 
     categories: defineTable({
-        user: v.string(),
+        userId: v.string(),
+        organizationId: v.string(),
         name: v.string(),
         color: v.string(),
         icon: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index('by_user', ['user']),
+    })
+    .index('by_user', ['userId'])
+    .index('by_organization', ['organizationId']),
 
     // Achievement definitions - what achievements exist
     achievementDefinitions: defineTable({
@@ -96,15 +107,15 @@ export default defineSchema({
         .index('by_type_active', ['type', 'isActive']),
 
     // User achievements - which users earned which achievements
-    userAchievements: defineTable({
-        user: v.string(),
+    obtainedAchievements: defineTable({
+        userId: v.string(),
         achievement: v.id('achievementDefinitions'),
         earnedAt: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index('by_user', ['user'])
-        .index('by_user_achievement', ['user', 'achievement'])
+        .index('by_user', ['userId'])
+        .index('by_user_achievement', ['userId', 'achievement'])
         .index('by_earned_at', ['earnedAt']),
 
     // Organization achievements - which organizations earned which achievements
@@ -119,18 +130,5 @@ export default defineSchema({
         .index('by_organization', ['organization'])
         .index('by_organization_achievement', ['organization', 'achievement'])
         .index('by_earned_at', ['earnedAt']),
-
-    // Achievement progress tracking
-    achievementProgress: defineTable({
-        user: v.string(),
-        organization: v.optional(v.string()),
-        achievement: v.id('achievementDefinitions'),
-        currentProgress: v.number(),
-        createdAt: v.number(),
-        updatedAt: v.number(),
-    })
-        .index('by_user', ['user'])
-        .index('by_organization', ['organization'])
-        .index('by_user_achievement', ['user', 'achievement']),
 
 });

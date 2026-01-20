@@ -138,7 +138,8 @@ export async function createAuditLog(
 
     try {
         await ctx.db.insert('auditLogs', {
-            user: userId,
+            userId: userId,
+            organizationId: '',
             action,
             resourceType,
             resourceId,

@@ -10,7 +10,6 @@ export const getAuditLogs = queryWithRLS({
         const limit = args.limit ?? 100;
         const resourceType = args.resourceType;
 
-        // Use an index to fetch the latest logs efficiently (no full table scan/sort).
         if (resourceType !== undefined) {
             return await ctx.db
                 .query('auditLogs')
@@ -33,14 +32,12 @@ export const getAuditLogsByResource = queryWithRLS({
         resourceId: v.string(),
     },
     handler: async (ctx, args) => {
-        // Get all logs for a specific resource
         const logs = await ctx.db
             .query('auditLogs')
             .withIndex('by_resourceType', q => q.eq('resourceType', args.resourceType))
             .order('desc')
             .collect();
 
-        // Filter by resourceId (would be more efficient with a composite index)
         return logs.filter(log => log.resourceId === args.resourceId);
     },
 });

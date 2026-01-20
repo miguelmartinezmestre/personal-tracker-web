@@ -81,7 +81,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                         <div className="flex items-center space-x-1 flex-shrink-0">
                             <QuickActions
                                 objectiveId={objective._id as Id<'objectives'>}
-                                currentStatus={objective.status ?? 'not_started'}
+                                currentStatus={objective.status ?? 'active'}
                                 className="flex-row"
                             />
                         </div>
@@ -116,7 +116,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                     {t('percentComplete')}
                                 </span>
                                 <StatusIndicator
-                                    status={objective.status ?? 'not_started'}
+                                    status={objective.status ?? 'active'}
                                     deadline={objective.deadline ?? undefined}
                                     currentValue={objective.currentValue ?? 0}
                                     targetValue={objective.targetValue ?? 0}
