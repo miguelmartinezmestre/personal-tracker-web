@@ -133,20 +133,4 @@ export default defineSchema({
         .index('by_organization', ['organization'])
         .index('by_user_achievement', ['user', 'achievement']),
 
-    // User permissions - permisos adicionales por usuario
-    userPermissions: defineTable({
-        userId: v.string(),
-        permission: v.string(), // "objectives:create" o "objectives:*"
-        grantedBy: v.string(),
-        grantedAt: v.number(),
-        expiresAt: v.optional(v.number()),
-        scope: v.optional(
-            v.object({
-                type: v.union(v.literal('global'), v.literal('organization')),
-                organizationId: v.optional(v.id('organization')),
-            })
-        ),
-    })
-        .index('by_user', ['userId'])
-        .index('by_user_permission', ['userId', 'permission']),
 });

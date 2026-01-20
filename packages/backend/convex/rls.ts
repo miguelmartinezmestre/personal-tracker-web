@@ -284,40 +284,6 @@ async function rlsRules(userId: string, role: string, ctx: QueryCtx) {
                 return category.user === userId;
             },
         },
-        userPermissions: {
-            read: async (_, permission) => {
-                if (!userId) return false;
-                // Los admins pueden ver todos los permisos
-                if (isAdmin) return true;
-                // Los usuarios pueden ver sus propios permisos
-                if (permission.userId === userId) return true;
-                // Los managers de organización pueden ver permisos de su organización
-                if (permission.scope?.type === 'organization' && permission.scope.organizationId) {
-                    return await isOrganizationAdmin(permission.scope.organizationId);
-                }
-                return false;
-            },
-            insert: async (_, permission) => {
-                if (!userId) return false;
-                // Los admins pueden crear cualquier permiso
-                if (isAdmin) return true;
-                // Los managers de organización pueden crear permisos de su organización
-                if (permission.scope?.type === 'organization' && permission.scope.organizationId) {
-                    return await isOrganizationAdmin(permission.scope.organizationId);
-                }
-                return false;
-            },
-            modify: async (_, permission) => {
-                if (!userId) return false;
-                // Los admins pueden modificar cualquier permiso
-                if (isAdmin) return true;
-                // Los managers de organización pueden modificar permisos de su organización
-                if (permission.scope?.type === 'organization' && permission.scope.organizationId) {
-                    return await isOrganizationAdmin(permission.scope.organizationId);
-                }
-                return false;
-            },
-        },
     } satisfies Rules<QueryCtx, DataModel>;
 }
 
