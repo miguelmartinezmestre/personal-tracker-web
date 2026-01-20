@@ -4,187 +4,9 @@ import { Doc } from './_generated/dataModel';
 import { internalMutation, QueryCtx, MutationCtx } from './_generated/server';
 import { components } from './_generated/api';
 import { TIME } from './utils/constants';
+import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
 
-// Achievement definitions data
-const ACHIEVEMENT_DEFINITIONS = [
-    // Individual - Milestone
-    {
-        code: 'first_objective',
-        type: 'individual',
-        category: 'milestone',
-        tier: 'bronze',
-        threshold: 1,
-        icon: 'Trophy',
-        points: 10,
-    },
-    {
-        code: 'objectives_created_5',
-        type: 'individual',
-        category: 'milestone',
-        tier: 'bronze',
-        threshold: 5,
-        icon: 'Target',
-        points: 25,
-    },
-    {
-        code: 'objectives_created_15',
-        type: 'individual',
-        category: 'milestone',
-        tier: 'silver',
-        threshold: 15,
-        icon: 'Target',
-        points: 50,
-    },
-    {
-        code: 'objectives_created_30',
-        type: 'individual',
-        category: 'milestone',
-        tier: 'gold',
-        threshold: 30,
-        icon: 'Target',
-        points: 100,
-    },
-    // Individual - Completion
-    {
-        code: 'objectives_completed_3',
-        type: 'individual',
-        category: 'completion',
-        tier: 'bronze',
-        threshold: 3,
-        icon: 'CheckCircle',
-        points: 30,
-    },
-    {
-        code: 'objectives_completed_10',
-        type: 'individual',
-        category: 'completion',
-        tier: 'silver',
-        threshold: 10,
-        icon: 'CheckCircle',
-        points: 75,
-    },
-    {
-        code: 'objectives_completed_25',
-        type: 'individual',
-        category: 'completion',
-        tier: 'gold',
-        threshold: 25,
-        icon: 'CheckCircle',
-        points: 150,
-    },
-    // Individual - Streak
-    {
-        code: 'streak_3',
-        type: 'individual',
-        category: 'streak',
-        tier: 'bronze',
-        threshold: 3,
-        icon: 'Flame',
-        points: 20,
-    },
-    {
-        code: 'streak_7',
-        type: 'individual',
-        category: 'streak',
-        tier: 'silver',
-        threshold: 7,
-        icon: 'Flame',
-        points: 50,
-    },
-    {
-        code: 'streak_14',
-        type: 'individual',
-        category: 'streak',
-        tier: 'gold',
-        threshold: 14,
-        icon: 'Flame',
-        points: 100,
-    },
-    // Individual - Activity
-    {
-        code: 'progress_updates_10',
-        type: 'individual',
-        category: 'activity',
-        tier: 'bronze',
-        threshold: 10,
-        icon: 'TrendingUp',
-        points: 15,
-    },
-    {
-        code: 'progress_updates_50',
-        type: 'individual',
-        category: 'activity',
-        tier: 'silver',
-        threshold: 50,
-        icon: 'TrendingUp',
-        points: 40,
-    },
-    {
-        code: 'progress_updates_100',
-        type: 'individual',
-        category: 'activity',
-        tier: 'gold',
-        threshold: 100,
-        icon: 'TrendingUp',
-        points: 80,
-    },
-    // Individual - Special
-    {
-        code: 'early_bird',
-        type: 'individual',
-        category: 'completion',
-        tier: 'silver',
-        threshold: 1,
-        icon: 'Clock',
-        points: 40,
-    },
-    // Organization achievements
-    {
-        code: 'organization_first_objective',
-        type: 'organization',
-        category: 'milestone',
-        tier: 'bronze',
-        threshold: 1,
-        icon: 'Users',
-        points: 15,
-    },
-    {
-        code: 'organization_completed_5',
-        type: 'organization',
-        category: 'completion',
-        tier: 'bronze',
-        threshold: 5,
-        icon: 'Users',
-        points: 50,
-    },
-    {
-        code: 'organization_completed_15',
-        type: 'organization',
-        category: 'completion',
-        tier: 'silver',
-        threshold: 15,
-        icon: 'Users',
-        points: 100,
-    },
-    {
-        code: 'organization_completed_30',
-        type: 'organization',
-        category: 'completion',
-        tier: 'gold',
-        threshold: 30,
-        icon: 'Users',
-        points: 200,
-    },
-    {
-        code: 'organization_streak_7',
-        type: 'organization',
-        category: 'streak',
-        tier: 'silver',
-        threshold: 7,
-        icon: 'Flame',
-        points: 75,
-    },
-];
+
 
 // ============ QUERIES ============
 
@@ -213,19 +35,16 @@ export const getUserAchievements = queryWithRLS({
     handler: async ctx => {
         const userId = String(ctx.identity?.subject);
 
-        const userAchievements = await ctx.db
-            .query('userAchievements')
-            .withIndex('by_user', q => q.eq('user', userId))
+        const obtainedAchievements = await ctx.db
+            .query('obtainedAchievements')
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         // Get achievement definitions for each earned achievement
         const achievementsWithDetails = await Promise.all(
-            userAchievements.map(async ua => {
-                const definition = await ctx.db.get('achievementDefinitions', ua.achievement);
-                return {
-                    ...ua,
-                    definition,
-                };
+            obtainedAchievements.map(async oa => {
+                const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
+                return definition;
             })
         );
 
@@ -262,14 +81,14 @@ export const getUserAchievementStats = queryWithRLS({
     handler: async ctx => {
         const userId = String(ctx.identity?.subject);
 
-        const userAchievements = await ctx.db
-            .query('userAchievements')
-            .withIndex('by_user', q => q.eq('user', userId))
+        const obtainedAchievements = await ctx.db
+            .query('obtainedAchievements')
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         let totalPoints = 0;
-        for (const ua of userAchievements) {
-            const definition = await ctx.db.get('achievementDefinitions', ua.achievement);
+        for (const oa of obtainedAchievements) {
+            const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
             if (definition) {
                 totalPoints += definition.points;
             }
@@ -284,7 +103,7 @@ export const getUserAchievementStats = queryWithRLS({
 
         return {
             totalPoints,
-            earnedCount: userAchievements.length,
+            earnedCount: obtainedAchievements.length,
             totalAvailable: individualDefinitions.length,
         };
     },
@@ -298,19 +117,16 @@ export const getRecentAchievements = queryWithRLS({
         const userId = String(ctx.identity?.subject);
         const limit = args.limit ?? 5;
 
-        const userAchievements = await ctx.db
-            .query('userAchievements')
-            .withIndex('by_user', q => q.eq('user', userId))
+        const obtainedAchievements = await ctx.db
+            .query('obtainedAchievements')
+            .withIndex('by_user', q => q.eq('userId', userId))
             .order('desc')
             .take(limit);
 
         const achievementsWithDetails = await Promise.all(
-            userAchievements.map(async ua => {
-                const definition = await ctx.db.get('achievementDefinitions', ua.achievement);
-                return {
-                    ...ua,
-                    definition,
-                };
+            obtainedAchievements.map(async oa => {
+                const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
+                return definition;
             })
         );
 
@@ -332,17 +148,17 @@ export const getUserAchievementProgress = queryWithRLS({
         const activeDefinitions = definitions.filter(d => d.isActive);
 
         // Get user's earned achievements
-        const earnedAchievements = await ctx.db
-            .query('userAchievements')
-            .withIndex('by_user', q => q.eq('user', userId))
+        const obtainedAchievements = await ctx.db
+            .query('obtainedAchievements')
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        const earnedIds = new Set(earnedAchievements.map(ea => String(ea.achievement)));
+        const earnedIds = new Set(obtainedAchievements.map(oa => String(oa.achievement)));
 
         // Calculate progress for each achievement
         const objectivesCount = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
@@ -402,7 +218,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned
-                    ? earnedAchievements.find(ea => String(ea.achievement) === String(def._id))
+                    ? obtainedAchievements.find(oa => String(oa._id) === String(def._id))
                           ?.earnedAt
                     : undefined,
             };
@@ -416,7 +232,7 @@ export const getUserAchievementProgress = queryWithRLS({
 async function calculateUserStreak(ctx: QueryCtx, userId: string): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
-        .withIndex('by_user', q => q.eq('user', userId))
+        .withIndex('by_user', q => q.eq('userId', userId))
         .collect();
 
     const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
@@ -527,8 +343,8 @@ export const checkUserAchievements = internalMutation({
 
         // Get user's already earned achievements
         const earnedAchievements = await ctx.db
-            .query('userAchievements')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .query('obtainedAchievements')
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const earnedCodes = new Set(
@@ -543,7 +359,7 @@ export const checkUserAchievements = internalMutation({
         // Get current stats
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const completedObjectives = objectives.filter(o => o.status === 'completed');
@@ -617,8 +433,8 @@ export const checkUserAchievements = internalMutation({
 
             if (shouldAward) {
                 // Award the achievement
-                await ctx.db.insert('userAchievements', {
-                    user: userId,
+                await ctx.db.insert('obtainedAchievements', {
+                    userId: userId,
                     achievement: def._id,
                     earnedAt: now,
                     createdAt: now,
@@ -627,7 +443,8 @@ export const checkUserAchievements = internalMutation({
 
                 // Create notification
                 await ctx.db.insert('notifications', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: '',
                     objective: undefined,
                     read: false,
                     notificationType: 'achievement',
@@ -649,7 +466,7 @@ export const checkUserAchievements = internalMutation({
 async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
-        .withIndex('by_user', q => q.eq('user', userId))
+        .withIndex('by_user', q => q.eq('userId', userId))
         .collect();
 
     const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
@@ -760,7 +577,7 @@ export const checkOrganizationAchievements = internalMutation({
             memberUserIds.map(async userId => {
                 const userObjectives = await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('user', userId))
+                    .withIndex('by_user', q => q.eq('userId', userId))
                     .collect();
                 return userObjectives;
             })
@@ -821,7 +638,8 @@ export const checkOrganizationAchievements = internalMutation({
                 // Notify all organization members
                 for (const member of members) {
                     await ctx.db.insert('notifications', {
-                        user: member.userId,
+                        userId: member.userId,
+                        organizationId: organizationId,
                         objective: undefined,
                         read: false,
                         notificationType: 'achievement',
@@ -849,7 +667,7 @@ async function calculateOrganizationStreak(
         memberUserIds.map(async userId => {
             const userObjectives = await ctx.db
                 .query('objectives')
-                .withIndex('by_user', q => q.eq('user', userId))
+                .withIndex('by_user', q => q.eq('userId', userId))
                 .collect();
             return userObjectives;
         })
@@ -922,7 +740,7 @@ export const getUnviewedAchievementsCount = queryWithRLS({
         const notifications = await ctx.db
             .query('notifications')
             .withIndex('by_user_type_read', q =>
-                q.eq('user', userId).eq('notificationType', 'achievement').eq('read', false)
+                q.eq('userId', userId).eq('notificationType', 'achievement').eq('read', false)
             )
             .collect();
 
