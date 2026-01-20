@@ -1,6 +1,5 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
-import { authComponent } from './auth';
 import { internalMutation } from './_generated/server';
 import type { Doc } from './_generated/dataModel';
 import { paginationOptsValidator } from 'convex/server';
@@ -26,20 +25,20 @@ const buildDeadlineMessage = (
 
     if (objective.deadline <= now) {
         const daysOverdue = Math.max(1, Math.ceil((now - objective.deadline) / DAY_MS));
-        return `Objective \"${objective.title}\" is overdue by ${daysOverdue} day${
+        return `Objective "${objective.title}" is overdue by ${daysOverdue} day${
             daysOverdue === 1 ? '' : 's'
         } (due on ${formatDate(objective.deadline)}).`;
     }
 
     const isDueToday = objective.deadline >= dayStart && objective.deadline < dayEnd;
     if (isDueToday) {
-        return `Objective \"${objective.title}\" is due today (${formatDate(objective.deadline)}).`;
+        return `Objective "${objective.title}" is due today (${formatDate(objective.deadline)}).`;
     }
 
     const daysUntil = Math.ceil((objective.deadline - now) / DAY_MS);
     if (daysUntil > DEADLINE_SOON_DAYS) return null;
 
-    return `Objective \"${objective.title}\" is due in ${daysUntil} day${
+    return `Objective "${objective.title}" is due in ${daysUntil} day${
         daysUntil === 1 ? '' : 's'
     } (${formatDate(objective.deadline)}).`;
 };
@@ -52,7 +51,7 @@ export const getNotificationsByUser = queryWithRLS({
         const userId = String(ctx.identity?.subject);
         const results = await ctx.db
             .query('notifications')
-            .withIndex('by_user_date', q => q.eq('user', userId))
+            .withIndex('by_user_date', q => q.eq('userId', userId))
             .order('desc')
             .paginate(paginationOpts);
 
@@ -72,20 +71,15 @@ export const createNotification = mutationWithRLS({
         message: v.string(),
     },
     handler: async (ctx, args) => {
-        // Try to get user from betterAuth, but fall back to identity for tests
-        const user = await ctx.auth.getUserIdentity().catch(() => null);
-        const userId = String(ctx.identity?.subject);
-        if (!userId) throw new Error('User not authenticated');
 
-        // Only check user._id if betterAuth is available (not in tests)
-        if (user && !user._id) throw new Error('User not authenticated');
+        const userId = String(ctx.identity?.subject);
 
         const objective = await ctx.db.get('objectives', args.objective);
         if (!objective) throw new Error('Objective not found');
 
         const role = String(ctx.identity?.role ?? 'user');
         const isAdmin = role === 'admin' || role === 'ADMIN';
-        if (!isAdmin && objective.user !== userId) {
+        if (!isAdmin && objective.userId !== userId) {
             throw new Error('Not authorized to create notifications for this objective');
         }
 
@@ -93,7 +87,8 @@ export const createNotification = mutationWithRLS({
         const notificationDate = args.notificationDate ?? now;
 
         const id = await ctx.db.insert('notifications', {
-            user: userId,
+            userId: userId,
+            organizationId: objective.organizationId,
             objective: args.objective,
             read: false,
             notificationType: args.notificationType,
@@ -124,7 +119,7 @@ export const markAllNotificationsRead = mutationWithRLS({
         const userId = String(ctx.identity?.subject);
         const notifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
         const now = Date.now();
         let updated = 0;
@@ -189,7 +184,8 @@ export const runDeadlineNotificationsCron = internalMutation({
             }
 
             await ctx.db.insert('notifications', {
-                user: objective.user,
+                userId: objective.userId,
+                organizationId: objective.organizationId,
                 objective: objective._id,
                 read: false,
                 notificationType: 'deadline',
