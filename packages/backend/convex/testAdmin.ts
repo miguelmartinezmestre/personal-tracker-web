@@ -9,7 +9,7 @@ export const promoteSelfToAdmin = mutation({
             throw new Error('Promote admin disabled');
         }
 
-        const user = await authComponent.getAuthUser(ctx).catch(() => null);
+        const user = await ctx.auth.getUserIdentity().catch(() => null);
         if (!user || !user._id) {
             throw new Error('Unauthorized');
         }
