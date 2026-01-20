@@ -1,5 +1,4 @@
 import { mutation } from './_generated/server';
-import { authComponent } from './auth';
 import { components } from './_generated/api';
 
 export const promoteSelfToAdmin = mutation({
@@ -10,20 +9,17 @@ export const promoteSelfToAdmin = mutation({
         }
 
         const user = await ctx.auth.getUserIdentity().catch(() => null);
-        if (!user || !user._id) {
-            throw new Error('Unauthorized');
-        }
 
         await ctx.runMutation(components.betterAuth.adapter.updateOne, {
             input: {
                 model: 'user',
-                where: [{ field: '_id', value: user._id }],
+                where: [{ field: '_id', value: String(user?.subject) }],
                 update: {
                     role: 'admin',
                 },
             },
         });
 
-        return { userId: user._id };
+        return { userId: String(user?.subject) };
     },
 });
