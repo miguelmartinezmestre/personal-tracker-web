@@ -1,10 +1,7 @@
 import { queryWithRLS } from './rls';
 import { v } from 'convex/values';
-import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
+import { TIME, DASHBOARD } from './utils/constants';
 
-/**
- * Obtiene estadísticas generales del dashboard del usuario
- */
 export const getDashboardStats = queryWithRLS({
     args: {},
     handler: async ctx => {
@@ -12,7 +9,7 @@ export const getDashboardStats = queryWithRLS({
 
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const totalObjectives = objectives.length;
@@ -33,9 +30,6 @@ export const getDashboardStats = queryWithRLS({
     },
 });
 
-/**
- * Obtiene el conteo de actualizaciones de progreso por mes (últimos 6 meses)
- */
 export const getMonthlyProgress = queryWithRLS({
     args: {
         months: v.optional(v.number()),
@@ -44,21 +38,17 @@ export const getMonthlyProgress = queryWithRLS({
         const userId = String(ctx.identity?.subject);
         const monthsToFetch = 6;
 
-        // Obtener los objetivos del usuario
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const objectiveIds = new Set(objectives.map(o => String(o._id)));
 
-        // Obtener todas las actualizaciones de progreso
         const allUpdates = await ctx.db.query('progressUpdates').collect();
 
-        // Filtrar solo las actualizaciones de los objetivos del usuario
         const userUpdates = allUpdates.filter(pu => objectiveIds.has(String(pu.objective)));
 
-        // Calcular el rango de fechas (últimos N meses)
         const now = new Date();
         const monthsData: { month: string; monthKey: string; count: number }[] = [];
 
@@ -71,7 +61,6 @@ export const getMonthlyProgress = queryWithRLS({
                 u => u.updateDate >= monthStart && u.updateDate < monthEnd
             ).length;
 
-            // Formato: "Ene", "Feb", etc.
             const monthName = date.toLocaleDateString('es-ES', { month: 'short' });
             const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
@@ -86,9 +75,6 @@ export const getMonthlyProgress = queryWithRLS({
     },
 });
 
-/**
- * Obtiene los objetivos con mayor progreso
- */
 export const getObjectivesWithMostProgress = queryWithRLS({
     args: {
         limit: v.optional(v.number()),
@@ -99,10 +85,9 @@ export const getObjectivesWithMostProgress = queryWithRLS({
 
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        // Calcular porcentaje de progreso para cada objetivo
         const objectivesWithProgress = objectives
             .filter(o => o.targetValue > 0 && o.status !== 'archived')
             .map(o => {
@@ -121,9 +106,6 @@ export const getObjectivesWithMostProgress = queryWithRLS({
     },
 });
 
-/**
- * Obtiene los objetivos con deadlines próximos
- */
 export const getUpcomingDeadlines = queryWithRLS({
     args: {
         days: v.optional(v.number()),
@@ -136,7 +118,7 @@ export const getUpcomingDeadlines = queryWithRLS({
 
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const upcomingDeadlines = objectives
@@ -161,9 +143,6 @@ export const getUpcomingDeadlines = queryWithRLS({
     },
 });
 
-/**
- * Obtiene estadísticas de actividad reciente
- */
 export const getRecentActivity = queryWithRLS({
     args: {
         days: v.optional(v.number()),
@@ -173,24 +152,20 @@ export const getRecentActivity = queryWithRLS({
         const daysBack = DASHBOARD.ACTIVITY_DAYS_BACK;
         const startDate = Date.now() - daysBack * TIME.DAY_MS;
 
-        // Objetivos del usuario
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('user', userId))
+            .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
         const objectiveIds = new Set(objectives.map(o => String(o._id)));
 
-        // Actualizaciones de progreso recientes
         const allUpdates = await ctx.db.query('progressUpdates').collect();
         const recentUpdates = allUpdates.filter(
             u => objectiveIds.has(String(u.objective)) && u.updateDate >= startDate
         );
 
-        // Objetivos creados recientemente
         const recentObjectives = objectives.filter(o => o.createdAt >= startDate);
 
-        // Objetivos completados recientemente
         const recentlyCompleted = objectives.filter(
             o => o.status === 'completed' && o.updatedAt >= startDate
         );
