@@ -1,41 +1,10 @@
 {
+    "extends": "./convex/tsconfig.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "lib": [
-            "ES2021",
-            "dom"
-        ],
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "jsx": "react-jsx",
-        "strict": true,
-        "allowJs": true,
-        "skipLibCheck": true,
-        "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
-        "isolatedModules": true,
-        "noEmit": true,
-        "baseUrl": ".",
         "paths": {
             "@repo/backend/convex/*": [
                 "./convex/*"
             ]
         }
     },
-    "include": [
-        "convex/**/*.ts",
-        "convex/**/*.tsx"
-    ],
-    "exclude": [
-        "node_modules",
-        "convex/_generated",
-        "convex/**/_generated",
-        "convex/**/*.test.ts",
-        "convex/**/*.test.tsx",
-        "convex/test.setup.ts",
-        "test.setup.ts",
-        "../apps",
-        "../packages",
-        "test_helpers.ts"
-    ]
 }
