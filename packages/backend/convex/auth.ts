@@ -94,12 +94,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
 export const getCurrentUser = query({
     args: {},
     handler: async ctx => {
-        try {
-            const user = await authComponent.getAuthUser(ctx);
-            return user;
-        } catch (error) {
-            console.error('[getCurrentUser] Error getting current user:', error);
-        }
+        return ctx.auth.getUserIdentity().catch(() => null);
     },
 });
 
@@ -107,7 +102,7 @@ export const getCurrentUser = query({
 export const isAuthenticated = query({
     args: {},
     handler: async ctx => {
-        const user = await authComponent.getAuthUser(ctx).catch(() => null);
+        const user = await ctx.auth.getUserIdentity().catch(() => null);
         if (user) return true;
         // Fall back to checking identity in tests
         const identity = await ctx.auth.getUserIdentity();

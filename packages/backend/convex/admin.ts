@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
-import { query, mutation } from './_generated/server';
 import { components } from './_generated/api';
 import { authComponent, createAuth } from './auth';
 import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
+import { mutationWithRLS, queryWithRLS } from './rls';
 
 export type BetterAuthUser = {
     _id: string;
@@ -43,10 +43,7 @@ export type PaginationResult<T> = {
 
 export type AdminUsersResult = PaginationResult<BetterAuthUser>;
 
-/**
- * List all users (admin only)
- */
-export const listUsers = query({
+export const listUsers = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         searchValue: v.optional(v.string()),
@@ -65,10 +62,7 @@ export const listUsers = query({
     },
 });
 
-/**
- * Ban a user (admin only)
- */
-export const banUser = mutation({
+export const banUser = mutationWithRLS({
     args: {
         userId: v.string(),
         banReason: v.optional(v.string()),
@@ -93,10 +87,7 @@ export const banUser = mutation({
     },
 });
 
-/**
- * Unban a user (admin only)
- */
-export const unbanUser = mutation({
+export const unbanUser = mutationWithRLS({
     args: {
         userId: v.string(),
     },
@@ -117,10 +108,7 @@ export const unbanUser = mutation({
     },
 });
 
-/**
- * Update user role (admin only)
- */
-export const updateUserRole = mutation({
+export const updateUserRole = mutationWithRLS({
     args: {
         userId: v.string(),
         role: v.string(),
@@ -129,7 +117,6 @@ export const updateUserRole = mutation({
         
         await requireAdmin(ctx);
 
-        // Update user role
         await ctx.runMutation(components.betterAuth.adapter.updateOne, {
             input: {
                 model: 'user',
@@ -144,10 +131,7 @@ export const updateUserRole = mutation({
     },
 });
 
-/**
- * Delete a user (admin only)
- */
-export const deleteUser = mutation({
+export const deleteUser = mutationWithRLS({
     args: {
         userId: v.string(),
     },
@@ -168,7 +152,7 @@ export const deleteUser = mutation({
     },
 });
 
-export const listUserSessions = query({
+export const listUserSessions = queryWithRLS({
     args: {
         userId: v.string(),
         paginationOpts: paginationOptsValidator,
@@ -176,7 +160,6 @@ export const listUserSessions = query({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
         
-        // Get all users from BetterAuth user table
         const sessions = await ctx.runQuery(components.betterAuth.adapter.findMany, {
             model: 'session',
             where: [{ field: 'userId', value: args.userId, operator: 'eq' }],
