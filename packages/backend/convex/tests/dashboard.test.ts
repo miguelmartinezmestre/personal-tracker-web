@@ -1,30 +1,57 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex dashboard', async () => {
-    let t: ReturnType<typeof convexTest>;
-    let userIdentity: ReturnType<ReturnType<typeof convexTest>['withIdentity']>;
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
+    let userId: string;
+    let organizationId: string;
 
     beforeEach(async () => {
-        t = convexTest(schema, modules);
-        register(t);
-        userIdentity = t.withIdentity({
-            subject: 'test-user-dashboard',
-            role: 'admin',
-        });
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        await createTestUser(t, {
-            userId: 'test-user-dashboard',
-            email: 'dashboard-test@example.com',
-            name: 'Dashboard Test User',
+        const user = {
+            userId: 'test-user-dashboard-' + randomSuffix,
+            email: 'dashboard-test@example.com-' + randomSuffix,
+            name: 'Dashboard Test User ' + randomSuffix,
             password: 'test-password',
             role: 'admin',
             emailVerified: false,
+        };
+
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const orgId = await createTestOrganization(t, {
+            name: 'Dashboard Org ' + randomSuffix,
+            slug: 'dashboard-org-' + randomSuffix,
+        });
+
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        organizationId = String(orgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
         });
     });
 
@@ -40,40 +67,61 @@ describe('convex dashboard', async () => {
         });
 
         test('calculates correct stats with multiple objectives', async () => {
-            // Create objectives with different statuses
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'In Progress Objective 1',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'In Progress Objective 1',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'In Progress Objective 2',
-                targetValue: 100,
-                currentValue: 25,
-                status: 'in_progress',
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'In Progress Objective 2',
+                    targetValue: 100,
+                    currentValue: 25,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Completed Objective',
-                targetValue: 100,
-                currentValue: 100,
-                status: 'completed',
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Completed Objective',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Paused Objective',
-                targetValue: 100,
-                currentValue: 30,
-                status: 'paused',
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Paused Objective',
+                    targetValue: 100,
+                    currentValue: 30,
+                    status: 'paused',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Archived Objective',
-                targetValue: 100,
-                currentValue: 80,
-                status: 'archived',
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Archived Objective',
+                    targetValue: 100,
+                    currentValue: 80,
+                    status: 'archived',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const stats = await userIdentity.query(api.dashboard.getDashboardStats, {});
@@ -90,25 +138,22 @@ describe('convex dashboard', async () => {
         test('returns empty counts when no progress updates exist', async () => {
             const monthlyProgress = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
 
-            expect(monthlyProgress).toHaveLength(6); // Last 6 months
+            expect(monthlyProgress).toHaveLength(6);
             expect(monthlyProgress.every(m => m.count === 0)).toBe(true);
             expect(monthlyProgress.every(m => m.month && m.monthKey)).toBe(true);
         });
 
         test('counts progress updates correctly by month', async () => {
-            // Create an objective first
             const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
                 title: 'Monthly Progress Test',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             const now = new Date();
             const currentMonth = new Date(now.getFullYear(), now.getMonth(), 15);
             const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
 
-            // Create 3 updates in current month
             for (let i = 0; i < 3; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
@@ -122,7 +167,6 @@ describe('convex dashboard', async () => {
                 });
             }
 
-            // Create 2 updates in last month
             for (let i = 0; i < 2; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
@@ -138,8 +182,6 @@ describe('convex dashboard', async () => {
 
             const monthlyProgress = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
 
-            // Find current month and last month in results
-            // Use the same date objects to ensure correct year handling
             const currentMonthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
             const lastMonthKey = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
@@ -162,26 +204,39 @@ describe('convex dashboard', async () => {
         });
 
         test('sorts objectives by progress percentage', async () => {
-            // Create objectives with different progress levels
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Low Progress',
-                targetValue: 100,
-                currentValue: 20,
-                status: 'in_progress',
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Low Progress',
+                    targetValue: 100,
+                    currentValue: 20,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'High Progress',
-                targetValue: 100,
-                currentValue: 90,
-                status: 'in_progress',
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'High Progress',
+                    targetValue: 100,
+                    currentValue: 90,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Medium Progress',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Medium Progress',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const topProgress = await userIdentity.query(
@@ -199,18 +254,28 @@ describe('convex dashboard', async () => {
         });
 
         test('excludes archived objectives', async () => {
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Active High Progress',
-                targetValue: 100,
-                currentValue: 95,
-                status: 'in_progress',
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Active High Progress',
+                    targetValue: 100,
+                    currentValue: 95,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Archived High Progress',
-                targetValue: 100,
-                currentValue: 98,
-                status: 'archived',
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Archived High Progress',
+                    targetValue: 100,
+                    currentValue: 98,
+                    status: 'archived',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const topProgress = await userIdentity.query(
@@ -223,13 +288,18 @@ describe('convex dashboard', async () => {
         });
 
         test('limits results to top 5', async () => {
-            // Create 7 objectives
             for (let i = 1; i <= 7; i++) {
-                await userIdentity.mutation(api.objectives.createObjective, {
-                    title: `Objective ${i}`,
-                    targetValue: 100,
-                    currentValue: i * 10,
-                    status: 'in_progress',
+                await userIdentity.run(async ctx => {
+                    await ctx.db.insert('objectives', {
+                        userId: userId,
+                        organizationId: organizationId,
+                        title: `Objective ${i}`,
+                        targetValue: 100,
+                        currentValue: i * 10,
+                        status: 'active',
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
                 });
             }
 
@@ -239,7 +309,6 @@ describe('convex dashboard', async () => {
             );
 
             expect(topProgress).toHaveLength(5);
-            // Should be sorted by descending progress
             expect(topProgress[0]?.progress).toBe(70);
             expect(topProgress[4]?.progress).toBe(30);
         });
@@ -247,11 +316,17 @@ describe('convex dashboard', async () => {
 
     describe('getUpcomingDeadlines', () => {
         test('returns empty array when no objectives have deadlines', async () => {
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'No Deadline',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'No Deadline',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
@@ -263,31 +338,42 @@ describe('convex dashboard', async () => {
             const now = Date.now();
             const DAY_MS = 24 * 60 * 60 * 1000;
 
-            // Deadline in 3 days (should be included)
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Deadline in 3 days',
-                targetValue: 100,
-                currentValue: 60,
-                status: 'in_progress',
-                deadline: now + 3 * DAY_MS,
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Deadline in 3 days',
+                    targetValue: 100,
+                    currentValue: 60,
+                    status: 'active',
+                    deadline: now + 3 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
 
-            // Deadline in 6 days (should be included)
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Deadline in 6 days',
-                targetValue: 100,
-                currentValue: 40,
-                status: 'in_progress',
-                deadline: now + 6 * DAY_MS,
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Deadline in 6 days',
+                    targetValue: 100,
+                    currentValue: 40,
+                    status: 'active',
+                    deadline: now + 6 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
 
-            // Deadline in 10 days (should NOT be included)
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Deadline in 10 days',
-                targetValue: 100,
-                currentValue: 30,
-                status: 'in_progress',
-                deadline: now + 10 * DAY_MS,
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Deadline in 10 days',
+                    targetValue: 100,
+                    currentValue: 30,
+                    status: 'active',
+                    deadline: now + 10 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
             });
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
@@ -303,28 +389,42 @@ describe('convex dashboard', async () => {
             const now = Date.now();
             const DAY_MS = 24 * 60 * 60 * 1000;
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Active with deadline',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
-                deadline: now + 5 * DAY_MS,
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Active with deadline',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now + 5 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Completed with deadline',
-                targetValue: 100,
-                currentValue: 100,
-                status: 'completed',
-                deadline: now + 4 * DAY_MS,
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Completed with deadline',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    deadline: now + 4 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Archived with deadline',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'archived',
-                deadline: now + 3 * DAY_MS,
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Archived with deadline',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'archived',
+                    deadline: now + 3 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
             });
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
@@ -337,28 +437,42 @@ describe('convex dashboard', async () => {
             const now = Date.now();
             const DAY_MS = 24 * 60 * 60 * 1000;
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Deadline 5 days',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
-                deadline: now + 5 * DAY_MS,
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Deadline 5 days',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now + 5 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Deadline 2 days',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
-                deadline: now + 2 * DAY_MS,
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Deadline 2 days',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now + 2 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Deadline 7 days',
-                targetValue: 100,
-                currentValue: 50,
-                status: 'in_progress',
-                deadline: now + 7 * DAY_MS,
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Deadline 7 days',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now + 7 * DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
             });
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
@@ -385,13 +499,11 @@ describe('convex dashboard', async () => {
                 title: 'Recent Activity Test',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             const now = Date.now();
             const DAY_MS = 24 * 60 * 60 * 1000;
 
-            // Create 5 updates within last 30 days
             for (let i = 0; i < 5; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
@@ -405,7 +517,6 @@ describe('convex dashboard', async () => {
                 });
             }
 
-            // Create 2 updates older than 30 days (should not be counted)
             for (let i = 0; i < 2; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
@@ -425,26 +536,39 @@ describe('convex dashboard', async () => {
         });
 
         test('counts recently created and completed objectives', async () => {
-            // These objectives are created within the test, so they're recent
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Recently Created 1',
-                targetValue: 100,
-                currentValue: 0,
-                status: 'in_progress',
-            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Recently Created 1',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Recently Created 2',
-                targetValue: 100,
-                currentValue: 0,
-                status: 'in_progress',
-            });
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Recently Created 2',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'Recently Completed',
-                targetValue: 100,
-                currentValue: 100,
-                status: 'completed',
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Recently Completed',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const activity = await userIdentity.query(api.dashboard.getRecentActivity, {});

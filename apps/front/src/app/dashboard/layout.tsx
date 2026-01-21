@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@repo/ui/componen
 import CommandMenu from '@/features/dashboard/components/command';
 import { LanguageSwitcher } from '@/features/landing/components/language-switcher';
 import { OrganizationSwitcher } from '@/features/organizations/components/organization-switcher';
+import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
@@ -30,6 +31,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     </div>
                     <div className="flex items-center gap-2">
                         <OrganizationSwitcher />
+                        <NotificationBell />
                         <ThemeToggle />
                         <LanguageSwitcher />
                     </div>

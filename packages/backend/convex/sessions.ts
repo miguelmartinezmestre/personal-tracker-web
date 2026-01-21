@@ -20,7 +20,7 @@ export const getSessionsByUser = queryWithRLS({
 });
 
 export const invalidateSession = mutationWithRLS({
-    args: { _id: v.id('session') },
+    args: { token: v.string() },
     handler: async (ctx, args) => {
 
         const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
@@ -28,10 +28,36 @@ export const invalidateSession = mutationWithRLS({
         await auth.api.revokeSession({
             headers,
             body: {
-                token: args._id,
+                token: args.token,
             },
         });
 
         return { message: 'Session invalidated' } as const;
+    },
+});
+
+export const invalidateAllOtherSessions = mutationWithRLS({
+    args: { currentToken: v.string() },
+    handler: async (ctx, args) => {
+
+        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+
+        const sessions = await auth.api.listSessions({ headers });
+
+        let revokedCount = 0;
+        for (const session of sessions) {
+            // betterAuth sessions use 'token' as the identifier
+            if (session.token !== args.currentToken) {
+                await auth.api.revokeSession({
+                    headers,
+                    body: {
+                        token: session.token,
+                    },
+                });
+                revokedCount++;
+            }
+        }
+
+        return { message: 'All other sessions invalidated', revokedCount } as const;
     },
 });

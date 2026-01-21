@@ -1,10 +1,9 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { register, runInBetterAuth } from '../../better-auth.helper';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { initConvexTest } from '../../better-auth.helper';
 import { createTestUser, createTestOrganization } from '../../test_helpers';
-import type { ComponentRunner } from '../../better-auth.helper';
+import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import { DataModel as BetterAuthDataModel } from '../betterAuth/_generated/dataModel';
+import { DataModel } from '../_generated/dataModel';
 
 type InvitationRecord = {
     _id: string;
@@ -28,29 +27,31 @@ type MemberRecord = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 describe('convex invitations (better-auth)', () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = initConvexTest();
 
     beforeEach(() => {
-        t = convexTest(schema, modules);
-        register(t);
+        // Nothing to do here, tests will create their own users
     });
 
     test('inviteMember creates pending invitation', async () => {
-        await createTestUser(t as unknown as Parameters<typeof createTestUser>[0], {
-            userId: 'inviter-1',
-            email: 'inviter@example.com',
-            name: 'Inviter User',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        await createTestUser(t, {
+            userId: 'inviter-1-' + randomSuffix,
+            email: 'inviter@example.com-' + randomSuffix,
+            name: 'Inviter User ' + randomSuffix,
+            password: 'test-password',
             role: 'admin',
             emailVerified: true,
         });
 
-        const organizationId = await createTestOrganization(t as unknown as ComponentRunner, {
+        const organizationId = await createTestOrganization(t, {
             name: 'Invite Org',
-            slug: 'invite-org',
+            slug: 'invite-org-' + randomSuffix,
             description: 'Invitations org',
         });
 
-        const invitationId = await runInBetterAuth(t as unknown as ComponentRunner, async ctx => {
+        const invitationId = await t.run(async (ctx: GenericMutationCtx<BetterAuthDataModel>) => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'invitee@example.com',
@@ -58,14 +59,14 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() + DAY_MS,
                 createdAt: Date.now(),
-                inviterId: 'inviter-1',
+                inviterId: 'inviter-1-' + randomSuffix,
             });
         });
 
-        const invitation = await runInBetterAuth(t as unknown as ComponentRunner, async ctx =>
+        const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db.get(invitationId)
         );
-        const record = invitation as InvitationRecord;
+        const record = invitation as unknown as InvitationRecord;
         expect(record).not.toBeNull();
         expect(record.status).toBe('pending');
         expect(record.email).toBe('invitee@example.com');
@@ -73,29 +74,33 @@ describe('convex invitations (better-auth)', () => {
     });
 
     test('accepting invitation creates member and updates status', async () => {
-        await createTestUser(t as unknown as Parameters<typeof createTestUser>[0], {
-            userId: 'inviter-2',
-            email: 'inviter2@example.com',
-            name: 'Inviter 2',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        await createTestUser(t, {
+            userId: 'inviter-2-' + randomSuffix,
+            email: 'inviter2@example.com-' + randomSuffix,
+            name: 'Inviter 2 ' + randomSuffix,
+            password: 'test-password',
             role: 'admin',
             emailVerified: true,
         });
 
-        await createTestUser(t as unknown as Parameters<typeof createTestUser>[0], {
-            userId: 'invitee-2',
-            email: 'invitee2@example.com',
-            name: 'Invitee 2',
+        await createTestUser(t, {
+            userId: 'invitee-2-' + randomSuffix,
+            email: 'invitee2@example.com-' + randomSuffix,
+            name: 'Invitee 2 ' + randomSuffix,
+            password: 'test-password',
             role: 'user',
             emailVerified: true,
         });
 
-        const organizationId = await createTestOrganization(t as unknown as ComponentRunner, {
+        const organizationId = await createTestOrganization(t, {
             name: 'Accept Org',
-            slug: 'accept-org',
+            slug: 'accept-org-' + randomSuffix,
             description: 'Accept org',
         });
 
-        const invitationId = await runInBetterAuth(t as unknown as ComponentRunner, async ctx => {
+        const invitationId = await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'invitee2@example.com',
@@ -103,54 +108,60 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() + DAY_MS,
                 createdAt: Date.now(),
-                inviterId: 'inviter-2',
+                inviterId: 'inviter-2-' + randomSuffix,
             });
         });
 
-        await runInBetterAuth(t as unknown as ComponentRunner, async ctx => {
+        await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
             await ctx.db.patch(invitationId, { status: 'accepted' });
             await ctx.db.insert('member', {
                 organizationId,
-                userId: 'invitee-2',
+                userId: 'invitee-2-' + randomSuffix,
                 role: 'member',
                 createdAt: Date.now(),
             });
         });
 
-        const invitation = await runInBetterAuth(t as unknown as ComponentRunner, async ctx =>
+        const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db.get(invitationId)
         );
-        const members = await runInBetterAuth(t as unknown as ComponentRunner, async ctx =>
+        // Use filter instead of index (index not available in test env)
+        const members = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db
                 .query('member')
-                .withIndex('organizationId_userId', (q: any) =>
-                    q.eq('organizationId', organizationId).eq('userId', 'invitee-2')
+                .filter((q: any) =>
+                    q.and(
+                        q.eq(q.field('organizationId'), organizationId),
+                        q.eq(q.field('userId'), 'invitee-2-' + randomSuffix)
+                    )
                 )
-                .collect()
-        );
+                .collect());
 
-        const invitationRecord = invitation as InvitationRecord;
-        const memberRecords = members as MemberRecord[];
+        const invitationRecord = invitation as unknown as InvitationRecord;
+        const memberRecords = members as unknown as MemberRecord[];
         expect(invitationRecord.status).toBe('accepted');
         expect(memberRecords.length).toBe(1);
     });
 
     test('rejecting invitation marks status rejected', async () => {
-        await createTestUser(t as unknown as Parameters<typeof createTestUser>[0], {
-            userId: 'inviter-3',
-            email: 'inviter3@example.com',
-            name: 'Inviter 3',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        await createTestUser(t, {
+            userId: 'inviter-3-' + randomSuffix,
+            email: 'inviter3@example.com-' + randomSuffix,
+            name: 'Inviter 3 ' + randomSuffix,
+            password: 'test-password',
             role: 'admin',
             emailVerified: true,
         });
 
-        const organizationId = await createTestOrganization(t as unknown as ComponentRunner, {
+        const organizationId = await createTestOrganization(t, {
             name: 'Reject Org',
-            slug: 'reject-org',
+            slug: 'reject-org-' + randomSuffix,
             description: 'Reject org',
         });
 
-        const invitationId = await runInBetterAuth(t as unknown as ComponentRunner, async ctx => {
+        const invitationId = await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'reject@example.com',
@@ -158,15 +169,15 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() + DAY_MS,
                 createdAt: Date.now(),
-                inviterId: 'inviter-3',
+                inviterId: 'inviter-3-' + randomSuffix,
             });
         });
 
-        await runInBetterAuth(t as unknown as ComponentRunner, async ctx => {
+        await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
             await ctx.db.patch(invitationId, { status: 'rejected' });
         });
 
-        const invitation = await runInBetterAuth(t as unknown as ComponentRunner, async ctx =>
+        const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db.get(invitationId)
         );
         const record = invitation as InvitationRecord;
@@ -174,21 +185,24 @@ describe('convex invitations (better-auth)', () => {
     });
 
     test('expired invitations can be detected', async () => {
-        await createTestUser(t as unknown as Parameters<typeof createTestUser>[0], {
-            userId: 'inviter-4',
-            email: 'inviter4@example.com',
-            name: 'Inviter 4',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        await createTestUser(t, {
+            userId: 'inviter-4-' + randomSuffix,
+            email: 'inviter4@example.com-' + randomSuffix,
+            name: 'Inviter 4 ' + randomSuffix,
+            password: 'test-password',
             role: 'admin',
             emailVerified: true,
         });
 
-        const organizationId = await createTestOrganization(t as unknown as ComponentRunner, {
+        const organizationId = await createTestOrganization(t, {
             name: 'Expired Org',
-            slug: 'expired-org',
+            slug: 'expired-org-' + randomSuffix,
             description: 'Expired org',
         });
 
-        const invitationId = await runInBetterAuth(t as unknown as ComponentRunner, async ctx => {
+        const invitationId = await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'expired@example.com',
@@ -196,11 +210,11 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() - DAY_MS,
                 createdAt: Date.now() - DAY_MS * 2,
-                inviterId: 'inviter-4',
+                inviterId: 'inviter-4-' + randomSuffix,
             });
         });
 
-        const invitation = await runInBetterAuth(t as unknown as ComponentRunner, async ctx =>
+        const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db.get(invitationId)
         );
         const record = invitation as InvitationRecord;

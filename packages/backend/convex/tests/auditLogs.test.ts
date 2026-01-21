@@ -1,46 +1,103 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 import { Doc, Id } from '../_generated/dataModel';
 
 describe('convex auditLogs', () => {
-    const t = convexTest(schema, modules);
-    register(t);
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
+    let adminIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
-
-    const adminIdentity = t.withIdentity({
-        subject: 'test-admin-123',
-        role: 'admin',
-    });
-
-    const userIdentity = t.withIdentity({
-        subject: 'test-user-456',
-        role: 'user',
-    });
+    let adminId: string;
+    let userOrganizationId: string;
+    let adminOrganizationId: string;
 
     beforeEach(async () => {
+        const userRandom = Math.random().toString(36).substring(2, 15);
+        const adminRandom = Math.random().toString(36).substring(2, 15);
+
         // Create admin user
-        await createTestUser(t, {
-            userId: 'test-admin-123',
-            email: 'admin@example.com',
-            name: 'Admin User',
+        const admin = {
+            userId: 'test-admin-audit-' + adminRandom,
+            email: 'admin-audit@example.com-' + adminRandom,
+            name: 'Admin Audit User ' + adminRandom,
+            password: 'test-password',
             role: 'admin',
             emailVerified: true,
+        };
+        await createTestUser(t, admin);
+        adminId = admin.userId;
+
+        const adminOrgId = await createTestOrganization(t, {
+            name: 'Audit Admin Org ' + adminRandom,
+            slug: 'audit-admin-org-' + adminRandom,
+        });
+
+        await createTestMember(t, {
+            organizationId: String(adminOrgId),
+            userId: adminId,
+            role: 'owner',
+        });
+
+        adminOrganizationId = String(adminOrgId);
+
+        adminIdentity = t.withIdentity({
+            subject: admin.userId,
+            role: admin.role,
+            email: admin.email,
+            name: admin.name,
+            password: admin.password,
+            emailVerified: admin.emailVerified,
+            createdAt: Date.now(),
+            userId: admin.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
         });
 
         // Create regular user
-        const result = await createTestUser(t, {
-            userId: 'test-user-456',
-            email: 'user@example.com',
-            name: 'Regular User',
+        const user = {
+            userId: 'test-user-audit-' + userRandom,
+            email: 'user-audit@example.com-' + userRandom,
+            name: 'User Audit ' + userRandom,
+            password: 'test-password',
             role: 'user',
             emailVerified: true,
+        };
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const userOrgId = await createTestOrganization(t, {
+            name: 'Audit User Org ' + userRandom,
+            slug: 'audit-user-org-' + userRandom,
         });
-        userId = result.userId;
+
+        await createTestMember(t, {
+            organizationId: String(userOrgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        userOrganizationId = String(userOrgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
     });
 
     describe('getAuditLogs', () => {
@@ -49,7 +106,8 @@ describe('convex auditLogs', () => {
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-1',
@@ -57,7 +115,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 2000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.updated',
                     resourceType: 'objective',
                     resourceId: 'obj-1',
@@ -65,7 +124,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 1000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.deleted',
                     resourceType: 'objective',
                     resourceId: 'obj-1',
@@ -93,7 +153,8 @@ describe('convex auditLogs', () => {
                 const now = Date.now();
                 for (let i = 0; i < 10; i++) {
                     await ctx.db.insert('auditLogs', {
-                        user: 'test-admin-123',
+                        userId: adminId,
+                        organizationId: adminOrganizationId,
                         action: 'objective.created',
                         resourceType: 'objective',
                         resourceId: `obj-${i}`,
@@ -115,7 +176,8 @@ describe('convex auditLogs', () => {
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-1',
@@ -123,7 +185,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 2000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'category.created',
                     resourceType: 'category',
                     resourceId: 'cat-1',
@@ -131,7 +194,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 1000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'organization.created',
                     resourceType: 'organization',
                     resourceId: 'organization-1',
@@ -157,7 +221,8 @@ describe('convex auditLogs', () => {
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-admin',
@@ -165,7 +230,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 1000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-user-456',
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-user',
@@ -176,7 +242,7 @@ describe('convex auditLogs', () => {
 
             // Regular user should only see their own logs
             const userLogs = await userIdentity.query(api.auditLogs.getAuditLogs, {});
-            expect(userLogs.every(log => log.user === 'test-user-456')).toBe(true);
+            expect(userLogs.every(log => log.userId === userId)).toBe(true);
         });
 
         test('admin can see all logs', async () => {
@@ -184,7 +250,8 @@ describe('convex auditLogs', () => {
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-admin',
@@ -192,7 +259,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 1000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-user-456',
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-user',
@@ -203,9 +271,9 @@ describe('convex auditLogs', () => {
 
             // Admin should see all logs
             const adminLogs = await adminIdentity.query(api.auditLogs.getAuditLogs, {});
-            const userIds = new Set(adminLogs.map(log => log.user));
-            expect(userIds.has('test-admin-123')).toBe(true);
-            expect(userIds.has('test-user-456')).toBe(true);
+            const userIds = new Set(adminLogs.map(log => log.userId));
+            expect(userIds.has(adminId)).toBe(true);
+            expect(userIds.has(userId)).toBe(true);
         });
     });
 
@@ -215,7 +283,8 @@ describe('convex auditLogs', () => {
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-target',
@@ -223,7 +292,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 3000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.updated',
                     resourceType: 'objective',
                     resourceId: 'obj-target',
@@ -231,7 +301,8 @@ describe('convex auditLogs', () => {
                     createdAt: now - 2000,
                 });
                 await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     resourceId: 'obj-other',
@@ -265,12 +336,13 @@ describe('convex auditLogs', () => {
 
             await adminIdentity.run(async ctx => {
                 logId = await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.updated',
                     resourceType: 'objective',
                     resourceId: 'obj-1',
                     metadata: {
-                        before: { title: 'Old Title', status: 'in_progress' },
+                        before: { title: 'Old Title', status: 'active' },
                         after: { title: 'New Title', status: 'completed' },
                         context: 'Updated objective details',
                     },
@@ -281,7 +353,7 @@ describe('convex auditLogs', () => {
 
             const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
 
-            expect(log?.metadata?.before).toEqual({ title: 'Old Title', status: 'in_progress' });
+            expect(log?.metadata?.before).toEqual({ title: 'Old Title', status: 'active' });
             expect(log?.metadata?.after).toEqual({ title: 'New Title', status: 'completed' });
             expect(log?.metadata?.context).toBe('Updated objective details');
         });
@@ -294,7 +366,8 @@ describe('convex auditLogs', () => {
                 const now = Date.now();
                 for (const severity of severities) {
                     const id = await ctx.db.insert('auditLogs', {
-                        user: 'test-admin-123',
+                        userId: adminId,
+                        organizationId: adminOrganizationId,
                         action: 'objective.created',
                         resourceType: 'objective',
                         severity,
@@ -315,7 +388,8 @@ describe('convex auditLogs', () => {
 
             await adminIdentity.run(async ctx => {
                 logId = await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'category.defaults_created',
                     resourceType: 'category',
                     // No resourceId
@@ -346,7 +420,8 @@ describe('convex auditLogs', () => {
 
             await adminIdentity.run(async ctx => {
                 logId = await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     severity: 'info',
@@ -372,7 +447,8 @@ describe('convex auditLogs', () => {
 
             await adminIdentity.run(async ctx => {
                 logId = await ctx.db.insert('auditLogs', {
-                    user: 'test-admin-123',
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
                     action: 'objective.created',
                     resourceType: 'objective',
                     severity: 'info',

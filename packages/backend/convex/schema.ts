@@ -11,7 +11,7 @@ export default defineSchema({
         targetValue: v.number(),
         currentValue: v.number(),
         deadline: v.optional(v.number()),
-        status: v.string(),
+        status: v.string(), // 'active' | 'paused' | 'completed' | 'archived' | 'deleted'
         unit: v.optional(v.string()),
         objectiveType: v.optional(v.string()),
         period: v.optional(v.string()),
@@ -19,10 +19,16 @@ export default defineSchema({
         periodLengthDays: v.optional(v.number()),
         createdAt: v.number(),
         updatedAt: v.number(),
+        // Workflow fields
+        workflowId: v.optional(v.string()),     // ID of the active workflow
+        nextTickAt: v.optional(v.number()),     // Timestamp of next scheduled tick
+        nextTickSeq: v.optional(v.number()),    // Monotonic counter for anti-race pattern
     })
     .index('by_user', ['userId'])
     .index('by_organization', ['organizationId'])
-    .index('by_organization_user', ['organizationId', 'userId']),
+    .index('by_organization_user', ['organizationId', 'userId'])
+    .index('by_workflow', ['workflowId'])
+    .index('by_status', ['status']),
 
     progressUpdates: defineTable({
         objective: v.id('objectives'),

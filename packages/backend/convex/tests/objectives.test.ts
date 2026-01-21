@@ -1,33 +1,59 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex objectives', async () => {
-    const t = convexTest(schema, modules);
-    register(t);
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
+    let organizationId: string;
     const DAY_MS = 24 * 60 * 60 * 1000;
 
-    const userIdentity = t.withIdentity({
-        subject: 'test-user-123',
-        role: 'admin',
-    });
-
     beforeEach(async () => {
-        // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await createTestUser(t, {
-            userId: 'test-user-123',
-            email: 'test@example.com',
-            name: 'Test User',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        const user = {
+            userId: 'test-user-objectives-' + randomSuffix,
+            email: 'objectives-test@example.com-' + randomSuffix,
+            name: 'Objectives Test User ' + randomSuffix,
             password: 'test-password',
             role: 'admin',
             emailVerified: false,
+        };
+
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const orgId = await createTestOrganization(t, {
+            name: 'Objectives Org ' + randomSuffix,
+            slug: 'objectives-org-' + randomSuffix,
         });
-        userId = result.userId;
+
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        organizationId = String(orgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
     });
 
     test('createObjective creates a new objective', async () => {
@@ -38,7 +64,6 @@ describe('convex objectives', async () => {
             targetValue: 2000,
             currentValue: 250,
             deadline: Date.now() + 30 * 24 * 60 * 60 * 1000,
-            status: 'not_started',
             unit: 'EUR',
             objectiveType: 'money',
             period: 'monthly',
@@ -52,41 +77,35 @@ describe('convex objectives', async () => {
         expect(objective?.category).toBe('finance');
         expect(objective?.targetValue).toBe(2000);
         expect(objective?.currentValue).toBe(250);
-        expect(objective?.status).toBe('not_started');
+        expect(objective?.status).toBe('active');
         expect(objective?.unit).toBe('EUR');
         expect(objective?.objectiveType).toBe('money');
         expect(objective?.period).toBe('monthly');
-        expect(objective?.user).toBe(userId);
+        expect(objective?.userId).toBe(userId);
     });
 
-    test('getObjectiveById computes period progress for event-based objectives', async () => {
+    test('getObjectiveById reflects period progress for event-based objectives', async () => {
         const now = Date.now();
         const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
             title: 'Gym visits',
             targetValue: 3,
             currentValue: 0,
-            status: 'in_progress',
             objectiveType: 'count',
             period: 'custom',
             periodStart: now - 2 * DAY_MS,
             periodLengthDays: 7,
         });
 
-        await userIdentity.run(async ctx => {
-            await ctx.db.insert('progressUpdates', {
-                objective: objectiveId,
-                updatedValue: 1,
-                updateDate: now - DAY_MS,
-                createdAt: now,
-                updatedAt: now,
-            });
-            await ctx.db.insert('progressUpdates', {
-                objective: objectiveId,
-                updatedValue: 2,
-                updateDate: now - 10 * DAY_MS,
-                createdAt: now,
-                updatedAt: now,
-            });
+        await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+            objective: objectiveId,
+            updatedValue: 1,
+            updateDate: now - DAY_MS,
+        });
+
+        await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+            objective: objectiveId,
+            updatedValue: 2,
+            updateDate: now - 10 * DAY_MS,
         });
 
         const objective = await userIdentity.query(api.objectives.getObjectiveById, {
@@ -98,7 +117,9 @@ describe('convex objectives', async () => {
 
     test("getObjectivesByUser returns user's objectives", async () => {
         // Get initial count to account for objectives from previous tests
-        const initialObjectives = await userIdentity.query(api.objectives.getObjectivesByUser, { paginationOpts: { numItems: 10, cursor: null } });
+        const initialObjectives = await userIdentity.query(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
         const initialCount = initialObjectives.page.length;
 
         // Create multiple objectives
@@ -106,17 +127,17 @@ describe('convex objectives', async () => {
             title: 'Objective 1',
             targetValue: 100,
             currentValue: 50,
-            status: 'in_progress',
         });
 
         const obj2 = await userIdentity.mutation(api.objectives.createObjective, {
             title: 'Objective 2',
             targetValue: 200,
             currentValue: 100,
-            status: 'not_started',
         });
 
-        const objectives = await userIdentity.query(api.objectives.getObjectivesByUser, { paginationOpts: { numItems: 10, cursor: null } });
+        const objectives = await userIdentity.query(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
 
         expect(objectives.page.length).toBe(initialCount + 2);
         expect(objectives.page.some(o => o._id === obj1)).toBe(true);
@@ -128,7 +149,6 @@ describe('convex objectives', async () => {
             title: 'Test Objective',
             targetValue: 100,
             currentValue: 50,
-            status: 'in_progress',
         });
 
         const objective = await userIdentity.query(api.objectives.getObjectiveById, {
@@ -142,14 +162,15 @@ describe('convex objectives', async () => {
     test('updateObjective patches realistic fields', async () => {
         const { objectiveId } = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('objectives', {
-                user: userId,
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Save for vacation',
                 description: 'Initial savings goal',
                 category: 'finance',
                 targetValue: 2000,
                 currentValue: 250,
                 deadline: Date.now() + 30 * 24 * 60 * 60 * 1000,
-                status: 'not_started',
+                status: 'active',
                 unit: 'EUR',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -164,7 +185,6 @@ describe('convex objectives', async () => {
             category: 'finance',
             currentValue: 350,
             deadline: Date.now() + 60 * 24 * 60 * 60 * 1000,
-            status: 'in_progress',
             unit: 'EUR',
         });
 
@@ -174,7 +194,7 @@ describe('convex objectives', async () => {
         expect(updated?.category).toBe('finance');
         expect(updated?.currentValue).toBe(350);
         expect(typeof updated?.deadline).toBe('number');
-        expect(updated?.status).toBe('in_progress');
+        expect(updated?.status).toBe('active');
         expect(updated?.unit).toBe('EUR');
         expect(typeof updated?.updatedAt).toBe('number');
     });
@@ -182,14 +202,15 @@ describe('convex objectives', async () => {
     test('deleteObjective removes the document', async () => {
         const { objectiveId } = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('objectives', {
-                user: userId,
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Lose 5kg',
                 description: 'Cut sugar & run 3x/week',
                 category: 'health',
                 targetValue: 5,
                 currentValue: 1,
                 deadline: Date.now() + 45 * 24 * 60 * 60 * 1000,
-                status: 'not_started',
+                status: 'active',
                 unit: 'kg',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -197,7 +218,8 @@ describe('convex objectives', async () => {
             return { objectiveId: id };
         });
 
-        await userIdentity.mutation(api.objectives.deleteObjective, { id: objectiveId });
+        // Use hardDeleteObjective for permanent removal (deleteObjective only soft deletes)
+        await userIdentity.mutation(api.objectives.hardDeleteObjective, { id: objectiveId });
         const doc = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
         expect(doc).toBeNull();
     });
@@ -210,12 +232,13 @@ describe('convex objectives', async () => {
             targetValue: 12,
             currentValue: 3,
             deadline: Date.now() + 365 * 24 * 60 * 60 * 1000,
-            status: 'not_started',
+            status: 'active',
             unit: 'books',
         };
         const { objectiveId } = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('objectives', {
-                user: userId,
+                userId: userId,
+                organizationId: organizationId,
                 ...initial,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -225,11 +248,10 @@ describe('convex objectives', async () => {
 
         await userIdentity.mutation(api.objectives.updateObjective, {
             id: objectiveId,
-            status: 'in_progress',
         });
 
         const after = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
-        expect(after?.status).toBe('in_progress');
+        expect(after?.status).toBe('active');
         expect(after?.title).toBe(initial.title);
         expect(after?.description).toBe(initial.description);
         expect(after?.category).toBe(initial.category);
@@ -248,26 +270,28 @@ describe('convex objectives', async () => {
                 targetValue: 1,
                 currentValue: 0,
                 deadline: undefined,
-                status: 'not_started',
                 unit: undefined,
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated/);
     });
 
     test('getObjectivesByUser rejects when unauthenticated', async () => {
-        await expect(t.query(api.objectives.getObjectivesByUser, { paginationOpts: { numItems: 10, cursor: null } })).rejects.toThrow(
-            /Unauthenticated|User not authenticated/
-        );
+        await expect(
+            t.query(api.objectives.getObjectivesByUser, {
+                paginationOpts: { numItems: 10, cursor: null },
+            })
+        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
     });
 
     test('updateObjective updates updatedAt timestamp', async () => {
         const { objectiveId, initialUpdatedAt } = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('objectives', {
-                user: userId,
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Test',
                 targetValue: 100,
                 currentValue: 50,
-                status: 'in_progress',
+                status: 'active',
                 createdAt: Date.now(),
                 updatedAt: Date.now() - 1000, // 1 second ago
             });
@@ -292,11 +316,12 @@ describe('convex objectives', async () => {
         const fakeId = await userIdentity.run(async ctx => {
             // Create a temporary objective to get a valid ID format, then delete it
             const tempId = await ctx.db.insert('objectives', {
-                user: userId,
+                userId: userId,
+                organizationId: organizationId,
                 title: 'temp',
                 targetValue: 1,
                 currentValue: 0,
-                status: 'not_started',
+                status: 'active',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });

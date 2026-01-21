@@ -29,7 +29,6 @@ const getStatusInfo = (
                 variant: 'default' as const,
                 className: 'bg-green-500 hover:bg-green-600 text-white',
             };
-        case 'in_progress':
         case 'active':
             if (isOverdue) {
                 return {
@@ -68,6 +67,12 @@ const getStatusInfo = (
                 label: 'Archived',
                 variant: 'outline' as const,
                 className: 'bg-gray-400 hover:bg-gray-500 text-white',
+            };
+        case 'deleted':
+            return {
+                label: 'Deleted',
+                variant: 'outline' as const,
+                className: 'bg-gray-300 hover:bg-gray-400 text-white',
             };
         default:
             return {

@@ -111,9 +111,8 @@ export async function createTestOrganization(
         return await ctx.db.insert('organization', {
             name: options.name,
             slug: options.slug,
-            description: options.description ?? null,
             createdAt: now,
-            metadata: null,
+            metadata: options.description ?? null,
             logo: null,
         });
     });

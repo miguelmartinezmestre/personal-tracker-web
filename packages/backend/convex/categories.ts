@@ -22,7 +22,7 @@ export const createCategory = mutationWithRLS({
         const userId = String(ctx.identity?.subject);
         const categoryId = await ctx.db.insert('categories', {
             userId: userId,
-            organizationId: '',
+            organizationId: ctx.organizationId ?? '',
             name: args.name,
             color: args.color,
             icon: args.icon,
@@ -86,7 +86,7 @@ export const createDefaultCategories = mutationWithRLS({
         for (const category of defaultCategories) {
             const id = await ctx.db.insert('categories', {
                 userId: user,
-                organizationId: '',
+                organizationId: ctx.organizationId ?? '',
                 name: category.name,
                 color: category.color,
                 icon: category.icon,

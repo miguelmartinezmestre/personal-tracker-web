@@ -20,10 +20,12 @@
     "jiti": "^2.6.1",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.49.0",
-    "vitest" :"^4.0.15"
+    "vitest": "^4.0.15"
   },
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",
+    "@convex-dev/workflow": "0.3.3",
+    "@convex-dev/workpool": "^0.3.1",
     "better-auth": "catalog:",
     "convex": "1.31.2",
     "convex-helpers": "^0.1.108",

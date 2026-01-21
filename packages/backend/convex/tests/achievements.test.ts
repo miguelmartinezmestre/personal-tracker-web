@@ -1,34 +1,58 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
-import { api, internal } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { api } from '../_generated/api';
+import { initConvexTest } from '../../better-auth.helper';
 import { createTestMember, createTestOrganization, createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex achievements', async () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
-
-    let userIdentity: ReturnType<ReturnType<typeof convexTest>['withIdentity']>;
+    let organizationId: string;
 
     beforeEach(async () => {
-        t = convexTest(schema, modules);
-        register(t);
-        userIdentity = t.withIdentity({
-            subject: 'test-user-achievements',
-            role: 'admin',
-        });
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        const result = await createTestUser(t, {
-            userId: 'test-user-achievements',
-            email: 'achievements-test@example.com',
-            name: 'Achievements Test User',
+        const user = {
+            userId: 'test-user-achievements-' + randomSuffix,
+            email: 'achievements-test@example.com-' + randomSuffix,
+            name: 'Achievements Test User ' + randomSuffix,
             password: 'test-password',
             role: 'admin',
             emailVerified: false,
+        };
+
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const orgId = await createTestOrganization(t, {
+            name: 'Test Organization ' + randomSuffix,
+            slug: 'test-org-' + randomSuffix,
         });
-        userId = result.userId;
+
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        organizationId = String(orgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
     });
 
     describe('seedAchievementDefinitions', () => {
@@ -109,8 +133,8 @@ describe('convex achievements', async () => {
                 const firstDef = await ctx.db.query('achievementDefinitions').first();
 
                 if (firstDef) {
-                    await ctx.db.insert('userAchievements', {
-                        user: userId,
+                    await ctx.db.insert('obtainedAchievements', {
+                        userId: userId,
                         achievement: firstDef._id,
                         earnedAt: Date.now(),
                         createdAt: Date.now(),
@@ -122,8 +146,8 @@ describe('convex achievements', async () => {
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
             expect(achievements.length).toBe(1);
-            expect(achievements[0].definition).toBeDefined();
-            expect(achievements[0].user).toBe(userId);
+            expect(achievements[0]?.definition).toBeDefined();
+            expect(achievements[0]?.user).toBe(userId);
         });
     });
 
@@ -149,8 +173,8 @@ describe('convex achievements', async () => {
                     .first();
 
                 if (def) {
-                    await ctx.db.insert('userAchievements', {
-                        user: userId,
+                    await ctx.db.insert('obtainedAchievements', {
+                        userId: userId,
                         achievement: def._id,
                         earnedAt: Date.now(),
                         createdAt: Date.now(),
@@ -177,8 +201,8 @@ describe('convex achievements', async () => {
                 const defs = await ctx.db.query('achievementDefinitions').take(3);
 
                 for (const def of defs) {
-                    await ctx.db.insert('userAchievements', {
-                        user: userId,
+                    await ctx.db.insert('obtainedAchievements', {
+                        userId: userId,
                         achievement: def._id,
                         earnedAt: Date.now(),
                         createdAt: Date.now(),
@@ -218,14 +242,12 @@ describe('convex achievements', async () => {
                 title: 'Test Objective 1',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             await userIdentity.mutation(api.objectives.createObjective, {
                 title: 'Test Objective 2',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             const progress = await userIdentity.query(
@@ -248,7 +270,8 @@ describe('convex achievements', async () => {
             // Create an unread achievement notification
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('notifications', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: organizationId,
                     objective: undefined,
                     read: false,
                     notificationType: 'achievement',
@@ -270,7 +293,8 @@ describe('convex achievements', async () => {
         test('returns zero when all notifications are read', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('notifications', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: organizationId,
                     objective: undefined,
                     read: true,
                     notificationType: 'achievement',
@@ -299,7 +323,6 @@ describe('convex achievements', async () => {
                 title: 'My First Objective',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             // Wait a bit for the scheduled function to run
@@ -328,8 +351,8 @@ describe('convex achievements', async () => {
                     .first();
 
                 if (def) {
-                    await ctx.db.insert('userAchievements', {
-                        user: userId,
+                    await ctx.db.insert('obtainedAchievements', {
+                        userId: userId,
                         achievement: def._id,
                         earnedAt: Date.now(),
                         createdAt: Date.now(),
@@ -343,7 +366,6 @@ describe('convex achievements', async () => {
                 title: 'Second Objective',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
@@ -363,7 +385,6 @@ describe('convex achievements', async () => {
                 title: 'Progress Threshold Test',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             // Create exactly 10 progress updates
@@ -410,7 +431,6 @@ describe('convex achievements', async () => {
                 title: 'Streak Test Objective',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
 
             const DAY_MS = 24 * 60 * 60 * 1000;

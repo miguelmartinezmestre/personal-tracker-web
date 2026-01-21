@@ -1,47 +1,99 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex categories', async () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
+    let adminIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
-    let userIdentity: ReturnType<ReturnType<typeof convexTest>['withIdentity']>;
-    let adminIdentity: ReturnType<ReturnType<typeof convexTest>['withIdentity']>;
+    let userOrganizationId: string;
+    let adminOrganizationId: string;
 
     beforeEach(async () => {
-        t = convexTest(schema, modules);
-        register(t);
-        userIdentity = t.withIdentity({
-            subject: 'test-user-categories',
+        const userRandom = Math.random().toString(36).substring(2, 15);
+        const adminRandom = Math.random().toString(36).substring(2, 15);
+
+        // Create user
+        const user = {
+            userId: 'test-user-categories-' + userRandom,
+            email: 'categories-test@example.com-' + userRandom,
+            name: 'Categories Test User ' + userRandom,
+            password: 'test-password',
             role: 'user',
+            emailVerified: false,
+        };
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const userOrgId = await createTestOrganization(t, {
+            name: 'Categories User Org ' + userRandom,
+            slug: 'categories-user-org-' + userRandom,
         });
+
+        await createTestMember(t, {
+            organizationId: String(userOrgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        userOrganizationId = String(userOrgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        // Create admin
+        const admin = {
+            userId: 'test-admin-categories-' + adminRandom,
+            email: 'categories-admin@example.com-' + adminRandom,
+            name: 'Categories Admin User ' + adminRandom,
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
+        };
+        await createTestUser(t, admin);
+
+        const adminOrgId = await createTestOrganization(t, {
+            name: 'Categories Admin Org ' + adminRandom,
+            slug: 'categories-admin-org-' + adminRandom,
+        });
+
+        await createTestMember(t, {
+            organizationId: String(adminOrgId),
+            userId: admin.userId,
+            role: 'owner',
+        });
+
+        adminOrganizationId = String(adminOrgId);
 
         adminIdentity = t.withIdentity({
-            subject: 'test-admin-categories',
-            role: 'admin',
-        });
-
-        const result = await createTestUser(t, {
-            userId: 'test-user-categories',
-            email: 'categories-test@example.com',
-            name: 'Categories Test User',
-            password: 'test-password',
-            role: 'user',
-            emailVerified: false,
-        });
-        userId = result.userId;
-
-        await createTestUser(t, {
-            userId: 'test-admin-categories',
-            email: 'categories-admin@example.com',
-            name: 'Categories Admin User',
-            password: 'test-password',
-            role: 'admin',
-            emailVerified: false,
+            subject: admin.userId,
+            role: admin.role,
+            email: admin.email,
+            name: admin.name,
+            password: admin.password,
+            emailVerified: admin.emailVerified,
+            createdAt: Date.now(),
+            userId: admin.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
         });
     });
 
@@ -59,7 +111,7 @@ describe('convex categories', async () => {
             expect(category?.name).toBe('Health');
             expect(category?.color).toBe('#10b981');
             expect(category?.icon).toBe('heart');
-            expect(category?.user).toBe(userId);
+            expect(category?.userId).toBe(userId);
         });
 
         test('creates category without icon', async () => {
@@ -122,7 +174,7 @@ describe('convex categories', async () => {
 
             const userCategories = await userIdentity.query(api.categories.getCategoriesByUser, {});
             expect(userCategories).toHaveLength(2);
-            expect(userCategories.every(c => c.user === userId)).toBe(true);
+            expect(userCategories.every(c => c.userId === userId)).toBe(true);
         });
 
         test('rejects unauthenticated users', async () => {
@@ -146,6 +198,8 @@ describe('convex categories', async () => {
 
             const updated = await userIdentity.run(async ctx => ctx.db.get(categoryId));
             expect(updated?.name).toBe('New Name');
+            expect(updated?.color).toBe('#10b981'); // Color should remain unchanged
+            expect(updated?.userId).toBe(userId);
         });
 
         test('updates category color', async () => {
@@ -294,7 +348,7 @@ describe('convex categories', async () => {
             const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
 
             result.forEach(category => {
-                expect(category?.user).toBe(userId);
+                expect(category?.userId).toBe(userId);
             });
         });
 
