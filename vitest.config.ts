@@ -11,6 +11,7 @@ export default defineConfig({
     },
     test: {
         setupFiles: ['./apps/front/vitest.setup.ts'],
+        reporters: ['tree'],
         include: [
             'packages/backend/convex/tests/**/*.test.ts',
             'apps/front/src/features/**/*.test.{ts,tsx}',

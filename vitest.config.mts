@@ -12,6 +12,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./apps/front/vitest.setup.ts"],
     server: { deps: { inline: ["convex-test", "@repo/ui", new RegExp("^@radix-ui/")] } },
+    reporters: ["tree"],
     include: [
       "packages/backend/convex/tests/**/*.test.ts",
       "apps/front/src/**/*.test.{ts,tsx}",
