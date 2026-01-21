@@ -28,18 +28,22 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         const t = useTranslations('Objectives');
         const queryClient = useQueryClient();
 
+        const invalidateObjectives = () => {
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: {
+                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
+                        cursor: null,
+                    },
+                }).queryKey,
+            });
+        };
+
         const completeObjective = useMutation({
             mutationFn: useConvexMutation(api.objectives.completeObjective),
             onSuccess: () => {
                 toast.success(t('toast.completedSuccess'));
-                queryClient.invalidateQueries({
-                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                        paginationOpts: {
-                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                            cursor: null,
-                        },
-                    }).queryKey,
-                });
+                invalidateObjectives();
             },
         });
 
@@ -47,14 +51,7 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
             mutationFn: useConvexMutation(api.objectives.pauseObjective),
             onSuccess: () => {
                 toast.success(t('toast.pausedSuccess'));
-                queryClient.invalidateQueries({
-                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                        paginationOpts: {
-                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                            cursor: null,
-                        },
-                    }).queryKey,
-                });
+                invalidateObjectives();
             },
         });
 
@@ -62,29 +59,15 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
             mutationFn: useConvexMutation(api.objectives.archiveObjective),
             onSuccess: () => {
                 toast.success(t('toast.archivedSuccess'));
-                queryClient.invalidateQueries({
-                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                        paginationOpts: {
-                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                            cursor: null,
-                        },
-                    }).queryKey,
-                });
+                invalidateObjectives();
             },
         });
 
         const resumeObjective = useMutation({
-            mutationFn: useConvexMutation(api.objectives.updateObjectiveStatus),
+            mutationFn: useConvexMutation(api.objectives.resumeObjective),
             onSuccess: () => {
                 toast.success(t('toast.resumedSuccess'));
-                queryClient.invalidateQueries({
-                    queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                        paginationOpts: {
-                            numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                            cursor: null,
-                        },
-                    }).queryKey,
-                });
+                invalidateObjectives();
             },
         });
 
@@ -101,13 +84,19 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         };
 
         const handleResume = () => {
-            resumeObjective.mutate({ id: objectiveId, status: 'in_progress' });
+            resumeObjective.mutate({ id: objectiveId });
         };
 
         const status = currentStatus.toLowerCase();
         const isCompleted = status === 'completed';
         const isPaused = status === 'paused';
         const isArchived = status === 'archived';
+        const isDeleted = status === 'deleted';
+
+        // Don't show actions for terminal states
+        if (isDeleted) {
+            return null;
+        }
 
         return (
             <div ref={ref} className={`flex items-center space-x-1 ${className}`}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
@@ -41,28 +41,15 @@ import {
     objectiveTypeSchema,
     periodSchema,
 } from '@/features/objectives/schemas/objective';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
 import { OBJECTIVES_DEFAULT_PAGE_SIZE } from './objectives-utils';
-const statusOptions = [
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-];
-
-const categoryOptions = [
-    { value: 'personal', label: 'Personal' },
-    { value: 'work', label: 'Work' },
-    { value: 'health', label: 'Health' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'education', label: 'Education' },
-];
-
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
+    const tCommon = useTranslations('Common');
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
 
@@ -79,6 +66,30 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             });
         },
     });
+
+    const categoriesQuery = useQuery({
+        ...convexQuery(api.categories.getCategoriesByUser, {}),
+    });
+
+    const categoryOptions = useMemo(() => {
+        const options = (categoriesQuery.data ?? []).map(category => ({
+            value: category.name,
+            label: category.name,
+        }));
+
+        if (defaultValues.category && !options.some(option => option.value === defaultValues.category)) {
+            options.unshift({ value: defaultValues.category, label: defaultValues.category });
+        }
+
+        return options;
+    }, [categoriesQuery.data, defaultValues.category]);
+
+    const statusOptions = [
+        { value: 'active', label: t('statusOptions.active') },
+        { value: 'paused', label: t('statusOptions.paused') },
+        { value: 'completed', label: t('statusOptions.completed') },
+        { value: 'archived', label: t('statusOptions.archived') },
+    ];
 
     const objectiveTypeOptions = [
         { value: 'value', label: t('objectiveTypeOptions.value') },
@@ -232,14 +243,24 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {categoryOptions.map(category => (
-                                                <SelectItem
-                                                    key={category.value}
-                                                    value={category.value}
-                                                >
-                                                    {category.label}
+                                            {categoriesQuery.isLoading ? (
+                                                <SelectItem value="loading" disabled>
+                                                    {tCommon('loading')}
                                                 </SelectItem>
-                                            ))}
+                                            ) : categoryOptions.length === 0 ? (
+                                                <SelectItem value="empty" disabled>
+                                                    {t('categories.emptyTitle')}
+                                                </SelectItem>
+                                            ) : (
+                                                categoryOptions.map(category => (
+                                                    <SelectItem
+                                                        key={category.value}
+                                                        value={category.value}
+                                                    >
+                                                        {category.label}
+                                                    </SelectItem>
+                                                ))
+                                            )}
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
@@ -577,7 +598,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                     <FormLabel>{t('status')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
-                                        value={field.value || 'not_started'}
+                                        value={field.value || 'active'}
                                     >
                                         <FormControl>
                                             <SelectTrigger>

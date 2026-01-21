@@ -128,7 +128,7 @@ export default function ObjectivesTable({
                 const objective = row.original;
                 return (
                     <StatusIndicator
-                        status={objective.status ?? 'not_started'}
+                        status={objective.status ?? 'active'}
                         deadline={objective.deadline ?? undefined}
                         currentValue={objective.currentValue ?? 0}
                         targetValue={objective.targetValue ?? 0}
@@ -146,7 +146,7 @@ export default function ObjectivesTable({
                 return (
                     <QuickActions
                         objectiveId={objetiveRow._id as Id<'objectives'>}
-                        currentStatus={objetiveRow.status ?? 'not_started'}
+                        currentStatus={objetiveRow.status ?? 'active'}
                     />
                 );
             },

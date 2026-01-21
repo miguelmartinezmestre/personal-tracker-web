@@ -2,11 +2,7 @@ import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import { createTestUser } from './test-helpers';
 
-async function createObjective(
-    page: import('@playwright/test').Page,
-    title: string,
-    status: string = 'in_progress'
-) {
+async function createObjective(page: import('@playwright/test').Page, title: string) {
     await page.goto('/dashboard/objectives');
     await page.getByTestId('objective-create-open').click();
     await page.getByTestId('objective-title-input').fill(title);
@@ -16,11 +12,7 @@ async function createObjective(
     await page.getByTestId('objective-target-input').fill('100');
     await page.getByTestId('objective-unit-input').fill('units');
     await page.getByTestId('objective-current-input').fill('50');
-    // Select the status - default is 'not_started', we need 'in_progress' for most tests
-    if (status === 'in_progress') {
-        await page.getByTestId('objective-status-select').click();
-        await page.getByRole('option', { name: /in progress|en progreso/i }).click();
-    }
+    // Status is auto-set to active by the workflow
     await page.getByTestId('objective-save-button').click();
     await expect(page.getByText(title)).toBeVisible({ timeout: 10000 });
 }
@@ -31,13 +23,13 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `complete-test-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         // Find the objective row
         const row = page.locator('tr', { hasText: objectiveTitle }).first();
         await expect(row).toBeVisible();
 
-        // Verify initial status is in_progress
+        // Verify initial status reflects active progress
         await expect(row).toContainText(/in progress|en progreso/i);
 
         // Click complete action (CheckCircle icon or menu option)
@@ -64,7 +56,7 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `pause-test-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         // Find the objective row
         const row = page.locator('tr', { hasText: objectiveTitle }).first();
@@ -91,7 +83,7 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `resume-test-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         // First pause the objective
         let row = page.locator('tr', { hasText: objectiveTitle }).first();
@@ -116,7 +108,7 @@ test.describe('Objective Status Actions', () => {
         await page.reload();
         await page.waitForLoadState('networkidle');
 
-        // Verify status is back to in_progress
+        // Verify status is back to active
         const updatedRow = page.locator('tr', { hasText: objectiveTitle }).first();
         await expect(updatedRow).toContainText(/in progress|en progreso/i);
     });
@@ -126,7 +118,7 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `archive-test-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         // Find the objective row
         const row = page.locator('tr', { hasText: objectiveTitle }).first();
@@ -153,7 +145,7 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `notify-test-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         // Complete the objective
         const row = page.locator('tr', { hasText: objectiveTitle }).first();
@@ -178,7 +170,7 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `multi-status-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         let row = page.locator('tr', { hasText: objectiveTitle }).first();
 
@@ -224,7 +216,7 @@ test.describe('Objective Status Actions', () => {
         const objectiveTitle = `archived-no-actions-${uuid}`;
 
         await createTestUser(page);
-        await createObjective(page, objectiveTitle, 'in_progress');
+        await createObjective(page, objectiveTitle);
 
         // Archive the objective
         let row = page.locator('tr', { hasText: objectiveTitle }).first();

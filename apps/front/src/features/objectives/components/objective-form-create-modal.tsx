@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
@@ -41,7 +41,7 @@ import {
     objectiveTypeSchema,
     periodSchema,
 } from '@/features/objectives/schemas/objective';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { OBJECTIVES_DEFAULT_PAGE_SIZE } from './objectives-utils';
@@ -54,14 +54,12 @@ const defaultValues: CreateObjective = {
     targetValue: 0,
     currentValue: 0,
     deadline: null,
-    status: 'not_started',
+    status: 'active', // Objectives auto-activate on creation
     unit: '',
     objectiveType: 'value',
     period: 'none',
     periodStart: null,
     periodLengthDays: null,
-    // createdAt: new Date().toISOString(),
-    // updatedAt: new Date().toISOString(),
 };
 
 export default function CreateObjectiveFormModal() {
@@ -84,11 +82,7 @@ export default function CreateObjectiveFormModal() {
         },
     });
 
-    const statusOptions = [
-        { value: 'not_started', label: t('statusOptions.notStarted') },
-        { value: 'in_progress', label: t('statusOptions.inProgress') },
-        { value: 'completed', label: t('statusOptions.completed') },
-    ];
+    // Status is auto-set to 'active' by the workflow system, no selection needed
 
     const objectiveTypeOptions = [
         { value: 'value', label: t('objectiveTypeOptions.value') },
@@ -119,13 +113,18 @@ export default function CreateObjectiveFormModal() {
         duration: 'weekly',
     };
 
-    const categoryOptions = [
-        { value: 'personal', label: t('categoryOptions.personal') },
-        { value: 'work', label: t('categoryOptions.work') },
-        { value: 'health', label: t('categoryOptions.health') },
-        { value: 'finance', label: t('categoryOptions.finance') },
-        { value: 'education', label: t('categoryOptions.education') },
-    ];
+    const categoriesQuery = useQuery({
+        ...convexQuery(api.categories.getCategoriesByUser, {}),
+    });
+
+    const categoryOptions = useMemo(
+        () =>
+            (categoriesQuery.data ?? []).map(category => ({
+                value: category.name,
+                label: category.name,
+            })),
+        [categoriesQuery.data]
+    );
 
     const [open, setOpen] = useState(false);
 
@@ -148,7 +147,7 @@ export default function CreateObjectiveFormModal() {
             targetValue: values.targetValue,
             currentValue: values.currentValue,
             deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
-            status: values.status ?? 'not_started',
+            // Status is auto-set to 'active' by the workflow system
             unit: values.unit ?? undefined,
             objectiveType: values.objectiveType ?? undefined,
             period: values.period ?? undefined,
@@ -248,14 +247,24 @@ export default function CreateObjectiveFormModal() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {categoryOptions.map(category => (
-                                                <SelectItem
-                                                    key={category.value}
-                                                    value={category.value}
-                                                >
-                                                    {category.label}
+                                            {categoriesQuery.isLoading ? (
+                                                <SelectItem value="loading" disabled>
+                                                    {tCommon('loading')}
                                                 </SelectItem>
-                                            ))}
+                                            ) : categoryOptions.length === 0 ? (
+                                                <SelectItem value="empty" disabled>
+                                                    {t('categories.emptyTitle')}
+                                                </SelectItem>
+                                            ) : (
+                                                categoryOptions.map(category => (
+                                                    <SelectItem
+                                                        key={category.value}
+                                                        value={category.value}
+                                                    >
+                                                        {category.label}
+                                                    </SelectItem>
+                                                ))
+                                            )}
                                         </SelectContent>
                                     </Select>
                                     <FormDescription>
@@ -590,35 +599,7 @@ export default function CreateObjectiveFormModal() {
                             )}
                         />
 
-                        <FormField
-                            name="status"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('status')}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || 'not_started'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger data-testid="objective-status-select">
-                                                <SelectValue placeholder={t('selectStatus')} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {statusOptions.map(status => (
-                                                <SelectItem key={status.value} value={status.value}>
-                                                    {status.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        {t('currentStatusOfYourObjective')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Status is auto-set to 'active' by the workflow system */}
 
                         <DialogFooter className="pt-4">
                             <Button

@@ -38,7 +38,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
 
         const statusOptions = [
             { value: 'all', label: t('statusOptions.all') },
-            { value: 'in_progress', label: t('statusOptions.inProgress') },
+            { value: 'active', label: t('statusOptions.active') },
             { value: 'completed', label: t('statusOptions.completed') },
             { value: 'paused', label: t('statusOptions.paused') },
             { value: 'archived', label: t('statusOptions.archived') },
