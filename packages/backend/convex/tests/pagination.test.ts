@@ -1,45 +1,78 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 
-const createObjective = async (t: ReturnType<typeof convexTest>, title: string) => {
-    const userIdentity = t.withIdentity({ subject: 'pagination-user', role: 'admin' });
+const createObjective = async (
+    t: ReturnType<typeof initConvexTest>,
+    userIdentity: TestConvexForDataModel<DataModel>,
+    title: string
+) => {
     return await userIdentity.mutation(api.objectives.createObjective, {
         title,
         targetValue: 100,
         currentValue: 10,
-        status: 'in_progress',
     });
 };
 
 describe('convex pagination', () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
+    let userId: string;
+    let organizationId: string;
 
     beforeEach(async () => {
-        t = convexTest(schema, modules);
-        register(t);
-        await createTestUser(t as unknown as Parameters<typeof createTestUser>[0], {
-            userId: 'pagination-user',
-            email: 'pagination@example.com',
-            name: 'Pagination User',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        const user = {
+            userId: 'test-user-pagination-' + randomSuffix,
+            email: 'pagination@example.com-' + randomSuffix,
+            name: 'Pagination User ' + randomSuffix,
+            password: 'test-password',
             role: 'admin',
             emailVerified: true,
+        };
+
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const orgId = await createTestOrganization(t, {
+            name: 'Test Organization ' + randomSuffix,
+            slug: 'test-org-' + randomSuffix,
+        });
+
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        organizationId = String(orgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
         });
     });
 
     test('getObjectivesByUser paginates', async () => {
-        const userIdentity = t.withIdentity({ subject: 'pagination-user', role: 'admin' });
-
         for (let i = 0; i < 15; i++) {
             await userIdentity.mutation(api.objectives.createObjective, {
                 title: `Objective ${i}`,
                 targetValue: 100,
                 currentValue: 10,
-                status: 'in_progress',
             });
         }
 
@@ -56,8 +89,7 @@ describe('convex pagination', () => {
     });
 
     test('getUpdateProgressByObjectiveId paginates', async () => {
-        const userIdentity = t.withIdentity({ subject: 'pagination-user', role: 'admin' });
-        const objectiveId = await createObjective(t, 'Pagination Objective');
+        const objectiveId = await createObjective(t, userIdentity, 'Pagination Objective');
 
         for (let i = 0; i < 12; i++) {
             await userIdentity.mutation(api.update_progress.createUpdateProgress, {
@@ -82,8 +114,7 @@ describe('convex pagination', () => {
     });
 
     test('getNotificationsByUser paginates', async () => {
-        const userIdentity = t.withIdentity({ subject: 'pagination-user', role: 'admin' });
-        const objectiveId = await createObjective(t, 'Notifications Objective');
+        const objectiveId = await createObjective(t, userIdentity, 'Notifications Objective');
 
         for (let i = 0; i < 12; i++) {
             await userIdentity.mutation(api.notifications.createNotification, {

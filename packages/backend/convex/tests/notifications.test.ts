@@ -1,51 +1,102 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 import type { Id } from '../_generated/dataModel';
 
 describe('convex notifications', async () => {
-    let t: ReturnType<typeof convexTest>;
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
+    let adminIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
     let objectiveId: Id<'objectives'>;
+    let userOrganizationId: string;
+    let adminOrganizationId: string;
     const DAY_MS = 24 * 60 * 60 * 1000;
 
-    let userIdentity: ReturnType<ReturnType<typeof convexTest>['withIdentity']>;
-    let adminIdentity: ReturnType<ReturnType<typeof convexTest>['withIdentity']>;
-
     beforeEach(async () => {
-        t = convexTest(schema, modules);
-        register(t);
-        userIdentity = t.withIdentity({
-            subject: 'test-user-notifications',
+        const userRandom = Math.random().toString(36).substring(2, 15);
+        const adminRandom = Math.random().toString(36).substring(2, 15);
+
+        // Create user
+        const user = {
+            userId: 'test-user-notifications-' + userRandom,
+            email: 'notifications-test@example.com-' + userRandom,
+            name: 'Notifications Test User ' + userRandom,
+            password: 'test-password',
             role: 'user',
+            emailVerified: false,
+        };
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const userOrgId = await createTestOrganization(t, {
+            name: 'Notifications User Org ' + userRandom,
+            slug: 'notifications-user-org-' + userRandom,
         });
+
+        await createTestMember(t, {
+            organizationId: String(userOrgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        userOrganizationId = String(userOrgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        // Create admin
+        const admin = {
+            userId: 'test-admin-notifications-' + adminRandom,
+            email: 'notifications-admin@example.com-' + adminRandom,
+            name: 'Notifications Admin User ' + adminRandom,
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: false,
+        };
+        await createTestUser(t, admin);
+
+        const adminOrgId = await createTestOrganization(t, {
+            name: 'Notifications Admin Org ' + adminRandom,
+            slug: 'notifications-admin-org-' + adminRandom,
+        });
+
+        await createTestMember(t, {
+            organizationId: String(adminOrgId),
+            userId: admin.userId,
+            role: 'owner',
+        });
+
+        adminOrganizationId = String(adminOrgId);
 
         adminIdentity = t.withIdentity({
-            subject: 'test-admin-notifications',
-            role: 'admin',
-        });
-
-        const result = await createTestUser(t, {
-            userId: 'test-user-notifications',
-            email: 'notifications-test@example.com',
-            name: 'Notifications Test User',
-            password: 'test-password',
-            role: 'user',
-            emailVerified: false,
-        });
-        userId = result.userId;
-
-        await createTestUser(t, {
-            userId: 'test-admin-notifications',
-            email: 'notifications-admin@example.com',
-            name: 'Notifications Admin User',
-            password: 'test-password',
-            role: 'admin',
-            emailVerified: false,
+            subject: admin.userId,
+            role: admin.role,
+            email: admin.email,
+            name: admin.name,
+            password: admin.password,
+            emailVerified: admin.emailVerified,
+            createdAt: Date.now(),
+            userId: admin.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
         });
 
         // Create a test objective for notifications
@@ -53,7 +104,6 @@ describe('convex notifications', async () => {
             title: 'Test Objective for Notifications',
             targetValue: 100,
             currentValue: 0,
-            status: 'in_progress',
         });
     });
 
@@ -69,7 +119,7 @@ describe('convex notifications', async () => {
             expect(notification?.message).toBe('Test notification message');
             expect(notification?.notificationType).toBe('reminder');
             expect(notification?.objective).toBe(objectiveId);
-            expect(notification?.user).toBe(userId);
+            expect(notification?.userId).toBe(userId);
             expect(notification?.read).toBe(false);
         });
 
@@ -101,11 +151,12 @@ describe('convex notifications', async () => {
         test('rejects notification for non-existent objective', async () => {
             const fakeObjectiveId = await userIdentity.run(async ctx => {
                 const tempId = await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'temp',
                     targetValue: 1,
                     currentValue: 0,
-                    status: 'not_started',
+                    status: 'active',
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
@@ -180,7 +231,6 @@ describe('convex notifications', async () => {
                 title: 'Admin Objective',
                 targetValue: 100,
                 currentValue: 0,
-                status: 'in_progress',
             });
             await adminIdentity.mutation(api.notifications.createNotification, {
                 objective: adminObjectiveId,
@@ -197,9 +247,11 @@ describe('convex notifications', async () => {
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(t.query(api.notifications.getNotificationsByUser, { paginationOpts: { numItems: 10, cursor: null } })).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
-            );
+            await expect(
+                t.query(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
         });
     });
 
@@ -399,11 +451,12 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'Due Today',
                     targetValue: 100,
                     currentValue: 50,
-                    status: 'in_progress',
+                    status: 'active',
                     deadline: now + 3600000, // 1 hour from now
                     createdAt: now,
                     updatedAt: now,
@@ -423,11 +476,12 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'Overdue',
                     targetValue: 100,
                     currentValue: 50,
-                    status: 'in_progress',
+                    status: 'active',
                     deadline: now - DAY_MS, // 1 day ago
                     createdAt: now,
                     updatedAt: now,
@@ -446,11 +500,12 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'Due Soon',
                     targetValue: 100,
                     currentValue: 50,
-                    status: 'in_progress',
+                    status: 'active',
                     deadline: now + 2 * DAY_MS, // 2 days from now
                     createdAt: now,
                     updatedAt: now,
@@ -469,7 +524,8 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'Completed',
                     targetValue: 100,
                     currentValue: 100,
@@ -493,7 +549,8 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'Archived',
                     targetValue: 100,
                     currentValue: 50,
@@ -516,11 +573,12 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    user: userId,
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'No Deadline',
                     targetValue: 100,
                     currentValue: 50,
-                    status: 'in_progress',
+                    status: 'active',
                     createdAt: now,
                     updatedAt: now,
                 });
@@ -536,13 +594,14 @@ describe('convex notifications', async () => {
 
         test('does not duplicate notifications for same day', async () => {
             const now = Date.now();
-            const objId = await userIdentity.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    user: userId,
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: userOrganizationId,
                     title: 'Due Today',
                     targetValue: 100,
                     currentValue: 50,
-                    status: 'in_progress',
+                    status: 'active',
                     deadline: now + 3600000,
                     createdAt: now,
                     updatedAt: now,

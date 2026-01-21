@@ -1,41 +1,68 @@
-import { convexTest } from 'convex-test';
-import { describe, expect, test, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from '../../test.setup';
-import { createTestUser } from '../../test_helpers';
-import { register } from '../../better-auth.helper';
+import { initConvexTest } from '../../better-auth.helper';
+import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
+import { TestConvexForDataModel } from 'convex-test';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex update_progress', () => {
-    const t = convexTest(schema, modules);
-    register(t);
+    const t = initConvexTest();
+    let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
     let objectiveId: string;
-
-    const userIdentity = t.withIdentity({
-        subject: 'test-user-123',
-        role: 'admin',
-    });
+    let organizationId: string;
 
     beforeEach(async () => {
-        // Create a complete test user with account (similar to better-auth sign-up)
-        const result = await createTestUser(t, {
-            userId: 'test-user-123',
-            email: 'test@example.com',
-            name: 'Test User',
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+        const user = {
+            userId: 'test-user-update-progress-' + randomSuffix,
+            email: 'update-progress@example.com-' + randomSuffix,
+            name: 'Update Progress Test User ' + randomSuffix,
             password: 'test-password',
             role: 'admin',
             emailVerified: false,
+        };
+
+        await createTestUser(t, user);
+        userId = user.userId;
+
+        const orgId = await createTestOrganization(t, {
+            name: 'Update Progress Org ' + randomSuffix,
+            slug: 'update-progress-org-' + randomSuffix,
         });
-        userId = result.userId;
+
+        await createTestMember(t, {
+            organizationId: String(orgId),
+            userId: userId,
+            role: 'owner',
+        });
+
+        organizationId = String(orgId);
+
+        userIdentity = t.withIdentity({
+            subject: user.userId,
+            role: user.role,
+            email: user.email,
+            name: user.name,
+            password: user.password,
+            emailVerified: user.emailVerified,
+            createdAt: Date.now(),
+            userId: user.userId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
 
         objectiveId = await userIdentity.run(async ctx => {
             return await ctx.db.insert('objectives', {
-                user: userId,
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Test Objective',
                 targetValue: 100,
                 currentValue: 50,
-                status: 'in_progress',
+                status: 'active',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
@@ -98,7 +125,7 @@ describe('convex update_progress', () => {
             api.update_progress.getUpdateProgressByObjectiveId,
             {
                 objectiveId,
-                paginationOpts: { numItems: 10, cursor: null }
+                paginationOpts: { numItems: 10, cursor: null },
             }
         );
 
