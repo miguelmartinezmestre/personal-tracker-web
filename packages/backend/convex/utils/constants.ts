@@ -40,11 +40,11 @@ export const DASHBOARD = {
  * Objective status values
  */
 export const OBJECTIVE_STATUS = {
-    NOT_STARTED: 'not_started',
-    IN_PROGRESS: 'in_progress',
+    ACTIVE: 'active',
     COMPLETED: 'completed',
     PAUSED: 'paused',
     ARCHIVED: 'archived',
+    DELETED: 'deleted',
 } as const;
 
 export type ObjectiveStatus = (typeof OBJECTIVE_STATUS)[keyof typeof OBJECTIVE_STATUS];

@@ -1,14 +1,13 @@
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
-import { Doc } from './_generated/dataModel';
-import { internalMutation, QueryCtx, MutationCtx } from './_generated/server';
 import { components } from './_generated/api';
-import { TIME } from './utils/constants';
+import { internalMutation } from './_generated/server';
+import {
+    calculateUserStreak,
+    calculateUserStreakInternal,
+    calculateOrganizationStreak,
+} from './achievements_utils/calculations';
+import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
 import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
-
-
-
-// ============ QUERIES ============
 
 export const getAchievementDefinitions = queryWithRLS({
     args: {
@@ -44,7 +43,11 @@ export const getUserAchievements = queryWithRLS({
         const achievementsWithDetails = await Promise.all(
             obtainedAchievements.map(async oa => {
                 const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
-                return definition;
+                return {
+                    ...oa,
+                    definition,
+                    user: oa.userId,
+                };
             })
         );
 
@@ -218,8 +221,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned
-                    ? obtainedAchievements.find(oa => String(oa._id) === String(def._id))
-                          ?.earnedAt
+                    ? obtainedAchievements.find(oa => String(oa._id) === String(def._id))?.earnedAt
                     : undefined,
             };
         });
@@ -228,74 +230,22 @@ export const getUserAchievementProgress = queryWithRLS({
     },
 });
 
-// Helper function to calculate user streak
-async function calculateUserStreak(ctx: QueryCtx, userId: string): Promise<number> {
-    const objectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .collect();
+export const getUnviewedAchievementsCount = queryWithRLS({
+    args: {},
+    handler: async ctx => {
+        const userId = String(ctx.identity?.subject);
 
-    const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
-
-    if (objectiveIds.length === 0) return 0;
-
-    // Fetch progress updates for each objective using indexed queries
-    const userUpdates = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
-            return updates;
-        })
-    )
-        .then(results => results.flat())
-        .then(updates =>
-            updates.sort(
-                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
-                    b.updateDate - a.updateDate
+        // Get unread achievement notifications
+        const notifications = await ctx.db
+            .query('notifications')
+            .withIndex('by_user_type_read', q =>
+                q.eq('userId', userId).eq('notificationType', 'achievement').eq('read', false)
             )
-        );
+            .collect();
 
-    if (userUpdates.length === 0) return 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayMs = today.getTime();
-
-    // Get unique days with activity
-    const activityDays = new Set<number>();
-    for (const update of userUpdates) {
-        const dayStart = new Date(update.updateDate);
-        dayStart.setHours(0, 0, 0, 0);
-        activityDays.add(dayStart.getTime());
-    }
-
-    const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
-
-    // Check if there's activity today or yesterday (to maintain streak)
-    const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - TIME.DAY_MS) {
-        return 0; // Streak broken
-    }
-
-    // Count consecutive days
-    let streak = 0;
-    let expectedDay = mostRecentDay;
-
-    for (const day of sortedDays) {
-        if (day === expectedDay) {
-            streak++;
-            expectedDay -= TIME.DAY_MS;
-        } else if (day < expectedDay) {
-            break; // Gap in streak
-        }
-    }
-
-    return streak;
-}
-
-// ============ MUTATIONS ============
+        return notifications.length;
+    },
+});
 
 export const seedAchievementDefinitions = mutationWithRLS({
     args: {},
@@ -462,70 +412,6 @@ export const checkUserAchievements = internalMutation({
     },
 });
 
-// Internal helper for streak calculation (without RLS context)
-async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Promise<number> {
-    const objectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .collect();
-
-    const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
-
-    if (objectiveIds.length === 0) return 0;
-
-    // Fetch progress updates for each objective using indexed queries
-    const userUpdates = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
-            return updates;
-        })
-    )
-        .then(results => results.flat())
-        .then(updates =>
-            updates.sort(
-                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
-                    b.updateDate - a.updateDate
-            )
-        );
-
-    if (userUpdates.length === 0) return 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayMs = today.getTime();
-
-    const activityDays = new Set<number>();
-    for (const update of userUpdates) {
-        const dayStart = new Date(update.updateDate);
-        dayStart.setHours(0, 0, 0, 0);
-        activityDays.add(dayStart.getTime());
-    }
-
-    const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
-
-    const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - TIME.DAY_MS) {
-        return 0;
-    }
-
-    let streak = 0;
-    let expectedDay = mostRecentDay;
-
-    for (const day of sortedDays) {
-        if (day === expectedDay) {
-            streak++;
-            expectedDay -= TIME.DAY_MS;
-        } else if (day < expectedDay) {
-            break;
-        }
-    }
-
-    return streak;
-}
-
 // Check organization achievements
 export const checkOrganizationAchievements = internalMutation({
     args: {
@@ -655,95 +541,5 @@ export const checkOrganizationAchievements = internalMutation({
         }
 
         return { awarded: newAchievements };
-    },
-});
-
-async function calculateOrganizationStreak(
-    ctx: QueryCtx,
-    memberUserIds: string[]
-): Promise<number> {
-    // Get organization objectives using indexed queries per user
-    const organizationObjectives = await Promise.all(
-        memberUserIds.map(async userId => {
-            const userObjectives = await ctx.db
-                .query('objectives')
-                .withIndex('by_user', q => q.eq('userId', userId))
-                .collect();
-            return userObjectives;
-        })
-    ).then(results => results.flat());
-
-    const objectiveIds = organizationObjectives.map((o: Doc<'objectives'>) => o._id);
-
-    if (objectiveIds.length === 0) return 0;
-
-    // Fetch progress updates for each objective using indexed queries
-    const organizationUpdates = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
-            return updates;
-        })
-    )
-        .then(results => results.flat())
-        .then(updates =>
-            updates.sort(
-                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
-                    b.updateDate - a.updateDate
-            )
-        );
-
-    if (organizationUpdates.length === 0) return 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayMs = today.getTime();
-
-    const activityDays = new Set<number>();
-    for (const update of organizationUpdates) {
-        const dayStart = new Date(update.updateDate);
-        dayStart.setHours(0, 0, 0, 0);
-        activityDays.add(dayStart.getTime());
-    }
-
-    const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
-
-    const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - TIME.DAY_MS) {
-        return 0;
-    }
-
-    let streak = 0;
-    let expectedDay = mostRecentDay;
-
-    for (const day of sortedDays) {
-        if (day === expectedDay) {
-            streak++;
-            expectedDay -= TIME.DAY_MS;
-        } else if (day < expectedDay) {
-            break;
-        }
-    }
-
-    return streak;
-}
-
-// Get unviewed achievements count (for sidebar indicator)
-export const getUnviewedAchievementsCount = queryWithRLS({
-    args: {},
-    handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
-
-        // Get unread achievement notifications
-        const notifications = await ctx.db
-            .query('notifications')
-            .withIndex('by_user_type_read', q =>
-                q.eq('userId', userId).eq('notificationType', 'achievement').eq('read', false)
-            )
-            .collect();
-
-        return notifications.length;
     },
 });
