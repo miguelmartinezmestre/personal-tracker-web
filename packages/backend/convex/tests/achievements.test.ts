@@ -146,8 +146,8 @@ describe('convex achievements', async () => {
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
             expect(achievements.length).toBe(1);
-            expect(achievements[0].definition).toBeDefined();
-            expect(achievements[0].user).toBe(userId);
+            expect(achievements[0]?.definition).toBeDefined();
+            expect(achievements[0]?.user).toBe(userId);
         });
     });
 

@@ -3,13 +3,13 @@ import { api } from '../_generated/api';
 import { initConvexTest } from '../../better-auth.helper';
 import { createTestUser, createTestOrganization, createTestMember } from '../../test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex update_progress', () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
-    let objectiveId: string;
+    let objectiveId: Id<'objectives'>;
     let organizationId: string;
 
     beforeEach(async () => {

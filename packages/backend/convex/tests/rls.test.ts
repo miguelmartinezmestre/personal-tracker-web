@@ -272,7 +272,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 {}
             );
             expect(user1Categories).toHaveLength(1);
-            expect(user1Categories[0].name).toBe('User 1 Category');
+            expect(user1Categories[0]?.name).toBe('User 1 Category');
 
             // User 2 can only see their category
             const user2Categories = await user2Identity.query(
@@ -280,7 +280,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 {}
             );
             expect(user2Categories).toHaveLength(1);
-            expect(user2Categories[0].name).toBe('User 2 Category');
+            expect(user2Categories[0]?.name).toBe('User 2 Category');
         });
 
         test('user cannot modify another user categories', async () => {
@@ -301,7 +301,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                     api.categories.getCategoriesByUser,
                     {}
                 );
-                expect(categories[0].name).toBe('User 1 Category');
+                expect(categories[0]?.name).toBe('User 1 Category');
             } catch (error) {
                 // RLS blocked the operation - expected behavior
                 expect(error).toBeDefined();
@@ -381,7 +381,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                     api.notifications.getNotificationsByUser,
                     { paginationOpts: { numItems: 10, cursor: null } }
                 );
-                expect(notifications.page[0].read).toBe(false);
+                expect(notifications.page[0]?.read).toBe(false);
             } catch (error) {
                 // RLS blocked the operation - expected behavior
                 expect(error).toBeDefined();
