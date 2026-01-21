@@ -52,7 +52,7 @@ export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promis
 
     // Check if there's activity today or yesterday (to maintain streak)
     const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - TIME.DAY_MS) {
+    if (mostRecentDay === undefined || mostRecentDay < todayMs - TIME.DAY_MS) {
         return 0; // Streak broken
     }
 
@@ -119,7 +119,7 @@ export async function calculateUserStreakInternal(ctx: MutationCtx, userId: stri
     const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
 
     const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - TIME.DAY_MS) {
+    if (mostRecentDay === undefined || mostRecentDay < todayMs - TIME.DAY_MS) {
         return 0;
     }
 
@@ -194,7 +194,7 @@ export async function calculateOrganizationStreak(
     const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
 
     const mostRecentDay = sortedDays[0];
-    if (mostRecentDay < todayMs - TIME.DAY_MS) {
+    if (mostRecentDay === undefined || mostRecentDay < todayMs - TIME.DAY_MS) {
         return 0;
     }
 

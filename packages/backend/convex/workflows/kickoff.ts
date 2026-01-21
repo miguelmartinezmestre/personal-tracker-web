@@ -11,6 +11,7 @@ import { workflow } from '../workflow';
 import { internal } from '../_generated/api';
 import { vWorkflowId } from '@convex-dev/workflow';
 import { vResultValidator } from '@convex-dev/workpool';
+import { authComponent, createAuth } from '../auth';
 
 /**
  * Public Mutation: Start objective lifecycle workflow
@@ -23,10 +24,14 @@ export const startObjectiveLifecycle = mutation({
     reminderIntervalDays: v.optional(v.number()),
     stallThresholdDays: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
-    const userId = String(ctx.identity?.subject);
+  handler: async (ctx, args): Promise<{ workflowId: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('User not authenticated');
+    }
+    const userId = String(identity.subject);
 
-    const workflowId = await workflow.start<internal.workflows.objectiveLifecycle.objectiveLifecycle>(
+    const workflowId = await workflow.start(
       ctx,
       internal.workflows.objectiveLifecycle.objectiveLifecycle,
       {
@@ -55,23 +60,30 @@ export const triggerAchievementCheck = mutation({
   args: {
     trigger: v.string(), // 'objective_created' | 'objective_completed' | 'progress_update'
   },
-  handler: async (ctx, args) => {
-    const userId = String(ctx.identity?.subject);
-    const organizationId = ctx.organizationId;
+  handler: async (ctx, args): Promise<{ workflowId: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('User not authenticated');
+    }
+    const userId = String(identity.subject);
+
+    // Get organizationId from session
+    let organizationId: string | undefined = undefined;
+    try {
+      const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+      const session = await auth.api.getSession({ headers });
+      organizationId = session?.session.activeOrganizationId ?? undefined;
+    } catch {
+      organizationId = undefined;
+    }
 
     // Choose the appropriate workflow based on trigger
-    let workflowFn: typeof internal.workflows.achievementProcessing.processAchievements;
-
-    switch (args.trigger) {
-      case 'progress_update':
-        workflowFn = internal.workflows.achievementProcessing.processProgressAchievements;
-        break;
-      case 'objective_completed':
-        workflowFn = internal.workflows.achievementProcessing.processCompletionAchievements;
-        break;
-      default:
-        workflowFn = internal.workflows.achievementProcessing.processAchievements;
-    }
+    const workflowFn =
+      args.trigger === 'progress_update'
+        ? internal.workflows.achievementProcessing.processProgressAchievements
+        : args.trigger === 'objective_completed'
+          ? internal.workflows.achievementProcessing.processCompletionAchievements
+          : internal.workflows.achievementProcessing.processAchievements;
 
     const workflowId = await workflow.start(
       ctx,
@@ -79,7 +91,6 @@ export const triggerAchievementCheck = mutation({
       {
         userId,
         organizationId,
-        trigger: args.trigger,
       },
       {
         onComplete: internal.workflows.kickoff.handleAchievementCheckComplete,

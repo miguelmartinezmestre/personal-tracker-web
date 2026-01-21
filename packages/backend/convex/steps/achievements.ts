@@ -167,7 +167,7 @@ export const checkAchievementCategory = internalMutation({
  */
 function extractNumberFromCode(code: string): number {
   const match = code.match(/(\d+)$/);
-  return match ? parseInt(match[1], 10) : 0;
+  return match && match[1] !== undefined ? parseInt(match[1], 10) : 0;
 }
 
 /**
@@ -232,28 +232,78 @@ export const checkAllAchievements = internalMutation({
         };
       });
 
-    // Check each category
+    // Check each category directly (implementing the logic inline)
     const categories = ['objectives_created', 'objectives_completed', 'streak', 'progress_updates', 'early_bird'] as const;
-    const results = await Promise.all(
-      categories.map(category =>
-        ctx.db
-          .get(systemFunctionId(internal.steps.achievements.checkAchievementCategory))
-          .then(fn => ctx.scheduler.runAfter(0, internal.steps.achievements.checkAchievementCategory, {
-            userId,
-            organizationId,
-            category,
-            stats,
-          }))
-      )
-    );
+    const allAwarded: string[] = [];
 
-    const allAwarded = results.flatMap(r => r.awarded ?? []);
+    for (const category of categories) {
+      // Get achievement definitions for this category
+      const allDefinitions = await ctx.db.query('achievementDefinitions').collect();
+      const categoryDefinitions = allDefinitions.filter(
+        d => d.isActive && d.type === 'individual' && d.code.includes(category)
+      );
+
+      // Get already earned achievements
+      const earnedAchievements = await ctx.db
+        .query('obtainedAchievements')
+        .withIndex('by_user', q => q.eq('userId', userId))
+        .collect();
+
+      const earnedCodes = new Set(
+        await Promise.all(
+          earnedAchievements.map(async ea => {
+            const def = await ctx.db.get('achievementDefinitions', ea.achievement);
+            return def?.code;
+          })
+        )
+      );
+
+      for (const def of categoryDefinitions) {
+        if (earnedCodes.has(def.code)) continue;
+
+        let shouldAward = false;
+
+        // Evaluate based on category
+        switch (category) {
+          case 'objectives_created':
+            const targetCreated = extractNumberFromCode(def.code);
+            shouldAward = stats.totalObjectives >= targetCreated;
+            break;
+          case 'objectives_completed':
+            const targetCompleted = extractNumberFromCode(def.code);
+            shouldAward = stats.completedObjectives >= targetCompleted;
+            break;
+          case 'streak':
+            const targetStreak = extractNumberFromCode(def.code);
+            shouldAward = stats.streak >= targetStreak;
+            break;
+          case 'progress_updates':
+            const targetUpdates = extractNumberFromCode(def.code);
+            shouldAward = stats.totalProgressUpdates >= targetUpdates;
+            break;
+          case 'early_bird':
+            shouldAward = stats.earlyCompletions >= 1;
+            break;
+        }
+
+        if (shouldAward) {
+          const now = Date.now();
+          try {
+            await ctx.db.insert('obtainedAchievements', {
+              userId: userId,
+              achievement: def._id,
+              earnedAt: now,
+              createdAt: now,
+              updatedAt: now,
+            });
+            allAwarded.push(def.code);
+          } catch {
+            // Ignore duplicate insert errors
+          }
+        }
+      }
+    }
 
     return { awarded: allAwarded, stats };
   },
 });
-
-// Type helper for getting system function ID
-function systemFunctionId(..._args: unknown[]): string {
-  return '';
-}

@@ -15,6 +15,12 @@ import { v } from 'convex/values';
 import { workflow } from '../workflow';
 import { internal } from '../_generated/api';
 
+// Type for achievement check result
+type AchievementCheckResult = {
+    awarded?: string[];
+    [key: string]: unknown;
+};
+
 /**
  * Workflow: Process achievements after progress update
  *
@@ -60,7 +66,7 @@ export const processAchievements = workflow.define({
     );
 
     // Collect all awarded achievements
-    const awardedAchievements = categoryResults.flatMap(r => r.awarded ?? []);
+    const awardedAchievements = categoryResults.flatMap((r: AchievementCheckResult) => r.awarded ?? []);
 
     // Step 3: Check organization achievements if enabled and orgId provided
     if (checkOrganization && organizationId) {
@@ -111,7 +117,7 @@ export const processProgressAchievements = workflow.define({
       )
     );
 
-    const awardedAchievements = categoryResults.flatMap(r => r.awarded ?? []);
+    const awardedAchievements = categoryResults.flatMap((r: AchievementCheckResult) => r.awarded ?? []);
 
     return { awarded: awardedAchievements };
   },
@@ -151,7 +157,7 @@ export const processCompletionAchievements = workflow.define({
       )
     );
 
-    const awardedAchievements = categoryResults.flatMap(r => r.awarded ?? []);
+    const awardedAchievements = categoryResults.flatMap((r: AchievementCheckResult) => r.awarded ?? []);
 
     return { awarded: awardedAchievements };
   },

@@ -6,6 +6,7 @@
  * 2. Sends reminders at appropriate intervals
  * 3. Checks for deadline approaching/overdue
  * 4. Detects stalled objectives
+ * 5. Handles recurring objectives (period resets)
  *
  * The workflow runs indefinitely until the objective is completed or cancelled.
  */
@@ -24,6 +25,7 @@ import { internal } from '../_generated/api';
  *
  * Schedule:
  * - Daily: Check if objective should be auto-completed
+ * - Daily: Check for recurring objective reset
  * - Weekly: Send reminder notification
  * - Near deadline: Send deadline approaching reminder
  * - Every 3 days: Check if objective is stalled
@@ -52,39 +54,58 @@ export const objectiveLifecycle = workflow.define({
       { objectiveId },
     );
 
-    // If already completed, end workflow
+    // If already completed, check if we should create a recurring instance
     if (initialStatus.status === 'already_completed') {
+      await step.runMutation(internal.steps.objectives.createRecurringInstance, {
+        sourceObjectiveId: objectiveId,
+      });
       return;
     }
 
     // Main monitoring loop - runs indefinitely until cancelled or completed
     let iterationCount = 0;
     const maxIterations = 365; // Prevent infinite loops (1 year of daily checks)
+    const oneDayMs = 24 * 60 * 60 * 1000;
 
     while (iterationCount < maxIterations) {
       iterationCount++;
 
-      // Wait one day between checks
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      await step.sleep(oneDayMs);
-
-      // Check 1: Auto-complete if target reached
+      // Check 1: Auto-complete if target reached (runs immediately)
       const completionStatus = await step.runMutation(
         internal.steps.objectives.checkAutoComplete,
         { objectiveId },
       );
 
       if (completionStatus.status === 'completed') {
-        // Objective completed - trigger achievement check and end workflow
+        // Objective completed - trigger achievement check
         await step.runMutation(internal.achievements.checkUserAchievements, {
           userId,
           trigger: 'objective_completed',
         });
+        // Check if we should create a recurring instance
+        await step.runMutation(internal.steps.objectives.createRecurringInstance, {
+          sourceObjectiveId: objectiveId,
+        });
         return;
       }
 
-      // Check 2: Deadline approaching (3 days before)
-      if (iterationCount % reminderIntervalDays === 0) {
+      // Check 2: Recurring objective reset (daily check)
+      const resetStatus = await step.runMutation(
+        internal.steps.objectives.checkAndResetRecurring,
+        { objectiveId },
+      );
+
+      // If reset occurred, optionally send a reminder about the new period
+      if (resetStatus.reset && enableReminders) {
+        await step.runMutation(internal.steps.objectives.sendReminder, {
+          objectiveId,
+          reminderType: 'weekly_check',
+          dedupeKey: `reset_${iterationCount}`,
+        });
+      }
+
+      // Check 3: Deadline approaching (on interval)
+      if (enableReminders && iterationCount % reminderIntervalDays === 0) {
         await step.runMutation(internal.steps.objectives.sendReminder, {
           objectiveId,
           reminderType: 'deadline_approaching',
@@ -92,7 +113,7 @@ export const objectiveLifecycle = workflow.define({
         });
       }
 
-      // Check 3: Stalled objective (every 3 days)
+      // Check 4: Stalled objective (every 3 days)
       if (iterationCount % 3 === 0) {
         await step.runMutation(internal.steps.objectives.markStalled, {
           objectiveId,
@@ -100,10 +121,27 @@ export const objectiveLifecycle = workflow.define({
         });
       }
 
-      // Check 4: Overdue check
+      // Check 5: Overdue check
       await step.runMutation(internal.steps.objectives.checkOverdue, {
         objectiveId,
       });
+
+      // Schedule the next iteration after one day
+      // Use runWorkflow to recursively schedule the next iteration
+      await step.runWorkflow(
+        internal.workflows.objectiveLifecycle.objectiveLifecycle,
+        {
+          objectiveId,
+          userId,
+          enableReminders,
+          reminderIntervalDays,
+          stallThresholdDays,
+        },
+        { runAfter: oneDayMs },
+      );
+
+      // Exit after scheduling next iteration
+      return;
     }
 
     // Safety: if we reach max iterations, end gracefully

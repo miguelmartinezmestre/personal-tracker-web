@@ -9,7 +9,7 @@ import { v } from 'convex/values';
 import { mutationWithRLS } from './rls';
 import { internal } from './_generated/api';
 import { workflow } from './workflow';
-import { vWorkflowId } from '@convex-dev/workflow';
+import { type WorkflowId } from '@convex-dev/workflow';
 import {
     pauseEvent,
     resumeEvent,
@@ -69,13 +69,16 @@ export const createObjective = mutationWithRLS({
         if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
             const workflowId = await workflow.start(
                 ctx,
-                internal.objectiveWorkflow.objectiveLifecycleV2,
+                internal.workflows.objectiveLifecycle.objectiveLifecycle,
                 {
                     objectiveId,
                     userId,
+                    enableReminders: true,
+                    reminderIntervalDays: 7,
+                    stallThresholdDays: 14,
                 },
                 {
-                    onComplete: internal.workflows.kickoff.handleObjectiveLifecycleV2Complete,
+                    onComplete: internal.workflows.kickoff.handleObjectiveLifecycleComplete,
                     context: { objectiveId, userId },
                 }
             );
@@ -111,7 +114,7 @@ export const pauseObjective = mutationWithRLS({
         if (objective.workflowId) {
             await workflow.sendEvent(ctx, {
                 ...pauseEvent,
-                workflowId: objective.workflowId as ReturnType<typeof vWorkflowId['parse']>,
+                workflowId: objective.workflowId as WorkflowId,
                 value: { reason: args.reason },
             });
         } else {
@@ -148,7 +151,7 @@ export const resumeObjective = mutationWithRLS({
         if (objective.workflowId) {
             await workflow.sendEvent(ctx, {
                 ...resumeEvent,
-                workflowId: objective.workflowId as ReturnType<typeof vWorkflowId['parse']>,
+                workflowId: objective.workflowId as WorkflowId,
                 value: {},
             });
         } else {
@@ -187,7 +190,7 @@ export const completeObjective = mutationWithRLS({
         if (objective.workflowId) {
             await workflow.sendEvent(ctx, {
                 ...completeEvent,
-                workflowId: objective.workflowId as ReturnType<typeof vWorkflowId['parse']>,
+                workflowId: objective.workflowId as WorkflowId,
                 value: { completedAt: now, autoCompleted: false },
             });
         } else {
@@ -225,7 +228,7 @@ export const archiveObjective = mutationWithRLS({
         if (objective.workflowId) {
             await workflow.sendEvent(ctx, {
                 ...archiveEvent,
-                workflowId: objective.workflowId as ReturnType<typeof vWorkflowId['parse']>,
+                workflowId: objective.workflowId as WorkflowId,
                 value: { reason: args.reason },
             });
         } else {
@@ -262,7 +265,7 @@ export const deleteObjective = mutationWithRLS({
         if (objective.workflowId) {
             await workflow.sendEvent(ctx, {
                 ...deleteEvent,
-                workflowId: objective.workflowId as ReturnType<typeof vWorkflowId['parse']>,
+                workflowId: objective.workflowId as WorkflowId,
                 value: {},
             });
         } else {
@@ -296,7 +299,7 @@ export const hardDeleteObjective = mutationWithRLS({
             try {
                 await workflow.cancel(
                     ctx,
-                    objective.workflowId as ReturnType<typeof vWorkflowId['parse']>
+                    objective.workflowId as WorkflowId
                 );
             } catch (e) {
                 // Ignore errors if workflow already completed/canceled
@@ -374,7 +377,7 @@ export const reconfigureObjective = mutationWithRLS({
         if (objective.workflowId && objective.status === 'active') {
             await workflow.sendEvent(ctx, {
                 ...reconfigureEvent,
-                workflowId: objective.workflowId as ReturnType<typeof vWorkflowId['parse']>,
+                workflowId: objective.workflowId as WorkflowId,
                 value: {
                     newDeadline: args.newDeadline,
                     newPeriod: args.newPeriod,

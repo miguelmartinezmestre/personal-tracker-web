@@ -63,6 +63,19 @@ export const getNotificationsByUser = queryWithRLS({
     },
 });
 
+export const getUnreadNotificationCount = queryWithRLS({
+    args: {},
+    handler: async ctx => {
+        const userId = String(ctx.identity?.subject);
+        const unreadNotifications = await ctx.db
+            .query('notifications')
+            .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+            .collect();
+
+        return { count: unreadNotifications.length };
+    },
+});
+
 export const createNotification = mutationWithRLS({
     args: {
         objective: v.id('objectives'),
