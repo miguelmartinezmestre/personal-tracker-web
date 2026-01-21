@@ -1,7 +1,28 @@
+/**
+ * Objectives Queries and General Updates
+ *
+ * This file contains query functions for objectives.
+ * Status-changing mutations are in objectivePublic.ts
+ */
+
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
 
+export {
+    createObjective,
+    pauseObjective,
+    resumeObjective,
+    completeObjective,
+    archiveObjective,
+    deleteObjective,
+    hardDeleteObjective,
+    reconfigureObjective,
+} from './objectivePublic';
+
+/**
+ * Get objectives for the current user with pagination
+ */
 export const getObjectivesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
@@ -13,64 +34,48 @@ export const getObjectivesByUser = queryWithRLS({
             .order('desc')
             .paginate(paginationOpts);
 
-        return results
+        return results;
     },
 });
 
+/**
+ * Get a single objective by ID
+ */
 export const getObjectiveById = queryWithRLS({
     args: {
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
         const result = await ctx.db.get('objectives', args.id);
-
         return result;
     },
 });
 
-export const createObjective = mutationWithRLS({
+/**
+ * Get objectives by status
+ */
+export const getObjectivesByStatus = queryWithRLS({
     args: {
-        title: v.string(),
-        description: v.optional(v.string()),
-        category: v.optional(v.string()),
-        targetValue: v.number(),
-        currentValue: v.number(),
-        deadline: v.optional(v.number()),
         status: v.string(),
-        unit: v.optional(v.string()),
-        objectiveType: v.optional(v.string()),
-        period: v.optional(v.string()),
-        periodStart: v.optional(v.number()),
-        periodLengthDays: v.optional(v.number()),
+        paginationOpts: paginationOptsValidator,
     },
-    handler: async (ctx, args) => {
-        const now = Date.now();
-        const objectiveType = args.objectiveType ?? 'value';
-        const period = args.period ?? 'none';
+    handler: async (ctx, { status, paginationOpts }) => {
+        const userId = String(ctx.identity?.subject);
+        const results = await ctx.db
+            .query('objectives')
+            .withIndex('by_user', q => q.eq('userId', userId))
+            .filter(q => q.eq(q.field('status'), status))
+            .order('desc')
+            .paginate(paginationOpts);
 
-        const objectiveId = await ctx.db.insert('objectives', {
-            userId: String(ctx.identity?.subject),
-            organizationId: ctx.organizationId,
-            title: args.title,
-            description: args.description,
-            category: args.category,
-            targetValue: args.targetValue,
-            currentValue: args.currentValue,
-            deadline: args.deadline,
-            status: args.status,
-            unit: args.unit,
-            objectiveType,
-            period,
-            periodStart: args.periodStart,
-            periodLengthDays: args.periodLengthDays,
-            createdAt: now,
-            updatedAt: now,
-        });
-
-        return objectiveId;
+        return results;
     },
 });
 
+/**
+ * Update objective fields (non-status updates)
+ * For status changes, use the mutations in objectivePublic.ts
+ */
 export const updateObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
@@ -80,7 +85,6 @@ export const updateObjective = mutationWithRLS({
         targetValue: v.optional(v.number()),
         currentValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
-        status: v.optional(v.string()),
         unit: v.optional(v.string()),
         objectiveType: v.optional(v.string()),
         period: v.optional(v.string()),
@@ -100,15 +104,3 @@ export const updateObjective = mutationWithRLS({
         return updated;
     },
 });
-
-export const deleteObjective = mutationWithRLS({
-    args: {
-        id: v.id('objectives'),
-    },
-    handler: async (ctx, args) => {
-        const result = await ctx.db.delete('objectives', args.id);
-
-        return result;
-    },
-});
-

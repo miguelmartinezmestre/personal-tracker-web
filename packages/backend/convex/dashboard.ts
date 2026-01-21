@@ -14,9 +14,7 @@ export const getDashboardStats = queryWithRLS({
 
         const totalObjectives = objectives.length;
         const completedObjectives = objectives.filter(o => o.status === 'completed').length;
-        const pendingObjectives = objectives.filter(
-            o => o.status === 'in_progress' || o.status === 'active'
-        ).length;
+        const pendingObjectives = objectives.filter(o => o.status === 'active').length;
         const pausedObjectives = objectives.filter(o => o.status === 'paused').length;
         const archivedObjectives = objectives.filter(o => o.status === 'archived').length;
 
