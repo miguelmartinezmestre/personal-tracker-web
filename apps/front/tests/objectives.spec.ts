@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
-import { takeScreenshot } from './test-helpers';
+import { takeScreenshot, ensureDefaultCategories } from './test-helpers';
 
 test('objectives end-to-end: register, validate, create, progress, edit, delete', async ({
     page,
@@ -21,6 +21,9 @@ test('objectives end-to-end: register, validate, create, progress, edit, delete'
     await page.getByTestId('register-button').click();
 
     await expect(page).toHaveURL(/\/dashboard\/home$/);
+
+    // Ensure categories exist before creating objective
+    await ensureDefaultCategories(page);
     const welcomeMessage = await page.getByTestId('welcome-message').textContent();
     expect(welcomeMessage).toContain(username);
 

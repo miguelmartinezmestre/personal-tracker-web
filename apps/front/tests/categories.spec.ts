@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, takeScreenshot } from './test-helpers';
+import { createTestUser, takeScreenshot, ensureDefaultCategories } from './test-helpers';
 import { randomUUID } from 'crypto';
 
 test.describe('Categories Management', () => {
@@ -24,6 +24,7 @@ test.describe('Categories Management', () => {
         const objectiveTitle = `category-test-${uuid}`;
 
         await createTestUser(page);
+        await ensureDefaultCategories(page);
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
@@ -52,6 +53,7 @@ test.describe('Categories Management', () => {
 
     test('default categories are available for new users', async ({ page }) => {
         await createTestUser(page);
+        await ensureDefaultCategories(page);
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
@@ -78,6 +80,7 @@ test.describe('Categories Management', () => {
         const objectiveTitle = `category-persist-${uuid}`;
 
         await createTestUser(page);
+        await ensureDefaultCategories(page);
         await page.goto('/dashboard/objectives');
 
         // Create objective with specific category
@@ -107,6 +110,7 @@ test.describe('Categories Management', () => {
         const uuid = randomUUID();
 
         await createTestUser(page);
+        await ensureDefaultCategories(page);
         await page.goto('/dashboard/objectives');
 
         // Create first objective with Personal category
@@ -180,6 +184,7 @@ test.describe('Category Filtering', () => {
         const objectiveTitle = `filter-test-${uuid}`;
 
         await createTestUser(page);
+        await ensureDefaultCategories(page);
         await page.goto('/dashboard/objectives');
 
         // Create an objective with a category

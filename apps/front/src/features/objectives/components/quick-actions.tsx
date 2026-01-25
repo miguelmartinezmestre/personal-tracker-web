@@ -15,7 +15,6 @@ import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { OBJECTIVES_DEFAULT_PAGE_SIZE } from './objectives-utils';
 
 interface QuickActionsProps {
     objectiveId: Id<'objectives'>;
@@ -29,13 +28,9 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
         const queryClient = useQueryClient();
 
         const invalidateObjectives = () => {
+            // Invalidate all objectives queries regardless of pagination
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: {
-                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                        cursor: null,
-                    },
-                }).queryKey,
+                queryKey: [api.objectives.getObjectivesByUser],
             });
         };
 
@@ -108,6 +103,8 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         disabled={completeObjective.isPending}
                         className="text-green-600 hover:text-green-700 hover:bg-green-50"
                         title={t('tooltips.complete')}
+                        aria-label={t('tooltips.complete')}
+                        data-testid="objective-complete-button"
                     >
                         <CheckCircle className="h-4 w-4" />
                     </Button>
@@ -121,6 +118,8 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         disabled={pauseObjective.isPending}
                         className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
                         title={t('tooltips.pause')}
+                        aria-label={t('tooltips.pause')}
+                        data-testid="objective-pause-button"
                     >
                         <PauseCircle className="h-4 w-4" />
                     </Button>
@@ -134,6 +133,8 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         disabled={resumeObjective.isPending}
                         className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         title={t('tooltips.resume')}
+                        aria-label={t('tooltips.resume')}
+                        data-testid="objective-resume-button"
                     >
                         <PlayCircle className="h-4 w-4" />
                     </Button>
@@ -147,6 +148,8 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                         disabled={archiveObjective.isPending}
                         className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
                         title={t('tooltips.archive')}
+                        aria-label={t('tooltips.archive')}
+                        data-testid="objective-archive-button"
                     >
                         <Archive className="h-4 w-4" />
                     </Button>
@@ -159,34 +162,47 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                             size="sm"
                             className="h-8 w-8 p-0"
                             title={t('tooltips.more')}
+                            aria-label={t('tooltips.more')}
                         >
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         {!isCompleted && !isArchived && (
-                            <DropdownMenuItem onClick={handleComplete}>
+                            <DropdownMenuItem
+                                onClick={handleComplete}
+                                data-testid="objective-complete-menu-item"
+                            >
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
                                 {t('menu.complete')}
                             </DropdownMenuItem>
                         )}
 
                         {!isPaused && !isCompleted && !isArchived && (
-                            <DropdownMenuItem onClick={handlePause}>
+                            <DropdownMenuItem
+                                onClick={handlePause}
+                                data-testid="objective-pause-menu-item"
+                            >
                                 <PauseCircle className="mr-2 h-4 w-4 text-yellow-600" />
                                 {t('menu.pause')}
                             </DropdownMenuItem>
                         )}
 
                         {isPaused && !isArchived && (
-                            <DropdownMenuItem onClick={handleResume}>
+                            <DropdownMenuItem
+                                onClick={handleResume}
+                                data-testid="objective-resume-menu-item"
+                            >
                                 <PlayCircle className="mr-2 h-4 w-4 text-blue-600" />
                                 {t('menu.resume')}
                             </DropdownMenuItem>
                         )}
 
                         {!isArchived && (
-                            <DropdownMenuItem onClick={handleArchive}>
+                            <DropdownMenuItem
+                                onClick={handleArchive}
+                                data-testid="objective-archive-menu-item"
+                            >
                                 <Archive className="mr-2 h-4 w-4 text-gray-600" />
                                 {t('menu.archive')}
                             </DropdownMenuItem>

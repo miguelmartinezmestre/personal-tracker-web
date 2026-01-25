@@ -67,7 +67,7 @@ importers:
     dependencies:
       '@convex-dev/better-auth':
         specifier: 'catalog:'
-        version: 0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(convex@1.31.4(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+        version: 0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.1.11))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(convex@1.31.4(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       '@convex-dev/react-query':
         specifier: ^0.1.0
         version: 0.1.0(@tanstack/react-query@5.90.2(react@19.2.3))(convex@1.31.4(react@19.2.3))
@@ -221,23 +221,38 @@ importers:
     dependencies:
       '@convex-dev/better-auth':
         specifier: 'catalog:'
-        version: 0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.3.5))(convex@1.31.4(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+        version: 0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.3.5))(convex@1.31.2(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+      '@convex-dev/workflow':
+        specifier: 0.3.3
+        version: 0.3.3(@convex-dev/workpool@0.3.1(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3)))(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3))
+      '@convex-dev/workpool':
+        specifier: ^0.3.1
+        version: 0.3.1(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3))
       better-auth:
         specifier: 'catalog:'
         version: 1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17)
+      common-tags:
+        specifier: ^1.8.2
+        version: 1.8.2
       convex:
-        specifier: 'catalog:'
-        version: 1.31.4(react@19.2.3)
+        specifier: 1.31.2
+        version: 1.31.2(react@19.2.3)
       convex-helpers:
         specifier: ^0.1.108
-        version: 0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.4(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5)
+        version: 0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5)
       convex-test:
         specifier: ^0.0.41
-        version: 0.0.41(convex@1.31.4(react@19.2.3))
+        version: 0.0.41(convex@1.31.2(react@19.2.3))
+      remeda:
+        specifier: ^2.33.4
+        version: 2.33.4
+      type-fest:
+        specifier: ^5.4.1
+        version: 5.4.1
     devDependencies:
       '@convex-dev/eslint-plugin':
         specifier: ^1.1.0
-        version: 1.1.1(convex@1.31.4(react@19.2.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+        version: 1.1.1(convex@1.31.2(react@19.2.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
       '@eslint/js':
         specifier: ^9.39.1
         version: 9.39.2
@@ -907,6 +922,19 @@ packages:
       '@tanstack/react-query': ^5.0.0
       convex: ^1.29.3
 
+  '@convex-dev/workflow@0.3.3':
+    resolution: {integrity: sha512-wmW5Sr2GIMUZEQ+bUQ0A3b2y8Rkt+hS8gw2KPs3WhRV2ZxgMz1ftfcnDm3i4VykSCACxjvL7wFV4NHwv8V+H4w==}
+    peerDependencies:
+      '@convex-dev/workpool': ^0.3.0
+      convex: ^1.24.8
+      convex-helpers: ^0.1.99
+
+  '@convex-dev/workpool@0.3.1':
+    resolution: {integrity: sha512-uw4Mi+irhhoYA/KwaMo5wXyYJ7BbxqeaLcCZbst3t1SxPN5488rpnR0OwBcPDCmwcdQjBVHOx+q8S4GUjq0Csg==}
+    peerDependencies:
+      convex: ^1.24.8
+      convex-helpers: ^0.1.94
+
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
@@ -958,6 +986,12 @@ packages:
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
 
+  '@esbuild/aix-ppc64@0.25.4':
+    resolution: {integrity: sha512-1VCICWypeQKhVbE9oW/sJaAmjLxhVqacdkvPLEjwlttjfwENRSClS8EjBz0KzRyFSCPDIkuXW34Je/vk7zdB7Q==}
+    engines: {node: '>=18'}
+    cpu: [ppc64]
+    os: [aix]
+
   '@esbuild/aix-ppc64@0.27.0':
     resolution: {integrity: sha512-KuZrd2hRjz01y5JK9mEBSD3Vj3mbCvemhT466rSuJYeE/hjuBrHfjjcjMdTm/sz7au+++sdbJZJmuBwQLuw68A==}
     engines: {node: '>=18'}
@@ -970,6 +1004,12 @@ packages:
     cpu: [ppc64]
     os: [aix]
 
+  '@esbuild/android-arm64@0.25.4':
+    resolution: {integrity: sha512-bBy69pgfhMGtCnwpC/x5QhfxAz/cBgQ9enbtwjf6V9lnPI/hMyT9iWpR1arm0l3kttTr4L0KSLpKmLp/ilKS9A==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [android]
+
   '@esbuild/android-arm64@0.27.0':
     resolution: {integrity: sha512-CC3vt4+1xZrs97/PKDkl0yN7w8edvU2vZvAFGD16n9F0Cvniy5qvzRXjfO1l94efczkkQE6g1x0i73Qf5uthOQ==}
     engines: {node: '>=18'}
@@ -980,6 +1020,12 @@ packages:
     resolution: {integrity: sha512-pvz8ZZ7ot/RBphf8fv60ljmaoydPU12VuXHImtAs0XhLLw+EXBi2BLe3OYSBslR4rryHvweW5gmkKFwTiFy6KA==}
     engines: {node: '>=18'}
     cpu: [arm64]
+    os: [android]
+
+  '@esbuild/android-arm@0.25.4':
+    resolution: {integrity: sha512-QNdQEps7DfFwE3hXiU4BZeOV68HHzYwGd0Nthhd3uCkkEKK7/R6MTgM0P7H7FAs5pU/DIWsviMmEGxEoxIZ+ZQ==}
+    engines: {node: '>=18'}
+    cpu: [arm]
     os: [android]
 
   '@esbuild/android-arm@0.27.0':
@@ -994,6 +1040,12 @@ packages:
     cpu: [arm]
     os: [android]
 
+  '@esbuild/android-x64@0.25.4':
+    resolution: {integrity: sha512-TVhdVtQIFuVpIIR282btcGC2oGQoSfZfmBdTip2anCaVYcqWlZXGcdcKIUklfX2wj0JklNYgz39OBqh2cqXvcQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [android]
+
   '@esbuild/android-x64@0.27.0':
     resolution: {integrity: sha512-wurMkF1nmQajBO1+0CJmcN17U4BP6GqNSROP8t0X/Jiw2ltYGLHpEksp9MpoBqkrFR3kv2/te6Sha26k3+yZ9Q==}
     engines: {node: '>=18'}
@@ -1006,6 +1058,12 @@ packages:
     cpu: [x64]
     os: [android]
 
+  '@esbuild/darwin-arm64@0.25.4':
+    resolution: {integrity: sha512-Y1giCfM4nlHDWEfSckMzeWNdQS31BQGs9/rouw6Ub91tkK79aIMTH3q9xHvzH8d0wDru5Ci0kWB8b3up/nl16g==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [darwin]
+
   '@esbuild/darwin-arm64@0.27.0':
     resolution: {integrity: sha512-uJOQKYCcHhg07DL7i8MzjvS2LaP7W7Pn/7uA0B5S1EnqAirJtbyw4yC5jQ5qcFjHK9l6o/MX9QisBg12kNkdHg==}
     engines: {node: '>=18'}
@@ -1016,6 +1074,12 @@ packages:
     resolution: {integrity: sha512-davCD2Zc80nzDVRwXTcQP/28fiJbcOwvdolL0sOiOsbwBa72kegmVU0Wrh1MYrbuCL98Omp5dVhQFWRKR2ZAlg==}
     engines: {node: '>=18'}
     cpu: [arm64]
+    os: [darwin]
+
+  '@esbuild/darwin-x64@0.25.4':
+    resolution: {integrity: sha512-CJsry8ZGM5VFVeyUYB3cdKpd/H69PYez4eJh1W/t38vzutdjEjtP7hB6eLKBoOdxcAlCtEYHzQ/PJ/oU9I4u0A==}
+    engines: {node: '>=18'}
+    cpu: [x64]
     os: [darwin]
 
   '@esbuild/darwin-x64@0.27.0':
@@ -1030,6 +1094,12 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@esbuild/freebsd-arm64@0.25.4':
+    resolution: {integrity: sha512-yYq+39NlTRzU2XmoPW4l5Ifpl9fqSk0nAJYM/V/WUGPEFfek1epLHJIkTQM6bBs1swApjO5nWgvr843g6TjxuQ==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [freebsd]
+
   '@esbuild/freebsd-arm64@0.27.0':
     resolution: {integrity: sha512-9FHtyO988CwNMMOE3YIeci+UV+x5Zy8fI2qHNpsEtSF83YPBmE8UWmfYAQg6Ux7Gsmd4FejZqnEUZCMGaNQHQw==}
     engines: {node: '>=18'}
@@ -1040,6 +1110,12 @@ packages:
     resolution: {integrity: sha512-lS/9CN+rgqQ9czogxlMcBMGd+l8Q3Nj1MFQwBZJyoEKI50XGxwuzznYdwcav6lpOGv5BqaZXqvBSiB/kJ5op+g==}
     engines: {node: '>=18'}
     cpu: [arm64]
+    os: [freebsd]
+
+  '@esbuild/freebsd-x64@0.25.4':
+    resolution: {integrity: sha512-0FgvOJ6UUMflsHSPLzdfDnnBBVoCDtBTVyn/MrWloUNvq/5SFmh13l3dvgRPkDihRxb77Y17MbqbCAa2strMQQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
     os: [freebsd]
 
   '@esbuild/freebsd-x64@0.27.0':
@@ -1054,6 +1130,12 @@ packages:
     cpu: [x64]
     os: [freebsd]
 
+  '@esbuild/linux-arm64@0.25.4':
+    resolution: {integrity: sha512-+89UsQTfXdmjIvZS6nUnOOLoXnkUTB9hR5QAeLrQdzOSWZvNSAXAtcRDHWtqAUtAmv7ZM1WPOOeSxDzzzMogiQ==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [linux]
+
   '@esbuild/linux-arm64@0.27.0':
     resolution: {integrity: sha512-AS18v0V+vZiLJyi/4LphvBE+OIX682Pu7ZYNsdUHyUKSoRwdnOsMf6FDekwoAFKej14WAkOef3zAORJgAtXnlQ==}
     engines: {node: '>=18'}
@@ -1064,6 +1146,12 @@ packages:
     resolution: {integrity: sha512-hYxN8pr66NsCCiRFkHUAsxylNOcAQaxSSkHMMjcpx0si13t1LHFphxJZUiGwojB1a/Hd5OiPIqDdXONia6bhTw==}
     engines: {node: '>=18'}
     cpu: [arm64]
+    os: [linux]
+
+  '@esbuild/linux-arm@0.25.4':
+    resolution: {integrity: sha512-kro4c0P85GMfFYqW4TWOpvmF8rFShbWGnrLqlzp4X1TNWjRY3JMYUfDCtOxPKOIY8B0WC8HN51hGP4I4hz4AaQ==}
+    engines: {node: '>=18'}
+    cpu: [arm]
     os: [linux]
 
   '@esbuild/linux-arm@0.27.0':
@@ -1078,6 +1166,12 @@ packages:
     cpu: [arm]
     os: [linux]
 
+  '@esbuild/linux-ia32@0.25.4':
+    resolution: {integrity: sha512-yTEjoapy8UP3rv8dB0ip3AfMpRbyhSN3+hY8mo/i4QXFeDxmiYbEKp3ZRjBKcOP862Ua4b1PDfwlvbuwY7hIGQ==}
+    engines: {node: '>=18'}
+    cpu: [ia32]
+    os: [linux]
+
   '@esbuild/linux-ia32@0.27.0':
     resolution: {integrity: sha512-Mz1jxqm/kfgKkc/KLHC5qIujMvnnarD9ra1cEcrs7qshTUSksPihGrWHVG5+osAIQ68577Zpww7SGapmzSt4Nw==}
     engines: {node: '>=18'}
@@ -1088,6 +1182,12 @@ packages:
     resolution: {integrity: sha512-MJt5BRRSScPDwG2hLelYhAAKh9imjHK5+NE/tvnRLbIqUWa+0E9N4WNMjmp/kXXPHZGqPLxggwVhz7QP8CTR8w==}
     engines: {node: '>=18'}
     cpu: [ia32]
+    os: [linux]
+
+  '@esbuild/linux-loong64@0.25.4':
+    resolution: {integrity: sha512-NeqqYkrcGzFwi6CGRGNMOjWGGSYOpqwCjS9fvaUlX5s3zwOtn1qwg1s2iE2svBe4Q/YOG1q6875lcAoQK/F4VA==}
+    engines: {node: '>=18'}
+    cpu: [loong64]
     os: [linux]
 
   '@esbuild/linux-loong64@0.27.0':
@@ -1102,6 +1202,12 @@ packages:
     cpu: [loong64]
     os: [linux]
 
+  '@esbuild/linux-mips64el@0.25.4':
+    resolution: {integrity: sha512-IcvTlF9dtLrfL/M8WgNI/qJYBENP3ekgsHbYUIzEzq5XJzzVEV/fXY9WFPfEEXmu3ck2qJP8LG/p3Q8f7Zc2Xg==}
+    engines: {node: '>=18'}
+    cpu: [mips64el]
+    os: [linux]
+
   '@esbuild/linux-mips64el@0.27.0':
     resolution: {integrity: sha512-sJz3zRNe4tO2wxvDpH/HYJilb6+2YJxo/ZNbVdtFiKDufzWq4JmKAiHy9iGoLjAV7r/W32VgaHGkk35cUXlNOg==}
     engines: {node: '>=18'}
@@ -1112,6 +1218,12 @@ packages:
     resolution: {integrity: sha512-nlP2I6ArEBewvJ2gjrrkESEZkB5mIoaTswuqNFRv/WYd+ATtUpe9Y09RnJvgvdag7he0OWgEZWhviS1OTOKixw==}
     engines: {node: '>=18'}
     cpu: [mips64el]
+    os: [linux]
+
+  '@esbuild/linux-ppc64@0.25.4':
+    resolution: {integrity: sha512-HOy0aLTJTVtoTeGZh4HSXaO6M95qu4k5lJcH4gxv56iaycfz1S8GO/5Jh6X4Y1YiI0h7cRyLi+HixMR+88swag==}
+    engines: {node: '>=18'}
+    cpu: [ppc64]
     os: [linux]
 
   '@esbuild/linux-ppc64@0.27.0':
@@ -1126,6 +1238,12 @@ packages:
     cpu: [ppc64]
     os: [linux]
 
+  '@esbuild/linux-riscv64@0.25.4':
+    resolution: {integrity: sha512-i8JUDAufpz9jOzo4yIShCTcXzS07vEgWzyX3NH2G7LEFVgrLEhjwL3ajFE4fZI3I4ZgiM7JH3GQ7ReObROvSUA==}
+    engines: {node: '>=18'}
+    cpu: [riscv64]
+    os: [linux]
+
   '@esbuild/linux-riscv64@0.27.0':
     resolution: {integrity: sha512-pQdyAIZ0BWIC5GyvVFn5awDiO14TkT/19FTmFcPdDec94KJ1uZcmFs21Fo8auMXzD4Tt+diXu1LW1gHus9fhFQ==}
     engines: {node: '>=18'}
@@ -1136,6 +1254,12 @@ packages:
     resolution: {integrity: sha512-B5BOmojNtUyN8AXlK0QJyvjEZkWwy/FKvakkTDCziX95AowLZKR6aCDhG7LeF7uMCXEJqwa8Bejz5LTPYm8AvA==}
     engines: {node: '>=18'}
     cpu: [riscv64]
+    os: [linux]
+
+  '@esbuild/linux-s390x@0.25.4':
+    resolution: {integrity: sha512-jFnu+6UbLlzIjPQpWCNh5QtrcNfMLjgIavnwPQAfoGx4q17ocOU9MsQ2QVvFxwQoWpZT8DvTLooTvmOQXkO51g==}
+    engines: {node: '>=18'}
+    cpu: [s390x]
     os: [linux]
 
   '@esbuild/linux-s390x@0.27.0':
@@ -1150,6 +1274,12 @@ packages:
     cpu: [s390x]
     os: [linux]
 
+  '@esbuild/linux-x64@0.25.4':
+    resolution: {integrity: sha512-6e0cvXwzOnVWJHq+mskP8DNSrKBr1bULBvnFLpc1KY+d+irZSgZ02TGse5FsafKS5jg2e4pbvK6TPXaF/A6+CA==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [linux]
+
   '@esbuild/linux-x64@0.27.0':
     resolution: {integrity: sha512-1hBWx4OUJE2cab++aVZ7pObD6s+DK4mPGpemtnAORBvb5l/g5xFGk0vc0PjSkrDs0XaXj9yyob3d14XqvnQ4gw==}
     engines: {node: '>=18'}
@@ -1162,6 +1292,12 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@esbuild/netbsd-arm64@0.25.4':
+    resolution: {integrity: sha512-vUnkBYxZW4hL/ie91hSqaSNjulOnYXE1VSLusnvHg2u3jewJBz3YzB9+oCw8DABeVqZGg94t9tyZFoHma8gWZQ==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [netbsd]
+
   '@esbuild/netbsd-arm64@0.27.0':
     resolution: {integrity: sha512-6m0sfQfxfQfy1qRuecMkJlf1cIzTOgyaeXaiVaaki8/v+WB+U4hc6ik15ZW6TAllRlg/WuQXxWj1jx6C+dfy3w==}
     engines: {node: '>=18'}
@@ -1172,6 +1308,12 @@ packages:
     resolution: {integrity: sha512-Kj6DiBlwXrPsCRDeRvGAUb/LNrBASrfqAIok+xB0LxK8CHqxZ037viF13ugfsIpePH93mX7xfJp97cyDuTZ3cw==}
     engines: {node: '>=18'}
     cpu: [arm64]
+    os: [netbsd]
+
+  '@esbuild/netbsd-x64@0.25.4':
+    resolution: {integrity: sha512-XAg8pIQn5CzhOB8odIcAm42QsOfa98SBeKUdo4xa8OvX8LbMZqEtgeWE9P/Wxt7MlG2QqvjGths+nq48TrUiKw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
     os: [netbsd]
 
   '@esbuild/netbsd-x64@0.27.0':
@@ -1186,6 +1328,12 @@ packages:
     cpu: [x64]
     os: [netbsd]
 
+  '@esbuild/openbsd-arm64@0.25.4':
+    resolution: {integrity: sha512-Ct2WcFEANlFDtp1nVAXSNBPDxyU+j7+tId//iHXU2f/lN5AmO4zLyhDcpR5Cz1r08mVxzt3Jpyt4PmXQ1O6+7A==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [openbsd]
+
   '@esbuild/openbsd-arm64@0.27.0':
     resolution: {integrity: sha512-fWgqR8uNbCQ/GGv0yhzttj6sU/9Z5/Sv/VGU3F5OuXK6J6SlriONKrQ7tNlwBrJZXRYk5jUhuWvF7GYzGguBZQ==}
     engines: {node: '>=18'}
@@ -1196,6 +1344,12 @@ packages:
     resolution: {integrity: sha512-DNIHH2BPQ5551A7oSHD0CKbwIA/Ox7+78/AWkbS5QoRzaqlev2uFayfSxq68EkonB+IKjiuxBFoV8ESJy8bOHA==}
     engines: {node: '>=18'}
     cpu: [arm64]
+    os: [openbsd]
+
+  '@esbuild/openbsd-x64@0.25.4':
+    resolution: {integrity: sha512-xAGGhyOQ9Otm1Xu8NT1ifGLnA6M3sJxZ6ixylb+vIUVzvvd6GOALpwQrYrtlPouMqd/vSbgehz6HaVk4+7Afhw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
     os: [openbsd]
 
   '@esbuild/openbsd-x64@0.27.0':
@@ -1222,6 +1376,12 @@ packages:
     cpu: [arm64]
     os: [openharmony]
 
+  '@esbuild/sunos-x64@0.25.4':
+    resolution: {integrity: sha512-Mw+tzy4pp6wZEK0+Lwr76pWLjrtjmJyUB23tHKqEDP74R3q95luY/bXqXZeYl4NYlvwOqoRKlInQialgCKy67Q==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [sunos]
+
   '@esbuild/sunos-x64@0.27.0':
     resolution: {integrity: sha512-Q1KY1iJafM+UX6CFEL+F4HRTgygmEW568YMqDA5UV97AuZSm21b7SXIrRJDwXWPzr8MGr75fUZPV67FdtMHlHA==}
     engines: {node: '>=18'}
@@ -1233,6 +1393,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [sunos]
+
+  '@esbuild/win32-arm64@0.25.4':
+    resolution: {integrity: sha512-AVUP428VQTSddguz9dO9ngb+E5aScyg7nOeJDrF1HPYu555gmza3bDGMPhmVXL8svDSoqPCsCPjb265yG/kLKQ==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [win32]
 
   '@esbuild/win32-arm64@0.27.0':
     resolution: {integrity: sha512-W1eyGNi6d+8kOmZIwi/EDjrL9nxQIQ0MiGqe/AWc6+IaHloxHSGoeRgDRKHFISThLmsewZ5nHFvGFWdBYlgKPg==}
@@ -1246,6 +1412,12 @@ packages:
     cpu: [arm64]
     os: [win32]
 
+  '@esbuild/win32-ia32@0.25.4':
+    resolution: {integrity: sha512-i1sW+1i+oWvQzSgfRcxxG2k4I9n3O9NRqy8U+uugaT2Dy7kLO9Y7wI72haOahxceMX8hZAzgGou1FhndRldxRg==}
+    engines: {node: '>=18'}
+    cpu: [ia32]
+    os: [win32]
+
   '@esbuild/win32-ia32@0.27.0':
     resolution: {integrity: sha512-30z1aKL9h22kQhilnYkORFYt+3wp7yZsHWus+wSKAJR8JtdfI76LJ4SBdMsCopTR3z/ORqVu5L1vtnHZWVj4cQ==}
     engines: {node: '>=18'}
@@ -1256,6 +1428,12 @@ packages:
     resolution: {integrity: sha512-Iuws0kxo4yusk7sw70Xa2E2imZU5HoixzxfGCdxwBdhiDgt9vX9VUCBhqcwY7/uh//78A1hMkkROMJq9l27oLQ==}
     engines: {node: '>=18'}
     cpu: [ia32]
+    os: [win32]
+
+  '@esbuild/win32-x64@0.25.4':
+    resolution: {integrity: sha512-nOT2vZNw6hJ+z43oP1SPea/G/6AbN6X+bGNhNuq8NtRHy4wsMhw765IKLNmnjek7GvjWBYQ8Q5VBoYTFg9y1UQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
     os: [win32]
 
   '@esbuild/win32-x64@0.27.0':
@@ -3710,6 +3888,9 @@ packages:
   ast-v8-to-istanbul@0.3.10:
     resolution: {integrity: sha512-p4K7vMz2ZSk3wN8l5o3y2bJAoZXT3VuJI5OLTATY/01CYWumWvwkUw0SqDBnNq6IiTO3qDa1eSQDibAV8g7XOQ==}
 
+  async-channel@0.2.0:
+    resolution: {integrity: sha512-BJyjI/sfKlyijaBt2hbOSxT28xGNtLR0QLzAKO1Hlnv5BULY7sAoYoTPW3lfr1ZIC7y+FxabxO9T8GXpyoofGg==}
+
   async-function@1.0.0:
     resolution: {integrity: sha512-hsU18Ae8CDTR6Kgu9DYf0EbCr/a5iGL0rytQDobUcdpYOKokk8LEjVphnXkDkgpi0wYVsqrXuP0bZxJaTqdgoA==}
     engines: {node: '>= 0.4'}
@@ -4069,6 +4250,22 @@ packages:
     peerDependencies:
       convex: ^1.16.4
 
+  convex@1.31.2:
+    resolution: {integrity: sha512-RFuJOwlL2bM5X63egvBI5ZZZH6wESREpAbHsLjODxzDeJuewTLKrEnbvHV/NWp1uJYpgEFJziuGHmZ0tnAmmJg==}
+    engines: {node: '>=18.0.0', npm: '>=7.0.0'}
+    hasBin: true
+    peerDependencies:
+      '@auth0/auth0-react': ^2.0.1
+      '@clerk/clerk-react': ^4.12.8 || ^5.0.0
+      react: ^18.0.0 || ^19.0.0-0 || ^19.0.0
+    peerDependenciesMeta:
+      '@auth0/auth0-react':
+        optional: true
+      '@clerk/clerk-react':
+        optional: true
+      react:
+        optional: true
+
   convex@1.31.4:
     resolution: {integrity: sha512-iDm283Gb/CFRb30cvhH6Z9qlYof6dhtin415FarKUKB3K7gumO0rn8snY0CTvUrThV3UnCtttbuL/1oY7LscyA==}
     engines: {node: '>=18.0.0', npm: '>=7.0.0'}
@@ -4390,6 +4587,11 @@ packages:
   es-to-primitive@1.3.0:
     resolution: {integrity: sha512-w+5mJ3GuFL+NjVtJlvydShqE1eN3h3PbI7/5LAsYJP/2qtuMXjfL2LpHSRqo4b4eSF5K/DH1JXKUAHSB2UW50g==}
     engines: {node: '>= 0.4'}
+
+  esbuild@0.25.4:
+    resolution: {integrity: sha512-8pgjLUcUjcgDg+2Q4NYXnPbo/vncAY4UmyaCm0jZevERqCHZIaWwdJHkf8XQtu4AxSKCdvrUbT0XUr1IdZzI8Q==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   esbuild@0.27.0:
     resolution: {integrity: sha512-jd0f4NHbD6cALCyGElNpGAOtWxSq46l9X/sWB0Nzd5er4Kz2YTm+Vl0qKFT9KUJvD8+fiO8AvoHhFvEatfVixA==}
@@ -6117,8 +6319,8 @@ packages:
     resolution: {integrity: sha512-ZbgR5aZEdf4UKZVBPYIgaglBmSF2Hi94s2PcIHhRGFjKYu+chjJdYfHn4rt3hB6eCKLJ8giVIIfgMa1ehDfZKA==}
     engines: {node: '>=0.10.0'}
 
-  remeda@2.33.3:
-    resolution: {integrity: sha512-lZne8IOVPnyZApub61z13+iAD7Wr80JdlThr9iUcYjZdZvSBDvRrmJIZsqSKGnI5zJr/zt6ppIEJgZM15X6KjQ==}
+  remeda@2.33.4:
+    resolution: {integrity: sha512-ygHswjlc/opg2VrtiYvUOPLjxjtdKvjGz1/plDhkG66hjNjFr1xmfrs2ClNFo/E6TyUFiwYNh53bKV26oBoMGQ==}
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -6487,6 +6689,10 @@ packages:
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
+  tagged-tag@1.0.0:
+    resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
+    engines: {node: '>=20'}
+
   tailwind-merge@3.4.0:
     resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
 
@@ -6500,6 +6706,7 @@ packages:
   tar@7.5.2:
     resolution: {integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
@@ -6690,6 +6897,10 @@ packages:
   type-fest@4.41.0:
     resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
     engines: {node: '>=16'}
+
+  type-fest@5.4.1:
+    resolution: {integrity: sha512-xygQcmneDyzsEuKZrFbRMne5HDqMs++aFzefrJTgEIKjQ3rekM+RPfFCVq2Gp1VIDqddoYeppCj4Pcb+RZW0GQ==}
+    engines: {node: '>=20'}
 
   type-is@2.0.1:
     resolution: {integrity: sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw==}
@@ -7741,7 +7952,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0)':
+  '@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.1.11))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0)':
     dependencies:
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
@@ -7752,9 +7963,20 @@ snapshots:
       nanostores: 1.1.0
       zod: 4.3.5
 
-  '@better-auth/passkey@1.4.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(nanostores@1.1.0)':
+  '@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0)':
     dependencies:
-      '@better-auth/core': 1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0)
+      '@better-auth/utils': 0.3.0
+      '@better-fetch/fetch': 1.1.21
+      '@standard-schema/spec': 1.1.0
+      better-call: 1.1.7(zod@4.3.5)
+      jose: 6.1.0
+      kysely: 0.28.9
+      nanostores: 1.1.0
+      zod: 4.3.5
+
+  '@better-auth/passkey@1.4.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.1.11))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(nanostores@1.1.0)':
+    dependencies:
+      '@better-auth/core': 1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.1.11))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0)
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.21
       '@simplewebauthn/browser': 13.2.2
@@ -7786,9 +8008,9 @@ snapshots:
 
   '@better-fetch/fetch@1.1.21': {}
 
-  '@convex-dev/better-auth@0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(convex@1.31.4(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
+  '@convex-dev/better-auth@0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.1.11))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(convex@1.31.4(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
     dependencies:
-      '@better-auth/passkey': 1.4.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(nanostores@1.1.0)
+      '@better-auth/passkey': 1.4.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.1.11))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.1.11))(nanostores@1.1.0)
       '@better-fetch/fetch': 1.1.21
       better-auth: 1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17)
       common-tags: 1.8.2
@@ -7797,7 +8019,7 @@ snapshots:
       jose: 6.1.0
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
-      remeda: 2.33.3
+      remeda: 2.33.4
       semver: 7.7.3
       type-fest: 4.41.0
       zod: 4.1.11
@@ -7810,18 +8032,18 @@ snapshots:
       - nanostores
       - typescript
 
-  '@convex-dev/better-auth@0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.3.5))(convex@1.31.4(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
+  '@convex-dev/better-auth@0.10.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@standard-schema/spec@1.1.0)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.3.5))(convex@1.31.2(react@19.2.3))(hono@4.11.4)(nanostores@1.1.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
     dependencies:
       '@better-auth/passkey': 1.4.9(@better-auth/core@1.4.9(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.7(zod@4.3.5))(jose@6.1.0)(kysely@0.28.9)(nanostores@1.1.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17))(better-call@1.1.7(zod@4.3.5))(nanostores@1.1.0)
       '@better-fetch/fetch': 1.1.21
       better-auth: 1.4.9(next@16.1.1(@babel/core@7.28.6)(@playwright/test@1.55.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.0.17)
       common-tags: 1.8.2
-      convex: 1.31.4(react@19.2.3)
-      convex-helpers: 0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.4(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.1.11)
+      convex: 1.31.2(react@19.2.3)
+      convex-helpers: 0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.1.11)
       jose: 6.1.0
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
-      remeda: 2.33.3
+      remeda: 2.33.4
       semver: 7.7.3
       type-fest: 4.41.0
       zod: 4.1.11
@@ -7834,10 +8056,10 @@ snapshots:
       - nanostores
       - typescript
 
-  '@convex-dev/eslint-plugin@1.1.1(convex@1.31.4(react@19.2.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)':
+  '@convex-dev/eslint-plugin@1.1.1(convex@1.31.2(react@19.2.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/utils': 8.49.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-      convex: 1.31.4(react@19.2.3)
+      convex: 1.31.2(react@19.2.3)
     transitivePeerDependencies:
       - eslint
       - supports-color
@@ -7847,6 +8069,18 @@ snapshots:
     dependencies:
       '@tanstack/react-query': 5.90.2(react@19.2.3)
       convex: 1.31.4(react@19.2.3)
+
+  '@convex-dev/workflow@0.3.3(@convex-dev/workpool@0.3.1(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3)))(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3))':
+    dependencies:
+      '@convex-dev/workpool': 0.3.1(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3))
+      async-channel: 0.2.0
+      convex: 1.31.2(react@19.2.3)
+      convex-helpers: 0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5)
+
+  '@convex-dev/workpool@0.3.1(convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5))(convex@1.31.2(react@19.2.3))':
+    dependencies:
+      convex: 1.31.2(react@19.2.3)
+      convex-helpers: 0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5)
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -7894,10 +8128,16 @@ snapshots:
 
   '@epic-web/invariant@1.0.0': {}
 
+  '@esbuild/aix-ppc64@0.25.4':
+    optional: true
+
   '@esbuild/aix-ppc64@0.27.0':
     optional: true
 
   '@esbuild/aix-ppc64@0.27.2':
+    optional: true
+
+  '@esbuild/android-arm64@0.25.4':
     optional: true
 
   '@esbuild/android-arm64@0.27.0':
@@ -7906,10 +8146,16 @@ snapshots:
   '@esbuild/android-arm64@0.27.2':
     optional: true
 
+  '@esbuild/android-arm@0.25.4':
+    optional: true
+
   '@esbuild/android-arm@0.27.0':
     optional: true
 
   '@esbuild/android-arm@0.27.2':
+    optional: true
+
+  '@esbuild/android-x64@0.25.4':
     optional: true
 
   '@esbuild/android-x64@0.27.0':
@@ -7918,10 +8164,16 @@ snapshots:
   '@esbuild/android-x64@0.27.2':
     optional: true
 
+  '@esbuild/darwin-arm64@0.25.4':
+    optional: true
+
   '@esbuild/darwin-arm64@0.27.0':
     optional: true
 
   '@esbuild/darwin-arm64@0.27.2':
+    optional: true
+
+  '@esbuild/darwin-x64@0.25.4':
     optional: true
 
   '@esbuild/darwin-x64@0.27.0':
@@ -7930,10 +8182,16 @@ snapshots:
   '@esbuild/darwin-x64@0.27.2':
     optional: true
 
+  '@esbuild/freebsd-arm64@0.25.4':
+    optional: true
+
   '@esbuild/freebsd-arm64@0.27.0':
     optional: true
 
   '@esbuild/freebsd-arm64@0.27.2':
+    optional: true
+
+  '@esbuild/freebsd-x64@0.25.4':
     optional: true
 
   '@esbuild/freebsd-x64@0.27.0':
@@ -7942,10 +8200,16 @@ snapshots:
   '@esbuild/freebsd-x64@0.27.2':
     optional: true
 
+  '@esbuild/linux-arm64@0.25.4':
+    optional: true
+
   '@esbuild/linux-arm64@0.27.0':
     optional: true
 
   '@esbuild/linux-arm64@0.27.2':
+    optional: true
+
+  '@esbuild/linux-arm@0.25.4':
     optional: true
 
   '@esbuild/linux-arm@0.27.0':
@@ -7954,10 +8218,16 @@ snapshots:
   '@esbuild/linux-arm@0.27.2':
     optional: true
 
+  '@esbuild/linux-ia32@0.25.4':
+    optional: true
+
   '@esbuild/linux-ia32@0.27.0':
     optional: true
 
   '@esbuild/linux-ia32@0.27.2':
+    optional: true
+
+  '@esbuild/linux-loong64@0.25.4':
     optional: true
 
   '@esbuild/linux-loong64@0.27.0':
@@ -7966,10 +8236,16 @@ snapshots:
   '@esbuild/linux-loong64@0.27.2':
     optional: true
 
+  '@esbuild/linux-mips64el@0.25.4':
+    optional: true
+
   '@esbuild/linux-mips64el@0.27.0':
     optional: true
 
   '@esbuild/linux-mips64el@0.27.2':
+    optional: true
+
+  '@esbuild/linux-ppc64@0.25.4':
     optional: true
 
   '@esbuild/linux-ppc64@0.27.0':
@@ -7978,10 +8254,16 @@ snapshots:
   '@esbuild/linux-ppc64@0.27.2':
     optional: true
 
+  '@esbuild/linux-riscv64@0.25.4':
+    optional: true
+
   '@esbuild/linux-riscv64@0.27.0':
     optional: true
 
   '@esbuild/linux-riscv64@0.27.2':
+    optional: true
+
+  '@esbuild/linux-s390x@0.25.4':
     optional: true
 
   '@esbuild/linux-s390x@0.27.0':
@@ -7990,10 +8272,16 @@ snapshots:
   '@esbuild/linux-s390x@0.27.2':
     optional: true
 
+  '@esbuild/linux-x64@0.25.4':
+    optional: true
+
   '@esbuild/linux-x64@0.27.0':
     optional: true
 
   '@esbuild/linux-x64@0.27.2':
+    optional: true
+
+  '@esbuild/netbsd-arm64@0.25.4':
     optional: true
 
   '@esbuild/netbsd-arm64@0.27.0':
@@ -8002,16 +8290,25 @@ snapshots:
   '@esbuild/netbsd-arm64@0.27.2':
     optional: true
 
+  '@esbuild/netbsd-x64@0.25.4':
+    optional: true
+
   '@esbuild/netbsd-x64@0.27.0':
     optional: true
 
   '@esbuild/netbsd-x64@0.27.2':
     optional: true
 
+  '@esbuild/openbsd-arm64@0.25.4':
+    optional: true
+
   '@esbuild/openbsd-arm64@0.27.0':
     optional: true
 
   '@esbuild/openbsd-arm64@0.27.2':
+    optional: true
+
+  '@esbuild/openbsd-x64@0.25.4':
     optional: true
 
   '@esbuild/openbsd-x64@0.27.0':
@@ -8026,10 +8323,16 @@ snapshots:
   '@esbuild/openharmony-arm64@0.27.2':
     optional: true
 
+  '@esbuild/sunos-x64@0.25.4':
+    optional: true
+
   '@esbuild/sunos-x64@0.27.0':
     optional: true
 
   '@esbuild/sunos-x64@0.27.2':
+    optional: true
+
+  '@esbuild/win32-arm64@0.25.4':
     optional: true
 
   '@esbuild/win32-arm64@0.27.0':
@@ -8038,10 +8341,16 @@ snapshots:
   '@esbuild/win32-arm64@0.27.2':
     optional: true
 
+  '@esbuild/win32-ia32@0.25.4':
+    optional: true
+
   '@esbuild/win32-ia32@0.27.0':
     optional: true
 
   '@esbuild/win32-ia32@0.27.2':
+    optional: true
+
+  '@esbuild/win32-x64@0.25.4':
     optional: true
 
   '@esbuild/win32-x64@0.27.0':
@@ -10710,6 +11019,8 @@ snapshots:
       estree-walker: 3.0.3
       js-tokens: 9.0.1
 
+  async-channel@0.2.0: {}
+
   async-function@1.0.0: {}
 
   available-typed-arrays@1.0.7:
@@ -10795,7 +11106,7 @@ snapshots:
       '@better-fetch/fetch': 1.1.21
       '@noble/ciphers': 2.1.1
       '@noble/hashes': 2.0.1
-      better-call: 1.1.7(zod@4.1.11)
+      better-call: 1.1.7(zod@4.3.5)
       defu: 6.1.4
       jose: 6.1.0
       kysely: 0.28.9
@@ -11040,6 +11351,26 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
+  convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.1.11):
+    dependencies:
+      convex: 1.31.2(react@19.2.3)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.11.4
+      react: 19.2.3
+      typescript: 5.9.3
+      zod: 4.1.11
+
+  convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.2(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5):
+    dependencies:
+      convex: 1.31.2(react@19.2.3)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.11.4
+      react: 19.2.3
+      typescript: 5.9.3
+      zod: 4.3.5
+
   convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.4(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.1.11):
     dependencies:
       convex: 1.31.4(react@19.2.3)
@@ -11050,19 +11381,16 @@ snapshots:
       typescript: 5.9.3
       zod: 4.1.11
 
-  convex-helpers@0.1.109(@standard-schema/spec@1.1.0)(convex@1.31.4(react@19.2.3))(hono@4.11.4)(react@19.2.3)(typescript@5.9.3)(zod@4.3.5):
+  convex-test@0.0.41(convex@1.31.2(react@19.2.3)):
     dependencies:
-      convex: 1.31.4(react@19.2.3)
-    optionalDependencies:
-      '@standard-schema/spec': 1.1.0
-      hono: 4.11.4
-      react: 19.2.3
-      typescript: 5.9.3
-      zod: 4.3.5
+      convex: 1.31.2(react@19.2.3)
 
-  convex-test@0.0.41(convex@1.31.4(react@19.2.3)):
+  convex@1.31.2(react@19.2.3):
     dependencies:
-      convex: 1.31.4(react@19.2.3)
+      esbuild: 0.25.4
+      prettier: 3.7.4
+    optionalDependencies:
+      react: 19.2.3
 
   convex@1.31.4(react@19.2.3):
     dependencies:
@@ -11407,6 +11735,34 @@ snapshots:
       is-callable: 1.2.7
       is-date-object: 1.1.0
       is-symbol: 1.1.1
+
+  esbuild@0.25.4:
+    optionalDependencies:
+      '@esbuild/aix-ppc64': 0.25.4
+      '@esbuild/android-arm': 0.25.4
+      '@esbuild/android-arm64': 0.25.4
+      '@esbuild/android-x64': 0.25.4
+      '@esbuild/darwin-arm64': 0.25.4
+      '@esbuild/darwin-x64': 0.25.4
+      '@esbuild/freebsd-arm64': 0.25.4
+      '@esbuild/freebsd-x64': 0.25.4
+      '@esbuild/linux-arm': 0.25.4
+      '@esbuild/linux-arm64': 0.25.4
+      '@esbuild/linux-ia32': 0.25.4
+      '@esbuild/linux-loong64': 0.25.4
+      '@esbuild/linux-mips64el': 0.25.4
+      '@esbuild/linux-ppc64': 0.25.4
+      '@esbuild/linux-riscv64': 0.25.4
+      '@esbuild/linux-s390x': 0.25.4
+      '@esbuild/linux-x64': 0.25.4
+      '@esbuild/netbsd-arm64': 0.25.4
+      '@esbuild/netbsd-x64': 0.25.4
+      '@esbuild/openbsd-arm64': 0.25.4
+      '@esbuild/openbsd-x64': 0.25.4
+      '@esbuild/sunos-x64': 0.25.4
+      '@esbuild/win32-arm64': 0.25.4
+      '@esbuild/win32-ia32': 0.25.4
+      '@esbuild/win32-x64': 0.25.4
 
   esbuild@0.27.0:
     optionalDependencies:
@@ -13528,7 +13884,7 @@ snapshots:
     dependencies:
       rc: 1.2.8
 
-  remeda@2.33.3: {}
+  remeda@2.33.4: {}
 
   require-directory@2.1.1: {}
 
@@ -13957,6 +14313,8 @@ snapshots:
 
   symbol-tree@3.2.4: {}
 
+  tagged-tag@1.0.0: {}
+
   tailwind-merge@3.4.0: {}
 
   tailwindcss@4.1.14: {}
@@ -14136,6 +14494,10 @@ snapshots:
   type-fest@0.21.3: {}
 
   type-fest@4.41.0: {}
+
+  type-fest@5.4.1:
+    dependencies:
+      tagged-tag: 1.0.0
 
   type-is@2.0.1:
     dependencies:

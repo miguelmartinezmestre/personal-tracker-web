@@ -1,12 +1,11 @@
 import { v } from 'convex/values';
-import { components } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import {
     calculateUserStreak,
     calculateUserStreakInternal,
     calculateOrganizationStreak,
 } from './achievements_utils/calculations';
-import { queryWithRLS, mutationWithRLS, BetterAuthDataModel } from './rls';
+import { queryWithRLS, mutationWithRLS } from './rls';
 import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
 
 export const getAchievementDefinitions = queryWithRLS({
@@ -446,15 +445,7 @@ export const checkOrganizationAchievements = internalMutation({
             )
         );
 
-        // Get organization members
-        const members = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'member',
-            where: [{ field: 'organizationId', value: organizationId }],
-            paginationOpts: {
-                cursor: null,
-                numItems: 10,
-            },
-        })) as BetterAuthDataModel['member']['document'][];
+        const members = await ctx.db.query('member').withIndex('organizationId', q => q.eq('organizationId', organizationId)).collect();
 
         const memberUserIds = members.map(m => m.userId);
 

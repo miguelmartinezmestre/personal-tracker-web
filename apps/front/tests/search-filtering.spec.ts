@@ -1,5 +1,6 @@
 ﻿import { test, expect, type Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
+import { ensureDefaultCategories } from './test-helpers';
 
 async function registerUser(page: Page, uuid: string) {
     const shortId = uuid.substring(0, 8);
@@ -20,6 +21,7 @@ async function createObjective(
     statusLabel: RegExp,
     currentValue: string = '5'
 ) {
+    await ensureDefaultCategories(page);
     await page.getByTestId('objective-create-open').click();
     await page.getByTestId('objective-title-input').fill(title);
     await page.getByTestId('objective-description-input').fill(`desc-${title}`);

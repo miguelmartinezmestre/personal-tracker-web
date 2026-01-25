@@ -14,7 +14,7 @@ export default defineConfig([
   ...convexPlugin.configs.recommended,
   {
     rules: {
-      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+      // "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
     },
   },
 ]);

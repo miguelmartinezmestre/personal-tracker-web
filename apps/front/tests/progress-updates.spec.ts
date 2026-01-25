@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
-import { takeScreenshot } from './test-helpers';
+import { takeScreenshot, ensureDefaultCategories } from './test-helpers';
 
 test('progress updates: create, edit, delete progress entry', async ({ page }) => {
     // Register and login
@@ -18,6 +18,9 @@ test('progress updates: create, edit, delete progress entry', async ({ page }) =
     await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
+
+    // Ensure categories exist before creating objective
+    await ensureDefaultCategories(page);
 
     // Create an objective first
     await page.goto('/dashboard/objectives');
@@ -99,6 +102,9 @@ test('progress updates: validation for required fields', async ({ page }) => {
     await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
+
+    // Ensure categories exist before creating objective
+    await ensureDefaultCategories(page);
 
     // Create an objective
     await page.goto('/dashboard/objectives');

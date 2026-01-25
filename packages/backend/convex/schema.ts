@@ -1,7 +1,11 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import schema from './betterAuth/schema';
 
 export default defineSchema({
+
+    ...schema.tables,
+
     objectives: defineTable({
         organizationId: v.string(),
         userId: v.string(),
@@ -17,6 +21,7 @@ export default defineSchema({
         period: v.optional(v.string()),
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
+        collaborators: v.optional(v.array(v.string())),
         createdAt: v.number(),
         updatedAt: v.number(),
         // Workflow fields

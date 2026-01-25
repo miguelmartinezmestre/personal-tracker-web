@@ -1,5 +1,7 @@
+import { Id } from './_generated/dataModel';
 import { mutation } from './_generated/server';
-import { components } from './_generated/api';
+import { adapter } from './betterAuth/adapter';
+
 
 export const promoteSelfToAdmin = mutation({
     args: {},
@@ -10,14 +12,8 @@ export const promoteSelfToAdmin = mutation({
 
         const user = await ctx.auth.getUserIdentity().catch(() => null);
 
-        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-            input: {
-                model: 'user',
-                where: [{ field: '_id', value: String(user?.subject) }],
-                update: {
-                    role: 'admin',
-                },
-            },
+        await ctx.db.patch('user', String(user?.subject) as Id<'user'>, {
+            role: 'admin',
         });
 
         return { userId: String(user?.subject) };

@@ -1,7 +1,7 @@
 import { GenericMutationCtx, GenericQueryCtx, GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
-import { DataModel } from './convex/betterAuth/_generated/dataModel';
-import { components } from './convex/_generated/api';
+import { adapter } from './convex/betterAuth/adapter';
+import { DataModel } from './convex/_generated/dataModel';
 
 export interface TestUserData {
     userId: string;
@@ -30,44 +30,35 @@ export async function createTestUser(
             .first();
 
         if (existing) {
-            await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-                input:{
-                    model:"user",
-                    where:[{ field: '_id', value: existing._id }],
-                    update:{
-                        name: name,
-                        email: email,
-                        role: role ?? null,
-                        emailVerified: emailVerified ?? false,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                        userId: userId,
-                        image: "https://example.com/image.png",
-                        banExpires: null,
-                        banReason: null,
-                        banned: false,
-                    }
-                }
-            });
+
+
+            ctx.db.patch("user", existing._id, {
+                name: name,
+                email: email,
+                role: role ?? null,
+                emailVerified: emailVerified ?? false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                userId: userId,
+                image: "https://example.com/image.png",
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            })
         }
 
-        await ctx.runMutation(components.betterAuth.adapter.create, {
-            input: {
-                model: "user",
-                data: {
-                    name: name,
-                    email: email,
-                    role: role ?? null,
-                    emailVerified: emailVerified ?? false,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                    userId: userId,
-                    image: "https://example.com/image.png",
-                    banExpires: null,
-                    banReason: null,
-                    banned: false,
-                }
-            }
+        await ctx.db.insert("user", {
+            name: name,
+            email: email,
+            role: role ?? null,
+            emailVerified: emailVerified ?? false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            userId: userId,
+            image: "https://example.com/image.png",
+            banExpires: null,
+            banReason: null,
+            banned: false,
         });
     });
 
