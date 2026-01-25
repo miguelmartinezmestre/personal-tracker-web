@@ -17,6 +17,7 @@ export default defineSchema({
         period: v.optional(v.string()),
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
+        collaborators: v.optional(v.array(v.string())),
         createdAt: v.number(),
         updatedAt: v.number(),
         // Workflow fields

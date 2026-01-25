@@ -141,11 +141,6 @@ export const getSharedObjectives = queryWithRLS({
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .collect();
 
-        // Filter objectives where user is a collaborator but not the owner
-        const sharedObjectives = allObjectives.filter(
-            obj => obj.userId !== userId && obj.collaborators?.includes(userId)
-        );
-
         // Manual pagination for the filtered results
         const { numItems, cursor } = paginationOpts;
         let startIndex = 0;
@@ -153,11 +148,11 @@ export const getSharedObjectives = queryWithRLS({
         if (cursor) {
             // In a real implementation, you'd decode the cursor to find the start index
             // For now, we'll use a simple approach
-            startIndex = sharedObjectives.findIndex(obj => obj._id === cursor);
+            startIndex = allObjectives.findIndex(obj => obj._id === cursor);
             if (startIndex === -1) startIndex = 0;
         }
 
-        const page = sharedObjectives.slice(startIndex, startIndex + numItems);
+        const page = allObjectives.slice(startIndex, startIndex + numItems);
         const lastItem = page.length > 0 ? page[page.length - 1] : undefined;
         const continueCursor = page.length === numItems && lastItem
             ? lastItem._id
@@ -204,17 +199,23 @@ export const addCollaborator = mutationWithRLS({
         }
 
         // Don't add if already a collaborator or is the owner
-        if (objective.collaborators?.includes(collaboratorId)) {
+        if (objective.userId === collaboratorId) {
+            return objective;
+        }
+
+        // Get existing collaborators or initialize empty array
+        const existingCollaborators = objective.collaborators ?? [];
+        
+        // Don't add if already a collaborator
+        if (existingCollaborators.includes(collaboratorId)) {
             return objective;
         }
 
         const now = Date.now();
-        const collaborators = [...(objective.collaborators || []), collaboratorId];
         const updated = await ctx.db.patch('objectives', objectiveId, {
-            collaborators,
+            collaborators: [...existingCollaborators, collaboratorId],
             updatedAt: now,
         });
-
         return updated;
     },
 });
@@ -244,7 +245,7 @@ export const removeCollaborator = mutationWithRLS({
         }
 
         const now = Date.now();
-        const collaborators = objective.collaborators.filter(id => id !== collaboratorId);
+        const collaborators = objective.collaborators.filter((id: string) => id !== collaboratorId);
         const updated = await ctx.db.patch('objectives', objectiveId, {
             collaborators,
             updatedAt: now,
