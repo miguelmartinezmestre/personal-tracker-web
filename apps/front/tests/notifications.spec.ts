@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
-import { createTestUser } from './test-helpers';
+import { createTestUser, ensureDefaultCategories } from './test-helpers';
 
 async function createObjective(page: import('@playwright/test').Page, title: string) {
+    await ensureDefaultCategories(page);
     await page.goto('/dashboard/objectives');
     await page.getByTestId('objective-create-open').click();
     await page.getByTestId('objective-title-input').fill(title);

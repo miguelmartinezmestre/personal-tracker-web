@@ -16,8 +16,8 @@ test('navigation: sidebar links work correctly', async ({ page }) => {
     await expect(page).toHaveURL(/\/dashboard\/sessions$/);
     await takeScreenshot(page, 'navigation-sidebar', 'sessions-page');
 
-    // Navigate to Notifications via sidebar
-    await page.getByRole('link', { name: /notifications/i }).click();
+    // Navigate to Notifications via sidebar (use sidebar menu to avoid strict mode violation)
+    await page.getByTestId('sidebar-menu').getByRole('link', { name: /notifications/i }).click();
     await expect(page).toHaveURL(/\/dashboard\/notifications$/);
     await takeScreenshot(page, 'navigation-sidebar', 'notifications-page');
 

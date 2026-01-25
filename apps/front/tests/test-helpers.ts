@@ -18,9 +18,10 @@ function normalizeForEmail(name: string): string {
 /**
  * Normalizes a name for use in organization slugs.
  * Only allows lowercase letters, numbers, and hyphens (per organizationSlug schema validation).
+ * Also truncates to max 20 characters to stay under BetterAuth's 30 character limit.
  */
 function normalizeForSlug(name: string): string {
-    return name
+    const normalized = name
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
@@ -28,6 +29,10 @@ function normalizeForSlug(name: string): string {
         .replace(/[^a-z0-9-]/g, '') // Keep only alphanumeric and hyphens
         .replace(/-+/g, '-') // Collapse multiple hyphens to one
         .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+
+    // Truncate to max 20 characters to stay under BetterAuth's 30 character limit
+    // (leaves room for the '-xxxxxxxx' suffix added later)
+    return normalized.substring(0, 20);
 }
 
 // Nombres presentables para capturas de TFG
@@ -38,6 +43,19 @@ const PRESENTABLE_NAMES = [
     'Laura Sánchez',
     'David Fernández',
 ];
+
+/**
+ * Creates a safe organization slug that is guaranteed to be under 30 characters.
+ * BetterAuth has a 30 character limit on organization slugs.
+ * Format: {base}-{suffix} where total length <= 30 chars
+ */
+function createSafeSlug(name: string, suffix: string): string {
+    const normalized = normalizeForSlug(name);
+    // Max length for base = 30 - 1 (hyphen) - suffix.length
+    const maxBaseLength = 30 - 1 - suffix.length;
+    const base = normalized.substring(0, Math.max(1, maxBaseLength));
+    return `${base}-${suffix}`;
+}
 
 /**
  * Creates a test user with options for TFG documentation screenshots.
@@ -68,18 +86,17 @@ export async function createTestUser(
         username = options.customUsername;
         email = options?.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
         organizationSlug =
-            options?.customOrganizationSlug ??
-            `${normalizeForSlug(options.customUsername)}-${shortId}`;
+            options?.customOrganizationSlug ?? createSafeSlug(options.customUsername, shortId);
     } else if (options?.usePresentableName) {
         // Use a presentable name for TFG screenshots
         const randomName = PRESENTABLE_NAMES[Math.floor(Math.random() * PRESENTABLE_NAMES.length)];
         username = randomName;
         email = `${normalizeForEmail(randomName)}.${shortId}@example.com`;
-        organizationSlug = `${normalizeForSlug(randomName)}-${shortId}`;
+        organizationSlug = createSafeSlug(randomName, shortId);
     } else {
         username = `usernametest-${uuid}`;
         email = `useremail-${uuid}@useremail.com`;
-        organizationSlug = `org-${shortId}`;
+        organizationSlug = `o-${shortId}`; // Simplified to 'o-' instead of 'org-' to be shorter
     }
 
     const password = options?.password ?? DEFAULT_PASSWORD;
@@ -216,22 +233,38 @@ export async function createObjective(
         unit?: string;
         status?: string;
         deadline?: number;
+        /** Ensure categories exist before creating objective */
+        ensureCategories?: boolean;
     }
 ) {
     const uuid = randomUUID();
     const title = options?.title ?? `test-objective-${uuid}`;
     const description = options?.description ?? 'Test objective description';
+    // Use 'Personal' which is the category expected by tests
+    // If the test specifies a custom category, use that
     const category = options?.category ?? 'Personal';
     const targetValue = options?.targetValue ?? 100;
     const currentValue = options?.currentValue ?? 0;
     const unit = options?.unit ?? 'units';
 
+    // If requested, ensure categories exist first
+    if (options?.ensureCategories !== false) {
+        await ensureDefaultCategories(page);
+    }
+
     await page.goto('/dashboard/objectives');
     await page.getByTestId('objective-create-open').click();
     await page.getByTestId('objective-title-input').fill(title);
     await page.getByTestId('objective-description-input').fill(description);
+
+    // Handle category selection - use data-testid approach if available
     await page.getByTestId('objective-category-select').click();
-    await page.getByRole('option', { name: new RegExp(category, 'i') }).click();
+    // Wait for the dropdown options to load and be visible
+    await page.waitForSelector('[role="option"]', { timeout: 5000 });
+    // Try to find the option by text, with a more robust selector
+    const categoryOption = page.getByRole('option', { name: new RegExp(category, 'i') }).first();
+    await categoryOption.click();
+
     await page.getByTestId('objective-target-input').fill(String(targetValue));
     await page.getByTestId('objective-unit-input').fill(unit);
     await page.getByTestId('objective-current-input').fill(String(currentValue));
@@ -296,6 +329,34 @@ export async function createOrganization(
     await expect(page.getByText(name)).toBeVisible({ timeout: 10000 });
 
     return { name, description };
+}
+
+/**
+ * Ensures default categories exist for the current user.
+ * If the categories page shows no categories, creates them manually.
+ * Creates a simple "Personal" category for tests (not "Personal Development").
+ * @param page - Playwright page object
+ */
+export async function ensureDefaultCategories(page: Page): Promise<void> {
+    await page.goto('/dashboard/categories');
+    await page.waitForLoadState('networkidle');
+
+    // Check if "Personal" category already exists
+    const personalCategoryExists = await page.getByText('Personal').count() > 0;
+
+    if (!personalCategoryExists) {
+        // Create a simple "Personal" category for tests
+        await page.getByTestId('category-create-open').click();
+        await page.getByTestId('category-name-input').fill('Personal');
+        // Color is a Select component, click and select a color (Green/#22c55e)
+        await page.getByTestId('category-color-select').click();
+        // Select the Green option by text
+        await page.getByRole('option', { name: 'Green' }).click();
+        await page.getByTestId('category-save-button').click();
+        // Wait for the category to be saved and visible
+        await expect(page.getByText('Personal')).toBeVisible({ timeout: 10000 });
+        await page.waitForLoadState('networkidle');
+    }
 }
 
 /**

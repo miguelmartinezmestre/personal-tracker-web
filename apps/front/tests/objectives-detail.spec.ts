@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
-import { takeScreenshot } from './test-helpers';
+import { takeScreenshot, ensureDefaultCategories } from './test-helpers';
 
 test('objectives: navigate to objective detail page and verify content', async ({ page }) => {
     // Register a new user
@@ -18,6 +18,9 @@ test('objectives: navigate to objective detail page and verify content', async (
     await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
     await page.getByTestId('register-button').click();
     await expect(page).toHaveURL(/\/dashboard\/home$/);
+
+    // Ensure categories exist before creating objective
+    await ensureDefaultCategories(page);
 
     // Go to Objectives and create an objective
     await page.goto('/dashboard/objectives');
