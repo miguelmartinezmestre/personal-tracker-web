@@ -44,13 +44,9 @@ export default function ObjectivesTable({
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
         onSuccess: () => {
+            // Invalidate all objectives queries regardless of pagination
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: {
-                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                        cursor: null,
-                    },
-                }).queryKey,
+                queryKey: [api.objectives.getObjectivesByUser],
             });
             toast.success(t('toast.deletedSuccess'));
         },

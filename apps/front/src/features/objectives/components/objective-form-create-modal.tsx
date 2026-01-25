@@ -44,7 +44,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
-import { OBJECTIVES_DEFAULT_PAGE_SIZE } from './objectives-utils';
 import { useTranslations } from 'next-intl';
 
 const defaultValues: CreateObjective = {
@@ -71,13 +70,9 @@ export default function CreateObjectiveFormModal() {
     const createObjective = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
         onSuccess: () => {
+            // Invalidate all objectives queries regardless of pagination
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: {
-                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                        cursor: null,
-                    },
-                }).queryKey,
+                queryKey: [api.objectives.getObjectivesByUser],
             });
         },
     });

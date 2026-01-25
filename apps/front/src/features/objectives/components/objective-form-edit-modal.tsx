@@ -46,7 +46,6 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@repo/backend/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import type { Id } from '@repo/backend/convex/_generated/dataModel';
-import { OBJECTIVES_DEFAULT_PAGE_SIZE } from './objectives-utils';
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
@@ -56,13 +55,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     const updateObjective = useMutation({
         mutationFn: useConvexMutation(api.objectives.updateObjective),
         onSuccess: () => {
+            // Invalidate all objectives queries regardless of pagination
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: {
-                        numItems: OBJECTIVES_DEFAULT_PAGE_SIZE,
-                        cursor: null,
-                    },
-                }).queryKey,
+                queryKey: [api.objectives.getObjectivesByUser],
             });
         },
     });
