@@ -11,7 +11,7 @@ import { workflow } from '../workflow';
 import { internal } from '../_generated/api';
 import { vWorkflowId } from '@convex-dev/workflow';
 import { vResultValidator } from '@convex-dev/workpool';
-import { authComponent, createAuth } from '../auth';
+import { getHeaders, getSession } from '../betterAuth/helpers';
 
 /**
  * Public Mutation: Start objective lifecycle workflow
@@ -70,9 +70,12 @@ export const triggerAchievementCheck = mutation({
     // Get organizationId from session
     let organizationId: string | undefined = undefined;
     try {
-      const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
-      const session = await auth.api.getSession({ headers });
-      organizationId = session?.session.activeOrganizationId ?? undefined;
+      const session = await getSession(ctx);
+      const auth = await getAuth(ctx);
+      const headers = await getHeaders(ctx, session);
+
+      const session = await auth.api.getActiveOrganization({ headers });
+      organizationId = session?.activeOrganizationId ?? undefined;
     } catch {
       organizationId = undefined;
     }
@@ -222,6 +225,7 @@ export const cancelObjectiveWorkflow = mutation({
  */
 import { query } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
+import { getAuth } from '../auth';
 
 export const getWorkflowStatus = query({
   args: {

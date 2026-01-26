@@ -8,7 +8,7 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
-import { components } from './_generated/api';
+import { adapter } from './betterAuth/adapter';
 
 export {
     createObjective,
@@ -119,20 +119,13 @@ export const getSharedObjectives = queryWithRLS({
 
         // Get all organization objectives where user is a collaborator
         // First, get the user's organization from betterAuth
-        const membersResult = await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-                model: 'member',
-                where: [{ field: 'userId', value: userId }],
-                paginationOpts: { numItems: 1, cursor: null },
-            }
-        );
+        const membersResult = await ctx.db.query('member').withIndex('userId', q => q.eq('userId', userId)).collect();
 
-        if (!membersResult.page || membersResult.page.length === 0) {
+        if (!membersResult || membersResult.length === 0) {
             return { page: [], continueCursor: null };
         }
 
-        const orgMember = membersResult.page[0];
+        const orgMember = membersResult[0];
         const organizationId = orgMember.organizationId;
 
         // Get all objectives for the organization and filter by collaborators
@@ -183,19 +176,10 @@ export const addCollaborator = mutationWithRLS({
         }
 
         // Check if the collaborator is in the same organization
-        const collaboratorsResult = await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-                model: 'member',
-                where: [{ field: 'userId', value: collaboratorId }],
-                paginationOpts: { numItems: 1, cursor: null },
-            }
-        );
+        const collaboratorsResult = await ctx.db.query('member').withIndex('userId', q => q.eq('userId', collaboratorId)).collect();
 
-        const collaboratorMember = collaboratorsResult.page?.[0];
-
-        if (!collaboratorMember || collaboratorMember.organizationId !== objective.organizationId) {
-            throw new Error('Collaborator must be a member of the same organization');
+        if (collaboratorsResult.length === 0) {
+            throw new Error('Collaborator not found');
         }
 
         // Don't add if already a collaborator or is the owner
@@ -264,44 +248,23 @@ export const getOrganizationMembers = queryWithRLS({
         const userId = String(ctx.identity?.subject);
 
         // Get the user's organization from betterAuth
-        const userMembersResult = await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-                model: 'member',
-                where: [{ field: 'userId', value: userId }],
-                paginationOpts: { numItems: 1, cursor: null },
-            }
-        );
+        const userMembersResult = await ctx.db.query('member').withIndex('userId', q => q.eq('userId', userId)).collect();
 
-        const userMember = userMembersResult.page?.[0];
+        const userMember = userMembersResult[0];
         if (!userMember) {
             return [];
         }
 
         // Get all members of the organization
-        const membersResult = await ctx.runQuery(
-            components.betterAuth.adapter.findMany,
-            {
-                model: 'member',
-                where: [{ field: 'organizationId', value: userMember.organizationId }],
-                paginationOpts: { numItems: 1000, cursor: null },
-            }
-        );
+        const membersResult = await ctx.db.query('member').withIndex('organizationId', q => q.eq('organizationId', userMember.organizationId)).collect();
 
-        const members = membersResult.page ?? [];
+        const members = membersResult ?? [];
 
         // Get user details for each member using betterAuth adapter
         const membersWithDetails = await Promise.all(
             members.map(async (member: { userId: string; role: string; organizationId: string }) => {
-                const usersResult = await ctx.runQuery(
-                    components.betterAuth.adapter.findMany,
-                    {
-                        model: 'user',
-                        where: [{ field: 'userId', value: member.userId }],
-                        paginationOpts: { numItems: 1, cursor: null },
-                    }
-                );
-                const user = usersResult.page?.[0];
+                const usersResult = await ctx.db.query('user').withIndex('userId', q => q.eq('userId', member.userId)).collect();
+                const user = usersResult[0];
                 return {
                     userId: member.userId,
                     name: user?.name,

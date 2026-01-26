@@ -10,10 +10,18 @@ import { DataModel } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
 
 import type { DataModelFromSchemaDefinition } from 'convex/server';
-import authSchema from './betterAuth/schema';
 import { authComponent, createAuth } from './auth';
+import schema from './schema';
 
-export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof authSchema>;
+export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof schema>;
+
+// Extended session type with organization fields
+type SessionWithOrg = {
+    session: {
+        activeOrganizationId?: string | null;
+        [key: string]: any;
+    };
+};
 
 async function rlsRules(
     userId: string,
@@ -33,7 +41,7 @@ async function rlsRules(
 
             const session = await auth.api.getSession({
                 headers,
-            });
+            }) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? undefined;
         } catch (e) {
@@ -196,7 +204,7 @@ export const queryWithRLS = customQuery(
 
             const session = await auth.api.getSession({
                 headers,
-            });
+            }) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? null;
         } catch (e) {
@@ -241,7 +249,7 @@ export const mutationWithRLS = customMutation(
 
             const session = await auth.api.getSession({
                 headers,
-            });
+            }) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? null;
         } catch (e) {

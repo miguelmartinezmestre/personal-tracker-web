@@ -1,62 +1,21 @@
 import { v } from 'convex/values';
-import { components } from './_generated/api';
 import { authComponent, createAuth } from './auth';
 import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
 import { mutationWithRLS, queryWithRLS } from './rls';
-
-export type BetterAuthUser = {
-    _id: string;
-    _creationTime: number;
-    name: string;
-    email: string;
-    emailVerified: boolean;
-    image: string | null;
-    createdAt: number;
-    updatedAt: number;
-    userId: string | null;
-    role: string | null;
-    banned: boolean | null;
-    banReason: string | null;
-    banExpires: number | null;
-};
-
-export type UserSession = {
-    _id: string;
-    _creationTime: number;
-    expiresAt: number,
-    token: string,
-    createdAt: number,
-    updatedAt: number,
-    ipAddress?: string | null | undefined,
-    userAgent?: string | null | undefined,
-    userId: string,
-    impersonatedBy?: string | null | undefined,
-    activeOrganizationId?: string | null | undefined,
-};
-
-export type PaginationResult<T> = {
-    continueCursor: string | null;
-    isDone: boolean;
-    page: T[];
-};
-
-export type AdminUsersResult = PaginationResult<BetterAuthUser>;
+import { adapter } from './betterAuth/adapter';
 
 export const listUsers = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         searchValue: v.optional(v.string()),
     },
-    handler: async (ctx, args): Promise<PaginationResult<BetterAuthUser>> => {
+    handler: async (ctx, args) => {
 
         await requireAdmin(ctx);
 
         // Get all users from BetterAuth user table
-        const users = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'user',
-            paginationOpts: args.paginationOpts,
-        })) as PaginationResult<BetterAuthUser>;
+        const users = await ctx.db.query('user').collect();
 
         return users;
     },
@@ -110,21 +69,15 @@ export const unbanUser = mutationWithRLS({
 
 export const updateUserRole = mutationWithRLS({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
         role: v.string(),
     },
     handler: async (ctx, args) => {
         
         await requireAdmin(ctx);
 
-        await ctx.runMutation(components.betterAuth.adapter.updateOne, {
-            input: {
-                model: 'user',
-                where: [{ field: '_id', value: args.userId }],
-                update: {
-                    role: args.role,
-                },
-            },
+        await ctx.db.patch('user', args.userId, {
+            role: args.role,
         });
 
         return { success: true };
@@ -160,11 +113,7 @@ export const listUserSessions = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
         
-        const sessions = await ctx.runQuery(components.betterAuth.adapter.findMany, {
-            model: 'session',
-            where: [{ field: 'userId', value: args.userId, operator: 'eq' }],
-            paginationOpts: args.paginationOpts,
-        }) as PaginationResult<UserSession>;
+        const sessions = await ctx.db.query('session').withIndex('userId', q => q.eq('userId', args.userId)).collect();
 
         return sessions;
     },

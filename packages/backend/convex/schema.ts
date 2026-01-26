@@ -1,7 +1,11 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import schema from './betterAuth/schema';
 
 export default defineSchema({
+
+    ...schema.tables,
+
     objectives: defineTable({
         organizationId: v.string(),
         userId: v.string(),

@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
-import { authComponent, createAuth } from './auth';
+import { authComponent } from './auth';
 
 export const getSessionsByUser = queryWithRLS({
     args: {
