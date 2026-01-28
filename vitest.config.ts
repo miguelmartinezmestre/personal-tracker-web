@@ -4,21 +4,20 @@ import path from 'path';
 export default defineConfig({
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './apps/front/src'),
-            '@repo/backend': path.resolve(__dirname, './packages/backend'),
-            '@repo/ui': path.resolve(__dirname, './packages/ui/src'),
+            '@': path.resolve(__dirname, './src'),
+            '@/convex': path.resolve(__dirname, './convex'),
         },
     },
     test: {
-        setupFiles: ['./apps/front/vitest.setup.ts'],
+        setupFiles: ['./vitest.setup.ts'],
         reporters: ['tree'],
         include: [
-            'packages/backend/convex/tests/**/*.test.ts',
-            'apps/front/src/features/**/*.test.{ts,tsx}',
-            'apps/front/tests/**/*.test.{ts,tsx}',
-            'apps/front/tests/**/*.spec.{ts,tsx}',
+            'convex/tests/**/*.test.ts',
+            'src/features/**/*.test.{ts,tsx}',
+            'tests/**/*.test.{ts,tsx}',
+            'tests/**/*.spec.{ts,tsx}',
         ],
-        exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**'],
+        exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'convex/_generated/**'],
         environment: 'jsdom',
         globals: true,
     },

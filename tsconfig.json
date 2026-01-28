@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/convex/*": [
+        "./convex/*"
       ]
     },
     "noUnusedLocals": true,
@@ -46,6 +49,17 @@
   ],
   "exclude": [
     "node_modules",
-    ".react-email"
+    "convex/_generated",
+    "tests",
+    "convex/tests",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "test.setup.ts",
+    "test_helpers.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "playwright.config.ts"
   ]
 }
