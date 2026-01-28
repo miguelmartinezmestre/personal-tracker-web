@@ -1,9 +1,9 @@
 import { v } from 'convex/values';
 import { authComponent, createAuth } from './auth';
 import { paginationOptsValidator } from 'convex/server';
-import { requireAdmin } from './utils/requiredAdmin';
-import { mutationWithRLS, queryWithRLS } from './rls';
-import { adapter } from './betterAuth/adapter';
+import { requireAdmin } from '../utils/requiredAdmin';
+import { mutationWithRLS, queryWithRLS } from '../rls';
+import { adapter } from '../betterAuth/adapter';
 
 export const listUsers = queryWithRLS({
     args: {
@@ -73,7 +73,7 @@ export const updateUserRole = mutationWithRLS({
         role: v.string(),
     },
     handler: async (ctx, args) => {
-        
+
         await requireAdmin(ctx);
 
         await ctx.db.patch('user', args.userId, {
@@ -89,7 +89,7 @@ export const deleteUser = mutationWithRLS({
         userId: v.string(),
     },
     handler: async (ctx, args) => {
-        
+
         await requireAdmin(ctx);
 
         const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
@@ -112,7 +112,7 @@ export const listUserSessions = queryWithRLS({
     },
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
-        
+
         const sessions = await ctx.db.query('session').withIndex('userId', q => q.eq('userId', args.userId)).collect();
 
         return sessions;

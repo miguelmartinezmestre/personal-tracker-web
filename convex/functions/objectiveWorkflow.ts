@@ -13,8 +13,8 @@
  */
 
 import { v } from 'convex/values';
-import { workflow } from './workflow';
-import { internal } from './_generated/api';
+import { workflow } from '../workflow';
+import { internal } from '../_generated/api';
 import { vEventId, type WorkflowId } from '@convex-dev/workflow';
 
 // Maximum iterations to prevent infinite loops (safety guard)

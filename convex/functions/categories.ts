@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS, mutationWithRLS } from '../rls';
 
 export const getCategoriesByUser = queryWithRLS({
     args: {},

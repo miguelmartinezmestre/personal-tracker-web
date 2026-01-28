@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from '../rls';
 
 export const getAuditLogs = queryWithRLS({
     args: {

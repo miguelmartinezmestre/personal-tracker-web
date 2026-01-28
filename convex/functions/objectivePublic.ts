@@ -6,9 +6,9 @@
  */
 
 import { v } from 'convex/values';
-import { mutationWithRLS } from './rls';
-import { internal } from './_generated/api';
-import { workflow } from './workflow';
+import { mutationWithRLS } from '../rls';
+import { internal } from '../_generated/api';
+import { workflow } from '../workflow';
 import { type WorkflowId } from '@convex-dev/workflow';
 import {
     pauseEvent,

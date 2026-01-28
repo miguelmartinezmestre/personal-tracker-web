@@ -10,7 +10,7 @@ import { DataModel } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
 
 import type { DataModelFromSchemaDefinition } from 'convex/server';
-import { authComponent, createAuth } from './auth';
+import { authComponent, createAuth } from './functions/auth';
 import schema from './schema';
 
 export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof schema>;

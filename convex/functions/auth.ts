@@ -1,13 +1,13 @@
 import { type GenericCtx, type Triggers, type AuthFunctions } from '@convex-dev/better-auth';
 import { convex } from '@convex-dev/better-auth/plugins';
-import { internal } from './_generated/api';
-import { DataModel } from './_generated/dataModel';
-import { MutationCtx, query, QueryCtx } from './_generated/server';
+import { internal } from '../_generated/api';
+import { DataModel } from '../_generated/dataModel';
+import { MutationCtx, query, QueryCtx } from '../_generated/server';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { admin, organization } from 'better-auth/plugins';
 import authConfig from './auth.config';
-import schema from './schema';
-import { createClient } from './betterAuth/create-client';
+import schema from '../schema';
+import { createClient } from '../betterAuth/create-client';
 import { DocumentByName, GenericDataModel, GenericQueryCtx } from 'convex/server';
 import { getSession } from 'better-auth/api';
 

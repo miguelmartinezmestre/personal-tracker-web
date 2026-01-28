@@ -225,7 +225,7 @@ export const cancelObjectiveWorkflow = mutation({
  */
 import { query } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
-import { getAuth } from '../auth';
+import { getAuth } from '../functions/auth';
 
 export const getWorkflowStatus = query({
   args: {

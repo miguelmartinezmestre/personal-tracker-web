@@ -6,9 +6,9 @@
  */
 
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS, mutationWithRLS } from '../rls';
 import { paginationOptsValidator } from 'convex/server';
-import { adapter } from './betterAuth/adapter';
+import { adapter } from '../betterAuth/adapter';
 
 export {
     createObjective,
@@ -189,7 +189,7 @@ export const addCollaborator = mutationWithRLS({
 
         // Get existing collaborators or initialize empty array
         const existingCollaborators = objective.collaborators ?? [];
-        
+
         // Don't add if already a collaborator
         if (existingCollaborators.includes(collaboratorId)) {
             return objective;

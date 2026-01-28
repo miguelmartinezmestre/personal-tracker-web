@@ -1,6 +1,6 @@
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from '../rls';
 import { v } from 'convex/values';
-import { TIME, DASHBOARD } from './utils/constants';
+import { TIME, DASHBOARD } from '../utils/constants';
 
 export const getDashboardStats = queryWithRLS({
     args: {},

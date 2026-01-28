@@ -1,6 +1,6 @@
 import { ConvexError } from "convex/values";
 import { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
-import { authComponent } from "../auth";
+import { authComponent } from "../functions/auth";
 
 export async function requireAdmin(ctx: QueryCtx | MutationCtx | ActionCtx) {
     const currentUser = await ctx.auth.getUserIdentity().catch(() => null);

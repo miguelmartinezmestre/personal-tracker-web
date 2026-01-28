@@ -1,0 +1,12 @@
+{
+  "functions": "convex/functions",
+  "node": {
+    "nodeVersion": "22"
+  },
+  "codegen": {
+    "staticApi": true,
+    "staticDataModel": true
+  },
+  "typescriptCompiler": "tsgo",
+  "$schema": "https://raw.githubusercontent.com/get-convex/convex-backend/refs/heads/main/npm-packages/convex/schemas/convex.schema.json"
+}
