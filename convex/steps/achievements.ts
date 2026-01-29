@@ -6,7 +6,7 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation, internalAction } from '../_generated/server';
+import { internalMutation } from '../_generated/server';
 
 /**
  * Step: Calculate user statistics for achievement checking
@@ -180,9 +180,8 @@ export const checkOrganizationAchievementsCategory = internalMutation({
     triggerUserId: v.string(),
     category: v.string(),
   },
-  handler: async (ctx, args) => {
-    const { organizationId, triggerUserId, category } = args;
-    const now = Date.now();
+  handler: async (_, args) => {
+    const { organizationId, category } = args;
 
     // This would use the BetterAuth adapter to get org members
     // For now, return empty - implementation depends on your auth structure
@@ -202,7 +201,7 @@ export const checkAllAchievements = internalMutation({
     organizationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { userId, organizationId } = args;
+    const { userId } = args;
 
     // Calculate stats once
     const stats = await ctx.db

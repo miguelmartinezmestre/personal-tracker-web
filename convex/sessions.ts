@@ -1,7 +1,8 @@
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from '../rls';
+import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
-import { authComponent } from './auth';
+import { getAuth } from './auth';
+import { getHeaders } from 'better-convex/auth';
 
 export const getSessionsByUser = queryWithRLS({
     args: {
@@ -9,7 +10,8 @@ export const getSessionsByUser = queryWithRLS({
     },
     handler: async (ctx) => {
 
-        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
 
         const sessions = await auth.api.listSessions({
             headers,
@@ -23,7 +25,8 @@ export const invalidateSession = mutationWithRLS({
     args: { token: v.string() },
     handler: async (ctx, args) => {
 
-        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
 
         await auth.api.revokeSession({
             headers,
@@ -40,7 +43,8 @@ export const invalidateAllOtherSessions = mutationWithRLS({
     args: { currentToken: v.string() },
     handler: async (ctx, args) => {
 
-        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
 
         const sessions = await auth.api.listSessions({ headers });
 

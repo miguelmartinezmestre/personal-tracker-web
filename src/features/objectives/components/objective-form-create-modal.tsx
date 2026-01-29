@@ -45,6 +45,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
+import { Doc } from '@/convex/_generated/dataModel';
 
 const defaultValues: CreateObjective = {
     title: '',
@@ -114,7 +115,7 @@ export default function CreateObjectiveFormModal() {
 
     const categoryOptions = useMemo(
         () =>
-            (categoriesQuery.data ?? []).map(category => ({
+            (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
                 value: category.name,
                 label: category.name,
             })),
@@ -251,12 +252,12 @@ export default function CreateObjectiveFormModal() {
                                                     {t('categories.emptyTitle')}
                                                 </SelectItem>
                                             ) : (
-                                                categoryOptions.map(category => (
+                                                categoryOptions.map((category: Doc<'categories'>) => (
                                                     <SelectItem
-                                                        key={category.value}
-                                                        value={category.value}
+                                                        key={category._id}
+                                                        value={category.name}
                                                     >
-                                                        {category.label}
+                                                        {category.name}
                                                     </SelectItem>
                                                 ))
                                             )}

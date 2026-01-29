@@ -11,7 +11,7 @@ export function useAuditLogsTableColumns() {
             accessorKey: 'user',
             header: t('auditLogsTable.columns.userId'),
             cell: ({ row }) => {
-                const userId = row.original.user;
+                const userId = row.original.userId;
                 return <span className="font-mono text-xs">{userId}</span>;
             },
         },

@@ -168,7 +168,7 @@ export function DataTable<TData extends RowData, TValue>({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            {columns.map((column, index) => (
+                            {columns.map((_, index) => (
                                 <TableHead key={index}>
                                     <Skeleton className="h-8 w-full" />
                                 </TableHead>
@@ -357,9 +357,9 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
             return;
         }
         const nextOrder = [...orderableOrder];
-        [nextOrder[currentIndex], nextOrder[targetIndex]] = [
-            nextOrder[targetIndex],
-            nextOrder[currentIndex],
+        [nextOrder[currentIndex] as string, nextOrder[targetIndex] as string] = [
+            nextOrder[targetIndex] as string,
+            nextOrder[currentIndex] as string,
         ];
         setColumnOrder(nextOrder);
     };
@@ -626,7 +626,7 @@ export function DataTableAdvanced<TData extends RowData, TValue>({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                {columns.map((column, index) => (
+                                {columns.map((_, index) => (
                                     <TableHead key={index}>
                                         <Skeleton className="h-8 w-full" />
                                     </TableHead>

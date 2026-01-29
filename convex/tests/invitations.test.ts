@@ -3,7 +3,7 @@ import { initConvexTest } from './better-auth.helper';
 import { createTestUser, createTestOrganization } from './test_helpers';
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { DataModel as BetterAuthDataModel } from '../betterAuth/_generated/dataModel';
-import { DataModel } from '../_generated/dataModel';
+import { DataModel } from ./ _generated / dataModel';
 
 type InvitationRecord = {
     _id: string;

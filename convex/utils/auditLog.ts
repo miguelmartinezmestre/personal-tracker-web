@@ -145,10 +145,10 @@ export async function createAuditLog(
             resourceId,
             metadata: metadata
                 ? {
-                      before: metadata.before,
-                      after: metadata.after,
-                      context: metadata.context,
-                  }
+                    before: metadata.before,
+                    after: metadata.after,
+                    context: metadata.context,
+                }
                 : undefined,
             severity: resolvedSeverity,
             createdAt: Date.now(),

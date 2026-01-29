@@ -1,6 +1,5 @@
 import { GenericMutationCtx, GenericQueryCtx, GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
-import { adapter } from '../betterAuth/adapter';
 import { DataModel } from '../_generated/dataModel';
 
 export interface TestUserData {

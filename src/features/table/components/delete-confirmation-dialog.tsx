@@ -51,7 +51,7 @@ export function DeleteConfirmationDialog({
     const resolvedConfirmLabel = confirmLabel ?? t('confirm');
     const resolvedCancelLabel = cancelLabel ?? t('cancel');
 
-    const handleConfirm = async (e: React.MouseEvent) => {
+    const handleConfirm = async () => {
         setInternalIsLoading(true);
         try {
             await onConfirmRef.current();

@@ -6,11 +6,11 @@ import { DataTableAdvanced } from '@/features/table/components/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { ObjectiveCard } from '@/features/objectives/components/objective-card';
 import { Objective } from '@/features/objectives/schemas/objective';
-import { Id } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { ObjectivesFilters, type FilterOptions } from './objective-filters';
 import { Button } from '@/components/ui/button';
@@ -34,9 +34,6 @@ const DEFAULT_FILTERS: FilterOptions = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ITEMS_PER_PAGE = 10;
-
-// Load more items at once for objectives (no backend limit)
-const LARGE_PAGE_SIZE = 1000;
 
 // Static skeleton array for loading state
 const SKELETON_PLACEHOLDERS = [1, 2, 3];
@@ -84,9 +81,9 @@ const ResponsiveObjectivesView = React.forwardRef<
 
     const categories = React.useMemo(() => {
         const values = fetchedObjectives?.page
-            .map(objective => objective.category)
-            .filter((category): category is string => Boolean(category));
-        return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+            .map((objective: { category: string }) => objective.category)
+            .filter((category: string): category is string => Boolean(category));
+        return Array.from(new Set(values)).sort((a: unknown, b: unknown) => (a as string).localeCompare(b as string));
     }, [fetchedObjectives]);
 
     const filteredObjectives = React.useMemo(() => {
@@ -118,7 +115,7 @@ const ResponsiveObjectivesView = React.forwardRef<
             }
         };
 
-        const filtered = fetchedObjectives?.page.filter(objective => {
+        const filtered = fetchedObjectives?.page.filter((objective: Doc<'objectives'>) => {
             if (normalizedSearch) {
                 const haystack = [
                     objective.title ?? '',
@@ -319,7 +316,7 @@ const ResponsiveObjectivesView = React.forwardRef<
                 <ObjectivesFilters
                     filters={filters}
                     onFiltersChange={setFilters}
-                    categories={categories}
+                    categories={categories as string[]}
                 />
                 {!fetchedObjectives ? (
                     <div className="space-y-4">
@@ -332,7 +329,7 @@ const ResponsiveObjectivesView = React.forwardRef<
                         <p className="text-muted-foreground">{t('empty.noObjectivesFound')}</p>
                     </div>
                 ) : (
-                    paginatedObjectives?.map(objective => (
+                    paginatedObjectives?.map((objective: Doc<'objectives'>) => (
                         <ObjectiveCard
                             key={objective._id}
                             objective={normalizeObjective(objective)}
@@ -352,7 +349,7 @@ const ResponsiveObjectivesView = React.forwardRef<
             <ObjectivesFilters
                 filters={filters}
                 onFiltersChange={setFilters}
-                categories={categories}
+                categories={categories as string[]}
             />
             <DataTableAdvanced
                 columns={columns}

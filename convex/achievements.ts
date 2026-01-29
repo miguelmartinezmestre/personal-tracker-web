@@ -1,12 +1,12 @@
 import { v } from 'convex/values';
-import { internalMutation } from '../_generated/server';
+import { internalMutation } from './_generated/server';
 import {
     calculateUserStreak,
     calculateUserStreakInternal,
     calculateOrganizationStreak,
-} from '../achievements_utils/calculations';
-import { queryWithRLS, mutationWithRLS } from '../rls';
-import { ACHIEVEMENT_DEFINITIONS } from '../utils/achievements';
+} from './achievements_utils/calculations';
+import { queryWithRLS, mutationWithRLS } from './rls';
+import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
 
 export const getAchievementDefinitions = queryWithRLS({
     args: {

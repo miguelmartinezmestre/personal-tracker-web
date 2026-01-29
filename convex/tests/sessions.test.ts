@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api } from ./ _generated / api';
 import { initConvexTest } from './better-auth.helper';
 import { createTestSession, createTestUser } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';

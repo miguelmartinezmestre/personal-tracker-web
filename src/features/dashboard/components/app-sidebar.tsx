@@ -11,7 +11,6 @@ import {
     Users,
     Activity,
     Tag,
-    Loader2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -29,8 +28,6 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/ui-utils/utils';
-import { convexQuery } from '@convex-dev/react-query';
-import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';

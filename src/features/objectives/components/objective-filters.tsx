@@ -84,7 +84,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                 category: 'all',
                 deadlineRange: 'all',
             };
-            handleFilterChange(key, defaultValues[key]);
+            handleFilterChange(key as keyof FilterOptions, defaultValues[key] ?? '');
         };
 
         return (

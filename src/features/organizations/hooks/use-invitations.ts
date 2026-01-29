@@ -151,7 +151,7 @@ export function useCancelInvitation() {
                 invitationId,
             });
         },
-        onSuccess: (_, variables, context) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ['organization-invitations'],
             });

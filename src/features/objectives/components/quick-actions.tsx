@@ -13,7 +13,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 
 interface QuickActionsProps {

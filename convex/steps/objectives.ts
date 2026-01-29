@@ -6,8 +6,8 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation, internalAction } from '../_generated/server';
-import { internal } from '../_generated/api';
+import { internalMutation } from '../_generated/server';
+
 
 /**
  * Step: Check if objective should be auto-completed
@@ -219,11 +219,11 @@ export const createRecurringInstance = internalMutation({
     }
 
     const now = Date.now();
-    
+
     // Calculate next period start
     const periodLengthMs = (sourceObjective.periodLengthDays ?? 30) * 24 * 60 * 60 * 1000;
-    const nextPeriodStart = sourceObjective.periodStart 
-      ? sourceObjective.periodStart + periodLengthMs 
+    const nextPeriodStart = sourceObjective.periodStart
+      ? sourceObjective.periodStart + periodLengthMs
       : now;
 
     // Create new objective instance with reset values
@@ -235,8 +235,8 @@ export const createRecurringInstance = internalMutation({
       category: sourceObjective.category,
       targetValue: sourceObjective.targetValue,
       currentValue: 0, // Reset to 0 for new period
-      deadline: sourceObjective.deadline 
-        ? sourceObjective.deadline + periodLengthMs 
+      deadline: sourceObjective.deadline
+        ? sourceObjective.deadline + periodLengthMs
         : undefined,
       status: 'active',
       unit: sourceObjective.unit,

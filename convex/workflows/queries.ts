@@ -86,7 +86,7 @@ export const getObjectiveWorkflowStatus = query({
  */
 export const getUserActiveWorkflows = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async () => {
     // This requires a table mapping userId -> workflowIds
     // For now, return empty
     return [];

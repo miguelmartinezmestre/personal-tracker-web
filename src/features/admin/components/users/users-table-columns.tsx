@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Badge, UserCheck, Ban, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { EditUserModal } from "./edit-user-modal";
-import { BetterAuthUser } from "@/convex/admin";
+import { Doc } from '@/convex/_generated/dataModel';
 import { useBanUser, useDeleteUser, useUnBanUser } from "./users-table-actions";
 
 export function useUsersTableColumns() {
@@ -16,7 +16,7 @@ export function useUsersTableColumns() {
     const { unbanUser, isUnbanningUser } = useUnBanUser();
     const { deleteUser, isDeletingUser } = useDeleteUser();
 
-    const columns: ColumnDef<BetterAuthUser>[] = [
+    const columns: ColumnDef<Doc<'user'>>[] = [
         {
             accessorKey: 'id',
             header: t('usersTable.columns.id'),

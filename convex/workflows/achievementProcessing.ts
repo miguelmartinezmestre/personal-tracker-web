@@ -17,8 +17,8 @@ import { internal } from '../_generated/api';
 
 // Type for achievement check result
 type AchievementCheckResult = {
-    awarded?: string[];
-    [key: string]: unknown;
+  awarded?: string[];
+  [key: string]: unknown;
 };
 
 /**
@@ -43,7 +43,7 @@ export const processAchievements = workflow.define({
     checkOrganization: v.optional(v.boolean()),
   },
   handler: async (step, args): Promise<{ awarded: string[] }> => {
-    const { userId, organizationId, trigger, checkOrganization = false } = args;
+    const { userId, organizationId, checkOrganization = false } = args;
 
     // Step 1: Calculate user statistics (deterministic)
     const stats = await step.runMutation(internal.steps.achievements.calculateUserStats, {

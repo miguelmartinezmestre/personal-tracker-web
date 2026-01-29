@@ -1,12 +1,12 @@
 import { authClient } from "@/features/auth/auth-client";
-import { queryClient } from "@/features/convex/providers/convex-provider";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 export function useRevokeSession() {
 
     const t = useTranslations('Admin');
+    const queryClient = useQueryClient();
 
     const { mutate: revokeSession, isPending: isRevokingSession } = useMutation({
         mutationFn: async ({ sessionToken }: { sessionToken: string }) => {
@@ -27,6 +27,7 @@ export function useRevokeSession() {
 export function useConfirmRevokeAllSessions() {
 
     const t = useTranslations('Admin');
+    const queryClient = useQueryClient();
 
     const { mutate: revokeAllSessions, isPending: isRevokingAllSessions } = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {

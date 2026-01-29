@@ -1,11 +1,9 @@
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from '../rls';
-import { authComponent } from './auth';
-import { internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
-import type { MutationCtx } from '../_generated/server';
-import { createAuditLog, sanitizeForAudit, createChangeDiff } from '../utils/auditLog';
+import { queryWithRLS, mutationWithRLS } from './rls';
+import type { MutationCtx } from './_generated/server';
 import { paginationOptsValidator } from 'convex/server';
+import { Id } from './_generated/dataModel';
+import { internal } from './_generated/api';
 
 type PeriodRange = { start: number; end: number };
 

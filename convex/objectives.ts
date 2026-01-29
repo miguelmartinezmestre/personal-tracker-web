@@ -6,9 +6,8 @@
  */
 
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from '../rls';
+import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
-import { adapter } from '../betterAuth/adapter';
 
 export {
     createObjective,
@@ -126,12 +125,12 @@ export const getSharedObjectives = queryWithRLS({
         }
 
         const orgMember = membersResult[0];
-        const organizationId = orgMember.organizationId;
+        const organizationId = orgMember?.organizationId ?? null;
 
         // Get all objectives for the organization and filter by collaborators
         const allObjectives = await ctx.db
             .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId ?? ''))
             .collect();
 
         // Manual pagination for the filtered results

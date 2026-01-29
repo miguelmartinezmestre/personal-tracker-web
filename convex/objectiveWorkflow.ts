@@ -13,12 +13,8 @@
  */
 
 import { v } from 'convex/values';
-import { workflow } from '../workflow';
-import { internal } from '../_generated/api';
-import { vEventId, type WorkflowId } from '@convex-dev/workflow';
-
-// Maximum iterations to prevent infinite loops (safety guard)
-const MAX_ITERATIONS = 1000;
+import { workflow } from './workflow';
+import { internal } from './_generated/api';
 
 /**
  * Event definitions for objective lifecycle
@@ -47,7 +43,7 @@ export const objectiveLifecycleV2 = workflow.define({
         userId: v.string(),
     },
     handler: async (step, args): Promise<{ finalStatus: string; reason: string }> => {
-        const { objectiveId, userId } = args;
+        const { objectiveId } = args;
 
         // Do a single check and return
         // TODO: Implement full event-driven workflow

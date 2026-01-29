@@ -25,13 +25,13 @@ import { authClient } from '@/features/auth/auth-client';
 import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import type { BetterAuthUser } from '@/convex/admin';
+import type { Doc } from '@/convex/_generated/dataModel';
 
 export function EditUserModal({
     user,
     onSuccessAction,
 }: {
-    user: BetterAuthUser;
+    user: Doc<'user'>;
     onSuccessAction?: () => void;
 }) {
     const t = useTranslations('Admin');

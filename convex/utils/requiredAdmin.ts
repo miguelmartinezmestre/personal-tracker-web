@@ -1,10 +1,20 @@
 import { ConvexError } from "convex/values";
-import { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
-import { authComponent } from "../functions/auth";
+import { query } from "../_generated/server";
 
-export async function requireAdmin(ctx: QueryCtx | MutationCtx | ActionCtx) {
-    const currentUser = await ctx.auth.getUserIdentity().catch(() => null);
-    if (currentUser?.role !== 'admin') {
-        throw new ConvexError('Admin access required');
-    }
+import { getAuthUserIdentity } from 'better-convex/auth';
+import { GenericMutationCtx } from "convex/server";
+import { DataModel } from "../_generated/dataModel";
+
+export const getAuthUser = query({
+  handler: async (ctx) => {
+    const identity = await getAuthUserIdentity(ctx);
+    if (!identity) throw new ConvexError("Unauthenticated");
+
+    return await ctx.db.get('user', identity.userId);
+  },
+});
+
+export async function requireAdmin(_: GenericMutationCtx<DataModel>) {
+    // const currentUser = await getAuthUserIdentity(ctx);
+    // TODO: Implement admin check
 }

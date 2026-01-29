@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from '../rls';
-import { internalMutation } from '../_generated/server';
-import type { Doc } from '../_generated/dataModel';
+import { queryWithRLS, mutationWithRLS } from './rls';
+import { internalMutation } from './_generated/server';
+import type { Doc } from './_generated/dataModel';
 import { paginationOptsValidator } from 'convex/server';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

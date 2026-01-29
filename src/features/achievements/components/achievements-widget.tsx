@@ -6,8 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, ChevronRight, Star, Award } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
@@ -127,7 +125,7 @@ export function AchievementsWidget({
                                 {t('widget.recentlyEarned')}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                {recentAchievements.map((achievement, index) => (
+                                {recentAchievements.map((achievement: { _id: string, definition: { icon: string, tier: AchievementTier, code: string } }, index: number) => (
                                     <div
                                         key={achievement._id}
                                         className="animate-in fade-in slide-in-from-bottom-2 duration-300"

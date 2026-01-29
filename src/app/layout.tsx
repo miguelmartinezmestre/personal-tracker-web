@@ -1,12 +1,14 @@
 import '@/styles/globals.css';
 
-import { ConvexClientProvider } from '@/features/convex/providers/convex-provider';
+import { BetterConvexProvider } from '@/features/convex/providers/convex-provider';
 import { ThemeProvider } from '@/features/theme/theme';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider, useLocale, useMessages } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Toaster } from 'sonner';
+import { getToken } from '@/features/auth/auth-server';
+import { redirect } from 'next/navigation';
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('App');
@@ -17,9 +19,14 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
     const locale = useLocale();
     const messages = useMessages();
+    const token = await getToken();
+
+    if (!token) {
+        redirect('/login');
+    }
 
     return (
         <html lang={locale} suppressHydrationWarning>
@@ -33,7 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <main>
                         <Suspense fallback={null}>
                             <NextIntlClientProvider locale={locale} messages={messages}>
-                                <ConvexClientProvider>{children}</ConvexClientProvider>
+                                <BetterConvexProvider token={token}>{children}</BetterConvexProvider>
                             </NextIntlClientProvider>
                         </Suspense>
                     </main>

@@ -79,7 +79,7 @@ export default function NotificationsTable({
 
     // Columns
     const columns = useNotificationsTableColumns({
-        objectiveMap,
+        objectiveMap: objectiveMap as Map<string, Doc<'objectives'>>,
         onMutationSuccess: reset,
     });
 

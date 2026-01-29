@@ -12,7 +12,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,23 +25,6 @@ type InvitationStatus =
     | 'accepted'
     | 'error';
 
-interface InvitationData {
-    id: string;
-    email: string;
-    role: string;
-    organization?: {
-        id: string;
-        name: string;
-        slug: string;
-    };
-    inviter?: {
-        id: string;
-        name: string;
-        email: string;
-    };
-    status: string;
-}
-
 export default function InvitationPage() {
     const params = useParams();
     const router = useRouter();
@@ -50,7 +32,6 @@ export default function InvitationPage() {
     const token = params.token as string;
 
     const [status, setStatus] = useState<InvitationStatus>('loading');
-    const [invitation, setInvitation] = useState<InvitationData | null>(null);
     const [session, setSession] = useState<{ user: { email: string } } | null>(null);
     const [errorMessage, setErrorMessage] = useState('');
 

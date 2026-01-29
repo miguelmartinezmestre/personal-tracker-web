@@ -10,8 +10,9 @@ import { DataModel } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
 
 import type { DataModelFromSchemaDefinition } from 'convex/server';
-import { authComponent, createAuth } from './functions/auth';
 import schema from './schema';
+import { getHeaders } from 'better-convex/auth';
+import { getAuth } from './auth';
 
 export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof schema>;
 
@@ -37,7 +38,8 @@ async function rlsRules(
         organizationId = providedOrganizationId;
     } else {
         try {
-            const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+            const headers = await getHeaders(ctx);
+            const auth = getAuth(ctx);
 
             const session = await auth.api.getSession({
                 headers,
@@ -116,10 +118,10 @@ async function rlsRules(
             },
         },
         auditLogs: {
-            read: async (_, auditLog) => {
+            read: async () => {
                 return isAdmin;
             },
-            insert: async (_, auditLog) => {
+            insert: async () => {
                 return false;
             },
             modify: async () => {
@@ -200,7 +202,8 @@ export const queryWithRLS = customQuery(
         let organizationId: string | null = null;
 
         try {
-            const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+            const headers = await getHeaders(ctx);
+            const auth = getAuth(ctx);
 
             const session = await auth.api.getSession({
                 headers,
@@ -245,7 +248,8 @@ export const mutationWithRLS = customMutation(
         let organizationId: string | null = null;
 
         try {
-            const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+            const headers = await getHeaders(ctx);
+            const auth = getAuth(ctx);
 
             const session = await auth.api.getSession({
                 headers,

@@ -6,11 +6,11 @@
  */
 
 import { v } from 'convex/values';
-import { internalQuery, internalMutation, internalAction } from '../_generated/server';
-import { internal } from '../_generated/api';
-import { Id, Doc } from '../_generated/dataModel';
-import { workflow } from '../workflow';
-import { tickEvent, isTerminalStatus } from './objectiveEvents';
+import { internalQuery, internalMutation, internalAction } from './_generated/server';
+import { internal } from './_generated/api';
+import { Doc } from './_generated/dataModel';
+import { workflow } from './workflow';
+import { tickEvent } from './objectiveEvents';
 import { vWorkflowId } from '@convex-dev/workflow';
 
 /**

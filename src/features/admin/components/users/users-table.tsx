@@ -3,9 +3,10 @@
 import { DataTable } from '@/features/table/components/table';
 import { useTranslations } from 'next-intl';
 import { useUsersTableColumns } from './users-table-columns';
-import { BetterAuthUser, PaginationResult } from '@/convex/admin';
+import { PaginationResult } from 'convex/server';
+import { Doc } from '@/convex/_generated/dataModel';
 
-export function UsersTable({ users }: { users: PaginationResult<BetterAuthUser> | null }) {
+export function UsersTable({ users }: { users: PaginationResult<Doc<'user'>> | null }) {
 
     const t = useTranslations('Admin');
     const columns = useUsersTableColumns();

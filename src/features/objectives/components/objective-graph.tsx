@@ -61,7 +61,7 @@ export function ObjectiveProgressGraph({
         []
     );
 
-    const latestValue = data.length > 0 ? data[data.length - 1].currentValue : 0;
+    const latestValue = data.length > 0 ? data[data.length - 1]?.currentValue ?? 0 : 0;
     const objectiveValue = targetValue ?? data[data.length - 1]?.objective ?? 0;
     const progressPercent =
         objectiveValue > 0 ? Math.round((latestValue / objectiveValue) * 100) : 0;

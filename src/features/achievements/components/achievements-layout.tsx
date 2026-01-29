@@ -45,7 +45,7 @@ export default function AchievementsLayout({
         ...convexQuery(api.achievements.getUserAchievementProgress, {}),
         initialData: initialProgress ?? undefined,
         select: (data): AchievementProgress[] =>
-            data.map(item => achievementProgressSchema.parse(item)),
+            data.map((item: unknown) => achievementProgressSchema.parse(item)),
     });
 
     const seedMutation = useMutation({

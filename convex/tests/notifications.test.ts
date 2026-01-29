@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api, internal } from ./ _generated / api';
 import { initConvexTest } from './better-auth.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
-import type { Id } from '../_generated/dataModel';
+import { DataModel } from ./ _generated / dataModel';
+import type { Id } from ./ _generated / dataModel';
 
 describe('convex notifications', async () => {
     const t = initConvexTest();

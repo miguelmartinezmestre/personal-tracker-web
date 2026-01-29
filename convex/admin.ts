@@ -1,18 +1,19 @@
 import { v } from 'convex/values';
-import { authComponent, createAuth } from './auth';
-import { paginationOptsValidator } from 'convex/server';
-import { requireAdmin } from '../utils/requiredAdmin';
-import { mutationWithRLS, queryWithRLS } from '../rls';
-import { adapter } from '../betterAuth/adapter';
+import { getAuth } from './auth';
+import { GenericMutationCtx, paginationOptsValidator } from 'convex/server';
+import { requireAdmin } from './utils/requiredAdmin';
+import { mutationWithRLS, queryWithRLS } from './rls';
+import { getHeaders } from 'better-convex/auth';
+import { DataModel } from './_generated/dataModel';
 
 export const listUsers = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         searchValue: v.optional(v.string()),
     },
-    handler: async (ctx, args) => {
+    handler: async (ctx) => {
 
-        await requireAdmin(ctx);
+        await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
 
         // Get all users from BetterAuth user table
         const users = await ctx.db.query('user').collect();
@@ -31,7 +32,8 @@ export const banUser = mutationWithRLS({
 
         await requireAdmin(ctx);
 
-        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx); 
 
         await auth.api.banUser({
             body: {
@@ -54,7 +56,8 @@ export const unbanUser = mutationWithRLS({
 
         await requireAdmin(ctx);
 
-        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
 
         await auth.api.unbanUser({
             body: {
@@ -92,7 +95,8 @@ export const deleteUser = mutationWithRLS({
 
         await requireAdmin(ctx);
 
-        const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
 
         await auth.api.removeUser({
             body: {
@@ -111,7 +115,7 @@ export const listUserSessions = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        await requireAdmin(ctx);
+        await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
 
         const sessions = await ctx.db.query('session').withIndex('userId', q => q.eq('userId', args.userId)).collect();
 

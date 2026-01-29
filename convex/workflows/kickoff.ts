@@ -6,12 +6,13 @@
  */
 
 import { v } from 'convex/values';
-import { mutation, internalMutation } from '../_generated/server';
+import { mutation, internalMutation, query } from '../_generated/server';
 import { workflow } from '../workflow';
 import { internal } from '../_generated/api';
 import { vWorkflowId } from '@convex-dev/workflow';
 import { vResultValidator } from '@convex-dev/workpool';
-import { getHeaders, getSession } from '../betterAuth/helpers';
+import { getHeaders } from 'better-convex/auth';
+import { getAuth } from '../auth';
 
 /**
  * Public Mutation: Start objective lifecycle workflow
@@ -70,12 +71,12 @@ export const triggerAchievementCheck = mutation({
     // Get organizationId from session
     let organizationId: string | undefined = undefined;
     try {
-      const session = await getSession(ctx);
-      const auth = await getAuth(ctx);
-      const headers = await getHeaders(ctx, session);
+      const headers = await getHeaders(ctx);
+      const auth = getAuth(ctx); // Your getAuth function from auth.ts
+      const session = await auth.api.getSession({ headers });
 
       // const session = await auth.api.getActiveOrganization({ headers });
-      organizationId = session?.activeOrganizationId ?? undefined;
+      organizationId = session?.session.activeOrganizationId ?? undefined;
     } catch {
       organizationId = undefined;
     }
@@ -116,7 +117,7 @@ export const handleObjectiveLifecycleComplete = internalMutation({
     context: v.any(),
   },
   handler: async (ctx, args) => {
-    const { result, context } = args;
+    const { result } = args;
 
     // Log completion for observability
     if (result.kind === 'success') {
@@ -190,10 +191,10 @@ export const handleAchievementCheckComplete = internalMutation({
     context: v.any(),
   },
   handler: async (ctx, args) => {
-    const { result, context } = args;
+    const { result } = args;
 
     if (result.kind === 'success') {
-      const awarded = result.returnValue as { awarded: string[] };
+      result.returnValue as { awarded: string[] };
       // Could trigger notification summary here
     } else if (result.kind === 'failed') {
       console.error('Achievement check workflow error:', result.error);
@@ -220,12 +221,6 @@ export const cancelObjectiveWorkflow = mutation({
   },
 });
 
-/**
- * Query: Get workflow status (for UI)
- */
-import { query } from '../_generated/server';
-import { Id } from '../_generated/dataModel';
-import { getAuth } from '../functions/auth';
 
 export const getWorkflowStatus = query({
   args: {

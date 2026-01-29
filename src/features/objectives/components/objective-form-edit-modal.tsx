@@ -45,7 +45,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
-import type { Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
@@ -67,12 +67,12 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     });
 
     const categoryOptions = useMemo(() => {
-        const options = (categoriesQuery.data ?? []).map(category => ({
+        const options = (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
             value: category.name,
             label: category.name,
         }));
 
-        if (defaultValues.category && !options.some(option => option.value === defaultValues.category)) {
+        if (defaultValues.category && !options.some((option: { value: string }) => option.value === defaultValues.category)) {
             options.unshift({ value: defaultValues.category, label: defaultValues.category });
         }
 
@@ -247,12 +247,12 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                     {t('categories.emptyTitle')}
                                                 </SelectItem>
                                             ) : (
-                                                categoryOptions.map(category => (
+                                                categoryOptions.map((category: Doc<'categories'>) => (
                                                     <SelectItem
-                                                        key={category.value}
-                                                        value={category.value}
+                                                        key={category._id}
+                                                        value={category.name}
                                                     >
-                                                        {category.label}
+                                                        {category.name}
                                                     </SelectItem>
                                                 ))
                                             )}
