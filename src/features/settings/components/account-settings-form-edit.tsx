@@ -129,7 +129,11 @@ export default function AccountSettingsFormEdit() {
                         <FormItem>
                             <FormLabel>{t('email')}</FormLabel>
                             <FormControl>
-                                <Input placeholder={t('placeholders.enterEmail')} {...field} />
+                                <Input
+                                    type="email"
+                                    placeholder={t('placeholders.enterEmail')}
+                                    {...field}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
