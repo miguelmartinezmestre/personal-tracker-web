@@ -28,9 +28,11 @@ export const getObjectivesByUser = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { paginationOpts }) => {
+        const userId = String(ctx.identity?.subject);
         const results = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', String(ctx.identity?.subject)))
+            .withIndex('by_user', q => q.eq('userId', userId))
+            .filter(q => q.neq(q.field('status'), 'deleted'))
             .order('desc')
             .paginate(paginationOpts);
 
@@ -85,6 +87,7 @@ export const updateObjective = mutationWithRLS({
         targetValue: v.optional(v.number()),
         currentValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
+        status: v.optional(v.string()),
         unit: v.optional(v.string()),
         objectiveType: v.optional(v.string()),
         period: v.optional(v.string()),
@@ -118,7 +121,10 @@ export const getSharedObjectives = queryWithRLS({
 
         // Get all organization objectives where user is a collaborator
         // First, get the user's organization from betterAuth
-        const membersResult = await ctx.db.query('member').withIndex('userId', q => q.eq('userId', userId)).collect();
+        const membersResult = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .collect();
 
         if (!membersResult || membersResult.length === 0) {
             return { page: [], continueCursor: null };
@@ -146,9 +152,7 @@ export const getSharedObjectives = queryWithRLS({
 
         const page = allObjectives.slice(startIndex, startIndex + numItems);
         const lastItem = page.length > 0 ? page[page.length - 1] : undefined;
-        const continueCursor = page.length === numItems && lastItem
-            ? lastItem._id
-            : null;
+        const continueCursor = page.length === numItems && lastItem ? lastItem._id : null;
 
         return { page, continueCursor };
     },
@@ -175,7 +179,10 @@ export const addCollaborator = mutationWithRLS({
         }
 
         // Check if the collaborator is in the same organization
-        const collaboratorsResult = await ctx.db.query('member').withIndex('userId', q => q.eq('userId', collaboratorId)).collect();
+        const collaboratorsResult = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', collaboratorId))
+            .collect();
 
         if (collaboratorsResult.length === 0) {
             throw new Error('Collaborator not found');
@@ -247,7 +254,10 @@ export const getOrganizationMembers = queryWithRLS({
         const userId = String(ctx.identity?.subject);
 
         // Get the user's organization from betterAuth
-        const userMembersResult = await ctx.db.query('member').withIndex('userId', q => q.eq('userId', userId)).collect();
+        const userMembersResult = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .collect();
 
         const userMember = userMembersResult[0];
         if (!userMember) {
@@ -255,22 +265,30 @@ export const getOrganizationMembers = queryWithRLS({
         }
 
         // Get all members of the organization
-        const membersResult = await ctx.db.query('member').withIndex('organizationId', q => q.eq('organizationId', userMember.organizationId)).collect();
+        const membersResult = await ctx.db
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', userMember.organizationId))
+            .collect();
 
         const members = membersResult ?? [];
 
         // Get user details for each member using betterAuth adapter
         const membersWithDetails = await Promise.all(
-            members.map(async (member: { userId: string; role: string; organizationId: string }) => {
-                const usersResult = await ctx.db.query('user').withIndex('userId', q => q.eq('userId', member.userId)).collect();
-                const user = usersResult[0];
-                return {
-                    userId: member.userId,
-                    name: user?.name,
-                    email: user?.email,
-                    role: member.role,
-                };
-            })
+            members.map(
+                async (member: { userId: string; role: string; organizationId: string }) => {
+                    const usersResult = await ctx.db
+                        .query('user')
+                        .withIndex('userId', q => q.eq('userId', member.userId))
+                        .collect();
+                    const user = usersResult[0];
+                    return {
+                        userId: member.userId,
+                        name: user?.name,
+                        email: user?.email,
+                        role: member.role,
+                    };
+                }
+            )
         );
 
         return membersWithDetails;
