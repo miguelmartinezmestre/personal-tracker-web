@@ -72,7 +72,10 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             label: category.name,
         }));
 
-        if (defaultValues.category && !options.some((option: { value: string }) => option.value === defaultValues.category)) {
+        if (
+            defaultValues.category &&
+            !options.some((option: { value: string }) => option.value === defaultValues.category)
+        ) {
             options.unshift({ value: defaultValues.category, label: defaultValues.category });
         }
 
@@ -247,14 +250,16 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                     {t('categories.emptyTitle')}
                                                 </SelectItem>
                                             ) : (
-                                                categoryOptions.map((category: Doc<'categories'>) => (
-                                                    <SelectItem
-                                                        key={category._id}
-                                                        value={category.name}
-                                                    >
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))
+                                                categoryOptions.map(
+                                                    (category: Doc<'categories'>) => (
+                                                        <SelectItem
+                                                            key={category._id}
+                                                            value={category.name}
+                                                        >
+                                                            {category.name}
+                                                        </SelectItem>
+                                                    )
+                                                )
                                             )}
                                         </SelectContent>
                                     </Select>
