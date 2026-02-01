@@ -11,14 +11,14 @@ export const listUsers = queryWithRLS({
         paginationOpts: paginationOptsValidator,
         searchValue: v.optional(v.string()),
     },
-    handler: async (ctx) => {
+    handler: async (ctx, args) => {
 
         await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
 
-        // Get all users from BetterAuth user table
-        const users = await ctx.db.query('user').collect();
+        // Get all users from BetterAuth user table with pagination
+        const result = await ctx.db.query('user').paginate(args.paginationOpts);
 
-        return users;
+        return result;
     },
 });
 
