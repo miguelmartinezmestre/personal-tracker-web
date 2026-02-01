@@ -198,7 +198,32 @@ export function useUpdateOrganization() {
                 organizationId: values.id,
             });
         },
-        onSuccess: () => {
+        onMutate: async values => {
+            await queryClient.cancelQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
+            const previous = queryClient.getQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY);
+
+            if (previous) {
+                queryClient.setQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY, old =>
+                    old?.map(org =>
+                        org.id === values.id
+                            ? {
+                                  ...org,
+                                  name: values.name,
+                                  description: values.description ?? '',
+                              }
+                            : org
+                    )
+                );
+            }
+
+            return { previous };
+        },
+        onError: (_error, _values, context) => {
+            if (context?.previous) {
+                queryClient.setQueryData(ORGANIZATIONS_QUERY_KEY, context.previous);
+            }
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: ORGANIZATIONS_QUERY_KEY,
             });
@@ -218,7 +243,24 @@ export function useDeleteOrganization() {
                 organizationId: values.id,
             });
         },
-        onSuccess: () => {
+        onMutate: async values => {
+            await queryClient.cancelQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
+            const previous = queryClient.getQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY);
+
+            if (previous) {
+                queryClient.setQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY, old =>
+                    old?.filter(org => org.id !== values.id)
+                );
+            }
+
+            return { previous };
+        },
+        onError: (_error, _values, context) => {
+            if (context?.previous) {
+                queryClient.setQueryData(ORGANIZATIONS_QUERY_KEY, context.previous);
+            }
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: ORGANIZATIONS_QUERY_KEY,
             });

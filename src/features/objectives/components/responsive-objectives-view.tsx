@@ -46,7 +46,7 @@ const ResponsiveObjectivesView = React.forwardRef<
     const t = useTranslations('Objectives');
     const tCard = useTranslations('ObjectiveCard');
     const [editingObjective, setEditingObjective] = React.useState<Objective | null>(null);
-    const [filters, setFilters] = React.useState<FilterOptions>(DEFAULT_FILTERS);
+    const [filters, setFilters] = React.useState<FilterOptions>(() => ({ ...DEFAULT_FILTERS }));
     const [currentPage, setCurrentPage] = React.useState(0);
 
     // Fetch ALL objectives for client-side filtering
@@ -83,7 +83,9 @@ const ResponsiveObjectivesView = React.forwardRef<
         const values = fetchedObjectives?.page
             .map((objective: { category: string }) => objective.category)
             .filter((category: string): category is string => Boolean(category));
-        return Array.from(new Set(values)).sort((a: unknown, b: unknown) => (a as string).localeCompare(b as string));
+        return Array.from(new Set(values)).sort((a: unknown, b: unknown) =>
+            (a as string).localeCompare(b as string)
+        );
     }, [fetchedObjectives]);
 
     const filteredObjectives = React.useMemo(() => {
@@ -116,6 +118,9 @@ const ResponsiveObjectivesView = React.forwardRef<
         };
 
         const filtered = fetchedObjectives?.page.filter((objective: Doc<'objectives'>) => {
+            if (objective.status === 'deleted') {
+                return false;
+            }
             if (normalizedSearch) {
                 const haystack = [
                     objective.title ?? '',

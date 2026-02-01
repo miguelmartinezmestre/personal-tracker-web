@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/features/table/components/table';
@@ -11,15 +11,33 @@ import { useConfirmRevokeAllSessions } from './user-sessions-table-actions';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
+import { authClient } from '@/features/auth/auth-client';
 
 export function UserSessions() {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
     const columns = useUserSessionsTableColumns();
+    const sessionQuery = authClient.useSession();
+    const sessionUserId = sessionQuery.data?.user?.id ?? '';
     const [userId, setUserId] = useState('');
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
 
-    const { data: sessions, isLoading } = useQuery(convexQuery(api.admin.listUserSessions, { userId, paginationOpts: { numItems: 10, cursor: null } }));
+    useEffect(() => {
+        if (!userId && sessionUserId) {
+            setUserId(sessionUserId);
+        }
+    }, [sessionUserId, userId]);
+
+    const sessionsQuery = convexQuery(api.admin.listUserSessions, {
+        userId,
+        paginationOpts: { numItems: 10, cursor: null },
+    });
+    const { data: sessions, isLoading } = useQuery({
+        ...sessionsQuery,
+        enabled: Boolean(userId),
+    });
+
+    const sessionRows = Array.isArray(sessions) ? sessions : (sessions?.page ?? []);
 
     return (
         <div className="space-y-4">
@@ -46,8 +64,8 @@ export function UserSessions() {
             </div>
             {userId ? (
                 <>
-                    <DataTable columns={columns} data={sessions?.page ?? []} isLoading={isLoading} />
-                    {sessions?.page?.length === 0 && !isLoading && (
+                    <DataTable columns={columns} data={sessionRows} isLoading={isLoading} />
+                    {sessionRows.length === 0 && !isLoading && (
                         <p className="text-center text-muted-foreground py-8">
                             {t('userSessions.emptyWithUser')}
                         </p>

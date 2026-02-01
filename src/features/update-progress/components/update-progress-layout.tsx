@@ -20,6 +20,12 @@ export default function UpdateProgressLayout({
     const tUpdateProgress = useTranslations('UpdateProgress');
     const progress = usePreloadedAuthQuery(preloadedProgressQuery);
     const objective = usePreloadedAuthQuery(preloadedObjectiveQuery);
+    const objectiveTitle = objective?.title ?? '';
+    const objectiveDescription = objective?.description?.trim() ?? '';
+    const unitLabel = objective?.unit ?? '';
+    const targetValue = objective?.targetValue;
+    const currentValue = objective?.currentValue;
+    const formatValue = (value: number) => (unitLabel ? `${value} ${unitLabel}` : String(value));
 
     return (
         <div className="space-y-6">
@@ -29,6 +35,44 @@ export default function UpdateProgressLayout({
                         {tObjectives('objectiveProgress')}
                     </h1>
                     <p className="text-muted-foreground">{tUpdateProgress('pageDescription')}</p>
+                    {objectiveTitle && (
+                        <p className="text-lg font-semibold text-foreground">{objectiveTitle}</p>
+                    )}
+                    {(objectiveDescription ||
+                        typeof targetValue === 'number' ||
+                        typeof currentValue === 'number') && (
+                        <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                            {objectiveDescription ? (
+                                <p>
+                                    <span className="font-medium text-foreground">
+                                        {tObjectives('tableDescription')}:
+                                    </span>{' '}
+                                    {objectiveDescription}
+                                </p>
+                            ) : null}
+                            {(typeof targetValue === 'number' ||
+                                typeof currentValue === 'number') && (
+                                <div className="flex flex-wrap gap-4">
+                                    {typeof targetValue === 'number' ? (
+                                        <span>
+                                            <span className="font-medium text-foreground">
+                                                {tObjectives('targetValue')}:
+                                            </span>{' '}
+                                            {formatValue(targetValue)}
+                                        </span>
+                                    ) : null}
+                                    {typeof currentValue === 'number' ? (
+                                        <span>
+                                            <span className="font-medium text-foreground">
+                                                {tObjectives('currentValue')}:
+                                            </span>{' '}
+                                            {formatValue(currentValue)}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <CreateUpdateProgressFormModal />
             </div>
