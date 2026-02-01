@@ -19,6 +19,8 @@ const eslintConfig = [
     "node_modules/**",
     "convex/_generated/**",
     "dist/**",
+    "tests/**",
+    "src/tests-manual/**",
   ]),
   {
     ...pluginReact.configs.flat.recommended,
