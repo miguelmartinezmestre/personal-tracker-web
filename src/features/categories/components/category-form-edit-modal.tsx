@@ -185,8 +185,10 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
                                 <FormItem>
                                     <FormLabel>{t('fields.icon')}</FormLabel>
                                     <Select
-                                        value={field.value ?? ''}
-                                        onValueChange={value => field.onChange(value || undefined)}
+                                        value={field.value ?? 'none'}
+                                        onValueChange={value =>
+                                            field.onChange(value === 'none' ? undefined : value)
+                                        }
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="category-edit-icon-select">
@@ -197,7 +199,7 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
                                         </FormControl>
                                         <SelectContent>
                                             <SelectItem
-                                                value=""
+                                                value="none"
                                                 data-testid="category-edit-icon-none"
                                             >
                                                 {tCommon('icons.tag')}
