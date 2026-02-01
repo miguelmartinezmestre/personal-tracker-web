@@ -57,7 +57,7 @@ export default function EditOrganizationFormModal({
 
     const onSubmit = async (values: Organization) => {
         const updateData = {
-            id: values.id,
+            id: values.id || defaultValues.id,
             name: values.name,
             description: values.description ?? undefined,
         };
