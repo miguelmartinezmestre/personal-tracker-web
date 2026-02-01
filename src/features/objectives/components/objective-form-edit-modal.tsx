@@ -536,7 +536,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                         Number.parseFloat(e.target.value)
                                                     )
                                                 }
-                                                disabled={true}
+                                                data-testid="objective-edit-current-input"
                                             />
                                         </FormControl>
                                         <FormDescription>
@@ -601,7 +601,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         value={field.value || 'active'}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger data-testid="objective-edit-status-select">
                                                 <SelectValue placeholder={t('selectStatus')} />
                                             </SelectTrigger>
                                         </FormControl>
