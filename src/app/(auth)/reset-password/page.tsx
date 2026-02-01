@@ -11,10 +11,10 @@ export default async function ResetPasswordPage({
 }) {
     const params = await searchParams;
 
-    const resetPasswordKey = params.key ?? params.token;
+    const resetPasswordKey = params.token ?? params.key;
 
     if (!resetPasswordKey) {
-        redirect('/');
+        redirect('/forget-password');
     }
 
     const t = await getTranslations('HomePage');
