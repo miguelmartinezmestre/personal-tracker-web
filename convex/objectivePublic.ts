@@ -261,6 +261,8 @@ export const deleteObjective = mutationWithRLS({
             throw new Error(`Cannot delete objective from status: ${objective.status}`);
         }
 
+        const now = Date.now();
+
         // If we have a workflow, send the delete event
         if (objective.workflowId) {
             await workflow.sendEvent(ctx, {
@@ -268,13 +270,12 @@ export const deleteObjective = mutationWithRLS({
                 workflowId: objective.workflowId as WorkflowId,
                 value: {},
             });
-        } else {
-            // No workflow, update directly
-            await ctx.db.patch(args.id, {
-                status: 'deleted',
-                updatedAt: Date.now(),
-            });
         }
+
+        await ctx.db.patch(args.id, {
+            status: 'deleted',
+            updatedAt: now,
+        });
 
         return { success: true };
     },
@@ -297,10 +298,7 @@ export const hardDeleteObjective = mutationWithRLS({
         // Cancel workflow if running
         if (objective.workflowId) {
             try {
-                await workflow.cancel(
-                    ctx,
-                    objective.workflowId as WorkflowId
-                );
+                await workflow.cancel(ctx, objective.workflowId as WorkflowId);
             } catch (e) {
                 // Ignore errors if workflow already completed/canceled
             }
