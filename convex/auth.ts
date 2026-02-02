@@ -8,6 +8,7 @@ import authConfig from "./auth.config";
 import schema from "./schema";
 import { admin, organization } from "better-auth/plugins";
 import { ConvexError } from "convex/values";
+import { sendTestEmail } from "./email";
 
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
@@ -53,7 +54,27 @@ export const authClient = createClient<DataModel, typeof schema>({
 const createAuthOptions = (ctx: GenericCtx) =>
   ({
     baseURL: process.env.SITE_URL!,
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      sendResetPassword: async ({ user, url, token }, request) => {
+        console.log(`Sending reset password email to ${user.email} with url ${url} and token ${token}`);
+        // void sendEmail({
+        //   to: user.email,
+        //   subject: "Reset your password",
+        //   text: `Click the link to reset your password: ${url}`,
+        // });
+        await (ctx as MutationCtx).runMutation(internal.email.sendTestEmail, {
+          to: user.email,
+          subject: "Reset your password",
+          text: `Click the link to reset your password: ${url}`,
+        });
+      },
+      onPasswordReset: async ({ user }, request) => {
+        // your logic here
+        console.log(`Password for user ${user.email} has been reset.`);
+      },
+      revokeSessionsOnPasswordReset: true,
+    },
     socialProviders: {
       github: {
         clientId: process.env.GITHUB_CLIENT_ID!,
