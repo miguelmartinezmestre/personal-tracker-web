@@ -68,6 +68,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
     const categoryOptions = useMemo(() => {
         const options = (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
+            id: category._id,
             value: category.name,
             label: category.name,
         }));
@@ -76,7 +77,11 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             defaultValues.category &&
             !options.some((option: { value: string }) => option.value === defaultValues.category)
         ) {
-            options.unshift({ value: defaultValues.category, label: defaultValues.category });
+            options.unshift({
+                id: `missing-${defaultValues.category}`,
+                value: defaultValues.category,
+                label: defaultValues.category,
+            });
         }
 
         return options;
@@ -250,16 +255,14 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                     {t('categories.emptyTitle')}
                                                 </SelectItem>
                                             ) : (
-                                                categoryOptions.map(
-                                                    (category: Doc<'categories'>) => (
-                                                        <SelectItem
-                                                            key={category._id}
-                                                            value={category.name}
-                                                        >
-                                                            {category.name}
-                                                        </SelectItem>
-                                                    )
-                                                )
+                                                categoryOptions.map(category => (
+                                                    <SelectItem
+                                                        key={category.id ?? category.value}
+                                                        value={category.value}
+                                                    >
+                                                        {category.label}
+                                                    </SelectItem>
+                                                ))
                                             )}
                                         </SelectContent>
                                     </Select>
