@@ -116,6 +116,7 @@ export default function CreateObjectiveFormModal() {
     const categoryOptions = useMemo(
         () =>
             (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
+                id: category._id,
                 value: category.name,
                 label: category.name,
             })),
@@ -252,12 +253,12 @@ export default function CreateObjectiveFormModal() {
                                                     {t('categories.emptyTitle')}
                                                 </SelectItem>
                                             ) : (
-                                                categoryOptions.map((category: Doc<'categories'>) => (
+                                                categoryOptions.map(category => (
                                                     <SelectItem
-                                                        key={category._id}
-                                                        value={category.name}
+                                                        key={category.id ?? category.value}
+                                                        value={category.value}
                                                     >
-                                                        {category.name}
+                                                        {category.label}
                                                     </SelectItem>
                                                 ))
                                             )}
