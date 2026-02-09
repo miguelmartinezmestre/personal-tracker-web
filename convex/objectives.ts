@@ -8,6 +8,8 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
+import { computeCurrentValue, computeLastProgressAt } from './utils/objectiveProgress';
+import { computeNextReminderAt } from './utils/reminderSchedule';
 
 export {
     createObjective,
@@ -86,14 +88,19 @@ export const updateObjective = mutationWithRLS({
         category: v.optional(v.string()),
         targetValue: v.optional(v.number()),
         currentValue: v.optional(v.number()),
+        startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         status: v.optional(v.string()),
         unit: v.optional(v.string()),
         objectiveType: v.optional(v.string()),
+        direction: v.optional(v.string()),
         period: v.optional(v.string()),
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
         collaborators: v.optional(v.array(v.string())),
+        reminderInterval: v.optional(v.string()),
+        nextReminderAt: v.optional(v.number()),
+        progressMode: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
@@ -103,7 +110,41 @@ export const updateObjective = mutationWithRLS({
         }
 
         const now = Date.now();
-        const updated = await ctx.db.patch('objectives', id, { ...rest, updatedAt: now });
+        const updateData: Record<string, unknown> = { ...rest };
+
+        if (args.reminderInterval !== undefined) {
+            updateData.nextReminderAt = computeNextReminderAt(args.reminderInterval, now);
+        }
+
+        if (args.status !== undefined && args.status !== existing.status) {
+            throw new Error('Status updates must use dedicated objective status mutations');
+        }
+        delete updateData.status;
+
+        const shouldRecalculate =
+            args.progressMode !== undefined ||
+            args.startValue !== undefined;
+
+        if (args.period !== undefined || args.periodStart !== undefined || args.periodLengthDays !== undefined) {
+            updateData.period = 'none';
+            updateData.periodStart = undefined;
+            updateData.periodLengthDays = undefined;
+        }
+
+        if (shouldRecalculate) {
+            const updates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective_date', q => q.eq('objective', id))
+                .collect();
+            const objectiveForCalc = {
+                ...existing,
+                ...updateData,
+            } as typeof existing;
+            updateData.currentValue = computeCurrentValue(objectiveForCalc, updates);
+            updateData.lastProgressAt = computeLastProgressAt(updates);
+        }
+
+        const updated = await ctx.db.patch('objectives', id, { ...updateData, updatedAt: now });
 
         return updated;
     },
