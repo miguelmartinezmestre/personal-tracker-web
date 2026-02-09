@@ -22,7 +22,6 @@ export const startObjectiveLifecycle = mutation({
   args: {
     objectiveId: v.id('objectives'),
     enableReminders: v.optional(v.boolean()),
-    reminderIntervalDays: v.optional(v.number()),
     stallThresholdDays: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<{ workflowId: string }> => {
@@ -39,7 +38,6 @@ export const startObjectiveLifecycle = mutation({
         objectiveId: args.objectiveId,
         userId,
         enableReminders: args.enableReminders,
-        reminderIntervalDays: args.reminderIntervalDays,
         stallThresholdDays: args.stallThresholdDays,
       },
       {
@@ -117,7 +115,17 @@ export const handleObjectiveLifecycleComplete = internalMutation({
     context: v.any(),
   },
   handler: async (ctx, args) => {
-    const { result } = args;
+    const { result, context } = args;
+    const objectiveId = context?.objectiveId;
+
+    if (objectiveId) {
+      const objective = await ctx.db.get(objectiveId);
+      if (objective) {
+        await ctx.db.patch(objectiveId, {
+          workflowId: undefined,
+        });
+      }
+    }
 
     // Log completion for observability
     if (result.kind === 'success') {
