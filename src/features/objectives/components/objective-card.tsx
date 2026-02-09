@@ -12,6 +12,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/ui-utils/utils';
+import { computeObjectiveProgressPercent } from './objectives-utils';
 
 interface ObjectiveCardProps {
     objective: Objective;
@@ -24,7 +25,12 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
         const t = useTranslations('ObjectiveCard');
         const targetValue = objective.targetValue ?? 0;
         const currentValue = objective.currentValue ?? 0;
-        const progress = targetValue > 0 ? (currentValue / targetValue) * 100 : 0;
+        const progress = computeObjectiveProgressPercent({
+            currentValue,
+            targetValue,
+            startValue: objective.startValue ?? null,
+            direction: objective.direction ?? 'increase',
+        });
         const isOverdue = objective.deadline && objective.deadline < Date.now();
 
         const getPeriodLabel = (period?: string | null) => {
@@ -97,11 +103,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                         )}
                     >
                         <div className="relative">
-                            <CircularProgress
-                                value={objective.currentValue ?? 0}
-                                max={objective.targetValue ?? 0}
-                                size="md"
-                            />
+                            <CircularProgress value={progress} max={100} size="md" />
                             <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -115,12 +117,14 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                     {Math.round(progress)}
                                     {t('percentComplete')}
                                 </span>
-                                <StatusIndicator
-                                    status={objective.status ?? 'active'}
-                                    deadline={objective.deadline ?? undefined}
-                                    currentValue={objective.currentValue ?? 0}
-                                    targetValue={objective.targetValue ?? 0}
-                                />
+                            <StatusIndicator
+                                status={objective.status ?? 'active'}
+                                deadline={objective.deadline ?? undefined}
+                                currentValue={objective.currentValue ?? 0}
+                                targetValue={objective.targetValue ?? 0}
+                                startValue={objective.startValue ?? undefined}
+                                direction={objective.direction ?? undefined}
+                            />
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {objective.currentValue ?? 0} / {objective.targetValue ?? 0}{' '}
