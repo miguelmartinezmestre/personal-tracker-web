@@ -7,6 +7,7 @@ import CommandMenu from '@/features/dashboard/components/command';
 import { LanguageSwitcher } from '@/features/landing/components/language-switcher';
 import { OrganizationSwitcher } from '@/features/organizations/components/organization-switcher';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
+import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
@@ -34,6 +35,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
                         <NotificationBell />
                         <ThemeToggle />
                         <LanguageSwitcher />
+                        <SignOutButton />
                     </div>
                 </header>
                 <CommandMenu />
