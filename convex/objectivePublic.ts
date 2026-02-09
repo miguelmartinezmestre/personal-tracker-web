@@ -10,15 +10,8 @@ import { mutationWithRLS } from './rls';
 import { internal } from './_generated/api';
 import { workflow } from './workflow';
 import { type WorkflowId } from '@convex-dev/workflow';
-import {
-    pauseEvent,
-    resumeEvent,
-    completeEvent,
-    archiveEvent,
-    deleteEvent,
-    reconfigureEvent,
-    isValidTransition,
-} from './objectiveEvents';
+import { isValidTransition } from './objectiveEvents';
+import { computeNextReminderAt } from './utils/reminderSchedule';
 
 /**
  * Create a new objective
@@ -31,18 +24,24 @@ export const createObjective = mutationWithRLS({
         category: v.optional(v.string()),
         targetValue: v.number(),
         currentValue: v.number(),
+        startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         unit: v.optional(v.string()),
         objectiveType: v.optional(v.string()),
+        direction: v.optional(v.string()),
         period: v.optional(v.string()),
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
+        reminderInterval: v.optional(v.string()),
+        progressMode: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const now = Date.now();
         const userId = String(ctx.identity?.subject);
         const objectiveType = args.objectiveType ?? 'value';
-        const period = args.period ?? 'none';
+        const direction = args.direction ?? 'increase';
+        const reminderInterval = args.reminderInterval ?? 'none';
+        const progressMode = args.progressMode ?? 'cumulative';
 
         // Create objective in 'active' state (auto-activate)
         const objectiveId = await ctx.db.insert('objectives', {
@@ -53,17 +52,31 @@ export const createObjective = mutationWithRLS({
             category: args.category,
             targetValue: args.targetValue,
             currentValue: args.currentValue,
+            startValue: args.startValue ?? args.currentValue,
             deadline: args.deadline,
             status: 'active', // Auto-activate
             unit: args.unit,
             objectiveType,
-            period,
-            periodStart: args.periodStart,
-            periodLengthDays: args.periodLengthDays,
+            direction,
+            period: 'none',
+            periodStart: undefined,
+            periodLengthDays: undefined,
+            reminderInterval,
+            nextReminderAt: computeNextReminderAt(reminderInterval, now),
+            progressMode,
+            lastProgressAt: now,
             createdAt: now,
             updatedAt: now,
             // Workflow fields will be set by the workflow
         });
+
+        // Check for achievements after objective creation
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId,
+                trigger: 'objective_created',
+            });
+        }
 
         // Start the workflow (non-blocking in tests)
         if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
@@ -74,7 +87,6 @@ export const createObjective = mutationWithRLS({
                     objectiveId,
                     userId,
                     enableReminders: true,
-                    reminderIntervalDays: 7,
                     stallThresholdDays: 14,
                 },
                 {
@@ -110,19 +122,21 @@ export const pauseObjective = mutationWithRLS({
             throw new Error(`Cannot pause objective from status: ${objective.status}`);
         }
 
-        // If we have a workflow, send the pause event
+        // Update status directly
+        await ctx.db.patch(args.id, {
+            status: 'paused',
+            nextReminderAt: undefined,
+            updatedAt: Date.now(),
+        });
+
+        // Cancel workflow if running
         if (objective.workflowId) {
-            await workflow.sendEvent(ctx, {
-                ...pauseEvent,
-                workflowId: objective.workflowId as WorkflowId,
-                value: { reason: args.reason },
-            });
-        } else {
-            // No workflow, update directly
-            await ctx.db.patch(args.id, {
-                status: 'paused',
-                updatedAt: Date.now(),
-            });
+            try {
+                await workflow.cancel(ctx, objective.workflowId as WorkflowId);
+            } catch (e) {
+                // Ignore errors if workflow already completed/canceled
+            }
+            await ctx.db.patch(args.id, { workflowId: undefined });
         }
 
         return { success: true };
@@ -147,19 +161,36 @@ export const resumeObjective = mutationWithRLS({
             throw new Error(`Cannot resume objective from status: ${objective.status}`);
         }
 
-        // If we have a workflow, send the resume event
-        if (objective.workflowId) {
-            await workflow.sendEvent(ctx, {
-                ...resumeEvent,
-                workflowId: objective.workflowId as WorkflowId,
-                value: {},
-            });
-        } else {
-            // No workflow, update directly
-            await ctx.db.patch(args.id, {
-                status: 'active',
-                updatedAt: Date.now(),
-            });
+        // Update status directly
+        const now = Date.now();
+        await ctx.db.patch(args.id, {
+            status: 'active',
+            updatedAt: now,
+        });
+
+        await ctx.db.patch(args.id, {
+            nextReminderAt: computeNextReminderAt(objective.reminderInterval ?? 'none', now),
+            updatedAt: now,
+        });
+
+        // Start workflow again if not in tests
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            const workflowId = await workflow.start(
+                ctx,
+                internal.workflows.objectiveLifecycle.objectiveLifecycle,
+                {
+                    objectiveId: args.id,
+                    userId: objective.userId,
+                    enableReminders: true,
+                    stallThresholdDays: 14,
+                },
+                {
+                    onComplete: internal.workflows.kickoff.handleObjectiveLifecycleComplete,
+                    context: { objectiveId: args.id, userId: objective.userId },
+                }
+            );
+
+            await ctx.db.patch(args.id, { workflowId: String(workflowId) });
         }
 
         return { success: true };
@@ -186,19 +217,40 @@ export const completeObjective = mutationWithRLS({
 
         const now = Date.now();
 
-        // If we have a workflow, send the complete event
+        // Update status directly
+        await ctx.db.patch(args.id, {
+            status: 'completed',
+            nextReminderAt: undefined,
+            updatedAt: now,
+        });
+
+        await ctx.db.insert('notifications', {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Your objective "${objective.title}" has been completed!`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId: objective.userId,
+                trigger: 'objective_completed',
+            });
+        }
+
+        // Cancel workflow if running
         if (objective.workflowId) {
-            await workflow.sendEvent(ctx, {
-                ...completeEvent,
-                workflowId: objective.workflowId as WorkflowId,
-                value: { completedAt: now, autoCompleted: false },
-            });
-        } else {
-            // No workflow, update directly
-            await ctx.db.patch(args.id, {
-                status: 'completed',
-                updatedAt: now,
-            });
+            try {
+                await workflow.cancel(ctx, objective.workflowId as WorkflowId);
+            } catch (e) {
+                // Ignore errors if workflow already completed/canceled
+            }
+            await ctx.db.patch(args.id, { workflowId: undefined });
         }
 
         return { success: true };
@@ -224,19 +276,21 @@ export const archiveObjective = mutationWithRLS({
             throw new Error(`Cannot archive objective from status: ${objective.status}`);
         }
 
-        // If we have a workflow, send the archive event
+        // Update status directly
+        await ctx.db.patch(args.id, {
+            status: 'archived',
+            nextReminderAt: undefined,
+            updatedAt: Date.now(),
+        });
+
+        // Cancel workflow if running
         if (objective.workflowId) {
-            await workflow.sendEvent(ctx, {
-                ...archiveEvent,
-                workflowId: objective.workflowId as WorkflowId,
-                value: { reason: args.reason },
-            });
-        } else {
-            // No workflow, update directly
-            await ctx.db.patch(args.id, {
-                status: 'archived',
-                updatedAt: Date.now(),
-            });
+            try {
+                await workflow.cancel(ctx, objective.workflowId as WorkflowId);
+            } catch (e) {
+                // Ignore errors if workflow already completed/canceled
+            }
+            await ctx.db.patch(args.id, { workflowId: undefined });
         }
 
         return { success: true };
@@ -263,19 +317,22 @@ export const deleteObjective = mutationWithRLS({
 
         const now = Date.now();
 
-        // If we have a workflow, send the delete event
-        if (objective.workflowId) {
-            await workflow.sendEvent(ctx, {
-                ...deleteEvent,
-                workflowId: objective.workflowId as WorkflowId,
-                value: {},
-            });
-        }
-
+        // Update status directly
         await ctx.db.patch(args.id, {
             status: 'deleted',
+            nextReminderAt: undefined,
             updatedAt: now,
         });
+
+        // Cancel workflow if running
+        if (objective.workflowId) {
+            try {
+                await workflow.cancel(ctx, objective.workflowId as WorkflowId);
+            } catch (e) {
+                // Ignore errors if workflow already completed/canceled
+            }
+            await ctx.db.patch(args.id, { workflowId: undefined });
+        }
 
         return { success: true };
     },
@@ -369,20 +426,6 @@ export const reconfigureObjective = mutationWithRLS({
         }
 
         await ctx.db.patch(args.id, updateData);
-
-        // If we have a workflow and objective is active, send reconfigure event
-        // This will cause the workflow to reschedule the tick
-        if (objective.workflowId && objective.status === 'active') {
-            await workflow.sendEvent(ctx, {
-                ...reconfigureEvent,
-                workflowId: objective.workflowId as WorkflowId,
-                value: {
-                    newDeadline: args.newDeadline,
-                    newPeriod: args.newPeriod,
-                    newTargetValue: args.newTargetValue,
-                },
-            });
-        }
 
         return { success: true };
     },
