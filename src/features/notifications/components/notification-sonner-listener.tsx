@@ -15,12 +15,15 @@ export function NotificationSonnerListener() {
 
     const initializedRef = useRef(false);
     const lastIdRef = useRef<string | null>(null);
+    const latest = data?.page?.[0];
+    const latestId = latest ? String(latest._id) : null;
+    const hasLatest = latestId !== null;
+    const latestIsRead = latest?.read ?? true;
+    const latestMessage = latest?.message ?? '';
 
     useEffect(() => {
-        const latest = data?.page?.[0];
-        if (!latest) return;
+        if (!hasLatest || !latestId) return;
 
-        const latestId = String(latest._id);
         if (!initializedRef.current) {
             initializedRef.current = true;
             lastIdRef.current = latestId;
@@ -29,11 +32,11 @@ export function NotificationSonnerListener() {
 
         if (latestId !== lastIdRef.current) {
             lastIdRef.current = latestId;
-            if (!latest.read) {
-                toast(latest.message);
+            if (!latestIsRead) {
+                toast(latestMessage);
             }
         }
-    }, [data]);
+    }, [hasLatest, latestId, latestIsRead, latestMessage]);
 
     return null;
 }
