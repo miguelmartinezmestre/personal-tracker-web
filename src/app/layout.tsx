@@ -8,6 +8,7 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { getToken } from '@/features/auth/auth-server';
+import { NotificationSonnerListener } from '@/features/notifications/components/notification-sonner-listener';
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('App');
@@ -37,7 +38,10 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     <main>
                         <Suspense fallback={null}>
                             <NextIntlClientProvider locale={locale} messages={messages}>
-                                <BetterConvexProvider token={token ?? ''}>{children}</BetterConvexProvider>
+                                <BetterConvexProvider token={token ?? ''}>
+                                    <NotificationSonnerListener />
+                                    {children}
+                                </BetterConvexProvider>
                             </NextIntlClientProvider>
                         </Suspense>
                     </main>

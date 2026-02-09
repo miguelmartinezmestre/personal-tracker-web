@@ -7,6 +7,10 @@
 
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { computeNextReminderAt } from '../utils/reminderSchedule';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEADLINE_SOON_DAYS = 3;
 
 
 /**
@@ -27,12 +31,30 @@ export const checkAutoComplete = internalMutation({
       return { status: 'already_completed', shouldComplete: false };
     }
 
-    const shouldComplete = objective.currentValue >= objective.targetValue;
+    const direction = objective.direction ?? 'increase';
+    const shouldComplete =
+      direction === 'decrease'
+        ? objective.currentValue <= objective.targetValue
+        : objective.currentValue >= objective.targetValue;
 
     if (shouldComplete) {
+      const now = Date.now();
       await ctx.db.patch('objectives', args.objectiveId, {
         status: 'completed',
-        updatedAt: Date.now(),
+        nextReminderAt: undefined,
+        updatedAt: now,
+      });
+
+      await ctx.db.insert('notifications', {
+        userId: objective.userId,
+        organizationId: objective.organizationId ?? '',
+        objective: args.objectiveId,
+        read: false,
+        notificationType: 'status',
+        notificationDate: now,
+        message: `Your objective "${objective.title}" has been completed!`,
+        createdAt: now,
+        updatedAt: now,
       });
     }
 
@@ -61,12 +83,16 @@ export const sendReminder = internalMutation({
       return { sent: false, reason: 'not_found_or_completed' };
     }
 
+    if (objective.status !== 'active') {
+      return { sent: false, reason: 'not_active' };
+    }
+
     // Check dedupe - if we already sent this reminder recently, skip
     if (args.dedupeKey) {
       const existingNotification = await ctx.db
         .query('notifications')
         .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-        .filter(q => q.eq(q.field('notificationType'), 'objective_reminder'))
+        .filter(q => q.eq(q.field('notificationType'), 'reminder'))
         .first();
 
       if (existingNotification) {
@@ -104,7 +130,7 @@ export const sendReminder = internalMutation({
       organizationId: objective.organizationId ?? '',
       objective: args.objectiveId,
       read: false,
-      notificationType: 'objective_reminder',
+      notificationType: 'reminder',
       notificationDate: now,
       message,
       createdAt: now,
@@ -131,19 +157,30 @@ export const markStalled = internalMutation({
     }
 
     const now = Date.now();
-    const daysSinceUpdate = Math.floor((now - objective.updatedAt) / (24 * 60 * 60 * 1000));
+    if (objective.status !== 'active') {
+      return { marked: false, reason: 'not_active' };
+    }
+    const lastProgressAt = objective.lastProgressAt ?? objective.createdAt;
+    const daysSinceUpdate = Math.floor((now - lastProgressAt) / DAY_MS);
 
     if (daysSinceUpdate >= args.stalledDays) {
+      if (objective.lastStalledNotifiedAt && now - objective.lastStalledNotifiedAt < DAY_MS) {
+        return { marked: false, reason: 'recently_notified' };
+      }
       // We could add a 'stalled' flag to the schema, but for now we just create a notification
       await ctx.db.insert('notifications', {
         userId: objective.userId,
         organizationId: objective.organizationId ?? '',
         objective: args.objectiveId,
         read: false,
-        notificationType: 'objective_stalled',
+        notificationType: 'reminder',
         notificationDate: now,
         message: `Your objective "${objective.title}" has been inactive for ${daysSinceUpdate} days. Consider updating or closing it.`,
         createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.patch('objectives', args.objectiveId, {
+        lastStalledNotifiedAt: now,
         updatedAt: now,
       });
       return { marked: true, daysSinceUpdate };
@@ -166,36 +203,124 @@ export const checkOverdue = internalMutation({
       return { isOverdue: false };
     }
 
+    if (objective.status !== 'active') {
+      return { isOverdue: false, reason: 'not_active' };
+    }
+
     if (!objective.deadline) {
       return { isOverdue: false, reason: 'no_deadline' };
     }
 
     const now = Date.now();
+    const startOfDayUtc = (timestamp: number) => {
+      const date = new Date(timestamp);
+      date.setUTCHours(0, 0, 0, 0);
+      return date.getTime();
+    };
+
     const isOverdue = now > objective.deadline;
+    const daysUntil = Math.ceil((objective.deadline - now) / DAY_MS);
+    const shouldNotify = isOverdue || daysUntil <= DEADLINE_SOON_DAYS;
 
-    if (isOverdue) {
-      const existingNotification = await ctx.db
-        .query('notifications')
-        .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-        .filter(q => q.eq(q.field('notificationType'), 'objective_overdue'))
-        .first();
-
-      if (!existingNotification) {
-        await ctx.db.insert('notifications', {
-          userId: objective.userId,
-          organizationId: objective.organizationId ?? '',
-          objective: args.objectiveId,
-          read: false,
-          notificationType: 'objective_overdue',
-          notificationDate: now,
-          message: `Your objective "${objective.title}" has passed its deadline.`,
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
+    if (!shouldNotify) {
+      return { isOverdue, deadline: objective.deadline, shouldNotify: false };
     }
 
-    return { isOverdue, deadline: objective.deadline };
+    const lastNotifiedAt = objective.lastDeadlineNotifiedAt ?? 0;
+    if (startOfDayUtc(lastNotifiedAt) === startOfDayUtc(now)) {
+      return { isOverdue, deadline: objective.deadline, shouldNotify: false, reason: 'recently_notified' };
+    }
+
+    let message = '';
+    if (isOverdue) {
+      const daysOverdue = Math.max(1, Math.ceil((now - objective.deadline) / DAY_MS));
+      message = `Your objective "${objective.title}" is overdue by ${daysOverdue} day${daysOverdue === 1 ? '' : 's'}.`;
+    } else if (daysUntil <= 0) {
+      message = `Your objective "${objective.title}" is due today.`;
+    } else {
+      message = `Your objective "${objective.title}" is due in ${daysUntil} day${daysUntil === 1 ? '' : 's'}.`;
+    }
+
+    await ctx.db.insert('notifications', {
+      userId: objective.userId,
+      organizationId: objective.organizationId ?? '',
+      objective: args.objectiveId,
+      read: false,
+      notificationType: 'deadline',
+      notificationDate: now,
+      message,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch('objectives', args.objectiveId, {
+      lastDeadlineNotifiedAt: now,
+      updatedAt: now,
+    });
+
+    return { isOverdue, deadline: objective.deadline, shouldNotify: true };
+  },
+});
+
+/**
+ * Step: Send periodic reminder based on reminderInterval
+ * - monthly: every month
+ * - biweekly: twice per month (1st/15th)
+ */
+export const sendPeriodicReminder = internalMutation({
+  args: {
+    objectiveId: v.id('objectives'),
+  },
+  handler: async (ctx, args) => {
+    const objective = await ctx.db.get('objectives', args.objectiveId);
+    if (!objective || objective.status === 'completed') {
+      return { sent: false, reason: 'not_found_or_completed' };
+    }
+
+    if (objective.status !== 'active') {
+      return { sent: false, reason: 'not_active' };
+    }
+
+    const interval = objective.reminderInterval ?? 'none';
+    if (interval === 'none') {
+      return { sent: false, reason: 'no_interval' };
+    }
+
+    const now = Date.now();
+    const nextReminderAt = objective.nextReminderAt;
+    if (!nextReminderAt) {
+      const initialNext = computeNextReminderAt(interval, now);
+      await ctx.db.patch('objectives', args.objectiveId, {
+        nextReminderAt: initialNext,
+        updatedAt: now,
+      });
+      return { sent: false, reason: 'scheduled_initial', nextReminderAt: initialNext };
+    }
+
+    if (now < nextReminderAt) {
+      return { sent: false, reason: 'not_due' };
+    }
+
+    const computedNext = computeNextReminderAt(interval, now);
+
+    await ctx.db.insert('notifications', {
+      userId: objective.userId,
+      organizationId: objective.organizationId ?? '',
+      objective: args.objectiveId,
+      read: false,
+      notificationType: 'reminder',
+      notificationDate: now,
+      message: `Reminder: Update progress for "${objective.title}" (${interval === 'monthly' ? 'monthly' : 'twice per month'}).`,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch('objectives', args.objectiveId, {
+      nextReminderAt: computedNext,
+      updatedAt: now,
+    });
+
+    return { sent: true, nextReminderAt: computedNext };
   },
 });
 
