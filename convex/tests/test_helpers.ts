@@ -1,4 +1,4 @@
-import { GenericMutationCtx, GenericQueryCtx, GenericSchema, SchemaDefinition } from 'convex/server';
+import { GenericMutationCtx, GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
 
