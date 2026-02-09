@@ -34,6 +34,8 @@
             "delete": "Delete",
             "edit": "Edit",
             "close": "Close",
+            "signOut": "Sign out",
+            "signingOut": "Signing out...",
             "goToLogin": "Go to Login",
             "revokeAll": "Revoke all"
         },
@@ -447,6 +449,12 @@
             "money": "Money",
             "duration": "Duration"
         },
+        "direction": "Direction",
+        "directionDescription": "Choose if the objective progresses by increasing or decreasing.",
+        "directionOptions": {
+            "increase": "Increase (higher is better)",
+            "decrease": "Decrease (lower is better)"
+        },
         "period": "Period",
         "periodDescription": "Choose the period for this objective.",
         "periodOptions": {
@@ -455,6 +463,21 @@
             "monthly": "Monthly",
             "custom": "Custom"
         },
+        "reminderInterval": "Reminder interval",
+        "reminderIntervalDescription": "How often to remind you to add progress.",
+        "reminderIntervalOptions": {
+            "none": "No reminders",
+            "monthly": "Monthly",
+            "biweekly": "Twice per month"
+        },
+        "progressMode": "Progress mode",
+        "progressModeDescription": "Choose how progress is recorded.",
+        "progressModeOptions": {
+            "cumulative": "Cumulative (adds up)",
+            "snapshot": "Current value (replaces)"
+        },
+        "initialValue": "Initial value",
+        "initialValueDescription": "Your starting point for this objective.",
         "periodStart": "Period start",
         "periodStartDescription": "Start date for the custom period.",
         "periodLengthDays": "Period length (days)",
@@ -596,22 +619,26 @@
                 "description": "Description",
                 "category": "Category",
                 "objectiveType": "Objective type",
+                "direction": "Direction",
                 "unit": "Unit",
                 "targetValueRequired": "Target value *",
                 "currentValue": "Current value",
                 "deadline": "Deadline",
-                "period": "Period"
+                "period": "Period",
+                "reminderInterval": "Reminder interval"
             },
             "placeholders": {
                 "title": "Enter your objective title...",
                 "description": "Describe your objective...",
                 "category": "Select category",
                 "objectiveType": "Select objective type",
+                "direction": "Select direction",
                 "unit": "Select unit",
                 "targetValue": "Target value...",
                 "currentValue": "Current value...",
                 "pickDate": "Pick a date",
-                "period": "Select period"
+                "period": "Select period",
+                "reminderInterval": "Select reminder interval"
             },
             "buttons": {
                 "create": "Create objective",
@@ -891,6 +918,8 @@
             "duration": "Enter duration"
         },
         "valueDescription": "Value for this update{unit}",
+        "valueDescriptionCumulative": "Enter the increment since the last update{unit}.",
+        "valueDescriptionSnapshot": "Enter the current value{unit}. Previous updates won’t count.",
         "comment": "Comment",
         "describeYourUpdateProgressInDetail": "Describe your update progress in detail",
         "optionalAddDetailsAboutYourUpdateProgress": "Optional: Add details about your update progress.",
