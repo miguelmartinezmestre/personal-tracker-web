@@ -55,6 +55,7 @@ export default function CreateUpdateProgressFormModal() {
         | (Doc<'objectives'> & { objectiveType?: string; unit?: string })
         | undefined;
     const objectiveType = objectiveDoc?.objectiveType ?? 'value';
+    const progressMode = objectiveDoc?.progressMode ?? 'cumulative';
     const unitLabel = objectiveDoc?.unit ? ` (${objectiveDoc.unit})` : '';
     const updatedValueLabel =
         objectiveType === 'count'
@@ -72,6 +73,10 @@ export default function CreateUpdateProgressFormModal() {
               : objectiveType === 'duration'
                 ? t('valuePlaceholders.duration')
                 : t('valuePlaceholders.value');
+    const updatedValueDescription =
+        progressMode === 'snapshot'
+            ? t('valueDescriptionSnapshot', { unit: unitLabel })
+            : t('valueDescriptionCumulative', { unit: unitLabel });
     const form = useForm<CreateUpdateProgress>({
         defaultValues: {
             comment: '',
@@ -138,9 +143,7 @@ export default function CreateUpdateProgressFormModal() {
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('valueDescription', {
-                                            unit: unitLabel,
-                                        })}
+                                        {updatedValueDescription}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

@@ -2,18 +2,17 @@
 
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
-import { Mail, AlertCircle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import {
     usePendingInvitations,
     useAcceptInvitation,
     useRejectInvitation,
 } from '@/features/organizations/hooks/use-invitations';
 import { InvitationCard } from './invitation-card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function InvitationsList() {
     const t = useTranslations('Invitations');
-    const { data: invitations, isLoading, error } = usePendingInvitations();
+    const { data: invitations, isLoading } = usePendingInvitations();
     const acceptInvitation = useAcceptInvitation();
     const rejectInvitation = useRejectInvitation();
 
@@ -22,17 +21,6 @@ function InvitationsList() {
             <div className="text-center py-8" data-testid="invitations-loading">
                 {t('loading')}
             </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <Alert variant="destructive" data-testid="invitations-error">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                    {t('errorLoading')}: {error.message}
-                </AlertDescription>
-            </Alert>
         );
     }
 

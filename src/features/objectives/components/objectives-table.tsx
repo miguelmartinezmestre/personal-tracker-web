@@ -16,7 +16,11 @@ import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { normalizeObjective, OBJECTIVES_DEFAULT_PAGE_SIZE } from './objectives-utils';
+import {
+    computeObjectiveProgressPercent,
+    normalizeObjective,
+    OBJECTIVES_DEFAULT_PAGE_SIZE,
+} from './objectives-utils';
 
 interface ObjectivesTableProps {
     objectives?: Objective[];
@@ -92,15 +96,25 @@ export default function ObjectivesTable({
         {
             id: 'progress',
             accessorFn: objective =>
-                objective.targetValue > 0 ? objective.currentValue / objective.targetValue : 0,
+                computeObjectiveProgressPercent({
+                    currentValue: objective.currentValue ?? 0,
+                    targetValue: objective.targetValue ?? 0,
+                    startValue: objective.startValue ?? null,
+                    direction: objective.direction ?? 'increase',
+                }) / 100,
             header: t('progress'),
             cell: ({ row }) => {
                 const objective = row.original;
                 const periodLabel = getPeriodLabel(objective.period);
-                const maxValue = objective.targetValue > 0 ? objective.targetValue : 100;
+                const progressPercent = computeObjectiveProgressPercent({
+                    currentValue: objective.currentValue ?? 0,
+                    targetValue: objective.targetValue ?? 0,
+                    startValue: objective.startValue ?? null,
+                    direction: objective.direction ?? 'increase',
+                });
                 return (
                     <div className="flex items-center space-x-2">
-                        <CircularProgress value={objective.currentValue} max={maxValue} size="sm" />
+                        <CircularProgress value={progressPercent} max={100} size="sm" />
                         <span className="text-sm text-muted-foreground">
                             {objective.currentValue}/{objective.targetValue} {objective.unit || ''}
                             {periodLabel ? ` (${periodLabel})` : ''}
@@ -128,6 +142,8 @@ export default function ObjectivesTable({
                         deadline={objective.deadline ?? undefined}
                         currentValue={objective.currentValue ?? 0}
                         targetValue={objective.targetValue ?? 0}
+                        startValue={objective.startValue ?? undefined}
+                        direction={objective.direction ?? undefined}
                     />
                 );
             },

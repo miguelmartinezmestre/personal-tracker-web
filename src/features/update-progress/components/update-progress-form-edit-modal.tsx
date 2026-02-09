@@ -28,23 +28,38 @@ import {
     DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import {
     UpdateProgress,
     savedUpdateProgressSchema,
 } from '@/features/update-progress/schemas/update-progress';
-import { Id } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
+import { convexQuery } from '@convex-dev/react-query';
 
 export default function UpdateProgressFormModal({
     defaultValues,
+    objectiveId,
 }: {
     defaultValues: UpdateProgress;
+    objectiveId: Id<'objectives'>;
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
+    const objective = useQuery(
+        convexQuery(api.objectives.getObjectiveById, { id: objectiveId })
+    );
+    const objectiveDoc = objective.data as
+        | (Doc<'objectives'> & { objectiveType?: string; unit?: string })
+        | undefined;
+    const progressMode = objectiveDoc?.progressMode ?? 'cumulative';
+    const unitLabel = objectiveDoc?.unit ? ` (${objectiveDoc.unit})` : '';
+    const updatedValueDescription =
+        progressMode === 'snapshot'
+            ? t('valueDescriptionSnapshot', { unit: unitLabel })
+            : t('valueDescriptionCumulative', { unit: unitLabel });
     const updateUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress),
     });
@@ -114,7 +129,7 @@ export default function UpdateProgressFormModal({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t('giveYourUpdateProgressAClearConciseTitle')}
+                                        {updatedValueDescription}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { QuickActions } from './quick-actions';
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { normalizeObjective } from './objectives-utils';
+import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { Preloaded } from 'convex/react';
 
@@ -198,10 +198,15 @@ const ResponsiveObjectivesView = React.forwardRef<
             cell: ({ row }) => {
                 const objective = row.original;
                 const periodLabel = getPeriodLabel(objective.period);
-                const maxValue = objective.targetValue > 0 ? objective.targetValue : 100;
+                const progressPercent = computeObjectiveProgressPercent({
+                    currentValue: objective.currentValue ?? 0,
+                    targetValue: objective.targetValue ?? 0,
+                    startValue: objective.startValue ?? null,
+                    direction: objective.direction ?? 'increase',
+                });
                 return (
                     <div className="flex items-center space-x-2">
-                        <CircularProgress value={objective.currentValue} max={maxValue} size="sm" />
+                        <CircularProgress value={progressPercent} max={100} size="sm" />
                         <span className="text-sm text-muted-foreground">
                             {objective.currentValue}/{objective.targetValue} {objective.unit || ''}
                             {periodLabel ? ` (${periodLabel})` : ''}
@@ -229,6 +234,8 @@ const ResponsiveObjectivesView = React.forwardRef<
                         deadline={objective.deadline ?? undefined}
                         currentValue={objective.currentValue ?? 0}
                         targetValue={objective.targetValue ?? 0}
+                        startValue={objective.startValue ?? undefined}
+                        direction={objective.direction ?? undefined}
                     />
                 );
             },

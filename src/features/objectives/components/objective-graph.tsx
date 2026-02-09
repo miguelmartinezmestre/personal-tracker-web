@@ -13,6 +13,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Progress as ProgressBar } from '@/components/ui/progress';
+import { computeObjectiveProgressPercent } from './objectives-utils';
 
 type ObjectiveProgressPoint = {
     date: number;
@@ -24,6 +25,8 @@ interface ObjectiveProgressGraphProps {
     data: ObjectiveProgressPoint[];
     unit?: string | null;
     targetValue?: number | null;
+    startValue?: number | null;
+    direction?: string | null;
     period?: string | null;
     periodRange?: { start: number; end: number } | null;
     lastUpdated?: number | null;
@@ -39,6 +42,8 @@ export function ObjectiveProgressGraph({
     data,
     unit,
     targetValue,
+    startValue,
+    direction,
     period,
     periodRange,
     lastUpdated,
@@ -63,8 +68,14 @@ export function ObjectiveProgressGraph({
 
     const latestValue = data.length > 0 ? data[data.length - 1]?.currentValue ?? 0 : 0;
     const objectiveValue = targetValue ?? data[data.length - 1]?.objective ?? 0;
-    const progressPercent =
-        objectiveValue > 0 ? Math.round((latestValue / objectiveValue) * 100) : 0;
+    const progressPercent = Math.round(
+        computeObjectiveProgressPercent({
+            currentValue: latestValue,
+            targetValue: objectiveValue,
+            startValue: startValue ?? null,
+            direction: direction ?? 'increase',
+        })
+    );
     const progressBarValue = clamp(progressPercent, 0, 100);
 
     const formatValue = (value: number) =>

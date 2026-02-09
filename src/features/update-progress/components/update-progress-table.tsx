@@ -99,6 +99,8 @@ export default function UpdateProgressTable({
               period?: string;
               periodStart?: number;
               periodLengthDays?: number;
+              startValue?: number;
+              direction?: string;
           })
         | undefined;
     const objectiveType = objectiveDoc?.objectiveType ?? 'value';
@@ -145,6 +147,8 @@ export default function UpdateProgressTable({
                     data={progressData}
                     unit={objectiveDoc?.unit ?? null}
                     targetValue={objectiveDoc?.targetValue ?? null}
+                    startValue={objectiveDoc?.startValue ?? null}
+                    direction={objectiveDoc?.direction ?? null}
                     period={period}
                     periodRange={range}
                     lastUpdated={lastUpdated}
