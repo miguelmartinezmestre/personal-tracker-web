@@ -1,6 +1,8 @@
 'use client';
 
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { OrganizationRole } from '../types/roles';
@@ -30,40 +32,29 @@ const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
     organizationId,
 ];
 
-const normalizeMember = (member: {
-    id: string;
-    organizationId: string;
-    userId: string;
-    role: string;
-    createdAt: Date;
-    user?: { email?: string | null };
-}) =>
-    ({
+/**
+ * Hook para obtener los miembros de una organización
+ */
+export function useOrganizationMembers(organizationId: string | null) {
+    const data = useQuery(
+        api.organizations.getOrganizationMembers,
+        organizationId ? { organizationId } : 'skip'
+    );
+
+    const members = data?.members.map((member: any) => ({
         id: member.id,
         organizationId: member.organizationId,
         userId: member.userId,
         email: member.user?.email ?? '',
         role: member.role as OrganizationRole,
-        createdAt: member.createdAt,
-    }) satisfies OrganizationMember;
+        createdAt: new Date(member.createdAt),
+    })) as OrganizationMember[] | undefined;
 
-/**
- * Hook para obtener los miembros de una organización
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
- */
-export function useOrganizationMembers(organizationId: string | null) {
-    return useSuspenseQuery({
-        queryKey: ORGANIZATION_MEMBERS_QUERY_KEY(organizationId),
-        queryFn: async () => {
-            if (!organizationId) return [];
-            const result = await authClient.organization.listMembers({
-                query: { organizationId: organizationId },
-            });
-            const payload =
-                result && typeof result === 'object' && 'data' in result ? result.data : null;
-            return (payload?.members ?? []).map(normalizeMember);
-        },
-    });
+    return {
+        data: members ?? [],
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
