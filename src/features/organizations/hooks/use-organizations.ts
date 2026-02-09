@@ -1,6 +1,8 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
 import type {
     CreateOrganization,
@@ -23,88 +25,66 @@ export interface UpdateOrganizationParams {
 
 const ORGANIZATIONS_QUERY_KEY = ['organizations'];
 
-// Organization type from BetterAuth
-type BetterAuthOrganization = {
-    id: string;
-    name: string;
-    slug?: string | null;
-    description?: string | null;
-    logo?: string | null;
-    createdAt?: Date | number;
-};
-
-const normalizeOrganization = (org: BetterAuthOrganization): Organization => {
-    // Ensure we're using the actual ID, not the slug
-    const organizationId = String(org.id);
-    const organizationSlug = org.slug ?? '';
-
-    return {
-        id: organizationId,
-        name: org.name,
-        slug: organizationSlug,
-        description: org.description ?? '',
-    };
-};
-
 /**
- * Hook para obtener todas las organizaciones
- * Usa BetterAuth directamente
+ * Hook para obtener todas las organizaciones del usuario
  */
 export function useOrganizations() {
-    return useQuery({
-        queryKey: ORGANIZATIONS_QUERY_KEY,
-        queryFn: async () => {
-            const result = await authClient.organization.list();
-            const organizations =
-                result && typeof result === 'object' && 'data' in result
-                    ? (result.data as unknown as BetterAuthOrganization[])
-                    : [];
-            const normalized = organizations.map(normalizeOrganization);
-            return normalized;
-        },
-    });
+    const data = useQuery(api.organizations.getOrganizationsByUser, {});
+
+    return {
+        data: data?.map((org: any) => ({
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            description: org.description ?? '',
+        })) as Organization[] | undefined,
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
  * Hook para obtener una organización por su ID
  */
 export function useOrganization(organizationId: string | null) {
-    return useQuery({
-        queryKey: ORGANIZATIONS_QUERY_KEY.concat(organizationId ?? 'null'),
-        queryFn: async () => {
-            if (!organizationId) return null;
-            // BetterAuth doesn't have a get method, we can use list and filter
-            const result = await authClient.organization.list();
-            const organizations =
-                result && typeof result === 'object' && 'data' in result
-                    ? (result.data as unknown as BetterAuthOrganization[])
-                    : [];
-            const org = organizations.find(o => o.id === organizationId);
-            return org ? normalizeOrganization(org) : null;
-        },
-        enabled: !!organizationId,
-    });
+    const data = useQuery(
+        api.organizations.getOrganizationsByUser,
+        organizationId ? {} : 'skip'
+    );
+
+    const org = data?.find((o: any) => o.id === organizationId);
+    return {
+        data: org ? {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            description: org.description ?? '',
+        } as Organization : null,
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
  * Hook para obtener una organización por su slug
  */
 export function useOrganizationBySlug(slug: string | null) {
-    return useQuery({
-        queryKey: ORGANIZATIONS_QUERY_KEY.concat('slug', slug ?? 'null'),
-        queryFn: async () => {
-            if (!slug) return null;
-            // Fetch all organizations and find by slug
-            const result = await authClient.organization.list();
-            const organizations =
-                result && typeof result === 'object' && 'data' in result
-                    ? (result.data as unknown as BetterAuthOrganization[])
-                    : [];
-            const org = organizations.find(o => o.slug === slug);
-            return org ? normalizeOrganization(org) : null;
-        },
-        enabled: !!slug,
-    });
+    const data = useQuery(
+        api.organizations.getOrganizationsByUser,
+        slug ? {} : 'skip'
+    );
+
+    const org = data?.find((o: any) => o.slug === slug);
+    return {
+        data: org ? {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            description: org.description ?? '',
+        } as Organization : null,
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
@@ -113,46 +93,33 @@ export function useOrganizationBySlug(slug: string | null) {
  * Esto permite que las rutas funcionen tanto con slugs como con IDs
  */
 export function useOrganizationByIdentifier(identifier: string | null) {
-    return useQuery({
-        queryKey: ORGANIZATIONS_QUERY_KEY.concat('identifier', identifier ?? 'null'),
-        queryFn: async () => {
-            if (!identifier) return null;
-            // Fetch all organizations
-            const result = await authClient.organization.list();
+    const data = useQuery(
+        api.organizations.getOrganizationsByUser,
+        identifier ? {} : 'skip'
+    );
 
-            // Handle different response structures
-            let organizations: BetterAuthOrganization[] = [];
-            if (Array.isArray(result)) {
-                // Direct array response
-                organizations = result as unknown as BetterAuthOrganization[];
-            } else if (result && typeof result === 'object') {
-                // Object with data property
-                if ('data' in result && Array.isArray(result.data)) {
-                    organizations = result.data as unknown as BetterAuthOrganization[];
-                } else if ('organizations' in result && Array.isArray(result.organizations)) {
-                    organizations = result.organizations as unknown as BetterAuthOrganization[];
-                }
-            }
-
-            // First try to find by slug (handle null/undefined cases)
-            let org = organizations.find(o => {
-                const slug = o.slug;
-                // Compare slug, handling null/undefined/empty string cases
-                if (slug === null || slug === undefined || slug === '') return false;
-                const slugStr = String(slug).trim();
-                const identifierStr = String(identifier).trim();
-                return slugStr === identifierStr;
-            });
-
-            // If not found by slug, try to find by ID
-            if (!org) {
-                org = organizations.find(o => String(o.id).trim() === String(identifier).trim());
-            }
-
-            return org ? normalizeOrganization(org) : null;
-        },
-        enabled: !!identifier,
+    // First try to find by slug
+    let org = data?.find((o: any) => {
+        const slug = o.slug;
+        if (!slug) return false;
+        return String(slug).trim() === String(identifier).trim();
     });
+
+    // If not found by slug, try by ID
+    if (!org) {
+        org = data?.find((o: any) => String(o.id).trim() === String(identifier).trim());
+    }
+
+    return {
+        data: org ? {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            description: org.description ?? '',
+        } as Organization : null,
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
