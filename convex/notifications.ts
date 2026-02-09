@@ -172,7 +172,7 @@ export const runDeadlineNotificationsCron = internalMutation({
 
         for (const objective of objectives) {
             if (!objective.deadline) continue;
-            if (objective.status === 'completed' || objective.status === 'archived') continue;
+            if (objective.status === 'completed' || objective.status === 'archived' || objective.status === 'deleted') continue;
 
             const message = buildDeadlineMessage(objective, now, dayStart, dayEnd);
             if (!message) continue;
