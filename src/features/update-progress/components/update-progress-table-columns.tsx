@@ -50,7 +50,12 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
                     updateDate: new Date(progressRow.updateDate),
                     comment: progressRow.comment ?? null,
                 } as unknown as UpdateProgress;
-                return <UpdateProgressFormModal defaultValues={defaultValues} />;
+                return (
+                    <UpdateProgressFormModal
+                        defaultValues={defaultValues}
+                        objectiveId={objectiveId}
+                    />
+                );
             },
         },
         {
