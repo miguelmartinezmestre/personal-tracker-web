@@ -1,5 +1,5 @@
 'use client';
-import { Check, Languages } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
 
 const locales = [
     { value: 'es', label: 'Español' },
@@ -21,31 +20,6 @@ export function LanguageSwitcher() {
     const t = useTranslations('LanguageSwitcher');
     const router = useRouter();
     const currentLocale = useLocale();
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    if (!isClient) {
-        return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon">
-                        <Languages className="h-4 w-4" />
-                        <span className="sr-only">{t('label')}</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    {locales.map(locale => (
-                        <DropdownMenuItem key={locale.value}>
-                            <span className="ml-2">{locale.label}</span>
-                        </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-            </DropdownMenu>
-        );
-    }
 
     const handleLanguageChange = (newLocale: string) => {
         Cookies.set('locale', newLocale, {
