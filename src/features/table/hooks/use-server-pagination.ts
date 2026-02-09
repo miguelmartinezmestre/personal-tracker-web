@@ -23,15 +23,23 @@ export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE)
 
     const updateCursor = useCallback((page: number, cursor: string | null, done: boolean) => {
         setCursors(prev => {
+            const nextIndex = page + 1;
+            const currentCursor = prev[nextIndex] ?? null;
+            const hasCapacity = prev.length > nextIndex;
+
+            if (hasCapacity && currentCursor === cursor) {
+                return prev;
+            }
+
             const newCursors = [...prev];
             // Ensure array is large enough
             while (newCursors.length <= page) {
                 newCursors.push(null);
             }
-            newCursors[page + 1] = cursor; // Store cursor for NEXT page
+            newCursors[nextIndex] = cursor; // Store cursor for NEXT page
             return newCursors;
         });
-        setIsDone(done);
+        setIsDone(prev => (prev === done ? prev : done));
     }, []);
 
     const nextPage = useCallback(() => {
