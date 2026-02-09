@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
@@ -16,10 +16,6 @@ import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 type InvitationStatus =
-    | 'loading'
-    | 'fetching'
-    | 'not_found'
-    | 'already_accepted'
     | 'ready'
     | 'accepting'
     | 'accepted'
@@ -30,34 +26,10 @@ export default function InvitationPage() {
     const router = useRouter();
     const t = useTranslations('Invitations');
     const token = params.token as string;
+    const sessionQuery = authClient.useSession();
 
-    const [status, setStatus] = useState<InvitationStatus>('loading');
-    const [session, setSession] = useState<{ user: { email: string } } | null>(null);
+    const [status, setStatus] = useState<InvitationStatus>('ready');
     const [errorMessage, setErrorMessage] = useState('');
-
-    // Check session and fetch invitation details
-    useEffect(() => {
-        async function load() {
-            try {
-                // Get current session
-                const sessionResult = await authClient.getSession();
-                setSession(sessionResult.data as { user: { email: string } } | null);
-
-                setStatus('fetching');
-
-                // For now, we'll proceed to the accept step directly
-                // BetterAuth doesn't provide a direct "get invitation by token" endpoint
-                // The token IS the invitation ID
-                setStatus('ready');
-            } catch (error) {
-                console.error('Error loading invitation:', error);
-                setStatus('error');
-                setErrorMessage(t('errorLoading'));
-            }
-        }
-
-        load();
-    }, [token, t]);
 
     async function handleAccept() {
         setStatus('accepting');
@@ -89,7 +61,7 @@ export default function InvitationPage() {
     }
 
     // Loading state
-    if (status === 'loading' || status === 'fetching') {
+    if (sessionQuery?.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
@@ -139,7 +111,7 @@ export default function InvitationPage() {
     }
 
     // Not logged in - need to register or login
-    if (!session && status === 'ready') {
+    if (!sessionQuery?.data?.user && status === 'ready') {
         return (
             <div className="flex min-h-screen items-center justify-center p-4">
                 <Card className="w-full max-w-md">

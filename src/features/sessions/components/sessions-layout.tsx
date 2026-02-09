@@ -1,18 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
-import { api } from '@/convex/_generated/api';
 import SessionsTable from './sessions-table';
+import { Preloaded } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
-interface SessionsLayoutProps {
-    preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
-}
-
-export default function SessionsLayout({ preloadedSessionsQuery }: SessionsLayoutProps) {
+export default function SessionsLayout({ preloadedSessionsQuery }: { preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser> }) {
     const t = useTranslations('Sessions');
     const sessions = usePreloadedAuthQuery(preloadedSessionsQuery);
+
+    console.log(sessions)
 
     return (
         <div className="space-y-6">
@@ -20,7 +18,7 @@ export default function SessionsLayout({ preloadedSessionsQuery }: SessionsLayou
                 <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <SessionsTable initialSessions={sessions ?? undefined} />
+            <SessionsTable sessions={sessions ?? undefined} />
         </div>
     );
 }

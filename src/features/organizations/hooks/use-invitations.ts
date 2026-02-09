@@ -1,6 +1,8 @@
 'use client';
 
-import { useMutation, useQueryClient, useSuspenseQuery, useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
 
 const INVITATIONS_QUERY_KEY = ['user-invitations'];
@@ -32,16 +34,27 @@ export interface Invitation {
 
 /**
  * Hook to get pending invitations for the current user
- * Uses BetterAuth's listUserInvitations under the hood
  */
 export function usePendingInvitations() {
-    return useSuspenseQuery({
-        queryKey: INVITATIONS_QUERY_KEY,
-        queryFn: async () => {
-            const result = await authClient.organization.listUserInvitations();
-            return (result as unknown as { data: Invitation[] })?.data ?? [];
-        },
-    });
+    const data = useQuery(api.organizations.getUserInvitations, {});
+
+    const invitations = data?.map((inv: any) => ({
+        id: inv.id,
+        email: inv.email,
+        role: inv.role as InvitationRole,
+        organizationId: inv.organizationId,
+        status: inv.status as 'pending' | 'accepted' | 'rejected' | 'cancelled',
+        createdAt: new Date(inv.createdAt),
+        expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : undefined,
+        organization: inv.organization,
+        inviter: inv.inviter,
+    })) as Invitation[] | undefined;
+
+    return {
+        data: invitations ?? [],
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
@@ -118,21 +131,29 @@ export function useRejectInvitation() {
 
 /**
  * Hook to list invitations for a specific organization
- * Uses BetterAuth's listInvitations under the hood
  */
 export function useOrganizationInvitations(organizationId: string | null) {
-    return useQuery({
-        queryKey: ['organization-invitations', organizationId],
-        queryFn: async () => {
-            if (!organizationId) return [];
-            // BetterAuth's listInvitations takes organizationId as query parameter
-            const result = await authClient.organization.listInvitations({
-                query: { organizationId },
-            });
-            return (result as unknown as { data: Invitation[] })?.data ?? [];
-        },
-        enabled: !!organizationId,
-    });
+    const data = useQuery(
+        api.organizations.getOrganizationInvitations,
+        organizationId ? { organizationId } : 'skip'
+    );
+
+    const invitations = data?.map((inv: any) => ({
+        id: inv.id,
+        email: inv.email,
+        role: inv.role as InvitationRole,
+        organizationId: inv.organizationId,
+        status: inv.status as 'pending' | 'accepted' | 'rejected' | 'cancelled',
+        createdAt: new Date(inv.createdAt),
+        expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : undefined,
+        inviter: inv.inviter,
+    })) as Invitation[] | undefined;
+
+    return {
+        data: invitations ?? [],
+        isPending: data === undefined,
+        isLoading: data === undefined,
+    };
 }
 
 /**
