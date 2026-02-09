@@ -12,32 +12,151 @@ import {
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+
+type OrganizationItem = {
+    id: string;
+    name: string;
+};
+
+type ActiveOrganizationMember = {
+    organizationId?: string | null;
+};
+
+type ActiveOrganization = {
+    id: string;
+    name: string;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null => {
+    if (!value || typeof value !== 'object') {
+        return null;
+    }
+    return value as Record<string, unknown>;
+};
+
+const getOrganizationLikePayload = (value: unknown): Record<string, unknown> | null => {
+    const payloadRecord = asRecord(value);
+    if (!payloadRecord) {
+        return null;
+    }
+
+    const nestedOrganizationRecord = asRecord(payloadRecord.organization);
+    if (nestedOrganizationRecord) {
+        return nestedOrganizationRecord;
+    }
+
+    return payloadRecord;
+};
+
+const normalizeId = (value: unknown): string | undefined => {
+    if (typeof value !== 'string' && typeof value !== 'number') {
+        return undefined;
+    }
+
+    const normalizedValue = String(value).trim();
+    return normalizedValue.length > 0 ? normalizedValue : undefined;
+};
+
+const extractResponseData = <T,>(result: unknown): T | null => {
+    if (result === null || result === undefined) {
+        return null;
+    }
+
+    if (typeof result === 'object' && 'data' in result) {
+        return ((result as { data?: T | null }).data ?? null) as T | null;
+    }
+
+    return result as T;
+};
+
+const normalizeActiveOrganization = (result: unknown): ActiveOrganization | null => {
+    const payload = extractResponseData<unknown>(result);
+    const organizationPayload = getOrganizationLikePayload(payload);
+    if (!organizationPayload) {
+        return null;
+    }
+
+    const organizationId =
+        normalizeId(organizationPayload.id) ?? normalizeId(organizationPayload.organizationId);
+    if (!organizationId) {
+        return null;
+    }
+
+    const organizationNameValue = organizationPayload.name;
+    const organizationName =
+        typeof organizationNameValue === 'string' && organizationNameValue.trim().length > 0
+            ? organizationNameValue
+            : organizationId;
+
+    return {
+        id: organizationId,
+        name: organizationName,
+    };
+};
+
+const normalizeOrganizations = (result: unknown): OrganizationItem[] => {
+    const payload = extractResponseData<unknown>(result);
+
+    const organizations = Array.isArray(payload)
+        ? payload
+        : payload &&
+            typeof payload === 'object' &&
+            'organizations' in payload &&
+            Array.isArray((payload as { organizations?: unknown }).organizations)
+          ? ((payload as { organizations: unknown[] }).organizations ?? [])
+          : [];
+
+    return organizations
+        .map(rawOrganization => {
+            const organization = getOrganizationLikePayload(rawOrganization);
+            if (!organization) {
+                return null;
+            }
+
+            const organizationId =
+                normalizeId(organization.id) ?? normalizeId(organization.organizationId);
+            if (!organizationId) {
+                return null;
+            }
+
+            const organizationNameValue = organization.name;
+            const organizationName =
+                typeof organizationNameValue === 'string' && organizationNameValue.trim().length > 0
+                    ? organizationNameValue
+                    : organizationId;
+
+            return {
+                id: organizationId,
+                name: organizationName,
+            } satisfies OrganizationItem;
+        })
+        .filter((organization): organization is OrganizationItem => organization !== null);
+};
 
 export function OrganizationSwitcher() {
     const t = useTranslations('OrganizationSwitcher');
     const router = useRouter();
-    const queryClient = useQueryClient();
-    const [{data: activeOrganizationData}, {data: organizationsData, isPending: isLoadingOrganizations}] = useQueries({
-        queries: [
-        {
-            queryKey: ['activeOrganization'],
-            queryFn: async () => {
-                const result = await authClient.organization.getActiveMember();
-                return result.data;
-            },
-        },
-        {
-            queryKey: ['organizations'],
-            queryFn: async () => {
-                const result = await authClient.organization.list();
-                return result.data;
-            },
-        },
-    ]});
-
-    const activeOrganizationId = activeOrganizationData?.organizationId as string | undefined;
-    const organizations = organizationsData;
+    const activeOrganizationQuery = authClient.useActiveOrganization();
+    const activeMemberQuery = authClient.useActiveMember();
+    const listOrganizationsQuery = authClient.useListOrganizations();
+    const sessionQuery = authClient.useSession();
+    const sessionActiveOrganizationId = normalizeId(
+        sessionQuery.data?.session?.activeOrganizationId
+    );
+    const activeOrganization = normalizeActiveOrganization(activeOrganizationQuery.data);
+    const activeOrganizationData = extractResponseData<ActiveOrganizationMember>(
+        activeMemberQuery.data
+    );
+    const organizations = normalizeOrganizations(listOrganizationsQuery.data);
+    const activeOrganizationId =
+        activeOrganization?.id ??
+        normalizeId(activeOrganizationData?.organizationId) ??
+        sessionActiveOrganizationId;
+    const isLoadingData =
+        activeOrganizationQuery.isPending ||
+        activeMemberQuery.isPending ||
+        listOrganizationsQuery.isPending;
 
     // Set active organization mutation
     const setActiveMutation = useMutation({
@@ -49,17 +168,18 @@ export function OrganizationSwitcher() {
         onSuccess: () => {
             // Refresh to update the session
             router.refresh();
-            queryClient.invalidateQueries({ queryKey: ['activeOrganization'] });
-            queryClient.invalidateQueries({ queryKey: ['organizations'] });
         },
     });
 
-    const activeOrganization = organizations?.find(
-        organization => organization.id === activeOrganizationId
+    const activeOrganizationFromList = organizations.find(
+        organization => normalizeId(organization.id) === activeOrganizationId
     );
-    const displayName = activeOrganization?.name || t('noOrganization');
+    const displayName = activeOrganization?.name || activeOrganizationFromList?.name || t('noOrganization');
 
     const handleOrganizationChange = (organizationId: string) => {
+        if (!organizationId || organizationId === activeOrganizationId) {
+            return;
+        }
         setActiveMutation.mutate(organizationId);
     };
 
@@ -70,9 +190,9 @@ export function OrganizationSwitcher() {
                     variant="outline"
                     data-testid="organization-switcher"
                     className="min-w-[140px] justify-start"
-                    disabled={setActiveMutation.isPending}
+                    disabled={setActiveMutation.isPending || isLoadingData}
                 >
-                    {setActiveMutation.isPending ? (
+                    {setActiveMutation.isPending || isLoadingData ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                         <>
@@ -87,12 +207,12 @@ export function OrganizationSwitcher() {
                 <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
                     {t('organizations')}
                 </div>
-                {isLoadingOrganizations ? (
+                {isLoadingData ? (
                     <DropdownMenuItem disabled>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         {t('loading')}
                     </DropdownMenuItem>
-                ) : organizations && organizations.length > 0 ? (
+                ) : organizations.length > 0 ? (
                     organizations.map(organization => (
                         <DropdownMenuItem
                             key={organization.id}
@@ -101,7 +221,7 @@ export function OrganizationSwitcher() {
                             className="flex items-center gap-3 cursor-pointer"
                         >
                             <span className="flex-1 truncate">{organization.name}</span>
-                            {organization.id === activeOrganizationId && (
+                            {normalizeId(organization.id) === activeOrganizationId && (
                                 <Check className="h-4 w-4 text-primary flex-shrink-0" />
                             )}
                         </DropdownMenuItem>

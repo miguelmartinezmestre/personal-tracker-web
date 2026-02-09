@@ -58,13 +58,25 @@ export default function NotificationsTable({
         }),
         initialData: initialObjectives,
     });
+    const hasNotificationsData = notifications.data !== undefined;
+    const notificationsContinueCursor = notifications.data?.continueCursor ?? null;
+    const notificationsIsDone = notifications.data?.isDone ?? false;
 
     // Update cursor when data changes
     useEffect(() => {
-        if (notifications.data) {
-            updateCursor(currentPage, notifications.data.continueCursor, notifications.data.isDone);
+        if (!hasNotificationsData || notifications.isFetching) {
+            return;
         }
-    }, [notifications.data, currentPage, updateCursor]);
+
+        updateCursor(currentPage, notificationsContinueCursor, notificationsIsDone);
+    }, [
+        currentPage,
+        hasNotificationsData,
+        notificationsContinueCursor,
+        notificationsIsDone,
+        notifications.isFetching,
+        updateCursor,
+    ]);
 
     // Actions
     const { markAllRead, isMarkingAllRead } = useMarkAllNotificationsRead(reset);
