@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { initConvexTest } from './better-auth.helper';
+import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization } from './test_helpers';
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { DataModel as BetterAuthDataModel } from '../betterAuth/_generated/dataModel';
-import { DataModel } from ./ _generated / dataModel';
+import { DataModel } from '../_generated/dataModel';
 
 type InvitationRecord = {
     _id: string;
@@ -135,7 +135,8 @@ describe('convex invitations (better-auth)', () => {
                         q.eq(q.field('userId'), 'invitee-2-' + randomSuffix)
                     )
                 )
-                .collect());
+                .collect()
+        );
 
         const invitationRecord = invitation as unknown as InvitationRecord;
         const memberRecords = members as unknown as MemberRecord[];

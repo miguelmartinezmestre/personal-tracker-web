@@ -127,8 +127,14 @@ export const onTickInternal = internalMutation({
         let autoCompleted = false;
         let isOverdue = false;
 
-        // Check auto-completion (currentValue >= targetValue)
-        if (objective.currentValue >= objective.targetValue) {
+        // Check auto-completion (direction-aware)
+        const direction = objective.direction ?? 'increase';
+        const shouldComplete =
+            direction === 'decrease'
+                ? objective.currentValue <= objective.targetValue
+                : objective.currentValue >= objective.targetValue;
+
+        if (shouldComplete) {
             await ctx.db.patch(args.objectiveId, {
                 status: 'completed',
                 updatedAt: now,

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from ./ _generated / api';
-import { initConvexTest } from './better-auth.helper';
+import { api } from '../_generated/api';
+import { initConvexTest } from './test.helper';
 import { createTestSession, createTestUser } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../betterAuth/_generated/dataModel';
 import { GenericQueryCtx } from 'convex/server';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex sessions', () => {
     const t = initConvexTest();
@@ -36,7 +36,7 @@ describe('convex sessions', () => {
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
             userId: user.userId,
-            image: "https://example.com/image.png",
+            image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
             banned: false,
@@ -76,9 +76,11 @@ describe('convex sessions', () => {
     });
 
     test('getSessionsByUser rejects when unauthenticated', async () => {
-        await expect(t.query(api.sessions.getSessionsByUser, { paginationOpts: { numItems: 10, cursor: null } })).rejects.toThrow(
-            /Unauthenticated|User not authenticated/
-        );
+        await expect(
+            t.query(api.sessions.getSessionsByUser, {
+                paginationOpts: { numItems: 10, cursor: null },
+            })
+        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
     });
 
     test('session can be retrieved after creation', async () => {

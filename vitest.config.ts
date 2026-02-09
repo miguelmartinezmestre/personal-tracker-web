@@ -14,10 +14,13 @@ export default defineConfig({
         include: [
             'convex/tests/**/*.test.ts',
             'src/features/**/*.test.{ts,tsx}',
-            'tests/**/*.test.{ts,tsx}',
-            'tests/**/*.spec.{ts,tsx}',
         ],
-        exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'convex/_generated/**'],
+        exclude: [
+            '**/node_modules/**',
+            '**/.git/**',
+            '**/dist/**',
+            'tests/**',
+        ],
         environment: 'jsdom',
         globals: true,
     },

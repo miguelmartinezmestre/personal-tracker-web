@@ -34,6 +34,8 @@
             "delete": "Eliminar",
             "edit": "Editar",
             "close": "Cerrar",
+            "signOut": "Cerrar sesión",
+            "signingOut": "Cerrando sesión...",
             "goToLogin": "Ir a iniciar sesión",
             "revokeAll": "Revocar todas"
         },
@@ -447,6 +449,12 @@
             "money": "Dinero",
             "duration": "Duracion"
         },
+        "direction": "Dirección",
+        "directionDescription": "Elige si el objetivo progresa al subir o al bajar.",
+        "directionOptions": {
+            "increase": "Aumentar (más es mejor)",
+            "decrease": "Disminuir (menos es mejor)"
+        },
         "period": "Periodo",
         "periodDescription": "Elige el periodo para este objetivo.",
         "periodOptions": {
@@ -455,6 +463,21 @@
             "monthly": "Mensual",
             "custom": "Personalizado"
         },
+        "reminderInterval": "Frecuencia de recordatorio",
+        "reminderIntervalDescription": "Cada cuánto recordarte añadir progreso.",
+        "reminderIntervalOptions": {
+            "none": "Sin recordatorios",
+            "monthly": "Mensual",
+            "biweekly": "Dos veces al mes"
+        },
+        "progressMode": "Modo de progreso",
+        "progressModeDescription": "Elige cómo se registra el progreso.",
+        "progressModeOptions": {
+            "cumulative": "Acumulativo (se suma)",
+            "snapshot": "Valor actual (se reemplaza)"
+        },
+        "initialValue": "Valor inicial",
+        "initialValueDescription": "Tu punto de partida para este objetivo.",
         "periodStart": "Inicio del periodo",
         "periodStartDescription": "Fecha de inicio para el periodo personalizado.",
         "periodLengthDays": "Duracion del periodo (dias)",
@@ -596,22 +619,26 @@
                 "description": "Descripción",
                 "category": "Categoría",
                 "objectiveType": "Tipo de objetivo",
+                "direction": "Dirección",
                 "unit": "Unidad",
                 "targetValueRequired": "Valor objetivo *",
                 "currentValue": "Valor actual",
                 "deadline": "Fecha límite",
-                "period": "Periodo"
+                "period": "Periodo",
+                "reminderInterval": "Frecuencia de recordatorio"
             },
             "placeholders": {
                 "title": "Ingresa el título de tu objetivo...",
                 "description": "Describe tu objetivo...",
                 "category": "Selecciona una categoría",
                 "objectiveType": "Selecciona el tipo de objetivo",
+                "direction": "Selecciona la dirección",
                 "unit": "Selecciona una unidad",
                 "targetValue": "Valor objetivo...",
                 "currentValue": "Valor actual...",
                 "pickDate": "Selecciona una fecha",
-                "period": "Selecciona el periodo"
+                "period": "Selecciona el periodo",
+                "reminderInterval": "Selecciona la frecuencia"
             },
             "buttons": {
                 "create": "Crear objetivo",
@@ -891,6 +918,8 @@
             "duration": "Ingresa la duracion"
         },
         "valueDescription": "Valor de esta actualizacion{unit}",
+        "valueDescriptionCumulative": "Introduce el incremento desde el último registro{unit}.",
+        "valueDescriptionSnapshot": "Introduce el valor actual{unit}. Los registros anteriores no cuentan.",
         "comment": "Comentario",
         "describeYourUpdateProgressInDetail": "Describe tu progreso actualizado en detalle",
         "optionalAddDetailsAboutYourUpdateProgress": "Opcional: Agrega detalles sobre tu progreso actualizado.",

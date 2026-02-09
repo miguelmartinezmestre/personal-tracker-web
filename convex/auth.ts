@@ -8,39 +8,14 @@ import authConfig from "./auth.config";
 import schema from "./schema";
 import { admin, organization } from "better-auth/plugins";
 import { ConvexError } from "convex/values";
-import { sendTestEmail } from "./email";
 
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 
 
 const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
-// const emailApiUrl = process.env.EMAIL_API_URL ?? 'http://localhost:3001';
-
-// Only require email verification in production when email service is configured
-// const isProduction = process.env.NODE_ENV === 'production';
-// const requireEmailVerification: boolean = !!(isProduction && process.env.EMAIL_API_URL);
 
 const authFunctions: AuthFunctions = internal.auth;
-
-// async function sendWelcomeEmail(data: { to: string; name: string }): Promise<void> {
-//     if (!process.env.EMAIL_API_URL) return;
-
-//     const url = `${emailApiUrl}/api/email/welcome`;
-//     try {
-//         const response = await fetch(url, {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify(data),
-//         });
-//         if (!response.ok) {
-//             const errorText = await response.text();
-//             console.error('[sendWelcomeEmail] Failed to send email:', errorText);
-//         }
-//     } catch (error) {
-//         console.error('[sendWelcomeEmail] Error sending email:', error);
-//     }
-// }
 
 export const authClient = createClient<DataModel, typeof schema>({
   authFunctions,
@@ -56,21 +31,15 @@ const createAuthOptions = (ctx: GenericCtx) =>
     baseURL: process.env.SITE_URL!,
     emailAndPassword: {
       enabled: true,
-      sendResetPassword: async ({ user, url, token }, request) => {
+      sendResetPassword: async ({ user, url, token }, _request) => {
         console.log(`Sending reset password email to ${user.email} with url ${url} and token ${token}`);
-        // void sendEmail({
-        //   to: user.email,
-        //   subject: "Reset your password",
-        //   text: `Click the link to reset your password: ${url}`,
-        // });
         await (ctx as MutationCtx).runMutation(internal.email.sendTestEmail, {
           to: user.email,
           subject: "Reset your password",
           text: `Click the link to reset your password: ${url}`,
         });
       },
-      onPasswordReset: async ({ user }, request) => {
-        // your logic here
+      onPasswordReset: async ({ user }, _request) => {
         console.log(`Password for user ${user.email} has been reset.`);
       },
       revokeSessionsOnPasswordReset: true,

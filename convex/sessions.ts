@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
 import { getAuth } from './auth';
-import { getHeaders } from 'better-convex/auth';
+import { getHeaders, getSession } from 'better-convex/auth';
 
 export const getSessionsByUser = queryWithRLS({
     args: {
@@ -10,14 +10,18 @@ export const getSessionsByUser = queryWithRLS({
     },
     handler: async (ctx) => {
 
-        const headers = await getHeaders(ctx);
-        const auth = getAuth(ctx);
+        const currentSession = await getSession(ctx);
 
-        const sessions = await auth.api.listSessions({
-            headers,
-        });
+        console.log(currentSession)
 
-        return sessions;
+        const sessions = await ctx.db.query('session')
+        .withIndex('userId', q => q.eq('userId', currentSession?.userId as string))
+        .collect();
+
+        return {
+            currentSession,
+            sessions
+        };
     },
 });
 
@@ -50,7 +54,6 @@ export const invalidateAllOtherSessions = mutationWithRLS({
 
         let revokedCount = 0;
         for (const session of sessions) {
-            // betterAuth sessions use 'token' as the identifier
             if (session.token !== args.currentToken) {
                 await auth.api.revokeSession({
                     headers,

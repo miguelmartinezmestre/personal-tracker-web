@@ -60,8 +60,14 @@ export const objectiveLifecycleV2 = workflow.define({
             return { finalStatus: objective.status, reason: 'Reached terminal status' };
         }
 
-        // If active and target reached, complete it
-        if (objective.status === 'active' && objective.currentValue >= objective.targetValue) {
+        // If active and target reached, complete it (direction-aware)
+        const direction = objective.direction ?? 'increase';
+        const shouldComplete =
+            direction === 'decrease'
+                ? objective.currentValue <= objective.targetValue
+                : objective.currentValue >= objective.targetValue;
+
+        if (objective.status === 'active' && shouldComplete) {
             await step.runMutation(
                 internal.objectiveInternals.updateStatusInternal,
                 { objectiveId, newStatus: 'completed' }

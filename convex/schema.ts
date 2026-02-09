@@ -14,13 +14,21 @@ export default defineSchema({
         category: v.optional(v.string()),
         targetValue: v.number(),
         currentValue: v.number(),
+        startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         status: v.string(), // 'active' | 'paused' | 'completed' | 'archived' | 'deleted'
         unit: v.optional(v.string()),
         objectiveType: v.optional(v.string()),
+        direction: v.optional(v.string()), // 'increase' | 'decrease'
         period: v.optional(v.string()),
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
+        reminderInterval: v.optional(v.string()), // 'none' | 'monthly' | 'biweekly' (twice per month)
+        nextReminderAt: v.optional(v.number()),
+        progressMode: v.optional(v.string()), // 'cumulative' | 'snapshot'
+        lastProgressAt: v.optional(v.number()),
+        lastStalledNotifiedAt: v.optional(v.number()),
+        lastDeadlineNotifiedAt: v.optional(v.number()),
         collaborators: v.optional(v.array(v.string())),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -51,7 +59,7 @@ export default defineSchema({
         organizationId: v.string(),
         objective: v.optional(v.id('objectives')),
         read: v.boolean(),
-        notificationType: v.string(), // 'deadline' | 'progress' | 'status' | 'achievement'
+        notificationType: v.string(), // 'deadline' | 'progress' | 'status' | 'reminder' | 'achievement'
         notificationDate: v.number(),
         message: v.string(),
         createdAt: v.number(),

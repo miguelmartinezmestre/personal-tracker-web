@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from ./ _generated / api';
-import { initConvexTest } from './better-auth.helper';
+import { api } from '../_generated/api';
+import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from ./ _generated / dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex update_progress', () => {
     const t = initConvexTest();
