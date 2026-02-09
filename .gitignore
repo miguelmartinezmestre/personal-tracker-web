@@ -16,9 +16,6 @@ dev.log
 # testing
 /coverage
 
-# next.js
-apps/front/.next
-
 
 # misc
 .DS_Store
@@ -55,7 +52,9 @@ coverage-output.txt
 .DS_Store
 
 # Frontend misc
-/apps/front/test-results
-/apps/front/playwright-report
-/apps/front/blob-report
-/apps/front/playwright/.cache
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+.next
