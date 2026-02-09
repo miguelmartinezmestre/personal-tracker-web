@@ -3,12 +3,15 @@
 import * as React from 'react';
 import { cn } from '@/lib/ui-utils/utils';
 import { Badge } from '@/components/ui/badge';
+import { computeObjectiveProgressPercent } from '@/features/objectives/components/objectives-utils';
 
 interface StatusIndicatorProps {
     status: string;
     deadline?: number;
     currentValue?: number;
     targetValue?: number;
+    startValue?: number;
+    direction?: string;
     className?: string;
 }
 
@@ -16,11 +19,18 @@ const getStatusInfo = (
     status: string,
     deadline?: number,
     currentValue?: number,
-    targetValue?: number
+    targetValue?: number,
+    startValue?: number,
+    direction?: string
 ) => {
     const now = Date.now();
     const isOverdue = deadline && deadline < now;
-    const progress = currentValue && targetValue ? (currentValue / targetValue) * 100 : 0;
+    const progress = computeObjectiveProgressPercent({
+        currentValue: currentValue ?? 0,
+        targetValue: targetValue ?? 0,
+        startValue: startValue ?? null,
+        direction: direction ?? 'increase',
+    });
 
     switch (status.toLowerCase()) {
         case 'completed':
@@ -84,8 +94,15 @@ const getStatusInfo = (
 };
 
 const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
-    ({ status, deadline, currentValue, targetValue, className, ...props }, ref) => {
-        const statusInfo = getStatusInfo(status, deadline, currentValue, targetValue);
+    ({ status, deadline, currentValue, targetValue, startValue, direction, className, ...props }, ref) => {
+        const statusInfo = getStatusInfo(
+            status,
+            deadline,
+            currentValue,
+            targetValue,
+            startValue,
+            direction
+        );
 
         return (
             <Badge
