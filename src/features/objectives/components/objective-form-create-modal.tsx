@@ -39,7 +39,7 @@ import {
     CreateObjective,
     objectiveSchema,
     objectiveTypeSchema,
-    periodSchema,
+    progressModeSchema,
 } from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
@@ -53,13 +53,17 @@ const defaultValues: CreateObjective = {
     category: null,
     targetValue: 0,
     currentValue: 0,
+    startValue: null,
     deadline: null,
     status: 'active', // Objectives auto-activate on creation
     unit: '',
     objectiveType: 'value',
+    direction: 'increase',
     period: 'none',
     periodStart: null,
     periodLengthDays: null,
+    reminderInterval: 'none',
+    progressMode: 'cumulative',
 };
 
 export default function CreateObjectiveFormModal() {
@@ -87,15 +91,19 @@ export default function CreateObjectiveFormModal() {
         { value: 'duration', label: t('objectiveTypeOptions.duration') },
     ];
 
-    const periodOptions = [
-        { value: 'none', label: t('periodOptions.none') },
-        { value: 'weekly', label: t('periodOptions.weekly') },
-        { value: 'monthly', label: t('periodOptions.monthly') },
-        { value: 'custom', label: t('periodOptions.custom') },
+    const directionOptions = [
+        { value: 'increase', label: t('directionOptions.increase') },
+        { value: 'decrease', label: t('directionOptions.decrease') },
+    ];
+
+    const reminderIntervalOptions = [
+        { value: 'none', label: t('reminderIntervalOptions.none') },
+        { value: 'monthly', label: t('reminderIntervalOptions.monthly') },
+        { value: 'biweekly', label: t('reminderIntervalOptions.biweekly') },
     ];
 
     type ObjectiveType = z.infer<typeof objectiveTypeSchema>;
-    type Period = z.infer<typeof periodSchema>;
+    type ProgressMode = z.infer<typeof progressModeSchema>;
 
     const defaultUnitByType: Partial<Record<ObjectiveType, string>> = {
         count: 'times',
@@ -103,20 +111,19 @@ export default function CreateObjectiveFormModal() {
         duration: 'minutes',
     };
 
-    const defaultPeriodByType: Partial<Record<ObjectiveType, Period>> = {
-        count: 'weekly',
-        money: 'monthly',
-        duration: 'weekly',
-    };
+    const progressModeOptions = [
+        { value: 'cumulative', label: t('progressModeOptions.cumulative') },
+        { value: 'snapshot', label: t('progressModeOptions.snapshot') },
+    ];
 
     const categoriesQuery = useQuery({
         ...convexQuery(api.categories.getCategoriesByUser, {}),
     });
 
     const categoryOptions = useMemo(
-        () =>
+        (): Array<{ id: string; value: string; label: string }> =>
             (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
-                id: category._id,
+                id: String(category._id),
                 value: category.name,
                 label: category.name,
             })),
@@ -143,20 +150,20 @@ export default function CreateObjectiveFormModal() {
             category: values.category ?? undefined,
             targetValue: values.targetValue,
             currentValue: values.currentValue,
+            startValue: values.startValue ?? values.currentValue,
             deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
             // Status is auto-set to 'active' by the workflow system
             unit: values.unit ?? undefined,
             objectiveType: values.objectiveType ?? undefined,
-            period: values.period ?? undefined,
-            periodStart: values.periodStart ?? undefined,
-            periodLengthDays: values.periodLengthDays ?? undefined,
+            direction: values.direction ?? undefined,
+            reminderInterval: values.reminderInterval ?? undefined,
+            progressMode: values.progressMode ?? undefined,
         });
         setOpen(false);
         form.reset();
     };
 
-    const objectiveType = form.state.values.objectiveType ?? 'value';
-    const period = form.state.values.period ?? 'none';
+    const progressMode = form.state.values.progressMode ?? 'cumulative';
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -282,19 +289,6 @@ export default function CreateObjectiveFormModal() {
                                             onValueChange={value => {
                                                 const nextType = value as ObjectiveType;
                                                 field.onChange(value);
-                                                if (value === 'value') {
-                                                    form.setFieldValue('period', 'none');
-                                                    form.setFieldValue('periodStart', null);
-                                                    form.setFieldValue('periodLengthDays', null);
-                                                } else if (
-                                                    !form.state.values.period ||
-                                                    form.state.values.period === 'none'
-                                                ) {
-                                                    form.setFieldValue(
-                                                        'period',
-                                                        defaultPeriodByType[nextType] ?? 'weekly'
-                                                    );
-                                                }
                                                 if (
                                                     !form.state.values.unit &&
                                                     defaultUnitByType[nextType]
@@ -336,42 +330,25 @@ export default function CreateObjectiveFormModal() {
                             />
 
                             <FormField
-                                name="period"
+                                name="direction"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{t('smartForm.fields.period')}</FormLabel>
+                                        <FormLabel>{t('smartForm.fields.direction')}</FormLabel>
                                         <Select
-                                            onValueChange={value => {
-                                                field.onChange(value);
-                                                if (value !== 'custom') {
-                                                    form.setFieldValue('periodStart', null);
-                                                    form.setFieldValue('periodLengthDays', null);
-                                                } else {
-                                                    if (!form.state.values.periodStart) {
-                                                        form.setFieldValue(
-                                                            'periodStart',
-                                                            Date.now()
-                                                        );
-                                                    }
-                                                    if (!form.state.values.periodLengthDays) {
-                                                        form.setFieldValue('periodLengthDays', 7);
-                                                    }
-                                                }
-                                            }}
-                                            value={field.value || 'none'}
-                                            disabled={objectiveType === 'value'}
+                                            onValueChange={field.onChange}
+                                            value={field.value || 'increase'}
                                         >
                                             <FormControl>
-                                                <SelectTrigger data-testid="objective-period-select">
+                                                <SelectTrigger>
                                                     <SelectValue
                                                         placeholder={t(
-                                                            'smartForm.placeholders.period'
+                                                            'smartForm.placeholders.direction'
                                                         )}
                                                     />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {periodOptions.map(option => (
+                                                {directionOptions.map(option => (
                                                     <SelectItem
                                                         key={option.value}
                                                         value={option.value}
@@ -381,99 +358,81 @@ export default function CreateObjectiveFormModal() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>{t('periodDescription')}</FormDescription>
+                                        <FormDescription>
+                                            {t('directionDescription')}
+                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
 
-                        {objectiveType !== 'value' && period === 'custom' && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField
-                                    name="periodStart"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel>{t('periodStart')}</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant={'outline'}
-                                                            className={cn(
-                                                                'w-full pl-3 text-left font-normal',
-                                                                !field.value &&
-                                                                    'text-muted-foreground'
-                                                            )}
-                                                        >
-                                                            {field.value ? (
-                                                                new Date(
-                                                                    field.value
-                                                                ).toLocaleDateString()
-                                                            ) : (
-                                                                <span>{t('pickADate')}</span>
-                                                            )}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent
-                                                    className="w-auto p-0"
-                                                    align="start"
-                                                >
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={
-                                                            field.value
-                                                                ? new Date(field.value)
-                                                                : undefined
-                                                        }
-                                                        onSelect={date =>
-                                                            field.onChange(date?.getTime() || null)
-                                                        }
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormDescription>
-                                                {t('periodStartDescription')}
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                        <FormField
+                            name="progressMode"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('progressMode')}</FormLabel>
+                                    <Select
+                                        onValueChange={value =>
+                                            field.onChange(value as ProgressMode)
+                                        }
+                                        value={field.value || 'cumulative'}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={t('progressMode')} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {progressModeOptions.map(option => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>{t('progressModeDescription')}</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-                                <FormField
-                                    name="periodLengthDays"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>{t('periodLengthDays')}</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    min={1}
-                                                    {...field}
-                                                    onChange={e =>
-                                                        field.onChange(
-                                                            e.target.value === ''
-                                                                ? null
-                                                                : Number.parseInt(
-                                                                      e.target.value,
-                                                                      10
-                                                                  )
-                                                        )
-                                                    }
+                        <FormField
+                            name="reminderInterval"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('reminderInterval')}</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value || 'none'}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue
+                                                    placeholder={t(
+                                                        'smartForm.placeholders.reminderInterval'
+                                                    )}
                                                 />
-                                            </FormControl>
-                                            <FormDescription>
-                                                {t('periodLengthDaysDescription')}
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        )}
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {reminderIntervalOptions.map(option => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        {t('reminderIntervalDescription')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
@@ -525,32 +484,36 @@ export default function CreateObjectiveFormModal() {
                             />
                         </div>
 
-                        {objectiveType === 'value' && (
-                            <FormField
-                                name="currentValue"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('smartForm.fields.currentValue')}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                {...field}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        Number.parseFloat(e.target.value)
-                                                    )
-                                                }
-                                                data-testid="objective-current-input"
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            {t('yourCurrentProgress')}
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
+                        <FormField
+                            name="currentValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {progressMode === 'cumulative'
+                                            ? t('initialValue')
+                                            : t('smartForm.fields.currentValue')}
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            {...field}
+                                            onChange={e =>
+                                                field.onChange(
+                                                    Number.parseFloat(e.target.value)
+                                                )
+                                            }
+                                            data-testid="objective-current-input"
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        {progressMode === 'cumulative'
+                                            ? t('initialValueDescription')
+                                            : t('yourCurrentProgress')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             name="deadline"
