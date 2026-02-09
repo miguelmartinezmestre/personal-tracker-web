@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from ./ _generated / api';
-import { initConvexTest } from './better-auth.helper';
+import { api } from '../_generated/api';
+import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from ./ _generated / dataModel';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex objectives', async () => {
     const t = initConvexTest();
@@ -80,20 +80,17 @@ describe('convex objectives', async () => {
         expect(objective?.status).toBe('active');
         expect(objective?.unit).toBe('EUR');
         expect(objective?.objectiveType).toBe('money');
-        expect(objective?.period).toBe('monthly');
+        expect(objective?.period).toBe('none');
         expect(objective?.userId).toBe(userId);
     });
 
-    test('getObjectiveById reflects period progress for event-based objectives', async () => {
+    test('getObjectiveById reflects cumulative progress for event-based objectives', async () => {
         const now = Date.now();
         const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
             title: 'Gym visits',
-            targetValue: 3,
+            targetValue: 5,
             currentValue: 0,
             objectiveType: 'count',
-            period: 'custom',
-            periodStart: now - 2 * DAY_MS,
-            periodLengthDays: 7,
         });
 
         await userIdentity.mutation(api.update_progress.createUpdateProgress, {
@@ -112,7 +109,8 @@ describe('convex objectives', async () => {
             id: objectiveId,
         });
 
-        expect(objective?.currentValue).toBe(1);
+        // Cumulative mode: startValue(0) + update1(1) + update2(2) = 3
+        expect(objective?.currentValue).toBe(3);
     });
 
     test("getObjectivesByUser returns user's objectives", async () => {
