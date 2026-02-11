@@ -22,7 +22,12 @@ export default function SessionsLayout({
                 <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <SessionsTable sessions={sessions ?? undefined} />
+            <SessionsTable
+                sessions={{
+                    currentSession: sessions?.currentSession ?? undefined,
+                    sessions: sessions?.sessions,
+                }}
+            />
         </div>
     );
 }
