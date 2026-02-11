@@ -21,6 +21,7 @@ const eslintConfig = [
     "dist/**",
     "tests/**",
     "src/tests-manual/**",
+    "src/components/ui/**",
   ]),
   {
     ...pluginReact.configs.flat.recommended,
