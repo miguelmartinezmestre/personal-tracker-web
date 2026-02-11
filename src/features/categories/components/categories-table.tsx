@@ -16,7 +16,8 @@ type ConvexCategory = {
     name: string;
     color: string;
     icon?: string;
-    user: string;
+    userId: string;
+    organizationId: string;
     createdAt: number;
     updatedAt: number;
 };

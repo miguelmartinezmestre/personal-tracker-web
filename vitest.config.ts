@@ -9,7 +9,6 @@ export default defineConfig({
         },
     },
     test: {
-        setupFiles: ['./vitest.setup.ts'],
         reporters: ['tree'],
         include: ['convex/tests/**/*.test.ts', 'src/features/**/*.test.{ts,tsx}'],
         exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],

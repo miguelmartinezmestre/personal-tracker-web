@@ -81,8 +81,8 @@ const ResponsiveObjectivesView = React.forwardRef<
 
     const categories = React.useMemo(() => {
         const values = fetchedObjectives?.page
-            .map((objective: { category: string }) => objective.category)
-            .filter((category: string): category is string => Boolean(category));
+            .map((objective: { category?: string }) => objective.category)
+            .filter((category): category is string => Boolean(category));
         return Array.from(new Set(values)).sort((a: unknown, b: unknown) =>
             (a as string).localeCompare(b as string)
         );

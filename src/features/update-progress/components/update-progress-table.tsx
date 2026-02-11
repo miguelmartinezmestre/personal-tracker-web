@@ -131,8 +131,7 @@ export default function UpdateProgressTable({
             objective: objectiveDoc?.targetValue ?? 0,
         };
     });
-    const lastUpdated =
-        relevantUpdates.length > 0 ? relevantUpdates[relevantUpdates.length - 1].updateDate : null;
+    const lastUpdated = relevantUpdates.at(-1)?.updateDate ?? null;
 
     // Prepare updates for velocity and streak calculations
     const updatesForGraph = relevantUpdates.map((item: Doc<'progressUpdates'>) => ({
