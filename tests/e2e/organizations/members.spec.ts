@@ -21,11 +21,11 @@ test.describe('Organization Members', () => {
 
             // Look for members section
             const membersSection = page.locator('text=/members|miembros/i');
-            const hasMembersSection = await membersSection.count() > 0;
+            const hasMembersSection = (await membersSection.count()) > 0;
 
             // Or a members tab
             const membersTab = page.locator('button:has-text("Members"), [data-testid*="members"]');
-            if (await membersTab.count() > 0) {
+            if ((await membersTab.count()) > 0) {
                 await membersTab.first().click();
                 await page.waitForLoadState('networkidle');
             }
@@ -51,12 +51,14 @@ test.describe('Organization Members', () => {
             await page.waitForLoadState('networkidle');
 
             // Owner should see member management options
-            const inviteButton = page.locator('button:has-text("Invite"), button:has-text("Invitar"), [data-testid*="invite"]');
-            const hasInviteButton = await inviteButton.count() > 0;
+            const inviteButton = page.locator(
+                'button:has-text("Invite"), button:has-text("Invitar"), [data-testid*="invite"]'
+            );
+            const hasInviteButton = (await inviteButton.count()) > 0;
 
             // Or member list visible
             const memberList = page.locator('[data-testid*="member-list"], table');
-            const hasMemberList = await memberList.count() > 0;
+            const hasMemberList = (await memberList.count()) > 0;
 
             expect(hasInviteButton || hasMemberList).toBeTruthy();
         }
@@ -82,7 +84,9 @@ test.describe('Organization Members', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for remove member button (if there are other members)
-            const removeButton = page.locator('[data-testid*="remove-member"], button[aria-label*="remove"]');
+            const removeButton = page.locator(
+                '[data-testid*="remove-member"], button[aria-label*="remove"]'
+            );
 
             // Since we only have the owner, there might be no remove buttons
             // Or remove is disabled for owner
@@ -101,8 +105,10 @@ test.describe('Organization Members', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for role badge (owner, admin, member)
-            const roleBadge = page.locator('text=/owner|admin|member|propietario|administrador|miembro/i');
-            const hasRoleBadge = await roleBadge.count() > 0;
+            const roleBadge = page.locator(
+                'text=/owner|admin|member|propietario|administrador|miembro/i'
+            );
+            const hasRoleBadge = (await roleBadge.count()) > 0;
 
             // The owner should see their role
             expect(hasRoleBadge).toBeTruthy();
@@ -121,13 +127,17 @@ test.describe('Organization Members', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for owner's member entry
-            const ownerRow = page.locator('tr:has-text("owner"), [data-testid*="member"]:has-text("owner")');
+            const ownerRow = page.locator(
+                'tr:has-text("owner"), [data-testid*="member"]:has-text("owner")'
+            );
 
-            if (await ownerRow.count() > 0) {
+            if ((await ownerRow.count()) > 0) {
                 // Remove button should be disabled or not present for owner
-                const removeButton = ownerRow.locator('[data-testid*="remove"], button[aria-label*="remove"]');
+                const removeButton = ownerRow.locator(
+                    '[data-testid*="remove"], button[aria-label*="remove"]'
+                );
 
-                if (await removeButton.count() > 0) {
+                if ((await removeButton.count()) > 0) {
                     // Should be disabled
                     await expect(removeButton.first()).toBeDisabled();
                 }
@@ -148,7 +158,7 @@ test.describe('Organization Members', () => {
 
             // Look for email display in member list
             const emailDisplay = page.getByText(/@.*\.com|@.*\.test/);
-            const hasEmail = await emailDisplay.count() > 0;
+            const hasEmail = (await emailDisplay.count()) > 0;
 
             // At least the owner's email should be visible
             // (depending on UI design)
@@ -168,7 +178,7 @@ test.describe('Organization Members', () => {
 
             // Look for date display
             const dateDisplay = page.getByText(/\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|ago|hace/);
-            const hasDate = await dateDisplay.count() > 0;
+            const hasDate = (await dateDisplay.count()) > 0;
 
             // Date formatting might vary
         }

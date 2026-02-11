@@ -142,9 +142,7 @@ export default function CreateUpdateProgressFormModal() {
                                             }
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        {updatedValueDescription}
-                                    </FormDescription>
+                                    <FormDescription>{updatedValueDescription}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

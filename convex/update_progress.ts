@@ -103,7 +103,6 @@ export const createUpdateProgress = mutationWithRLS({
         comment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-
         const objective = await ctx.db.get('objectives', args.objective);
         if (!objective) {
             throw new Error('Objective not found');
@@ -152,7 +151,11 @@ export const createUpdateProgress = mutationWithRLS({
         const currentValue = await syncObjectiveCurrentValue(ctx, args.objective);
 
         if (currentValue !== null) {
-            const completionState = await syncObjectiveCompletionState(ctx, args.objective, currentValue);
+            const completionState = await syncObjectiveCompletionState(
+                ctx,
+                args.objective,
+                currentValue
+            );
             if (
                 completionState.completedNow &&
                 !process.env.VITEST &&

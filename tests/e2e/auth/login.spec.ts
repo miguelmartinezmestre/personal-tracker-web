@@ -1,7 +1,17 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, loginUser, logoutUser, DEFAULT_PASSWORD } from '../../helpers/test-helpers';
+import {
+    createTestUser,
+    loginUser,
+    logoutUser,
+    DEFAULT_PASSWORD,
+} from '../../helpers/test-helpers';
 import { UserFactory } from '../../helpers/factories';
-import { expectOnDashboard, expectOnLogin, expectErrorAlert, expectWelcomeMessage } from '../../helpers/assertions';
+import {
+    expectOnDashboard,
+    expectOnLogin,
+    expectErrorAlert,
+    expectWelcomeMessage,
+} from '../../helpers/assertions';
 
 test.describe('Login', () => {
     test('login with valid credentials', async ({ page }) => {
@@ -89,7 +99,9 @@ test.describe('Login', () => {
         await page.goto('/login');
 
         // Click "Don't have an account" link
-        const registerLink = page.getByRole('link', { name: /don't have an account|no tienes cuenta/i });
+        const registerLink = page.getByRole('link', {
+            name: /don't have an account|no tienes cuenta/i,
+        });
         await registerLink.click();
 
         // Should be on register page

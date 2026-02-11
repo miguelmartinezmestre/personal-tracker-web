@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, ensureDefaultCategories, loginUser, logoutUser, DEFAULT_PASSWORD } from '../helpers/test-helpers';
+import {
+    createTestUser,
+    ensureDefaultCategories,
+    loginUser,
+    logoutUser,
+    DEFAULT_PASSWORD,
+} from '../helpers/test-helpers';
 import { randomUUID } from 'crypto';
 
 /**
@@ -57,8 +63,11 @@ test.describe('Critical Paths - Smoke Tests', () => {
         await page.getByTestId('objective-category-select').click();
         await page.waitForTimeout(500);
         await page.waitForSelector('[role="option"]', { timeout: 10000 });
-        const personalOption = page.getByRole('option').filter({ hasText: /personal/i }).first();
-        if (await personalOption.count() > 0) {
+        const personalOption = page
+            .getByRole('option')
+            .filter({ hasText: /personal/i })
+            .first();
+        if ((await personalOption.count()) > 0) {
             await personalOption.click();
         } else {
             await page.getByRole('option').first().click();
@@ -166,8 +175,11 @@ test.describe('Critical Paths - Smoke Tests', () => {
         await page.getByTestId('objective-title-input').fill(title);
         await page.getByTestId('objective-category-select').click();
         await page.waitForSelector('[role="option"]', { timeout: 10000 });
-        const catOption = page.getByRole('option').filter({ hasText: /personal/i }).first();
-        if (await catOption.count() > 0) {
+        const catOption = page
+            .getByRole('option')
+            .filter({ hasText: /personal/i })
+            .first();
+        if ((await catOption.count()) > 0) {
             await catOption.click();
         } else {
             await page.getByRole('option').first().click();
@@ -245,8 +257,11 @@ test.describe('Critical Paths - Smoke Tests', () => {
         await page.getByTestId('objective-title-input').fill(title);
         await page.getByTestId('objective-category-select').click();
         await page.waitForSelector('[role="option"]', { timeout: 10000 });
-        const persistOption = page.getByRole('option').filter({ hasText: /personal/i }).first();
-        if (await persistOption.count() > 0) {
+        const persistOption = page
+            .getByRole('option')
+            .filter({ hasText: /personal/i })
+            .first();
+        if ((await persistOption.count()) > 0) {
             await persistOption.click();
         } else {
             await page.getByRole('option').first().click();

@@ -1,8 +1,6 @@
 'use client';
 
-import {
-    useOrganizationByIdentifier,
-} from '@/features/organizations/hooks/use-organizations';
+import { useOrganizationByIdentifier } from '@/features/organizations/hooks/use-organizations';
 import CreateOrganizationMemberFormModal from '@/features/organizations/components/organization-members-form-create-modal';
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
 import { Skeleton } from '@/components/ui/skeleton';

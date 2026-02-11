@@ -6,11 +6,15 @@ import SessionsTable from './sessions-table';
 import { Preloaded } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
-export default function SessionsLayout({ preloadedSessionsQuery }: { preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser> }) {
+export default function SessionsLayout({
+    preloadedSessionsQuery,
+}: {
+    preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
+}) {
     const t = useTranslations('Sessions');
     const sessions = usePreloadedAuthQuery(preloadedSessionsQuery);
 
-    console.log(sessions)
+    console.log(sessions);
 
     return (
         <div className="space-y-6">

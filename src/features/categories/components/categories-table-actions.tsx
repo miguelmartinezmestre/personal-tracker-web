@@ -23,5 +23,9 @@ export function useDeleteCategory() {
         },
     });
 
-    return { deleteCategory: mutate, deleteCategoryAsync: mutateAsync, isDeletingCategory: isPending };
+    return {
+        deleteCategory: mutate,
+        deleteCategoryAsync: mutateAsync,
+        isDeletingCategory: isPending,
+    };
 }

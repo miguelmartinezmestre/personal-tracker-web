@@ -28,7 +28,11 @@ test.describe('Admin Users', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for search input
-        const searchInput = page.locator('[data-testid*="search"], input[type="search"], input[placeholder*="search"], input[placeholder*="buscar"]').first();
+        const searchInput = page
+            .locator(
+                '[data-testid*="search"], input[type="search"], input[placeholder*="search"], input[placeholder*="buscar"]'
+            )
+            .first();
 
         if (await searchInput.isVisible()) {
             // Search for a user
@@ -54,14 +58,16 @@ test.describe('Admin Users', () => {
 
         if (await userRow.isVisible()) {
             // Look for role change action
-            const roleButton = userRow.locator('[data-testid*="role"], button:has-text("Role"), select').first();
+            const roleButton = userRow
+                .locator('[data-testid*="role"], button:has-text("Role"), select')
+                .first();
 
             if (await roleButton.isVisible()) {
                 await roleButton.click();
 
                 // Select new role
                 const adminOption = page.getByRole('option', { name: /admin/i });
-                if (await adminOption.count() > 0) {
+                if ((await adminOption.count()) > 0) {
                     await adminOption.click();
                     await page.waitForTimeout(2000);
                     await page.waitForLoadState('networkidle');
@@ -83,7 +89,9 @@ test.describe('Admin Users', () => {
 
         if (await userRow.isVisible()) {
             // Look for ban button
-            const banButton = userRow.locator('button:has-text("Ban"), button:has-text("Suspend"), [data-testid*="ban"]').first();
+            const banButton = userRow
+                .locator('button:has-text("Ban"), button:has-text("Suspend"), [data-testid*="ban"]')
+                .first();
 
             if (await banButton.isVisible()) {
                 await banButton.click();
@@ -91,7 +99,9 @@ test.describe('Admin Users', () => {
                 // Confirm ban
                 const confirmDialog = page.locator('[role="dialog"]');
                 if (await confirmDialog.isVisible()) {
-                    const confirmButton = confirmDialog.locator('button:has-text("Confirm"), button:has-text("Ban")').first();
+                    const confirmButton = confirmDialog
+                        .locator('button:has-text("Confirm"), button:has-text("Ban")')
+                        .first();
                     await confirmButton.click();
                 }
 
@@ -111,14 +121,18 @@ test.describe('Admin Users', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for unban button on any banned user
-        const unbanButton = page.locator('button:has-text("Unban"), button:has-text("Activate"), [data-testid*="unban"]');
+        const unbanButton = page.locator(
+            'button:has-text("Unban"), button:has-text("Activate"), [data-testid*="unban"]'
+        );
 
-        if (await unbanButton.count() > 0) {
+        if ((await unbanButton.count()) > 0) {
             await unbanButton.first().click();
 
             const confirmDialog = page.locator('[role="dialog"]');
             if (await confirmDialog.isVisible()) {
-                const confirmButton = confirmDialog.locator('button:has-text("Confirm"), button:has-text("Unban")').first();
+                const confirmButton = confirmDialog
+                    .locator('button:has-text("Confirm"), button:has-text("Unban")')
+                    .first();
                 await confirmButton.click();
             }
 
@@ -132,7 +146,9 @@ test.describe('Admin Users', () => {
 
         // Click on a user to view details
         const userRow = page.locator('tbody tr, [data-testid*="user-row"]').first();
-        const viewButton = userRow.locator('a, button:has-text("View"), [data-testid*="view"]').first();
+        const viewButton = userRow
+            .locator('a, button:has-text("View"), [data-testid*="view"]')
+            .first();
 
         if (await viewButton.isVisible()) {
             await viewButton.click();
@@ -147,9 +163,11 @@ test.describe('Admin Users', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for pagination controls
-        const pagination = page.locator('[data-testid*="pagination"], .pagination, nav[aria-label*="pagination"]');
+        const pagination = page.locator(
+            '[data-testid*="pagination"], .pagination, nav[aria-label*="pagination"]'
+        );
 
-        if (await pagination.count() > 0) {
+        if ((await pagination.count()) > 0) {
             // Try navigating to next page
             const nextButton = page.locator('button:has-text("Next"), [aria-label*="next"]');
 
@@ -165,13 +183,15 @@ test.describe('Admin Users', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for role filter
-        const roleFilter = page.locator('[data-testid*="role-filter"], select:has-text("Role")').first();
+        const roleFilter = page
+            .locator('[data-testid*="role-filter"], select:has-text("Role")')
+            .first();
 
         if (await roleFilter.isVisible()) {
             await roleFilter.click();
 
             const adminOption = page.getByRole('option', { name: /admin/i });
-            if (await adminOption.count() > 0) {
+            if ((await adminOption.count()) > 0) {
                 await adminOption.click();
                 await page.waitForLoadState('networkidle');
 
@@ -185,13 +205,15 @@ test.describe('Admin Users', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for status filter
-        const statusFilter = page.locator('[data-testid*="status-filter"], select:has-text("Status")').first();
+        const statusFilter = page
+            .locator('[data-testid*="status-filter"], select:has-text("Status")')
+            .first();
 
         if (await statusFilter.isVisible()) {
             await statusFilter.click();
 
             const activeOption = page.getByRole('option', { name: /active|activo/i });
-            if (await activeOption.count() > 0) {
+            if ((await activeOption.count()) > 0) {
                 await activeOption.click();
                 await page.waitForLoadState('networkidle');
 
@@ -220,12 +242,14 @@ test.describe('Admin Users', () => {
 
         // Find own row (current admin user)
         // Role change for self should be disabled
-        const selfRow = page.locator('tr:has-text("(you)"), tr:has-text("(tú)"), [data-testid*="current-user"]');
+        const selfRow = page.locator(
+            'tr:has-text("(you)"), tr:has-text("(tú)"), [data-testid*="current-user"]'
+        );
 
-        if (await selfRow.count() > 0) {
+        if ((await selfRow.count()) > 0) {
             const roleButton = selfRow.locator('[data-testid*="role"], button:has-text("Role")');
 
-            if (await roleButton.count() > 0) {
+            if ((await roleButton.count()) > 0) {
                 // Should be disabled
                 await expect(roleButton.first()).toBeDisabled();
             }

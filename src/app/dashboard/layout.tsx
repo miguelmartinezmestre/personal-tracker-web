@@ -12,10 +12,9 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-
     let preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
 
-    try{
+    try {
         preloadedUserQuery = await preloadAuthQuery(api.auth.getCurrentUser);
     } catch (error) {
         console.error(error);

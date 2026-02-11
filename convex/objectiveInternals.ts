@@ -102,7 +102,10 @@ export const onTickInternal = internalMutation({
         objectiveId: v.id('objectives'),
         seq: v.number(),
     },
-    handler: async (ctx, args): Promise<{
+    handler: async (
+        ctx,
+        args
+    ): Promise<{
         processed: boolean;
         reason?: string;
         autoCompleted?: boolean;
@@ -240,7 +243,10 @@ export const computeNextTickInternal = internalAction({
         objectiveId: v.id('objectives'),
         workflowId: vWorkflowId,
     },
-    handler: async (ctx, args): Promise<{ scheduled: boolean; nextTickAt?: number; seq?: number }> => {
+    handler: async (
+        ctx,
+        args
+    ): Promise<{ scheduled: boolean; nextTickAt?: number; seq?: number }> => {
         // Get current objective state
         const objective = await ctx.runQuery(internal.objectiveInternals.getByIdInternal, {
             objectiveId: args.objectiveId,
@@ -270,15 +276,11 @@ export const computeNextTickInternal = internalAction({
         });
 
         // Schedule the tick signal
-        await ctx.scheduler.runAt(
-            nextTickAt,
-            internal.objectiveInternals.sendTickSignalInternal,
-            {
-                objectiveId: args.objectiveId,
-                seq: newSeq,
-                workflowId: args.workflowId,
-            }
-        );
+        await ctx.scheduler.runAt(nextTickAt, internal.objectiveInternals.sendTickSignalInternal, {
+            objectiveId: args.objectiveId,
+            seq: newSeq,
+            workflowId: args.workflowId,
+        });
 
         return { scheduled: true, nextTickAt, seq: newSeq };
     },

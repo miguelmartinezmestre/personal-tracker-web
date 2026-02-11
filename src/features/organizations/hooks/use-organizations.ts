@@ -47,19 +47,18 @@ export function useOrganizations() {
  * Hook para obtener una organización por su ID
  */
 export function useOrganization(organizationId: string | null) {
-    const data = useQuery(
-        api.organizations.getOrganizationsByUser,
-        organizationId ? {} : 'skip'
-    );
+    const data = useQuery(api.organizations.getOrganizationsByUser, organizationId ? {} : 'skip');
 
     const org = data?.find((o: any) => o.id === organizationId);
     return {
-        data: org ? {
-            id: org.id,
-            name: org.name,
-            slug: org.slug,
-            description: org.description ?? '',
-        } as Organization : null,
+        data: org
+            ? ({
+                  id: org.id,
+                  name: org.name,
+                  slug: org.slug,
+                  description: org.description ?? '',
+              } as Organization)
+            : null,
         isPending: data === undefined,
         isLoading: data === undefined,
     };
@@ -69,19 +68,18 @@ export function useOrganization(organizationId: string | null) {
  * Hook para obtener una organización por su slug
  */
 export function useOrganizationBySlug(slug: string | null) {
-    const data = useQuery(
-        api.organizations.getOrganizationsByUser,
-        slug ? {} : 'skip'
-    );
+    const data = useQuery(api.organizations.getOrganizationsByUser, slug ? {} : 'skip');
 
     const org = data?.find((o: any) => o.slug === slug);
     return {
-        data: org ? {
-            id: org.id,
-            name: org.name,
-            slug: org.slug,
-            description: org.description ?? '',
-        } as Organization : null,
+        data: org
+            ? ({
+                  id: org.id,
+                  name: org.name,
+                  slug: org.slug,
+                  description: org.description ?? '',
+              } as Organization)
+            : null,
         isPending: data === undefined,
         isLoading: data === undefined,
     };
@@ -93,10 +91,7 @@ export function useOrganizationBySlug(slug: string | null) {
  * Esto permite que las rutas funcionen tanto con slugs como con IDs
  */
 export function useOrganizationByIdentifier(identifier: string | null) {
-    const data = useQuery(
-        api.organizations.getOrganizationsByUser,
-        identifier ? {} : 'skip'
-    );
+    const data = useQuery(api.organizations.getOrganizationsByUser, identifier ? {} : 'skip');
 
     // First try to find by slug
     let org = data?.find((o: any) => {
@@ -111,12 +106,14 @@ export function useOrganizationByIdentifier(identifier: string | null) {
     }
 
     return {
-        data: org ? {
-            id: org.id,
-            name: org.name,
-            slug: org.slug,
-            description: org.description ?? '',
-        } as Organization : null,
+        data: org
+            ? ({
+                  id: org.id,
+                  name: org.name,
+                  slug: org.slug,
+                  description: org.description ?? '',
+              } as Organization)
+            : null,
         isPending: data === undefined,
         isLoading: data === undefined,
     };

@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { createTestUser, promoteToAdmin, logoutUser } from '../../helpers/test-helpers';
-import { expectOnLogin, expectOnDashboard, expectAdminMenuVisible, expectAdminMenuHidden } from '../../helpers/assertions';
+import {
+    expectOnLogin,
+    expectOnDashboard,
+    expectAdminMenuVisible,
+    expectAdminMenuHidden,
+} from '../../helpers/assertions';
 
 test.describe('Route Protection', () => {
     test('redirect to login when not authenticated', async ({ page }) => {
@@ -78,8 +83,10 @@ test.describe('Route Protection', () => {
 
         // Either redirected to home or shows forbidden/access denied
         const isRedirected = !currentUrl.includes('/admin/');
-        const accessDenied = page.locator('text=/access denied|forbidden|no autorizado|sin acceso/i');
-        const hasAccessDenied = await accessDenied.count() > 0;
+        const accessDenied = page.locator(
+            'text=/access denied|forbidden|no autorizado|sin acceso/i'
+        );
+        const hasAccessDenied = (await accessDenied.count()) > 0;
 
         expect(isRedirected || hasAccessDenied).toBeTruthy();
     });

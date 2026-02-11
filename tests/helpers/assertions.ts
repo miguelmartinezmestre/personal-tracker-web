@@ -32,8 +32,12 @@ export async function expectErrorAlert(page: Page, message?: string | RegExp): P
     // Wait a bit for error to appear
     await page.waitForTimeout(1000);
 
-    const alert = page.locator('[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]');
-    const errorText = page.getByText(/error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i);
+    const alert = page.locator(
+        '[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]'
+    );
+    const errorText = page.getByText(
+        /error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i
+    );
 
     const hasAlert = (await alert.count()) > 0;
     const hasErrorText = (await errorText.count()) > 0;
@@ -85,7 +89,9 @@ export async function expectNoTableRow(page: Page, text: string): Promise<void> 
  * Asserts that a modal/dialog is visible.
  */
 export async function expectModalVisible(page: Page): Promise<void> {
-    const modal = page.locator('[role="dialog"], [data-slot="dialog-content"], [data-slot="alert-dialog-content"]');
+    const modal = page.locator(
+        '[role="dialog"], [data-slot="dialog-content"], [data-slot="alert-dialog-content"]'
+    );
     await expect(modal.first()).toBeVisible();
 }
 
@@ -93,7 +99,9 @@ export async function expectModalVisible(page: Page): Promise<void> {
  * Asserts that a modal/dialog is hidden.
  */
 export async function expectModalHidden(page: Page): Promise<void> {
-    const modal = page.locator('[role="dialog"], [data-slot="dialog-content"], [data-slot="alert-dialog-content"]');
+    const modal = page.locator(
+        '[role="dialog"], [data-slot="dialog-content"], [data-slot="alert-dialog-content"]'
+    );
     await expect(modal).toHaveCount(0);
 }
 
@@ -102,7 +110,9 @@ export async function expectModalHidden(page: Page): Promise<void> {
  */
 export async function expectFieldError(page: Page, fieldTestId: string): Promise<void> {
     const field = page.getByTestId(fieldTestId);
-    const errorMessage = field.locator('..').locator('[class*="text-destructive"], [class*="error"]');
+    const errorMessage = field
+        .locator('..')
+        .locator('[class*="text-destructive"], [class*="error"]');
     await expect(errorMessage.first()).toBeVisible();
 }
 

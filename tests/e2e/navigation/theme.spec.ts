@@ -15,7 +15,7 @@ test.describe('Theme Switching', () => {
             '[data-testid*="theme"], button[aria-label*="theme"], button[aria-label*="dark"], button[aria-label*="light"], [data-testid*="mode-toggle"]'
         );
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             // Check current theme
             const htmlElement = page.locator('html');
             const currentClass = await htmlElement.getAttribute('class');
@@ -26,8 +26,10 @@ test.describe('Theme Switching', () => {
             await page.waitForTimeout(500);
 
             // If there's a dropdown, select dark mode
-            const darkOption = page.locator('[role="menuitem"]:has-text("Dark"), button:has-text("Dark"), [data-value="dark"]');
-            if (await darkOption.count() > 0) {
+            const darkOption = page.locator(
+                '[role="menuitem"]:has-text("Dark"), button:has-text("Dark"), [data-value="dark"]'
+            );
+            if ((await darkOption.count()) > 0) {
                 await darkOption.first().click();
                 await page.waitForTimeout(500);
             }
@@ -54,13 +56,15 @@ test.describe('Theme Switching', () => {
             '[data-testid*="theme"], button[aria-label*="theme"], [data-testid*="mode-toggle"]'
         );
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             await themeToggle.first().click();
             await page.waitForTimeout(500);
 
             // Select light mode
-            const lightOption = page.locator('[role="menuitem"]:has-text("Light"), button:has-text("Light"), [data-value="light"]');
-            if (await lightOption.count() > 0) {
+            const lightOption = page.locator(
+                '[role="menuitem"]:has-text("Light"), button:has-text("Light"), [data-value="light"]'
+            );
+            if ((await lightOption.count()) > 0) {
                 await lightOption.first().click();
                 await page.waitForTimeout(500);
             }
@@ -86,12 +90,14 @@ test.describe('Theme Switching', () => {
             '[data-testid*="theme"], button[aria-label*="theme"], [data-testid*="mode-toggle"]'
         );
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             await themeToggle.first().click();
             await page.waitForTimeout(300);
 
-            const darkOption = page.locator('[role="menuitem"]:has-text("Dark"), [data-value="dark"]');
-            if (await darkOption.count() > 0) {
+            const darkOption = page.locator(
+                '[role="menuitem"]:has-text("Dark"), [data-value="dark"]'
+            );
+            if ((await darkOption.count()) > 0) {
                 await darkOption.first().click();
                 await page.waitForTimeout(500);
             }
@@ -120,7 +126,7 @@ test.describe('Theme Switching', () => {
 
         const themeToggle = page.locator('[data-testid*="theme"], button[aria-label*="theme"]');
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             await themeToggle.first().click();
             await page.waitForTimeout(300);
 
@@ -129,7 +135,7 @@ test.describe('Theme Switching', () => {
                 '[role="menuitem"]:has-text("System"), button:has-text("System"), [data-value="system"]'
             );
 
-            if (await systemOption.count() > 0) {
+            if ((await systemOption.count()) > 0) {
                 await expect(systemOption.first()).toBeVisible();
             }
         }
@@ -142,12 +148,14 @@ test.describe('Theme Switching', () => {
         // Set dark mode
         const themeToggle = page.locator('[data-testid*="theme"], button[aria-label*="theme"]');
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             await themeToggle.first().click();
             await page.waitForTimeout(300);
 
-            const darkOption = page.locator('[role="menuitem"]:has-text("Dark"), [data-value="dark"]');
-            if (await darkOption.count() > 0) {
+            const darkOption = page.locator(
+                '[role="menuitem"]:has-text("Dark"), [data-value="dark"]'
+            );
+            if ((await darkOption.count()) > 0) {
                 await darkOption.first().click();
                 await page.waitForTimeout(500);
             }
@@ -172,7 +180,7 @@ test.describe('Theme Switching', () => {
 
         const themeToggle = page.locator('[data-testid*="theme"], button[aria-label*="theme"]');
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             // Should have accessible label
             const ariaLabel = await themeToggle.first().getAttribute('aria-label');
             const title = await themeToggle.first().getAttribute('title');
@@ -188,19 +196,23 @@ test.describe('Theme Switching', () => {
         // Set dark mode
         const themeToggle = page.locator('[data-testid*="theme"], button[aria-label*="theme"]');
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             await themeToggle.first().click();
             await page.waitForTimeout(300);
 
-            const darkOption = page.locator('[role="menuitem"]:has-text("Dark"), [data-value="dark"]');
-            if (await darkOption.count() > 0) {
+            const darkOption = page.locator(
+                '[role="menuitem"]:has-text("Dark"), [data-value="dark"]'
+            );
+            if ((await darkOption.count()) > 0) {
                 await darkOption.first().click();
                 await page.waitForTimeout(500);
             }
 
             // Check background color is dark
             const body = page.locator('body');
-            const backgroundColor = await body.evaluate(el => window.getComputedStyle(el).backgroundColor);
+            const backgroundColor = await body.evaluate(
+                el => window.getComputedStyle(el).backgroundColor
+            );
 
             // Dark backgrounds typically have low RGB values
             // This is a basic check
@@ -213,15 +225,19 @@ test.describe('Theme Switching', () => {
 
         const themeToggle = page.locator('[data-testid*="theme"], button[aria-label*="theme"]');
 
-        if (await themeToggle.count() > 0) {
+        if ((await themeToggle.count()) > 0) {
             // Get icon before toggle
-            const iconBefore = await themeToggle.first().locator('svg').innerHTML().catch(() => '');
+            const iconBefore = await themeToggle
+                .first()
+                .locator('svg')
+                .innerHTML()
+                .catch(() => '');
 
             await themeToggle.first().click();
             await page.waitForTimeout(300);
 
             const toggleOption = page.locator('[role="menuitem"]').first();
-            if (await toggleOption.count() > 0) {
+            if ((await toggleOption.count()) > 0) {
                 await toggleOption.click();
                 await page.waitForTimeout(500);
             }

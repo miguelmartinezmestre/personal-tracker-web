@@ -3,7 +3,6 @@ import { v } from 'convex/values';
 import authSchema from './authSchema';
 
 export default defineSchema({
-
     ...authSchema.tables,
 
     objectives: defineTable({
@@ -33,15 +32,15 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
         // Workflow fields
-        workflowId: v.optional(v.string()),     // ID of the active workflow
-        nextTickAt: v.optional(v.number()),     // Timestamp of next scheduled tick
-        nextTickSeq: v.optional(v.number()),    // Monotonic counter for anti-race pattern
+        workflowId: v.optional(v.string()), // ID of the active workflow
+        nextTickAt: v.optional(v.number()), // Timestamp of next scheduled tick
+        nextTickSeq: v.optional(v.number()), // Monotonic counter for anti-race pattern
     })
-    .index('by_user', ['userId'])
-    .index('by_organization', ['organizationId'])
-    .index('by_organization_user', ['organizationId', 'userId'])
-    .index('by_workflow', ['workflowId'])
-    .index('by_status', ['status']),
+        .index('by_user', ['userId'])
+        .index('by_organization', ['organizationId'])
+        .index('by_organization_user', ['organizationId', 'userId'])
+        .index('by_workflow', ['workflowId'])
+        .index('by_status', ['status']),
 
     progressUpdates: defineTable({
         objective: v.id('objectives'),
@@ -103,8 +102,8 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-    .index('by_user', ['userId'])
-    .index('by_organization', ['organizationId']),
+        .index('by_user', ['userId'])
+        .index('by_organization', ['organizationId']),
 
     // Achievement definitions - what achievements exist
     achievementDefinitions: defineTable({
@@ -149,5 +148,4 @@ export default defineSchema({
         .index('by_organization', ['organization'])
         .index('by_organization_achievement', ['organization', 'achievement'])
         .index('by_earned_at', ['earnedAt']),
-
 });

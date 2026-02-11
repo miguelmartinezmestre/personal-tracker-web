@@ -28,7 +28,11 @@ test.describe('Admin Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for user filter
-        const userFilter = page.locator('[data-testid*="user-filter"], input[placeholder*="user"], input[placeholder*="search"]').first();
+        const userFilter = page
+            .locator(
+                '[data-testid*="user-filter"], input[placeholder*="user"], input[placeholder*="search"]'
+            )
+            .first();
 
         if (await userFilter.isVisible()) {
             await userFilter.fill('test');
@@ -52,12 +56,14 @@ test.describe('Admin Sessions', () => {
         // Find a session that's not the current admin's
         const sessionRows = page.locator('tbody tr, [data-testid*="session-row"]');
 
-        for (let i = 0; i < await sessionRows.count(); i++) {
+        for (let i = 0; i < (await sessionRows.count()); i++) {
             const row = sessionRows.nth(i);
-            const isCurrentSession = await row.locator('text=/current|actual/i').count() > 0;
+            const isCurrentSession = (await row.locator('text=/current|actual/i').count()) > 0;
 
             if (!isCurrentSession) {
-                const revokeButton = row.locator('button:has-text("Revoke"), button:has-text("End"), [data-testid*="revoke"]');
+                const revokeButton = row.locator(
+                    'button:has-text("Revoke"), button:has-text("End"), [data-testid*="revoke"]'
+                );
 
                 if (await revokeButton.isVisible()) {
                     await revokeButton.click();
@@ -65,7 +71,9 @@ test.describe('Admin Sessions', () => {
                     // Confirm
                     const confirmDialog = page.locator('[role="dialog"]');
                     if (await confirmDialog.isVisible()) {
-                        const confirmButton = confirmDialog.locator('button:has-text("Confirm"), button:has-text("Revoke")').first();
+                        const confirmButton = confirmDialog
+                            .locator('button:has-text("Confirm"), button:has-text("Revoke")')
+                            .first();
                         await confirmButton.click();
                     }
 
@@ -82,7 +90,7 @@ test.describe('Admin Sessions', () => {
 
         // Table should be visible
         const table = page.locator('table');
-        const tableVisible = await table.count() > 0;
+        const tableVisible = (await table.count()) > 0;
 
         // Sessions table exists (user info is shown in the table)
         expect(tableVisible).toBeTruthy();
@@ -94,11 +102,13 @@ test.describe('Admin Sessions', () => {
 
         // Sessions should show device/browser info
         const deviceInfo = page.locator('text=/chrome|firefox|safari|windows|mac/i');
-        const hasDeviceInfo = await deviceInfo.count() > 0;
+        const hasDeviceInfo = (await deviceInfo.count()) > 0;
 
         // Or user agent column
-        const userAgentColumn = page.locator('th:has-text("Device"), th:has-text("Browser"), th:has-text("User Agent")');
-        const hasColumn = await userAgentColumn.count() > 0;
+        const userAgentColumn = page.locator(
+            'th:has-text("Device"), th:has-text("Browser"), th:has-text("User Agent")'
+        );
+        const hasColumn = (await userAgentColumn.count()) > 0;
     });
 
     test('sessions show IP address', async ({ page }) => {
@@ -119,8 +129,10 @@ test.describe('Admin Sessions', () => {
         await expect(table).toBeVisible({ timeout: 10000 });
 
         // Look for date column headers
-        const dateHeader = page.locator('th:has-text("Date"), th:has-text("Fecha"), th:has-text("Expires"), th:has-text("Created")');
-        const hasDateHeader = await dateHeader.count() > 0;
+        const dateHeader = page.locator(
+            'th:has-text("Date"), th:has-text("Fecha"), th:has-text("Expires"), th:has-text("Created")'
+        );
+        const hasDateHeader = (await dateHeader.count()) > 0;
 
         expect(hasDateHeader).toBeTruthy();
     });
@@ -132,7 +144,7 @@ test.describe('Admin Sessions', () => {
         // Look for pagination controls
         const pagination = page.locator('[data-testid*="pagination"], .pagination');
 
-        if (await pagination.count() > 0) {
+        if ((await pagination.count()) > 0) {
             const nextButton = page.locator('button:has-text("Next"), [aria-label*="next"]');
 
             if (await nextButton.isEnabled()) {
@@ -147,13 +159,15 @@ test.describe('Admin Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for status filter (active/revoked)
-        const statusFilter = page.locator('[data-testid*="status-filter"], select:has-text("Status")').first();
+        const statusFilter = page
+            .locator('[data-testid*="status-filter"], select:has-text("Status")')
+            .first();
 
         if (await statusFilter.isVisible()) {
             await statusFilter.click();
 
             const activeOption = page.getByRole('option', { name: /active|activo/i });
-            if (await activeOption.count() > 0) {
+            if ((await activeOption.count()) > 0) {
                 await activeOption.click();
                 await page.waitForLoadState('networkidle');
 
@@ -167,15 +181,19 @@ test.describe('Admin Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for bulk actions
-        const selectAllCheckbox = page.locator('input[type="checkbox"][aria-label*="all"], th input[type="checkbox"]').first();
+        const selectAllCheckbox = page
+            .locator('input[type="checkbox"][aria-label*="all"], th input[type="checkbox"]')
+            .first();
 
         if (await selectAllCheckbox.isVisible()) {
             await selectAllCheckbox.check();
 
             // Look for bulk action button
-            const bulkRevokeButton = page.locator('button:has-text("Revoke selected"), button:has-text("Bulk revoke")');
+            const bulkRevokeButton = page.locator(
+                'button:has-text("Revoke selected"), button:has-text("Bulk revoke")'
+            );
 
-            if (await bulkRevokeButton.count() > 0) {
+            if ((await bulkRevokeButton.count()) > 0) {
                 // Don't actually click to avoid mass revocation
                 await expect(bulkRevokeButton.first()).toBeVisible();
             }
@@ -191,8 +209,10 @@ test.describe('Admin Sessions', () => {
 
         if (await firstRow.isVisible()) {
             // Should have recent activity
-            const activityTime = firstRow.locator('text=/just now|seconds ago|hace.*segundos|hace.*minutos/i');
-            const isRecent = await activityTime.count() > 0;
+            const activityTime = firstRow.locator(
+                'text=/just now|seconds ago|hace.*segundos|hace.*minutos/i'
+            );
+            const isRecent = (await activityTime.count()) > 0;
         }
     });
 
@@ -201,9 +221,11 @@ test.describe('Admin Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for export button
-        const exportButton = page.locator('button:has-text("Export"), button:has-text("Download"), [data-testid*="export"]');
+        const exportButton = page.locator(
+            'button:has-text("Export"), button:has-text("Download"), [data-testid*="export"]'
+        );
 
-        if (await exportButton.count() > 0) {
+        if ((await exportButton.count()) > 0) {
             await expect(exportButton.first()).toBeVisible();
         }
     });
@@ -214,9 +236,11 @@ test.describe('Admin Sessions', () => {
 
         // Click on a session to view details
         const sessionRow = page.locator('tbody tr, [data-testid*="session-row"]').first();
-        const viewButton = sessionRow.locator('button:has-text("Details"), button:has-text("View"), [data-testid*="view"]');
+        const viewButton = sessionRow.locator(
+            'button:has-text("Details"), button:has-text("View"), [data-testid*="view"]'
+        );
 
-        if (await viewButton.count() > 0) {
+        if ((await viewButton.count()) > 0) {
             await viewButton.first().click();
             await page.waitForTimeout(500);
 

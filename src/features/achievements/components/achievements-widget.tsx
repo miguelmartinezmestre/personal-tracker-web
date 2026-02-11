@@ -22,7 +22,6 @@ export function AchievementsWidget({
     preloadedUserAchievementStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
     preloadedUserRecentAchievementsQuery: Preloaded<typeof api.achievements.getRecentAchievements>;
 }) {
-
     const stats = usePreloadedAuthQuery(preloadedUserAchievementStatsQuery);
     const recentAchievements = usePreloadedAuthQuery(preloadedUserRecentAchievementsQuery);
 
@@ -125,31 +124,43 @@ export function AchievementsWidget({
                                 {t('widget.recentlyEarned')}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                {recentAchievements.map((achievement: { _id: string, definition: { icon: string, tier: AchievementTier, code: string } }, index: number) => (
-                                    <div
-                                        key={achievement._id}
-                                        className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-                                        style={{ animationDelay: `${index * 50}ms` }}
-                                    >
-                                        <AchievementBadge
-                                            icon={achievement.definition?.icon ?? 'Trophy'}
-                                            tier={
-                                                (achievement.definition?.tier as AchievementTier) ??
-                                                'bronze'
-                                            }
-                                            name={t(
-                                                `definitions.${achievement.definition?.code}.name`,
-                                                {
-                                                    defaultValue:
-                                                        achievement.definition?.code ??
-                                                        'Achievement',
+                                {recentAchievements.map(
+                                    (
+                                        achievement: {
+                                            _id: string;
+                                            definition: {
+                                                icon: string;
+                                                tier: AchievementTier;
+                                                code: string;
+                                            };
+                                        },
+                                        index: number
+                                    ) => (
+                                        <div
+                                            key={achievement._id}
+                                            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                            style={{ animationDelay: `${index * 50}ms` }}
+                                        >
+                                            <AchievementBadge
+                                                icon={achievement.definition?.icon ?? 'Trophy'}
+                                                tier={
+                                                    (achievement.definition
+                                                        ?.tier as AchievementTier) ?? 'bronze'
                                                 }
-                                            )}
-                                            earned={true}
-                                            size="md"
-                                        />
-                                    </div>
-                                ))}
+                                                name={t(
+                                                    `definitions.${achievement.definition?.code}.name`,
+                                                    {
+                                                        defaultValue:
+                                                            achievement.definition?.code ??
+                                                            'Achievement',
+                                                    }
+                                                )}
+                                                earned={true}
+                                                size="md"
+                                            />
+                                        </div>
+                                    )
+                                )}
                             </div>
                         </div>
                     ) : (

@@ -5,12 +5,11 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
 export default async function CategoriesPage() {
-
     let preloadedCategoriesQuery: Preloaded<typeof api.categories.getCategoriesByUser>;
 
-    try{
+    try {
         preloadedCategoriesQuery = await preloadAuthQuery(api.categories.getCategoriesByUser, {});
-    }catch(error){
+    } catch (error) {
         console.error(error);
         redirect('/dashboard/home');
     }

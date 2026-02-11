@@ -27,5 +27,9 @@ export function useDeleteUpdateProgress(objectiveId: Id<'objectives'>) {
         },
     });
 
-    return { deleteUpdateProgress: mutate, deleteUpdateProgressAsync: mutateAsync, isDeletingProgress: isPending };
+    return {
+        deleteUpdateProgress: mutate,
+        deleteUpdateProgressAsync: mutateAsync,
+        isDeletingProgress: isPending,
+    };
 }

@@ -445,7 +445,10 @@ export const checkOrganizationAchievements = internalMutation({
             )
         );
 
-        const members = await ctx.db.query('member').withIndex('organizationId', q => q.eq('organizationId', organizationId)).collect();
+        const members = await ctx.db
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+            .collect();
 
         const memberUserIds = members.map(m => m.userId);
 

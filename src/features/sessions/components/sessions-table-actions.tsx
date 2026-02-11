@@ -25,5 +25,9 @@ export function useInvalidateSession() {
         },
     });
 
-    return { invalidateSession: mutate, invalidateSessionAsync: mutateAsync, isInvalidatingSession: isPending };
+    return {
+        invalidateSession: mutate,
+        invalidateSessionAsync: mutateAsync,
+        isInvalidatingSession: isPending,
+    };
 }

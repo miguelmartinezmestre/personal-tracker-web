@@ -38,9 +38,7 @@ export function SignOutButton() {
             ) : (
                 <LogOut className="h-4 w-4" />
             )}
-            {signOutMutation.isPending
-                ? t('actions.signingOut')
-                : t('actions.signOut')}
+            {signOutMutation.isPending ? t('actions.signingOut') : t('actions.signOut')}
         </Button>
     );
 }

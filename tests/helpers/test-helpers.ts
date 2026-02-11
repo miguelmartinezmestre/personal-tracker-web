@@ -124,7 +124,9 @@ export async function createTestUser(
         await page.waitForURL(/\/dashboard\/home$/, { timeout: 10000 });
         await expect(page).toHaveURL(/\/dashboard\/home$/);
     } else {
-        throw new Error(`Registration failed. Expected /dashboard/home or /login, got ${currentUrl}`);
+        throw new Error(
+            `Registration failed. Expected /dashboard/home or /login, got ${currentUrl}`
+        );
     }
 
     return { username, email, password, organizationSlug };
@@ -210,8 +212,11 @@ export async function createObjective(
     await page.waitForSelector('[role="option"]', { timeout: 10000 });
 
     // Try to find the category option with more flexibility
-    const categoryOption = page.getByRole('option').filter({ hasText: new RegExp(category, 'i') }).first();
-    if (await categoryOption.count() > 0) {
+    const categoryOption = page
+        .getByRole('option')
+        .filter({ hasText: new RegExp(category, 'i') })
+        .first();
+    if ((await categoryOption.count()) > 0) {
         await categoryOption.click();
     } else {
         // Fallback: click the first available option
@@ -263,8 +268,11 @@ export async function createCategory(
     await page.getByTestId('category-name-input').fill(name);
     await page.getByTestId('category-color-select').click();
     await page.waitForSelector('[role="option"]', { timeout: 5000 });
-    const colorOption = page.getByRole('option').filter({ hasText: new RegExp(color, 'i') }).first();
-    if (await colorOption.count() > 0) {
+    const colorOption = page
+        .getByRole('option')
+        .filter({ hasText: new RegExp(color, 'i') })
+        .first();
+    if ((await colorOption.count()) > 0) {
         await colorOption.click();
     } else {
         await page.getByRole('option').first().click();
@@ -362,7 +370,7 @@ export async function createNotification(
     await page.getByTestId('notification-objective-select').click();
     await page.waitForSelector('[role="option"]', { timeout: 5000 });
     const objectiveOption = page.getByRole('option').filter({ hasText: objectiveTitle }).first();
-    if (await objectiveOption.count() > 0) {
+    if ((await objectiveOption.count()) > 0) {
         await objectiveOption.click();
     } else {
         await page.getByRole('option').first().click();

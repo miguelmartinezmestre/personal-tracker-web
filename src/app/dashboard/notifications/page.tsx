@@ -5,7 +5,6 @@ import { Preloaded } from 'convex/react';
 import { redirect } from 'next/navigation';
 
 export default async function NotificationsPage() {
-
     let preloadedNotificationsQuery: Preloaded<typeof api.notifications.getNotificationsByUser>;
     let preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
 

@@ -132,10 +132,7 @@ export default function AchievementsLayout({
                 )}
             </div>
 
-            <div
-                className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                data-testid="achievements-stats"
-            >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="achievements-stats">
                 <Card data-testid="achievements-points-card">
                     <CardContent className="flex items-center gap-4 p-6">
                         <Star className="h-10 w-10 text-yellow-500" />
@@ -191,10 +188,7 @@ export default function AchievementsLayout({
                 </Card>
             </div>
 
-            <div
-                className="flex gap-2"
-                data-testid="achievements-filters"
-            >
+            <div className="flex gap-2" data-testid="achievements-filters">
                 <Button
                     variant={filter === 'all' ? 'default' : 'outline'}
                     size="sm"

@@ -41,9 +41,9 @@ async function rlsRules(
             const headers = await getHeaders(ctx);
             const auth = getAuth(ctx);
 
-            const session = await auth.api.getSession({
+            const session = (await auth.api.getSession({
                 headers,
-            }) as SessionWithOrg | null;
+            })) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? undefined;
         } catch (e) {
@@ -205,9 +205,9 @@ export const queryWithRLS = customQuery(
             const headers = await getHeaders(ctx);
             const auth = getAuth(ctx);
 
-            const session = await auth.api.getSession({
+            const session = (await auth.api.getSession({
                 headers,
-            }) as SessionWithOrg | null;
+            })) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? null;
         } catch (e) {
@@ -251,9 +251,9 @@ export const mutationWithRLS = customMutation(
             const headers = await getHeaders(ctx);
             const auth = getAuth(ctx);
 
-            const session = await auth.api.getSession({
+            const session = (await auth.api.getSession({
                 headers,
-            }) as SessionWithOrg | null;
+            })) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? null;
         } catch (e) {

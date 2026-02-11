@@ -121,11 +121,13 @@ export const updateObjective = mutationWithRLS({
         }
         delete updateData.status;
 
-        const shouldRecalculate =
-            args.progressMode !== undefined ||
-            args.startValue !== undefined;
+        const shouldRecalculate = args.progressMode !== undefined || args.startValue !== undefined;
 
-        if (args.period !== undefined || args.periodStart !== undefined || args.periodLengthDays !== undefined) {
+        if (
+            args.period !== undefined ||
+            args.periodStart !== undefined ||
+            args.periodLengthDays !== undefined
+        ) {
             updateData.period = 'none';
             updateData.periodStart = undefined;
             updateData.periodLengthDays = undefined;

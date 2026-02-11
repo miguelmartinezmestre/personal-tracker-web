@@ -20,12 +20,28 @@ import { internal } from './_generated/api';
  * Event definitions for objective lifecycle
  */
 export const tickEvent = { name: 'tick' as const, validator: v.object({ seq: v.number() }) };
-export const pauseEvent = { name: 'pause' as const, validator: v.object({ reason: v.optional(v.string()) }) };
+export const pauseEvent = {
+    name: 'pause' as const,
+    validator: v.object({ reason: v.optional(v.string()) }),
+};
 export const resumeEvent = { name: 'resume' as const, validator: v.object({}) };
-export const completeEvent = { name: 'complete' as const, validator: v.object({ completedAt: v.number(), autoCompleted: v.boolean() }) };
-export const archiveEvent = { name: 'archive' as const, validator: v.object({ reason: v.optional(v.string()) }) };
+export const completeEvent = {
+    name: 'complete' as const,
+    validator: v.object({ completedAt: v.number(), autoCompleted: v.boolean() }),
+};
+export const archiveEvent = {
+    name: 'archive' as const,
+    validator: v.object({ reason: v.optional(v.string()) }),
+};
 export const deleteEvent = { name: 'delete' as const, validator: v.object({}) };
-export const reconfigureEvent = { name: 'reconfigure' as const, validator: v.object({ newDeadline: v.optional(v.number()), newPeriod: v.optional(v.string()), newTargetValue: v.optional(v.number()) }) };
+export const reconfigureEvent = {
+    name: 'reconfigure' as const,
+    validator: v.object({
+        newDeadline: v.optional(v.number()),
+        newPeriod: v.optional(v.string()),
+        newTargetValue: v.optional(v.number()),
+    }),
+};
 
 // Helper function to check if status is terminal
 export function isTerminalStatus(status: string): boolean {
@@ -47,10 +63,9 @@ export const objectiveLifecycleV2 = workflow.define({
 
         // Do a single check and return
         // TODO: Implement full event-driven workflow
-        const objective = await step.runQuery(
-            internal.objectiveInternals.getByIdInternal,
-            { objectiveId }
-        );
+        const objective = await step.runQuery(internal.objectiveInternals.getByIdInternal, {
+            objectiveId,
+        });
 
         if (!objective) {
             return { finalStatus: 'not_found', reason: 'Objective was deleted' };
@@ -68,10 +83,10 @@ export const objectiveLifecycleV2 = workflow.define({
                 : objective.currentValue >= objective.targetValue;
 
         if (objective.status === 'active' && shouldComplete) {
-            await step.runMutation(
-                internal.objectiveInternals.updateStatusInternal,
-                { objectiveId, newStatus: 'completed' }
-            );
+            await step.runMutation(internal.objectiveInternals.updateStatusInternal, {
+                objectiveId,
+                newStatus: 'completed',
+            });
             return { finalStatus: 'completed', reason: 'Auto-completed' };
         }
 

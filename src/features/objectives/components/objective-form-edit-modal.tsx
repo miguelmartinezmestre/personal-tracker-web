@@ -69,7 +69,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     });
 
     const categoryOptions = useMemo(() => {
-        const options: Array<{ id: string; value: string; label: string }> = (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
+        const options: Array<{ id: string; value: string; label: string }> = (
+            categoriesQuery.data ?? []
+        ).map((category: Doc<'categories'>) => ({
             id: String(category._id),
             value: category.name,
             label: category.name,
@@ -388,7 +390,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription>{t('progressModeDescription')}</FormDescription>
+                                    <FormDescription>
+                                        {t('progressModeDescription')}
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -417,10 +421,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         </FormControl>
                                         <SelectContent>
                                             {reminderIntervalOptions.map(option => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
+                                                <SelectItem key={option.value} value={option.value}>
                                                     {option.label}
                                                 </SelectItem>
                                             ))}
@@ -495,9 +496,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                             type="number"
                                             {...field}
                                             onChange={e =>
-                                                field.onChange(
-                                                    Number.parseFloat(e.target.value)
-                                                )
+                                                field.onChange(Number.parseFloat(e.target.value))
                                             }
                                             data-testid="objective-edit-current-input"
                                         />

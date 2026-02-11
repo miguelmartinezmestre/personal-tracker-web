@@ -12,7 +12,6 @@ export const listUsers = queryWithRLS({
         searchValue: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-
         await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
 
         // Get all users from BetterAuth user table with pagination
@@ -29,11 +28,10 @@ export const banUser = mutationWithRLS({
         banExpires: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-
         await requireAdmin(ctx);
 
         const headers = await getHeaders(ctx);
-        const auth = getAuth(ctx); 
+        const auth = getAuth(ctx);
 
         await auth.api.banUser({
             body: {
@@ -53,7 +51,6 @@ export const unbanUser = mutationWithRLS({
         userId: v.string(),
     },
     handler: async (ctx, args) => {
-
         await requireAdmin(ctx);
 
         const headers = await getHeaders(ctx);
@@ -76,7 +73,6 @@ export const updateUserRole = mutationWithRLS({
         role: v.string(),
     },
     handler: async (ctx, args) => {
-
         await requireAdmin(ctx);
 
         await ctx.db.patch('user', args.userId, {
@@ -92,7 +88,6 @@ export const deleteUser = mutationWithRLS({
         userId: v.string(),
     },
     handler: async (ctx, args) => {
-
         await requireAdmin(ctx);
 
         const headers = await getHeaders(ctx);
@@ -117,7 +112,10 @@ export const listUserSessions = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
 
-        const sessions = await ctx.db.query('session').withIndex('userId', q => q.eq('userId', args.userId)).collect();
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', args.userId))
+            .collect();
 
         return sessions;
     },

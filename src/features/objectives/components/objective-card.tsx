@@ -117,14 +117,14 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                     {Math.round(progress)}
                                     {t('percentComplete')}
                                 </span>
-                            <StatusIndicator
-                                status={objective.status ?? 'active'}
-                                deadline={objective.deadline ?? undefined}
-                                currentValue={objective.currentValue ?? 0}
-                                targetValue={objective.targetValue ?? 0}
-                                startValue={objective.startValue ?? undefined}
-                                direction={objective.direction ?? undefined}
-                            />
+                                <StatusIndicator
+                                    status={objective.status ?? 'active'}
+                                    deadline={objective.deadline ?? undefined}
+                                    currentValue={objective.currentValue ?? 0}
+                                    targetValue={objective.targetValue ?? 0}
+                                    startValue={objective.startValue ?? undefined}
+                                    direction={objective.direction ?? undefined}
+                                />
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 {objective.currentValue ?? 0} / {objective.targetValue ?? 0}{' '}

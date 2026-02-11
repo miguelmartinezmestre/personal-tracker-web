@@ -75,7 +75,10 @@ export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promis
 /**
  * Calculate user streak for mutation context (same logic, different ctx type)
  */
-export async function calculateUserStreakInternal(ctx: MutationCtx, userId: string): Promise<number> {
+export async function calculateUserStreakInternal(
+    ctx: MutationCtx,
+    userId: string
+): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
         .withIndex('by_user', q => q.eq('userId', userId))

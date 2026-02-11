@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UsersTable } from '@/features/admin/components/users/users-table';
 import { useTranslations } from 'next-intl';
 import { api } from '@/convex/_generated/api';

@@ -26,7 +26,11 @@ export function useSetNotificationRead(onSuccess?: () => void) {
         },
     });
 
-    return { setNotificationRead: mutate, setNotificationReadAsync: mutateAsync, isSettingRead: isPending };
+    return {
+        setNotificationRead: mutate,
+        setNotificationReadAsync: mutateAsync,
+        isSettingRead: isPending,
+    };
 }
 
 export function useDeleteNotification(onSuccess?: () => void) {
@@ -49,7 +53,11 @@ export function useDeleteNotification(onSuccess?: () => void) {
         },
     });
 
-    return { deleteNotification: mutate, deleteNotificationAsync: mutateAsync, isDeletingNotification: isPending };
+    return {
+        deleteNotification: mutate,
+        deleteNotificationAsync: mutateAsync,
+        isDeletingNotification: isPending,
+    };
 }
 
 export function useMarkAllNotificationsRead(onSuccess?: () => void) {

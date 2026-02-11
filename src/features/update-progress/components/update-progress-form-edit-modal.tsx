@@ -48,9 +48,7 @@ export default function UpdateProgressFormModal({
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
-    const objective = useQuery(
-        convexQuery(api.objectives.getObjectiveById, { id: objectiveId })
-    );
+    const objective = useQuery(convexQuery(api.objectives.getObjectiveById, { id: objectiveId }));
     const objectiveDoc = objective.data as
         | (Doc<'objectives'> & { objectiveType?: string; unit?: string })
         | undefined;
@@ -128,9 +126,7 @@ export default function UpdateProgressFormModal({
                                             }
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        {updatedValueDescription}
-                                    </FormDescription>
+                                    <FormDescription>{updatedValueDescription}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

@@ -9,13 +9,13 @@ const app = new Hono();
 
 // CORS for API routes
 app.use(
-  '/api/*',
-  cors({
-    origin: process.env.SITE_URL!,
-    allowHeaders: ['Content-Type', 'Authorization', 'Better-Auth-Cookie'],
-    exposeHeaders: ['Set-Better-Auth-Cookie'],
-    credentials: true,
-  }),
+    '/api/*',
+    cors({
+        origin: process.env.SITE_URL!,
+        allowHeaders: ['Content-Type', 'Authorization', 'Better-Auth-Cookie'],
+        exposeHeaders: ['Set-Better-Auth-Cookie'],
+        credentials: true,
+    })
 );
 
 // Better Auth middleware

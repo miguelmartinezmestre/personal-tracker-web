@@ -1,6 +1,6 @@
-import "server-only";
-import { fetchAuthQuery } from "./auth-server";
-import { api } from "@/convex/_generated/api";
+import 'server-only';
+import { fetchAuthQuery } from './auth-server';
+import { api } from '@/convex/_generated/api';
 
 export async function getCurrentUser() {
     const user = await fetchAuthQuery(api.auth.getCurrentUser, {});

@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { createTestUser, DEFAULT_PASSWORD } from '../../helpers/test-helpers';
 import { UserFactory } from '../../helpers/factories';
-import { expectOnDashboard, expectOnRegister, expectErrorAlert, expectWelcomeMessage } from '../../helpers/assertions';
+import {
+    expectOnDashboard,
+    expectOnRegister,
+    expectErrorAlert,
+    expectWelcomeMessage,
+} from '../../helpers/assertions';
 
 test.describe('Register', () => {
     test('register new user with organization', async ({ page }) => {
@@ -150,7 +155,9 @@ test.describe('Register', () => {
         await page.goto('/register');
 
         // Click "Already have an account" link
-        const loginLink = page.getByRole('link', { name: /already have an account|ya tienes cuenta/i });
+        const loginLink = page.getByRole('link', {
+            name: /already have an account|ya tienes cuenta/i,
+        });
         await loginLink.click();
 
         // Should be on login page
@@ -162,10 +169,15 @@ test.describe('Register', () => {
         await page.goto('/register');
 
         // The hint text should be visible or the field should have placeholder/label
-        const hint = page.getByText(/only.*lowercase|solo.*minúsculas|letters.*numbers|letras.*números/i);
+        const hint = page.getByText(
+            /only.*lowercase|solo.*minúsculas|letters.*numbers|letras.*números/i
+        );
         const slugField = page.getByTestId('register-organization-slug-input');
         const placeholder = await slugField.getAttribute('placeholder');
-        const labelExists = await page.locator('label[for*="organization"], label:has-text("organization")').count() > 0;
+        const labelExists =
+            (await page
+                .locator('label[for*="organization"], label:has-text("organization")')
+                .count()) > 0;
 
         const hasHint = (await hint.count()) > 0;
         const hasPlaceholder = placeholder && placeholder.length > 0;

@@ -1,14 +1,13 @@
-import { DeleteConfirmationDialog } from "@/features/table/components/delete-confirmation-dialog";
-import { Button } from "@/components/ui/button";
-import { ColumnDef } from "@tanstack/react-table";
-import { Badge, UserCheck, Ban, Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { EditUserModal } from "./edit-user-modal";
+import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { Button } from '@/components/ui/button';
+import { ColumnDef } from '@tanstack/react-table';
+import { Badge, UserCheck, Ban, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { EditUserModal } from './edit-user-modal';
 import { Doc } from '@/convex/_generated/dataModel';
-import { useBanUser, useDeleteUser, useUnBanUser } from "./users-table-actions";
+import { useBanUser, useDeleteUser, useUnBanUser } from './users-table-actions';
 
 export function useUsersTableColumns() {
-    
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
 
@@ -41,9 +40,7 @@ export function useUsersTableColumns() {
                     return (
                         <div className="flex gap-1">
                             {role.map((r, index) => (
-                                <Badge key={index}>
-                                    {r}
-                                </Badge>
+                                <Badge key={index}>{r}</Badge>
                             ))}
                         </div>
                     );
@@ -57,7 +54,11 @@ export function useUsersTableColumns() {
             cell: ({ row }) => {
                 const user = row.original;
                 if (user.banned) {
-                    return <Badge className="bg-red-100 text-red-800">{tCommon('status.banned')}</Badge>;
+                    return (
+                        <Badge className="bg-red-100 text-red-800">
+                            {tCommon('status.banned')}
+                        </Badge>
+                    );
                 }
                 return (
                     <Badge className="bg-green-100 text-green-800">
