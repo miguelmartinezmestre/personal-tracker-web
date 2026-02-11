@@ -124,43 +124,34 @@ export function AchievementsWidget({
                                 {t('widget.recentlyEarned')}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                {recentAchievements.map(
-                                    (
-                                        achievement: {
-                                            _id: string;
-                                            definition: {
-                                                icon: string;
-                                                tier: AchievementTier;
-                                                code: string;
-                                            };
-                                        },
-                                        index: number
-                                    ) => (
+                                {recentAchievements
+                                    .filter(
+                                        (a): a is NonNullable<typeof a> => a !== null
+                                    )
+                                    .map((achievement, index) => (
                                         <div
                                             key={achievement._id}
                                             className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                                             style={{ animationDelay: `${index * 50}ms` }}
                                         >
                                             <AchievementBadge
-                                                icon={achievement.definition?.icon ?? 'Trophy'}
+                                                icon={achievement.icon ?? 'Trophy'}
                                                 tier={
-                                                    (achievement.definition
-                                                        ?.tier as AchievementTier) ?? 'bronze'
+                                                    (achievement.tier as AchievementTier) ??
+                                                    'bronze'
                                                 }
                                                 name={t(
-                                                    `definitions.${achievement.definition?.code}.name`,
+                                                    `definitions.${achievement.code}.name`,
                                                     {
                                                         defaultValue:
-                                                            achievement.definition?.code ??
-                                                            'Achievement',
+                                                            achievement.code ?? 'Achievement',
                                                     }
                                                 )}
                                                 earned={true}
                                                 size="md"
                                             />
                                         </div>
-                                    )
-                                )}
+                                    ))}
                             </div>
                         </div>
                     ) : (
