@@ -1,1 +1,1 @@
-find . -type d \( -name "node_modules" -o -name ".next" -o -name ".turbo" \) -exec rm -rf {} +
+find . -type d \( -name "node_modules" -o -name ".next" \) -exec rm -rf {} +
