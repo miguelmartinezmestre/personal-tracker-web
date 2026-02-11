@@ -6,21 +6,20 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
 export default async function UsersPage() {
-
     if (!(await isAdmin())) {
         redirect('/dashboard/home');
     }
 
     let preloadedUsersQuery: Preloaded<typeof api.admin.listUsers>;
 
-    try{
+    try {
         preloadedUsersQuery = await preloadAuthQuery(api.admin.listUsers, {
             paginationOpts: {
                 numItems: 10,
                 cursor: null,
             },
         });
-    }catch(error){
+    } catch (error) {
         console.error(error);
         redirect('/dashboard/home');
     }

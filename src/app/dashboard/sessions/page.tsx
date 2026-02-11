@@ -5,14 +5,13 @@ import { Preloaded } from 'convex/react';
 import { redirect } from 'next/navigation';
 
 export default async function SessionsPage() {
-    
     let preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
 
-    try{
+    try {
         preloadedSessionsQuery = await preloadAuthQuery(api.sessions.getSessionsByUser, {
             paginationOpts: { numItems: 20, cursor: null },
         });
-    }catch(error){
+    } catch (error) {
         console.error(error);
         redirect('/dashboard/home');
     }

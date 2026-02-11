@@ -29,13 +29,20 @@ export interface TestFixtures {
     /** Helper to create a new test user */
     createUser: (options?: Parameters<typeof createTestUser>[1]) => Promise<TestUserData>;
     /** Helper to create an objective */
-    createObjectiveHelper: (options?: Parameters<typeof createObjective>[1]) => Promise<ObjectiveData>;
+    createObjectiveHelper: (
+        options?: Parameters<typeof createObjective>[1]
+    ) => Promise<ObjectiveData>;
     /** Helper to create a category */
     createCategoryHelper: (options?: Parameters<typeof createCategory>[1]) => Promise<CategoryData>;
     /** Helper to create an organization */
-    createOrganizationHelper: (options?: Parameters<typeof createOrganization>[1]) => Promise<OrganizationData>;
+    createOrganizationHelper: (
+        options?: Parameters<typeof createOrganization>[1]
+    ) => Promise<OrganizationData>;
     /** Helper to create a notification */
-    createNotificationHelper: (objectiveTitle: string, options?: Parameters<typeof createNotification>[2]) => Promise<NotificationData>;
+    createNotificationHelper: (
+        objectiveTitle: string,
+        options?: Parameters<typeof createNotification>[2]
+    ) => Promise<NotificationData>;
     /** Helper to ensure default categories exist */
     ensureCategories: () => Promise<void>;
     /** Helper to promote user to admin */
@@ -67,25 +74,25 @@ export const test = base.extend<TestFixtures>({
     },
 
     createUser: async ({ page }, use) => {
-        await use(async (options) => {
+        await use(async options => {
             return createTestUser(page, options);
         });
     },
 
     createObjectiveHelper: async ({ page }, use) => {
-        await use(async (options) => {
+        await use(async options => {
             return createObjective(page, options);
         });
     },
 
     createCategoryHelper: async ({ page }, use) => {
-        await use(async (options) => {
+        await use(async options => {
             return createCategory(page, options);
         });
     },
 
     createOrganizationHelper: async ({ page }, use) => {
-        await use(async (options) => {
+        await use(async options => {
             return createOrganization(page, options);
         });
     },

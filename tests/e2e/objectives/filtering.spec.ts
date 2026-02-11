@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, createObjective, ensureDefaultCategories } from '../../helpers/test-helpers';
+import {
+    createTestUser,
+    createObjective,
+    ensureDefaultCategories,
+} from '../../helpers/test-helpers';
 
 test.describe('Objectives Filtering', () => {
     test.beforeEach(async ({ page }) => {
@@ -18,13 +22,17 @@ test.describe('Objectives Filtering', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for status filter
-        const statusFilter = page.locator('[data-testid*="status-filter"], [data-testid*="filter-status"], select, [aria-label*="status"]').first();
+        const statusFilter = page
+            .locator(
+                '[data-testid*="status-filter"], [data-testid*="filter-status"], select, [aria-label*="status"]'
+            )
+            .first();
 
         if (await statusFilter.isVisible()) {
             await statusFilter.click();
 
             const activeOption = page.getByRole('option', { name: /active|activo/i });
-            if (await activeOption.count() > 0) {
+            if ((await activeOption.count()) > 0) {
                 await activeOption.first().click();
                 await page.waitForLoadState('networkidle');
 
@@ -45,13 +53,15 @@ test.describe('Objectives Filtering', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for status filter
-        const statusFilter = page.locator('[data-testid*="status-filter"], [data-testid*="filter-status"], select').first();
+        const statusFilter = page
+            .locator('[data-testid*="status-filter"], [data-testid*="filter-status"], select')
+            .first();
 
         if (await statusFilter.isVisible()) {
             await statusFilter.click();
 
             const completedOption = page.getByRole('option', { name: /completed|completado/i });
-            if (await completedOption.count() > 0) {
+            if ((await completedOption.count()) > 0) {
                 await completedOption.first().click();
                 await page.waitForLoadState('networkidle');
 
@@ -73,13 +83,17 @@ test.describe('Objectives Filtering', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for category filter
-        const categoryFilter = page.locator('[data-testid*="category-filter"], [data-testid*="filter-category"], select:has-text("Category"), select:has-text("Categoría")').first();
+        const categoryFilter = page
+            .locator(
+                '[data-testid*="category-filter"], [data-testid*="filter-category"], select:has-text("Category"), select:has-text("Categoría")'
+            )
+            .first();
 
         if (await categoryFilter.isVisible()) {
             await categoryFilter.click();
 
             const personalOption = page.getByRole('option', { name: /personal/i });
-            if (await personalOption.count() > 0) {
+            if ((await personalOption.count()) > 0) {
                 await personalOption.first().click();
                 await page.waitForLoadState('networkidle');
 
@@ -100,7 +114,11 @@ test.describe('Objectives Filtering', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for search input
-        const searchInput = page.locator('[data-testid*="search"], input[type="search"], input[placeholder*="search"], input[placeholder*="buscar"]').first();
+        const searchInput = page
+            .locator(
+                '[data-testid*="search"], input[type="search"], input[placeholder*="search"], input[placeholder*="buscar"]'
+            )
+            .first();
 
         if (await searchInput.isVisible()) {
             await searchInput.fill('UniqueSearchTerm');
@@ -123,7 +141,9 @@ test.describe('Objectives Filtering', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
-        const searchInput = page.locator('[data-testid*="search"], input[type="search"], input[placeholder*="search"]').first();
+        const searchInput = page
+            .locator('[data-testid*="search"], input[type="search"], input[placeholder*="search"]')
+            .first();
 
         if (await searchInput.isVisible()) {
             await searchInput.fill('NonExistentObjectiveXYZ123');
@@ -132,11 +152,13 @@ test.describe('Objectives Filtering', () => {
             await page.waitForLoadState('networkidle');
 
             // Should show empty state or no results
-            const emptyState = page.locator('[data-testid*="empty"]').or(page.getByText(/no.*results|no.*encontrado|sin resultados/i));
+            const emptyState = page
+                .locator('[data-testid*="empty"]')
+                .or(page.getByText(/no.*results|no.*encontrado|sin resultados/i));
             const tableRows = page.locator('tbody tr');
 
             // Either empty state shown or no rows in table
-            const isEmpty = await emptyState.count() > 0 || (await tableRows.count()) === 0;
+            const isEmpty = (await emptyState.count()) > 0 || (await tableRows.count()) === 0;
             expect(isEmpty).toBeTruthy();
         }
     });
@@ -157,7 +179,7 @@ test.describe('Objectives Filtering', () => {
         if (await statusFilter.isVisible()) {
             await statusFilter.click();
             const activeOption = page.getByRole('option', { name: /active|activo/i });
-            if (await activeOption.count() > 0) {
+            if ((await activeOption.count()) > 0) {
                 await activeOption.first().click();
                 await page.waitForLoadState('networkidle');
             }
@@ -199,8 +221,10 @@ test.describe('Objectives Filtering', () => {
         }
 
         // Look for clear/reset filters button
-        const clearButton = page.locator('[data-testid*="clear-filter"], button:has-text("Clear"), button:has-text("Reset"), button:has-text("Limpiar")');
-        if (await clearButton.count() > 0) {
+        const clearButton = page.locator(
+            '[data-testid*="clear-filter"], button:has-text("Clear"), button:has-text("Reset"), button:has-text("Limpiar")'
+        );
+        if ((await clearButton.count()) > 0) {
             await clearButton.first().click();
             await page.waitForLoadState('networkidle');
 
@@ -241,20 +265,30 @@ test.describe('Objectives Filtering', () => {
 
     test('objectives count updates with filters', async ({ page }) => {
         // Create multiple objectives
-        await createObjective(page, { title: `Count Test A ${Date.now()}`, ensureCategories: false });
-        await createObjective(page, { title: `Count Test B ${Date.now()}`, ensureCategories: false });
+        await createObjective(page, {
+            title: `Count Test A ${Date.now()}`,
+            ensureCategories: false,
+        });
+        await createObjective(page, {
+            title: `Count Test B ${Date.now()}`,
+            ensureCategories: false,
+        });
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
         // Look for count indicator
-        const countIndicator = page.locator('[data-testid*="count"]').or(page.getByText(/\d+.*objectives|\d+.*objetivos/i));
+        const countIndicator = page
+            .locator('[data-testid*="count"]')
+            .or(page.getByText(/\d+.*objectives|\d+.*objetivos/i));
 
-        if (await countIndicator.count() > 0) {
+        if ((await countIndicator.count()) > 0) {
             const initialCount = await countIndicator.first().textContent();
 
             // Apply a filter that reduces results
-            const searchInput = page.locator('[data-testid*="search"], input[type="search"]').first();
+            const searchInput = page
+                .locator('[data-testid*="search"], input[type="search"]')
+                .first();
             if (await searchInput.isVisible()) {
                 await searchInput.fill('Count Test A');
                 await page.waitForTimeout(1000);

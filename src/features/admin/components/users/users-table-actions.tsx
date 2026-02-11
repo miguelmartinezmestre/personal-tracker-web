@@ -1,7 +1,7 @@
-import { authClient } from "@/features/auth/auth-client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import { authClient } from '@/features/auth/auth-client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 export function useBanUser() {
     const t = useTranslations('Admin');

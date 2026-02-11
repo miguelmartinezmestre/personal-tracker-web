@@ -20,11 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-    const [locale, messages, token] = await Promise.all([
-        getLocale(),
-        getMessages(),
-        getToken(),
-    ]);
+    const [locale, messages, token] = await Promise.all([getLocale(), getMessages(), getToken()]);
 
     return (
         <html lang={locale} suppressHydrationWarning>

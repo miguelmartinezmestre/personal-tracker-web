@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSessions } from './user-sessions-table';
 import { useTranslations } from 'next-intl';
 

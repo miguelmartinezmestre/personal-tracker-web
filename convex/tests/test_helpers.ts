@@ -29,9 +29,7 @@ export async function createTestUser(
             .first();
 
         if (existing) {
-
-
-            ctx.db.patch("user", existing._id, {
+            ctx.db.patch('user', existing._id, {
                 name: name,
                 email: email,
                 role: role ?? null,
@@ -39,14 +37,14 @@ export async function createTestUser(
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 userId: userId,
-                image: "https://example.com/image.png",
+                image: 'https://example.com/image.png',
                 banExpires: null,
                 banReason: null,
                 banned: false,
-            })
+            });
         }
 
-        await ctx.db.insert("user", {
+        await ctx.db.insert('user', {
             name: name,
             email: email,
             role: role ?? null,
@@ -54,7 +52,7 @@ export async function createTestUser(
             createdAt: Date.now(),
             updatedAt: Date.now(),
             userId: userId,
-            image: "https://example.com/image.png",
+            image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
             banned: false,

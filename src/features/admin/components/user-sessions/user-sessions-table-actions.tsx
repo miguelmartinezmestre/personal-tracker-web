@@ -1,10 +1,9 @@
-import { authClient } from "@/features/auth/auth-client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
+import { authClient } from '@/features/auth/auth-client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 export function useRevokeSession() {
-
     const t = useTranslations('Admin');
     const queryClient = useQueryClient();
 
@@ -23,9 +22,7 @@ export function useRevokeSession() {
     return { revokeSession, isRevokingSession };
 }
 
-
 export function useConfirmRevokeAllSessions() {
-
     const t = useTranslations('Admin');
     const queryClient = useQueryClient();
 
@@ -46,4 +43,3 @@ export function useConfirmRevokeAllSessions() {
     });
     return { revokeAllSessions, isRevokingAllSessions };
 }
-

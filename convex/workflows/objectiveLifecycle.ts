@@ -30,81 +30,75 @@ import { internal } from '../_generated/api';
  * - Every 3 days: Check if objective is stalled
  */
 export const objectiveLifecycle = workflow.define({
-  args: {
-    objectiveId: v.id('objectives'),
-    userId: v.string(),
-    // Optional configuration
-    enableReminders: v.optional(v.boolean()),
-    stallThresholdDays: v.optional(v.number()),
-  },
-  handler: async (step, args): Promise<void> => {
-    const {
-      objectiveId,
-      userId,
-      enableReminders = true,
-      stallThresholdDays = 14,
-    } = args;
+    args: {
+        objectiveId: v.id('objectives'),
+        userId: v.string(),
+        // Optional configuration
+        enableReminders: v.optional(v.boolean()),
+        stallThresholdDays: v.optional(v.number()),
+    },
+    handler: async (step, args): Promise<void> => {
+        const { objectiveId, userId, enableReminders = true, stallThresholdDays = 14 } = args;
 
-    const oneDayMs = 24 * 60 * 60 * 1000;
-    // Check objective status (stop if terminal or paused)
-    const objectiveSnapshot = await step.runQuery(
-      internal.objectiveInternals.getByIdInternal,
-      { objectiveId },
-    );
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        // Check objective status (stop if terminal or paused)
+        const objectiveSnapshot = await step.runQuery(internal.objectiveInternals.getByIdInternal, {
+            objectiveId,
+        });
 
-    if (!objectiveSnapshot) {
-      return;
-    }
+        if (!objectiveSnapshot) {
+            return;
+        }
 
-    if (['completed', 'archived', 'deleted', 'paused'].includes(objectiveSnapshot.status)) {
-      return;
-    }
+        if (['completed', 'archived', 'deleted', 'paused'].includes(objectiveSnapshot.status)) {
+            return;
+        }
 
-    // Check 1: Auto-complete if target reached
-    const completionStatus = await step.runMutation(
-      internal.steps.objectives.checkAutoComplete,
-      { objectiveId },
-    );
+        // Check 1: Auto-complete if target reached
+        const completionStatus = await step.runMutation(
+            internal.steps.objectives.checkAutoComplete,
+            { objectiveId }
+        );
 
-    if (completionStatus.status === 'completed') {
-      // Objective completed - trigger achievement check
-      await step.runMutation(internal.achievements.checkUserAchievements, {
-        userId,
-        trigger: 'objective_completed',
-      });
-      return;
-    }
+        if (completionStatus.status === 'completed') {
+            // Objective completed - trigger achievement check
+            await step.runMutation(internal.achievements.checkUserAchievements, {
+                userId,
+                trigger: 'objective_completed',
+            });
+            return;
+        }
 
-    // Check 2: Periodic reminder based on reminderInterval
-    if (enableReminders) {
-      await step.runMutation(internal.steps.objectives.sendPeriodicReminder, {
-        objectiveId,
-      });
-    }
+        // Check 2: Periodic reminder based on reminderInterval
+        if (enableReminders) {
+            await step.runMutation(internal.steps.objectives.sendPeriodicReminder, {
+                objectiveId,
+            });
+        }
 
-    // Check 3: Deadline approaching/overdue
-    await step.runMutation(internal.steps.objectives.checkOverdue, {
-      objectiveId,
-    });
+        // Check 3: Deadline approaching/overdue
+        await step.runMutation(internal.steps.objectives.checkOverdue, {
+            objectiveId,
+        });
 
-    // Check 4: Stalled objective
-    await step.runMutation(internal.steps.objectives.markStalled, {
-      objectiveId,
-      stalledDays: stallThresholdDays,
-    });
+        // Check 4: Stalled objective
+        await step.runMutation(internal.steps.objectives.markStalled, {
+            objectiveId,
+            stalledDays: stallThresholdDays,
+        });
 
-    // Schedule the next iteration after one day
-    await step.runWorkflow(
-      internal.workflows.objectiveLifecycle.objectiveLifecycle,
-      {
-        objectiveId,
-        userId,
-        enableReminders,
-        stallThresholdDays,
-      },
-      { runAfter: oneDayMs },
-    );
-  },
+        // Schedule the next iteration after one day
+        await step.runWorkflow(
+            internal.workflows.objectiveLifecycle.objectiveLifecycle,
+            {
+                objectiveId,
+                userId,
+                enableReminders,
+                stallThresholdDays,
+            },
+            { runAfter: oneDayMs }
+        );
+    },
 });
 
 /**
@@ -113,37 +107,37 @@ export const objectiveLifecycle = workflow.define({
  * without running a long-lived workflow
  */
 export const progressCheckWorkflow = workflow.define({
-  args: {
-    objectiveId: v.id('objectives'),
-    userId: v.string(),
-  },
-  handler: async (step, args): Promise<{ completed: boolean; achievementsAwarded: string[] }> => {
-    const { objectiveId, userId } = args;
+    args: {
+        objectiveId: v.id('objectives'),
+        userId: v.string(),
+    },
+    handler: async (step, args): Promise<{ completed: boolean; achievementsAwarded: string[] }> => {
+        const { objectiveId, userId } = args;
 
-    // Check if objective should be auto-completed
-    const completionStatus = await step.runMutation(
-      internal.steps.objectives.checkAutoComplete,
-      { objectiveId },
-    );
+        // Check if objective should be auto-completed
+        const completionStatus = await step.runMutation(
+            internal.steps.objectives.checkAutoComplete,
+            { objectiveId }
+        );
 
-    let achievementsAwarded: string[] = [];
+        let achievementsAwarded: string[] = [];
 
-    if (completionStatus.status === 'completed') {
-      // Trigger achievement check
-      const achievementResult = await step.runMutation(
-        internal.achievements.checkUserAchievements,
-        {
-          userId,
-          trigger: 'objective_completed',
-        },
-      );
+        if (completionStatus.status === 'completed') {
+            // Trigger achievement check
+            const achievementResult = await step.runMutation(
+                internal.achievements.checkUserAchievements,
+                {
+                    userId,
+                    trigger: 'objective_completed',
+                }
+            );
 
-      achievementsAwarded = achievementResult.awarded ?? [];
-    }
+            achievementsAwarded = achievementResult.awarded ?? [];
+        }
 
-    return {
-      completed: completionStatus.status === 'completed',
-      achievementsAwarded,
-    };
-  },
+        return {
+            completed: completionStatus.status === 'completed',
+            achievementsAwarded,
+        };
+    },
 });

@@ -24,27 +24,35 @@ test.describe('Organization Invitations', () => {
             // Look for invite button
             const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
 
-            if (await inviteButton.count() > 0) {
+            if ((await inviteButton.count()) > 0) {
                 await inviteButton.first().click();
 
                 // Fill invitation form
-                const emailInput = page.locator('input[type="email"], [data-testid*="invite-email"]').first();
+                const emailInput = page
+                    .locator('input[type="email"], [data-testid*="invite-email"]')
+                    .first();
                 if (await emailInput.isVisible()) {
                     const inviteEmail = `invite-${Date.now()}@example.com`;
                     await emailInput.fill(inviteEmail);
 
                     // Role selection if available
-                    const roleSelect = page.locator('[data-testid*="role"], select:has-text("Role")');
-                    if (await roleSelect.count() > 0) {
+                    const roleSelect = page.locator(
+                        '[data-testid*="role"], select:has-text("Role")'
+                    );
+                    if ((await roleSelect.count()) > 0) {
                         await roleSelect.first().click();
                         const memberOption = page.getByRole('option', { name: /member|miembro/i });
-                        if (await memberOption.count() > 0) {
+                        if ((await memberOption.count()) > 0) {
                             await memberOption.click();
                         }
                     }
 
                     // Send invitation
-                    const sendButton = page.locator('button:has-text("Send"), button:has-text("Invite"), button:has-text("Enviar")').first();
+                    const sendButton = page
+                        .locator(
+                            'button:has-text("Send"), button:has-text("Invite"), button:has-text("Enviar")'
+                        )
+                        .first();
                     await sendButton.click();
 
                     await page.waitForTimeout(2000);
@@ -70,9 +78,11 @@ test.describe('Organization Invitations', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for invitations tab or section
-            const invitationsTab = page.locator('button:has-text("Invitations"), button:has-text("Invitaciones"), [data-testid*="invitations"]');
+            const invitationsTab = page.locator(
+                'button:has-text("Invitations"), button:has-text("Invitaciones"), [data-testid*="invitations"]'
+            );
 
-            if (await invitationsTab.count() > 0) {
+            if ((await invitationsTab.count()) > 0) {
                 await invitationsTab.first().click();
                 await page.waitForLoadState('networkidle');
 
@@ -97,26 +107,32 @@ test.describe('Organization Invitations', () => {
             // First, send an invitation
             const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
 
-            if (await inviteButton.count() > 0) {
+            if ((await inviteButton.count()) > 0) {
                 await inviteButton.first().click();
 
                 const emailInput = page.locator('input[type="email"]').first();
                 if (await emailInput.isVisible()) {
                     await emailInput.fill(`cancel-test-${Date.now()}@example.com`);
 
-                    const sendButton = page.locator('button:has-text("Send"), button:has-text("Invite")').first();
+                    const sendButton = page
+                        .locator('button:has-text("Send"), button:has-text("Invite")')
+                        .first();
                     await sendButton.click();
                     await page.waitForTimeout(2000);
 
                     // Now look for cancel button on the invitation
-                    const cancelButton = page.locator('button:has-text("Cancel"), button:has-text("Revoke"), [data-testid*="cancel-invitation"]');
+                    const cancelButton = page.locator(
+                        'button:has-text("Cancel"), button:has-text("Revoke"), [data-testid*="cancel-invitation"]'
+                    );
 
-                    if (await cancelButton.count() > 0) {
+                    if ((await cancelButton.count()) > 0) {
                         await cancelButton.first().click();
 
                         // Confirm if needed
-                        const confirmButton = page.locator('[role="dialog"] button:has-text("Confirm"), [role="dialog"] button:has-text("Yes")');
-                        if (await confirmButton.count() > 0) {
+                        const confirmButton = page.locator(
+                            '[role="dialog"] button:has-text("Confirm"), [role="dialog"] button:has-text("Yes")'
+                        );
+                        if ((await confirmButton.count()) > 0) {
                             await confirmButton.click();
                         }
 
@@ -139,7 +155,7 @@ test.describe('Organization Invitations', () => {
         const emptyState = page.locator('text=/no.*invitations|sin invitaciones/i');
         const invitationsList = page.locator('tr, [data-testid*="invitation"]');
 
-        const hasContent = await emptyState.count() > 0 || await invitationsList.count() > 0;
+        const hasContent = (await emptyState.count()) > 0 || (await invitationsList.count()) > 0;
         expect(hasContent).toBeTruthy();
     });
 
@@ -164,7 +180,7 @@ test.describe('Organization Invitations', () => {
 
             const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
 
-            if (await inviteButton.count() > 0) {
+            if ((await inviteButton.count()) > 0) {
                 await inviteButton.first().click();
 
                 // Create another user's email for invitation
@@ -174,7 +190,9 @@ test.describe('Organization Invitations', () => {
                 if (await emailInput.isVisible()) {
                     await emailInput.fill(newUserData.email);
 
-                    const sendButton = page.locator('button:has-text("Send"), button:has-text("Invite")').first();
+                    const sendButton = page
+                        .locator('button:has-text("Send"), button:has-text("Invite")')
+                        .first();
                     await sendButton.click();
                     await page.waitForTimeout(2000);
 
@@ -193,14 +211,18 @@ test.describe('Organization Invitations', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for decline button on any invitation
-        const declineButton = page.locator('button:has-text("Decline"), button:has-text("Reject"), button:has-text("Rechazar")');
+        const declineButton = page.locator(
+            'button:has-text("Decline"), button:has-text("Reject"), button:has-text("Rechazar")'
+        );
 
-        if (await declineButton.count() > 0) {
+        if ((await declineButton.count()) > 0) {
             await declineButton.first().click();
 
             // Confirm decline if needed
-            const confirmButton = page.locator('[role="dialog"] button:has-text("Confirm"), [role="dialog"] button:has-text("Yes")');
-            if (await confirmButton.count() > 0) {
+            const confirmButton = page.locator(
+                '[role="dialog"] button:has-text("Confirm"), [role="dialog"] button:has-text("Yes")'
+            );
+            if ((await confirmButton.count()) > 0) {
                 await confirmButton.click();
             }
 
@@ -222,9 +244,11 @@ test.describe('Organization Invitations', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for resend button on any pending invitation
-            const resendButton = page.locator('button:has-text("Resend"), button:has-text("Reenviar")');
+            const resendButton = page.locator(
+                'button:has-text("Resend"), button:has-text("Reenviar")'
+            );
 
-            if (await resendButton.count() > 0) {
+            if ((await resendButton.count()) > 0) {
                 await resendButton.first().click();
                 await page.waitForTimeout(2000);
 
@@ -247,9 +271,11 @@ test.describe('Organization Invitations', () => {
             await page.waitForLoadState('networkidle');
 
             // Look for copy link button
-            const copyLinkButton = page.locator('button:has-text("Copy Link"), button:has-text("Copiar"), [data-testid*="copy-link"]');
+            const copyLinkButton = page.locator(
+                'button:has-text("Copy Link"), button:has-text("Copiar"), [data-testid*="copy-link"]'
+            );
 
-            if (await copyLinkButton.count() > 0) {
+            if ((await copyLinkButton.count()) > 0) {
                 // Copy link button should be present for sharing invitations
                 await expect(copyLinkButton.first()).toBeVisible();
             }

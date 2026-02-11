@@ -168,10 +168,7 @@ export default function CreateObjectiveFormModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button
-                    className="gap-2"
-                    data-testid="objective-create-open"
-                >
+                <Button className="gap-2" data-testid="objective-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>
@@ -391,7 +388,9 @@ export default function CreateObjectiveFormModal() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription>{t('progressModeDescription')}</FormDescription>
+                                    <FormDescription>
+                                        {t('progressModeDescription')}
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -417,10 +416,7 @@ export default function CreateObjectiveFormModal() {
                                         </FormControl>
                                         <SelectContent>
                                             {reminderIntervalOptions.map(option => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
+                                                <SelectItem key={option.value} value={option.value}>
                                                     {option.label}
                                                 </SelectItem>
                                             ))}
@@ -498,9 +494,7 @@ export default function CreateObjectiveFormModal() {
                                             type="number"
                                             {...field}
                                             onChange={e =>
-                                                field.onChange(
-                                                    Number.parseFloat(e.target.value)
-                                                )
+                                                field.onChange(Number.parseFloat(e.target.value))
                                             }
                                             data-testid="objective-current-input"
                                         />

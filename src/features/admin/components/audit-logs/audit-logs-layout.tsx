@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AuditLogsTable } from '@/features/admin/components/audit-logs/audit-logs-table';
 import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';

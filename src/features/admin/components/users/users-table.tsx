@@ -7,7 +7,6 @@ import { PaginationResult } from 'convex/server';
 import { Doc } from '@/convex/_generated/dataModel';
 
 export function UsersTable({ users }: { users: PaginationResult<Doc<'user'>> | null }) {
-
     const t = useTranslations('Admin');
     const columns = useUsersTableColumns();
 
@@ -15,9 +14,7 @@ export function UsersTable({ users }: { users: PaginationResult<Doc<'user'>> | n
         <div className="space-y-4">
             <DataTable columns={columns} data={users?.page || []} />
             {users?.page?.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">
-                    {t('usersTable.empty')}
-                </p>
+                <p className="text-center text-muted-foreground py-8">{t('usersTable.empty')}</p>
             )}
         </div>
     );

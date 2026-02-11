@@ -19,7 +19,7 @@ test.describe('Command Menu', () => {
             '[role="dialog"][data-testid*="command"], [data-testid*="command-menu"], [cmdk-root], [data-command-menu]'
         );
 
-        if (await commandMenu.count() > 0) {
+        if ((await commandMenu.count()) > 0) {
             await expect(commandMenu.first()).toBeVisible();
         }
     });
@@ -37,7 +37,7 @@ test.describe('Command Menu', () => {
             '[role="dialog"][data-testid*="command"], [data-testid*="command-menu"], [cmdk-root]'
         );
 
-        if (await commandMenu.count() > 0) {
+        if ((await commandMenu.count()) > 0) {
             await expect(commandMenu.first()).toBeVisible();
         }
     });
@@ -60,9 +60,11 @@ test.describe('Command Menu', () => {
             await page.waitForTimeout(500);
 
             // Select the result
-            const objectivesOption = page.locator('[cmdk-item]:has-text("Objectives"), [role="option"]:has-text("Objectives")');
+            const objectivesOption = page.locator(
+                '[cmdk-item]:has-text("Objectives"), [role="option"]:has-text("Objectives")'
+            );
 
-            if (await objectivesOption.count() > 0) {
+            if ((await objectivesOption.count()) > 0) {
                 await objectivesOption.first().click();
                 await page.waitForLoadState('networkidle');
 
@@ -80,9 +82,11 @@ test.describe('Command Menu', () => {
         await page.keyboard.press('Control+k');
         await page.waitForTimeout(500);
 
-        const commandMenu = page.locator('[role="dialog"], [cmdk-root], [data-testid*="command-menu"]');
+        const commandMenu = page.locator(
+            '[role="dialog"], [cmdk-root], [data-testid*="command-menu"]'
+        );
 
-        if (await commandMenu.count() > 0) {
+        if ((await commandMenu.count()) > 0) {
             await expect(commandMenu.first()).toBeVisible();
 
             // Press Escape to close
@@ -104,14 +108,16 @@ test.describe('Command Menu', () => {
 
         const commandMenu = page.locator('[role="dialog"], [cmdk-root]');
 
-        if (await commandMenu.count() > 0) {
+        if ((await commandMenu.count()) > 0) {
             // Use arrow keys to navigate
             await page.keyboard.press('ArrowDown');
             await page.waitForTimeout(200);
 
             // Check for selected state
-            const selectedItem = page.locator('[cmdk-item][aria-selected="true"], [role="option"][aria-selected="true"]');
-            const hasSelected = await selectedItem.count() > 0;
+            const selectedItem = page.locator(
+                '[cmdk-item][aria-selected="true"], [role="option"][aria-selected="true"]'
+            );
+            const hasSelected = (await selectedItem.count()) > 0;
 
             // Press Enter to select
             await page.keyboard.press('Enter');
@@ -129,7 +135,7 @@ test.describe('Command Menu', () => {
 
         // Look for recent section
         const recentSection = page.locator('text=/recent|reciente/i');
-        const hasRecent = await recentSection.count() > 0;
+        const hasRecent = (await recentSection.count()) > 0;
 
         // Recent items might show recently visited pages
     });
@@ -144,7 +150,7 @@ test.describe('Command Menu', () => {
 
         const commandMenu = page.locator('[role="dialog"], [cmdk-root]');
 
-        if (await commandMenu.count() > 0) {
+        if ((await commandMenu.count()) > 0) {
             // Should show navigation options
             const options = page.locator('[cmdk-item], [role="option"]');
             const optionCount = await options.count();
@@ -190,8 +196,10 @@ test.describe('Command Menu', () => {
         await page.waitForTimeout(500);
 
         // Might show page-specific actions like "Create objective"
-        const createAction = page.locator('[cmdk-item]:has-text("Create"), [role="option"]:has-text("Create")');
-        const hasActions = await createAction.count() > 0;
+        const createAction = page.locator(
+            '[cmdk-item]:has-text("Create"), [role="option"]:has-text("Create")'
+        );
+        const hasActions = (await createAction.count()) > 0;
     });
 
     test('empty state when no results', async ({ page }) => {
@@ -210,8 +218,10 @@ test.describe('Command Menu', () => {
             await page.waitForTimeout(500);
 
             // Should show empty state
-            const emptyState = page.locator('[cmdk-empty]').or(page.getByText(/no results|sin resultados/i));
-            const hasEmpty = await emptyState.count() > 0;
+            const emptyState = page
+                .locator('[cmdk-empty]')
+                .or(page.getByText(/no results|sin resultados/i));
+            const hasEmpty = (await emptyState.count()) > 0;
         }
     });
 
@@ -224,7 +234,7 @@ test.describe('Command Menu', () => {
             'button:has-text("⌘K"), button:has-text("Ctrl+K"), [data-testid*="command-trigger"], kbd:has-text("K")'
         );
 
-        if (await commandButton.count() > 0) {
+        if ((await commandButton.count()) > 0) {
             await expect(commandButton.first()).toBeVisible();
 
             // Click to open
@@ -232,7 +242,7 @@ test.describe('Command Menu', () => {
             await page.waitForTimeout(500);
 
             const commandMenu = page.locator('[role="dialog"], [cmdk-root]');
-            if (await commandMenu.count() > 0) {
+            if ((await commandMenu.count()) > 0) {
                 await expect(commandMenu.first()).toBeVisible();
             }
         }

@@ -15,13 +15,13 @@ import { workflow } from '../workflow';
  * Returns: { type: 'inProgress' | 'completed' | 'canceled' | 'failed', ... }
  */
 export const getWorkflowStatus = query({
-  args: {
-    workflowId: vWorkflowId,
-  },
-  handler: async (ctx, args) => {
-    const status = await workflow.status(ctx, args.workflowId);
-    return status;
-  },
+    args: {
+        workflowId: vWorkflowId,
+    },
+    handler: async (ctx, args) => {
+        const status = await workflow.status(ctx, args.workflowId);
+        return status;
+    },
 });
 
 /**
@@ -29,21 +29,21 @@ export const getWorkflowStatus = query({
  * Useful for debugging and showing progress history
  */
 export const getWorkflowSteps = query({
-  args: {
-    workflowId: vWorkflowId,
-    pageSize: v.optional(v.number()),
-    cursor: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const steps = await workflow.listSteps(ctx, args.workflowId, {
-      order: 'desc',
-      paginationOpts: {
-        cursor: args.cursor ?? null,
-        numItems: args.pageSize ?? 25,
-      },
-    });
-    return steps;
-  },
+    args: {
+        workflowId: vWorkflowId,
+        pageSize: v.optional(v.number()),
+        cursor: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const steps = await workflow.listSteps(ctx, args.workflowId, {
+            order: 'desc',
+            paginationOpts: {
+                cursor: args.cursor ?? null,
+                numItems: args.pageSize ?? 25,
+            },
+        });
+        return steps;
+    },
 });
 
 /**
@@ -53,29 +53,29 @@ export const getWorkflowSteps = query({
  * TODO: Add workflowId field to objectives schema to enable this query
  */
 export const getObjectiveWorkflowStatus = query({
-  args: {
-    objectiveId: v.id('objectives'),
-  },
-  handler: async (ctx, args) => {
-    // First, we need to get the workflowId from somewhere
-    // Options:
-    // 1. Store workflowId in the objective document (add field to schema)
-    // 2. Query a separate table mapping objectives to workflows
-    // 3. Pass workflowId directly from frontend
+    args: {
+        objectiveId: v.id('objectives'),
+    },
+    handler: async (ctx, args) => {
+        // First, we need to get the workflowId from somewhere
+        // Options:
+        // 1. Store workflowId in the objective document (add field to schema)
+        // 2. Query a separate table mapping objectives to workflows
+        // 3. Pass workflowId directly from frontend
 
-    // For now, this is a placeholder - implement based on your choice
-    const objective = await ctx.db.get('objectives', args.objectiveId);
+        // For now, this is a placeholder - implement based on your choice
+        const objective = await ctx.db.get('objectives', args.objectiveId);
 
-    if (!objective || !('workflowId' in objective)) {
-      return { status: 'not_found' };
-    }
+        if (!objective || !('workflowId' in objective)) {
+            return { status: 'not_found' };
+        }
 
-    // This would work if you add workflowId to the schema:
-    // const status = await workflow.status(ctx, objective.workflowId);
-    // return status;
+        // This would work if you add workflowId to the schema:
+        // const status = await workflow.status(ctx, objective.workflowId);
+        // return status;
 
-    return { status: 'not_implemented' };
-  },
+        return { status: 'not_implemented' };
+    },
 });
 
 /**
@@ -85,10 +85,10 @@ export const getObjectiveWorkflowStatus = query({
  * TODO: Create a userWorkflows table to track this
  */
 export const getUserActiveWorkflows = query({
-  args: {},
-  handler: async () => {
-    // This requires a table mapping userId -> workflowIds
-    // For now, return empty
-    return [];
-  },
+    args: {},
+    handler: async () => {
+        // This requires a table mapping userId -> workflowIds
+        // For now, return empty
+        return [];
+    },
 });

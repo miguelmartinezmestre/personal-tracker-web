@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { createTestUser, promoteToAdmin } from '../../helpers/test-helpers';
-import { expectSidebarVisible, expectAdminMenuVisible, expectAdminMenuHidden } from '../../helpers/assertions';
+import {
+    expectSidebarVisible,
+    expectAdminMenuVisible,
+    expectAdminMenuHidden,
+} from '../../helpers/assertions';
 
 test.describe('Sidebar Navigation', () => {
     test.beforeEach(async ({ page }) => {
@@ -86,11 +90,12 @@ test.describe('Sidebar Navigation', () => {
             });
 
             // Or check parent element
-            const parentIsActive = await objectivesLink
-                .locator('..')
-                .evaluate(el => {
-                    return el.classList.toString().includes('active') || el.getAttribute('data-active') === 'true';
-                });
+            const parentIsActive = await objectivesLink.locator('..').evaluate(el => {
+                return (
+                    el.classList.toString().includes('active') ||
+                    el.getAttribute('data-active') === 'true'
+                );
+            });
 
             expect(isActive || parentIsActive).toBeTruthy();
         }
@@ -115,7 +120,7 @@ test.describe('Sidebar Navigation', () => {
             'button[aria-label*="menu"], button[aria-label*="sidebar"], [data-testid*="sidebar-toggle"], [data-testid*="menu-toggle"]'
         );
 
-        if (await menuToggle.count() > 0) {
+        if ((await menuToggle.count()) > 0) {
             // Click to open sidebar
             await menuToggle.first().click();
             await page.waitForTimeout(500);
@@ -138,11 +143,13 @@ test.describe('Sidebar Navigation', () => {
 
         // Look for user info in sidebar
         const userInfo = page.locator('aside, [data-sidebar]').filter({ hasText: username });
-        const hasUserInfo = await userInfo.count() > 0;
+        const hasUserInfo = (await userInfo.count()) > 0;
 
         // Or avatar/initial
-        const avatar = page.locator('aside .avatar, [data-sidebar] .avatar, aside [class*="avatar"]');
-        const hasAvatar = await avatar.count() > 0;
+        const avatar = page.locator(
+            'aside .avatar, [data-sidebar] .avatar, aside [class*="avatar"]'
+        );
+        const hasAvatar = (await avatar.count()) > 0;
 
         // Some form of user identification should be present
     });
@@ -156,7 +163,7 @@ test.describe('Sidebar Navigation', () => {
             'button:has-text("Logout"), button:has-text("Sign out"), button:has-text("Cerrar sesión"), [data-testid*="logout"]'
         );
 
-        if (await logoutButton.count() > 0) {
+        if ((await logoutButton.count()) > 0) {
             await expect(logoutButton.first()).toBeVisible();
         }
     });
@@ -170,7 +177,7 @@ test.describe('Sidebar Navigation', () => {
             '[data-testid*="org-switch"], [data-testid*="organization-switch"], button:has-text("Organization")'
         );
 
-        if (await orgSwitcher.count() > 0) {
+        if ((await orgSwitcher.count()) > 0) {
             await expect(orgSwitcher.first()).toBeVisible();
         }
     });
@@ -204,7 +211,7 @@ test.describe('Sidebar Navigation', () => {
         for (let i = 0; i < Math.min(linkCount, 5); i++) {
             const link = sidebarLinks.nth(i);
             const icon = link.locator('svg, [class*="icon"], img');
-            const hasIcon = await icon.count() > 0;
+            const hasIcon = (await icon.count()) > 0;
             // Links should have icons for visual clarity
         }
     });

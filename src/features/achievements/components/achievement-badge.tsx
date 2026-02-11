@@ -3,12 +3,7 @@
 import { cn } from '@/lib/ui-utils/utils';
 import { Trophy, Target, CheckCircle, Flame, TrendingUp, Clock, Users, Lock } from 'lucide-react';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const TIER_COLORS: Record<AchievementTier, string> = {
     bronze: 'bg-amber-600 text-amber-50',

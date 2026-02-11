@@ -174,7 +174,8 @@ export function OrganizationSwitcher() {
     const activeOrganizationFromList = organizations.find(
         organization => normalizeId(organization.id) === activeOrganizationId
     );
-    const displayName = activeOrganization?.name || activeOrganizationFromList?.name || t('noOrganization');
+    const displayName =
+        activeOrganization?.name || activeOrganizationFromList?.name || t('noOrganization');
 
     const handleOrganizationChange = (organizationId: string) => {
         if (!organizationId || organizationId === activeOrganizationId) {

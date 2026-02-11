@@ -5,21 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-type InvitationStatus =
-    | 'ready'
-    | 'accepting'
-    | 'accepted'
-    | 'error';
+type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
 export default function InvitationPage() {
     const params = useParams();

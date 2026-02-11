@@ -2,13 +2,7 @@
 
 import { Mail, Building2, User, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Invitation } from '@/features/organizations/hooks/use-invitations';
 import { useTranslations } from 'next-intl';

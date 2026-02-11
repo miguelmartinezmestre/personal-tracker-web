@@ -29,7 +29,8 @@ export function useNotificationsTableColumns({
     const t = useTranslations('Notifications');
 
     const { setNotificationRead, isSettingRead } = useSetNotificationRead(onMutationSuccess);
-    const { deleteNotificationAsync, isDeletingNotification } = useDeleteNotification(onMutationSuccess);
+    const { deleteNotificationAsync, isDeletingNotification } =
+        useDeleteNotification(onMutationSuccess);
 
     const typeLabels: Record<string, string> = {
         reminder: t('typeOptions.reminder'),

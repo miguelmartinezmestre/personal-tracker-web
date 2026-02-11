@@ -1,4 +1,3 @@
-
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
@@ -10,23 +9,21 @@ import { Preloaded } from 'convex/react';
 import { createTranslator } from 'next-intl';
 
 export default async function ObjectivesPage() {
-
     let preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
-    let t: ReturnType<typeof createTranslator<Record<string, any>, "Objectives">>;
+    let t: ReturnType<typeof createTranslator<Record<string, any>, 'Objectives'>>;
 
-    try{
+    try {
         [t, preloadedObjectivesQuery] = await Promise.all([
             getTranslations('Objectives'),
             preloadAuthQuery(api.objectives.getObjectivesByUser, {
                 paginationOpts: { numItems: 1000, cursor: null },
             }),
         ]);
-    }catch(error){
+    } catch (error) {
         console.error(error);
         redirect('/dashboard/home');
     }
     // Start all promises in parallel
-
 
     return (
         <div className="space-y-6">

@@ -26,7 +26,7 @@ test.describe('Password Recovery', () => {
 
         // Either success message visible or redirect happened
         const successMessage = page.locator('text=/check.*email|revisa.*correo|sent|enviado/i');
-        const hasMessage = await successMessage.count() > 0;
+        const hasMessage = (await successMessage.count()) > 0;
 
         if (!hasMessage) {
             // Page might show different UI or redirect
@@ -35,7 +35,9 @@ test.describe('Password Recovery', () => {
         }
     });
 
-    test('request password reset with non-existent email shows appropriate response', async ({ page }) => {
+    test('request password reset with non-existent email shows appropriate response', async ({
+        page,
+    }) => {
         const fakeUser = UserFactory.create();
 
         await page.goto('/forget-password');
@@ -73,7 +75,7 @@ test.describe('Password Recovery', () => {
         // Should have a link back to login
         const loginLink = page.getByRole('link', { name: /login|iniciar sesión|back|volver/i });
 
-        if (await loginLink.count() > 0) {
+        if ((await loginLink.count()) > 0) {
             await loginLink.first().click();
             await page.waitForURL(/\/login$/);
             await expect(page).toHaveURL(/\/login$/);
@@ -92,16 +94,19 @@ test.describe('Password Recovery', () => {
         const currentUrl = page.url();
 
         // Check for redirect to home, login, or forgot-password (all valid behaviors)
-        const isRedirectedToHome = currentUrl === 'http://localhost:3000/' || currentUrl.endsWith('/');
+        const isRedirectedToHome =
+            currentUrl === 'http://localhost:3000/' || currentUrl.endsWith('/');
         const isRedirectedToLogin = currentUrl.includes('/login');
         const isRedirectedToForgotPassword = currentUrl.includes('/forget-password');
 
         // Or shows error message
         const errorMessage = page.locator('text=/invalid|expired|inválido|expirado|error/i');
-        const hasError = await errorMessage.count() > 0;
+        const hasError = (await errorMessage.count()) > 0;
 
         // Either error shown or redirected (redirect to home is the expected behavior)
-        expect(hasError || isRedirectedToHome || isRedirectedToLogin || isRedirectedToForgotPassword).toBeTruthy();
+        expect(
+            hasError || isRedirectedToHome || isRedirectedToLogin || isRedirectedToForgotPassword
+        ).toBeTruthy();
     });
 
     test('reset password form validates password requirements', async ({ page }) => {

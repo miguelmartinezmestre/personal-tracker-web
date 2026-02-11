@@ -9,10 +9,12 @@ export default async function ObjectiveDetailPage({ params }: { params: Promise<
     const { id } = await params;
     const objectiveId = id as Id<'objectives'>;
 
-    let preloadedProgressQuery: Preloaded<typeof api.update_progress.getUpdateProgressByObjectiveId>;
+    let preloadedProgressQuery: Preloaded<
+        typeof api.update_progress.getUpdateProgressByObjectiveId
+    >;
     let preloadedObjectiveQuery: Preloaded<typeof api.objectives.getObjectiveById>;
 
-    try{
+    try {
         [preloadedProgressQuery, preloadedObjectiveQuery] = await Promise.all([
             preloadAuthQuery(api.update_progress.getUpdateProgressByObjectiveId, {
                 objectiveId,
@@ -20,7 +22,7 @@ export default async function ObjectiveDetailPage({ params }: { params: Promise<
             }),
             preloadAuthQuery(api.objectives.getObjectiveById, { id: objectiveId }),
         ]);
-    }catch(error){
+    } catch (error) {
         console.error(error);
         redirect('/dashboard/home');
     }

@@ -8,19 +8,19 @@ export const getSessionsByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
-    handler: async (ctx) => {
-
+    handler: async ctx => {
         const currentSession = await getSession(ctx);
 
-        console.log(currentSession)
+        console.log(currentSession);
 
-        const sessions = await ctx.db.query('session')
-        .withIndex('userId', q => q.eq('userId', currentSession?.userId as string))
-        .collect();
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', currentSession?.userId as string))
+            .collect();
 
         return {
             currentSession,
-            sessions
+            sessions,
         };
     },
 });
@@ -28,7 +28,6 @@ export const getSessionsByUser = queryWithRLS({
 export const invalidateSession = mutationWithRLS({
     args: { token: v.string() },
     handler: async (ctx, args) => {
-
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
 
@@ -46,7 +45,6 @@ export const invalidateSession = mutationWithRLS({
 export const invalidateAllOtherSessions = mutationWithRLS({
     args: { currentToken: v.string() },
     handler: async (ctx, args) => {
-
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
 

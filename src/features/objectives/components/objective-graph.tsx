@@ -5,13 +5,7 @@ import { TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress as ProgressBar } from '@/components/ui/progress';
 import { computeObjectiveProgressPercent } from './objectives-utils';
 
@@ -66,7 +60,7 @@ export function ObjectiveProgressGraph({
         []
     );
 
-    const latestValue = data.length > 0 ? data[data.length - 1]?.currentValue ?? 0 : 0;
+    const latestValue = data.length > 0 ? (data[data.length - 1]?.currentValue ?? 0) : 0;
     const objectiveValue = targetValue ?? data[data.length - 1]?.objective ?? 0;
     const progressPercent = Math.round(
         computeObjectiveProgressPercent({

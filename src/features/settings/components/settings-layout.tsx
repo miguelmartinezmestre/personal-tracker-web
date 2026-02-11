@@ -1,13 +1,7 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AccountSettingsFormEdit from './account-settings-form-edit';
 import PasswordFormEdit from './password-form-edit';
 import { useTranslations } from 'next-intl';

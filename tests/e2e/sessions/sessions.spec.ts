@@ -36,10 +36,10 @@ test.describe('Sessions', () => {
 
         // Current session should have special indicator - look for "Current session" badge
         const currentSessionBadge = page.locator('text=/current session|sesión actual/i');
-        const hasCurrentIndicator = await currentSessionBadge.count() > 0;
+        const hasCurrentIndicator = (await currentSessionBadge.count()) > 0;
 
         // Or the table header
-        const tableExists = await page.locator('table').count() > 0;
+        const tableExists = (await page.locator('table').count()) > 0;
 
         expect(hasCurrentIndicator || tableExists).toBeTruthy();
     });
@@ -55,7 +55,7 @@ test.describe('Sessions', () => {
 
         // Table should show device/browser column
         const table = page.locator('table');
-        if (await table.count() > 0) {
+        if ((await table.count()) > 0) {
             // The table exists which means device info would be shown
             await expect(table).toBeVisible();
         }
@@ -67,7 +67,7 @@ test.describe('Sessions', () => {
 
         // Should show when session was last active
         const timeDisplay = page.locator('text=/ago|hace|\\d{1,2}[/:.]\\d{2}|today|hoy/i');
-        const hasTimeDisplay = await timeDisplay.count() > 0;
+        const hasTimeDisplay = (await timeDisplay.count()) > 0;
 
         expect(hasTimeDisplay).toBeTruthy();
     });
@@ -80,11 +80,13 @@ test.describe('Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for revoke button (should be disabled for current session)
-        const revokeButtons = page.locator('button:has-text("Revoke"), button:has-text("End"), button:has-text("Revocar"), [data-testid*="revoke"]');
+        const revokeButtons = page.locator(
+            'button:has-text("Revoke"), button:has-text("End"), button:has-text("Revocar"), [data-testid*="revoke"]'
+        );
 
-        if (await revokeButtons.count() > 0) {
+        if ((await revokeButtons.count()) > 0) {
             // Find a revoke button that's not for current session
-            for (let i = 0; i < await revokeButtons.count(); i++) {
+            for (let i = 0; i < (await revokeButtons.count()); i++) {
                 const button = revokeButtons.nth(i);
                 if (await button.isEnabled()) {
                     await button.click();
@@ -92,8 +94,10 @@ test.describe('Sessions', () => {
                     // Confirm if dialog appears
                     const confirmDialog = page.locator('[role="dialog"]');
                     if (await confirmDialog.isVisible()) {
-                        const confirmButton = confirmDialog.locator('button:has-text("Confirm"), button:has-text("Yes"), button:has-text("Revoke")');
-                        if (await confirmButton.count() > 0) {
+                        const confirmButton = confirmDialog.locator(
+                            'button:has-text("Confirm"), button:has-text("Yes"), button:has-text("Revoke")'
+                        );
+                        if ((await confirmButton.count()) > 0) {
                             await confirmButton.first().click();
                         }
                     }
@@ -110,13 +114,17 @@ test.describe('Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Find current session row
-        const currentSessionRow = page.locator('tr:has-text("current"), tr:has-text("actual"), [data-testid*="current-session"]');
+        const currentSessionRow = page.locator(
+            'tr:has-text("current"), tr:has-text("actual"), [data-testid*="current-session"]'
+        );
 
-        if (await currentSessionRow.count() > 0) {
+        if ((await currentSessionRow.count()) > 0) {
             // Revoke button should be disabled or hidden for current session
-            const revokeButton = currentSessionRow.locator('button:has-text("Revoke"), [data-testid*="revoke"]');
+            const revokeButton = currentSessionRow.locator(
+                'button:has-text("Revoke"), [data-testid*="revoke"]'
+            );
 
-            if (await revokeButton.count() > 0) {
+            if ((await revokeButton.count()) > 0) {
                 await expect(revokeButton.first()).toBeDisabled();
             }
         }
@@ -127,16 +135,20 @@ test.describe('Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for "Revoke all" button
-        const revokeAllButton = page.locator('button:has-text("Revoke all"), button:has-text("End all"), button:has-text("Cerrar todas")');
+        const revokeAllButton = page.locator(
+            'button:has-text("Revoke all"), button:has-text("End all"), button:has-text("Cerrar todas")'
+        );
 
-        if (await revokeAllButton.count() > 0) {
+        if ((await revokeAllButton.count()) > 0) {
             await revokeAllButton.first().click();
 
             // Confirm
             const confirmDialog = page.locator('[role="dialog"]');
             if (await confirmDialog.isVisible()) {
-                const confirmButton = confirmDialog.locator('button:has-text("Confirm"), button:has-text("Yes")');
-                if (await confirmButton.count() > 0) {
+                const confirmButton = confirmDialog.locator(
+                    'button:has-text("Confirm"), button:has-text("Yes")'
+                );
+                if ((await confirmButton.count()) > 0) {
                     await confirmButton.first().click();
                 }
             }
@@ -164,7 +176,7 @@ test.describe('Sessions', () => {
                 await revokeButton.click();
 
                 const confirmButton = page.locator('[role="dialog"] button:has-text("Confirm")');
-                if (await confirmButton.count() > 0) {
+                if ((await confirmButton.count()) > 0) {
                     await confirmButton.click();
                 }
 
@@ -183,8 +195,10 @@ test.describe('Sessions', () => {
         await page.waitForLoadState('networkidle');
 
         // Look for location info (city, country, or IP)
-        const locationDisplay = page.locator('[data-testid*="location"]').or(page.getByText(/\d+\.\d+\.\d+\.\d+/));
-        const hasLocation = await locationDisplay.count() > 0;
+        const locationDisplay = page
+            .locator('[data-testid*="location"]')
+            .or(page.getByText(/\d+\.\d+\.\d+\.\d+/));
+        const hasLocation = (await locationDisplay.count()) > 0;
 
         // IP address at minimum should be shown
     });
@@ -195,7 +209,7 @@ test.describe('Sessions', () => {
 
         // Current session should be first (most recent)
         const firstRow = page.locator('tbody tr, [data-testid*="session"]').first();
-        const isCurrentFirst = await firstRow.locator('text=/current|actual/i').count() > 0;
+        const isCurrentFirst = (await firstRow.locator('text=/current|actual/i').count()) > 0;
 
         // Most recently active sessions should appear first
     });
