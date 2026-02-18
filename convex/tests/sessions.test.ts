@@ -67,9 +67,7 @@ describe('convex sessions', () => {
         const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
             return await ctx.db
                 .query('session')
-                .filter(
-                    (q) => q.eq(q.field('userId'), userId)
-                )
+                .filter(q => q.eq(q.field('userId'), userId))
                 .collect();
         });
 

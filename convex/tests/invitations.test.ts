@@ -129,12 +129,11 @@ describe('convex invitations (better-auth)', () => {
         const members = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db
                 .query('member')
-                .filter(
-                    (q) =>
-                        q.and(
-                            q.eq(q.field('organizationId'), organizationId),
-                            q.eq(q.field('userId'), 'invitee-2-' + randomSuffix)
-                        )
+                .filter(q =>
+                    q.and(
+                        q.eq(q.field('organizationId'), organizationId),
+                        q.eq(q.field('userId'), 'invitee-2-' + randomSuffix)
+                    )
                 )
                 .collect()
         );
