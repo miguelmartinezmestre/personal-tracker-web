@@ -10,7 +10,6 @@
                 "**/.next/**",
                 "**/coverage/**",
                 "**/build/**",
-                "**/.turbo/**",
                 "**/*.d.ts",
                 "**/_generated/**",
                 "**/test-results/**",
@@ -20,12 +19,7 @@
             ]
         },
         "apps/front": {
-            "entry": [
-                "src/app/**/*.{ts,tsx}",
-                "src/**/*.test.{ts,tsx}",
-                "vitest.setup.ts",
-                "scripts/**/*.{ts,js}"
-            ],
+            "entry": ["src/app/**/*.{ts,tsx}", "src/**/*.test.{ts,tsx}", "scripts/**/*.{ts,js}"],
             "ignore": [
                 "**/node_modules/**",
                 "**/dist/**",
@@ -55,7 +49,7 @@
         "packages/ui": {
             "entry": ["src/**/*.{ts,tsx}"],
             "ignore": ["**/node_modules/**", "**/dist/**", "**/*.d.ts", "**/*.css"],
-            "ignoreDependencies": ["@tailwindcss/postcss", "@turbo/gen"]
+            "ignoreDependencies": ["@tailwindcss/postcss"]
         }
     },
     "ignore": [
@@ -66,7 +60,6 @@
         "packages/**/_generated/**",
         "**/*.d.ts",
         "node_modules/**",
-        ".turbo/**",
         "mysql-data/**",
         "data/**",
         "packages/backend/convex/achievements.ts",
