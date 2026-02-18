@@ -37,6 +37,18 @@ export default defineConfig({
                 },
             },
         },
+        {
+            name: 'firefox',
+            use: {
+                ...devices['Desktop Firefox'],
+            },
+        },
+        {
+            name: 'webkit',
+            use: {
+                ...devices['Desktop Safari'],
+            },
+        },
     ],
 
     // Global setup to ensure backend is ready
