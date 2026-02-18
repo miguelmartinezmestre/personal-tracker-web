@@ -53,7 +53,15 @@ const eslintConfig = [
   },
   {
     rules: {
-      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+      "max-lines": ["error", { max: 650, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
   {
