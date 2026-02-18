@@ -65,18 +65,65 @@ export function useMarkAllNotificationsRead(onSuccess?: () => void) {
     const queryClient = useQueryClient();
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: useConvexMutation(api.notifications.markAllNotificationsRead),
-        onSuccess: () => {
-            onSuccess?.();
+        mutationFn: () => useConvexMutation(api.notifications.markAllNotificationsRead)({}),
+        onMutate: async () => {
+            await queryClient.cancelQueries({
+                queryKey: convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey,
+            });
+
+            const previousNotifications = queryClient.getQueryData(
+                convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey
+            );
+
+            queryClient.setQueryData(
+                convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey,
+                (old: any) => {
+                    if (!old?.page) return old;
+                    return {
+                        ...old,
+                        page: old.page.map((notification: any) => ({
+                            ...notification,
+                            read: true,
+                        })),
+                    };
+                }
+            );
+
+            queryClient.setQueryData(
+                convexQuery(api.notifications.getUnreadNotificationCount, {}).queryKey,
+                { count: 0 }
+            );
+
+            return { previousNotifications };
+        },
+        onError: (_err, _variables, context) => {
+            queryClient.setQueryData(
+                convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey,
+                context?.previousNotifications
+            );
+            toast.error(t('toast.markAllFailed'));
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: convexQuery(api.notifications.getNotificationsByUser, {
                     paginationOpts: { numItems: 20, cursor: null },
                 }).queryKey,
             });
-            toast.success(t('toast.markAll'));
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.notifications.getUnreadNotificationCount, {}).queryKey,
+            });
         },
-        onError: () => {
-            toast.error(t('toast.markAllFailed'));
+        onSuccess: () => {
+            onSuccess?.();
+            toast.success(t('toast.markAll'));
         },
     });
 
