@@ -4,7 +4,6 @@
         ".": {
             "entry": ["scripts/**/*.{ts,js,mjs}", "test.setup.ts"],
             "ignore": [
-                "turbo/generators/config.ts",
                 "**/node_modules/**",
                 "**/dist/**",
                 "**/.next/**",
@@ -26,7 +25,6 @@
                 "**/.next/**",
                 "**/coverage/**",
                 "**/build/**",
-                "**/.turbo/**",
                 "**/*.d.ts",
                 "**/_generated/**",
                 "**/test-results/**",
