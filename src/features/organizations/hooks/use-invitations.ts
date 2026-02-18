@@ -12,6 +12,18 @@ const INVITATIONS_QUERY_KEY = ['user-invitations'];
  */
 export type InvitationRole = 'owner' | 'admin' | 'member';
 
+interface InvitationRaw {
+    id: string;
+    email: string;
+    role: string;
+    organizationId: string;
+    status: string;
+    createdAt: number;
+    expiresAt?: number;
+    organization?: { id: string; name: string; slug: string };
+    inviter?: { id: string; name: string; email: string };
+}
+
 export interface Invitation {
     id: string;
     email: string;
@@ -38,7 +50,7 @@ export interface Invitation {
 export function usePendingInvitations() {
     const data = useQuery(api.organizations.getUserInvitations, {});
 
-    const invitations = data?.map((inv: any) => ({
+    const invitations = data?.map((inv: InvitationRaw) => ({
         id: inv.id,
         email: inv.email,
         role: inv.role as InvitationRole,
@@ -138,7 +150,7 @@ export function useOrganizationInvitations(organizationId: string | null) {
         organizationId ? { organizationId } : 'skip'
     );
 
-    const invitations = data?.map((inv: any) => ({
+    const invitations = data?.map((inv: InvitationRaw) => ({
         id: inv.id,
         email: inv.email,
         role: inv.role as InvitationRole,

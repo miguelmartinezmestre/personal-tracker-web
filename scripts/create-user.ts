@@ -117,12 +117,13 @@ async function createUser() {
             console.log(`   Email: ${email}`);
             console.log(`   Password: ${password}`);
             console.log(`\n💡 Puedes iniciar sesión en: ${siteUrl}/login`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Si el usuario ya existe, informar
+            const message = error instanceof Error ? error.message : String(error);
             if (
-                error.message?.includes('already exists') ||
-                error.message?.includes('409') ||
-                error.message?.includes('duplicate')
+                message?.includes('already exists') ||
+                message?.includes('409') ||
+                message?.includes('duplicate')
             ) {
                 console.log('⚠️  El usuario ya existe en el sistema.');
                 console.log(`   Email: ${email}`);
@@ -131,11 +132,12 @@ async function createUser() {
             }
             throw error;
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('\n❌ Error al crear usuario:');
-        console.error(`   ${error.message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`   ${message}`);
 
-        if (error.message?.includes('NEXT_PUBLIC_CONVEX_URL')) {
+        if (message?.includes('NEXT_PUBLIC_CONVEX_URL')) {
             console.error(
                 '\n💡 Asegúrate de tener configurado NEXT_PUBLIC_CONVEX_URL en tu archivo .env'
             );

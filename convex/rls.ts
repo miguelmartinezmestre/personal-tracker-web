@@ -20,7 +20,7 @@ export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof schema>;
 type SessionWithOrg = {
     session: {
         activeOrganizationId?: string | null;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 };
 
@@ -46,7 +46,7 @@ async function rlsRules(
             })) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? undefined;
-        } catch (e) {
+        } catch {
             // In test environment, auth might not work properly
             organizationId = undefined;
         }
@@ -210,7 +210,7 @@ export const queryWithRLS = customQuery(
             })) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? null;
-        } catch (e) {
+        } catch {
             // In test environment, auth might not work properly
             // Fall back to using userId from identity
             organizationId = null;
@@ -256,7 +256,7 @@ export const mutationWithRLS = customMutation(
             })) as SessionWithOrg | null;
 
             organizationId = session?.session.activeOrganizationId ?? null;
-        } catch (e) {
+        } catch {
             // In test environment, auth might not work properly
             // Fall back to using userId from identity
             organizationId = null;

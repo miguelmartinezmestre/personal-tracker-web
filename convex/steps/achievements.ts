@@ -104,22 +104,26 @@ export const checkAchievementCategory = internalMutation({
 
             // Evaluate based on category
             switch (category) {
-                case 'objectives_created':
+                case 'objectives_created': {
                     const targetCreated = extractNumberFromCode(def.code);
                     shouldAward = stats.totalObjectives >= targetCreated;
                     break;
-                case 'objectives_completed':
+                }
+                case 'objectives_completed': {
                     const targetCompleted = extractNumberFromCode(def.code);
                     shouldAward = stats.completedObjectives >= targetCompleted;
                     break;
-                case 'streak':
+                }
+                case 'streak': {
                     const targetStreak = extractNumberFromCode(def.code);
                     shouldAward = stats.streak >= targetStreak;
                     break;
-                case 'progress_updates':
+                }
+                case 'progress_updates': {
                     const targetUpdates = extractNumberFromCode(def.code);
                     shouldAward = stats.totalProgressUpdates >= targetUpdates;
                     break;
+                }
                 case 'early_bird':
                     shouldAward = stats.earlyCompletions >= 1;
                     break;
@@ -150,7 +154,7 @@ export const checkAchievementCategory = internalMutation({
                     });
 
                     newAchievements.push(def.code);
-                } catch (error) {
+                } catch {
                     // Ignore duplicate insert errors (already earned)
                     // This makes the step idempotent
                 }
@@ -271,22 +275,26 @@ export const checkAllAchievements = internalMutation({
 
                 // Evaluate based on category
                 switch (category) {
-                    case 'objectives_created':
+                    case 'objectives_created': {
                         const targetCreated = extractNumberFromCode(def.code);
                         shouldAward = stats.totalObjectives >= targetCreated;
                         break;
-                    case 'objectives_completed':
+                    }
+                    case 'objectives_completed': {
                         const targetCompleted = extractNumberFromCode(def.code);
                         shouldAward = stats.completedObjectives >= targetCompleted;
                         break;
-                    case 'streak':
+                    }
+                    case 'streak': {
                         const targetStreak = extractNumberFromCode(def.code);
                         shouldAward = stats.streak >= targetStreak;
                         break;
-                    case 'progress_updates':
+                    }
+                    case 'progress_updates': {
                         const targetUpdates = extractNumberFromCode(def.code);
                         shouldAward = stats.totalProgressUpdates >= targetUpdates;
                         break;
+                    }
                     case 'early_bird':
                         shouldAward = stats.earlyCompletions >= 1;
                         break;

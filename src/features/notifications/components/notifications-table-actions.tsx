@@ -9,9 +9,10 @@ import { toast } from 'sonner';
 export function useSetNotificationRead(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
+    const setNotificationRead = useConvexMutation(api.notifications.setNotificationRead);
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: useConvexMutation(api.notifications.setNotificationRead),
+        mutationFn: setNotificationRead,
         onSuccess: () => {
             onSuccess?.();
             queryClient.invalidateQueries({
@@ -36,9 +37,10 @@ export function useSetNotificationRead(onSuccess?: () => void) {
 export function useDeleteNotification(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
+    const deleteNotification = useConvexMutation(api.notifications.deleteNotification);
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: useConvexMutation(api.notifications.deleteNotification),
+        mutationFn: deleteNotification,
         onSuccess: () => {
             onSuccess?.();
             queryClient.invalidateQueries({
@@ -63,9 +65,10 @@ export function useDeleteNotification(onSuccess?: () => void) {
 export function useMarkAllNotificationsRead(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
+    const markAllNotificationsRead = useConvexMutation(api.notifications.markAllNotificationsRead);
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: () => useConvexMutation(api.notifications.markAllNotificationsRead)({}),
+        mutationFn: () => markAllNotificationsRead({}),
         onMutate: async () => {
             await queryClient.cancelQueries({
                 queryKey: convexQuery(api.notifications.getNotificationsByUser, {
@@ -83,11 +86,12 @@ export function useMarkAllNotificationsRead(onSuccess?: () => void) {
                 convexQuery(api.notifications.getNotificationsByUser, {
                     paginationOpts: { numItems: 20, cursor: null },
                 }).queryKey,
-                (old: any) => {
-                    if (!old?.page) return old;
+                (old: unknown) => {
+                    const data = old as { page?: Array<{ read?: boolean }> };
+                    if (!data?.page) return old;
                     return {
-                        ...old,
-                        page: old.page.map((notification: any) => ({
+                        ...data,
+                        page: data.page.map(notification => ({
                             ...notification,
                             read: true,
                         })),

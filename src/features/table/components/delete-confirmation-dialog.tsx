@@ -55,7 +55,7 @@ export function DeleteConfirmationDialog({
         setInternalIsLoading(true);
         try {
             await onConfirmRef.current();
-        } catch (error) {
+        } catch {
             // Don't re-throw - let the dialog close
         } finally {
             setInternalIsLoading(false);

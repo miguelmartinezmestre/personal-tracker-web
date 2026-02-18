@@ -10,8 +10,8 @@ describe('convex categories', async () => {
     let userIdentity: TestConvexForDataModel<DataModel>;
     let adminIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
-    let userOrganizationId: string;
-    let adminOrganizationId: string;
+    let _userOrganizationId: string;
+    let _adminOrganizationId: string;
 
     beforeEach(async () => {
         const userRandom = Math.random().toString(36).substring(2, 15);
@@ -40,7 +40,7 @@ describe('convex categories', async () => {
             role: 'owner',
         });
 
-        userOrganizationId = String(userOrgId);
+        _userOrganizationId = String(userOrgId);
 
         userIdentity = t.withIdentity({
             subject: user.userId,
@@ -79,7 +79,7 @@ describe('convex categories', async () => {
             role: 'owner',
         });
 
-        adminOrganizationId = String(adminOrgId);
+        _adminOrganizationId = String(adminOrgId);
 
         adminIdentity = t.withIdentity({
             subject: admin.userId,

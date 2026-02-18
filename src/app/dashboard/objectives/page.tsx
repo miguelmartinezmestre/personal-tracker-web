@@ -19,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ObjectivesPage() {
     let preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl createTranslator generic
     let t: ReturnType<typeof createTranslator<Record<string, any>, 'Objectives'>>;
 
     try {

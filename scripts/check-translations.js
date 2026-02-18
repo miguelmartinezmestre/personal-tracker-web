@@ -1,5 +1,3 @@
-
-
 /**
  * Script to verify that all translations are synchronized
  * between language files (es.json and en.json)
@@ -23,7 +21,7 @@ const enPath = path.join(translationsDir, 'en.json');
 // Recursive function to get all keys from an object
 function getAllKeys(obj, prefix = '') {
   let keys = [];
-  for (let key in obj) {
+  for (const key in obj) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
     if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
       keys = keys.concat(getAllKeys(obj[key], fullKey));

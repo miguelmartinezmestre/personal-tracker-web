@@ -14,9 +14,9 @@ describe('convex RLS (Row-Level Security)', async () => {
     let user1Id: string;
     let user2Id: string;
     let adminId: string;
-    let user1OrganizationId: string;
-    let user2OrganizationId: string;
-    let adminOrganizationId: string;
+    let _user1OrganizationId: string;
+    let _user2OrganizationId: string;
+    let _adminOrganizationId: string;
 
     beforeEach(async () => {
         const user1Random = Math.random().toString(36).substring(2, 15);
@@ -46,7 +46,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             role: 'owner',
         });
 
-        user1OrganizationId = String(user1OrgId);
+        _user1OrganizationId = String(user1OrgId);
 
         user1Identity = t.withIdentity({
             subject: user1.userId,
@@ -86,7 +86,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             role: 'owner',
         });
 
-        user2OrganizationId = String(user2OrgId);
+        _user2OrganizationId = String(user2OrgId);
 
         user2Identity = t.withIdentity({
             subject: user2.userId,
@@ -126,7 +126,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             role: 'owner',
         });
 
-        adminOrganizationId = String(adminOrgId);
+        _adminOrganizationId = String(adminOrgId);
 
         adminIdentity = t.withIdentity({
             subject: admin.userId,

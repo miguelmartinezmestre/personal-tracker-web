@@ -104,6 +104,7 @@ export const { beforeCreate, beforeDelete, beforeUpdate, onCreate, onDelete, onU
     authClient.triggersApi();
 // Export for Better Auth CLI
 // biome-ignore lint/suspicious/noExplicitAny: Required for CLI
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for BetterAuth CLI
 export const auth = betterAuth(createAuthOptions({} as any));
 
 export const getCurrentUser = query({

@@ -3,7 +3,7 @@ import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import { DataModel } from '../_generated/dataModel';
 
 describe('convex objectives', async () => {
     const t = initConvexTest();
@@ -380,7 +380,9 @@ describe('convex objectives', async () => {
                 }
             );
 
-            expect(activeObjectives.page.every((o: any) => o.status === 'active')).toBe(true);
+            expect(
+                activeObjectives.page.every((o: { status: string }) => o.status === 'active')
+            ).toBe(true);
 
             const completedObjectives = await userIdentity.query(
                 api.objectives.getObjectivesByStatus,
@@ -390,7 +392,9 @@ describe('convex objectives', async () => {
                 }
             );
 
-            expect(completedObjectives.page.every((o: any) => o.status === 'completed')).toBe(true);
+            expect(
+                completedObjectives.page.every((o: { status: string }) => o.status === 'completed')
+            ).toBe(true);
         });
 
         test('returns empty array when no objectives match status', async () => {

@@ -292,7 +292,7 @@ describe('convex achievements', async () => {
             const now = Date.now();
             const futureDeadline = now + 7 * 24 * 60 * 60 * 1000;
 
-            const objId = await userIdentity.run(async ctx => {
+            await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
@@ -442,7 +442,7 @@ describe('convex achievements', async () => {
             // Check if achievement was awarded
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
-            const firstObjectiveAchievement = achievements.find(
+            const _firstObjectiveAchievement = achievements.find(
                 a => a.definition?.code === 'first_objective'
             );
 

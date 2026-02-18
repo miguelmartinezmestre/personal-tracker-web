@@ -141,7 +141,7 @@ export const pauseObjective = mutationWithRLS({
         if (objective.workflowId) {
             try {
                 await workflow.cancel(ctx, objective.workflowId as WorkflowId);
-            } catch (e) {
+            } catch {
                 // Ignore errors if workflow already completed/canceled
             }
             await ctx.db.patch(args.id, { workflowId: undefined });
@@ -255,7 +255,7 @@ export const completeObjective = mutationWithRLS({
         if (objective.workflowId) {
             try {
                 await workflow.cancel(ctx, objective.workflowId as WorkflowId);
-            } catch (e) {
+            } catch {
                 // Ignore errors if workflow already completed/canceled
             }
             await ctx.db.patch(args.id, { workflowId: undefined });
@@ -295,7 +295,7 @@ export const archiveObjective = mutationWithRLS({
         if (objective.workflowId) {
             try {
                 await workflow.cancel(ctx, objective.workflowId as WorkflowId);
-            } catch (e) {
+            } catch {
                 // Ignore errors if workflow already completed/canceled
             }
             await ctx.db.patch(args.id, { workflowId: undefined });
@@ -336,7 +336,7 @@ export const deleteObjective = mutationWithRLS({
         if (objective.workflowId) {
             try {
                 await workflow.cancel(ctx, objective.workflowId as WorkflowId);
-            } catch (e) {
+            } catch {
                 // Ignore errors if workflow already completed/canceled
             }
             await ctx.db.patch(args.id, { workflowId: undefined });
@@ -364,7 +364,7 @@ export const hardDeleteObjective = mutationWithRLS({
         if (objective.workflowId) {
             try {
                 await workflow.cancel(ctx, objective.workflowId as WorkflowId);
-            } catch (e) {
+            } catch {
                 // Ignore errors if workflow already completed/canceled
             }
         }

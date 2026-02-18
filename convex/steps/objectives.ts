@@ -106,7 +106,7 @@ export const sendReminder = internalMutation({
         let message = '';
 
         switch (args.reminderType) {
-            case 'deadline_approaching':
+            case 'deadline_approaching': {
                 if (!objective.deadline) {
                     return { sent: false, reason: 'no_deadline' };
                 }
@@ -115,12 +115,14 @@ export const sendReminder = internalMutation({
                 );
                 message = `Reminder: Your objective "${objective.title}" has ${daysUntilDeadline} days until deadline.`;
                 break;
-            case 'stagnation':
+            }
+            case 'stagnation': {
                 const daysSinceUpdate = Math.floor(
                     (now - objective.updatedAt) / (24 * 60 * 60 * 1000)
                 );
                 message = `Your objective "${objective.title}" hasn't been updated in ${daysSinceUpdate} days. Keep the momentum!`;
                 break;
+            }
             case 'weekly_check':
                 message = `Weekly check-in: How is your objective "${objective.title}" progressing?`;
                 break;
