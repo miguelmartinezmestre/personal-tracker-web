@@ -53,8 +53,9 @@ const ResponsiveObjectivesView = React.forwardRef<
     const fetchedObjectives = usePreloadedAuthQuery(preloadedObjectivesQuery);
 
     const queryClient = useQueryClient();
+    const deleteObjective = useConvexMutation(api.objectives.deleteObjective);
     const deleteObjectiveMutation = useMutation({
-        mutationFn: useConvexMutation(api.objectives.deleteObjective),
+        mutationFn: deleteObjective,
         onSuccess: () => {
             // Invalidate all objectives queries regardless of pagination
             queryClient.invalidateQueries({
@@ -66,8 +67,6 @@ const ResponsiveObjectivesView = React.forwardRef<
             toast.error(t('toast.deleteFailed'));
         },
     });
-
-    const objectives = fetchedObjectives ?? [];
 
     const handleEdit = (objective: Objective) => {
         setEditingObjective(objective);
@@ -150,7 +149,7 @@ const ResponsiveObjectivesView = React.forwardRef<
         });
 
         return filtered;
-    }, [objectives, filters]);
+    }, [filters, fetchedObjectives?.page]);
 
     // Client-side pagination
     const totalPages = Math.ceil((filteredObjectives?.length ?? 0) / ITEMS_PER_PAGE) || 1;

@@ -204,7 +204,7 @@ export const handleAchievementCheckComplete = internalMutation({
         const { result } = args;
 
         if (result.kind === 'success') {
-            result.returnValue as { awarded: string[] };
+            void (result.returnValue as { awarded: string[] });
             // Could trigger notification summary here
         } else if (result.kind === 'failed') {
             console.error('Achievement check workflow error:', result.error);

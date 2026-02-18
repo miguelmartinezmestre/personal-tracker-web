@@ -230,7 +230,7 @@ describe('convex objectives', async () => {
             targetValue: 12,
             currentValue: 3,
             deadline: Date.now() + 365 * 24 * 60 * 60 * 1000,
-            status: 'active',
+            status: 'active' as const,
             unit: 'books',
         };
         const { objectiveId } = await userIdentity.run(async ctx => {
@@ -333,5 +333,387 @@ describe('convex objectives', async () => {
         });
 
         expect(objective).toBeNull();
+    });
+
+    describe('getObjectivesByStatus', () => {
+        test('filters objectives by status', async () => {
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Active Objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Completed Objective',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Paused Objective',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'paused',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            const activeObjectives = await userIdentity.query(
+                api.objectives.getObjectivesByStatus,
+                {
+                    status: 'active',
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+
+            expect(
+                activeObjectives.page.every((o: { status: string }) => o.status === 'active')
+            ).toBe(true);
+
+            const completedObjectives = await userIdentity.query(
+                api.objectives.getObjectivesByStatus,
+                {
+                    status: 'completed',
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+
+            expect(
+                completedObjectives.page.every((o: { status: string }) => o.status === 'completed')
+            ).toBe(true);
+        });
+
+        test('returns empty array when no objectives match status', async () => {
+            const archivedObjectives = await userIdentity.query(
+                api.objectives.getObjectivesByStatus,
+                {
+                    status: 'archived',
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+
+            expect(archivedObjectives.page).toEqual([]);
+        });
+
+        test('rejects unauthenticated users', async () => {
+            await expect(
+                t.query(api.objectives.getObjectivesByStatus, {
+                    status: 'active',
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        });
+    });
+
+    describe('getSharedObjectives', () => {
+        test('returns empty result when user has no organization', async () => {
+            const randomSuffix = Math.random().toString(36).substring(2, 15);
+            const lonelyUser = {
+                userId: 'lonely-user-' + randomSuffix,
+                email: 'lonely@example.com-' + randomSuffix,
+                name: 'Lonely User',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            };
+
+            await createTestUser(t, lonelyUser);
+
+            const lonelyIdentity = t.withIdentity({
+                subject: lonelyUser.userId,
+                role: lonelyUser.role,
+                email: lonelyUser.email,
+                name: lonelyUser.name,
+                password: lonelyUser.password,
+                emailVerified: lonelyUser.emailVerified,
+                createdAt: Date.now(),
+                userId: lonelyUser.userId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
+            const result = await lonelyIdentity.query(api.objectives.getSharedObjectives, {
+                paginationOpts: { numItems: 10, cursor: null },
+            });
+
+            expect(result.page).toEqual([]);
+            expect(result.continueCursor).toBeNull();
+        });
+
+        test('rejects unauthenticated users', async () => {
+            await expect(
+                t.query(api.objectives.getSharedObjectives, {
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        });
+    });
+
+    describe('addCollaborator', () => {
+        test('throws error when objective not found', async () => {
+            const fakeId = await userIdentity.run(async ctx => {
+                const tempId = await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'temp',
+                    targetValue: 1,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+                await ctx.db.delete(tempId);
+                return tempId;
+            });
+
+            await expect(
+                userIdentity.mutation(api.objectives.addCollaborator, {
+                    objectiveId: fakeId,
+                    collaboratorId: 'some-user',
+                })
+            ).rejects.toThrow(/Objective not found/);
+        });
+    });
+
+    describe('removeCollaborator', () => {
+        test('removes collaborator successfully', async () => {
+            const randomSuffix = Math.random().toString(36).substring(2, 15);
+            const collaborator = {
+                userId: 'collab-remove-' + randomSuffix,
+                email: 'collab-remove@example.com-' + randomSuffix,
+                name: 'Collaborator Remove',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            };
+
+            await createTestUser(t, collaborator);
+
+            const objectiveId = await userIdentity.run(async ctx => {
+                return await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Test Objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    collaborators: [collaborator.userId],
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            await userIdentity.mutation(api.objectives.removeCollaborator, {
+                objectiveId: objectiveId,
+                collaboratorId: collaborator.userId,
+            });
+
+            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            expect(objective?.collaborators).not.toContain(collaborator.userId);
+        });
+
+        test('throws error when objective not found', async () => {
+            const fakeId = await userIdentity.run(async ctx => {
+                const tempId = await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'temp',
+                    targetValue: 1,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+                await ctx.db.delete(tempId);
+                return tempId;
+            });
+
+            await expect(
+                userIdentity.mutation(api.objectives.removeCollaborator, {
+                    objectiveId: fakeId,
+                    collaboratorId: 'some-user',
+                })
+            ).rejects.toThrow(/Objective not found/);
+        });
+
+        test('returns unchanged when no collaborators exist', async () => {
+            const objectiveId = await userIdentity.run(async ctx => {
+                return await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Test Objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            await userIdentity.mutation(api.objectives.removeCollaborator, {
+                objectiveId: objectiveId,
+                collaboratorId: 'non-existent',
+            });
+
+            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            expect(objective?.collaborators).toBeUndefined();
+        });
+    });
+
+    describe('getOrganizationMembers', () => {
+        test('returns empty array when user has no organization', async () => {
+            const randomSuffix = Math.random().toString(36).substring(2, 15);
+            const lonelyUser = {
+                userId: 'lonely-org-' + randomSuffix,
+                email: 'lonely-org@example.com-' + randomSuffix,
+                name: 'Lonely Org User',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            };
+
+            await createTestUser(t, lonelyUser);
+
+            const lonelyIdentity = t.withIdentity({
+                subject: lonelyUser.userId,
+                role: lonelyUser.role,
+                email: lonelyUser.email,
+                name: lonelyUser.name,
+                password: lonelyUser.password,
+                emailVerified: lonelyUser.emailVerified,
+                createdAt: Date.now(),
+                userId: lonelyUser.userId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
+            const members = await lonelyIdentity.query(api.objectives.getOrganizationMembers, {});
+
+            expect(members).toEqual([]);
+        });
+
+        test('rejects unauthenticated users', async () => {
+            await expect(t.query(api.objectives.getOrganizationMembers, {})).rejects.toThrow(
+                /Unauthenticated|User not authenticated/
+            );
+        });
+    });
+
+    describe('updateObjective edge cases', () => {
+        test('throws error when objective not found', async () => {
+            const fakeId = await userIdentity.run(async ctx => {
+                const tempId = await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'temp',
+                    targetValue: 1,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+                await ctx.db.delete(tempId);
+                return tempId;
+            });
+
+            await expect(
+                userIdentity.mutation(api.objectives.updateObjective, {
+                    id: fakeId,
+                    title: 'New Title',
+                })
+            ).rejects.toThrow(/Objective not found/);
+        });
+
+        test('throws error when trying to change status', async () => {
+            const objectiveId = await userIdentity.run(async ctx => {
+                return await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Test Objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            await expect(
+                userIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    status: 'completed',
+                })
+            ).rejects.toThrow(/Status updates must use dedicated objective status mutations/);
+        });
+
+        test('resets period fields when periodStart is set', async () => {
+            const objectiveId = await userIdentity.run(async ctx => {
+                return await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Test Objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    period: 'weekly',
+                    periodStart: Date.now(),
+                    periodLengthDays: 7,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            await userIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                periodStart: Date.now(),
+            });
+
+            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            expect(objective?.period).toBe('none');
+        });
+
+        test('resets period fields when periodLengthDays is set', async () => {
+            const objectiveId = await userIdentity.run(async ctx => {
+                return await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Test Objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    period: 'monthly',
+                    periodStart: Date.now(),
+                    periodLengthDays: 30,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            await userIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                periodLengthDays: 14,
+            });
+
+            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            expect(objective?.period).toBe('none');
+        });
     });
 });

@@ -20,7 +20,8 @@
     "create-user": "tsx scripts/create-user.ts",
     "generate-admin-key": "docker compose exec backend ./generate_admin_key.sh",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "knip": "knip"
+    "knip": "knip",
+    "prepare": "husky"
   },
   "dependencies": {
     "@convex-dev/better-auth": "0.10.9",
@@ -93,10 +94,10 @@
     "zod": "4.1.11"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "16.0.0",
     "@convex-dev/eslint-plugin": "^1.1.0",
     "@eslint/eslintrc": "3.3.1",
     "@eslint/js": "^9.39.1",
+    "@next/eslint-plugin-next": "16.0.0",
     "@playwright/test": "1.55.1",
     "@tailwindcss/postcss": "4.1.14",
     "@testing-library/jest-dom": "^6.9.1",
@@ -120,6 +121,7 @@
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.1.0",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
     "jiti": "^2.6.1",
     "jose": "6.1.0",
     "jsdom": "^27.2.0",

@@ -8,7 +8,7 @@ import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex sessions', () => {
     const t = initConvexTest();
-    let userIdentity: TestConvexForDataModel<DataModel>;
+    let _userIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
     let sessionId: string;
 
@@ -27,7 +27,7 @@ describe('convex sessions', () => {
         await createTestUser(t, user);
         userId = user.userId;
 
-        userIdentity = t.withIdentity({
+        _userIdentity = t.withIdentity({
             subject: user.userId,
             role: user.role,
             email: user.email,
@@ -67,12 +67,12 @@ describe('convex sessions', () => {
         const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
             return await ctx.db
                 .query('session')
-                .filter((q: any) => q.eq(q.field('userId'), userId))
+                .filter(q => q.eq(q.field('userId'), userId))
                 .collect();
         });
 
         expect(sessions.length).toBeGreaterThanOrEqual(2);
-        expect(sessions.every((s: any) => s.userId === userId)).toBe(true);
+        expect(sessions.every((s: { userId: string }) => s.userId === userId)).toBe(true);
     });
 
     test('getSessionsByUser rejects when unauthenticated', async () => {
@@ -90,8 +90,8 @@ describe('convex sessions', () => {
         });
 
         expect(session).not.toBeNull();
-        expect((session as any)?.userId).toBe(userId);
-        expect((session as any)?.createdAt).toBeDefined();
-        expect((session as any)?.updatedAt).toBeDefined();
+        expect((session as { userId?: string })?.userId).toBe(userId);
+        expect((session as { createdAt?: number })?.createdAt).toBeDefined();
+        expect((session as { updatedAt?: number })?.updatedAt).toBeDefined();
     });
 });

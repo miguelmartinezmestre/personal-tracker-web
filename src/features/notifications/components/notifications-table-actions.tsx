@@ -9,9 +9,10 @@ import { toast } from 'sonner';
 export function useSetNotificationRead(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
+    const setNotificationRead = useConvexMutation(api.notifications.setNotificationRead);
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: useConvexMutation(api.notifications.setNotificationRead),
+        mutationFn: setNotificationRead,
         onSuccess: () => {
             onSuccess?.();
             queryClient.invalidateQueries({
@@ -36,9 +37,10 @@ export function useSetNotificationRead(onSuccess?: () => void) {
 export function useDeleteNotification(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
+    const deleteNotification = useConvexMutation(api.notifications.deleteNotification);
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: useConvexMutation(api.notifications.deleteNotification),
+        mutationFn: deleteNotification,
         onSuccess: () => {
             onSuccess?.();
             queryClient.invalidateQueries({
@@ -63,20 +65,69 @@ export function useDeleteNotification(onSuccess?: () => void) {
 export function useMarkAllNotificationsRead(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
     const queryClient = useQueryClient();
+    const markAllNotificationsRead = useConvexMutation(api.notifications.markAllNotificationsRead);
 
     const { mutate, mutateAsync, isPending } = useMutation({
-        mutationFn: useConvexMutation(api.notifications.markAllNotificationsRead),
-        onSuccess: () => {
-            onSuccess?.();
+        mutationFn: () => markAllNotificationsRead({}),
+        onMutate: async () => {
+            await queryClient.cancelQueries({
+                queryKey: convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey,
+            });
+
+            const previousNotifications = queryClient.getQueryData(
+                convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey
+            );
+
+            queryClient.setQueryData(
+                convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey,
+                (old: unknown) => {
+                    const data = old as { page?: Array<{ read?: boolean }> };
+                    if (!data?.page) return old;
+                    return {
+                        ...data,
+                        page: data.page.map(notification => ({
+                            ...notification,
+                            read: true,
+                        })),
+                    };
+                }
+            );
+
+            queryClient.setQueryData(
+                convexQuery(api.notifications.getUnreadNotificationCount, {}).queryKey,
+                { count: 0 }
+            );
+
+            return { previousNotifications };
+        },
+        onError: (_err, _variables, context) => {
+            queryClient.setQueryData(
+                convexQuery(api.notifications.getNotificationsByUser, {
+                    paginationOpts: { numItems: 20, cursor: null },
+                }).queryKey,
+                context?.previousNotifications
+            );
+            toast.error(t('toast.markAllFailed'));
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: convexQuery(api.notifications.getNotificationsByUser, {
                     paginationOpts: { numItems: 20, cursor: null },
                 }).queryKey,
             });
-            toast.success(t('toast.markAll'));
+            queryClient.invalidateQueries({
+                queryKey: convexQuery(api.notifications.getUnreadNotificationCount, {}).queryKey,
+            });
         },
-        onError: () => {
-            toast.error(t('toast.markAllFailed'));
+        onSuccess: () => {
+            onSuccess?.();
+            toast.success(t('toast.markAll'));
         },
     });
 

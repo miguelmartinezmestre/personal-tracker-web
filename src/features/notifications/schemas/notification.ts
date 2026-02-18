@@ -1,8 +1,16 @@
 import { z } from 'zod';
 
+export const notificationTypeEnum = z.enum([
+    'deadline',
+    'progress',
+    'status',
+    'achievement',
+    'reminder',
+]);
+
 export const notificationSchema = z.object({
     objective: z.string().min(1, { message: 'Objective is required' }),
-    notificationType: z.string().min(1, { message: 'Notification type is required' }),
+    notificationType: notificationTypeEnum,
     notificationDate: z.date(),
     message: z.string().min(1, { message: 'Message is required' }),
 });

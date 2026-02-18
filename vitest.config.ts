@@ -14,5 +14,18 @@ export default defineConfig({
         exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
         environment: 'jsdom',
         globals: true,
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'html', 'lcov'],
+            include: ['convex/**/*.ts', 'src/**/*.{ts,tsx}'],
+            exclude: [
+                '**/*.test.ts',
+                '**/*.test.tsx',
+                '**/tests/**',
+                '**/_generated/**',
+                '**/node_modules/**',
+                '**/*.d.ts',
+            ],
+        },
     },
 });

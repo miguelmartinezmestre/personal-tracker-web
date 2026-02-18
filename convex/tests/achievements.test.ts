@@ -237,7 +237,6 @@ describe('convex achievements', async () => {
         test('shows correct progress for objectives created', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Create some objectives
             await userIdentity.mutation(api.objectives.createObjective, {
                 title: 'Test Objective 1',
                 targetValue: 100,
@@ -260,6 +259,118 @@ describe('convex achievements', async () => {
             );
 
             expect(objectivesCreatedProgress?.currentProgress).toBeGreaterThanOrEqual(2);
+        });
+
+        test('shows correct progress for objectives completed', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            const obj1 = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Test Objective 1',
+                targetValue: 100,
+                currentValue: 100,
+            });
+
+            await userIdentity.mutation(api.objectives.completeObjective, {
+                id: obj1,
+            });
+
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const completedProgress = progress.find(
+                p => p.definition.code === 'objectives_completed_3'
+            );
+
+            expect(completedProgress?.currentProgress).toBeGreaterThanOrEqual(1);
+        });
+
+        test('shows correct progress for early_bird achievement', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            const now = Date.now();
+            const futureDeadline = now + 7 * 24 * 60 * 60 * 1000;
+
+            await userIdentity.run(async ctx => {
+                return await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Early Bird Objective',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    deadline: futureDeadline,
+                    createdAt: now - 1000,
+                    updatedAt: now,
+                });
+            });
+
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const earlyBirdProgress = progress.find(p => p.definition.code === 'early_bird');
+
+            expect(earlyBirdProgress).toBeDefined();
+            expect(earlyBirdProgress?.currentProgress).toBeGreaterThanOrEqual(1);
+        });
+
+        test('early_bird does not count objectives without deadline', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'No Deadline Objective',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    createdAt: Date.now() - 1000,
+                    updatedAt: Date.now(),
+                });
+            });
+
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const earlyBirdProgress = progress.find(p => p.definition.code === 'early_bird');
+
+            expect(earlyBirdProgress?.currentProgress).toBe(0);
+        });
+
+        test('early_bird does not count objectives completed after deadline', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            const now = Date.now();
+            const pastDeadline = now - 1000;
+
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Late Objective',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    deadline: pastDeadline,
+                    createdAt: now - 2000,
+                    updatedAt: now,
+                });
+            });
+
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const earlyBirdProgress = progress.find(p => p.definition.code === 'early_bird');
+
+            expect(earlyBirdProgress?.currentProgress).toBe(0);
         });
     });
 
@@ -331,7 +442,7 @@ describe('convex achievements', async () => {
             // Check if achievement was awarded
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
-            const firstObjectiveAchievement = achievements.find(
+            const _firstObjectiveAchievement = achievements.find(
                 a => a.definition?.code === 'first_objective'
             );
 

@@ -91,7 +91,7 @@ export default function AccountSettingsFormEdit() {
                 username: sessionUser.name ?? '',
             });
         }
-    }, [sessionUser?.email, sessionUser?.name, form]);
+    }, [sessionUser, sessionUser?.email, sessionUser?.name, form]);
 
     if (sessionQuery?.isPending) {
         return (

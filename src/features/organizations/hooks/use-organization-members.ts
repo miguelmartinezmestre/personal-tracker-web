@@ -7,6 +7,15 @@ import { authClient } from '@/features/auth/auth-client';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { OrganizationRole } from '../types/roles';
 
+interface OrganizationMemberRaw {
+    id: string;
+    organizationId: string;
+    userId: string;
+    role: string;
+    createdAt: number;
+    user?: { email?: string } | null;
+}
+
 /**
  * Tipos para las operaciones de miembros de organización
  */
@@ -41,7 +50,7 @@ export function useOrganizationMembers(organizationId: string | null) {
         organizationId ? { organizationId } : 'skip'
     );
 
-    const members = data?.members.map((member: any) => ({
+    const members = data?.members.map((member: OrganizationMemberRaw) => ({
         id: member.id,
         organizationId: member.organizationId,
         userId: member.userId,

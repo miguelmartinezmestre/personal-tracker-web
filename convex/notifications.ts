@@ -3,6 +3,7 @@ import { queryWithRLS, mutationWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
 import type { Doc } from './_generated/dataModel';
 import { paginationOptsValidator } from 'convex/server';
+import { notificationTypeValidator } from './utils/validators';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -79,7 +80,7 @@ export const getUnreadNotificationCount = queryWithRLS({
 export const createNotification = mutationWithRLS({
     args: {
         objective: v.id('objectives'),
-        notificationType: v.string(),
+        notificationType: notificationTypeValidator,
         notificationDate: v.optional(v.number()),
         message: v.string(),
     },
@@ -103,7 +104,12 @@ export const createNotification = mutationWithRLS({
             organizationId: objective.organizationId,
             objective: args.objective,
             read: false,
-            notificationType: args.notificationType,
+            notificationType: args.notificationType as
+                | 'deadline'
+                | 'progress'
+                | 'status'
+                | 'achievement'
+                | 'reminder',
             notificationDate,
             message: args.message,
             createdAt: now,

@@ -408,6 +408,7 @@
     },
     "Objectives": {
         "title": "Objetivos",
+        "pageTitle": "Objetivos | Metrics App",
         "description": "Define tus objetivos personales y profesionales para alcanzar tus metas.",
         "pageDescription": "Gestiona tus objetivos personales y profesionales.",
         "loadingObjectives": "Cargando objetivos...",

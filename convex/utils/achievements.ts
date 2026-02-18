@@ -1,5 +1,16 @@
-export const ACHIEVEMENT_DEFINITIONS = [
-    // Individual - Milestone
+import type { AchievementType, AchievementCategory, AchievementTier } from './constants';
+
+type AchievementDefinition = {
+    code: string;
+    type: AchievementType;
+    category: AchievementCategory;
+    tier: AchievementTier;
+    threshold: number;
+    icon: string;
+    points: number;
+};
+
+export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     {
         code: 'first_objective',
         type: 'individual',

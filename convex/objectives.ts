@@ -10,6 +10,14 @@ import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
 import { computeCurrentValue, computeLastProgressAt } from './utils/objectiveProgress';
 import { computeNextReminderAt } from './utils/reminderSchedule';
+import {
+    objectiveStatusValidator,
+    objectiveTypeValidator,
+    periodValidator,
+    directionValidator,
+    reminderIntervalValidator,
+    progressModeValidator,
+} from './utils/validators';
 
 export {
     createObjective,
@@ -60,7 +68,7 @@ export const getObjectiveById = queryWithRLS({
  */
 export const getObjectivesByStatus = queryWithRLS({
     args: {
-        status: v.string(),
+        status: objectiveStatusValidator,
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { status, paginationOpts }) => {
@@ -90,17 +98,17 @@ export const updateObjective = mutationWithRLS({
         currentValue: v.optional(v.number()),
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
-        status: v.optional(v.string()),
+        status: v.optional(objectiveStatusValidator),
         unit: v.optional(v.string()),
-        objectiveType: v.optional(v.string()),
-        direction: v.optional(v.string()),
-        period: v.optional(v.string()),
+        objectiveType: objectiveTypeValidator,
+        direction: directionValidator,
+        period: periodValidator,
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
         collaborators: v.optional(v.array(v.string())),
-        reminderInterval: v.optional(v.string()),
+        reminderInterval: reminderIntervalValidator,
         nextReminderAt: v.optional(v.number()),
-        progressMode: v.optional(v.string()),
+        progressMode: progressModeValidator,
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;

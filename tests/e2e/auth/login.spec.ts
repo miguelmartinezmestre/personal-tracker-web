@@ -12,9 +12,12 @@ import {
     expectErrorAlert,
     expectWelcomeMessage,
 } from '../../helpers/assertions';
+import { LoginPage } from '../../pages';
 
 test.describe('Login', () => {
     test('login with valid credentials', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+
         // Create user first
         const { email, username } = await createTestUser(page);
 
@@ -22,7 +25,8 @@ test.describe('Login', () => {
         await logoutUser(page);
 
         // Login again
-        await loginUser(page, email);
+        await loginPage.goto();
+        await loginPage.login(email, DEFAULT_PASSWORD);
 
         // Verify on dashboard
         await expectOnDashboard(page);
@@ -30,6 +34,8 @@ test.describe('Login', () => {
     });
 
     test('login with invalid password', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+
         // Create user first
         const { email } = await createTestUser(page);
 
@@ -37,10 +43,8 @@ test.describe('Login', () => {
         await logoutUser(page);
 
         // Try to login with wrong password
-        await page.goto('/login');
-        await page.getByTestId('email-input').fill(email);
-        await page.getByTestId('password-input').fill('wrongpassword123');
-        await page.getByTestId('login-button').click();
+        await loginPage.goto();
+        await loginPage.login(email, 'wrongpassword123');
 
         // Should stay on login page
         await expectOnLogin(page);
@@ -50,12 +54,11 @@ test.describe('Login', () => {
     });
 
     test('login with non-existent email', async ({ page }) => {
+        const loginPage = new LoginPage(page);
         const fakeUser = UserFactory.create();
 
-        await page.goto('/login');
-        await page.getByTestId('email-input').fill(fakeUser.email);
-        await page.getByTestId('password-input').fill(fakeUser.password);
-        await page.getByTestId('login-button').click();
+        await loginPage.goto();
+        await loginPage.login(fakeUser.email, fakeUser.password);
 
         // Should stay on login page
         await expectOnLogin(page);
@@ -96,13 +99,11 @@ test.describe('Login', () => {
     });
 
     test('redirect to register link works', async ({ page }) => {
-        await page.goto('/login');
+        const loginPage = new LoginPage(page);
+        await loginPage.goto();
 
         // Click "Don't have an account" link
-        const registerLink = page.getByRole('link', {
-            name: /don't have an account|no tienes cuenta/i,
-        });
-        await registerLink.click();
+        await loginPage.clickRegisterLink();
 
         // Should be on register page
         await page.waitForURL(/\/register$/);
@@ -110,11 +111,11 @@ test.describe('Login', () => {
     });
 
     test('redirect to forgot password link works', async ({ page }) => {
-        await page.goto('/login');
+        const loginPage = new LoginPage(page);
+        await loginPage.goto();
 
         // Click forgot password link
-        const forgotLink = page.getByRole('link', { name: /forgot|olvidaste/i });
-        await forgotLink.click();
+        await loginPage.clickForgotPasswordLink();
 
         // Should be on forgot password page
         await page.waitForURL(/\/forget-password$/);
@@ -122,22 +123,22 @@ test.describe('Login', () => {
     });
 
     test('form validates email format', async ({ page }) => {
-        await page.goto('/login');
+        const loginPage = new LoginPage(page);
+        await loginPage.goto();
 
         // Enter invalid email
-        await page.getByTestId('email-input').fill('invalid-email');
-        await page.getByTestId('password-input').fill(DEFAULT_PASSWORD);
-        await page.getByTestId('login-button').click();
+        await loginPage.login('invalid-email', DEFAULT_PASSWORD);
 
         // Should show validation error or stay on page
         await expectOnLogin(page);
     });
 
     test('form validates empty fields', async ({ page }) => {
-        await page.goto('/login');
+        const loginPage = new LoginPage(page);
+        await loginPage.goto();
 
         // Try to submit empty form
-        await page.getByTestId('login-button').click();
+        await loginPage.loginButton.click();
 
         // Should stay on login page (validation prevents submission)
         await expectOnLogin(page);

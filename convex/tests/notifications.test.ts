@@ -13,7 +13,7 @@ describe('convex notifications', async () => {
     let userId: string;
     let objectiveId: Id<'objectives'>;
     let userOrganizationId: string;
-    let adminOrganizationId: string;
+    let _adminOrganizationId: string;
     const DAY_MS = 24 * 60 * 60 * 1000;
 
     beforeEach(async () => {
@@ -82,7 +82,7 @@ describe('convex notifications', async () => {
             role: 'owner',
         });
 
-        adminOrganizationId = String(adminOrgId);
+        _adminOrganizationId = String(adminOrgId);
 
         adminIdentity = t.withIdentity({
             subject: admin.userId,

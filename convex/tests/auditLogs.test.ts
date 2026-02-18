@@ -4,7 +4,7 @@ import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
-import { Doc, Id } from '../_generated/dataModel';
+import { Id } from '../_generated/dataModel';
 
 describe('convex auditLogs', () => {
     const t = initConvexTest();

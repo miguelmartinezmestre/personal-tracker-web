@@ -109,7 +109,7 @@ export default function NotificationsTable({
                 </div>
                 <Button
                     variant="outline"
-                    onClick={() => markAllRead({})}
+                    onClick={() => markAllRead()}
                     disabled={unreadCount === 0 || isMarkingAllRead}
                 >
                     {t('markAllRead')}

@@ -79,12 +79,14 @@ export default function RegisterForm() {
 
                                 // Get all organizations to find the invited one and set it as active
                                 const orgsResult = await authClient.organization.list();
-                                const organizations = (orgsResult as any)?.data || [];
+                                const organizations =
+                                    (orgsResult as { data?: Array<{ id: string }> })?.data ?? [];
 
                                 // Set the first organization as active (the invited one)
-                                if (organizations.length > 0) {
+                                const firstOrg = organizations[0];
+                                if (firstOrg) {
                                     await authClient.organization.setActive({
-                                        organizationId: organizations[0].id,
+                                        organizationId: firstOrg.id,
                                     });
                                 }
                             } else {
@@ -94,9 +96,11 @@ export default function RegisterForm() {
                                     slug: values.organizationSlug as string,
                                 });
 
+                                const createResult = createOrgResult as
+                                    | { data?: { id: string }; id?: string }
+                                    | undefined;
                                 const ownOrganizationId =
-                                    (createOrgResult as any)?.data?.id ||
-                                    (createOrgResult as any)?.id;
+                                    createResult?.data?.id ?? createResult?.id;
 
                                 if (ownOrganizationId) {
                                     await authClient.organization.setActive({
@@ -106,9 +110,11 @@ export default function RegisterForm() {
                             }
 
                             router.push('/dashboard/home');
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error('Error after registration:', error);
-                            setRegisterError(error.message || 'Error during registration');
+                            setRegisterError(
+                                error instanceof Error ? error.message : 'Error during registration'
+                            );
                             setIsSubmitting(false);
                         }
                     },
@@ -118,8 +124,8 @@ export default function RegisterForm() {
                     },
                 }
             );
-        } catch (error: any) {
-            setRegisterError(error.message || t('errors.registerFallback'));
+        } catch (error: unknown) {
+            setRegisterError(error instanceof Error ? error.message : t('errors.registerFallback'));
             setIsSubmitting(false);
         }
     }

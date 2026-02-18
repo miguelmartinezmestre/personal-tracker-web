@@ -21,7 +21,7 @@ describe('convex pagination', () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: string;
-    let organizationId: string;
+    let _organizationId: string;
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -49,7 +49,7 @@ describe('convex pagination', () => {
             role: 'owner',
         });
 
-        organizationId = String(orgId);
+        _organizationId = String(orgId);
 
         userIdentity = t.withIdentity({
             subject: user.userId,

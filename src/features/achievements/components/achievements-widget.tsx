@@ -125,9 +125,7 @@ export function AchievementsWidget({
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 {recentAchievements
-                                    .filter(
-                                        (a): a is NonNullable<typeof a> => a !== null
-                                    )
+                                    .filter((a): a is NonNullable<typeof a> => a !== null)
                                     .map((achievement, index) => (
                                         <div
                                             key={achievement._id}
@@ -140,13 +138,9 @@ export function AchievementsWidget({
                                                     (achievement.tier as AchievementTier) ??
                                                     'bronze'
                                                 }
-                                                name={t(
-                                                    `definitions.${achievement.code}.name`,
-                                                    {
-                                                        defaultValue:
-                                                            achievement.code ?? 'Achievement',
-                                                    }
-                                                )}
+                                                name={t(`definitions.${achievement.code}.name`, {
+                                                    defaultValue: achievement.code ?? 'Achievement',
+                                                })}
                                                 earned={true}
                                                 size="md"
                                             />

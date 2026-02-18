@@ -25,6 +25,13 @@ export interface UpdateOrganizationParams {
 
 const ORGANIZATIONS_QUERY_KEY = ['organizations'];
 
+interface OrganizationRaw {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+}
+
 /**
  * Hook para obtener todas las organizaciones del usuario
  */
@@ -32,7 +39,7 @@ export function useOrganizations() {
     const data = useQuery(api.organizations.getOrganizationsByUser, {});
 
     return {
-        data: data?.map((org: any) => ({
+        data: data?.map((org: OrganizationRaw) => ({
             id: org.id,
             name: org.name,
             slug: org.slug,
@@ -49,7 +56,7 @@ export function useOrganizations() {
 export function useOrganization(organizationId: string | null) {
     const data = useQuery(api.organizations.getOrganizationsByUser, organizationId ? {} : 'skip');
 
-    const org = data?.find((o: any) => o.id === organizationId);
+    const org = data?.find((o: OrganizationRaw) => o.id === organizationId);
     return {
         data: org
             ? ({
@@ -70,7 +77,7 @@ export function useOrganization(organizationId: string | null) {
 export function useOrganizationBySlug(slug: string | null) {
     const data = useQuery(api.organizations.getOrganizationsByUser, slug ? {} : 'skip');
 
-    const org = data?.find((o: any) => o.slug === slug);
+    const org = data?.find((o: OrganizationRaw) => o.slug === slug);
     return {
         data: org
             ? ({
@@ -94,7 +101,7 @@ export function useOrganizationByIdentifier(identifier: string | null) {
     const data = useQuery(api.organizations.getOrganizationsByUser, identifier ? {} : 'skip');
 
     // First try to find by slug
-    let org = data?.find((o: any) => {
+    let org = data?.find((o: OrganizationRaw) => {
         const slug = o.slug;
         if (!slug) return false;
         return String(slug).trim() === String(identifier).trim();
@@ -102,7 +109,7 @@ export function useOrganizationByIdentifier(identifier: string | null) {
 
     // If not found by slug, try by ID
     if (!org) {
-        org = data?.find((o: any) => String(o.id).trim() === String(identifier).trim());
+        org = data?.find((o: OrganizationRaw) => String(o.id).trim() === String(identifier).trim());
     }
 
     return {
