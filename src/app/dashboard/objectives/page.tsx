@@ -7,6 +7,15 @@ import { api } from '@/convex/_generated/api';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 import { createTranslator } from 'next-intl';
+import type { Metadata } from 'next';
+
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations('Objectives');
+    return {
+        title: t('pageTitle'),
+        description: t('pageDescription'),
+    };
+}
 
 export default async function ObjectivesPage() {
     let preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
