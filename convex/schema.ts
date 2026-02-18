@@ -1,6 +1,18 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import authSchema from './authSchema';
+import {
+    objectiveStatusValidator,
+    objectiveTypeValidator,
+    periodValidator,
+    directionValidator,
+    reminderIntervalValidator,
+    progressModeValidator,
+    notificationTypeValidator,
+    achievementTypeValidator,
+    achievementCategoryValidator,
+    achievementTierValidator,
+} from './utils/validators';
 
 export default defineSchema({
     ...authSchema.tables,
@@ -15,26 +27,25 @@ export default defineSchema({
         currentValue: v.number(),
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
-        status: v.string(), // 'active' | 'paused' | 'completed' | 'archived' | 'deleted'
+        status: objectiveStatusValidator,
         unit: v.optional(v.string()),
-        objectiveType: v.optional(v.string()),
-        direction: v.optional(v.string()), // 'increase' | 'decrease'
-        period: v.optional(v.string()),
+        objectiveType: objectiveTypeValidator,
+        direction: directionValidator,
+        period: periodValidator,
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
-        reminderInterval: v.optional(v.string()), // 'none' | 'monthly' | 'biweekly' (twice per month)
+        reminderInterval: reminderIntervalValidator,
         nextReminderAt: v.optional(v.number()),
-        progressMode: v.optional(v.string()), // 'cumulative' | 'snapshot'
+        progressMode: progressModeValidator,
         lastProgressAt: v.optional(v.number()),
         lastStalledNotifiedAt: v.optional(v.number()),
         lastDeadlineNotifiedAt: v.optional(v.number()),
         collaborators: v.optional(v.array(v.string())),
         createdAt: v.number(),
         updatedAt: v.number(),
-        // Workflow fields
-        workflowId: v.optional(v.string()), // ID of the active workflow
-        nextTickAt: v.optional(v.number()), // Timestamp of next scheduled tick
-        nextTickSeq: v.optional(v.number()), // Monotonic counter for anti-race pattern
+        workflowId: v.optional(v.string()),
+        nextTickAt: v.optional(v.number()),
+        nextTickSeq: v.optional(v.number()),
     })
         .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
@@ -58,7 +69,7 @@ export default defineSchema({
         organizationId: v.string(),
         objective: v.optional(v.id('objectives')),
         read: v.boolean(),
-        notificationType: v.string(), // 'deadline' | 'progress' | 'status' | 'reminder' | 'achievement'
+        notificationType: notificationTypeValidator,
         notificationDate: v.number(),
         message: v.string(),
         createdAt: v.number(),
@@ -108,9 +119,9 @@ export default defineSchema({
     // Achievement definitions - what achievements exist
     achievementDefinitions: defineTable({
         code: v.string(),
-        type: v.string(), // 'individual' | 'organization'
-        category: v.string(), // 'milestone' | 'streak' | 'completion' | 'activity'
-        tier: v.string(), // 'bronze' | 'silver' | 'gold' | 'platinum'
+        type: achievementTypeValidator,
+        category: achievementCategoryValidator,
+        tier: achievementTierValidator,
         threshold: v.number(),
         icon: v.string(),
         points: v.number(),

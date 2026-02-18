@@ -7,10 +7,11 @@ import {
 } from './achievements_utils/calculations';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
+import { achievementTypeValidator } from './utils/validators';
 
 export const getAchievementDefinitions = queryWithRLS({
     args: {
-        type: v.optional(v.string()),
+        type: v.optional(achievementTypeValidator),
     },
     handler: async (ctx, args) => {
         const typeFilter = args.type;

@@ -12,6 +12,14 @@ import { workflow } from './workflow';
 import { type WorkflowId } from '@convex-dev/workflow';
 import { isValidTransition } from './objectiveEvents';
 import { computeNextReminderAt } from './utils/reminderSchedule';
+import {
+    objectiveTypeValidator,
+    directionValidator,
+    reminderIntervalValidator,
+    progressModeValidator,
+    periodValidator,
+} from './utils/validators';
+import { OBJECTIVE_TYPE, DIRECTION, REMINDER_INTERVAL, PROGRESS_MODE } from './utils/constants';
 
 /**
  * Create a new objective
@@ -27,21 +35,21 @@ export const createObjective = mutationWithRLS({
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         unit: v.optional(v.string()),
-        objectiveType: v.optional(v.string()),
-        direction: v.optional(v.string()),
-        period: v.optional(v.string()),
+        objectiveType: objectiveTypeValidator,
+        direction: directionValidator,
+        period: periodValidator,
         periodStart: v.optional(v.number()),
         periodLengthDays: v.optional(v.number()),
-        reminderInterval: v.optional(v.string()),
-        progressMode: v.optional(v.string()),
+        reminderInterval: reminderIntervalValidator,
+        progressMode: progressModeValidator,
     },
     handler: async (ctx, args) => {
         const now = Date.now();
         const userId = String(ctx.identity?.subject);
-        const objectiveType = args.objectiveType ?? 'value';
-        const direction = args.direction ?? 'increase';
-        const reminderInterval = args.reminderInterval ?? 'none';
-        const progressMode = args.progressMode ?? 'cumulative';
+        const objectiveType = args.objectiveType ?? OBJECTIVE_TYPE.VALUE;
+        const direction = args.direction ?? DIRECTION.INCREASE;
+        const reminderInterval = args.reminderInterval ?? REMINDER_INTERVAL.NONE;
+        const progressMode = args.progressMode ?? PROGRESS_MODE.CUMULATIVE;
 
         // Create objective in 'active' state (auto-activate)
         const objectiveId = await ctx.db.insert('objectives', {

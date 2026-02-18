@@ -139,3 +139,34 @@ export const ORGANIZATION_ROLE = {
 } as const;
 
 export type OrganizationRole = (typeof ORGANIZATION_ROLE)[keyof typeof ORGANIZATION_ROLE];
+
+/**
+ * Objective progress direction
+ */
+export const DIRECTION = {
+    INCREASE: 'increase',
+    DECREASE: 'decrease',
+} as const;
+
+export type Direction = (typeof DIRECTION)[keyof typeof DIRECTION];
+
+/**
+ * Reminder interval options
+ */
+export const REMINDER_INTERVAL = {
+    NONE: 'none',
+    MONTHLY: 'monthly',
+    BIWEEKLY: 'biweekly',
+} as const;
+
+export type ReminderInterval = (typeof REMINDER_INTERVAL)[keyof typeof REMINDER_INTERVAL];
+
+/**
+ * Progress mode options
+ */
+export const PROGRESS_MODE = {
+    CUMULATIVE: 'cumulative',
+    SNAPSHOT: 'snapshot',
+} as const;
+
+export type ProgressMode = (typeof PROGRESS_MODE)[keyof typeof PROGRESS_MODE];

@@ -12,6 +12,7 @@ import { Doc } from './_generated/dataModel';
 import { workflow } from './workflow';
 import { tickEvent } from './objectiveEvents';
 import { vWorkflowId } from '@convex-dev/workflow';
+import { objectiveStatusValidator } from './utils/validators';
 
 /**
  * Get objective by ID without RLS (for internal workflow use)
@@ -68,7 +69,7 @@ export const clearNextTickInternal = internalMutation({
 export const updateStatusInternal = internalMutation({
     args: {
         objectiveId: v.id('objectives'),
-        newStatus: v.string(),
+        newStatus: objectiveStatusValidator,
         workflowId: v.optional(v.string()),
     },
     handler: async (ctx, args): Promise<{ success: boolean; previousStatus?: string }> => {
