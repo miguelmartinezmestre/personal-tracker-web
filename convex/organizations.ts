@@ -3,6 +3,23 @@ import { query } from './_generated/server';
 import { getAuthUserIdentity } from 'better-convex/auth';
 import type { Id } from './_generated/dataModel';
 
+function getOrganizationDescription(metadata: string | null | undefined): string {
+    if (!metadata) {
+        return '';
+    }
+
+    try {
+        const parsed = JSON.parse(metadata) as { description?: unknown } | null;
+        if (parsed && typeof parsed === 'object' && typeof parsed.description === 'string') {
+            return parsed.description;
+        }
+    } catch {
+        return '';
+    }
+
+    return '';
+}
+
 export const getCurrentSession = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
@@ -42,7 +59,7 @@ export const getCurrentSession = query({
 export const getOrganizationsByUser = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated');
+        if (!identity) return [];
 
         const memberships = await ctx.db
             .query('member')
@@ -62,7 +79,7 @@ export const getOrganizationsByUser = query({
                     id: org._id,
                     name: org.name,
                     slug: org.slug,
-                    description: org.metadata ? JSON.parse(org.metadata).description : '',
+                    description: getOrganizationDescription(org.metadata),
                     logo: org.logo,
                     createdAt: org.createdAt,
                     role: member.role,
@@ -98,7 +115,7 @@ export const getActiveOrganization = query({
             id: org._id,
             name: org.name,
             slug: org.slug,
-            description: org.metadata ? JSON.parse(org.metadata).description : '',
+            description: getOrganizationDescription(org.metadata),
             logo: org.logo,
             createdAt: org.createdAt,
         };
@@ -140,7 +157,7 @@ export const getOrganizationMembers = query({
     args: { organizationId: v.string() },
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated');
+        if (!identity) return { members: [] };
 
         const userMembership = await ctx.db
             .query('member')
@@ -188,7 +205,7 @@ export const getOrganizationMembers = query({
 export const getUserInvitations = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated');
+        if (!identity) return [];
 
         const user = await ctx.db
             .query('user')
@@ -251,7 +268,7 @@ export const getOrganizationInvitations = query({
     args: { organizationId: v.string() },
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated');
+        if (!identity) return [];
 
         const userMembership = await ctx.db
             .query('member')
