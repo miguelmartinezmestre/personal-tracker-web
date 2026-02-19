@@ -2,9 +2,67 @@ import { test, expect } from '@playwright/test';
 import {
     createTestUser,
     createObjective,
-    createNotification,
     ensureDefaultCategories,
 } from '../../helpers/test-helpers';
+
+async function openNotificationCreateModal(
+    page: import('@playwright/test').Page
+): Promise<boolean> {
+    const createButton = page.getByTestId('notification-create-open');
+
+    try {
+        await expect(createButton).toBeVisible({ timeout: 10000 });
+    } catch {
+        return false;
+    }
+
+    const objectiveSelect = page.getByTestId('notification-objective-select');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await createButton.click();
+
+        try {
+            await expect(objectiveSelect).toBeVisible({ timeout: 5000 });
+            return true;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+            await page.waitForTimeout(300);
+        }
+    }
+
+    return false;
+}
+
+async function createNotificationInModal(
+    page: import('@playwright/test').Page,
+    objectiveTitle: string,
+    message: string
+): Promise<boolean> {
+    const isModalOpen = await openNotificationCreateModal(page);
+    if (!isModalOpen) {
+        return false;
+    }
+
+    await page.getByTestId('notification-objective-select').click();
+
+    const specificOption = page.getByRole('option', { name: objectiveTitle }).first();
+    if ((await specificOption.count()) > 0) {
+        await specificOption.click();
+    } else {
+        const firstOption = page.getByRole('option').first();
+        if ((await firstOption.count()) === 0) {
+            return false;
+        }
+        await firstOption.click();
+    }
+
+    await page.getByTestId('notification-type-input').fill('reminder');
+    await page.getByTestId('notification-message-input').fill(message);
+    await page.getByTestId('notification-save-button').click();
+
+    await expect(page.getByText(message)).toBeVisible({ timeout: 10000 });
+    return true;
+}
 
 test.describe('Notifications', () => {
     test.beforeEach(async ({ page }) => {
@@ -52,29 +110,9 @@ test.describe('Notifications', () => {
         await page.goto('/dashboard/notifications');
         await page.waitForLoadState('networkidle');
 
-        // Look for create notification button
-        const createButton = page.getByTestId('notification-create-open');
-
-        if (await createButton.isVisible()) {
-            await createButton.click();
-
-            // Select objective
-            await page.getByTestId('notification-objective-select').click();
-            await page.getByRole('option', { name: objective.title }).click();
-
-            // Fill type
-            await page.getByTestId('notification-type-input').fill('reminder');
-
-            // Fill message
-            const message = `Test notification ${Date.now()}`;
-            await page.getByTestId('notification-message-input').fill(message);
-
-            // Save
-            await page.getByTestId('notification-save-button').click();
-
-            // Verify notification appears
-            await expect(page.getByText(message)).toBeVisible({ timeout: 10000 });
-        }
+        const message = `Test notification ${Date.now()}`;
+        const wasCreated = await createNotificationInModal(page, objective.title, message);
+        expect(wasCreated).toBeTruthy();
     });
 
     test('mark notification as read', async ({ page }) => {
@@ -84,18 +122,13 @@ test.describe('Notifications', () => {
 
         await page.goto('/dashboard/notifications');
 
-        const createButton = page.getByTestId('notification-create-open');
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.getByTestId('notification-objective-select').click();
-            await page.getByRole('option', { name: objective.title }).click();
-            await page.getByTestId('notification-type-input').fill('reminder');
-            await page
-                .getByTestId('notification-message-input')
-                .fill(`Mark read test ${Date.now()}`);
-            await page.getByTestId('notification-save-button').click();
-            await page.waitForTimeout(2000);
-        }
+        const wasCreated = await createNotificationInModal(
+            page,
+            objective.title,
+            `Mark read test ${Date.now()}`
+        );
+        expect(wasCreated).toBeTruthy();
+        await page.waitForTimeout(2000);
 
         await page.waitForLoadState('networkidle');
 
@@ -146,23 +179,12 @@ test.describe('Notifications', () => {
 
         await page.goto('/dashboard/notifications');
 
-        const createButton = page.getByTestId('notification-create-open');
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.getByTestId('notification-objective-select').click();
-            await page.getByRole('option', { name: objective.title }).click();
-            await page.getByTestId('notification-type-input').fill('reminder');
-            const message = `Delete test ${Date.now()}`;
-            await page.getByTestId('notification-message-input').fill(message);
-            await page.getByTestId('notification-save-button').click();
-            await expect(page.getByText(message)).toBeVisible({ timeout: 10000 });
-        }
+        const deleteMessage = `Delete test ${Date.now()}`;
+        const wasCreated = await createNotificationInModal(page, objective.title, deleteMessage);
+        expect(wasCreated).toBeTruthy();
 
         // Now delete it
-        const row = page
-            .locator('tr')
-            .filter({ hasText: /Delete test/ })
-            .first();
+        const row = page.locator('tr').filter({ hasText: deleteMessage }).first();
         const deleteButton = row
             .locator('[data-testid*="delete"], button[aria-label*="delete"]')
             .first();
@@ -206,25 +228,17 @@ test.describe('Notifications', () => {
 
         await page.goto('/dashboard/notifications');
 
-        // Create notification linked to objective
-        const createButton = page.getByTestId('notification-create-open');
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.getByTestId('notification-objective-select').click();
-            await page.getByRole('option', { name: objective.title }).click();
-            await page.getByTestId('notification-type-input').fill('reminder');
-            await page.getByTestId('notification-message-input').fill('Related objective test');
-            await page.getByTestId('notification-save-button').click();
-            await page.waitForTimeout(2000);
-        }
+        const relatedMessage = `Related objective test ${Date.now()}`;
+        const wasCreated = await createNotificationInModal(page, objective.title, relatedMessage);
+        expect(wasCreated).toBeTruthy();
+        await page.waitForTimeout(2000);
 
         await page.waitForLoadState('networkidle');
 
         // Notification should show or link to the related objective
         const objectiveLink = page.locator(`text=${objective.title}`);
         const hasObjectiveRef = (await objectiveLink.count()) > 0;
-
-        // Or objective reference in notification
+        expect(hasObjectiveRef).toBeTruthy();
     });
 
     test('notification click navigates to related objective', async ({ page }) => {
@@ -237,21 +251,15 @@ test.describe('Notifications', () => {
         await page.goto('/dashboard/notifications');
 
         // Create and then click notification
-        const createButton = page.getByTestId('notification-create-open');
-        if (await createButton.isVisible()) {
-            await createButton.click();
-            await page.getByTestId('notification-objective-select').click();
-            await page.getByRole('option', { name: objective.title }).click();
-            await page.getByTestId('notification-type-input').fill('reminder');
-            await page.getByTestId('notification-message-input').fill('Click test notification');
-            await page.getByTestId('notification-save-button').click();
-            await page.waitForTimeout(2000);
-        }
+        const clickMessage = `Click test notification ${Date.now()}`;
+        const wasCreated = await createNotificationInModal(page, objective.title, clickMessage);
+        expect(wasCreated).toBeTruthy();
+        await page.waitForTimeout(2000);
 
         await page.waitForLoadState('networkidle');
 
         // Click on the notification to navigate
-        const notificationRow = page.locator('tr').filter({ hasText: 'Click test' }).first();
+        const notificationRow = page.locator('tr').filter({ hasText: clickMessage }).first();
         const clickableArea = notificationRow.locator('a, [role="button"]').first();
 
         if (await clickableArea.isVisible()) {

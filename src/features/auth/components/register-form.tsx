@@ -38,7 +38,6 @@ export default function RegisterForm() {
             password: '',
             confirmPassword: '',
             username: '',
-            organizationSlug: invitationToken ? undefined : '',
         },
         validators: {
             onChange: registerSchema,
@@ -50,15 +49,7 @@ export default function RegisterForm() {
     });
 
     async function onSubmit(values: z.infer<typeof registerSchema>) {
-        // Clear any previous error
         setRegisterError('');
-
-        // Require organizationSlug if NOT coming from an invitation
-        if (!invitationToken && !values.organizationSlug) {
-            setRegisterError(tCommon('fields.organizationSlug') + ' is required');
-            return;
-        }
-
         setIsSubmitting(true);
 
         try {
@@ -71,40 +62,19 @@ export default function RegisterForm() {
                 {
                     onSuccess: async () => {
                         try {
-                            // If coming from an invitation, accept it and set as active
                             if (invitationToken) {
                                 await authClient.organization.acceptInvitation({
                                     invitationId: invitationToken,
                                 });
 
-                                // Get all organizations to find the invited one and set it as active
                                 const orgsResult = await authClient.organization.list();
                                 const organizations =
                                     (orgsResult as { data?: Array<{ id: string }> })?.data ?? [];
 
-                                // Set the first organization as active (the invited one)
                                 const firstOrg = organizations[0];
                                 if (firstOrg) {
                                     await authClient.organization.setActive({
                                         organizationId: firstOrg.id,
-                                    });
-                                }
-                            } else {
-                                // No invitation - create user's own organization
-                                const createOrgResult = await authClient.organization.create({
-                                    name: `${values.username}'s Organization`,
-                                    slug: values.organizationSlug as string,
-                                });
-
-                                const createResult = createOrgResult as
-                                    | { data?: { id: string }; id?: string }
-                                    | undefined;
-                                const ownOrganizationId =
-                                    createResult?.data?.id ?? createResult?.id;
-
-                                if (ownOrganizationId) {
-                                    await authClient.organization.setActive({
-                                        organizationId: ownOrganizationId,
                                     });
                                 }
                             }
@@ -229,32 +199,6 @@ export default function RegisterForm() {
                         </FormItem>
                     )}
                 />
-
-                {/* Only show organizationSlug field if NOT coming from an invitation */}
-                {!invitationToken && (
-                    <FormField
-                        name="organizationSlug"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-gray-700">
-                                    {tCommon('fields.organizationSlug')}
-                                </FormLabel>
-                                <FormControl>
-                                    <Input
-                                        {...field}
-                                        placeholder={tCommon('placeholders.organizationSlug')}
-                                        className="focus:ring-2 focus:ring-primary/20"
-                                        data-testid="register-organization-slug-input"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {tCommon('fields.organizationSlugHint')}
-                                </p>
-                            </FormItem>
-                        )}
-                    />
-                )}
 
                 <Button
                     type="submit"

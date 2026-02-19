@@ -59,14 +59,24 @@ export interface TestUserData {
     organizationSlug: string;
 }
 
-/**
- * Creates a test user by registering through the UI.
- * Handles both direct dashboard redirect and login redirect scenarios.
- */
-export async function createTestUser(
-    page: Page,
-    options?: CreateTestUserOptions
-): Promise<TestUserData> {
+interface AuthSessionPayload {
+    session?: {
+        activeOrganizationId?: string | null;
+    } | null;
+    user?: unknown;
+    data?: {
+        session?: {
+            activeOrganizationId?: string | null;
+        } | null;
+        user?: unknown;
+    } | null;
+}
+
+interface OrganizationListItem {
+    id?: string;
+}
+
+function generateTestUserData(options?: CreateTestUserOptions): TestUserData {
     const uuid = randomUUID();
     const shortId = uuid.substring(0, 8);
 
@@ -91,45 +101,261 @@ export async function createTestUser(
         organizationSlug = `org-${shortId}`;
     }
 
-    const password = options?.password ?? DEFAULT_PASSWORD;
+    return {
+        username,
+        email,
+        password: options?.password ?? DEFAULT_PASSWORD,
+        organizationSlug,
+    };
+}
 
-    await page.goto('/register');
-    await page.waitForSelector('[data-testid="register-username-input"]');
+async function getSessionData(page: Page): Promise<AuthSessionPayload | null> {
+    try {
+        const response = await page.request.get('/api/auth/get-session');
 
-    // Fill registration form
-    await page.getByTestId('register-username-input').fill(username);
-    await page.getByTestId('register-email-input').fill(email);
-    await page.getByTestId('register-password-input').fill(password);
-    await page.getByTestId('register-confirm-password-input').fill(password);
-    await page.getByTestId('register-organization-slug-input').fill(organizationSlug);
+        if (!response.ok()) {
+            return null;
+        }
 
-    // Submit
-    await page.getByTestId('register-button').click();
+        const payload = (await response.json()) as AuthSessionPayload | null;
+        if (!payload || typeof payload !== 'object') {
+            return null;
+        }
 
-    // Wait for navigation
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
+        return payload.data ?? payload;
+    } catch {
+        return null;
+    }
+}
 
-    const currentUrl = page.url();
+async function hasAuthenticatedSession(page: Page): Promise<boolean> {
+    const sessionData = await getSessionData(page);
+    return Boolean(sessionData?.session && sessionData?.user);
+}
 
-    if (currentUrl.includes('/dashboard/home')) {
-        await expect(page).toHaveURL(/\/dashboard\/home$/);
-    } else if (currentUrl.includes('/login')) {
-        // Need to login after registration
-        await page.waitForSelector('[data-testid="email-input"]', { timeout: 5000 });
-        await page.getByTestId('email-input').clear();
-        await page.getByTestId('password-input').clear();
-        await page.getByTestId('email-input').fill(email);
-        await page.getByTestId('password-input').fill(password);
-        await page.getByTestId('login-button').click();
-        await page.waitForURL(/\/dashboard\/home$/, { timeout: 10000 });
-        await expect(page).toHaveURL(/\/dashboard\/home$/);
-    } else {
-        throw new Error(
-            `Registration failed. Expected /dashboard/home or /login, got ${currentUrl}`
-        );
+async function hasActiveOrganization(page: Page): Promise<boolean> {
+    const sessionData = await getSessionData(page);
+    return Boolean(sessionData?.session?.activeOrganizationId);
+}
+
+async function getOrganizationIds(page: Page): Promise<string[]> {
+    try {
+        return await page.evaluate(async () => {
+            const response = await fetch('/api/auth/organization/list', {
+                method: 'GET',
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                return [];
+            }
+
+            const payload = (await response.json()) as
+                | OrganizationListItem[]
+                | { data?: unknown }
+                | null;
+
+            const organizations = Array.isArray(payload)
+                ? payload
+                : Array.isArray(payload?.data)
+                  ? (payload.data as OrganizationListItem[])
+                  : [];
+
+            return organizations
+                .map(organization => organization.id)
+                .filter(
+                    (organizationId): organizationId is string =>
+                        typeof organizationId === 'string' && organizationId.length > 0
+                );
+        });
+    } catch {
+        return [];
+    }
+}
+
+async function setActiveOrganizationViaBrowser(
+    page: Page,
+    organizationId: string
+): Promise<boolean> {
+    try {
+        return await page.evaluate(async id => {
+            const response = await fetch('/api/auth/organization/set-active', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ organizationId: id }),
+            });
+
+            return response.ok;
+        }, organizationId);
+    } catch {
+        return false;
+    }
+}
+
+async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
+    await expect
+        .poll(async () => await hasAuthenticatedSession(page), {
+            timeout,
+            intervals: [500, 1000, 2000],
+        })
+        .toBe(true);
+}
+
+async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<void> {
+    if (await hasActiveOrganization(page)) {
+        return;
     }
 
-    return { username, email, password, organizationSlug };
+    const timeoutAt = Date.now() + timeout;
+    while (Date.now() < timeoutAt) {
+        const organizationIds = await getOrganizationIds(page);
+        for (const organizationId of organizationIds) {
+            if (await setActiveOrganizationViaBrowser(page, organizationId)) {
+                await page.goto('/dashboard/home');
+                await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
+                return;
+            }
+        }
+
+        await page.waitForTimeout(500);
+    }
+}
+
+async function ensureAuthenticatedState(page: Page): Promise<void> {
+    await waitForAuthenticatedSession(page);
+    await ensureActiveOrganization(page);
+}
+
+async function loginWithCredentials(page: Page, email: string, password: string): Promise<void> {
+    await page.waitForSelector('[data-testid="email-input"]', { timeout: 10000 });
+    await page.getByTestId('email-input').clear();
+    await page.getByTestId('password-input').clear();
+    await page.getByTestId('email-input').fill(email);
+    await page.getByTestId('password-input').fill(password);
+    await page.getByTestId('login-button').click();
+    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
+    await ensureAuthenticatedState(page);
+}
+
+async function completeRegistrationFlow(page: Page, userData: TestUserData): Promise<void> {
+    await page.goto('/register');
+    await page.waitForSelector('[data-testid="register-username-input"]', {
+        timeout: 10000,
+    });
+
+    await page.getByTestId('register-username-input').fill(userData.username);
+    await page.getByTestId('register-email-input').fill(userData.email);
+    await page.getByTestId('register-password-input').fill(userData.password);
+    await page.getByTestId('register-confirm-password-input').fill(userData.password);
+    await page.getByTestId('register-organization-slug-input').fill(userData.organizationSlug);
+
+    await page.getByTestId('register-button').click();
+
+    const timeoutAt = Date.now() + 12000;
+    let outcome: 'dashboard' | 'login' | 'session' | null = null;
+
+    while (Date.now() < timeoutAt) {
+        const currentUrl = page.url();
+
+        if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
+            outcome = 'dashboard';
+            break;
+        }
+
+        if (/\/login(\?|$)/.test(currentUrl)) {
+            outcome = 'login';
+            break;
+        }
+
+        if (await hasAuthenticatedSession(page)) {
+            outcome = 'session';
+            break;
+        }
+
+        await page.waitForTimeout(300);
+    }
+
+    if (!outcome) {
+        throw new Error(`Registration did not complete. Current URL: ${page.url()}`);
+    }
+
+    if (outcome === 'login') {
+        await loginWithCredentials(page, userData.email, userData.password);
+        return;
+    }
+
+    if (outcome === 'session') {
+        await page.goto('/dashboard/home');
+        await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
+    }
+
+    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
+    await ensureAuthenticatedState(page);
+}
+
+async function recoverAuthenticatedUser(page: Page, userData: TestUserData): Promise<boolean> {
+    if (await hasAuthenticatedSession(page)) {
+        try {
+            await page.goto('/dashboard/home');
+            await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
+            await ensureAuthenticatedState(page);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    try {
+        await page.goto('/login');
+        await loginWithCredentials(page, userData.email, userData.password);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Creates a test user by registering through the UI.
+ * Handles both direct dashboard redirect and login redirect scenarios.
+ */
+export async function createTestUser(
+    page: Page,
+    options?: CreateTestUserOptions
+): Promise<TestUserData> {
+    const hasCustomIdentity = Boolean(
+        options?.customUsername || options?.customEmail || options?.customOrganizationSlug
+    );
+    const maxAttempts = hasCustomIdentity ? 1 : 2;
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const userData = generateTestUserData(options);
+
+        try {
+            await completeRegistrationFlow(page, userData);
+
+            return userData;
+        } catch (error) {
+            lastError = error;
+
+            if (await recoverAuthenticatedUser(page, userData)) {
+                return userData;
+            }
+
+            if (attempt < maxAttempts) {
+                try {
+                    await page.context().clearCookies();
+                } catch {
+                    // Ignore cleanup failures and proceed to the next attempt.
+                }
+                continue;
+            }
+        }
+    }
+
+    const reason = lastError instanceof Error ? lastError.message : String(lastError);
+    throw new Error(`Failed to create test user after ${maxAttempts} attempt(s): ${reason}`);
 }
 
 /**
@@ -141,12 +367,8 @@ export async function loginUser(
     password: string = DEFAULT_PASSWORD
 ): Promise<void> {
     await page.goto('/login');
-    await page.waitForSelector('[data-testid="email-input"]');
-    await page.getByTestId('email-input').fill(email);
-    await page.getByTestId('password-input').fill(password);
-    await page.getByTestId('login-button').click();
-    await page.waitForURL(/\/dashboard\/home$/, { timeout: 10000 });
-    await expect(page).toHaveURL(/\/dashboard\/home$/);
+    await loginWithCredentials(page, email, password);
+    await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 }
 
 /**
@@ -329,8 +551,10 @@ export async function createOrganization(
     const description = options?.description ?? 'Test organization description';
 
     await page.goto('/dashboard/organizations');
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL(/\/dashboard\/organizations(\?|$)/, { timeout: 15000 });
 
+    // Wait for organizations page to be ready
+    await page.waitForSelector('[data-testid="organizations-title"]', { timeout: 15000 });
     await page.getByTestId('organization-create-open').click();
     await page.getByTestId('organization-name-input').fill(name);
     await page.getByTestId('organization-description-input').fill(description);

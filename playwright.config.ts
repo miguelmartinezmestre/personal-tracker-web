@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * See https://playwright.dev/docs/test-configuration.
+ * Fast Playwright suite for local/PR feedback.
+ * Full cross-browser suite lives in playwright.full.config.ts.
  */
 export default defineConfig({
     testDir: './tests',
@@ -37,23 +38,11 @@ export default defineConfig({
                 },
             },
         },
-        {
-            name: 'firefox',
-            use: {
-                ...devices['Desktop Firefox'],
-            },
-        },
-        {
-            name: 'webkit',
-            use: {
-                ...devices['Desktop Safari'],
-            },
-        },
     ],
 
     // Global setup to ensure backend is ready
     globalSetup: './tests/config/global-setup.ts',
 
-    // Ignore backup tests and manual tests
-    testIgnore: ['**/tests-manual/**'],
+    // Ignore manual and suites migrated to Vitest
+    testIgnore: ['**/tests-manual/**', '**/e2e/admin/**'],
 });

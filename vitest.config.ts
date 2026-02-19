@@ -4,8 +4,8 @@ import path from 'path';
 export default defineConfig({
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './src'),
             '@/convex': path.resolve(__dirname, './convex'),
+            '@': path.resolve(__dirname, './src'),
         },
     },
     test: {
@@ -14,6 +14,7 @@ export default defineConfig({
         exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
         environment: 'jsdom',
         globals: true,
+        setupFiles: ['./vitest.setup.ts'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
