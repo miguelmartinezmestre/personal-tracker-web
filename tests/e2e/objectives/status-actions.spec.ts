@@ -16,33 +16,18 @@ test.describe('Objectives Status Actions', () => {
         const row = page.locator('tr', { hasText: objective.title }).first();
         await expect(row).toBeVisible({ timeout: 10000 });
 
-        // The status can be changed via the edit modal - open it
-        const editButton = row.getByTestId('objective-edit-open');
-        if (await editButton.isVisible()) {
-            await editButton.click();
-            await expect(page.getByTestId('objective-edit-title-input')).toBeVisible({
-                timeout: 10000,
-            });
+        // Pause via the pause button (status is not in the edit modal)
+        const pauseButton = row.getByTestId('objective-pause-button');
+        await expect(pauseButton).toBeVisible();
+        await pauseButton.click();
 
-            // Look for status select in the modal
-            const statusSelect = page.getByTestId('objective-edit-status-select');
-            await expect(statusSelect).toBeVisible();
-            await statusSelect.click();
+        // Wait for mutation to complete
+        await page.waitForTimeout(2000);
+        await page.waitForLoadState('networkidle');
 
-            // Select paused status
-            const pausedOption = page.getByRole('option', { name: /paused|pausado/i }).first();
-            if ((await pausedOption.count()) > 0) {
-                await pausedOption.click();
-
-                // Save
-                await page.getByTestId('objective-edit-save-button').click();
-                await page.waitForTimeout(2000);
-            } else {
-                await page.keyboard.press('Escape');
-            }
-        }
-
-        // Test passes - we verified objective can be edited
+        // Verify status changed (row should show paused or hide pause button)
+        const resumeButton = row.getByTestId('objective-resume-button');
+        await expect(resumeButton).toBeVisible({ timeout: 10000 });
     });
 
     test('resume paused objective', async ({ page }) => {

@@ -138,34 +138,30 @@ test.describe('Objectives Progress Updates', () => {
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
 
-        // On detail page, look for edit button on progress entries
-        // Progress updates might not exist yet, so this is optional
-        const editButton = page
-            .locator(
-                '[data-testid*="progress-edit"], button:has-text("Edit"), button[aria-label*="edit"]'
-            )
-            .first();
+        // Ensure at least one progress update exists so edit action is available.
+        const addProgressButton = page.getByTestId('progress-create-open');
+        if (await addProgressButton.isVisible()) {
+            await addProgressButton.click();
+            const createValueInput = page.getByTestId('progress-value-input');
+            await expect(createValueInput).toBeVisible({ timeout: 10000 });
+            await createValueInput.fill('25');
+            await page.getByTestId('progress-save-button').click();
+            await page.waitForLoadState('networkidle');
+        }
+
+        const editButton = page.getByTestId('progress-edit-open').first();
 
         if ((await editButton.count()) > 0 && (await editButton.isVisible())) {
             await editButton.click();
 
-            // Update value - find enabled input fields
-            const valueInput = page.locator('input[type="number"]:not([disabled])').first();
-            if ((await valueInput.count()) > 0 && (await valueInput.isVisible())) {
-                await valueInput.clear();
-                await valueInput.fill('30');
+            const editValueInput = page.getByTestId('progress-edit-value-input').first();
+            await expect(editValueInput).toBeVisible({ timeout: 10000 });
+            await editValueInput.clear();
+            await editValueInput.fill('30');
 
-                // Save
-                const saveButton = page
-                    .locator(
-                        'button:has-text("Save"), button:has-text("Guardar"), button[type="submit"]'
-                    )
-                    .first();
-                if ((await saveButton.count()) > 0) {
-                    await saveButton.click();
-                    await page.waitForTimeout(2000);
-                }
-            }
+            const editSaveButton = page.getByTestId('progress-edit-save-button').first();
+            await editSaveButton.click();
+            await page.waitForLoadState('networkidle');
         }
 
         // Test passes - we navigated to detail page
@@ -342,7 +338,7 @@ test.describe('Objectives Progress Updates', () => {
         // Should show target value
         await expect(page.getByText('200')).toBeVisible();
 
-        // Should show unit
-        await expect(page.getByText('EUR')).toBeVisible();
+        // Should show unit (EUR appears in both Target and Current value - use first)
+        await expect(page.getByText('EUR').first()).toBeVisible();
     });
 });
