@@ -114,7 +114,22 @@
         "genericErrorTitle": "Error",
         "genericErrorDescription": "An error occurred while accessing this page.",
         "dashboardTitle": "Dashboard",
-        "welcome": "Welcome {name}"
+        "welcome": "Welcome {name}",
+        "stats": {
+            "active": "Active",
+            "completed": "Completed",
+            "paused": "Paused",
+            "archived": "Archived"
+        },
+        "upcomingDeadlines": "Upcoming Deadlines",
+        "noUpcomingDeadlines": "No deadlines in the next 7 days",
+        "recentActivity": "Recent Activity",
+        "activity": {
+            "progressUpdates": "Progress updates",
+            "objectivesCreated": "Objectives created",
+            "objectivesCompleted": "Objectives completed",
+            "period": "Last {days} days"
+        }
     },
     "HomePage": {
         "title": "Achieve your goals. Control your progress.",

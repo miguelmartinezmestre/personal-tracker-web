@@ -114,7 +114,22 @@
         "genericErrorTitle": "Error",
         "genericErrorDescription": "Ocurrió un error al acceder a esta página.",
         "dashboardTitle": "Dashboard",
-        "welcome": "Bienvenido {name}"
+        "welcome": "Bienvenido {name}",
+        "stats": {
+            "active": "Activos",
+            "completed": "Completados",
+            "paused": "Pausados",
+            "archived": "Archivados"
+        },
+        "upcomingDeadlines": "Próximos vencimientos",
+        "noUpcomingDeadlines": "Sin vencimientos en los próximos 7 días",
+        "recentActivity": "Actividad reciente",
+        "activity": {
+            "progressUpdates": "Actualizaciones de progreso",
+            "objectivesCreated": "Objetivos creados",
+            "objectivesCompleted": "Objetivos completados",
+            "period": "Últimos {days} días"
+        }
     },
     "HomePage": {
         "title": "Cumple tus objetivos. Controla tu progreso.",
