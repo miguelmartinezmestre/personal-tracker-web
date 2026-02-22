@@ -37,6 +37,11 @@ export const authClient = createClient<DataModel, typeof schema>({
 const createAuthOptions = (ctx: GenericCtx) =>
     ({
         baseURL: process.env.SITE_URL!,
+        user: {
+            deleteUser: {
+                enabled: true,
+            },
+        },
         emailAndPassword: {
             enabled: true,
             sendResetPassword: async ({ user, url, token }, _request) => {

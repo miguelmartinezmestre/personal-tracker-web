@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AccountSettingsFormEdit from './account-settings-form-edit';
 import PasswordFormEdit from './password-form-edit';
+import AccountDeletionSection from './account-deletion-section';
 import { useTranslations } from 'next-intl';
-import { User, Key } from 'lucide-react';
+import { User, Key, AlertTriangle } from 'lucide-react';
 
 export default function SettingsLayout() {
     const t = useTranslations('Settings');
@@ -18,7 +19,7 @@ export default function SettingsLayout() {
             </div>
 
             <Tabs defaultValue="account" className="space-y-4">
-                <TabsList className="grid w-full max-w-md grid-cols-3">
+                <TabsList className="grid w-full max-w-lg grid-cols-3">
                     <TabsTrigger value="account" className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         {t('account')}
@@ -26,6 +27,10 @@ export default function SettingsLayout() {
                     <TabsTrigger value="password" className="flex items-center gap-2">
                         <Key className="h-4 w-4" />
                         {t('password')}
+                    </TabsTrigger>
+                    <TabsTrigger value="danger" className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        {t('dangerZone')}
                     </TabsTrigger>
                 </TabsList>
 
@@ -49,6 +54,18 @@ export default function SettingsLayout() {
                         </CardHeader>
                         <CardContent>
                             <PasswordFormEdit />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="danger">
+                    <Card className="max-w-2xl">
+                        <CardHeader>
+                            <CardTitle>{t('dangerZoneSettings')}</CardTitle>
+                            <CardDescription>{t('dangerZoneSettingsDescription')}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <AccountDeletionSection />
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -763,7 +763,20 @@
         "confirmPassword": "Confirmar contraseña",
         "newPassword": "Nueva contraseña",
         "accountUpdated": "Cuenta actualizada.",
-        "emailChangeRequested": "Te hemos enviado un email de verificación para confirmar tu nueva dirección."
+        "emailChangeRequested": "Te hemos enviado un email de verificación para confirmar tu nueva dirección.",
+        "dangerZone": "Zona de Peligro",
+        "dangerZoneSettings": "Zona de Peligro",
+        "dangerZoneSettingsDescription": "Acciones irreversibles para tu cuenta.",
+        "deleteAccountTitle": "Eliminar Cuenta",
+        "deleteAccountDescription": "Una vez que elimines tu cuenta, no hay vuelta atrás. Todos tus datos serán eliminados permanentemente.",
+        "deleteAccountConfirmLabel": "Confirma ingresando tu correo electrónico",
+        "deleteAccountPlaceholder": "Ingresa tu correo electrónico",
+        "deleteAccountHelpText": "Escribe {email} para confirmar la eliminación",
+        "deleteAccountButton": "Eliminar Mi Cuenta",
+        "deleteAccountEmailMismatch": "El correo electrónico no coincide",
+        "deleteAccountSuccess": "Tu cuenta ha sido eliminada. Redireccionando...",
+        "deleteAccountPasswordLabel": "Ingresa tu contraseña para confirmar",
+        "deleteAccountPasswordPlaceholder": "Tu contraseña"
     },
     "Admin": {
         "title": "Panel de Administración",
