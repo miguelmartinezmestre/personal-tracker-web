@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { DataTableAdvanced } from '@/features/table/components/table';
 import { ColumnDef } from '@tanstack/react-table';
 import { ObjectiveCard } from '@/features/objectives/components/objective-card';
@@ -34,15 +33,12 @@ const DEFAULT_FILTERS: FilterOptions = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ITEMS_PER_PAGE = 10;
-
-// Static skeleton array for loading state
 const SKELETON_PLACEHOLDERS = [1, 2, 3];
 
 const ResponsiveObjectivesView = React.forwardRef<
     HTMLDivElement,
     { preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser> }
 >(({ preloadedObjectivesQuery }, ref) => {
-    const isMobile = useIsMobile();
     const t = useTranslations('Objectives');
     const tCard = useTranslations('ObjectiveCard');
     const [editingObjective, setEditingObjective] = React.useState<Objective | null>(null);
@@ -321,22 +317,23 @@ const ResponsiveObjectivesView = React.forwardRef<
         },
     ];
 
-    if (isMobile) {
-        return (
-            <div ref={ref} className="space-y-4">
-                <ObjectivesFilters
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    categories={categories as string[]}
-                />
+    return (
+        <div ref={ref} className="w-full min-w-0 space-y-4">
+            <ObjectivesFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+                categories={categories as string[]}
+                className="w-full"
+            />
+            <div className="w-full min-w-0 space-y-4 md:hidden">
                 {!fetchedObjectives ? (
                     <div className="space-y-4">
                         {SKELETON_PLACEHOLDERS.map(i => (
-                            <div key={i} className="h-48 bg-muted rounded-lg animate-pulse" />
+                            <div key={i} className="h-48 rounded-lg bg-muted animate-pulse" />
                         ))}
                     </div>
                 ) : filteredObjectives?.length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="py-8 text-center">
                         <p className="text-muted-foreground">{t('empty.noObjectivesFound')}</p>
                     </div>
                 ) : (
@@ -352,37 +349,30 @@ const ResponsiveObjectivesView = React.forwardRef<
 
                 {editingObjective && <EditObjectiveFormModal defaultValues={editingObjective} />}
             </div>
-        );
-    }
 
-    return (
-        <div ref={ref} className="space-y-4">
-            <ObjectivesFilters
-                filters={filters}
-                onFiltersChange={setFilters}
-                categories={categories as string[]}
-            />
-            <DataTableAdvanced
-                columns={columns}
-                data={paginatedObjectives?.map(normalizeObjective) ?? []}
-                isLoading={!fetchedObjectives}
-                enableGlobalSearch={false}
-                enableColumnFilters={false}
-                enableSorting={true}
-                pagination={
-                    totalPages > 1
-                        ? {
-                              currentPage,
-                              totalPages,
-                              onPageChange: setCurrentPage,
-                              hasNextPage: currentPage < totalPages - 1,
-                              hasPreviousPage: currentPage > 0,
-                              pageSize: ITEMS_PER_PAGE,
-                              totalItems: filteredObjectives?.length ?? 0,
-                          }
-                        : undefined
-                }
-            />
+            <div className="hidden w-full min-w-0 md:block">
+                <DataTableAdvanced
+                    columns={columns}
+                    data={paginatedObjectives?.map(normalizeObjective) ?? []}
+                    isLoading={!fetchedObjectives}
+                    enableGlobalSearch={false}
+                    enableColumnFilters={false}
+                    enableSorting={true}
+                    pagination={
+                        totalPages > 1
+                            ? {
+                                  currentPage,
+                                  totalPages,
+                                  onPageChange: setCurrentPage,
+                                  hasNextPage: currentPage < totalPages - 1,
+                                  hasPreviousPage: currentPage > 0,
+                                  pageSize: ITEMS_PER_PAGE,
+                                  totalItems: filteredObjectives?.length ?? 0,
+                              }
+                            : undefined
+                    }
+                />
+            </div>
         </div>
     );
 });

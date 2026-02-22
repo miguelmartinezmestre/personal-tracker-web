@@ -8,12 +8,14 @@ export default function OrganizationsLayout() {
     const t = useTranslations('Organizations');
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold" data-testid="organizations-title">
+        <div className="w-full min-w-0 space-y-6">
+            <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h1 className="min-w-0 text-2xl font-bold" data-testid="organizations-title">
                     {t('title')}
                 </h1>
-                <CreateOrganizationFormModal />
+                <div className="w-full sm:w-auto">
+                    <CreateOrganizationFormModal />
+                </div>
             </div>
             <OrganizationsTable />
         </div>

@@ -190,15 +190,15 @@ export function OrganizationSwitcher() {
                 <Button
                     variant="outline"
                     data-testid="organization-switcher"
-                    className="min-w-[140px] justify-start"
+                    className="w-9 justify-center px-0 sm:min-w-[140px] sm:w-auto sm:justify-start sm:px-3"
                     disabled={setActiveMutation.isPending || isLoadingData}
                 >
                     {setActiveMutation.isPending || isLoadingData ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                         <>
-                            <Building className="h-4 w-4 mr-2" />
-                            <span className="truncate">{displayName}</span>
+                            <Building className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden truncate sm:inline">{displayName}</span>
                         </>
                     )}
                     <span className="sr-only">{t('label')}</span>

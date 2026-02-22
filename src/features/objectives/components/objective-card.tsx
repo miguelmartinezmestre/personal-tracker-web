@@ -63,7 +63,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
             <Card
                 ref={ref}
                 className={cn(
-                    'group mb-4 hover:shadow-lg transition-all duration-300 border-border/50',
+                    'group mb-4 w-full hover:shadow-lg transition-all duration-300 border-border/50',
                     isOverdue && 'border-destructive/50 hover:border-destructive/70'
                 )}
             >

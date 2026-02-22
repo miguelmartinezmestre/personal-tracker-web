@@ -16,10 +16,12 @@ export default function CategoriesLayout({ preloadedCategoriesQuery }: Categorie
     const categories = usePreloadedAuthQuery(preloadedCategoriesQuery);
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">{t('title')}</h1>
-                <CreateCategoryFormModal />
+        <div className="w-full min-w-0 space-y-6">
+            <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h1 className="min-w-0 text-2xl font-bold">{t('title')}</h1>
+                <div className="w-full sm:w-auto">
+                    <CreateCategoryFormModal />
+                </div>
             </div>
             <CategoriesTable initialCategories={categories ?? undefined} />
         </div>
