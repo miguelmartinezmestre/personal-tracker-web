@@ -1,13 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
 import type {
     CreateOrganization,
     Organization,
 } from '@/features/organizations/schemas/organization';
+import { convexQuery } from '@convex-dev/react-query';
 
 /**
  * Tipos para las operaciones de organizaciones
@@ -36,7 +37,9 @@ interface OrganizationRaw {
  * Hook para obtener todas las organizaciones del usuario
  */
 export function useOrganizations() {
-    const data = useQuery(api.organizations.getOrganizationsByUser, {});
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getOrganizationsByUser, {})
+    );
 
     return {
         data: data?.map((org: OrganizationRaw) => ({
@@ -45,8 +48,8 @@ export function useOrganizations() {
             slug: org.slug,
             description: org.description ?? '',
         })) as Organization[] | undefined,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
@@ -54,7 +57,9 @@ export function useOrganizations() {
  * Hook para obtener una organización por su ID
  */
 export function useOrganization(organizationId: string | null) {
-    const data = useQuery(api.organizations.getOrganizationsByUser, organizationId ? {} : 'skip');
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getOrganizationsByUser, organizationId ? {} : 'skip')
+    );
 
     const org = data?.find((o: OrganizationRaw) => o.id === organizationId);
     return {
@@ -66,8 +71,8 @@ export function useOrganization(organizationId: string | null) {
                   description: org.description ?? '',
               } as Organization)
             : null,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
@@ -75,7 +80,9 @@ export function useOrganization(organizationId: string | null) {
  * Hook para obtener una organización por su slug
  */
 export function useOrganizationBySlug(slug: string | null) {
-    const data = useQuery(api.organizations.getOrganizationsByUser, slug ? {} : 'skip');
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getOrganizationsByUser, slug ? {} : 'skip')
+    );
 
     const org = data?.find((o: OrganizationRaw) => o.slug === slug);
     return {
@@ -87,8 +94,8 @@ export function useOrganizationBySlug(slug: string | null) {
                   description: org.description ?? '',
               } as Organization)
             : null,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
@@ -98,7 +105,9 @@ export function useOrganizationBySlug(slug: string | null) {
  * Esto permite que las rutas funcionen tanto con slugs como con IDs
  */
 export function useOrganizationByIdentifier(identifier: string | null) {
-    const data = useQuery(api.organizations.getOrganizationsByUser, identifier ? {} : 'skip');
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getOrganizationsByUser, identifier ? {} : 'skip')
+    );
 
     // First try to find by slug
     let org = data?.find((o: OrganizationRaw) => {
@@ -121,8 +130,8 @@ export function useOrganizationByIdentifier(identifier: string | null) {
                   description: org.description ?? '',
               } as Organization)
             : null,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 

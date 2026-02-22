@@ -28,9 +28,9 @@ export default function UpdateProgressLayout({
     const formatValue = (value: number) => (unitLabel ? `${value} ${unitLabel}` : String(value));
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
+        <div className="w-full min-w-0 space-y-6">
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0">
                     <h1 className="text-3xl font-bold tracking-tight">
                         {tObjectives('objectiveProgress')}
                     </h1>
@@ -74,7 +74,9 @@ export default function UpdateProgressLayout({
                         </div>
                     )}
                 </div>
-                <CreateUpdateProgressFormModal />
+                <div className="w-full sm:w-auto">
+                    <CreateUpdateProgressFormModal />
+                </div>
             </div>
 
             <UpdateProgressTable

@@ -21,9 +21,9 @@ export default function NotificationsLayout({
     const objectives = usePreloadedAuthQuery(preloadedObjectivesQuery);
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
+        <div className="w-full min-w-0 space-y-6">
+            <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
                     <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
                     <p className="text-muted-foreground">{t('description')}</p>
                 </div>

@@ -20,12 +20,22 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/auth-client';
+import { useSignOutMutationOptions } from '@/features/auth/auth-client';
+import { useMutation } from '@tanstack/react-query';
 
 export default function LoginForm() {
     const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [loginError, setLoginError] = useState('');
+    const session = authClient.useSession();
+
+    const signOutMutation = useMutation(
+        useSignOutMutationOptions({
+            onSuccess: () => {},
+            onError: () => {},
+        })
+    );
 
     const form = useForm<z.infer<typeof loginSchema>>({
         defaultValues: {
@@ -42,6 +52,10 @@ export default function LoginForm() {
     });
 
     async function onSubmit(values: z.infer<typeof loginSchema>) {
+        if (session.data?.user) {
+            await signOutMutation.mutateAsync();
+        }
+
         await authClient.signIn.email(
             {
                 email: values.email,

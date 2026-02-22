@@ -1,9 +1,9 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
+import { convexQuery } from '@convex-dev/react-query';
 
 const INVITATIONS_QUERY_KEY = ['user-invitations'];
 
@@ -48,7 +48,9 @@ export interface Invitation {
  * Hook to get pending invitations for the current user
  */
 export function usePendingInvitations() {
-    const data = useQuery(api.organizations.getUserInvitations, {});
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getUserInvitations, {})
+    );
 
     const invitations = data?.map((inv: InvitationRaw) => ({
         id: inv.id,
@@ -64,8 +66,8 @@ export function usePendingInvitations() {
 
     return {
         data: invitations ?? [],
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
@@ -145,9 +147,11 @@ export function useRejectInvitation() {
  * Hook to list invitations for a specific organization
  */
 export function useOrganizationInvitations(organizationId: string | null) {
-    const data = useQuery(
-        api.organizations.getOrganizationInvitations,
-        organizationId ? { organizationId } : 'skip'
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(
+            api.organizations.getOrganizationInvitations,
+            organizationId ? { organizationId } : 'skip'
+        )
     );
 
     const invitations = data?.map((inv: InvitationRaw) => ({
@@ -163,24 +167,21 @@ export function useOrganizationInvitations(organizationId: string | null) {
 
     return {
         data: invitations ?? [],
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
 /**
  * Hook to cancel a pending invitation (for the inviter)
- * Uses BetterAuth's cancelInvitation under the hood if available,
- * otherwise uses rejectInvitation
+ * Uses BetterAuth's cancelInvitation endpoint.
  */
 export function useCancelInvitation() {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (invitationId: string) => {
-            // BetterAuth may not have a dedicated cancel method,
-            // so we use rejectInvitation which cancels pending invitations
-            return await authClient.organization.rejectInvitation({
+            return await authClient.organization.cancelInvitation({
                 invitationId,
             });
         },

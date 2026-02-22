@@ -20,6 +20,8 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authClient } from '@/features/auth/auth-client';
+import { useSignOutMutationOptions } from '@/features/auth/auth-client';
+import { useMutation } from '@tanstack/react-query';
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -28,6 +30,14 @@ export default function RegisterForm() {
     const tCommon = useTranslations('Common');
     const [registerError, setRegisterError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const session = authClient.useSession();
+
+    const signOutMutation = useMutation(
+        useSignOutMutationOptions({
+            onSuccess: () => {},
+            onError: () => {},
+        })
+    );
 
     // Get invitation token from URL if coming from an invitation link
     const invitationToken = searchParams.get('invitation');
@@ -53,6 +63,10 @@ export default function RegisterForm() {
         setIsSubmitting(true);
 
         try {
+            if (session.data?.user) {
+                await signOutMutation.mutateAsync();
+            }
+
             await authClient.signUp.email(
                 {
                     name: values.username,

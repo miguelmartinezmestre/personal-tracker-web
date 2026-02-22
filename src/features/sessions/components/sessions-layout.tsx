@@ -14,8 +14,6 @@ export default function SessionsLayout({
     const t = useTranslations('Sessions');
     const sessions = usePreloadedAuthQuery(preloadedSessionsQuery);
 
-    console.log(sessions);
-
     return (
         <div className="space-y-6">
             <div>

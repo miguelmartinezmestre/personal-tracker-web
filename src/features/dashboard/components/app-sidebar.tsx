@@ -21,10 +21,11 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/ui-utils/utils';
@@ -106,6 +107,7 @@ export function AppSidebar({
 }) {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
+    const { isMobile, setOpenMobile } = useSidebar();
 
     const user = usePreloadedAuthQuery(preloadedUserQuery);
 
@@ -115,6 +117,12 @@ export function AppSidebar({
     const projects = useMemo(() => {
         return isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
     }, [isAdmin]);
+
+    useEffect(() => {
+        if (isMobile) {
+            setOpenMobile(false);
+        }
+    }, [pathname, isMobile, setOpenMobile]);
 
     return (
         <Sidebar collapsible="icon" data-testid="app-sidebar">

@@ -28,6 +28,7 @@ export function SignOutButton() {
         <Button
             variant="outline"
             size="sm"
+            className="px-2 sm:px-3"
             onClick={() => signOutMutation.mutate()}
             disabled={signOutMutation.isPending}
             data-testid="logout-button"
@@ -38,7 +39,9 @@ export function SignOutButton() {
             ) : (
                 <LogOut className="h-4 w-4" />
             )}
-            {signOutMutation.isPending ? t('actions.signingOut') : t('actions.signOut')}
+            <span className="hidden sm:inline">
+                {signOutMutation.isPending ? t('actions.signingOut') : t('actions.signOut')}
+            </span>
         </Button>
     );
 }

@@ -113,22 +113,27 @@ export default function AchievementsLayout({
     const needsSeeding = !progress || progress.length === 0;
 
     return (
-        <div className="container mx-auto p-4 space-y-6" data-testid="achievements-page">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+        <div
+            className="container mx-auto w-full min-w-0 p-4 space-y-6"
+            data-testid="achievements-page"
+        >
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                     <Trophy className="h-8 w-8 text-yellow-500" />
                     <h1 className="text-2xl font-bold" data-testid="achievements-title">
                         {t('title')}
                     </h1>
                 </div>
                 {needsSeeding && (
-                    <Button
-                        onClick={handleSeedAchievements}
-                        disabled={seedMutation.isPending}
-                        data-testid="achievements-seed-button"
-                    >
-                        {seedMutation.isPending ? 'Seeding...' : 'Initialize Achievements'}
-                    </Button>
+                    <div className="w-full sm:w-auto">
+                        <Button
+                            onClick={handleSeedAchievements}
+                            disabled={seedMutation.isPending}
+                            data-testid="achievements-seed-button"
+                        >
+                            {seedMutation.isPending ? 'Seeding...' : 'Initialize Achievements'}
+                        </Button>
+                    </div>
                 )}
             </div>
 

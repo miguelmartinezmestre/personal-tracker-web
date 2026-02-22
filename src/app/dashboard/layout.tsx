@@ -25,11 +25,11 @@ export default async function Layout({ children }: { children: React.ReactNode }
         <SidebarProvider>
             <AppSidebar preloadedUserQuery={preloadedUserQuery} />
             <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center px-4 justify-between transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-                    <div className="flex items-center gap-2">
+                <header className="grid h-16 min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+                    <div className="flex min-w-0 items-center gap-2">
                         <SidebarTrigger className="-ml-1" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
                         <OrganizationSwitcher />
                         <NotificationBell />
                         <ThemeToggle />
@@ -38,7 +38,9 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     </div>
                 </header>
                 <CommandMenu />
-                <div className="grid grid-cols-1 gap-4 p-4 pt-0">{children}</div>
+                <div className="grid w-full min-w-0 [grid-template-columns:minmax(0,1fr)] gap-4 p-4 pt-0 [&>*]:min-w-0">
+                    {children}
+                </div>
             </SidebarInset>
         </SidebarProvider>
     );

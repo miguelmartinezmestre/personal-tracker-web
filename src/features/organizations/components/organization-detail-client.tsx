@@ -18,7 +18,7 @@ export default function OrganizationDetailClient({
     if (isLoading) {
         return (
             <>
-                <div className="flex justify-between items-center mb-4">
+                <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <Skeleton className="h-8 w-48" />
                     <Skeleton className="h-10 w-32" />
                 </div>
@@ -37,12 +37,14 @@ export default function OrganizationDetailClient({
 
     return (
         <>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold" data-testid="organization-detail-title">
+            <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h1 className="min-w-0 text-2xl font-bold" data-testid="organization-detail-title">
                     {organization.name}{' '}
                     <span className="text-sm text-muted-foreground">({organization.slug})</span>
                 </h1>
-                <CreateOrganizationMemberFormModal organizationId={organization.id} />
+                <div className="w-full sm:w-auto">
+                    <CreateOrganizationMemberFormModal organizationId={organization.id} />
+                </div>
             </div>
             <OrganizationMembersTable organizationId={organization.id} />
         </>

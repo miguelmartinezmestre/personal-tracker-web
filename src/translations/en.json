@@ -114,7 +114,22 @@
         "genericErrorTitle": "Error",
         "genericErrorDescription": "An error occurred while accessing this page.",
         "dashboardTitle": "Dashboard",
-        "welcome": "Welcome {name}"
+        "welcome": "Welcome {name}",
+        "stats": {
+            "active": "Active",
+            "completed": "Completed",
+            "paused": "Paused",
+            "archived": "Archived"
+        },
+        "upcomingDeadlines": "Upcoming Deadlines",
+        "noUpcomingDeadlines": "No deadlines in the next 7 days",
+        "recentActivity": "Recent Activity",
+        "activity": {
+            "progressUpdates": "Progress updates",
+            "objectivesCreated": "Objectives created",
+            "objectivesCompleted": "Objectives completed",
+            "period": "Last {days} days"
+        }
     },
     "HomePage": {
         "title": "Achieve your goals. Control your progress.",
@@ -748,7 +763,20 @@
         "confirmPassword": "Confirm Password",
         "newPassword": "New Password",
         "accountUpdated": "Account updated.",
-        "emailChangeRequested": "We sent a verification email to confirm your new address."
+        "emailChangeRequested": "We sent a verification email to confirm your new address.",
+        "dangerZone": "Danger Zone",
+        "dangerZoneSettings": "Danger Zone",
+        "dangerZoneSettingsDescription": "Irreversible actions for your account.",
+        "deleteAccountTitle": "Delete Account",
+        "deleteAccountDescription": "Once you delete your account, there is no going back. All your data will be permanently deleted.",
+        "deleteAccountConfirmLabel": "Confirm by entering your email",
+        "deleteAccountPlaceholder": "Enter your email address",
+        "deleteAccountHelpText": "Type {email} to confirm deletion",
+        "deleteAccountButton": "Delete My Account",
+        "deleteAccountEmailMismatch": "Email does not match",
+        "deleteAccountSuccess": "Your account has been deleted. Redirecting...",
+        "deleteAccountPasswordLabel": "Enter your password to confirm",
+        "deleteAccountPasswordPlaceholder": "Your password"
     },
     "Admin": {
         "title": "Admin Panel",
