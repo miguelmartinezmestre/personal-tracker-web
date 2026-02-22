@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { UserAgentIcon } from '@/features/sessions/components/user-agent';
 import { BetterAuthDataModel } from '@/convex/rls';
 import { useInvalidateSession } from './sessions-table-actions';
-import { Id } from '@/convex/_generated/dataModel';
 
 type SessionDocument = BetterAuthDataModel['session']['document'];
 
@@ -81,7 +80,7 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
                         size="sm"
                         disabled={isInvalidatingSession}
                         onClick={async () => {
-                            await invalidateSessionAsync({ token: session._id as Id<'session'> });
+                            await invalidateSessionAsync({ token: session.token });
                         }}
                     >
                         {isInvalidatingSession ? t('revoking') : t('revoke')}
