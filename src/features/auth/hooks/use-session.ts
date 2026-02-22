@@ -1,7 +1,8 @@
 'use client';
 
-import { useQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
 
 export interface SessionUser {
     id: string;
@@ -28,11 +29,11 @@ export interface SessionData {
  * Hook para obtener la sesión actual del usuario
  */
 export function useSession() {
-    const data = useQuery(api.organizations.getCurrentSession, {});
+    const {data, isPending, isLoading} = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
 
     return {
         data: data ?? null,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }

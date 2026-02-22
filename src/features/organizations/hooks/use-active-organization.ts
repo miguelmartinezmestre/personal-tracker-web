@@ -1,7 +1,8 @@
 'use client';
 
-import { useQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
 
 export interface ActiveOrganization {
     id: string;
@@ -24,12 +25,14 @@ export interface ActiveMember {
  * Hook para obtener la organización activa del usuario
  */
 export function useActiveOrganization() {
-    const data = useQuery(api.organizations.getActiveOrganization, {});
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getActiveOrganization, {})
+    );
 
     return {
         data: data ?? null,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
@@ -37,11 +40,13 @@ export function useActiveOrganization() {
  * Hook para obtener el miembro activo (relación usuario-organización activa)
  */
 export function useActiveMember() {
-    const data = useQuery(api.organizations.getActiveMember, {});
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getActiveMember, {})
+    );
 
     return {
         data: data ?? null,
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }

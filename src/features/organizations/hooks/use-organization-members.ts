@@ -1,11 +1,12 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { OrganizationRole } from '../types/roles';
+import { convexQuery } from '@convex-dev/react-query';
 
 interface OrganizationMemberRaw {
     id: string;
@@ -45,9 +46,11 @@ const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
  * Hook para obtener los miembros de una organización
  */
 export function useOrganizationMembers(organizationId: string | null) {
-    const data = useQuery(
-        api.organizations.getOrganizationMembers,
-        organizationId ? { organizationId } : 'skip'
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(
+            api.organizations.getOrganizationMembers,
+            organizationId ? { organizationId } : 'skip'
+        )
     );
 
     const members = data?.members.map((member: OrganizationMemberRaw) => ({
@@ -61,8 +64,8 @@ export function useOrganizationMembers(organizationId: string | null) {
 
     return {
         data: members ?? [],
-        isPending: data === undefined,
-        isLoading: data === undefined,
+        isPending: isPending,
+        isLoading: isLoading,
     };
 }
 
