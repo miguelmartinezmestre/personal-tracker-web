@@ -36,17 +36,21 @@ export default async function ObjectivesPage() {
     // Start all promises in parallel
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
+        <div className="w-full min-w-0 space-y-6">
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                     <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
                     <p className="text-muted-foreground">{t('pageDescription')}</p>
                 </div>
-                <CreateObjectiveFormModal />
+                <div className="w-full sm:w-auto">
+                    <CreateObjectiveFormModal />
+                </div>
             </div>
-            <Suspense fallback={<div>{t('loadingObjectives')}</div>}>
-                <ResponsiveObjectivesView preloadedObjectivesQuery={preloadedObjectivesQuery} />
-            </Suspense>
+            <div className="min-w-0">
+                <Suspense fallback={<div>{t('loadingObjectives')}</div>}>
+                    <ResponsiveObjectivesView preloadedObjectivesQuery={preloadedObjectivesQuery} />
+                </Suspense>
+            </div>
         </div>
     );
 }
