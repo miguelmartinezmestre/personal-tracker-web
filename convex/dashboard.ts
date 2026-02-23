@@ -5,7 +5,7 @@ import { TIME, DASHBOARD } from './utils/constants';
 export const getDashboardStats = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         const objectives = await ctx.db
             .query('objectives')
@@ -33,7 +33,7 @@ export const getMonthlyProgress = queryWithRLS({
         months: v.optional(v.number()),
     },
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const monthsToFetch = 6;
 
         const objectives = await ctx.db
@@ -78,7 +78,7 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         limit: v.optional(v.number()),
     },
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const limit = 5;
 
         const objectives = await ctx.db
@@ -109,7 +109,7 @@ export const getUpcomingDeadlines = queryWithRLS({
         days: v.optional(v.number()),
     },
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const daysAhead = DASHBOARD.DEADLINE_DAYS_AHEAD;
         const now = Date.now();
         const futureLimit = now + daysAhead * TIME.DAY_MS;
@@ -146,7 +146,7 @@ export const getRecentActivity = queryWithRLS({
         days: v.optional(v.number()),
     },
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const daysBack = DASHBOARD.ACTIVITY_DAYS_BACK;
         const startDate = Date.now() - daysBack * TIME.DAY_MS;
 

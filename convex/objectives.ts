@@ -38,7 +38,7 @@ export const getObjectivesByUser = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { paginationOpts }) => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const results = await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('userId', userId))
@@ -72,7 +72,7 @@ export const getObjectivesByStatus = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { status, paginationOpts }) => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const results = await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('userId', userId))
@@ -168,7 +168,7 @@ export const getSharedObjectives = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { paginationOpts }) => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         // Get all organization objectives where user is a collaborator
         // First, get the user's organization from betterAuth
@@ -224,7 +224,7 @@ export const addCollaborator = mutationWithRLS({
         }
 
         // Check if the user is the owner
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         if (objective.userId !== userId) {
             throw new Error('Only the owner can add collaborators');
         }
@@ -276,7 +276,7 @@ export const removeCollaborator = mutationWithRLS({
         }
 
         // Check if the user is the owner
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         if (objective.userId !== userId) {
             throw new Error('Only the owner can remove collaborators');
         }
@@ -302,7 +302,7 @@ export const removeCollaborator = mutationWithRLS({
 export const getOrganizationMembers = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         // Get the user's organization from betterAuth
         const userMembersResult = await ctx.db

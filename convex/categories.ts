@@ -6,7 +6,7 @@ export const getCategoriesByUser = queryWithRLS({
     handler: async ctx => {
         return await ctx.db
             .query('categories')
-            .withIndex('by_user', q => q.eq('userId', String(ctx.identity?.subject)))
+            .withIndex('by_user', q => q.eq('userId', String(ctx.userId)))
             .collect();
     },
 });
@@ -19,7 +19,7 @@ export const createCategory = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const now = Date.now();
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const categoryId = await ctx.db.insert('categories', {
             userId: userId,
             organizationId: ctx.organizationId ?? '',
@@ -68,7 +68,7 @@ export const deleteCategory = mutationWithRLS({
 export const createDefaultCategories = mutationWithRLS({
     args: {},
     handler: async ctx => {
-        const user = String(ctx.identity?.subject);
+        const user = String(ctx.userId);
         const now = Date.now();
         const defaultCategories = [
             { name: 'Health & Fitness', color: '#10b981', icon: 'heart' },
