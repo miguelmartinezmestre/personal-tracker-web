@@ -4,6 +4,7 @@ import {
     createApi,
     createClient,
     getAuthUserIdentity,
+    getHeaders,
     type AuthFunctions,
 } from 'better-convex/auth';
 import { internal } from './_generated/api';
@@ -117,5 +118,22 @@ export const getCurrentUser = query({
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) throw new ConvexError('Unauthenticated');
         return await ctx.db.get('user', identity.userId);
+    },
+});
+
+export const getCurrentOrganization = query({
+    handler: async ctx => {
+        let organizationId: string | null = null;
+
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
+
+        const session = await auth.api.getSession({
+            headers,
+        });
+
+        organizationId = session?.session.activeOrganizationId ?? null;
+
+        return organizationId;
     },
 });
