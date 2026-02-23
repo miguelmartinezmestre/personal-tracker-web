@@ -72,7 +72,7 @@ const createAuthOptions = (ctx: GenericCtx) =>
             }),
             admin(),
             organization({
-                invitationExpiry: false,
+                invitationExpiresIn: 60 * 60 * 24 * 2,
                 defaultRole: 'member',
                 sendInvitationEmail: async data => {
                     const inviteLink = `${siteUrl}/invitations/${data.id}`;
