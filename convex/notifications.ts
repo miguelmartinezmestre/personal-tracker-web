@@ -26,8 +26,9 @@ const buildDeadlineMessage = (
 
     if (objective.deadline <= now) {
         const daysOverdue = Math.max(1, Math.ceil((now - objective.deadline) / DAY_MS));
-        return `Objective "${objective.title}" is overdue by ${daysOverdue} day${daysOverdue === 1 ? '' : 's'
-            } (due on ${formatDate(objective.deadline)}).`;
+        return `Objective "${objective.title}" is overdue by ${daysOverdue} day${
+            daysOverdue === 1 ? '' : 's'
+        } (due on ${formatDate(objective.deadline)}).`;
     }
 
     const isDueToday = objective.deadline >= dayStart && objective.deadline < dayEnd;
@@ -38,8 +39,9 @@ const buildDeadlineMessage = (
     const daysUntil = Math.ceil((objective.deadline - now) / DAY_MS);
     if (daysUntil > DEADLINE_SOON_DAYS) return null;
 
-    return `Objective "${objective.title}" is due in ${daysUntil} day${daysUntil === 1 ? '' : 's'
-        } (${formatDate(objective.deadline)}).`;
+    return `Objective "${objective.title}" is due in ${daysUntil} day${
+        daysUntil === 1 ? '' : 's'
+    } (${formatDate(objective.deadline)}).`;
 };
 
 export const getNotificationsByUser = queryWithRLS({
