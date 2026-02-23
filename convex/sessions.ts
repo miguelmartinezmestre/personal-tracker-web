@@ -11,8 +11,6 @@ export const getSessionsByUser = queryWithRLS({
     handler: async ctx => {
         const currentSession = await getSession(ctx);
 
-        console.log(currentSession);
-
         const sessions = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', currentSession?.userId as string))

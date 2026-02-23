@@ -32,7 +32,7 @@ export const getAchievementDefinitions = queryWithRLS({
 export const getUserAchievements = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -82,7 +82,7 @@ export const getOrganizationAchievements = queryWithRLS({
 export const getUserAchievementStats = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -117,7 +117,7 @@ export const getRecentAchievements = queryWithRLS({
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const limit = args.limit ?? 5;
 
         const obtainedAchievements = await ctx.db
@@ -140,7 +140,7 @@ export const getRecentAchievements = queryWithRLS({
 export const getUserAchievementProgress = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         // Get all active individual achievement definitions
         const definitions = await ctx.db
@@ -233,7 +233,7 @@ export const getUserAchievementProgress = queryWithRLS({
 export const getUnviewedAchievementsCount = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
 
         // Get unread achievement notifications
         const notifications = await ctx.db

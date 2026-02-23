@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 export function useBanUser() {
     const t = useTranslations('Admin');
     const queryClient = useQueryClient();
-    // Ban usuario
+
     const { mutate: banUser, isPending: isBanningUser } = useMutation({
         mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
             return await authClient.admin.banUser({
@@ -28,7 +28,7 @@ export function useBanUser() {
 export function useUnBanUser() {
     const t = useTranslations('Admin');
     const queryClient = useQueryClient();
-    // Unban usuario
+
     const { mutate: unbanUser, isPending: isUnbanningUser } = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
             return await authClient.admin.unbanUser({ userId });
@@ -47,7 +47,7 @@ export function useUnBanUser() {
 export function useDeleteUser() {
     const t = useTranslations('Admin');
     const queryClient = useQueryClient();
-    // Eliminar usuario
+
     const { mutate: deleteUser, isPending: isDeletingUser } = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
             return await authClient.admin.removeUser({ userId });

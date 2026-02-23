@@ -45,7 +45,7 @@ export const createObjective = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const now = Date.now();
-        const userId = String(ctx.identity?.subject);
+        const userId = String(ctx.userId);
         const objectiveType = args.objectiveType ?? OBJECTIVE_TYPE.VALUE;
         const direction = args.direction ?? DIRECTION.INCREASE;
         const reminderInterval = args.reminderInterval ?? REMINDER_INTERVAL.NONE;

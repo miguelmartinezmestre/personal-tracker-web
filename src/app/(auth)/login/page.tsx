@@ -1,10 +1,10 @@
 import Footer from '@/features/landing/components/footer';
 import Header from '@/features/landing/components/header';
 import LoginForm from '@/features/auth/components/login-form';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
-export default function Login() {
-    const t = useTranslations('HomePage');
+export default async function Login() {
+    const t = await getTranslations('HomePage');
 
     return (
         <div className="flex flex-col min-h-screen">
