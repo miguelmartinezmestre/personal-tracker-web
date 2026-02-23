@@ -1,6 +1,6 @@
 import { ConvexError, v } from 'convex/values';
-import { query } from './_generated/server';
-import { getAuthUserIdentity } from 'better-convex/auth';
+import { query, type QueryCtx } from './_generated/server';
+import { getAuthUserIdentity, getSession } from 'better-convex/auth';
 import type { Id } from './_generated/dataModel';
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
@@ -20,28 +20,30 @@ function getOrganizationDescription(metadata: string | null | undefined): string
     return '';
 }
 
+async function resolveCurrentSession(ctx: QueryCtx) {
+    const currentSession = await getSession(ctx);
+
+    if (!currentSession || currentSession.expiresAt < Date.now()) {
+        return null;
+    }
+
+    return currentSession;
+}
+
 export const getCurrentSession = query({
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return null;
+        const currentSession = await resolveCurrentSession(ctx);
+        if (!currentSession) return null;
 
-        const session = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', identity.userId))
-            .order('desc')
-            .first();
-
-        if (!session || session.expiresAt < Date.now()) return null;
-
-        const user = await ctx.db.get(identity.userId);
+        const user = await ctx.db.get('user', currentSession.userId as Id<'user'>);
 
         return {
             session: {
-                id: session._id,
-                userId: session.userId,
-                expiresAt: session.expiresAt,
-                activeOrganizationId: session.activeOrganizationId,
-                createdAt: session.createdAt,
+                id: currentSession._id,
+                userId: currentSession.userId,
+                expiresAt: currentSession.expiresAt,
+                activeOrganizationId: currentSession.activeOrganizationId,
+                createdAt: currentSession.createdAt,
             },
             user: user
                 ? {
@@ -93,20 +95,14 @@ export const getOrganizationsByUser = query({
 
 export const getActiveOrganization = query({
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return null;
-
-        const session = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', identity.userId))
-            .order('desc')
-            .first();
-
-        if (!session?.activeOrganizationId) return null;
+        const currentSession = await resolveCurrentSession(ctx);
+        if (!currentSession?.activeOrganizationId) return null;
 
         const org = await ctx.db
             .query('organization')
-            .filter(q => q.eq(q.field('_id'), session.activeOrganizationId as Id<'organization'>))
+            .filter(q =>
+                q.eq(q.field('_id'), currentSession.activeOrganizationId as Id<'organization'>)
+            )
             .first();
 
         if (!org) return null;
@@ -124,21 +120,15 @@ export const getActiveOrganization = query({
 
 export const getActiveMember = query({
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return null;
-
-        const session = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', identity.userId))
-            .order('desc')
-            .first();
-
-        if (!session?.activeOrganizationId) return null;
+        const currentSession = await resolveCurrentSession(ctx);
+        if (!currentSession?.activeOrganizationId) return null;
 
         const member = await ctx.db
             .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', session.activeOrganizationId!))
-            .filter(q => q.eq(q.field('userId'), identity.userId))
+            .withIndex('organizationId', q =>
+                q.eq('organizationId', currentSession.activeOrganizationId!)
+            )
+            .filter(q => q.eq(q.field('userId'), currentSession.userId))
             .first();
 
         if (!member) return null;
