@@ -29,7 +29,9 @@ export interface SessionData {
  * Hook para obtener la sesión actual del usuario
  */
 export function useSession() {
-    const {data, isPending, isLoading} = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getCurrentSession, {})
+    );
 
     return {
         data: data ?? null,
