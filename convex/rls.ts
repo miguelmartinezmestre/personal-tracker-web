@@ -28,18 +28,37 @@ async function rlsRules(
         objectives: {
             read: async (_, objective) => {
                 if (isAdmin) return true;
-
-                return objective.userId === userId || objective.organizationId === organizationId;
+                if (objective.userId === userId) return true;
+                // Only match by org if both sides have a real (non-empty) orgId
+                if (
+                    organizationId &&
+                    objective.organizationId &&
+                    objective.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             insert: async (_, objective) => {
                 if (isAdmin) return true;
-
-                return objective.userId === userId || objective.organizationId === organizationId;
+                if (objective.userId === userId) return true;
+                if (
+                    organizationId &&
+                    objective.organizationId &&
+                    objective.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             modify: async (_, objective) => {
                 if (isAdmin) return true;
-
-                return objective.userId === userId || objective.organizationId === organizationId;
+                if (objective.userId === userId) return true;
+                if (
+                    organizationId &&
+                    objective.organizationId &&
+                    objective.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
         },
         progressUpdates: {
@@ -47,42 +66,75 @@ async function rlsRules(
                 if (isAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                return objective?.userId === userId || objective?.organizationId === organizationId;
+                if (objective?.userId === userId) return true;
+                if (
+                    organizationId &&
+                    objective?.organizationId &&
+                    objective.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             insert: async (_, progressUpdate) => {
                 if (isAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                return objective?.userId === userId || objective?.organizationId === organizationId;
+                if (objective?.userId === userId) return true;
+                if (
+                    organizationId &&
+                    objective?.organizationId &&
+                    objective.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             modify: async (_, progressUpdate) => {
                 if (isAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                return objective?.userId === userId || objective?.organizationId === organizationId;
+                if (objective?.userId === userId) return true;
+                if (
+                    organizationId &&
+                    objective?.organizationId &&
+                    objective.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
         },
         notifications: {
             read: async (_, notification) => {
                 if (isAdmin) return true;
-
-                return (
-                    notification.userId === userId || notification.organizationId === organizationId
-                );
+                if (notification.userId === userId) return true;
+                if (
+                    organizationId &&
+                    notification.organizationId &&
+                    notification.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             insert: async (_, notification) => {
                 if (isAdmin) return true;
-
-                return (
-                    notification.userId === userId || notification.organizationId === organizationId
-                );
+                if (notification.userId === userId) return true;
+                if (
+                    organizationId &&
+                    notification.organizationId &&
+                    notification.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             modify: async (_, notification) => {
                 if (isAdmin) return true;
-
-                return (
-                    notification.userId === userId || notification.organizationId === organizationId
-                );
+                if (notification.userId === userId) return true;
+                if (
+                    organizationId &&
+                    notification.organizationId &&
+                    notification.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
         },
         auditLogs: {
@@ -123,8 +175,13 @@ async function rlsRules(
         organizationAchievements: {
             read: async (_, achievement) => {
                 if (isAdmin) return true;
-
-                return achievement.organization === organizationId;
+                if (
+                    organizationId &&
+                    achievement.organization &&
+                    achievement.organization === organizationId
+                )
+                    return true;
+                return false;
             },
             insert: async () => {
                 return false;
@@ -136,14 +193,34 @@ async function rlsRules(
         categories: {
             read: async (_, category) => {
                 if (isAdmin) return true;
-
-                return category.userId === userId || category.organizationId === organizationId;
+                if (category.userId === userId) return true;
+                if (
+                    organizationId &&
+                    category.organizationId &&
+                    category.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             insert: async (_, category) => {
-                return category.userId === userId || category.organizationId === organizationId;
+                if (category.userId === userId) return true;
+                if (
+                    organizationId &&
+                    category.organizationId &&
+                    category.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
             modify: async (_, category) => {
-                return category.userId === userId || category.organizationId === organizationId;
+                if (category.userId === userId) return true;
+                if (
+                    organizationId &&
+                    category.organizationId &&
+                    category.organizationId === organizationId
+                )
+                    return true;
+                return false;
             },
         },
     } satisfies Rules<QueryCtx, DataModel>;
