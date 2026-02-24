@@ -39,6 +39,7 @@ import {
     CreateObjective,
     objectiveSchema,
     objectiveTypeSchema,
+    periodSchema,
     progressModeSchema,
 } from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -70,7 +71,6 @@ export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
     const queryClient = useQueryClient();
-    // const user = useUser();
 
     const createObjective = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
@@ -104,6 +104,7 @@ export default function CreateObjectiveFormModal() {
 
     type ObjectiveType = z.infer<typeof objectiveTypeSchema>;
     type ProgressMode = z.infer<typeof progressModeSchema>;
+    type Period = z.infer<typeof periodSchema>;
 
     const defaultUnitByType: Partial<Record<ObjectiveType, string>> = {
         count: 'times',
@@ -114,6 +115,13 @@ export default function CreateObjectiveFormModal() {
     const progressModeOptions = [
         { value: 'cumulative', label: t('progressModeOptions.cumulative') },
         { value: 'snapshot', label: t('progressModeOptions.snapshot') },
+    ];
+
+    const periodOptions = [
+        { value: 'none', label: t('periodOptions.none') },
+        { value: 'weekly', label: t('periodOptions.weekly') },
+        { value: 'monthly', label: t('periodOptions.monthly') },
+        { value: 'custom', label: t('periodOptions.custom') },
     ];
 
     const categoriesQuery = useQuery({
@@ -156,6 +164,9 @@ export default function CreateObjectiveFormModal() {
             unit: values.unit ?? undefined,
             objectiveType: values.objectiveType ?? undefined,
             direction: values.direction ?? undefined,
+            period: values.period ?? undefined,
+            periodStart: values.period && values.period !== 'none' ? Date.now() : undefined,
+            periodLengthDays: values.periodLengthDays ?? undefined,
             reminderInterval: values.reminderInterval ?? undefined,
             progressMode: values.progressMode ?? undefined,
         });
@@ -164,6 +175,7 @@ export default function CreateObjectiveFormModal() {
     };
 
     const progressMode = form.state.values.progressMode ?? 'cumulative';
+    const selectedPeriod = form.state.values.period ?? 'none';
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -177,10 +189,6 @@ export default function CreateObjectiveFormModal() {
                 <DialogHeader>
                     <DialogTitle>{t('createObjective')}</DialogTitle>
                     <DialogDescription>{t('createObjectiveDescription')}</DialogDescription>
-                    {/* Ejemplo: mostrar información del usuario */}
-                    <div className="mt-2 text-xs text-muted-foreground">
-                        {/* {t('creatingAs', { name: user.email || user.name || tCommon('user') })} */}
-                    </div>
                 </DialogHeader>
 
                 <Form {...form}>
@@ -429,6 +437,75 @@ export default function CreateObjectiveFormModal() {
                                 </FormItem>
                             )}
                         />
+
+                        <FormField
+                            name="period"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('period')}</FormLabel>
+                                    <Select
+                                        onValueChange={value => {
+                                            field.onChange(value as Period);
+                                            // Auto-set periodLengthDays for known periods
+                                            if (value === 'weekly') {
+                                                form.setFieldValue('periodLengthDays', 7);
+                                            } else if (value === 'monthly') {
+                                                form.setFieldValue('periodLengthDays', 30);
+                                            } else if (value === 'none') {
+                                                form.setFieldValue('periodLengthDays', null);
+                                            }
+                                        }}
+                                        value={field.value || 'none'}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger data-testid="objective-period-select">
+                                                <SelectValue placeholder={t('period')} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {periodOptions.map(option => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>{t('periodDescription')}</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {selectedPeriod === 'custom' && (
+                            <FormField
+                                name="periodLengthDays"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('periodLengthDays')}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                {...field}
+                                                value={field.value ?? ''}
+                                                onChange={e =>
+                                                    field.onChange(
+                                                        e.target.value
+                                                            ? Number.parseInt(e.target.value, 10)
+                                                            : null
+                                                    )
+                                                }
+                                                data-testid="objective-period-length-input"
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            {t('periodLengthDaysDescription')}
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
-import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { CalendarIcon, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -40,6 +40,7 @@ import {
     savedObjectiveSchema,
     directionSchema,
     objectiveTypeSchema,
+    periodSchema,
     reminderIntervalSchema,
     progressModeSchema,
 } from '@/features/objectives/schemas/objective';
@@ -113,6 +114,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     type Direction = z.infer<typeof directionSchema>;
     type ReminderInterval = z.infer<typeof reminderIntervalSchema>;
     type ProgressMode = z.infer<typeof progressModeSchema>;
+    type Period = z.infer<typeof periodSchema>;
 
     const defaultUnitByType: Partial<Record<ObjectiveType, string>> = {
         count: 'times',
@@ -125,12 +127,20 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
         { value: 'snapshot', label: t('progressModeOptions.snapshot') },
     ];
 
+    const periodOptions = [
+        { value: 'none', label: t('periodOptions.none') },
+        { value: 'weekly', label: t('periodOptions.weekly') },
+        { value: 'monthly', label: t('periodOptions.monthly') },
+        { value: 'custom', label: t('periodOptions.custom') },
+    ];
+
     const initialValues = {
         ...defaultValues,
         objectiveType: defaultValues.objectiveType ?? 'value',
         direction: defaultValues.direction ?? 'increase',
         reminderInterval: defaultValues.reminderInterval ?? 'none',
         progressMode: defaultValues.progressMode ?? 'cumulative',
+        period: defaultValues.period ?? 'none',
     };
 
     const form = useForm<z.infer<typeof savedObjectiveSchema>>({
@@ -150,13 +160,17 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             title: values.title,
             description: values.description ?? undefined,
             category: values.category ?? undefined,
-            targetValue: values.targetValue,
-            currentValue: values.currentValue,
             startValue: values.startValue ?? undefined,
             deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
             unit: values.unit ?? undefined,
             objectiveType: values.objectiveType ?? undefined,
             direction: values.direction ?? undefined,
+            period: values.period ?? undefined,
+            periodStart:
+                values.period && values.period !== 'none'
+                    ? (values.periodStart ?? Date.now())
+                    : undefined,
+            periodLengthDays: values.periodLengthDays ?? undefined,
             reminderInterval: values.reminderInterval ?? undefined,
             progressMode: values.progressMode ?? undefined,
         };
@@ -168,12 +182,13 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     };
 
     const progressMode = form.state.values.progressMode ?? 'cumulative';
+    const selectedPeriod = form.state.values.period ?? 'none';
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="gap-2" data-testid="objective-edit-open">
-                    <PlusCircle className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                     {t('editObjective')}
                 </Button>
             </DialogTrigger>
@@ -435,6 +450,81 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                             )}
                         />
 
+                        <FormField
+                            name="period"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('period')}</FormLabel>
+                                    <Select
+                                        onValueChange={value => {
+                                            field.onChange(value as Period);
+                                            // Auto-set periodLengthDays for known periods
+                                            if (value === 'weekly') {
+                                                form.setFieldValue('periodLengthDays', 7);
+                                                form.setFieldValue('periodStart', Date.now());
+                                            } else if (value === 'monthly') {
+                                                form.setFieldValue('periodLengthDays', 30);
+                                                form.setFieldValue('periodStart', Date.now());
+                                            } else if (value === 'none') {
+                                                form.setFieldValue('periodLengthDays', null);
+                                                form.setFieldValue('periodStart', null);
+                                            } else if (value === 'custom') {
+                                                // Reset periodStart for custom period too
+                                                form.setFieldValue('periodStart', Date.now());
+                                            }
+                                        }}
+                                        value={field.value || 'none'}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger data-testid="objective-edit-period-select">
+                                                <SelectValue placeholder={t('period')} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {periodOptions.map(option => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>{t('periodDescription')}</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {selectedPeriod === 'custom' && (
+                            <FormField
+                                name="periodLengthDays"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('periodLengthDays')}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                {...field}
+                                                value={field.value ?? ''}
+                                                onChange={e =>
+                                                    field.onChange(
+                                                        e.target.value
+                                                            ? Number.parseInt(e.target.value, 10)
+                                                            : null
+                                                    )
+                                                }
+                                                data-testid="objective-edit-period-length-input"
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            {t('periodLengthDaysDescription')}
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
                                 name="targetValue"
@@ -495,9 +585,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         <Input
                                             type="number"
                                             {...field}
-                                            onChange={e =>
-                                                field.onChange(Number.parseFloat(e.target.value))
-                                            }
+                                            disabled
                                             data-testid="objective-edit-current-input"
                                         />
                                     </FormControl>

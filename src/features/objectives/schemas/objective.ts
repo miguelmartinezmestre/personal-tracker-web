@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const objectiveTypeSchema = z.enum(['value', 'count', 'money', 'duration']);
-export const periodSchema = z.enum(['none']);
+export const periodSchema = z.enum(['none', 'weekly', 'monthly', 'custom']);
 export const directionSchema = z.enum(['increase', 'decrease']);
 // "biweekly" is presented to users as "twice per month".
 export const reminderIntervalSchema = z.enum(['none', 'monthly', 'biweekly']);
@@ -26,7 +26,7 @@ export const objectiveStatusSchema = z.enum([
 export type ObjectiveStatus = z.infer<typeof objectiveStatusSchema>;
 
 export const objectiveSchema = z.object({
-    title: z.string().min(1, { message: 'Title is required' }),
+    title: z.string().min(1),
     description: z.string().optional().nullable(),
     category: z.string().optional().nullable(),
     targetValue: z.number(),
@@ -47,6 +47,7 @@ export const objectiveSchema = z.object({
 export const savedObjectiveSchema = objectiveSchema.extend({
     _id: z.string(),
     workflowId: z.string().optional().nullable(),
+    collaborators: z.array(z.string()).optional().nullable(),
 });
 
 export type Objective = z.infer<typeof savedObjectiveSchema>;
