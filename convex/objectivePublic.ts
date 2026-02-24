@@ -66,9 +66,9 @@ export const createObjective = mutationWithRLS({
             unit: args.unit,
             objectiveType,
             direction,
-            period: 'none',
-            periodStart: undefined,
-            periodLengthDays: undefined,
+            period: args.period ?? 'none',
+            periodStart: args.periodStart,
+            periodLengthDays: args.periodLengthDays,
             reminderInterval,
             nextReminderAt: computeNextReminderAt(reminderInterval, now),
             progressMode,
@@ -130,11 +130,26 @@ export const pauseObjective = mutationWithRLS({
             throw new Error(`Cannot pause objective from status: ${objective.status}`);
         }
 
+        const now = Date.now();
+
         // Update status directly
         await ctx.db.patch(args.id, {
             status: 'paused',
             nextReminderAt: undefined,
-            updatedAt: Date.now(),
+            updatedAt: now,
+        });
+
+        // Notify user about the status change
+        await ctx.db.insert('notifications', {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Your objective "${objective.title}" has been paused.`,
+            createdAt: now,
+            updatedAt: now,
         });
 
         // Cancel workflow if running
@@ -173,11 +188,20 @@ export const resumeObjective = mutationWithRLS({
         const now = Date.now();
         await ctx.db.patch(args.id, {
             status: 'active',
+            nextReminderAt: computeNextReminderAt(objective.reminderInterval ?? 'none', now),
             updatedAt: now,
         });
 
-        await ctx.db.patch(args.id, {
-            nextReminderAt: computeNextReminderAt(objective.reminderInterval ?? 'none', now),
+        // Notify user about the status change
+        await ctx.db.insert('notifications', {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Your objective "${objective.title}" has been resumed.`,
+            createdAt: now,
             updatedAt: now,
         });
 
@@ -261,6 +285,18 @@ export const completeObjective = mutationWithRLS({
             await ctx.db.patch(args.id, { workflowId: undefined });
         }
 
+        // If this is a periodic objective, create the next recurring instance
+        if (
+            objective.period &&
+            objective.period !== 'none' &&
+            !process.env.VITEST &&
+            process.env.NODE_ENV !== 'test'
+        ) {
+            await ctx.scheduler.runAfter(0, internal.steps.objectives.createRecurringInstance, {
+                sourceObjectiveId: args.id,
+            });
+        }
+
         return { success: true };
     },
 });
@@ -284,11 +320,26 @@ export const archiveObjective = mutationWithRLS({
             throw new Error(`Cannot archive objective from status: ${objective.status}`);
         }
 
+        const now = Date.now();
+
         // Update status directly
         await ctx.db.patch(args.id, {
             status: 'archived',
             nextReminderAt: undefined,
-            updatedAt: Date.now(),
+            updatedAt: now,
+        });
+
+        // Notify user about the status change
+        await ctx.db.insert('notifications', {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Your objective "${objective.title}" has been archived.`,
+            createdAt: now,
+            updatedAt: now,
         });
 
         // Cancel workflow if running
@@ -332,6 +383,19 @@ export const deleteObjective = mutationWithRLS({
             updatedAt: now,
         });
 
+        // Notify user about the status change
+        await ctx.db.insert('notifications', {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            objective: args.id,
+            read: false,
+            notificationType: 'status',
+            notificationDate: now,
+            message: `Your objective "${objective.title}" has been deleted.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+
         // Cancel workflow if running
         if (objective.workflowId) {
             try {
@@ -358,6 +422,14 @@ export const hardDeleteObjective = mutationWithRLS({
         const objective = await ctx.db.get(args.id);
         if (!objective) {
             throw new Error('Objective not found');
+        }
+
+        // Only allow hard-deleting objectives that have been soft-deleted first
+        if (objective.status !== 'deleted') {
+            throw new Error(
+                'Objective must be soft-deleted before it can be permanently removed. ' +
+                    `Current status: ${objective.status}`
+            );
         }
 
         // Cancel workflow if running
@@ -404,7 +476,7 @@ export const reconfigureObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
         newDeadline: v.optional(v.number()),
-        newPeriod: v.optional(v.string()),
+        newPeriod: periodValidator,
         newTargetValue: v.optional(v.number()),
     },
     handler: async (ctx, args) => {

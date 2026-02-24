@@ -24,8 +24,18 @@ export const computeNextReminderAt = (
     }
 
     if (interval === 'monthly') {
-        const nextMonth = new Date(now);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        const current = new Date(now);
+        const currentDay = current.getDate();
+        // Move to the 1st of the next month, then set the day.
+        // Clamp to the last day of that month to avoid skipping months
+        // (e.g. Jan 31 -> Feb 28, not Mar 3).
+        const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        const lastDayOfNextMonth = new Date(
+            nextMonth.getFullYear(),
+            nextMonth.getMonth() + 1,
+            0
+        ).getDate();
+        nextMonth.setDate(Math.min(currentDay, lastDayOfNextMonth));
         return nextMonth.getTime();
     }
 
