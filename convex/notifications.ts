@@ -135,24 +135,21 @@ export const markAllNotificationsRead = mutationWithRLS({
     args: {},
     handler: async ctx => {
         const userId = String(ctx.userId);
-        const notifications = await ctx.db
+        // Only fetch unread notifications using the by_user_read index
+        const unreadNotifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user', q => q.eq('userId', userId))
+            .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
             .collect();
         const now = Date.now();
-        let updated = 0;
 
-        for (const notification of notifications) {
-            if (!notification.read) {
-                await ctx.db.patch('notifications', notification._id, {
-                    read: true,
-                    updatedAt: now,
-                });
-                updated += 1;
-            }
+        for (const notification of unreadNotifications) {
+            await ctx.db.patch('notifications', notification._id, {
+                read: true,
+                updatedAt: now,
+            });
         }
 
-        return { updated };
+        return { updated: unreadNotifications.length };
     },
 });
 
@@ -173,18 +170,16 @@ export const runDeadlineNotificationsCron = internalMutation({
         const dayStart = startOfDayUtc(now);
         const dayEnd = dayStart + DAY_MS;
 
-        const objectives = (await ctx.db.query('objectives').collect()) as Doc<'objectives'>[];
+        // Only scan active objectives (not completed/archived/deleted/paused)
+        const objectives = (await ctx.db
+            .query('objectives')
+            .withIndex('by_status', q => q.eq('status', 'active'))
+            .collect()) as Doc<'objectives'>[];
         let created = 0;
         let skipped = 0;
 
         for (const objective of objectives) {
             if (!objective.deadline) continue;
-            if (
-                objective.status === 'completed' ||
-                objective.status === 'archived' ||
-                objective.status === 'deleted'
-            )
-                continue;
 
             const message = buildDeadlineMessage(objective, now, dayStart, dayEnd);
             if (!message) continue;
