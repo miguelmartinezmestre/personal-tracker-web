@@ -510,6 +510,16 @@
             "paused": "Pausado",
             "archived": "Archivado"
         },
+        "statusLabels": {
+            "completed": "Completado",
+            "overdue": "Atrasado",
+            "onTrack": "En camino",
+            "inProgress": "En progreso",
+            "atRisk": "En riesgo",
+            "paused": "Pausado",
+            "archived": "Archivado",
+            "deleted": "Eliminado"
+        },
         "categoryOptions": {
             "all": "Todas las categorías",
             "personal": "Personal",
@@ -688,6 +698,42 @@
                 "words": "Palabras",
                 "count": "Cantidad",
                 "percentage": "Porcentaje"
+            }
+        },
+        "collaboration": {
+            "title": "Colaboradores",
+            "description": "Gestiona quién puede ver y actualizar este objetivo.",
+            "addCollaborator": "Añadir colaborador",
+            "removeCollaborator": "Eliminar colaborador",
+            "manageCollaborators": "Gestionar colaboradores",
+            "selectMember": "Selecciona un miembro",
+            "noMembers": "No hay miembros disponibles en la organización",
+            "alreadyAdded": "Este miembro ya es colaborador",
+            "owner": "Propietario",
+            "collaborator": "Colaborador",
+            "sharedObjectives": "Objetivos de la organización",
+            "sharedDescription": "Objetivos de otros miembros de tu organización.",
+            "noSharedObjectives": "No se encontraron objetivos de la organización",
+            "sharedBadge": "Organización",
+            "collaborativeBadge": "Colaborativo",
+            "toast": {
+                "addSuccess": "Colaborador añadido exitosamente",
+                "addFailed": "Error al añadir colaborador",
+                "removeSuccess": "Colaborador eliminado exitosamente",
+                "removeFailed": "Error al eliminar colaborador"
+            }
+        },
+        "trash": {
+            "title": "Papelera",
+            "description": "Objetivos que han sido eliminados. Puedes eliminarlos permanentemente aquí.",
+            "noDeletedObjectives": "No hay objetivos eliminados",
+            "permanentlyDelete": "Eliminar permanentemente",
+            "restoreObjective": "Esta acción no se puede deshacer.",
+            "confirmHardDelete": "¿Estás seguro de que quieres eliminar permanentemente este objetivo?",
+            "confirmHardDeleteDescription": "Esto eliminará permanentemente el objetivo y todas sus actualizaciones de progreso y notificaciones. Esta acción no se puede deshacer.",
+            "toast": {
+                "hardDeleteSuccess": "Objetivo eliminado permanentemente",
+                "hardDeleteFailed": "Error al eliminar permanentemente el objetivo"
             }
         }
     },

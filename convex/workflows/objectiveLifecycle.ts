@@ -69,6 +69,11 @@ export const objectiveLifecycle = workflow.define({
             return;
         }
 
+        // Check 1b: For recurring objectives, check if the period has ended and reset
+        await step.runMutation(internal.steps.objectives.checkAndResetRecurring, {
+            objectiveId,
+        });
+
         // Check 2: Periodic reminder based on reminderInterval
         if (enableReminders) {
             await step.runMutation(internal.steps.objectives.sendPeriodicReminder, {
@@ -98,46 +103,5 @@ export const objectiveLifecycle = workflow.define({
             },
             { runAfter: oneDayMs }
         );
-    },
-});
-
-/**
- * Variant: Short-lived workflow for one-time progress check
- * Use this when you want to trigger checks after progress updates
- * without running a long-lived workflow
- */
-export const progressCheckWorkflow = workflow.define({
-    args: {
-        objectiveId: v.id('objectives'),
-        userId: v.string(),
-    },
-    handler: async (step, args): Promise<{ completed: boolean; achievementsAwarded: string[] }> => {
-        const { objectiveId, userId } = args;
-
-        // Check if objective should be auto-completed
-        const completionStatus = await step.runMutation(
-            internal.steps.objectives.checkAutoComplete,
-            { objectiveId }
-        );
-
-        let achievementsAwarded: string[] = [];
-
-        if (completionStatus.status === 'completed') {
-            // Trigger achievement check
-            const achievementResult = await step.runMutation(
-                internal.achievements.checkUserAchievements,
-                {
-                    userId,
-                    trigger: 'objective_completed',
-                }
-            );
-
-            achievementsAwarded = achievementResult.awarded ?? [];
-        }
-
-        return {
-            completed: completionStatus.status === 'completed',
-            achievementsAwarded,
-        };
     },
 });

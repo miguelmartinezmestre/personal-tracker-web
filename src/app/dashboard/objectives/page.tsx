@@ -2,6 +2,8 @@ import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
+import { SharedObjectivesSection } from '@/features/objectives/components/shared-objectives-section';
+import { DeletedObjectivesSection } from '@/features/objectives/components/deleted-objectives-section';
 import { preloadAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@/convex/_generated/api';
 import { redirect } from 'next/navigation';
@@ -46,11 +48,17 @@ export default async function ObjectivesPage() {
                     <CreateObjectiveFormModal />
                 </div>
             </div>
+            <Suspense>
+                <SharedObjectivesSection />
+            </Suspense>
             <div className="min-w-0">
                 <Suspense fallback={<div>{t('loadingObjectives')}</div>}>
                     <ResponsiveObjectivesView preloadedObjectivesQuery={preloadedObjectivesQuery} />
                 </Suspense>
             </div>
+            <Suspense>
+                <DeletedObjectivesSection />
+            </Suspense>
         </div>
     );
 }

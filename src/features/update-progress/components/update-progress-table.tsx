@@ -34,6 +34,11 @@ interface UpdateProgressTableProps {
     initialObjective: ObjectiveResult | undefined;
 }
 
+/**
+ * Compute the current period window using the same logic as the backend:
+ * periodStart + periodLengthDays, cycling forward as needed.
+ * This avoids mismatches between frontend calendar-based and backend offset-based periods.
+ */
 function getPeriodRange(
     period: string | undefined,
     now: number,
@@ -41,37 +46,15 @@ function getPeriodRange(
     periodLengthDays?: number
 ) {
     if (!period || period === 'none') return null;
+    if (!periodStart || !periodLengthDays || periodLengthDays <= 0) return null;
 
-    const date = new Date(now);
-    switch (period) {
-        case 'weekly': {
-            const day = date.getDay();
-            const diffToMonday = (day === 0 ? -6 : 1) - day;
-            const start = new Date(date);
-            start.setHours(0, 0, 0, 0);
-            start.setDate(start.getDate() + diffToMonday);
-            const end = new Date(start);
-            end.setDate(start.getDate() + 7);
-            return { start: start.getTime(), end: end.getTime() };
-        }
-        case 'monthly': {
-            const start = new Date(date.getFullYear(), date.getMonth(), 1);
-            const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-            return { start: start.getTime(), end: end.getTime() };
-        }
-        case 'custom': {
-            if (!periodStart || !periodLengthDays || periodLengthDays <= 0) return null;
-            const lengthMs = periodLengthDays * 24 * 60 * 60 * 1000;
-            if (now < periodStart) {
-                return { start: periodStart, end: periodStart + lengthMs };
-            }
-            const cycles = Math.floor((now - periodStart) / lengthMs);
-            const start = periodStart + cycles * lengthMs;
-            return { start, end: start + lengthMs };
-        }
-        default:
-            return null;
+    const lengthMs = periodLengthDays * 24 * 60 * 60 * 1000;
+    if (now < periodStart) {
+        return { start: periodStart, end: periodStart + lengthMs };
     }
+    const cycles = Math.floor((now - periodStart) / lengthMs);
+    const start = periodStart + cycles * lengthMs;
+    return { start, end: start + lengthMs };
 }
 
 export default function UpdateProgressTable({
@@ -113,11 +96,17 @@ export default function UpdateProgressTable({
               periodLengthDays?: number;
               startValue?: number;
               direction?: string;
+              progressMode?: string;
           })
         | undefined;
     const objectiveType = objectiveDoc?.objectiveType ?? 'value';
     const period = objectiveDoc?.period ?? 'none';
-    const isEventBased = objectiveType !== 'value' || (period && period !== 'none');
+    const progressMode = objectiveDoc?.progressMode ?? 'cumulative';
+    // Event-based accumulation: non-value types OR periodic objectives, BUT only in cumulative mode.
+    // In snapshot mode, each update is an absolute reading — display raw values.
+    const isEventBased =
+        progressMode === 'cumulative' &&
+        (objectiveType !== 'value' || (period && period !== 'none'));
     const range = objectiveDoc
         ? getPeriodRange(
               period,

@@ -40,6 +40,9 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                 toast.success(t('toast.completedSuccess'));
                 invalidateObjectives();
             },
+            onError: () => {
+                toast.error(t('toast.completeFailed'));
+            },
         });
 
         const pauseObjective = useMutation({
@@ -47,6 +50,9 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
             onSuccess: () => {
                 toast.success(t('toast.pausedSuccess'));
                 invalidateObjectives();
+            },
+            onError: () => {
+                toast.error(t('toast.pauseFailed'));
             },
         });
 
@@ -56,6 +62,9 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
                 toast.success(t('toast.archivedSuccess'));
                 invalidateObjectives();
             },
+            onError: () => {
+                toast.error(t('toast.archiveFailed'));
+            },
         });
 
         const resumeObjective = useMutation({
@@ -63,6 +72,9 @@ const QuickActions = React.forwardRef<HTMLDivElement, QuickActionsProps>(
             onSuccess: () => {
                 toast.success(t('toast.resumedSuccess'));
                 invalidateObjectives();
+            },
+            onError: () => {
+                toast.error(t('toast.resumeFailed'));
             },
         });
 

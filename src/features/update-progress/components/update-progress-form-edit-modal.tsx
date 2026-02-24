@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
-import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { CalendarIcon, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -91,7 +91,7 @@ export default function UpdateProgressFormModal({
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="gap-2" data-testid="progress-edit-open">
-                    <PlusCircle className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                     {t('editProgress')}
                 </Button>
             </DialogTrigger>

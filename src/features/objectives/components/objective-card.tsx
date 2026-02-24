@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import { QuickActions } from '@/features/objectives/components/quick-actions';
-import { Calendar, Target, TrendingUp, ChevronRight, AlertCircle } from 'lucide-react';
+import { Calendar, Target, TrendingUp, ChevronRight, AlertCircle, Users } from 'lucide-react';
 import { Objective } from '@/features/objectives/schemas/objective';
 import { Id } from '@/convex/_generated/dataModel';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/ui-utils/utils';
 import { computeObjectiveProgressPercent } from './objectives-utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ObjectiveCardProps {
     objective: Objective;
@@ -23,6 +24,18 @@ interface ObjectiveCardProps {
 const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
     ({ objective, onEdit, onDelete }, ref) => {
         const t = useTranslations('ObjectiveCard');
+        const tObj = useTranslations('Objectives');
+        const tCollab = useTranslations('Objectives.collaboration');
+        const statusLabels = {
+            completed: tObj('statusLabels.completed'),
+            overdue: tObj('statusLabels.overdue'),
+            onTrack: tObj('statusLabels.onTrack'),
+            inProgress: tObj('statusLabels.inProgress'),
+            atRisk: tObj('statusLabels.atRisk'),
+            paused: tObj('statusLabels.paused'),
+            archived: tObj('statusLabels.archived'),
+            deleted: tObj('statusLabels.deleted'),
+        };
         const targetValue = objective.targetValue ?? 0;
         const currentValue = objective.currentValue ?? 0;
         const progress = computeObjectiveProgressPercent({
@@ -77,6 +90,15 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                 {isOverdue && (
                                     <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
                                 )}
+                                {objective.collaborators && objective.collaborators.length > 0 && (
+                                    <Badge
+                                        variant="secondary"
+                                        className="flex items-center gap-1 text-xs flex-shrink-0"
+                                    >
+                                        <Users className="h-3 w-3" />
+                                        {tCollab('collaborativeBadge')}
+                                    </Badge>
+                                )}
                             </div>
                             {objective.description && (
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -124,6 +146,7 @@ const ObjectiveCard = React.forwardRef<HTMLDivElement, ObjectiveCardProps>(
                                     targetValue={objective.targetValue ?? 0}
                                     startValue={objective.startValue ?? undefined}
                                     direction={objective.direction ?? undefined}
+                                    labels={statusLabels}
                                 />
                             </div>
                             <div className="text-sm text-muted-foreground">

@@ -6,6 +6,8 @@ import { Id } from './_generated/dataModel';
 import { internal } from './_generated/api';
 import { computeCurrentValue, computeLastProgressAt } from './utils/objectiveProgress';
 import { computeNextReminderAt } from './utils/reminderSchedule';
+import { isValidTransition } from './objectiveEvents';
+import { workflow } from './workflow';
 
 const isObjectiveComplete = (
     objective: { direction?: string; targetValue: number },
@@ -19,7 +21,16 @@ const isObjectiveComplete = (
 };
 
 const canCreateProgress = (status: string) => {
-    return !['completed', 'archived', 'deleted'].includes(status);
+    return !['completed', 'paused', 'archived', 'deleted'].includes(status);
+};
+
+/**
+ * Check if progress can be modified (edited/deleted) on an objective.
+ * Allows edit/delete on completed objectives so that removing or correcting
+ * a progress update can reopen the objective via syncObjectiveCompletionState.
+ */
+const canModifyProgress = (status: string) => {
+    return !['paused', 'archived', 'deleted'].includes(status);
 };
 
 const syncObjectiveCurrentValue = async (ctx: MutationCtx, objectiveId: Id<'objectives'>) => {
@@ -80,15 +91,53 @@ const syncObjectiveCompletionState = async (
             createdAt: now,
             updatedAt: now,
         });
+
+        // If this is a periodic objective, schedule creation of the next recurring instance
+        if (
+            objective.period &&
+            objective.period !== 'none' &&
+            !process.env.VITEST &&
+            process.env.NODE_ENV !== 'test'
+        ) {
+            await ctx.scheduler.runAfter(0, internal.steps.objectives.createRecurringInstance, {
+                sourceObjectiveId: objectiveId,
+            });
+        }
+
         return { completedNow: true, reopened: false };
     }
 
     if (!shouldComplete && objective.status === 'completed') {
+        if (!isValidTransition('completed', 'active')) {
+            return { completedNow: false, reopened: false };
+        }
         await ctx.db.patch('objectives', objectiveId, {
             status: 'active',
             nextReminderAt: computeNextReminderAt(objective.reminderInterval ?? 'none', now),
             updatedAt: now,
         });
+
+        // Restart the lifecycle workflow for the reopened objective
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            const workflowId = await workflow.start(
+                ctx,
+                internal.workflows.objectiveLifecycle.objectiveLifecycle,
+                {
+                    objectiveId,
+                    userId: objective.userId,
+                    enableReminders: true,
+                    stallThresholdDays: 14,
+                },
+                {
+                    onComplete: internal.workflows.kickoff.handleObjectiveLifecycleComplete,
+                    context: { objectiveId, userId: objective.userId },
+                }
+            );
+            await ctx.db.patch('objectives', objectiveId, {
+                workflowId: String(workflowId),
+            });
+        }
+
         return { completedNow: false, reopened: true };
     }
 
@@ -209,8 +258,10 @@ export const updateUpdateProgress = mutationWithRLS({
         if (!objective) {
             throw new Error('Objective not found');
         }
-        if (objective.status === 'archived' || objective.status === 'deleted') {
-            throw new Error('Cannot update progress for a closed objective');
+        if (!canModifyProgress(objective.status)) {
+            throw new Error(
+                `Cannot modify progress for an objective with status: ${objective.status}`
+            );
         }
 
         await ctx.db.patch('progressUpdates', id, { ...rest, updatedAt: Date.now() });
@@ -243,8 +294,10 @@ export const deleteUpdateProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const existing = await ctx.db.get('progressUpdates', args._id);
         const objective = existing ? await ctx.db.get('objectives', existing.objective) : null;
-        if (objective && (objective.status === 'archived' || objective.status === 'deleted')) {
-            throw new Error('Cannot delete progress for a closed objective');
+        if (objective && !canModifyProgress(objective.status)) {
+            throw new Error(
+                `Cannot delete progress for an objective with status: ${objective.status}`
+            );
         }
 
         await ctx.db.delete('progressUpdates', args._id);

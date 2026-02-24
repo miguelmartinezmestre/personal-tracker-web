@@ -16,7 +16,7 @@ describe('normalizeObjective', () => {
             unit: 'pts',
             objectiveType: 'invalid-type',
             direction: 'sideways',
-            period: 'weekly',
+            period: 'biannual',
             periodStart: null,
             periodLengthDays: null,
             reminderInterval: 'daily',

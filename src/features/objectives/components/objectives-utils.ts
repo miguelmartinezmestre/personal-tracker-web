@@ -4,48 +4,10 @@ import {
     directionSchema,
     objectiveTypeSchema,
     periodSchema,
+    progressModeSchema,
     reminderIntervalSchema,
     savedObjectiveSchema,
 } from '@/features/objectives/schemas/objective';
-
-const DEFAULT_PAGE_SIZE = 20;
-
-export interface CreateObjectiveParams {
-    title: string;
-    targetValue: number;
-    currentValue: number;
-    startValue?: number | null;
-    description?: string | null;
-    category?: string | null;
-    deadline?: number | null;
-    status?: string | null;
-    unit?: string | null;
-    objectiveType?: string | null;
-    direction?: string | null;
-    period?: string | null;
-    periodStart?: number | null;
-    periodLengthDays?: number | null;
-    reminderInterval?: string | null;
-}
-
-export interface UpdateObjectiveParams {
-    id: string;
-    title?: string;
-    description?: string | null;
-    category?: string | null;
-    targetValue?: number;
-    currentValue?: number;
-    startValue?: number | null;
-    deadline?: number | null;
-    status?: string | null;
-    unit?: string | null;
-    objectiveType?: string | null;
-    direction?: string | null;
-    period?: string | null;
-    periodStart?: number | null;
-    periodLengthDays?: number | null;
-    reminderInterval?: string | null;
-}
 
 export const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
     const objectiveType = objectiveTypeSchema.safeParse(objective.objectiveType).success
@@ -57,6 +19,9 @@ export const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
         : null;
     const reminderInterval = reminderIntervalSchema.safeParse(objective.reminderInterval).success
         ? objective.reminderInterval
+        : null;
+    const progressMode = progressModeSchema.safeParse(objective.progressMode).success
+        ? objective.progressMode
         : null;
 
     return savedObjectiveSchema.parse({
@@ -76,10 +41,10 @@ export const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
         periodStart: objective.periodStart ?? null,
         periodLengthDays: objective.periodLengthDays ?? null,
         reminderInterval,
+        progressMode,
+        collaborators: objective.collaborators ?? null,
     });
 };
-
-export const OBJECTIVES_DEFAULT_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 export const computeObjectiveProgressPercent = (objective: {
     currentValue: number;

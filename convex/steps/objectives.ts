@@ -7,7 +7,9 @@
 
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { internal } from '../_generated/api';
 import { computeNextReminderAt } from '../utils/reminderSchedule';
+import { workflow } from '../workflow';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -92,6 +94,7 @@ export const sendReminder = internalMutation({
                 .query('notifications')
                 .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
                 .filter(q => q.eq(q.field('notificationType'), 'reminder'))
+                .order('desc')
                 .first();
 
             if (existingNotification) {
@@ -353,6 +356,29 @@ export const createRecurringInstance = internalMutation({
             return { created: false, reason: 'not_recurring' };
         }
 
+        // Idempotency: check if a recurring instance was already created from this source
+        // Look for an active objective with the same title, user, and matching period config
+        const existingInstances = await ctx.db
+            .query('objectives')
+            .withIndex('by_user', q => q.eq('userId', sourceObjective.userId))
+            .filter(q =>
+                q.and(
+                    q.eq(q.field('title'), sourceObjective.title),
+                    q.eq(q.field('status'), 'active'),
+                    q.eq(q.field('period'), sourceObjective.period),
+                    q.neq(q.field('_id'), args.sourceObjectiveId)
+                )
+            )
+            .collect();
+
+        if (existingInstances.length > 0) {
+            return {
+                created: false,
+                reason: 'already_exists',
+                existingId: existingInstances[0]?._id,
+            };
+        }
+
         const now = Date.now();
 
         // Calculate next period start
@@ -362,6 +388,8 @@ export const createRecurringInstance = internalMutation({
             : now;
 
         // Create new objective instance with reset values
+        const startValue = sourceObjective.startValue ?? 0;
+        const reminderInterval = sourceObjective.reminderInterval ?? 'none';
         const newObjectiveId = await ctx.db.insert('objectives', {
             organizationId: sourceObjective.organizationId,
             userId: sourceObjective.userId,
@@ -369,20 +397,48 @@ export const createRecurringInstance = internalMutation({
             description: sourceObjective.description,
             category: sourceObjective.category,
             targetValue: sourceObjective.targetValue,
-            currentValue: 0, // Reset to 0 for new period
+            currentValue: startValue,
+            startValue,
             deadline: sourceObjective.deadline
                 ? sourceObjective.deadline + periodLengthMs
                 : undefined,
             status: 'active',
             unit: sourceObjective.unit,
             objectiveType: sourceObjective.objectiveType,
+            direction: sourceObjective.direction,
             period: sourceObjective.period,
             periodStart: nextPeriodStart,
             periodLengthDays: sourceObjective.periodLengthDays,
+            reminderInterval,
+            nextReminderAt: computeNextReminderAt(reminderInterval, now),
+            progressMode: sourceObjective.progressMode,
             collaborators: sourceObjective.collaborators,
+            lastProgressAt: now,
             createdAt: now,
             updatedAt: now,
         });
+
+        // Start a lifecycle workflow for the new recurring instance
+        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
+            const workflowId = await workflow.start(
+                ctx,
+                internal.workflows.objectiveLifecycle.objectiveLifecycle,
+                {
+                    objectiveId: newObjectiveId,
+                    userId: sourceObjective.userId,
+                    enableReminders: true,
+                    stallThresholdDays: 14,
+                },
+                {
+                    onComplete: internal.workflows.kickoff.handleObjectiveLifecycleComplete,
+                    context: {
+                        objectiveId: newObjectiveId,
+                        userId: sourceObjective.userId,
+                    },
+                }
+            );
+            await ctx.db.patch(newObjectiveId, { workflowId: String(workflowId) });
+        }
 
         return { created: true, newObjectiveId };
     },
@@ -429,9 +485,12 @@ export const checkAndResetRecurring = internalMutation({
         // Calculate next period start
         const nextPeriodStart = periodEnd;
 
-        // Reset the objective for the new period
+        // Reset the objective for the new period.
+        // Since computeCurrentValue now filters by period, updating periodStart
+        // means future recalculations will only include updates in the new period.
+        const resetValue = objective.startValue ?? 0;
         await ctx.db.patch('objectives', args.objectiveId, {
-            currentValue: 0,
+            currentValue: resetValue,
             periodStart: nextPeriodStart,
             updatedAt: now,
         });

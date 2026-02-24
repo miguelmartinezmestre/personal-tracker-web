@@ -221,7 +221,8 @@ export const getUserAchievementProgress = queryWithRLS({
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned
-                    ? obtainedAchievements.find(oa => String(oa._id) === String(def._id))?.earnedAt
+                    ? obtainedAchievements.find(oa => String(oa.achievement) === String(def._id))
+                          ?.earnedAt
                     : undefined,
             };
         });
@@ -315,8 +316,15 @@ export const checkUserAchievements = internalMutation({
         const completedObjectives = objectives.filter(o => o.status === 'completed');
 
         const objectiveIds = objectives.map(o => o._id);
-        const allUpdates = await ctx.db.query('progressUpdates').collect();
-        const userUpdates = allUpdates.filter(pu => objectiveIds.includes(pu.objective));
+        const userUpdates = await Promise.all(
+            objectiveIds.map(async objectiveId => {
+                const updates = await ctx.db
+                    .query('progressUpdates')
+                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .collect();
+                return updates;
+            })
+        ).then(results => results.flat());
 
         const streak = await calculateUserStreakInternal(ctx, userId);
 
@@ -382,6 +390,16 @@ export const checkUserAchievements = internalMutation({
             }
 
             if (shouldAward) {
+                // Double-check dedup at insert time to prevent race conditions
+                const alreadyAwarded = await ctx.db
+                    .query('obtainedAchievements')
+                    .withIndex('by_user_achievement', q =>
+                        q.eq('userId', userId).eq('achievement', def._id)
+                    )
+                    .first();
+
+                if (alreadyAwarded) continue;
+
                 // Award the achievement
                 await ctx.db.insert('obtainedAchievements', {
                     userId: userId,
@@ -455,10 +473,10 @@ export const checkOrganizationAchievements = internalMutation({
 
         // Get objectives from organization members using indexed queries per user
         const organizationObjectives = await Promise.all(
-            memberUserIds.map(async userId => {
+            memberUserIds.map(async memberId => {
                 const userObjectives = await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userId))
+                    .withIndex('by_user', q => q.eq('userId', memberId))
                     .collect();
                 return userObjectives;
             })
@@ -507,6 +525,16 @@ export const checkOrganizationAchievements = internalMutation({
             }
 
             if (shouldAward) {
+                // Double-check dedup at insert time to prevent race conditions
+                const alreadyAwarded = await ctx.db
+                    .query('organizationAchievements')
+                    .withIndex('by_organization_achievement', q =>
+                        q.eq('organization', organizationId).eq('achievement', def._id)
+                    )
+                    .first();
+
+                if (alreadyAwarded) continue;
+
                 await ctx.db.insert('organizationAchievements', {
                     organization: organizationId,
                     achievement: def._id,

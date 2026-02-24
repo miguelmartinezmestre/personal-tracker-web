@@ -49,8 +49,6 @@ export default defineSchema({
     })
         .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
-        .index('by_organization_user', ['organizationId', 'userId'])
-        .index('by_workflow', ['workflowId'])
         .index('by_status', ['status']),
 
     progressUpdates: defineTable({
@@ -101,8 +99,7 @@ export default defineSchema({
         .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
         .index('by_createdAt', ['createdAt'])
-        .index('by_resourceType', ['resourceType'])
-        .index('by_action', ['action']),
+        .index('by_resourceType', ['resourceType']),
 
     categories: defineTable({
         userId: v.string(),
@@ -130,10 +127,7 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_code', ['code'])
-        .index('by_type', ['type'])
-        .index('by_category', ['category'])
-        .index('by_isActive', ['isActive'])
-        .index('by_type_active', ['type', 'isActive']),
+        .index('by_type', ['type']),
 
     // User achievements - which users earned which achievements
     obtainedAchievements: defineTable({
@@ -144,8 +138,7 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_user', ['userId'])
-        .index('by_user_achievement', ['userId', 'achievement'])
-        .index('by_earned_at', ['earnedAt']),
+        .index('by_user_achievement', ['userId', 'achievement']),
 
     // Organization achievements - which organizations earned which achievements
     organizationAchievements: defineTable({
@@ -157,6 +150,5 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_organization', ['organization'])
-        .index('by_organization_achievement', ['organization', 'achievement'])
-        .index('by_earned_at', ['earnedAt']),
+        .index('by_organization_achievement', ['organization', 'achievement']),
 });

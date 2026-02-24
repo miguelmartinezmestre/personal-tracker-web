@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -181,7 +182,6 @@ describe('convex objectives', async () => {
             title: 'Save for summer vacation',
             description: 'Monthly savings',
             category: 'finance',
-            currentValue: 350,
             deadline: Date.now() + 60 * 24 * 60 * 60 * 1000,
             unit: 'EUR',
         });
@@ -190,7 +190,6 @@ describe('convex objectives', async () => {
         expect(updated?.title).toBe('Save for summer vacation');
         expect(updated?.description).toBe('Monthly savings');
         expect(updated?.category).toBe('finance');
-        expect(updated?.currentValue).toBe(350);
         expect(typeof updated?.deadline).toBe('number');
         expect(updated?.status).toBe('active');
         expect(updated?.unit).toBe('EUR');
@@ -302,7 +301,7 @@ describe('convex objectives', async () => {
 
         await userIdentity.mutation(api.objectives.updateObjective, {
             id: objectiveId,
-            currentValue: 75,
+            title: 'Updated Title',
         });
 
         const updated = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
@@ -462,6 +461,140 @@ describe('convex objectives', async () => {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
             ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        });
+
+        test('returns other org members objectives (org-wide behavior)', async () => {
+            const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+            // Create a second user in the same org
+            const otherUser = {
+                userId: 'other-user-' + randomSuffix,
+                email: 'other@example.com-' + randomSuffix,
+                name: 'Other User',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            };
+            await createTestUser(t, otherUser);
+            await createTestMember(t, {
+                organizationId: organizationId,
+                userId: otherUser.userId,
+                role: 'member',
+            });
+
+            // Other user creates an objective in the same org
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: otherUser.userId,
+                    organizationId: organizationId,
+                    title: 'Other User Objective ' + randomSuffix,
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            // Current user should see the other user's objective
+            const result = await userIdentity.query(api.objectives.getSharedObjectives, {
+                paginationOpts: { numItems: 100, cursor: null },
+            });
+
+            const otherObjective = result.page.find(
+                (o: { title: string }) => o.title === 'Other User Objective ' + randomSuffix
+            );
+            expect(otherObjective).toBeDefined();
+            expect(otherObjective!.userId).toBe(otherUser.userId);
+        });
+
+        test('excludes the current users own objectives', async () => {
+            // Create an objective owned by the current user
+            const randomSuffix = Math.random().toString(36).substring(2, 15);
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'My Own Objective ' + randomSuffix,
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            const result = await userIdentity.query(api.objectives.getSharedObjectives, {
+                paginationOpts: { numItems: 100, cursor: null },
+            });
+
+            const ownObjective = result.page.find(
+                (o: { title: string }) => o.title === 'My Own Objective ' + randomSuffix
+            );
+            expect(ownObjective).toBeUndefined();
+        });
+
+        test('excludes deleted and archived objectives from other members', async () => {
+            const randomSuffix = Math.random().toString(36).substring(2, 15);
+
+            const otherUser = {
+                userId: 'other-del-' + randomSuffix,
+                email: 'other-del@example.com-' + randomSuffix,
+                name: 'Other Delete User',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            };
+            await createTestUser(t, otherUser);
+            await createTestMember(t, {
+                organizationId: organizationId,
+                userId: otherUser.userId,
+                role: 'member',
+            });
+
+            // Create deleted and archived objectives from another user
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: otherUser.userId,
+                    organizationId: organizationId,
+                    title: 'Deleted Objective ' + randomSuffix,
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'deleted',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+                await ctx.db.insert('objectives', {
+                    userId: otherUser.userId,
+                    organizationId: organizationId,
+                    title: 'Archived Objective ' + randomSuffix,
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'archived',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+                // Also create an active one to confirm it IS returned
+                await ctx.db.insert('objectives', {
+                    userId: otherUser.userId,
+                    organizationId: organizationId,
+                    title: 'Active Objective ' + randomSuffix,
+                    targetValue: 100,
+                    currentValue: 25,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            const result = await userIdentity.query(api.objectives.getSharedObjectives, {
+                paginationOpts: { numItems: 100, cursor: null },
+            });
+
+            const titles = result.page.map((o: { title: string }) => o.title);
+            expect(titles).not.toContain('Deleted Objective ' + randomSuffix);
+            expect(titles).not.toContain('Archived Objective ' + randomSuffix);
+            expect(titles).toContain('Active Objective ' + randomSuffix);
         });
     });
 
@@ -664,7 +797,7 @@ describe('convex objectives', async () => {
             ).rejects.toThrow(/Status updates must use dedicated objective status mutations/);
         });
 
-        test('resets period fields when periodStart is set', async () => {
+        test('clears period fields when period is set to none', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
@@ -683,14 +816,16 @@ describe('convex objectives', async () => {
 
             await userIdentity.mutation(api.objectives.updateObjective, {
                 id: objectiveId,
-                periodStart: Date.now(),
+                period: 'none',
             });
 
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
             expect(objective?.period).toBe('none');
+            expect(objective?.periodStart).toBeUndefined();
+            expect(objective?.periodLengthDays).toBeUndefined();
         });
 
-        test('resets period fields when periodLengthDays is set', async () => {
+        test('preserves period when updating other period fields', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
@@ -713,7 +848,8 @@ describe('convex objectives', async () => {
             });
 
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
-            expect(objective?.period).toBe('none');
+            expect(objective?.period).toBe('monthly');
+            expect(objective?.periodLengthDays).toBe(14);
         });
     });
 });
