@@ -510,6 +510,16 @@
             "paused": "Paused",
             "archived": "Archived"
         },
+        "statusLabels": {
+            "completed": "Completed",
+            "overdue": "Overdue",
+            "onTrack": "On Track",
+            "inProgress": "In Progress",
+            "atRisk": "At Risk",
+            "paused": "Paused",
+            "archived": "Archived",
+            "deleted": "Deleted"
+        },
         "categoryOptions": {
             "all": "All Categories",
             "personal": "Personal",
@@ -688,6 +698,42 @@
                 "words": "Words",
                 "count": "Count",
                 "percentage": "Percentage"
+            }
+        },
+        "collaboration": {
+            "title": "Collaborators",
+            "description": "Manage who can view and update this objective.",
+            "addCollaborator": "Add Collaborator",
+            "removeCollaborator": "Remove Collaborator",
+            "manageCollaborators": "Manage Collaborators",
+            "selectMember": "Select a member",
+            "noMembers": "No organization members available",
+            "alreadyAdded": "This member is already a collaborator",
+            "owner": "Owner",
+            "collaborator": "Collaborator",
+            "sharedObjectives": "Organization Objectives",
+            "sharedDescription": "Objectives from other members in your organization.",
+            "noSharedObjectives": "No organization objectives found",
+            "sharedBadge": "Organization",
+            "collaborativeBadge": "Collaborative",
+            "toast": {
+                "addSuccess": "Collaborator added successfully",
+                "addFailed": "Failed to add collaborator",
+                "removeSuccess": "Collaborator removed successfully",
+                "removeFailed": "Failed to remove collaborator"
+            }
+        },
+        "trash": {
+            "title": "Trash",
+            "description": "Objectives that have been deleted. You can permanently delete them here.",
+            "noDeletedObjectives": "No deleted objectives",
+            "permanentlyDelete": "Permanently Delete",
+            "restoreObjective": "This action cannot be undone.",
+            "confirmHardDelete": "Are you sure you want to permanently delete this objective?",
+            "confirmHardDeleteDescription": "This will permanently remove the objective and all its progress updates and notifications. This action cannot be undone.",
+            "toast": {
+                "hardDeleteSuccess": "Objective permanently deleted",
+                "hardDeleteFailed": "Failed to permanently delete objective"
             }
         }
     },

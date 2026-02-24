@@ -22,6 +22,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { Preloaded } from 'convex/react';
+import { Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 // Hoist static constants outside component to avoid recreation on every render
 const DEFAULT_FILTERS: FilterOptions = {
@@ -41,6 +43,16 @@ const ResponsiveObjectivesView = React.forwardRef<
 >(({ preloadedObjectivesQuery }, ref) => {
     const t = useTranslations('Objectives');
     const tCard = useTranslations('ObjectiveCard');
+    const statusLabels = {
+        completed: t('statusLabels.completed'),
+        overdue: t('statusLabels.overdue'),
+        onTrack: t('statusLabels.onTrack'),
+        inProgress: t('statusLabels.inProgress'),
+        atRisk: t('statusLabels.atRisk'),
+        paused: t('statusLabels.paused'),
+        archived: t('statusLabels.archived'),
+        deleted: t('statusLabels.deleted'),
+    };
     const [editingObjective, setEditingObjective] = React.useState<Objective | null>(null);
     const [filters, setFilters] = React.useState<FilterOptions>(() => ({ ...DEFAULT_FILTERS }));
     const [currentPage, setCurrentPage] = React.useState(0);
@@ -56,6 +68,12 @@ const ResponsiveObjectivesView = React.forwardRef<
             // Invalidate all objectives queries regardless of pagination
             queryClient.invalidateQueries({
                 queryKey: [api.objectives.getObjectivesByUser],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [api.objectives.getDeletedObjectives],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [api.objectives.getSharedObjectives],
             });
             toast.success(t('toast.deletedSuccess'));
         },
@@ -179,6 +197,22 @@ const ResponsiveObjectivesView = React.forwardRef<
         {
             accessorKey: 'title',
             header: t('title'),
+            cell: ({ row }) => {
+                const objective = row.original;
+                const hasCollaborators =
+                    objective.collaborators && objective.collaborators.length > 0;
+                return (
+                    <div className="flex items-center gap-2">
+                        <span>{objective.title}</span>
+                        {hasCollaborators && (
+                            <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                                <Users className="h-3 w-3" />
+                                {objective.collaborators?.length}
+                            </Badge>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             id: 'description',
@@ -188,7 +222,12 @@ const ResponsiveObjectivesView = React.forwardRef<
         {
             id: 'progress',
             accessorFn: objective =>
-                objective.targetValue > 0 ? objective.currentValue / objective.targetValue : 0,
+                computeObjectiveProgressPercent({
+                    currentValue: objective.currentValue ?? 0,
+                    targetValue: objective.targetValue ?? 0,
+                    startValue: objective.startValue ?? null,
+                    direction: objective.direction ?? 'increase',
+                }) / 100,
             header: t('progress'),
             cell: ({ row }) => {
                 const objective = row.original;
@@ -231,6 +270,7 @@ const ResponsiveObjectivesView = React.forwardRef<
                         targetValue={objective.targetValue ?? 0}
                         startValue={objective.startValue ?? undefined}
                         direction={objective.direction ?? undefined}
+                        labels={statusLabels}
                     />
                 );
             },
