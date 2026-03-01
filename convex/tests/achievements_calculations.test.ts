@@ -534,7 +534,7 @@ describe('achievements calculations', async () => {
 
             await createTestMember(t, {
                 organizationId: organizationId,
-                    scope: 'personal',
+                scope: 'personal',
                 userId: user2.userId,
                 role: 'member',
             });
