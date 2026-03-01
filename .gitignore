@@ -36,3 +36,17 @@ node_modules/
 .next
 
 coverage/
+
+
+.claude/
+.opencode/
+.agents/
+agents.md
+opencode.jsonc
+metricas-memoria-main/
+features-docs/
+.vscode/
+CLAUDE.md
+better-auth-docs/
+
+.next-e2e/

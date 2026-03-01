@@ -1,0 +1,62 @@
+services:
+    mysql:
+        image: mysql:8.0
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=convex_self_hosted
+        volumes:
+            - mysql-data-e2e:/var/lib/mysql
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+
+    backend:
+        image: ghcr.io/get-convex/convex-backend:latest
+        depends_on:
+            - mysql
+        restart: on-failure
+        stop_grace_period: 10s
+        stop_signal: SIGINT
+        ports:
+            - '${PORT:-4210}:3210'
+            - '${SITE_PROXY_PORT:-4211}:3211'
+        volumes:
+            - convex-data-e2e:/convex/data
+        environment:
+            - INSTANCE_NAME=${INSTANCE_NAME:-}
+            - INSTANCE_SECRET=${INSTANCE_SECRET:-}
+            - CONVEX_RELEASE_VERSION_DEV=${CONVEX_RELEASE_VERSION_DEV:-}
+            - ACTIONS_USER_TIMEOUT_SECS=${ACTIONS_USER_TIMEOUT_SECS:-}
+            - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://127.0.0.1:${PORT:-4210}}
+            - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://127.0.0.1:${SITE_PROXY_PORT:-4211}}
+            - DATABASE_URL=${DATABASE_URL:-mysql://root:root@mysql:3306/convex_self_hosted}
+            - DISABLE_BEACON=${DISABLE_BEACON:-1}
+            - REDACT_LOGS_TO_CLIENT=${REDACT_LOGS_TO_CLIENT:-}
+            - DO_NOT_REQUIRE_SSL=${DO_NOT_REQUIRE_SSL:-1}
+            - POSTGRES_URL=${POSTGRES_URL:-}
+            - MYSQL_URL=${MYSQL_URL:-mysql://root:root@mysql:3306}
+            - RUST_LOG=${RUST_LOG:-info}
+            - RUST_BACKTRACE=${RUST_BACKTRACE:-}
+            - AWS_REGION=${AWS_REGION:-}
+            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+            - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+            - S3_STORAGE_EXPORTS_BUCKET=${S3_STORAGE_EXPORTS_BUCKET:-}
+            - S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET=${S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET:-}
+            - S3_STORAGE_MODULES_BUCKET=${S3_STORAGE_MODULES_BUCKET:-}
+            - S3_STORAGE_FILES_BUCKET=${S3_STORAGE_FILES_BUCKET:-}
+            - S3_STORAGE_SEARCH_BUCKET=${S3_STORAGE_SEARCH_BUCKET:-}
+            - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-}
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3210/version']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 60s
+
+volumes:
+    mysql-data-e2e:
+    convex-data-e2e:
