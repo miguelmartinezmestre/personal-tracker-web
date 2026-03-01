@@ -25,7 +25,7 @@ export async function createTestUser(
     await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         const existing = await ctx.db
             .query('user')
-            .filter(q => q.eq(q.field('userId'), userId))
+            .filter(q => q.eq(q.field('_id'), userId))
             .first();
 
         if (existing) {

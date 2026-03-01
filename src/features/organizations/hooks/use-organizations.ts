@@ -24,7 +24,8 @@ export interface UpdateOrganizationParams {
     description: string;
 }
 
-const ORGANIZATIONS_QUERY_KEY = ['organizations'];
+const ORGANIZATIONS_QUERY = convexQuery(api.organizations.getOrganizationsByUser, {});
+const ORGANIZATIONS_QUERY_KEY = ORGANIZATIONS_QUERY.queryKey;
 
 interface OrganizationRaw {
     id: string;
@@ -37,9 +38,7 @@ interface OrganizationRaw {
  * Hook para obtener todas las organizaciones del usuario
  */
 export function useOrganizations() {
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getOrganizationsByUser, {})
-    );
+    const { data, isPending, isLoading } = useQuery(ORGANIZATIONS_QUERY);
 
     return {
         data: data?.map((org: OrganizationRaw) => ({

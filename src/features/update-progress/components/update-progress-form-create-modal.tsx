@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -22,12 +21,12 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogFooter,
 } from '@/components/ui/dialog';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import {
     CreateUpdateProgress,
     updateProgressSchema,
@@ -35,48 +34,18 @@ import {
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
-import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { Doc, Id } from '@/convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
-
     const { id: objectiveId } = useParams();
+    const [open, setOpen] = useState(false);
 
     const createUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.createUpdateProgress),
     });
-    const objective = useQuery(
-        convexQuery(api.objectives.getObjectiveById, { id: objectiveId as Id<'objectives'> })
-    );
-    const [open, setOpen] = useState(false);
-    const objectiveDoc = objective.data as
-        | (Doc<'objectives'> & { objectiveType?: string; unit?: string })
-        | undefined;
-    const objectiveType = objectiveDoc?.objectiveType ?? 'value';
-    const progressMode = objectiveDoc?.progressMode ?? 'cumulative';
-    const unitLabel = objectiveDoc?.unit ? ` (${objectiveDoc.unit})` : '';
-    const updatedValueLabel =
-        objectiveType === 'count'
-            ? t('valueLabels.count')
-            : objectiveType === 'money'
-              ? t('valueLabels.money')
-              : objectiveType === 'duration'
-                ? t('valueLabels.duration')
-                : t('valueLabels.value');
-    const updatedValuePlaceholder =
-        objectiveType === 'count'
-            ? t('valuePlaceholders.count')
-            : objectiveType === 'money'
-              ? t('valuePlaceholders.money')
-              : objectiveType === 'duration'
-                ? t('valuePlaceholders.duration')
-                : t('valuePlaceholders.value');
-    const updatedValueDescription =
-        progressMode === 'snapshot'
-            ? t('valueDescriptionSnapshot', { unit: unitLabel })
-            : t('valueDescriptionCumulative', { unit: unitLabel });
+
     const form = useForm<CreateUpdateProgress>({
         defaultValues: {
             comment: '',
@@ -87,21 +56,17 @@ export default function CreateUpdateProgressFormModal() {
             onChange: updateProgressSchema,
             onSubmit: updateProgressSchema,
         },
-        onSubmit: async ({ value }: { value: CreateUpdateProgress }) => {
-            await onSubmit(value);
+        onSubmit: async ({ value }) => {
+            await createUpdateProgress.mutateAsync({
+                objective: objectiveId as Id<'objectives'>,
+                updatedValue: Number(value.updatedValue),
+                updateDate: new Date(value.updateDate).getTime(),
+                comment: value.comment ?? undefined,
+            });
+            setOpen(false);
+            form.reset();
         },
     });
-
-    const onSubmit = async (values: CreateUpdateProgress) => {
-        await createUpdateProgress.mutateAsync({
-            objective: objectiveId as Id<'objectives'>,
-            updatedValue: Number(values.updatedValue),
-            updateDate: new Date(values.updateDate).getTime(),
-            comment: values.comment ?? undefined,
-        });
-        setOpen(false);
-        form.reset();
-    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -129,10 +94,10 @@ export default function CreateUpdateProgressFormModal() {
                             name="updatedValue"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{updatedValueLabel}</FormLabel>
+                                    <FormLabel>{t('updatedValue')}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder={updatedValuePlaceholder}
+                                            placeholder={t('enterUpdatedValue')}
                                             type="number"
                                             data-testid="progress-value-input"
                                             {...field}
@@ -142,7 +107,6 @@ export default function CreateUpdateProgressFormModal() {
                                             }
                                         />
                                     </FormControl>
-                                    <FormDescription>{updatedValueDescription}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -162,9 +126,6 @@ export default function CreateUpdateProgressFormModal() {
                                             value={field.value || ''}
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        {t('optionalAddDetailsAboutYourUpdateProgress')}
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -174,12 +135,12 @@ export default function CreateUpdateProgressFormModal() {
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>{t('deadline')}</FormLabel>
+                                    <FormLabel>{t('table.columns.date')}</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button
-                                                    variant={'outline'}
+                                                    variant="outline"
                                                     className={cn(
                                                         'w-full pl-3 text-left font-normal',
                                                         !field.value && 'text-muted-foreground'

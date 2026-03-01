@@ -18,7 +18,7 @@ services:
 
   backend:
     container_name: convex-backend-metricas-dev
-    image: ghcr.io/get-convex/convex-backend:c1a7ac393888d743e704de56cf569a154b4526d4
+    image: ghcr.io/get-convex/convex-backend:latest
     depends_on:
       - mysql
     restart: on-failure
@@ -63,7 +63,7 @@ services:
 
   dashboard:
     container_name: convex-dashboard-metricas-dev
-    image: ghcr.io/get-convex/convex-dashboard:c1a7ac393888d743e704de56cf569a154b4526d4
+    image: ghcr.io/get-convex/convex-dashboard:latest
     depends_on:
       - backend
     stop_grace_period: 10s

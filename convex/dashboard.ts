@@ -16,15 +16,11 @@ export const getDashboardStats = queryWithRLS({
         const totalObjectives = objectives.length;
         const completedObjectives = objectives.filter(o => o.status === 'completed').length;
         const pendingObjectives = objectives.filter(o => o.status === 'active').length;
-        const pausedObjectives = objectives.filter(o => o.status === 'paused').length;
-        const archivedObjectives = objectives.filter(o => o.status === 'archived').length;
 
         return {
             totalObjectives,
             completedObjectives,
             pendingObjectives,
-            pausedObjectives,
-            archivedObjectives,
         };
     },
 });
@@ -93,13 +89,11 @@ export const getObjectivesWithMostProgress = queryWithRLS({
             .collect();
 
         const objectivesWithProgress = objectives
-            .filter(o => o.status !== 'archived' && o.status !== 'deleted')
             .map(o => {
                 const progress = computeProgressPercent({
                     currentValue: o.currentValue,
                     targetValue: o.targetValue,
                     startValue: o.startValue,
-                    direction: o.direction,
                 });
                 return {
                     id: o._id,
@@ -133,7 +127,7 @@ export const getUpcomingDeadlines = queryWithRLS({
         const upcomingDeadlines = objectives
             .filter(o => {
                 if (!o.deadline) return false;
-                if (o.status === 'completed' || o.status === 'archived') return false;
+                if (o.status === 'completed') return false;
                 return o.deadline >= now && o.deadline <= futureLimit;
             })
             .map(o => {
@@ -147,7 +141,6 @@ export const getUpcomingDeadlines = queryWithRLS({
                         currentValue: o.currentValue,
                         targetValue: o.targetValue,
                         startValue: o.startValue,
-                        direction: o.direction,
                     }),
                 };
             })

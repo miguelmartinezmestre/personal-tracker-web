@@ -2,8 +2,6 @@ import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
-import { SharedObjectivesSection } from '@/features/objectives/components/shared-objectives-section';
-import { DeletedObjectivesSection } from '@/features/objectives/components/deleted-objectives-section';
 import { preloadAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@/convex/_generated/api';
 import { redirect } from 'next/navigation';
@@ -20,22 +18,28 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ObjectivesPage() {
-    let preloadedObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
+    let preloadedPersonalObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
+    let preloadedOrganizationObjectivesQuery: Preloaded<
+        typeof api.objectives.getOrganizationObjectives
+    >;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl createTranslator generic
     let t: ReturnType<typeof createTranslator<Record<string, any>, 'Objectives'>>;
 
     try {
-        [t, preloadedObjectivesQuery] = await Promise.all([
-            getTranslations('Objectives'),
-            preloadAuthQuery(api.objectives.getObjectivesByUser, {
-                paginationOpts: { numItems: 1000, cursor: null },
-            }),
-        ]);
+        [t, preloadedPersonalObjectivesQuery, preloadedOrganizationObjectivesQuery] =
+            await Promise.all([
+                getTranslations('Objectives'),
+                preloadAuthQuery(api.objectives.getObjectivesByUser, {
+                    paginationOpts: { numItems: 1000, cursor: null },
+                }),
+                preloadAuthQuery(api.objectives.getOrganizationObjectives, {
+                    paginationOpts: { numItems: 1000, cursor: null },
+                }),
+            ]);
     } catch (error) {
         console.error(error);
         redirect('/dashboard/home');
     }
-    // Start all promises in parallel
 
     return (
         <div className="w-full min-w-0 space-y-6">
@@ -48,17 +52,14 @@ export default async function ObjectivesPage() {
                     <CreateObjectiveFormModal />
                 </div>
             </div>
-            <Suspense>
-                <SharedObjectivesSection />
-            </Suspense>
             <div className="min-w-0">
                 <Suspense fallback={<div>{t('loadingObjectives')}</div>}>
-                    <ResponsiveObjectivesView preloadedObjectivesQuery={preloadedObjectivesQuery} />
+                    <ResponsiveObjectivesView
+                        preloadedPersonalObjectivesQuery={preloadedPersonalObjectivesQuery}
+                        preloadedOrganizationObjectivesQuery={preloadedOrganizationObjectivesQuery}
+                    />
                 </Suspense>
             </div>
-            <Suspense>
-                <DeletedObjectivesSection />
-            </Suspense>
         </div>
     );
 }

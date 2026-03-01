@@ -3,15 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { AchievementsWidget } from '@/features/achievements/components/achievements-widget';
 import { api } from '@/convex/_generated/api';
-import {
-    Loader2,
-    Target,
-    CheckCircle,
-    PauseCircle,
-    Archive,
-    Calendar,
-    Activity,
-} from 'lucide-react';
+import { Loader2, Target, CheckCircle, Calendar, Activity } from 'lucide-react';
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +45,7 @@ export default function Home({
             </div>
 
             {/* Objectives stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                 <StatCard
                     label={t('stats.active')}
                     value={stats?.pendingObjectives}
@@ -63,16 +55,6 @@ export default function Home({
                     label={t('stats.completed')}
                     value={stats?.completedObjectives}
                     icon={CheckCircle}
-                />
-                <StatCard
-                    label={t('stats.paused')}
-                    value={stats?.pausedObjectives}
-                    icon={PauseCircle}
-                />
-                <StatCard
-                    label={t('stats.archived')}
-                    value={stats?.archivedObjectives}
-                    icon={Archive}
                 />
             </div>
 

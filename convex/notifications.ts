@@ -92,7 +92,12 @@ export const createNotification = mutationWithRLS({
 
         const role = String(ctx.role ?? 'user');
         const isAdmin = role === 'admin' || role === 'ADMIN';
-        if (!isAdmin && objective.userId !== userId) {
+        const isOwner = objective.userId === userId;
+        const isOrganizationMember =
+            objective.scope === 'organization' &&
+            Boolean(ctx.organizationId) &&
+            objective.organizationId === ctx.organizationId;
+        if (!isAdmin && !isOwner && !isOrganizationMember) {
             throw new Error('Not authorized to create notifications for this objective');
         }
 

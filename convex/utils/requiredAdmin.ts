@@ -7,12 +7,12 @@ export async function requireAdmin(ctx: GenericMutationCtx<DataModel>) {
     const userId = await getAuthUserId(ctx);
 
     if (!userId) {
-        throw new ConvexError('Unauthenticated');
+        throw new ConvexError('Unauthenticated 6');
     }
 
     const user = await ctx.db.get('user', String(userId) as Id<'user'>);
 
     if (!user || user.role !== 'admin') {
-        throw new ConvexError('Unauthenticated');
+        throw new ConvexError('Unauthenticated 7');
     }
 }

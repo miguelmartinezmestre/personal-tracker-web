@@ -1,113 +1,119 @@
-/**
- * Objectives Queries and General Updates
- *
- * This file contains query functions for objectives.
- * Status-changing mutations are in objectivePublic.ts
- */
-
-import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
-import { computeCurrentValue, computeLastProgressAt } from './utils/objectiveProgress';
-import { computeNextReminderAt } from './utils/reminderSchedule';
-import {
-    objectiveStatusValidator,
-    objectiveTypeValidator,
-    periodValidator,
-    directionValidator,
-    reminderIntervalValidator,
-    progressModeValidator,
-} from './utils/validators';
+import { ConvexError, v } from 'convex/values';
+import { internal } from './_generated/api';
+import type { Id } from './_generated/dataModel';
+import { mutationWithRLS, queryWithRLS } from './rls';
+import { objectiveScopeValidator } from './utils/validators';
+import { workflow } from './workflow';
 
-export {
-    createObjective,
-    pauseObjective,
-    resumeObjective,
-    completeObjective,
-    archiveObjective,
-    deleteObjective,
-    hardDeleteObjective,
-    reconfigureObjective,
-} from './objectivePublic';
+const EMPTY_PAGE = {
+    page: [],
+    continueCursor: '',
+    isDone: true,
+};
 
-/**
- * Get objectives for the current user with pagination
- */
+const runObjectiveSync = async (
+    ctx: Parameters<typeof workflow.start>[0],
+    objectiveId: Id<'objectives'>,
+    userId: string
+) => {
+    await workflow.start(ctx, internal.workflows.objectiveLifecycle.objectiveLifecycle, {
+        objectiveId,
+        userId,
+    });
+};
+
 export const getObjectivesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { paginationOpts }) => {
         const userId = String(ctx.userId);
-        const results = await ctx.db
+        return await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .filter(q => q.neq(q.field('status'), 'deleted'))
+            .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
             .order('desc')
             .paginate(paginationOpts);
-
-        return results;
     },
 });
 
-/**
- * Get a single objective by ID
- */
+export const getOrganizationObjectives = queryWithRLS({
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, { paginationOpts }) => {
+        if (!ctx.organizationId) {
+            return EMPTY_PAGE;
+        }
+
+        return await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_scope', q =>
+                q.eq('organizationId', ctx.organizationId).eq('scope', 'organization')
+            )
+            .order('desc')
+            .paginate(paginationOpts);
+    },
+});
+
 export const getObjectiveById = queryWithRLS({
     args: {
         id: v.id('objectives'),
     },
     handler: async (ctx, args) => {
-        const result = await ctx.db.get('objectives', args.id);
-        return result;
+        return await ctx.db.get('objectives', args.id);
     },
 });
 
-/**
- * Get objectives by status
- */
-export const getObjectivesByStatus = queryWithRLS({
+export const createObjective = mutationWithRLS({
     args: {
-        status: objectiveStatusValidator,
-        paginationOpts: paginationOptsValidator,
+        title: v.string(),
+        description: v.optional(v.string()),
+        category: v.optional(v.string()),
+        targetValue: v.number(),
+        currentValue: v.optional(v.number()),
+        startValue: v.optional(v.number()),
+        deadline: v.optional(v.number()),
+        unit: v.optional(v.string()),
+        scope: v.optional(objectiveScopeValidator),
     },
-    handler: async (ctx, { status, paginationOpts }) => {
+    handler: async (ctx, args) => {
         const userId = String(ctx.userId);
-        const results = await ctx.db
-            .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .filter(q => q.eq(q.field('status'), status))
-            .order('desc')
-            .paginate(paginationOpts);
+        const now = Date.now();
+        const scope = args.scope ?? 'personal';
 
-        return results;
+        if (scope === 'organization' && !ctx.organizationId) {
+            throw new ConvexError('No active organization selected');
+        }
+
+        const startValue = args.startValue ?? args.currentValue ?? 0;
+        const objectiveId = await ctx.db.insert('objectives', {
+            userId,
+            organizationId: ctx.organizationId ?? '',
+            scope,
+            title: args.title,
+            description: args.description,
+            category: args.category,
+            targetValue: args.targetValue,
+            currentValue: startValue,
+            startValue,
+            deadline: args.deadline,
+            status: startValue >= args.targetValue ? 'completed' : 'active',
+            unit: args.unit,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            userId,
+            trigger: 'objective_created',
+        });
+
+        await runObjectiveSync(ctx, objectiveId, userId);
+        return objectiveId;
     },
 });
 
-/**
- * Get deleted objectives for the trash view
- */
-export const getDeletedObjectives = queryWithRLS({
-    args: {
-        paginationOpts: paginationOptsValidator,
-    },
-    handler: async (ctx, { paginationOpts }) => {
-        const userId = String(ctx.userId);
-        const results = await ctx.db
-            .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .filter(q => q.eq(q.field('status'), 'deleted'))
-            .order('desc')
-            .paginate(paginationOpts);
-
-        return results;
-    },
-});
-
-/**
- * Update objective fields (non-status updates)
- * For status changes, use the mutations in objectivePublic.ts
- */
 export const updateObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
@@ -118,272 +124,68 @@ export const updateObjective = mutationWithRLS({
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         unit: v.optional(v.string()),
-        objectiveType: objectiveTypeValidator,
-        direction: directionValidator,
-        period: periodValidator,
-        periodStart: v.optional(v.number()),
-        periodLengthDays: v.optional(v.number()),
-        reminderInterval: reminderIntervalValidator,
-        progressMode: progressModeValidator,
+        scope: v.optional(objectiveScopeValidator),
     },
     handler: async (ctx, args) => {
-        const { id, ...rest } = args;
-        const existing = await ctx.db.get('objectives', id);
-        if (!existing) {
-            throw new Error('Objective not found');
-        }
-
-        // Block editing of completed, archived, or deleted objectives
-        if (
-            existing.status === 'completed' ||
-            existing.status === 'archived' ||
-            existing.status === 'deleted'
-        ) {
-            throw new Error(`Cannot edit an objective with status: ${existing.status}`);
-        }
-
-        const now = Date.now();
-        const updateData: Record<string, unknown> = { ...rest };
-
-        // Only recalculate nextReminderAt when the interval actually changes (M17)
-        if (
-            args.reminderInterval !== undefined &&
-            args.reminderInterval !== existing.reminderInterval
-        ) {
-            updateData.nextReminderAt = computeNextReminderAt(args.reminderInterval, now);
-        }
-
-        const shouldRecalculate = args.progressMode !== undefined || args.startValue !== undefined;
-
-        // Period fields are passed through from args via the spread above.
-        // If period is set to 'none', clear the period-specific fields.
-        if (args.period === 'none') {
-            updateData.periodStart = undefined;
-            updateData.periodLengthDays = undefined;
-        }
-
-        if (shouldRecalculate) {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective_date', q => q.eq('objective', id))
-                .collect();
-            const objectiveForCalc = {
-                ...existing,
-                ...updateData,
-            } as typeof existing;
-            updateData.currentValue = computeCurrentValue(objectiveForCalc, updates);
-            updateData.lastProgressAt = computeLastProgressAt(updates);
-        }
-
-        const updated = await ctx.db.patch('objectives', id, { ...updateData, updatedAt: now });
-
-        // Auto-complete if targetValue or direction changed such that the objective is now met
-        if (args.targetValue !== undefined || args.direction !== undefined) {
-            const patched = await ctx.db.get('objectives', id);
-            if (patched && patched.status === 'active') {
-                const direction = patched.direction ?? 'increase';
-                const isComplete =
-                    direction === 'decrease'
-                        ? patched.currentValue <= patched.targetValue
-                        : patched.currentValue >= patched.targetValue;
-                if (isComplete) {
-                    await ctx.db.patch('objectives', id, {
-                        status: 'completed',
-                        nextReminderAt: undefined,
-                        updatedAt: Date.now(),
-                    });
-                }
-            }
-        }
-
-        return updated;
-    },
-});
-
-/**
- * Get objectives shared with the user (collaborative objectives)
- */
-export const getSharedObjectives = queryWithRLS({
-    args: {
-        paginationOpts: paginationOptsValidator,
-    },
-    handler: async (ctx, { paginationOpts }) => {
-        const userId = String(ctx.userId);
-
-        // Get all organization objectives where user is a collaborator
-        // First, get the user's organization from betterAuth
-        const membersResult = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .collect();
-
-        if (!membersResult || membersResult.length === 0) {
-            return { page: [], isDone: true, continueCursor: '' };
-        }
-
-        const orgMember = membersResult[0];
-        const organizationId = orgMember?.organizationId ?? '';
-
-        // Use Convex built-in pagination on the indexed query
-        const results = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .order('desc')
-            .paginate(paginationOpts);
-
-        // Filter out the user's own objectives and deleted/archived objectives
-        const filteredPage = results.page.filter(
-            o => o.userId !== userId && o.status !== 'deleted' && o.status !== 'archived'
-        );
-
-        return {
-            ...results,
-            page: filteredPage,
-        };
-    },
-});
-
-/**
- * Add a collaborator to an objective
- */
-export const addCollaborator = mutationWithRLS({
-    args: {
-        objectiveId: v.id('objectives'),
-        collaboratorId: v.string(),
-    },
-    handler: async (ctx, { objectiveId, collaboratorId }) => {
-        const objective = await ctx.db.get('objectives', objectiveId);
+        const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {
-            throw new Error('Objective not found');
+            throw new ConvexError('Objective not found');
         }
 
-        // Check if the user is the owner
-        const userId = String(ctx.userId);
-        if (objective.userId !== userId) {
-            throw new Error('Only the owner can add collaborators');
+        if (objective.scope === 'personal' && objective.userId !== String(ctx.userId)) {
+            throw new ConvexError('Not authorized to edit this objective');
         }
 
-        // Check if the collaborator is a member of any organization
-        const collaboratorsResult = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', collaboratorId))
-            .collect();
-
-        if (collaboratorsResult.length === 0) {
-            throw new Error('Collaborator not found');
+        if (args.scope === 'organization' && !ctx.organizationId) {
+            throw new ConvexError('No active organization selected');
         }
 
-        // Verify the collaborator belongs to the same organization as the objective
-        const sameOrgMember = collaboratorsResult.find(
-            m => m.organizationId === objective.organizationId
-        );
-        if (!sameOrgMember) {
-            throw new Error('Collaborator must be a member of the same organization');
-        }
-
-        // Don't add if already a collaborator or is the owner
-        if (objective.userId === collaboratorId) {
-            return objective;
-        }
-
-        // Get existing collaborators or initialize empty array
-        const existingCollaborators = objective.collaborators ?? [];
-
-        // Don't add if already a collaborator
-        if (existingCollaborators.includes(collaboratorId)) {
-            return objective;
-        }
-
-        const now = Date.now();
-        const updated = await ctx.db.patch('objectives', objectiveId, {
-            collaborators: [...existingCollaborators, collaboratorId],
-            updatedAt: now,
-        });
-        return updated;
-    },
-});
-
-/**
- * Remove a collaborator from an objective
- */
-export const removeCollaborator = mutationWithRLS({
-    args: {
-        objectiveId: v.id('objectives'),
-        collaboratorId: v.string(),
-    },
-    handler: async (ctx, { objectiveId, collaboratorId }) => {
-        const objective = await ctx.db.get('objectives', objectiveId);
-        if (!objective) {
-            throw new Error('Objective not found');
-        }
-
-        // Check if the user is the owner
-        const userId = String(ctx.userId);
-        if (objective.userId !== userId) {
-            throw new Error('Only the owner can remove collaborators');
-        }
-
-        if (!objective.collaborators) {
-            return objective;
-        }
-
-        const now = Date.now();
-        const collaborators = objective.collaborators.filter(id => id !== collaboratorId);
-        const updated = await ctx.db.patch('objectives', objectiveId, {
-            collaborators,
-            updatedAt: now,
+        await ctx.db.patch('objectives', args.id, {
+            title: args.title,
+            description: args.description,
+            category: args.category,
+            targetValue: args.targetValue,
+            startValue: args.startValue,
+            deadline: args.deadline,
+            unit: args.unit,
+            scope: args.scope,
+            updatedAt: Date.now(),
         });
 
-        return updated;
+        await runObjectiveSync(ctx, args.id, objective.userId);
+        return await ctx.db.get('objectives', args.id);
     },
 });
 
-/**
- * Get organization members for adding as collaborators
- */
-export const getOrganizationMembers = queryWithRLS({
-    args: {},
-    handler: async ctx => {
-        const userId = String(ctx.userId);
-
-        // Get the user's organization from betterAuth
-        const userMembersResult = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .collect();
-
-        const userMember = userMembersResult[0];
-        if (!userMember) {
-            return [];
+export const deleteObjective = mutationWithRLS({
+    args: {
+        id: v.id('objectives'),
+    },
+    handler: async (ctx, args) => {
+        const objective = await ctx.db.get('objectives', args.id);
+        if (!objective) {
+            throw new ConvexError('Objective not found');
         }
 
-        // Get all members of the organization
-        const membersResult = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', userMember.organizationId))
+        const progressUpdates = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_objective', q => q.eq('objective', args.id))
             .collect();
 
-        const members = membersResult ?? [];
+        for (const progressUpdate of progressUpdates) {
+            await ctx.db.delete('progressUpdates', progressUpdate._id);
+        }
 
-        // Get user details for each member using betterAuth adapter
-        const membersWithDetails = await Promise.all(
-            members.map(
-                async (member: { userId: string; role: string; organizationId: string }) => {
-                    const usersResult = await ctx.db
-                        .query('user')
-                        .withIndex('userId', q => q.eq('userId', member.userId))
-                        .collect();
-                    const user = usersResult[0];
-                    return {
-                        userId: member.userId,
-                        name: user?.name,
-                        email: user?.email,
-                        role: member.role,
-                    };
-                }
-            )
-        );
+        const notifications = await ctx.db
+            .query('notifications')
+            .withIndex('by_objective', q => q.eq('objective', args.id))
+            .collect();
 
-        return membersWithDetails;
+        for (const notification of notifications) {
+            await ctx.db.delete('notifications', notification._id);
+        }
+
+        await ctx.db.delete('objectives', args.id);
+        return { success: true };
     },
 });

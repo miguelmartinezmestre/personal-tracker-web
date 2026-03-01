@@ -37,7 +37,7 @@ describe('convex auth', () => {
         const userConvexId = await t.run(async ctx => {
             const userDoc = await ctx.db
                 .query('user')
-                .filter(q => q.eq(q.field('userId'), userId))
+                .filter(q => q.eq(q.field('_id'), userId))
                 .first();
             return userDoc?._id;
         });

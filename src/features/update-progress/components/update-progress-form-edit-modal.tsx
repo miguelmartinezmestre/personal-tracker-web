@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -23,69 +22,53 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogFooter,
 } from '@/components/ui/dialog';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import {
     UpdateProgress,
     savedUpdateProgressSchema,
 } from '@/features/update-progress/schemas/update-progress';
-import { Doc, Id } from '@/convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
-import { convexQuery } from '@convex-dev/react-query';
 
 export default function UpdateProgressFormModal({
     defaultValues,
-    objectiveId,
+    objectiveId: _objectiveId,
 }: {
     defaultValues: UpdateProgress;
     objectiveId: Id<'objectives'>;
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
-    const objective = useQuery(convexQuery(api.objectives.getObjectiveById, { id: objectiveId }));
-    const objectiveDoc = objective.data as
-        | (Doc<'objectives'> & { objectiveType?: string; unit?: string })
-        | undefined;
-    const progressMode = objectiveDoc?.progressMode ?? 'cumulative';
-    const unitLabel = objectiveDoc?.unit ? ` (${objectiveDoc.unit})` : '';
-    const updatedValueDescription =
-        progressMode === 'snapshot'
-            ? t('valueDescriptionSnapshot', { unit: unitLabel })
-            : t('valueDescriptionCumulative', { unit: unitLabel });
+    const [open, setOpen] = useState(false);
+
     const updateUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress),
     });
-    const [open, setOpen] = useState(false);
+
     const form = useForm<z.infer<typeof savedUpdateProgressSchema>>({
-        defaultValues: defaultValues,
+        defaultValues,
         validators: {
             onChange: savedUpdateProgressSchema,
             onSubmit: savedUpdateProgressSchema,
         },
-        onSubmit: async ({ value }: { value: UpdateProgress }) => {
-            await onSubmit(value);
+        onSubmit: async ({ value }) => {
+            await updateUpdateProgress.mutateAsync({
+                id: value._id as Id<'progressUpdates'>,
+                updatedValue: value.updatedValue,
+                updateDate: new Date(value.updateDate).getTime(),
+                comment: value.comment ?? undefined,
+            });
+            setOpen(false);
+            form.reset();
         },
     });
-
-    const onSubmit = async (values: UpdateProgress) => {
-        const updateData = {
-            id: values._id as Id<'progressUpdates'>,
-            updatedValue: values.updatedValue,
-            updateDate: new Date(values.updateDate).getTime(),
-            comment: values.comment ?? undefined,
-        };
-
-        await updateUpdateProgress.mutateAsync(updateData);
-
-        setOpen(false);
-        form.reset();
-    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -126,7 +109,6 @@ export default function UpdateProgressFormModal({
                                             }
                                         />
                                     </FormControl>
-                                    <FormDescription>{updatedValueDescription}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -146,9 +128,6 @@ export default function UpdateProgressFormModal({
                                             value={field.value || ''}
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        {t('optionalAddDetailsAboutYourUpdateProgress')}
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -158,12 +137,12 @@ export default function UpdateProgressFormModal({
                             name="updateDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>{t('deadline')}</FormLabel>
+                                    <FormLabel>{t('table.columns.date')}</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button
-                                                    variant={'outline'}
+                                                    variant="outline"
                                                     className={cn(
                                                         'w-full pl-3 text-left font-normal',
                                                         !field.value && 'text-muted-foreground'
