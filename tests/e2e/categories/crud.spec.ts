@@ -14,7 +14,7 @@ test.describe('Categories CRUD', () => {
 
     test('view categories list', async ({ page }) => {
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Categories page should load
         await expect(page).toHaveURL(/\/dashboard\/categories/);
@@ -28,7 +28,7 @@ test.describe('Categories CRUD', () => {
         const categoryData = CategoryFactory.create();
 
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Open create modal
         await page.getByTestId('category-create-open').click();
@@ -102,7 +102,7 @@ test.describe('Categories CRUD', () => {
         const category = await createCategory(page, { name: `Edit Name ${Date.now()}` });
 
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Find and click edit button (uses data-testid="category-edit-open")
         const row = page.locator('tr', { hasText: category.name }).first();
@@ -125,7 +125,7 @@ test.describe('Categories CRUD', () => {
             await saveButton.click();
 
             await page.waitForTimeout(2000);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Verify update
             await expect(page.getByText(newName)).toBeVisible({ timeout: 10000 });
@@ -139,7 +139,7 @@ test.describe('Categories CRUD', () => {
         });
 
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const row = page.locator('tr', { hasText: category.name }).first();
         const editButton = row.getByTestId('category-edit-open');
@@ -177,7 +177,7 @@ test.describe('Categories CRUD', () => {
         const category = await createCategory(page, { name: `Delete Cat ${Date.now()}` });
 
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Verify category exists
         await expect(page.getByText(category.name)).toBeVisible();
@@ -205,16 +205,18 @@ test.describe('Categories CRUD', () => {
             }
 
             await page.waitForTimeout(2000);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Category should be removed
-            await expect(page.getByText(category.name)).toBeHidden({ timeout: 10000 });
+            await expect(
+                page.getByTestId('table-row').filter({ hasText: category.name })
+            ).toHaveCount(0, { timeout: 10000 });
         }
     });
 
     test('create default categories button', async ({ page }) => {
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Look for "Create Default Categories" button
         const defaultCategoriesButton = page.locator(
@@ -225,7 +227,7 @@ test.describe('Categories CRUD', () => {
             await defaultCategoriesButton.first().click();
 
             await page.waitForTimeout(2000);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Default categories should appear (Personal, Work, Health, etc.)
             const personalCategory = page.getByText(/personal/i);
@@ -265,13 +267,14 @@ test.describe('Categories CRUD', () => {
         // Fill other required fields
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
-        await page.getByTestId('objective-current-input').fill('0');
 
         // Save
         await page.getByTestId('objective-save-button').click();
 
         // Verify objective created
-        await expect(page.getByText(title)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('table-row').filter({ hasText: title }).first()).toBeVisible({
+            timeout: 10000,
+        });
     });
 
     test('category dropdown shows all categories', async ({ page }) => {
@@ -345,7 +348,7 @@ test.describe('Categories CRUD', () => {
         });
 
         await page.goto('/dashboard/categories');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Find category row
         const row = page.locator('tr', { hasText: category.name }).first();

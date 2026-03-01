@@ -7,12 +7,12 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
-    workers: 2,
+    workers: 4,
 
-    // Timeouts
-    timeout: 60000, // 1 minute max per test
+    // Timeouts (increased for auth + Convex sync; networkidle removed in favor of load)
+    timeout: 90000,
     expect: {
-        timeout: 10000, // 10s for assertions
+        timeout: 5000,
     },
 
     retries: 0,
@@ -23,9 +23,8 @@ export default defineConfig({
         // Use data-testid attribute for test selectors
         testIdAttribute: 'data-testid',
 
-        // Timeouts
-        // navigationTimeout: 15000,
-        // actionTimeout: 10000,
+        navigationTimeout: 45000,
+        actionTimeout: 15000,
     },
 
     projects: [

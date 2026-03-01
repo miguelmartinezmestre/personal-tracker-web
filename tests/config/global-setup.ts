@@ -13,19 +13,19 @@ async function globalSetup(config: FullConfig) {
 
         // Wait for the backend to be ready
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 5;
 
         while (attempts < maxAttempts) {
             try {
                 // Check if the Next.js app responds
                 await page.goto(`${baseURL}`, {
-                    timeout: 5000,
+                    timeout: 3000,
                     waitUntil: 'domcontentloaded',
                 });
 
                 // Also verify the auth endpoint is responsive
                 await page.goto(`${baseURL}/api/auth`, {
-                    timeout: 2000,
+                    timeout: 1500,
                     waitUntil: 'domcontentloaded',
                 });
 
@@ -34,12 +34,12 @@ async function globalSetup(config: FullConfig) {
             } catch {
                 attempts++;
                 console.log(`⏳ Waiting for backend... attempt ${attempts}/${maxAttempts}`);
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 750));
             }
         }
 
         if (attempts >= maxAttempts) {
-            console.warn('⚠️ Backend might not be fully ready, but proceeding with tests');
+            throw new Error('Backend did not become ready in time during global setup');
         }
 
         // Verify Convex is responding (optional check)
@@ -54,6 +54,7 @@ async function globalSetup(config: FullConfig) {
         }
     } catch (error) {
         console.error('❌ Global setup failed:', error);
+        throw error;
     } finally {
         await browser.close();
     }

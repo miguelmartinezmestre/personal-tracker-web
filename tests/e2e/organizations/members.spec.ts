@@ -9,7 +9,7 @@ test.describe('Organization Members', () => {
     test('view organization members', async ({ page }) => {
         // Navigate to organization detail or members page
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Find an organization and view its members
         const orgRow = page.locator('tr').first();
@@ -17,7 +17,7 @@ test.describe('Organization Members', () => {
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for members section
             const membersSection = page.locator('text=/members|miembros/i');
@@ -27,7 +27,7 @@ test.describe('Organization Members', () => {
             const membersTab = page.locator('button:has-text("Members"), [data-testid*="members"]');
             if ((await membersTab.count()) > 0) {
                 await membersTab.first().click();
-                await page.waitForLoadState('networkidle');
+                await page.waitForLoadState('load');
             }
 
             // Should see at least the owner
@@ -41,14 +41,14 @@ test.describe('Organization Members', () => {
 
         // Navigate to organization detail
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Owner should see member management options
             const inviteButton = page.locator(
@@ -74,14 +74,14 @@ test.describe('Organization Members', () => {
         const org = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for remove member button (if there are other members)
             const removeButton = page.locator(
@@ -95,14 +95,14 @@ test.describe('Organization Members', () => {
 
     test('member role is displayed', async ({ page }) => {
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr').first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for role badge (owner, admin, member)
             const roleBadge = page.locator(
@@ -117,14 +117,14 @@ test.describe('Organization Members', () => {
 
     test('owner cannot be removed', async ({ page }) => {
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr').first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for owner's member entry
             const ownerRow = page.locator(
@@ -147,14 +147,14 @@ test.describe('Organization Members', () => {
 
     test('member list shows email', async ({ page }) => {
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr').first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for email display in member list
             const emailDisplay = page.getByText(/@.*\.com|@.*\.test/);
@@ -167,14 +167,14 @@ test.describe('Organization Members', () => {
 
     test('member joined date is displayed', async ({ page }) => {
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr').first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for date display
             const dateDisplay = page.getByText(/\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|ago|hace/);

@@ -138,6 +138,23 @@ async function hasActiveOrganization(page: Page): Promise<boolean> {
     return Boolean(sessionData?.session?.activeOrganizationId);
 }
 
+async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> {
+    const switcher = page.getByTestId('organization-switcher');
+    if ((await switcher.count()) === 0) {
+        return false;
+    }
+
+    const label = ((await switcher.first().textContent()) ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    if (!label.trim()) {
+        return false;
+    }
+
+    return !label.includes('no organization') && !label.includes('sin organizacion');
+}
+
 async function getOrganizationIds(page: Page): Promise<string[]> {
     try {
         return await page.evaluate(async () => {
@@ -193,6 +210,80 @@ async function setActiveOrganizationViaBrowser(
     }
 }
 
+async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
+    const switcher = page.getByTestId('organization-switcher');
+    if ((await switcher.count()) === 0) {
+        return false;
+    }
+
+    const trigger = switcher.first();
+    if (!(await trigger.isVisible()) || (await trigger.isDisabled())) {
+        return false;
+    }
+
+    await trigger.click();
+
+    await page.waitForTimeout(250);
+    const option = page.locator('[data-testid^="organization-option-"]').first();
+    if ((await option.count()) === 0) {
+        await page.keyboard.press('Escape').catch(() => undefined);
+        return false;
+    }
+
+    await option.click();
+    await page.waitForTimeout(500);
+
+    return true;
+}
+
+async function ensureOrganizationExists(page: Page): Promise<void> {
+    try {
+        await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
+        await page.waitForSelector('[data-testid="organization-create-open"]', { timeout: 15000 });
+
+        const existingOrganizations = await page.getByTestId('table-row').count();
+        if (existingOrganizations > 0) {
+            return;
+        }
+
+        const uniqueSuffix = randomUUID().substring(0, 8);
+        const organizationName = `Test Org ${uniqueSuffix}`;
+
+        let modalOpened = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            await page.getByTestId('organization-create-open').click();
+            try {
+                await page.waitForSelector('[data-testid="organization-name-input"]', {
+                    timeout: 5000,
+                });
+                modalOpened = true;
+                break;
+            } catch {
+                await page.keyboard.press('Escape').catch(() => undefined);
+                await page.waitForTimeout(250);
+            }
+        }
+
+        if (!modalOpened) {
+            return;
+        }
+
+        await page.getByTestId('organization-name-input').fill(organizationName);
+        await page
+            .getByTestId('organization-description-input')
+            .fill('Automatically created for E2E setup');
+        await page.getByTestId('organization-save-button').click();
+
+        await expect(
+            page.getByTestId('table-row').filter({ hasText: organizationName }).first()
+        ).toBeVisible({
+            timeout: 15000,
+        });
+    } catch {
+        // Best effort only. Some flows can continue without creating an organization here.
+    }
+}
+
 async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
     await expect
         .poll(async () => await hasAuthenticatedSession(page), {
@@ -203,7 +294,7 @@ async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise
 }
 
 async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<void> {
-    if (await hasActiveOrganization(page)) {
+    if ((await hasActiveOrganization(page)) || (await hasOrganizationSelectedInUI(page))) {
         return;
     }
 
@@ -218,13 +309,28 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
             }
         }
 
+        if (await setActiveOrganizationViaUi(page)) {
+            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+            return;
+        }
+
         await page.waitForTimeout(500);
+    }
+
+    // Some auth payloads do not expose active organization consistently.
+    // If explicit activation did not succeed, continue with best-effort dashboard navigation.
+    try {
+        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+    } catch {
+        // Keep the current state and let downstream assertions report if navigation is broken.
     }
 }
 
 async function ensureAuthenticatedState(page: Page): Promise<void> {
     await waitForAuthenticatedSession(page);
+    await ensureOrganizationExists(page);
     await ensureActiveOrganization(page);
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 }
 
 async function loginWithCredentials(page: Page, email: string, password: string): Promise<void> {
@@ -248,7 +354,12 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
     await page.getByTestId('register-email-input').fill(userData.email);
     await page.getByTestId('register-password-input').fill(userData.password);
     await page.getByTestId('register-confirm-password-input').fill(userData.password);
-    await page.getByTestId('register-organization-slug-input').fill(userData.organizationSlug);
+
+    // Support both register form variants (with and without organization slug input).
+    const organizationSlugInput = page.getByTestId('register-organization-slug-input');
+    if ((await organizationSlugInput.count()) > 0) {
+        await organizationSlugInput.fill(userData.organizationSlug);
+    }
 
     await page.getByTestId('register-button').click();
 
@@ -417,12 +528,26 @@ export async function createObjective(
         await ensureDefaultCategories(page);
     }
 
-    await page.goto('/dashboard/objectives');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="objective-create-open"]', { timeout: 15000 });
 
     // Open create modal
-    await page.getByTestId('objective-create-open').click();
-    await page.waitForSelector('[data-testid="objective-title-input"]');
+    let modalOpened = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.getByTestId('objective-create-open').click();
+        try {
+            await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 5000 });
+            modalOpened = true;
+            break;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+            await page.waitForTimeout(250);
+        }
+    }
+
+    if (!modalOpened) {
+        throw new Error('Could not open create objective modal');
+    }
 
     // Fill form
     await page.getByTestId('objective-title-input').fill(title);
@@ -449,13 +574,13 @@ export async function createObjective(
     // Fill numeric values
     await page.getByTestId('objective-target-input').fill(String(targetValue));
     await page.getByTestId('objective-unit-input').fill(unit);
-    await page.getByTestId('objective-current-input').fill(String(currentValue));
 
     // Save
     await page.getByTestId('objective-save-button').click();
 
-    // Wait for objective to appear in list
-    await expect(page.getByText(title)).toBeVisible({ timeout: 10000 });
+    // Wait for objective to appear in visible table rows (avoid hidden mobile-card duplicates)
+    const createdObjectiveRow = page.getByTestId('table-row').filter({ hasText: title }).first();
+    await expect(createdObjectiveRow).toBeVisible({ timeout: 15000 });
 
     return { title, description, category, targetValue, currentValue, unit };
 }
@@ -481,11 +606,25 @@ export async function createCategory(
     const name = options?.name ?? `test-category-${uuid.substring(0, 8)}`;
     const color = options?.color ?? 'Green';
 
-    await page.goto('/dashboard/categories');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="category-create-open"]', { timeout: 15000 });
 
-    await page.getByTestId('category-create-open').click();
-    await page.waitForSelector('[data-testid="category-name-input"]', { timeout: 5000 });
+    let modalOpened = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.getByTestId('category-create-open').click();
+        try {
+            await page.waitForSelector('[data-testid="category-name-input"]', { timeout: 5000 });
+            modalOpened = true;
+            break;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+            await page.waitForTimeout(250);
+        }
+    }
+
+    if (!modalOpened) {
+        throw new Error('Could not open create category modal');
+    }
 
     await page.getByTestId('category-name-input').fill(name);
     await page.getByTestId('category-color-select').click();
@@ -500,9 +639,12 @@ export async function createCategory(
         await page.getByRole('option').first().click();
     }
     await page.getByTestId('category-save-button').click();
-
-    await expect(page.getByText(name)).toBeVisible({ timeout: 10000 });
-    await page.waitForLoadState('networkidle');
+    await expect
+        .poll(async () => await page.getByTestId('table-row').filter({ hasText: name }).count(), {
+            timeout: 15000,
+            intervals: [500, 1000, 2000],
+        })
+        .toBeGreaterThan(0);
 
     return { name, color };
 }
@@ -511,21 +653,22 @@ export async function createCategory(
  * Ensures default categories exist for the current user.
  */
 export async function ensureDefaultCategories(page: Page): Promise<void> {
-    await page.goto('/dashboard/categories');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector(
+        '[data-testid="category-create-open"], table, [data-testid*="categories"]',
+        {
+            timeout: 15000,
+        }
+    );
 
-    // Wait for table/list to load
-    await page.waitForTimeout(1000);
-
-    // Check for Personal category in table rows specifically
-    const categoryTable = page.locator('table, [data-testid*="categories"]');
-    const personalCategoryExists = (await categoryTable.locator('text=Personal').count()) > 0;
+    const personalCategoryExists =
+        (await page
+            .getByTestId('table-row')
+            .filter({ hasText: /\bPersonal\b/i })
+            .count()) > 0;
 
     if (!personalCategoryExists) {
         await createCategory(page, { name: 'Personal', color: 'Green' });
-        await page.waitForTimeout(3000); // Extra wait for Convex sync
-        await page.reload();
-        await page.waitForLoadState('networkidle');
     }
 }
 
@@ -556,11 +699,15 @@ export async function createOrganization(
     // Wait for organizations page to be ready
     await page.waitForSelector('[data-testid="organizations-title"]', { timeout: 15000 });
     await page.getByTestId('organization-create-open').click();
+    await page.waitForSelector('[data-testid="organization-name-input"]', { timeout: 5000 });
     await page.getByTestId('organization-name-input').fill(name);
     await page.getByTestId('organization-description-input').fill(description);
     await page.getByTestId('organization-save-button').click();
 
-    await expect(page.getByText(name)).toBeVisible({ timeout: 10000 });
+    // Wait for org to appear in list (Convex mutation is async)
+    await expect(page.locator('tr').filter({ hasText: name }).first()).toBeVisible({
+        timeout: 15000,
+    });
 
     return { name, description };
 }
@@ -588,7 +735,8 @@ export async function createNotification(
     const type = options?.type ?? 'reminder';
 
     await page.goto('/dashboard/notifications');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
+    await page.waitForSelector('[data-testid="notification-create-open"]', { timeout: 15000 });
 
     await page.getByTestId('notification-create-open').click();
     await page.getByTestId('notification-objective-select').click();
@@ -612,29 +760,33 @@ export async function createNotification(
  * Promotes the current logged-in user to admin role.
  */
 export async function promoteToAdmin(page: Page): Promise<void> {
-    await page.goto('/dashboard/home');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 
-    const result = await page.evaluate(async () => {
-        const response = await fetch('/api/test/promote-admin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.evaluate(async () => {
+            const response = await fetch('/api/test/promote-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                const body = await response.text();
+                throw new Error(`Promote admin failed: ${response.status} ${body}`);
+            }
+
+            return await response.json();
         });
 
-        if (!response.ok) {
-            const body = await response.text();
-            throw new Error(`Promote admin failed: ${response.status} ${body}`);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        const adminMenuItem = page.locator('a[href*="/dashboard/admin"], [data-testid*="admin"]');
+        if ((await adminMenuItem.count()) > 0) {
+            return;
         }
 
-        return await response.json();
-    });
+        await page.waitForTimeout(1000);
+    }
 
-    // console.log('User promoted to admin:', result);
-
-    await page.waitForTimeout(2000);
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    throw new Error('Failed to promote current user to admin after retries');
 }
 
 /**
