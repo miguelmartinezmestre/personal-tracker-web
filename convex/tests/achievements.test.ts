@@ -264,14 +264,10 @@ describe('convex achievements', async () => {
         test('shows correct progress for objectives completed', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            const obj1 = await userIdentity.mutation(api.objectives.createObjective, {
+            await userIdentity.mutation(api.objectives.createObjective, {
                 title: 'Test Objective 1',
                 targetValue: 100,
                 currentValue: 100,
-            });
-
-            await userIdentity.mutation(api.objectives.completeObjective, {
-                id: obj1,
             });
 
             const progress = await userIdentity.query(
@@ -296,6 +292,7 @@ describe('convex achievements', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
+                    scope: 'personal',
                     title: 'Early Bird Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -324,6 +321,7 @@ describe('convex achievements', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
+                    scope: 'personal',
                     title: 'No Deadline Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -353,6 +351,7 @@ describe('convex achievements', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
+                    scope: 'personal',
                     title: 'Late Objective',
                     targetValue: 100,
                     currentValue: 100,

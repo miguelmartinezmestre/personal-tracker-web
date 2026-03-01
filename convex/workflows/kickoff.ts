@@ -24,15 +24,6 @@ export const handleObjectiveLifecycleComplete = internalMutation({
         const { result, context } = args;
         const objectiveId = context?.objectiveId;
 
-        if (objectiveId) {
-            const objective = await ctx.db.get(objectiveId);
-            if (objective) {
-                await ctx.db.patch(objectiveId, {
-                    workflowId: undefined,
-                });
-            }
-        }
-
         // Log completion for observability
         if (result.kind === 'success') {
             // Objective was completed
@@ -47,6 +38,6 @@ export const handleObjectiveLifecycleComplete = internalMutation({
         // Cleanup workflow storage
         await workflow.cleanup(ctx, args.workflowId);
 
-        return { handled: true };
+        return { handled: true, objectiveId: objectiveId ?? null };
     },
 });

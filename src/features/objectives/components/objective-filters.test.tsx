@@ -15,8 +15,6 @@ vi.mock('next-intl', () => ({
             'Objectives.statusOptions.all': 'All',
             'Objectives.statusOptions.active': 'Active',
             'Objectives.statusOptions.completed': 'Completed',
-            'Objectives.statusOptions.paused': 'Paused',
-            'Objectives.statusOptions.archived': 'Archived',
             'Objectives.categoryOptions.all': 'All categories',
             'Objectives.deadlineRangeOptions.all': 'Any time',
             'Objectives.deadlineRangeOptions.today': 'Today',

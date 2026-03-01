@@ -12,7 +12,8 @@ import { ConvexError } from 'convex/values';
 
 import type { DataModelFromSchemaDefinition } from 'convex/server';
 import schema from './schema';
-import { api } from './_generated/api';
+import { getAuth } from './auth';
+import { getAuthUserIdentity, getHeaders } from 'better-convex/auth';
 
 export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof schema>;
 
@@ -23,42 +24,33 @@ async function rlsRules(
     organizationId?: string | null
 ) {
     const isAdmin = role === 'admin';
+    const canAccessObjective = (objective: {
+        userId: string;
+        organizationId: string;
+        scope?: string;
+    }) => {
+        if (isAdmin) return true;
+        if (objective.scope === 'organization') {
+            return (
+                Boolean(organizationId) &&
+                Boolean(objective.organizationId) &&
+                objective.organizationId === organizationId
+            );
+        }
+
+        return objective.userId === userId;
+    };
 
     return {
         objectives: {
             read: async (_, objective) => {
-                if (isAdmin) return true;
-                if (objective.userId === userId) return true;
-                // Only match by org if both sides have a real (non-empty) orgId
-                if (
-                    organizationId &&
-                    objective.organizationId &&
-                    objective.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                return canAccessObjective(objective);
             },
             insert: async (_, objective) => {
-                if (isAdmin) return true;
-                if (objective.userId === userId) return true;
-                if (
-                    organizationId &&
-                    objective.organizationId &&
-                    objective.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                return canAccessObjective(objective);
             },
             modify: async (_, objective) => {
-                if (isAdmin) return true;
-                if (objective.userId === userId) return true;
-                if (
-                    organizationId &&
-                    objective.organizationId &&
-                    objective.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                return canAccessObjective(objective);
             },
         },
         progressUpdates: {
@@ -66,40 +58,22 @@ async function rlsRules(
                 if (isAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (objective?.userId === userId) return true;
-                if (
-                    organizationId &&
-                    objective?.organizationId &&
-                    objective.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                if (!objective) return false;
+                return canAccessObjective(objective);
             },
             insert: async (_, progressUpdate) => {
                 if (isAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (objective?.userId === userId) return true;
-                if (
-                    organizationId &&
-                    objective?.organizationId &&
-                    objective.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                if (!objective) return false;
+                return canAccessObjective(objective);
             },
             modify: async (_, progressUpdate) => {
                 if (isAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (objective?.userId === userId) return true;
-                if (
-                    organizationId &&
-                    objective?.organizationId &&
-                    objective.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                if (!objective) return false;
+                return canAccessObjective(objective);
             },
         },
         notifications: {
@@ -245,15 +219,44 @@ type MutationRlsCtx = {
 export const queryWithRLS = customQuery(
     query,
     customCtx(async (ctx): Promise<QueryRlsCtx> => {
-        const currentUser = await ctx.runQuery(api.auth.getCurrentUser);
-        const currentOrganization = await ctx.runQuery(api.auth.getCurrentOrganization);
+        const identity = await getAuthUserIdentity(ctx);
+
+        if (!identity) {
+            throw new ConvexError('Unauthenticated 1');
+        }
+
+        const currentUser = await ctx.db
+            .query('user')
+            .filter(q => q.eq(q.field('_id'), identity.userId))
+            .first();
+
 
         if (!currentUser) {
-            throw new ConvexError('Unauthenticated');
+            throw new ConvexError('Unauthenticated 2');
         }
+
+        let organizationId = '';
+        try {
+            const headers = await getHeaders(ctx);
+            const auth = getAuth(ctx);
+            const session = await auth.api.getSession({ headers });
+            organizationId = session?.session.activeOrganizationId ?? '';
+        } catch {
+            organizationId = '';
+        }
+
+        if (!organizationId) {
+            const membership = await ctx.db
+                .query('member')
+                .withIndex('userId', q =>
+                    q.eq('userId', currentUser.userId ?? String(currentUser._id))
+                )
+                .first();
+            organizationId = membership?.organizationId ?? '';
+        }
+
         const userId = currentUser.userId ?? String(currentUser._id);
         const role = currentUser.role ?? 'user';
-        const organizationId = currentOrganization;
 
         return {
             db: wrapDatabaseReader(
@@ -272,15 +275,41 @@ export const queryWithRLS = customQuery(
 export const mutationWithRLS = customMutation(
     mutation,
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
-        const currentUser = await ctx.runQuery(api.auth.getCurrentUser);
-        const currentOrganization = await ctx.runQuery(api.auth.getCurrentOrganization);
-
-        if (!currentUser) {
-            throw new ConvexError('Unauthenticated');
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            throw new ConvexError('Unauthenticated 4');
         }
+
+        const currentUser = await ctx.db
+            .query('user')
+            .filter(q => q.eq(q.field('_id'), identity.userId))
+            .first();
+        if (!currentUser) {
+            throw new ConvexError('Unauthenticated 5');
+        }
+
+        let organizationId = '';
+        try {
+            const headers = await getHeaders(ctx);
+            const auth = getAuth(ctx);
+            const session = await auth.api.getSession({ headers });
+            organizationId = session?.session.activeOrganizationId ?? '';
+        } catch {
+            organizationId = '';
+        }
+
+        if (!organizationId) {
+            const membership = await ctx.db
+                .query('member')
+                .withIndex('userId', q =>
+                    q.eq('userId', currentUser.userId ?? String(currentUser._id))
+                )
+                .first();
+            organizationId = membership?.organizationId ?? '';
+        }
+
         const userId = currentUser.userId ?? String(currentUser._id);
         const role = currentUser.role ?? 'user';
-        const organizationId = currentOrganization;
 
         return {
             db: wrapDatabaseWriter(

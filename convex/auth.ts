@@ -116,7 +116,7 @@ export const auth = betterAuth(createAuthOptions({} as any));
 export const getCurrentUser = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated');
+        if (!identity) throw new ConvexError('Unauthenticated 3');
         return await ctx.db.get('user', identity.userId);
     },
 });

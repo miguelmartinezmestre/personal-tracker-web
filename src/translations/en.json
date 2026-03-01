@@ -457,6 +457,15 @@
         "saveObjective": "Save Objective",
         "category": "Category",
         "unit": "Unit",
+        "scope": "Scope",
+        "scopeOptions": {
+            "personal": "Personal",
+            "organization": "Organization"
+        },
+        "sections": {
+            "personal": "My objectives",
+            "organization": "Organization objectives"
+        },
         "objectiveType": "Objective type",
         "objectiveTypeDescription": "Select how this objective is measured.",
         "objectiveTypeOptions": {

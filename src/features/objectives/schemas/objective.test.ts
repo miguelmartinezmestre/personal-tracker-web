@@ -9,6 +9,7 @@ describe('objectiveSchema', () => {
             category: null,
             targetValue: 12,
             currentValue: 0,
+            scope: 'personal',
         });
 
         expect(result.success).toBe(true);
@@ -21,19 +22,21 @@ describe('objectiveSchema', () => {
             category: null,
             targetValue: 12,
             currentValue: 0,
+            scope: 'personal',
         });
 
         expect(result.success).toBe(false);
     });
 
-    it('accepts known status values', () => {
+    it('accepts supported status values', () => {
         const result = objectiveSchema.safeParse({
             title: 'Complete project',
             description: null,
             category: null,
             targetValue: 1,
             currentValue: 0,
-            status: 'paused',
+            scope: 'personal',
+            status: 'active',
         });
 
         expect(result.success).toBe(true);
@@ -47,6 +50,7 @@ describe('objectiveSchema', () => {
             targetValue: 1,
             currentValue: 0,
             status: 'in_review',
+            scope: 'personal',
         });
 
         expect(result.success).toBe(false);

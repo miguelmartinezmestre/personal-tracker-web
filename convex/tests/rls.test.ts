@@ -541,7 +541,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             expect(obj?.title).toBe('User 1 Secret Objective');
         });
 
-        test('admin can modify user data', async () => {
+        test('admin cannot modify another user personal objective', async () => {
             // User 1 creates objective
             const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
                 title: 'Original Title',
@@ -549,16 +549,17 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            // Admin updates it
-            await adminIdentity.mutation(api.objectives.updateObjective, {
-                id: obj1Id,
-                title: 'Admin Updated Title',
-            });
+            await expect(
+                adminIdentity.mutation(api.objectives.updateObjective, {
+                    id: obj1Id,
+                    title: 'Admin Updated Title',
+                })
+            ).rejects.toThrow('Not authorized to edit this objective');
 
             const obj = await user1Identity.query(api.objectives.getObjectiveById, {
                 id: obj1Id,
             });
-            expect(obj?.title).toBe('Admin Updated Title');
+            expect(obj?.title).toBe('Original Title');
         });
     });
 
