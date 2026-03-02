@@ -8,6 +8,8 @@ import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/features/dashboard/components/stat-card';
+import MonthlyProgressChart from '@/features/dashboard/components/monthly-progress-chart';
+import TopObjectivesChart from '@/features/dashboard/components/top-objectives-chart';
 
 export default function Home({
     preloadedUserQuery,
@@ -16,6 +18,8 @@ export default function Home({
     preloadedDashboardStatsQuery,
     preloadedUpcomingDeadlinesQuery,
     preloadedRecentActivityQuery,
+    preloadedMonthlyProgressQuery,
+    preloadedTopObjectivesQuery,
 }: {
     preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
     preloadedUserAchievementStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
@@ -23,6 +27,8 @@ export default function Home({
     preloadedDashboardStatsQuery: Preloaded<typeof api.dashboard.getDashboardStats>;
     preloadedUpcomingDeadlinesQuery: Preloaded<typeof api.dashboard.getUpcomingDeadlines>;
     preloadedRecentActivityQuery: Preloaded<typeof api.dashboard.getRecentActivity>;
+    preloadedMonthlyProgressQuery: Preloaded<typeof api.dashboard.getMonthlyProgress>;
+    preloadedTopObjectivesQuery: Preloaded<typeof api.dashboard.getObjectivesWithMostProgress>;
 }) {
     const user = usePreloadedAuthQuery(preloadedUserQuery);
     const stats = usePreloadedAuthQuery(preloadedDashboardStatsQuery);
@@ -56,6 +62,14 @@ export default function Home({
                     value={stats?.completedObjectives}
                     icon={CheckCircle}
                 />
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <MonthlyProgressChart
+                    preloadedMonthlyProgressQuery={preloadedMonthlyProgressQuery}
+                />
+                <TopObjectivesChart preloadedTopObjectivesQuery={preloadedTopObjectivesQuery} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
