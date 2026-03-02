@@ -2,31 +2,31 @@ import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 export default defineConfig({
-    resolve: {
-        alias: {
-            '@/convex': path.resolve(__dirname, './convex'),
-            '@': path.resolve(__dirname, './src'),
-        },
+  resolve: {
+    alias: {
+      '@/convex': path.resolve(__dirname, './convex'),
+      '@': path.resolve(__dirname, './src'),
     },
-    test: {
-        reporters: ['tree'],
-        include: ['convex/tests/**/*.test.ts', 'src/features/**/*.test.{ts,tsx}'],
-        exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
-        environment: 'jsdom',
-        globals: true,
-        setupFiles: ['./vitest.setup.ts'],
-        coverage: {
-            provider: 'v8',
-            reporter: ['text', 'html', 'lcov'],
-            include: ['convex/**/*.ts', 'src/**/*.{ts,tsx}'],
-            exclude: [
-                '**/*.test.ts',
-                '**/*.test.tsx',
-                '**/tests/**',
-                '**/_generated/**',
-                '**/node_modules/**',
-                '**/*.d.ts',
-            ],
-        },
+  },
+  test: {
+    reporters: ['tree'],
+    include: ['convex/tests/**/*.test.ts', 'src/features/**/*.test.{ts,tsx}'],
+    exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./vitest.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      include: ['convex/**/*.ts', 'src/**/*.{ts,tsx}'],
+      exclude: [
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/tests/**',
+        '**/_generated/**',
+        '**/node_modules/**',
+        '**/*.d.ts',
+      ],
     },
+  },
 });

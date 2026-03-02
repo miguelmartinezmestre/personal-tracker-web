@@ -7,91 +7,91 @@ import { GenericQueryCtx } from 'convex/server';
 import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex sessions', () => {
-    const t = initConvexTest();
-    let _userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
-    let sessionId: string;
+  const t = initConvexTest();
+  let _userIdentity: TestConvexForDataModel<DataModel>;
+  let userId: string;
+  let sessionId: string;
 
-    beforeEach(async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
+  beforeEach(async () => {
+    const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        const user = {
-            userId: 'test-user-sessions-' + randomSuffix,
-            email: 'sessions-test@example.com-' + randomSuffix,
-            name: 'Sessions Test User ' + randomSuffix,
-            password: 'test-password',
-            role: 'admin',
-            emailVerified: false,
-        };
+    const user = {
+      userId: 'test-user-sessions-' + randomSuffix,
+      email: 'sessions-test@example.com-' + randomSuffix,
+      name: 'Sessions Test User ' + randomSuffix,
+      password: 'test-password',
+      role: 'admin',
+      emailVerified: false,
+    };
 
-        await createTestUser(t, user);
-        userId = user.userId;
+    await createTestUser(t, user);
+    userId = user.userId;
 
-        _userIdentity = t.withIdentity({
-            subject: user.userId,
-            role: user.role,
-            email: user.email,
-            name: user.name,
-            password: user.password,
-            emailVerified: user.emailVerified,
-            createdAt: Date.now(),
-            userId: user.userId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-
-        sessionId = await createTestSession(t, {
-            userId: userId,
-            expiresAt: Date.now() + 1000000,
-            token: 'test-token-' + randomSuffix,
-            ipAddress: '127.0.0.1',
-            userAgent: 'test-agent',
-        });
+    _userIdentity = t.withIdentity({
+      subject: user.userId,
+      role: user.role,
+      email: user.email,
+      name: user.name,
+      password: user.password,
+      emailVerified: user.emailVerified,
+      createdAt: Date.now(),
+      userId: user.userId,
+      image: 'https://example.com/image.png',
+      banExpires: null,
+      banReason: null,
+      banned: false,
     });
 
-    test('createTestSession creates sessions for user', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
+    sessionId = await createTestSession(t, {
+      userId: userId,
+      expiresAt: Date.now() + 1000000,
+      token: 'test-token-' + randomSuffix,
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent',
+    });
+  });
 
-        // Create another session
-        await createTestSession(t, {
-            userId: userId,
-            expiresAt: Date.now() + 1000000,
-            token: 'test-token-2-' + randomSuffix,
-            ipAddress: '127.0.0.1',
-            userAgent: 'test-agent',
-        });
+  test('createTestSession creates sessions for user', async () => {
+    const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        // Verify sessions directly from the component using filter (index not available in test env)
-        const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
-            return await ctx.db
-                .query('session')
-                .filter(q => q.eq(q.field('userId'), userId))
-                .collect();
-        });
-
-        expect(sessions.length).toBeGreaterThanOrEqual(2);
-        expect(sessions.every((s: { userId: string }) => s.userId === userId)).toBe(true);
+    // Create another session
+    await createTestSession(t, {
+      userId: userId,
+      expiresAt: Date.now() + 1000000,
+      token: 'test-token-2-' + randomSuffix,
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent',
     });
 
-    test('getSessionsByUser rejects when unauthenticated', async () => {
-        await expect(
-            t.query(api.sessions.getSessionsByUser, {
-                paginationOpts: { numItems: 10, cursor: null },
-            })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+    // Verify sessions directly from the component using filter (index not available in test env)
+    const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
+      return await ctx.db
+        .query('session')
+        .filter(q => q.eq(q.field('userId'), userId))
+        .collect();
     });
 
-    test('session can be retrieved after creation', async () => {
-        // Verify that the session created in beforeEach can be retrieved
-        const session = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
-            return await ctx.db.get(sessionId as unknown as Id<'session'>);
-        });
+    expect(sessions.length).toBeGreaterThanOrEqual(2);
+    expect(sessions.every((s: { userId: string }) => s.userId === userId)).toBe(true);
+  });
 
-        expect(session).not.toBeNull();
-        expect((session as { userId?: string })?.userId).toBe(userId);
-        expect((session as { createdAt?: number })?.createdAt).toBeDefined();
-        expect((session as { updatedAt?: number })?.updatedAt).toBeDefined();
+  test('getSessionsByUser rejects when unauthenticated', async () => {
+    await expect(
+      t.query(api.sessions.getSessionsByUser, {
+        paginationOpts: { numItems: 10, cursor: null },
+      })
+    ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+  });
+
+  test('session can be retrieved after creation', async () => {
+    // Verify that the session created in beforeEach can be retrieved
+    const session = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
+      return await ctx.db.get(sessionId as unknown as Id<'session'>);
     });
+
+    expect(session).not.toBeNull();
+    expect((session as { userId?: string })?.userId).toBe(userId);
+    expect((session as { createdAt?: number })?.createdAt).toBeDefined();
+    expect((session as { updatedAt?: number })?.updatedAt).toBeDefined();
+  });
 });

@@ -1,7 +1,7 @@
 import { exportJWK, exportPKCS8, generateKeyPair } from 'jose';
 
 const keys = await generateKeyPair('RS256', {
-    extractable: true,
+  extractable: true,
 });
 const privateKey = await exportPKCS8(keys.privateKey);
 const publicKey = await exportJWK(keys.publicKey);

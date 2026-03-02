@@ -5,14 +5,14 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
 export default async function CategoriesPage() {
-    let preloadedCategoriesQuery: Preloaded<typeof api.categories.getCategoriesByUser>;
+  let preloadedCategoriesQuery: Preloaded<typeof api.categories.getCategoriesByUser>;
 
-    try {
-        preloadedCategoriesQuery = await preloadAuthQuery(api.categories.getCategoriesByUser, {});
-    } catch (error) {
-        console.error(error);
-        redirect('/dashboard/home');
-    }
+  try {
+    preloadedCategoriesQuery = await preloadAuthQuery(api.categories.getCategoriesByUser, {});
+  } catch (error) {
+    console.error(error);
+    redirect('/dashboard/home');
+  }
 
-    return <CategoriesLayout preloadedCategoriesQuery={preloadedCategoriesQuery} />;
+  return <CategoriesLayout preloadedCategoriesQuery={preloadedCategoriesQuery} />;
 }
