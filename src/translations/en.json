@@ -129,6 +129,15 @@
             "objectivesCreated": "Objectives created",
             "objectivesCompleted": "Objectives completed",
             "period": "Last {days} days"
+        },
+        "charts": {
+            "monthlyProgress": "Monthly Progress",
+            "monthlyProgressDescription": "Progress updates added per month",
+            "topObjectives": "Top Objectives",
+            "topObjectivesDescription": "Top 5 objectives by progress completion",
+            "noDataAvailable": "No data available",
+            "updates": "Updates",
+            "progress": "Progress"
         }
     },
     "HomePage": {
@@ -1031,6 +1040,12 @@
         "toast": {
             "deletedSuccess": "Update deleted successfully",
             "deleteFailed": "Failed to delete update"
+        },
+        "charts": {
+            "progressTimeline": "Progress Timeline",
+            "progressTimelineDescription": "Cumulative progress over time",
+            "value": "Value",
+            "target": "Target"
         }
     },
     "Header": {

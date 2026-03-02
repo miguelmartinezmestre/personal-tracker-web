@@ -11,6 +11,7 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
 import { ObjectiveProgressGraph } from '@/features/objectives/components/objective-graph';
+import ObjectiveProgressTimeline from './objective-progress-timeline';
 import { useUpdateProgressTableColumns } from './update-progress-table-columns';
 import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
@@ -98,6 +99,14 @@ export default function UpdateProgressTable({
                     targetValue={objectiveDoc?.targetValue ?? null}
                     startValue={objectiveDoc?.startValue ?? null}
                     lastUpdated={lastUpdated}
+                />
+            )}
+
+            {progressData.length >= 2 && (
+                <ObjectiveProgressTimeline
+                    data={progressData}
+                    unit={objectiveDoc?.unit ?? null}
+                    targetValue={objectiveDoc?.targetValue ?? null}
                 />
             )}
 

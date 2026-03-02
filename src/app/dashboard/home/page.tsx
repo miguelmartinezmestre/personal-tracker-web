@@ -15,6 +15,8 @@ export default async function HomePage() {
     let preloadedDashboardStatsQuery: Preloaded<typeof api.dashboard.getDashboardStats>;
     let preloadedUpcomingDeadlinesQuery: Preloaded<typeof api.dashboard.getUpcomingDeadlines>;
     let preloadedRecentActivityQuery: Preloaded<typeof api.dashboard.getRecentActivity>;
+    let preloadedMonthlyProgressQuery: Preloaded<typeof api.dashboard.getMonthlyProgress>;
+    let preloadedTopObjectivesQuery: Preloaded<typeof api.dashboard.getObjectivesWithMostProgress>;
 
     try {
         [
@@ -24,6 +26,8 @@ export default async function HomePage() {
             preloadedDashboardStatsQuery,
             preloadedUpcomingDeadlinesQuery,
             preloadedRecentActivityQuery,
+            preloadedMonthlyProgressQuery,
+            preloadedTopObjectivesQuery,
         ] = await Promise.all([
             preloadAuthQuery(api.auth.getCurrentUser),
             preloadAuthQuery(api.achievements.getUserAchievementStats),
@@ -31,6 +35,8 @@ export default async function HomePage() {
             preloadAuthQuery(api.dashboard.getDashboardStats),
             preloadAuthQuery(api.dashboard.getUpcomingDeadlines, {}),
             preloadAuthQuery(api.dashboard.getRecentActivity, {}),
+            preloadAuthQuery(api.dashboard.getMonthlyProgress, {}),
+            preloadAuthQuery(api.dashboard.getObjectivesWithMostProgress, {}),
         ]);
     } catch (error) {
         console.error(error);
@@ -45,6 +51,8 @@ export default async function HomePage() {
             preloadedDashboardStatsQuery={preloadedDashboardStatsQuery}
             preloadedUpcomingDeadlinesQuery={preloadedUpcomingDeadlinesQuery}
             preloadedRecentActivityQuery={preloadedRecentActivityQuery}
+            preloadedMonthlyProgressQuery={preloadedMonthlyProgressQuery}
+            preloadedTopObjectivesQuery={preloadedTopObjectivesQuery}
         />
     );
 }
