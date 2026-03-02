@@ -1,9 +1,9 @@
 export enum Role {
-  ADMIN = 'admin',
-  USER = 'user',
+    ADMIN = 'admin',
+    USER = 'user',
 }
 
 export enum OrganizationRole {
-  OWNER = 'owner',
-  MEMBER = 'member',
+    OWNER = 'owner',
+    MEMBER = 'member',
 }

@@ -11,84 +11,84 @@ import { useInvalidateSession } from './sessions-table-actions';
 type SessionDocument = BetterAuthDataModel['session']['document'];
 
 interface UseSessionsTableColumnsProps {
-  currentSessionToken: string | undefined;
+    currentSessionToken: string | undefined;
 }
 
 export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTableColumnsProps) {
-  const t = useTranslations('Sessions');
-  const { invalidateSessionAsync, isInvalidatingSession } = useInvalidateSession();
+    const t = useTranslations('Sessions');
+    const { invalidateSessionAsync, isInvalidatingSession } = useInvalidateSession();
 
-  const getSessionStatus = (session: SessionDocument) => {
-    const now = Date.now();
-    const isExpired = session.expiresAt < now;
-    const isCurrentSession = currentSessionToken === session.token;
+    const getSessionStatus = (session: SessionDocument) => {
+        const now = Date.now();
+        const isExpired = session.expiresAt < now;
+        const isCurrentSession = currentSessionToken === session.token;
 
-    if (isCurrentSession) {
-      return { status: 'current', label: t('currentSession'), variant: 'default' as const };
-    }
-    if (isExpired) {
-      return { status: 'expired', label: t('expired'), variant: 'secondary' as const };
-    }
-    return { status: 'active', label: t('active'), variant: 'outline' as const };
-  };
-
-  const columns: ColumnDef<SessionDocument>[] = [
-    {
-      accessorKey: 'userAgent',
-      header: t('device'),
-      cell: ({ row }) => {
-        return <UserAgentIcon userAgent={row.original.userAgent ?? ''} />;
-      },
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('date'),
-      cell: ({ row }) => {
-        return new Date(row.original.createdAt).toLocaleDateString();
-      },
-    },
-    {
-      accessorKey: 'expiresAt',
-      header: t('expiresAt'),
-      cell: ({ row }) => {
-        return new Date(row.original.expiresAt).toLocaleDateString();
-      },
-    },
-    {
-      id: 'status',
-      header: t('status'),
-      cell: ({ row }) => {
-        const { label, variant } = getSessionStatus(row.original);
-        return <Badge variant={variant}>{label}</Badge>;
-      },
-    },
-    {
-      header: '',
-      id: 'close-session',
-      cell: ({ row }) => {
-        const session = row.original;
-        const { status } = getSessionStatus(session);
-
-        // Don't show revoke button for current session or expired sessions
-        if (status === 'current' || status === 'expired') {
-          return null;
+        if (isCurrentSession) {
+            return { status: 'current', label: t('currentSession'), variant: 'default' as const };
         }
+        if (isExpired) {
+            return { status: 'expired', label: t('expired'), variant: 'secondary' as const };
+        }
+        return { status: 'active', label: t('active'), variant: 'outline' as const };
+    };
 
-        return (
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={isInvalidatingSession}
-            onClick={async () => {
-              await invalidateSessionAsync({ token: session.token });
-            }}
-          >
-            {isInvalidatingSession ? t('revoking') : t('revoke')}
-          </Button>
-        );
-      },
-    },
-  ];
+    const columns: ColumnDef<SessionDocument>[] = [
+        {
+            accessorKey: 'userAgent',
+            header: t('device'),
+            cell: ({ row }) => {
+                return <UserAgentIcon userAgent={row.original.userAgent ?? ''} />;
+            },
+        },
+        {
+            accessorKey: 'createdAt',
+            header: t('date'),
+            cell: ({ row }) => {
+                return new Date(row.original.createdAt).toLocaleDateString();
+            },
+        },
+        {
+            accessorKey: 'expiresAt',
+            header: t('expiresAt'),
+            cell: ({ row }) => {
+                return new Date(row.original.expiresAt).toLocaleDateString();
+            },
+        },
+        {
+            id: 'status',
+            header: t('status'),
+            cell: ({ row }) => {
+                const { label, variant } = getSessionStatus(row.original);
+                return <Badge variant={variant}>{label}</Badge>;
+            },
+        },
+        {
+            header: '',
+            id: 'close-session',
+            cell: ({ row }) => {
+                const session = row.original;
+                const { status } = getSessionStatus(session);
 
-  return columns;
+                // Don't show revoke button for current session or expired sessions
+                if (status === 'current' || status === 'expired') {
+                    return null;
+                }
+
+                return (
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={isInvalidatingSession}
+                        onClick={async () => {
+                            await invalidateSessionAsync({ token: session.token });
+                        }}
+                    >
+                        {isInvalidatingSession ? t('revoking') : t('revoke')}
+                    </Button>
+                );
+            },
+        },
+    ];
+
+    return columns;
 }

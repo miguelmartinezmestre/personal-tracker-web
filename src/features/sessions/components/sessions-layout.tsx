@@ -7,25 +7,25 @@ import { Preloaded } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
 export default function SessionsLayout({
-  preloadedSessionsQuery,
+    preloadedSessionsQuery,
 }: {
-  preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
+    preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
 }) {
-  const t = useTranslations('Sessions');
-  const sessions = usePreloadedAuthQuery(preloadedSessionsQuery);
+    const t = useTranslations('Sessions');
+    const sessions = usePreloadedAuthQuery(preloadedSessionsQuery);
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-      <SessionsTable
-        sessions={{
-          currentSession: sessions?.currentSession ?? undefined,
-          sessions: sessions?.sessions,
-        }}
-      />
-    </div>
-  );
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+                <p className="text-muted-foreground">{t('description')}</p>
+            </div>
+            <SessionsTable
+                sessions={{
+                    currentSession: sessions?.currentSession ?? undefined,
+                    sessions: sessions?.sessions,
+                }}
+            />
+        </div>
+    );
 }

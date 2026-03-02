@@ -5,11 +5,11 @@ import { isAdmin } from '@/features/auth/current-user';
 import { redirect } from 'next/navigation';
 
 export default async function AdminAuditPage() {
-  if (!(await isAdmin())) {
-    redirect('/dashboard/home');
-  }
+    if (!(await isAdmin())) {
+        redirect('/dashboard/home');
+    }
 
-  const preloadedAuditLogsQuery = await preloadAuthQuery(api.auditLogs.getAuditLogs, {});
+    const preloadedAuditLogsQuery = await preloadAuthQuery(api.auditLogs.getAuditLogs, {});
 
-  return <AdminAuditLayout preloadedAuditLogsQuery={preloadedAuditLogsQuery} />;
+    return <AdminAuditLayout preloadedAuditLogsQuery={preloadedAuditLogsQuery} />;
 }

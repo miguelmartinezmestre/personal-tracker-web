@@ -5,7 +5,7 @@ import workflow from '@convex-dev/workflow/test';
 export const modules = import.meta.glob('../**/*.*s');
 
 export function initConvexTest() {
-  const t = convexTest(schema, modules);
-  workflow.register(t);
-  return t;
+    const t = convexTest(schema, modules);
+    workflow.register(t);
+    return t;
 }

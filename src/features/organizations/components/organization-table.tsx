@@ -2,8 +2,8 @@
 
 import { DataTable } from '@/features/table/components/table';
 import {
-  useOrganizations,
-  useDeleteOrganization,
+    useOrganizations,
+    useDeleteOrganization,
 } from '@/features/organizations/hooks/use-organizations';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
@@ -15,98 +15,105 @@ import { toast } from 'sonner';
 import type { Organization } from '@/features/organizations/schemas/organization';
 
 export default function OrganizationsTable() {
-  const t = useTranslations('Organizations');
-  const organizations = useOrganizations();
-  const deleteOrganization = useDeleteOrganization();
+    const t = useTranslations('Organizations');
+    const organizations = useOrganizations();
+    const deleteOrganization = useDeleteOrganization();
 
-  const columns: ColumnDef<Organization>[] = [
-    {
-      accessorKey: 'name',
-      header: t('name'),
-    },
-    {
-      accessorKey: 'description',
-      header: t('tableDescription'),
-    },
-    {
-      header: '',
-      id: 'update-organization',
-      cell: ({ row }) => {
-        const organizationRow = row.original;
-        return <EditOrganizationFormModal defaultValues={organizationRow} />;
-      },
-    },
-    {
-      header: '',
-      id: 'delete',
-      cell: ({ row }) => {
-        const organizationRow = row.original;
-        return (
-          <DeleteConfirmationDialog
-            onConfirm={async () => {
-              try {
-                await deleteOrganization.mutateAsync({ id: organizationRow.id });
-                toast.success(t('toast.deletedSuccess'));
-              } catch {
-                toast.error(t('toast.deleteFailed'));
-              }
-            }}
-            title={t('confirm.deleteOrganization')}
-            description={t('confirm.deleteOrganizationDescription')}
-            triggerLabel={t('deleteOrganization')}
-            confirmLabel={t('confirm.deleteConfirm')}
-            cancelLabel={t('confirm.cancel')}
-            isLoading={deleteOrganization.isPending}
-            trigger={
-              <Button data-testid="organization-delete-button" variant="destructive" size="sm">
-                {t('deleteOrganization')}
-              </Button>
-            }
-          />
-        );
-      },
-    },
-    {
-      header: '',
-      id: 'go-to-activity',
-      cell: ({ row }) => {
-        // Use ID for the URL - ensure we're using the actual ID, not slug
-        // Explicitly check that we're not accidentally using the slug
-        const organizationId = row.original.id;
-        const organizationSlug = row.original.slug;
+    const columns: ColumnDef<Organization>[] = [
+        {
+            accessorKey: 'name',
+            header: t('name'),
+        },
+        {
+            accessorKey: 'description',
+            header: t('tableDescription'),
+        },
+        {
+            header: '',
+            id: 'update-organization',
+            cell: ({ row }) => {
+                const organizationRow = row.original;
+                return <EditOrganizationFormModal defaultValues={organizationRow} />;
+            },
+        },
+        {
+            header: '',
+            id: 'delete',
+            cell: ({ row }) => {
+                const organizationRow = row.original;
+                return (
+                    <DeleteConfirmationDialog
+                        onConfirm={async () => {
+                            try {
+                                await deleteOrganization.mutateAsync({ id: organizationRow.id });
+                                toast.success(t('toast.deletedSuccess'));
+                            } catch {
+                                toast.error(t('toast.deleteFailed'));
+                            }
+                        }}
+                        title={t('confirm.deleteOrganization')}
+                        description={t('confirm.deleteOrganizationDescription')}
+                        triggerLabel={t('deleteOrganization')}
+                        confirmLabel={t('confirm.deleteConfirm')}
+                        cancelLabel={t('confirm.cancel')}
+                        isLoading={deleteOrganization.isPending}
+                        trigger={
+                            <Button
+                                data-testid="organization-delete-button"
+                                variant="destructive"
+                                size="sm"
+                            >
+                                {t('deleteOrganization')}
+                            </Button>
+                        }
+                    />
+                );
+            },
+        },
+        {
+            header: '',
+            id: 'go-to-activity',
+            cell: ({ row }) => {
+                // Use ID for the URL - ensure we're using the actual ID, not slug
+                // Explicitly check that we're not accidentally using the slug
+                const organizationId = row.original.id;
+                const organizationSlug = row.original.slug;
 
-        // Ensure we have a valid ID (not empty, not the slug)
-        if (organizationId && organizationId !== organizationSlug) {
-          return (
-            <Link
-              href={`/dashboard/organizations/${String(organizationId)}`}
-              prefetch={false}
-              data-testid="organization-detail-link"
-            >
-              {t('goToOrganization')}
-            </Link>
-          );
-        }
+                // Ensure we have a valid ID (not empty, not the slug)
+                if (organizationId && organizationId !== organizationSlug) {
+                    return (
+                        <Link
+                            href={`/dashboard/organizations/${String(organizationId)}`}
+                            prefetch={false}
+                            data-testid="organization-detail-link"
+                        >
+                            {t('goToOrganization')}
+                        </Link>
+                    );
+                }
 
-        // Fallback: if ID is missing or equals slug, log error but don't render link
-        console.error('[OrganizationsTable] Cannot create link - invalid organization ID:', {
-          id: organizationId,
-          slug: organizationSlug,
-          name: row.original.name,
-        });
+                // Fallback: if ID is missing or equals slug, log error but don't render link
+                console.error(
+                    '[OrganizationsTable] Cannot create link - invalid organization ID:',
+                    {
+                        id: organizationId,
+                        slug: organizationSlug,
+                        name: row.original.name,
+                    }
+                );
 
-        return null;
-      },
-    },
-  ];
+                return null;
+            },
+        },
+    ];
 
-  return (
-    <div data-testid="organizations-table">
-      <DataTable
-        columns={columns}
-        data={organizations.data ?? []}
-        isLoading={organizations.isLoading}
-      />
-    </div>
-  );
+    return (
+        <div data-testid="organizations-table">
+            <DataTable
+                columns={columns}
+                data={organizations.data ?? []}
+                isLoading={organizations.isLoading}
+            />
+        </div>
+    );
 }
