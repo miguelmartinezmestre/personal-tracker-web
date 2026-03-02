@@ -14,15 +14,15 @@ import { WorkflowManager } from '@convex-dev/workflow';
 import { components } from './_generated/api';
 
 export const workflow = new WorkflowManager(components.workflow, {
-  workpoolOptions: {
-    // Enable retries by default for resilience
-    retryActionsByDefault: true,
-    defaultRetryBehavior: {
-      maxAttempts: 3,
-      initialBackoffMs: 200,
-      base: 2, // exponential backoff
+    workpoolOptions: {
+        // Enable retries by default for resilience
+        retryActionsByDefault: true,
+        defaultRetryBehavior: {
+            maxAttempts: 3,
+            initialBackoffMs: 200,
+            base: 2, // exponential backoff
+        },
+        // Conservative parallelism - adjust based on your Convex plan
+        maxParallelism: 5,
     },
-    // Conservative parallelism - adjust based on your Convex plan
-    maxParallelism: 5,
-  },
 });

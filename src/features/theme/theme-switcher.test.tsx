@@ -6,62 +6,62 @@ import { ThemeToggle } from './theme-switcher';
 const setThemeMock = vi.fn();
 
 vi.mock('next-themes', () => ({
-  useTheme: () => ({
-    setTheme: setThemeMock,
-  }),
+    useTheme: () => ({
+        setTheme: setThemeMock,
+    }),
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => {
-    const labels: Record<string, string> = {
-      toggle: 'Toggle theme',
-      light: 'Light',
-      dark: 'Dark',
-      system: 'System',
-    };
+    useTranslations: () => (key: string) => {
+        const labels: Record<string, string> = {
+            toggle: 'Toggle theme',
+            light: 'Light',
+            dark: 'Dark',
+            system: 'System',
+        };
 
-    return labels[key] ?? key;
-  },
+        return labels[key] ?? key;
+    },
 }));
 
 describe('ThemeToggle', () => {
-  beforeEach(() => {
-    setThemeMock.mockReset();
-  });
+    beforeEach(() => {
+        setThemeMock.mockReset();
+    });
 
-  it('renders the theme trigger button', () => {
-    render(<ThemeToggle />);
+    it('renders the theme trigger button', () => {
+        render(<ThemeToggle />);
 
-    expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
-  });
+        expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
+    });
 
-  it('sets dark theme when dark option is selected', async () => {
-    const user = userEvent.setup();
-    render(<ThemeToggle />);
+    it('sets dark theme when dark option is selected', async () => {
+        const user = userEvent.setup();
+        render(<ThemeToggle />);
 
-    await user.click(screen.getByRole('button', { name: 'Toggle theme' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Dark' }));
+        await user.click(screen.getByRole('button', { name: 'Toggle theme' }));
+        await user.click(await screen.findByRole('menuitem', { name: 'Dark' }));
 
-    expect(setThemeMock).toHaveBeenCalledWith('dark');
-  });
+        expect(setThemeMock).toHaveBeenCalledWith('dark');
+    });
 
-  it('sets light theme when light option is selected', async () => {
-    const user = userEvent.setup();
-    render(<ThemeToggle />);
+    it('sets light theme when light option is selected', async () => {
+        const user = userEvent.setup();
+        render(<ThemeToggle />);
 
-    await user.click(screen.getByRole('button', { name: 'Toggle theme' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Light' }));
+        await user.click(screen.getByRole('button', { name: 'Toggle theme' }));
+        await user.click(await screen.findByRole('menuitem', { name: 'Light' }));
 
-    expect(setThemeMock).toHaveBeenCalledWith('light');
-  });
+        expect(setThemeMock).toHaveBeenCalledWith('light');
+    });
 
-  it('sets system theme when system option is selected', async () => {
-    const user = userEvent.setup();
-    render(<ThemeToggle />);
+    it('sets system theme when system option is selected', async () => {
+        const user = userEvent.setup();
+        render(<ThemeToggle />);
 
-    await user.click(screen.getByRole('button', { name: 'Toggle theme' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'System' }));
+        await user.click(screen.getByRole('button', { name: 'Toggle theme' }));
+        await user.click(await screen.findByRole('menuitem', { name: 'System' }));
 
-    expect(setThemeMock).toHaveBeenCalledWith('system');
-  });
+        expect(setThemeMock).toHaveBeenCalledWith('system');
+    });
 });

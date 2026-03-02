@@ -11,48 +11,48 @@ import { useCategoriesTableColumns } from './categories-table-columns';
 
 // Tipo que viene de Convex
 type ConvexCategory = {
-  _id: Id<'categories'>;
-  _creationTime: number;
-  name: string;
-  color: string;
-  icon?: string;
-  userId: string;
-  organizationId: string;
-  createdAt: number;
-  updatedAt: number;
+    _id: Id<'categories'>;
+    _creationTime: number;
+    name: string;
+    color: string;
+    icon?: string;
+    userId: string;
+    organizationId: string;
+    createdAt: number;
+    updatedAt: number;
 };
 
 // Función para mapear de Convex a Category
 function mapConvexCategoryToCategory(convexCategory: ConvexCategory): Category {
-  return {
-    id: convexCategory._id,
-    name: convexCategory.name,
-    color: convexCategory.color,
-    icon: convexCategory.icon as Category['icon'],
-  };
+    return {
+        id: convexCategory._id,
+        name: convexCategory.name,
+        color: convexCategory.color,
+        icon: convexCategory.icon as Category['icon'],
+    };
 }
 
 type CategoriesResult = FunctionReturnType<typeof api.categories.getCategoriesByUser>;
 
 interface CategoriesTableProps {
-  initialCategories: CategoriesResult | undefined;
+    initialCategories: CategoriesResult | undefined;
 }
 
 export default function CategoriesTable({ initialCategories }: CategoriesTableProps) {
-  const categories = useQuery({
-    ...convexQuery(api.categories.getCategoriesByUser, {}),
-    initialData: initialCategories,
-  });
+    const categories = useQuery({
+        ...convexQuery(api.categories.getCategoriesByUser, {}),
+        initialData: initialCategories,
+    });
 
-  // Columns
-  const columns = useCategoriesTableColumns();
+    // Columns
+    const columns = useCategoriesTableColumns();
 
-  // Mapear los datos de Convex a Category
-  const mappedData = (categories.data ?? []).map(mapConvexCategoryToCategory);
+    // Mapear los datos de Convex a Category
+    const mappedData = (categories.data ?? []).map(mapConvexCategoryToCategory);
 
-  return (
-    <div>
-      <DataTable columns={columns} data={mappedData} isLoading={categories.isLoading} />
-    </div>
-  );
+    return (
+        <div>
+            <DataTable columns={columns} data={mappedData} isLoading={categories.isLoading} />
+        </div>
+    );
 }

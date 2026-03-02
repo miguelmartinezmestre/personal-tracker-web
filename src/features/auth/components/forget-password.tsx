@@ -5,12 +5,12 @@ import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-  Form,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+    Form,
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
@@ -20,91 +20,93 @@ import { forgetPasswordSchema } from '@/features/auth/schemas/forget-password';
 import { authClient } from '@/features/auth/auth-client';
 
 export default function ForgetPasswordForm() {
-  const tCommon = useTranslations('Common');
-  const t = useTranslations('ForgotPassword');
+    const tCommon = useTranslations('Common');
+    const t = useTranslations('ForgotPassword');
 
-  const [loginError, setLoginError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+    const [loginError, setLoginError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
-  const form = useForm<z.infer<typeof forgetPasswordSchema>>({
-    defaultValues: {
-      email: '',
-    },
-    validators: {
-      onChange: forgetPasswordSchema,
-      onSubmit: forgetPasswordSchema,
-    },
-    onSubmit: async ({ value }: { value: z.infer<typeof forgetPasswordSchema> }) => {
-      await onSubmit(value);
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
-    setLoginError('');
-    setSuccessMessage('');
-
-    const redirectTo = `${window.location.origin}/reset-password`;
-    const { error } = await authClient.requestPasswordReset({
-      email: values.email,
-      redirectTo,
+    const form = useForm<z.infer<typeof forgetPasswordSchema>>({
+        defaultValues: {
+            email: '',
+        },
+        validators: {
+            onChange: forgetPasswordSchema,
+            onSubmit: forgetPasswordSchema,
+        },
+        onSubmit: async ({ value }: { value: z.infer<typeof forgetPasswordSchema> }) => {
+            await onSubmit(value);
+        },
     });
 
-    if (error) {
-      setLoginError(error.message || tCommon('genericErrorDescription'));
-      return;
+    async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
+        setLoginError('');
+        setSuccessMessage('');
+
+        const redirectTo = `${window.location.origin}/reset-password`;
+        const { error } = await authClient.requestPasswordReset({
+            email: values.email,
+            redirectTo,
+        });
+
+        if (error) {
+            setLoginError(error.message || tCommon('genericErrorDescription'));
+            return;
+        }
+
+        setSuccessMessage(t('successMessage'));
     }
 
-    setSuccessMessage(t('successMessage'));
-  }
+    return (
+        <Form {...form}>
+            <form
+                onSubmit={e => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+                className="space-y-6"
+            >
+                {loginError && (
+                    <Alert variant="destructive" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
+                        <AlertDescription>{loginError}</AlertDescription>
+                    </Alert>
+                )}
 
-  return (
-    <Form {...form}>
-      <form
-        onSubmit={e => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-        className="space-y-6"
-      >
-        {loginError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{tCommon('error')}</AlertTitle>
-            <AlertDescription>{loginError}</AlertDescription>
-          </Alert>
-        )}
+                {successMessage && (
+                    <Alert variant="default" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{tCommon('success')}</AlertTitle>
+                        <AlertDescription>{successMessage}</AlertDescription>
+                    </Alert>
+                )}
 
-        {successMessage && (
-          <Alert variant="default" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{tCommon('success')}</AlertTitle>
-            <AlertDescription>{successMessage}</AlertDescription>
-          </Alert>
-        )}
-
-        <FormField
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700">{tCommon('fields.email')}</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  type="email"
-                  placeholder={tCommon('placeholders.email')}
-                  className="focus:ring-2 focus:ring-primary/20"
-                  data-testid="email-input"
+                <FormField
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-gray-700">
+                                {tCommon('fields.email')}
+                            </FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    type="email"
+                                    placeholder={tCommon('placeholders.email')}
+                                    className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="email-input"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <Button type="submit" className="w-full py-6 text-lg font-medium">
-          {t('submit')}
-        </Button>
-      </form>
-    </Form>
-  );
+                <Button type="submit" className="w-full py-6 text-lg font-medium">
+                    {t('submit')}
+                </Button>
+            </form>
+        </Form>
+    );
 }
