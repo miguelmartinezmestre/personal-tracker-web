@@ -6,23 +6,23 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 
 export default async function UsersPage() {
-    if (!(await isAdmin())) {
-        redirect('/dashboard/home');
-    }
+  if (!(await isAdmin())) {
+    redirect('/dashboard/home');
+  }
 
-    let preloadedUsersQuery: Preloaded<typeof api.admin.listUsers>;
+  let preloadedUsersQuery: Preloaded<typeof api.admin.listUsers>;
 
-    try {
-        preloadedUsersQuery = await preloadAuthQuery(api.admin.listUsers, {
-            paginationOpts: {
-                numItems: 10,
-                cursor: null,
-            },
-        });
-    } catch (error) {
-        console.error(error);
-        redirect('/dashboard/home');
-    }
+  try {
+    preloadedUsersQuery = await preloadAuthQuery(api.admin.listUsers, {
+      paginationOpts: {
+        numItems: 10,
+        cursor: null,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    redirect('/dashboard/home');
+  }
 
-    return <UsersLayout preloadedUsersQuery={preloadedUsersQuery} />;
+  return <UsersLayout preloadedUsersQuery={preloadedUsersQuery} />;
 }
