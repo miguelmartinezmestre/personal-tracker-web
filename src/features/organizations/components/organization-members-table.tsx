@@ -31,7 +31,9 @@ interface OrganizationMembersTableProps {
     organizationId: string;
 }
 
-export default function OrganizationMembersTable({ organizationId }: OrganizationMembersTableProps) {
+export default function OrganizationMembersTable({
+    organizationId,
+}: OrganizationMembersTableProps) {
     const t = useTranslations('OrganizationMembers');
     const deleteOrganizationMember = useDeleteOrganizationMember();
     const [activeOrganizationId, setActiveOrganizationId] = useState(organizationId);
