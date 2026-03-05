@@ -60,6 +60,20 @@ test.describe('User Registration', () => {
         await expect(page).toHaveURL(/\/register/);
     });
 
+    test('validation: weak password is rejected', async ({ page }) => {
+        const user = UserFactory.create();
+
+        await page.goto('/register');
+        await page.getByTestId('register-username-input').fill(user.username);
+        await page.getByTestId('register-email-input').fill(user.email);
+        await page.getByTestId('register-password-input').fill('12345678');
+        await page.getByTestId('register-confirm-password-input').fill('12345678');
+        await page.getByTestId('register-button').click();
+
+        // Should stay on register page due to strong password policy
+        await expect(page).toHaveURL(/\/register/);
+    });
+
     test('validation: passwords must match', async ({ page }) => {
         const user = UserFactory.create();
 
