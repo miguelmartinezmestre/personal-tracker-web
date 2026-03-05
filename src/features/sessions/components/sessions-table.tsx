@@ -19,7 +19,10 @@ interface SessionsTableProps {
     currentSessionToken: string | undefined;
 }
 
-export default function SessionsTable({ initialSessions, currentSessionToken }: SessionsTableProps) {
+export default function SessionsTable({
+    initialSessions,
+    currentSessionToken,
+}: SessionsTableProps) {
     const columns = useSessionsTableColumns({
         currentSessionToken,
     });

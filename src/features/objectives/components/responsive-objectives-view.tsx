@@ -78,9 +78,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
             status: filters.status !== 'all' ? filters.status : undefined,
             category: filters.category !== 'all' ? filters.category : undefined,
         }),
-        initialData: personalIsFirstPage && filters.status === 'all' && filters.category === 'all'
-            ? preloadedPersonal
-            : undefined,
+        initialData:
+            personalIsFirstPage && filters.status === 'all' && filters.category === 'all'
+                ? preloadedPersonal
+                : undefined,
     });
 
     // Organization objectives pagination
@@ -100,12 +101,15 @@ export const ResponsiveObjectivesView = React.forwardRef<
             status: filters.status !== 'all' ? filters.status : undefined,
             category: filters.category !== 'all' ? filters.category : undefined,
         }),
-        initialData: orgIsFirstPage && filters.status === 'all' && filters.category === 'all'
-            ? preloadedOrg
-            : undefined,
+        initialData:
+            orgIsFirstPage && filters.status === 'all' && filters.category === 'all'
+                ? preloadedOrg
+                : undefined,
     });
 
-    const categoryOptionsQuery = useQuery(convexQuery(api.categories.getCategoryNamesForFilters, {}));
+    const categoryOptionsQuery = useQuery(
+        convexQuery(api.categories.getCategoryNamesForFilters, {})
+    );
 
     // Update personal cursor
     const personalHasData = personalQuery.data !== undefined;
@@ -145,10 +149,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
         () => personalQuery.data?.page ?? [],
         [personalQuery.data]
     );
-    const organizationObjectives = React.useMemo(
-        () => orgQuery.data?.page ?? [],
-        [orgQuery.data]
-    );
+    const organizationObjectives = React.useMemo(() => orgQuery.data?.page ?? [], [orgQuery.data]);
 
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),

@@ -36,10 +36,7 @@ export function UserSessions() {
     const paginationOpts = getPaginationOpts(currentPage);
 
     const { data: sessions, isLoading } = useQuery(
-        convexQuery(
-            api.admin.listUserSessions,
-            userId ? { userId, paginationOpts } : 'skip'
-        )
+        convexQuery(api.admin.listUserSessions, userId ? { userId, paginationOpts } : 'skip')
     );
 
     const hasData = sessions !== undefined;
