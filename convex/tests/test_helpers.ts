@@ -116,7 +116,7 @@ export async function createTestObjective(
         currentValue?: number;
         startValue?: number;
         scope?: 'personal' | 'organization';
-        status?: string;
+        status?: 'active' | 'completed';
         description?: string;
         category?: string;
         deadline?: number;
