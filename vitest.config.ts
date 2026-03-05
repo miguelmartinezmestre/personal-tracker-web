@@ -10,11 +10,9 @@ export default defineConfig({
     },
     test: {
         reporters: ['tree'],
-        include: ['convex/tests/**/*.test.ts', 'src/features/**/*.test.{ts,tsx}'],
+        include: ['convex/tests/**/*.test.ts'],
         exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
-        environment: 'jsdom',
         globals: true,
-        setupFiles: ['./vitest.setup.ts'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],

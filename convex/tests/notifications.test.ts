@@ -107,13 +107,13 @@ describe('convex notifications', async () => {
         });
 
         // Create a test objective for notifications
-        objectiveId = await createTestObjective(t, {
+        objectiveId = (await createTestObjective(t, {
             userId: userId,
             organizationId: userOrganizationId,
             title: 'Test Objective for Notifications',
             targetValue: 100,
             currentValue: 0,
-        }) as Id<'objectives'>;
+        })) as Id<'objectives'>;
     });
 
     describe('createNotification', () => {
@@ -241,13 +241,13 @@ describe('convex notifications', async () => {
             });
 
             // Create objective and notification for admin
-            const adminObjectiveId = await createTestObjective(t, {
+            const adminObjectiveId = (await createTestObjective(t, {
                 userId: adminUserId,
                 organizationId: _adminOrganizationId,
                 title: 'Admin Objective',
                 targetValue: 100,
                 currentValue: 0,
-            }) as Id<'objectives'>;
+            })) as Id<'objectives'>;
             await adminIdentity.mutation(api.notifications.createNotification, {
                 objective: adminObjectiveId,
                 notificationType: 'reminder',

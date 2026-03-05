@@ -264,9 +264,7 @@ export const queryWithRLS = customQuery(
         if (!organizationId) {
             const membership = await ctx.db
                 .query('member')
-                .withIndex('userId', q =>
-                    q.eq('userId', currentUser.userId ?? currentUser._id)
-                )
+                .withIndex('userId', q => q.eq('userId', currentUser.userId ?? currentUser._id))
                 .first();
             organizationId = membership?.organizationId ?? '';
         }
@@ -317,9 +315,7 @@ export const mutationWithRLS = customMutation(
         if (!organizationId) {
             const membership = await ctx.db
                 .query('member')
-                .withIndex('userId', q =>
-                    q.eq('userId', currentUser.userId ?? currentUser._id)
-                )
+                .withIndex('userId', q => q.eq('userId', currentUser.userId ?? currentUser._id))
                 .first();
             organizationId = membership?.organizationId ?? '';
         }
