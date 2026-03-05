@@ -112,12 +112,12 @@ export function useOrganizationByIdentifier(identifier: string | null) {
     let org = data?.find((o: OrganizationRaw) => {
         const slug = o.slug;
         if (!slug) return false;
-        return String(slug).trim() === String(identifier).trim();
+        return slug.trim() === identifier!.trim();
     });
 
     // If not found by slug, try by ID
     if (!org) {
-        org = data?.find((o: OrganizationRaw) => String(o.id).trim() === String(identifier).trim());
+        org = data?.find((o: OrganizationRaw) => o.id.trim() === identifier!.trim());
     }
 
     return {

@@ -84,7 +84,7 @@ export default function NotificationsTable({
     // Build objective map for columns
     const objectiveMap = new Map(
         (objectives.data?.page ?? []).map((objective: Doc<'objectives'>) => [
-            String(objective._id),
+            objective._id,
             objective,
         ])
     );

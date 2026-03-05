@@ -184,7 +184,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
                     }
                 />
                 <Link
-                    href={`/dashboard/objectives/${String(objective._id)}`}
+                    href={`/dashboard/objectives/${objective._id}`}
                     prefetch={false}
                     data-testid="objective-progress-link"
                     className="inline-flex"
@@ -278,7 +278,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
         });
 
         return (
-            <Card key={String(objective._id)} className="w-full">
+            <Card key={objective._id} className="w-full">
                 <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">

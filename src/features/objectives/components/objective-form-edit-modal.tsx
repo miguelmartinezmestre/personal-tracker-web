@@ -61,21 +61,19 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     });
 
     const categoryOptions = useMemo(() => {
-        const options: Array<{ id: string; value: string; label: string }> = (
-            categoriesQuery.data ?? []
-        ).map((category: Doc<'categories'>) => ({
-            id: String(category._id),
-            value: category.name,
-            label: category.name,
-        }));
+        const options: Array<{ id: string; label: string }> = (categoriesQuery.data ?? []).map(
+            (category: Doc<'categories'>) => ({
+                id: category._id,
+                label: category.name,
+            })
+        );
 
         if (
             defaultValues.category &&
-            !options.some((option: { value: string }) => option.value === defaultValues.category)
+            !options.some(option => option.label === defaultValues.category)
         ) {
             options.unshift({
                 id: `missing-${defaultValues.category}`,
-                value: defaultValues.category,
                 label: defaultValues.category,
             });
         }
@@ -83,18 +81,41 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
         return options;
     }, [categoriesQuery.data, defaultValues.category]);
 
+    const categoryIdToName = useMemo(
+        () => new Map(categoryOptions.map(c => [c.id, c.label])),
+        [categoryOptions]
+    );
+
+    const categoryNameToId = useMemo(
+        () => new Map(categoryOptions.map(c => [c.label, c.id])),
+        [categoryOptions]
+    );
+
+    const initialValues = useMemo(
+        () => ({
+            ...defaultValues,
+            category: defaultValues.category
+                ? (categoryNameToId.get(defaultValues.category) ?? defaultValues.category)
+                : null,
+        }),
+        [defaultValues, categoryNameToId]
+    );
+
     const form = useForm<Objective>({
-        defaultValues,
+        defaultValues: initialValues,
         validators: {
             onChange: savedObjectiveSchema,
             onSubmit: savedObjectiveSchema,
         },
         onSubmit: async ({ value }) => {
+            const categoryName = value.category
+                ? (categoryIdToName.get(value.category) ?? value.category)
+                : undefined;
             await updateObjectiveMutation.mutateAsync({
                 id: value._id as Id<'objectives'>,
                 title: value.title,
                 description: value.description ?? undefined,
-                category: value.category ?? undefined,
+                category: categoryName,
                 targetValue: value.targetValue,
                 deadline: value.deadline ?? undefined,
                 unit: value.unit ?? undefined,
@@ -221,7 +242,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                     categoryOptions.map(category => (
                                                         <SelectItem
                                                             key={category.id}
-                                                            value={category.value}
+                                                            value={category.id}
                                                         >
                                                             {category.label}
                                                         </SelectItem>

@@ -16,7 +16,7 @@ export function NotificationSonnerListener() {
     const initializedRef = useRef(false);
     const lastIdRef = useRef<string | null>(null);
     const latest = data?.page?.[0];
-    const latestId = latest ? String(latest._id) : null;
+    const latestId = latest?._id ?? null;
     const hasLatest = latestId !== null;
     const latestIsRead = latest?.read ?? true;
     const latestMessage = latest?.message ?? '';

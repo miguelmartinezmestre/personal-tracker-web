@@ -122,14 +122,14 @@ export default function UpdateProgressTable({
                 ) : (
                     updates.map(progressRow => {
                         const defaultValues = {
-                            _id: String(progressRow._id),
+                            _id: progressRow._id,
                             updatedValue: progressRow.updatedValue,
                             updateDate: new Date(progressRow.updateDate),
                             comment: progressRow.comment ?? null,
                         } as unknown as UpdateProgress;
 
                         return (
-                            <Card key={String(progressRow._id)} className="w-full">
+                            <Card key={progressRow._id} className="w-full">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">

@@ -29,6 +29,13 @@ export default function NavBar() {
                     href={link.href}
                     className="text-primary hover:text-gray-700"
                     prefetch={false}
+                    data-testid={
+                        link.href === '/register'
+                            ? 'navbar-register-link'
+                            : link.href === '/login'
+                              ? 'navbar-login-link'
+                              : undefined
+                    }
                 >
                     {link.name}
                 </Link>
@@ -38,6 +45,7 @@ export default function NavBar() {
                     href="/dashboard/home"
                     className="text-primary hover:text-gray-700"
                     prefetch={false}
+                    data-testid="navbar-dashboard-link"
                 >
                     {t('goToDashboard')}
                 </Link>

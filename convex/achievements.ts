@@ -221,8 +221,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned
-                    ? obtainedAchievements.find(oa => oa.achievement === def._id)
-                          ?.earnedAt
+                    ? obtainedAchievements.find(oa => oa.achievement === def._id)?.earnedAt
                     : undefined,
             };
         });

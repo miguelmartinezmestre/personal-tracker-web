@@ -154,7 +154,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
     const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
             abortController.abort();
-            reject(new Error(`Request timeout after ${String(timeoutMs)}ms`));
+            reject(new Error(`Request timeout after ${timeoutMs}ms`));
         }, timeoutMs);
     });
 
@@ -200,7 +200,7 @@ function runCommand(
             const signalSuffix = signal ? ` signal=${signal}` : '';
             reject(
                 new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${String(code)}${signalSuffix}`
+                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}`
                 )
             );
         });
@@ -239,7 +239,7 @@ function runCommandWithInput(
             const signalSuffix = signal ? ` signal=${signal}` : '';
             reject(
                 new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${String(code)}${signalSuffix}`
+                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}`
                 )
             );
         });
@@ -285,7 +285,7 @@ function runCommandCapture(
             const signalSuffix = signal ? ` signal=${signal}` : '';
             reject(
                 new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${String(code)}${signalSuffix}\n${stdout}${stderr}`
+                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}\n${stdout}${stderr}`
                 )
             );
         });
@@ -471,7 +471,7 @@ async function waitForHttp(
             const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
             const progressHint =
                 lastStatus !== null
-                    ? `last status=${String(lastStatus)}`
+                    ? `last status=${lastStatus}`
                     : `last error=${lastError ?? 'unknown'}`;
             console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`);
         }
@@ -480,9 +480,7 @@ async function waitForHttp(
     }
 
     const statusMessage =
-        lastStatus !== null
-            ? `last status=${String(lastStatus)}`
-            : `last error=${lastError ?? 'unknown'}`;
+        lastStatus !== null ? `last status=${lastStatus}` : `last error=${lastError ?? 'unknown'}`;
     throw new Error(`Timed out waiting for ${url} (${statusMessage})`);
 }
 
@@ -510,13 +508,13 @@ async function waitForFrontendReady(
 
             if (frontendStartError !== null) {
                 throw new Error(
-                    `Frontend process failed to start: ${String(frontendStartError)}${getFrontendFailureSuffix()}`
+                    `Frontend process failed to start: ${frontendStartError}${getFrontendFailureSuffix()}`
                 );
             }
 
             if (child.exitCode !== null) {
                 throw new Error(
-                    `Frontend process exited before readiness check finished (code=${String(child.exitCode)})${getFrontendFailureSuffix()}`
+                    `Frontend process exited before readiness check finished (code=${child.exitCode})${getFrontendFailureSuffix()}`
                 );
             }
 
@@ -539,7 +537,7 @@ async function waitForFrontendReady(
                 const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
                 const progressHint =
                     lastStatus !== null
-                        ? `last status=${String(lastStatus)}`
+                        ? `last status=${lastStatus}`
                         : `last error=${lastError ?? 'unknown'}`;
                 console.log(
                     `Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`
@@ -551,7 +549,7 @@ async function waitForFrontendReady(
 
         const statusMessage =
             lastStatus !== null
-                ? `last status=${String(lastStatus)}`
+                ? `last status=${lastStatus}`
                 : `last error=${lastError ?? 'unknown'}`;
         throw new Error(
             `Timed out waiting for ${url} (${statusMessage})${getFrontendFailureSuffix()}`

@@ -83,7 +83,7 @@ export default function OrganizationsTable() {
                 if (organizationId && organizationId !== organizationSlug) {
                     return (
                         <Link
-                            href={`/dashboard/organizations/${String(organizationId)}`}
+                            href={`/dashboard/organizations/${organizationId}`}
                             prefetch={false}
                             data-testid="organization-detail-link"
                         >
