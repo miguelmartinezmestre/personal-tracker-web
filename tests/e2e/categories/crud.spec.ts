@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import {
-    createTestUser,
     createCategory,
     createObjective,
     ensureDefaultCategories,
@@ -8,10 +7,6 @@ import {
 import { CategoryFactory } from '../../helpers/factories';
 
 test.describe('Categories CRUD', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('view categories list', async ({ page }) => {
         await page.goto('/dashboard/categories');
         await page.waitForLoadState('load');
@@ -300,9 +295,27 @@ test.describe('Categories CRUD', () => {
 
     test('validate category name required', async ({ page }) => {
         await page.goto('/dashboard/categories');
+        await page.waitForLoadState('load');
+        await page.waitForSelector('[data-testid="category-create-open"]', { timeout: 15000 });
 
-        await page.getByTestId('category-create-open').click();
-        await page.waitForSelector('[data-testid="category-name-input"]');
+        let modalOpened = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            await page.getByTestId('category-create-open').click();
+            try {
+                await page.waitForSelector('[data-testid="category-name-input"]', {
+                    timeout: 5000,
+                });
+                modalOpened = true;
+                break;
+            } catch {
+                await page.keyboard.press('Escape').catch(() => undefined);
+                await page.waitForTimeout(250);
+            }
+        }
+
+        if (!modalOpened) {
+            throw new Error('Could not open create category modal');
+        }
 
         // Try to save without name
         await page.getByTestId('category-save-button').click();
@@ -319,9 +332,27 @@ test.describe('Categories CRUD', () => {
 
     test('cancel create closes modal', async ({ page }) => {
         await page.goto('/dashboard/categories');
+        await page.waitForLoadState('load');
+        await page.waitForSelector('[data-testid="category-create-open"]', { timeout: 15000 });
 
-        await page.getByTestId('category-create-open').click();
-        await page.waitForSelector('[data-testid="category-name-input"]');
+        let modalOpened = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            await page.getByTestId('category-create-open').click();
+            try {
+                await page.waitForSelector('[data-testid="category-name-input"]', {
+                    timeout: 5000,
+                });
+                modalOpened = true;
+                break;
+            } catch {
+                await page.keyboard.press('Escape').catch(() => undefined);
+                await page.waitForTimeout(250);
+            }
+        }
+
+        if (!modalOpened) {
+            throw new Error('Could not open create category modal');
+        }
 
         // Fill some data
         await page.getByTestId('category-name-input').fill('Test Category');

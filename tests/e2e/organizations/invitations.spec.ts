@@ -1,12 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, createOrganization } from '../../helpers/test-helpers';
+import { createTestUserViaAPI, createOrganization } from '../../helpers/test-helpers';
 import { UserFactory } from '../../helpers/factories';
 
 test.describe('Organization Invitations', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('invite member by email', async ({ page }) => {
         const org = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
 
@@ -164,7 +160,7 @@ test.describe('Organization Invitations', () => {
         // User 1 sends invitation, User 2 accepts
 
         // Create first user and organization
-        const user1 = await createTestUser(page);
+        const user1 = await createTestUserViaAPI(page);
         const org = await createOrganization(page, { name: `Accept Org ${Date.now()}` });
 
         // Navigate to org and send invitation

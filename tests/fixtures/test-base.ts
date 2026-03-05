@@ -1,6 +1,6 @@
 import { test as base, Page, expect } from '@playwright/test';
 import {
-    createTestUser,
+    createTestUserViaAPI,
     createObjective,
     createCategory,
     createOrganization,
@@ -27,7 +27,7 @@ export interface TestFixtures {
     /** Current test user data */
     testUser: TestUserData;
     /** Helper to create a new test user */
-    createUser: (options?: Parameters<typeof createTestUser>[1]) => Promise<TestUserData>;
+    createUser: (options?: Parameters<typeof createTestUserViaAPI>[1]) => Promise<TestUserData>;
     /** Helper to create an objective */
     createObjectiveHelper: (
         options?: Parameters<typeof createObjective>[1]
@@ -58,24 +58,24 @@ export interface TestFixtures {
  */
 export const test = base.extend<TestFixtures>({
     authenticatedPage: async ({ page }, use) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await use(page);
     },
 
     adminPage: async ({ page }, use) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await promoteToAdmin(page);
         await use(page);
     },
 
     testUser: async ({ page }, use) => {
-        const userData = await createTestUser(page);
+        const userData = await createTestUserViaAPI(page);
         await use(userData);
     },
 
     createUser: async ({ page }, use) => {
         await use(async options => {
-            return createTestUser(page, options);
+            return createTestUserViaAPI(page, options);
         });
     },
 
@@ -134,7 +134,7 @@ export { expect };
  * Re-export helpers for direct usage.
  */
 export {
-    createTestUser,
+    createTestUserViaAPI,
     createObjective,
     createCategory,
     createOrganization,

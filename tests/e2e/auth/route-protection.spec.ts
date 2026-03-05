@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, promoteToAdmin, logoutUser } from '../../helpers/test-helpers';
+import { createTestUserViaAPI, promoteToAdmin, logoutUser } from '../../helpers/test-helpers';
 import {
     expectOnLogin,
     expectOnDashboard,
@@ -61,7 +61,7 @@ test.describe('Route Protection', () => {
 
     test('redirect to dashboard after successful login', async ({ page }) => {
         // Create user (this logs them in automatically)
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         // Should be on dashboard
         await expectOnDashboard(page);
@@ -70,7 +70,7 @@ test.describe('Route Protection', () => {
 
     test('protect admin routes from non-admin users', async ({ page }) => {
         // Create regular user
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         // Try to access admin routes
         await page.goto('/dashboard/admin/users');
@@ -93,7 +93,7 @@ test.describe('Route Protection', () => {
 
     test('admin routes accessible to admin users', async ({ page }) => {
         // Create user and promote to admin
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await promoteToAdmin(page);
 
         // Navigate to admin users page
@@ -111,7 +111,7 @@ test.describe('Route Protection', () => {
 
     test('admin menu visible only for admin users', async ({ page }) => {
         // Create regular user
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         // Navigate to dashboard
         await page.goto('/dashboard/home');
@@ -123,7 +123,7 @@ test.describe('Route Protection', () => {
 
     test('admin menu visible for admin users', async ({ page }) => {
         // Create user and promote to admin
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await promoteToAdmin(page);
 
         // Navigate to dashboard
@@ -135,7 +135,7 @@ test.describe('Route Protection', () => {
     });
 
     test('authenticated user can access all dashboard routes', async ({ page }) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         // Test various dashboard routes
         const routes = [
@@ -162,7 +162,7 @@ test.describe('Route Protection', () => {
 
     test('session expires after logout', async ({ page }) => {
         // Create and login user
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await expectOnDashboard(page);
 
         // Logout
@@ -204,7 +204,7 @@ test.describe('Route Protection', () => {
 
     test('authenticated user accessing login redirects to dashboard', async ({ page }) => {
         // Create user (logs in automatically)
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         // Try to access login page while authenticated
         await page.goto('/login');

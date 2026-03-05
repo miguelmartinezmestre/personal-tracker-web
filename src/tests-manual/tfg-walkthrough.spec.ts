@@ -102,7 +102,7 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
 
     // Format filename with counter for ordering
     screenshotCounter++;
-    const paddedCounter = String(screenshotCounter).padStart(2, '0');
+    const paddedCounter = `${screenshotCounter}`.padStart(2, '0');
     const sanitizedName = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')

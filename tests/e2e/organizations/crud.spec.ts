@@ -1,10 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import {
-    createTestUser,
-    createOrganization,
-    createObjective,
-    ensureDefaultCategories,
-} from '../../helpers/test-helpers';
+import { createOrganization, createObjective } from '../../helpers/test-helpers';
 import { OrganizationFactory } from '../../helpers/factories';
 
 async function setActiveOrganization(page: Page, orgName: string): Promise<void> {
@@ -44,10 +39,6 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
 }
 
 test.describe('Organizations CRUD', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('view organizations list', async ({ page }) => {
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('load');
@@ -219,13 +210,9 @@ test.describe('Organizations CRUD', () => {
     });
 
     test('data isolation between organizations', async ({ page }) => {
-        // Ensure categories exist for first org
-        await ensureDefaultCategories(page);
-
-        // Create objective in first organization
+        // Create objective in first organization (ensureCategories runs inside createObjective)
         const obj1 = await createObjective(page, {
             title: `Org1 Objective ${Date.now()}`,
-            ensureCategories: false,
         });
 
         // Create second organization

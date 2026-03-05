@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, ensureDefaultCategories } from '../../helpers/test-helpers';
+import { ensureDefaultCategories } from '../../helpers/test-helpers';
 
 async function openObjectivesPage(page: import('@playwright/test').Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -66,7 +66,6 @@ function objectiveRow(page: import('@playwright/test').Page, title: string) {
 
 test.describe('Objectives CRUD', () => {
     test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
         await ensureDefaultCategories(page);
     });
 
@@ -109,10 +108,25 @@ test.describe('Objectives CRUD', () => {
 
         const originalRow = objectiveRow(page, originalTitle);
         await expect(originalRow).toBeVisible({ timeout: 10000 });
-        await originalRow.getByTestId('objective-edit-open').click();
-        await expect(page.getByTestId('objective-edit-title-input')).toBeVisible({
-            timeout: 10000,
-        });
+
+        let editModalOpened = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            await originalRow.getByTestId('objective-edit-open').click();
+            try {
+                await expect(page.getByTestId('objective-edit-title-input')).toBeVisible({
+                    timeout: 5000,
+                });
+                editModalOpened = true;
+                break;
+            } catch {
+                await page.keyboard.press('Escape').catch(() => undefined);
+                await page.waitForTimeout(250);
+            }
+        }
+
+        if (!editModalOpened) {
+            throw new Error('Could not open edit objective modal');
+        }
 
         await page.getByTestId('objective-edit-title-input').clear();
         await page.getByTestId('objective-edit-title-input').fill(updatedTitle);

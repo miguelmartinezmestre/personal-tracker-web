@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, createObjective } from '../../helpers/test-helpers';
+import { createObjective } from '../../helpers/test-helpers';
 
 async function openObjectiveDetailFromList(page: import('@playwright/test').Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -69,10 +69,6 @@ async function createProgressUpdate(
 }
 
 test.describe('Objectives Progress Updates', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('create progress update from objective detail', async ({ page }) => {
         const objective = await createObjective(page, {
             title: `Progress create ${Date.now()}`,

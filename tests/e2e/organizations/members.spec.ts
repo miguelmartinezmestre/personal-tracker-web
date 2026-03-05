@@ -1,11 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, createOrganization } from '../../helpers/test-helpers';
+import { createOrganization } from '../../helpers/test-helpers';
 
 test.describe('Organization Members', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('view organization members', async ({ page }) => {
         // Navigate to organization detail or members page
         await page.goto('/dashboard/organizations');
