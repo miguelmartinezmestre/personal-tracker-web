@@ -29,7 +29,7 @@ describe('achievements calculations', async () => {
             emailVerified: false,
         };
 
-        await createTestUser(t, user);
+        const userData = await createTestUser(t, user);
         userId = user.userId;
 
         const orgId = await createTestOrganization(t, {
@@ -38,22 +38,22 @@ describe('achievements calculations', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(orgId),
+            organizationId: orgId,
             userId: userId,
             role: 'owner',
         });
 
-        organizationId = String(orgId);
+        organizationId = orgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,

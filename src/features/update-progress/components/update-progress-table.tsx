@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { DataTable } from '@/features/table/components/table';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,14 +18,10 @@ import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
 import { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
 import { useTranslations } from 'next-intl';
+import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const DEFAULT_PAGE_SIZE = 20;
-const DEFAULT_PAGINATION_OPTS = {
-    paginationOpts: {
-        numItems: DEFAULT_PAGE_SIZE,
-        cursor: null,
-    },
-};
 
 type ProgressResult = FunctionReturnType<typeof api.update_progress.getUpdateProgressByObjectiveId>;
 type ObjectiveResult = FunctionReturnType<typeof api.objectives.getObjectiveById>;
@@ -47,18 +44,40 @@ export default function UpdateProgressTable({
         Array.isArray(objectiveIdParam) ? objectiveIdParam[0] : objectiveIdParam
     ) as Id<'objectives'>;
 
+    const {
+        currentPage,
+        isDone,
+        getPaginationOpts,
+        updateCursor,
+        goToPage,
+        hasNextPage,
+        hasPreviousPage,
+    } = useServerPagination(DEFAULT_PAGE_SIZE);
+
+    const paginationOpts = getPaginationOpts(currentPage);
+    const isFirstPage = paginationOpts.cursor === null;
+
     const updateProgress = useQuery({
         ...convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
             objectiveId,
-            ...DEFAULT_PAGINATION_OPTS,
+            paginationOpts,
         }),
-        initialData: initialProgress,
+        initialData: isFirstPage ? initialProgress : undefined,
     });
 
     const objective = useQuery({
         ...convexQuery(api.objectives.getObjectiveById, { id: objectiveId }),
         initialData: initialObjective,
     });
+
+    const hasData = updateProgress.data !== undefined;
+    const continueCursor = updateProgress.data?.continueCursor ?? null;
+    const pageIsDone = updateProgress.data?.isDone ?? false;
+
+    useEffect(() => {
+        if (!hasData || updateProgress.isFetching) return;
+        updateCursor(currentPage, continueCursor, pageIsDone);
+    }, [currentPage, hasData, continueCursor, pageIsDone, updateProgress.isFetching, updateCursor]);
 
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress(objectiveId);
 
@@ -89,6 +108,8 @@ export default function UpdateProgressTable({
 
     // Prepare updates for velocity and streak calculations
     const unitSuffix = objectiveDoc?.unit ? ` ${objectiveDoc.unit}` : '';
+
+    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="w-full min-w-0 space-y-4">
@@ -122,14 +143,14 @@ export default function UpdateProgressTable({
                 ) : (
                     updates.map(progressRow => {
                         const defaultValues = {
-                            _id: String(progressRow._id),
+                            _id: progressRow._id,
                             updatedValue: progressRow.updatedValue,
                             updateDate: new Date(progressRow.updateDate),
                             comment: progressRow.comment ?? null,
                         } as unknown as UpdateProgress;
 
                         return (
-                            <Card key={String(progressRow._id)} className="w-full">
+                            <Card key={progressRow._id} className="w-full">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
@@ -200,6 +221,29 @@ export default function UpdateProgressTable({
                         );
                     })
                 )}
+                {updates.length > 0 && (hasPreviousPage || hasNextPage) && (
+                    <div className="flex items-center justify-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={!hasPreviousPage}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            {currentPage + 1} / {totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={!hasNextPage}
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <div className="hidden w-full min-w-0 md:block">
@@ -207,6 +251,14 @@ export default function UpdateProgressTable({
                     columns={columns}
                     data={updateProgress.data?.page ?? []}
                     isLoading={updateProgress.isLoading}
+                    pagination={{
+                        currentPage,
+                        totalPages,
+                        onPageChange: goToPage,
+                        hasNextPage,
+                        hasPreviousPage,
+                        pageSize: DEFAULT_PAGE_SIZE,
+                    }}
                 />
             </div>
         </div>

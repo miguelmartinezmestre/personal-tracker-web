@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    createTestObjective,
+} from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
 
@@ -23,7 +28,7 @@ describe('convex dashboard', async () => {
             emailVerified: false,
         };
 
-        await createTestUser(t, user);
+        const userData = await createTestUser(t, user);
         userId = user.userId;
 
         const orgId = await createTestOrganization(t, {
@@ -32,22 +37,22 @@ describe('convex dashboard', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(orgId),
+            organizationId: orgId,
             userId: userId,
             role: 'owner',
         });
 
-        organizationId = String(orgId);
+        organizationId = orgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -121,7 +126,9 @@ describe('convex dashboard', async () => {
         });
 
         test('counts progress updates correctly by month', async () => {
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            const objectiveId = await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Monthly Progress Test',
                 targetValue: 100,
                 currentValue: 0,
@@ -159,8 +166,8 @@ describe('convex dashboard', async () => {
 
             const monthlyProgress = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
 
-            const currentMonthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
-            const lastMonthKey = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+            const currentMonthKey = `${currentMonth.getFullYear()}-${`${currentMonth.getMonth() + 1}`.padStart(2, '0')}`;
+            const lastMonthKey = `${lastMonth.getFullYear()}-${`${lastMonth.getMonth() + 1}`.padStart(2, '0')}`;
 
             const currentMonthData = monthlyProgress.find(m => m.monthKey === currentMonthKey);
             const lastMonthData = monthlyProgress.find(m => m.monthKey === lastMonthKey);
@@ -476,7 +483,9 @@ describe('convex dashboard', async () => {
         });
 
         test('counts recent progress updates correctly', async () => {
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            const objectiveId = await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Recent Activity Test',
                 targetValue: 100,
                 currentValue: 0,

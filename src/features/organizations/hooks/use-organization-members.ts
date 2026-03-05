@@ -49,11 +49,16 @@ export function useOrganizationMembers(organizationId: string | null) {
     const { data, isPending, isLoading } = useQuery(
         convexQuery(
             api.organizations.getOrganizationMembers,
-            organizationId ? { organizationId } : 'skip'
+            organizationId
+                ? {
+                      organizationId,
+                      paginationOpts: { numItems: 100, cursor: null },
+                  }
+                : 'skip'
         )
     );
 
-    const members = data?.members.map((member: OrganizationMemberRaw) => ({
+    const members = data?.page?.map((member: OrganizationMemberRaw) => ({
         id: member.id,
         organizationId: member.organizationId,
         userId: member.userId,

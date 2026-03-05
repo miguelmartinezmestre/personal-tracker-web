@@ -51,7 +51,7 @@ export default function Home({
             </div>
 
             {/* Objectives stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4" data-testid="dashboard-stats">
                 <StatCard
                     label={t('stats.active')}
                     value={stats?.pendingObjectives}
@@ -82,7 +82,7 @@ export default function Home({
                 </div>
 
                 {/* Upcoming deadlines */}
-                <Card className="md:col-span-1">
+                <Card className="md:col-span-1" data-testid="upcoming-deadlines">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
                             {t('upcomingDeadlines')}
@@ -99,7 +99,7 @@ export default function Home({
                         ) : (
                             <ul className="space-y-2">
                                 {upcomingDeadlines.slice(0, 5).map(d => (
-                                    <li key={String(d.id)} className="flex justify-between text-sm">
+                                    <li key={d.id} className="flex justify-between text-sm">
                                         <span className="truncate mr-2">{d.title}</span>
                                         <span className="text-muted-foreground shrink-0">
                                             {d.daysRemaining}d
@@ -112,7 +112,7 @@ export default function Home({
                 </Card>
 
                 {/* Recent activity */}
-                <Card className="md:col-span-1">
+                <Card className="md:col-span-1" data-testid="recent-activity">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('recentActivity')}</CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />

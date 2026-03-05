@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-    createTestUser,
+    createTestUserViaAPI,
     ensureDefaultCategories,
     loginUser,
     logoutUser,
@@ -120,7 +120,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
     test('login flow works correctly', async ({ page }) => {
         // Create user
-        const { email, username } = await createTestUser(page);
+        const { email, username } = await createTestUserViaAPI(page);
 
         // Logout
         await logoutUser(page);
@@ -137,7 +137,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
     });
 
     test('navigation between main pages works', async ({ page }) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         const pages = [
             { route: '/dashboard/home', check: /home/i },
@@ -165,7 +165,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
     });
 
     test('CRUD operations work for objectives', async ({ page }) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await ensureDefaultCategories(page);
 
         const uuid = randomUUID().substring(0, 8);
@@ -276,7 +276,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
     });
 
     test('form validation works', async ({ page }) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
 
         // Test objective form validation
         await page.goto('/dashboard/objectives');
@@ -297,7 +297,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
     });
 
     test('data persists after page reload', async ({ page }) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await ensureDefaultCategories(page);
 
         const uuid = randomUUID().substring(0, 8);

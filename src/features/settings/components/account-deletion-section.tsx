@@ -56,7 +56,10 @@ export default function AccountDeletionSection() {
 
     if (success) {
         return (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
+            <div
+                className="rounded-lg border border-green-200 bg-green-50 p-6 text-center"
+                data-testid="delete-account-success"
+            >
                 <p className="text-green-700">{t('deleteAccountSuccess')}</p>
             </div>
         );
@@ -83,6 +86,7 @@ export default function AccountDeletionSection() {
                             value={emailConfirmation}
                             onChange={e => setEmailConfirmation(e.target.value)}
                             className="bg-white border-red-300"
+                            data-testid="delete-account-email-input"
                         />
                         <p className="text-xs text-red-600">
                             {t('deleteAccountHelpText', { email: userEmail })}
@@ -100,16 +104,22 @@ export default function AccountDeletionSection() {
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             className="bg-white border-red-300"
+                            data-testid="delete-account-password-input"
                         />
                     </div>
 
-                    {error && <p className="text-sm text-red-600">{error}</p>}
+                    {error && (
+                        <p className="text-sm text-red-600" data-testid="delete-account-error">
+                            {error}
+                        </p>
+                    )}
 
                     <Button
                         variant="destructive"
                         onClick={handleDelete}
                         disabled={isLoading || !canDelete}
                         className="w-full sm:w-auto"
+                        data-testid="delete-account-button"
                     >
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {t('deleteAccountButton')}

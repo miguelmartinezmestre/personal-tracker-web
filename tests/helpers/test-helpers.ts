@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 
-export const DEFAULT_PASSWORD = '12345678';
+export const DEFAULT_PASSWORD = 'Password123';
 
 /**
  * Normalizes a name for use in email addresses by removing accents and special characters.
@@ -76,7 +76,7 @@ interface OrganizationListItem {
     id?: string;
 }
 
-function generateTestUserData(options?: CreateTestUserOptions): TestUserData {
+export function generateTestUserData(options?: CreateTestUserOptions): TestUserData {
     const uuid = randomUUID();
     const shortId = uuid.substring(0, 8);
 
@@ -470,6 +470,73 @@ export async function createTestUser(
 }
 
 /**
+ * Creates a test user via API calls instead of UI registration.
+ * Uses page.request which shares cookies with the browser context,
+ * so the page is authenticated after the API calls complete.
+ */
+export async function createTestUserViaAPI(
+    page: Page,
+    options?: CreateTestUserOptions
+): Promise<TestUserData> {
+    const userData = generateTestUserData(options);
+    const origin = process.env.BASE_URL || 'http://localhost:3000';
+    const headers = { Origin: origin };
+
+    // Step 1: Sign up via API
+    const signUpResponse = await page.request.post('/api/auth/sign-up/email', {
+        headers,
+        data: {
+            email: userData.email,
+            password: userData.password,
+            name: userData.username,
+        },
+    });
+
+    if (!signUpResponse.ok()) {
+        const body = await signUpResponse.text();
+        throw new Error(`Sign-up API failed (${signUpResponse.status()}): ${body}`);
+    }
+
+    // Step 2: Create organization via API
+    const createOrgResponse = await page.request.post('/api/auth/organization/create', {
+        headers,
+        data: {
+            name: `${userData.username} Org`,
+            slug: userData.organizationSlug,
+        },
+    });
+
+    if (!createOrgResponse.ok()) {
+        const body = await createOrgResponse.text();
+        throw new Error(`Create org API failed (${createOrgResponse.status()}): ${body}`);
+    }
+
+    const orgPayload = (await createOrgResponse.json()) as { id?: string; data?: { id?: string } };
+    const orgId = orgPayload.id ?? orgPayload.data?.id;
+
+    if (!orgId) {
+        throw new Error('Create org API did not return an organization ID');
+    }
+
+    // Step 3: Set active organization via API
+    const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
+        headers,
+        data: { organizationId: orgId },
+    });
+
+    if (!setActiveResponse.ok()) {
+        const body = await setActiveResponse.text();
+        throw new Error(`Set active org API failed (${setActiveResponse.status()}): ${body}`);
+    }
+
+    // Step 4: Navigate to dashboard to verify session is working
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
+
+    return userData;
+}
+
+/**
  * Logs in an existing user.
  */
 export async function loginUser(
@@ -572,7 +639,7 @@ export async function createObjective(
     }
 
     // Fill numeric values
-    await page.getByTestId('objective-target-input').fill(String(targetValue));
+    await page.getByTestId('objective-target-input').fill(`${targetValue}`);
     await page.getByTestId('objective-unit-input').fill(unit);
 
     // Save

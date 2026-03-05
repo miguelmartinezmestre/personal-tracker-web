@@ -1,5 +1,5 @@
 import { test as base, Page } from '@playwright/test';
-import { createTestUser, promoteToAdmin, TestUserData } from '../helpers/test-helpers';
+import { createTestUserViaAPI, promoteToAdmin, TestUserData } from '../helpers/test-helpers';
 
 /**
  * Extended test fixtures for authentication.
@@ -23,7 +23,7 @@ export const test = base.extend<AuthFixtures>({
      * Provides a page with an authenticated regular user.
      */
     authenticatedPage: async ({ page }, use) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await use(page);
     },
 
@@ -31,7 +31,7 @@ export const test = base.extend<AuthFixtures>({
      * Provides a page with an authenticated admin user.
      */
     adminPage: async ({ page }, use) => {
-        await createTestUser(page);
+        await createTestUserViaAPI(page);
         await promoteToAdmin(page);
         await use(page);
     },
@@ -41,7 +41,7 @@ export const test = base.extend<AuthFixtures>({
      * Useful when you need to control when user creation happens.
      */
     testUser: async ({ page }, use) => {
-        const userData = await createTestUser(page);
+        const userData = await createTestUserViaAPI(page);
         await use(userData);
     },
 
@@ -49,7 +49,7 @@ export const test = base.extend<AuthFixtures>({
      * Provides admin user data.
      */
     adminUser: async ({ page }, use) => {
-        const userData = await createTestUser(page);
+        const userData = await createTestUserViaAPI(page);
         await promoteToAdmin(page);
         await use(userData);
     },

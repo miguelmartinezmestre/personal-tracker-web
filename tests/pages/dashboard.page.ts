@@ -31,6 +31,22 @@ export class DashboardPage {
         await this.page.goto('/dashboard/settings');
     }
 
+    async gotoAchievements() {
+        await this.page.goto('/dashboard/achievements');
+    }
+
+    async gotoSessions() {
+        await this.page.goto('/dashboard/sessions');
+    }
+
+    async gotoCategories() {
+        await this.page.goto('/dashboard/categories');
+    }
+
+    async gotoOrganizations() {
+        await this.page.goto('/dashboard/organizations');
+    }
+
     async signOut() {
         await this.signOutButton.click();
     }

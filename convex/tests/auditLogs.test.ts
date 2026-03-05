@@ -28,7 +28,7 @@ describe('convex auditLogs', () => {
             role: 'admin',
             emailVerified: true,
         };
-        await createTestUser(t, admin);
+        const adminData = await createTestUser(t, admin);
         adminId = admin.userId;
 
         const adminOrgId = await createTestOrganization(t, {
@@ -37,22 +37,22 @@ describe('convex auditLogs', () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(adminOrgId),
+            organizationId: adminOrgId,
             userId: adminId,
             role: 'owner',
         });
 
-        adminOrganizationId = String(adminOrgId);
+        adminOrganizationId = adminOrgId;
 
         adminIdentity = t.withIdentity({
-            subject: admin.userId,
+            subject: adminData.docId,
             role: admin.role,
             email: admin.email,
             name: admin.name,
             password: admin.password,
             emailVerified: admin.emailVerified,
             createdAt: Date.now(),
-            userId: admin.userId,
+            userId: adminData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -68,7 +68,7 @@ describe('convex auditLogs', () => {
             role: 'user',
             emailVerified: true,
         };
-        await createTestUser(t, user);
+        const userDataResult = await createTestUser(t, user);
         userId = user.userId;
 
         const userOrgId = await createTestOrganization(t, {
@@ -77,22 +77,22 @@ describe('convex auditLogs', () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(userOrgId),
+            organizationId: userOrgId,
             userId: userId,
             role: 'owner',
         });
 
-        userOrganizationId = String(userOrgId);
+        userOrganizationId = userOrgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userDataResult.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userDataResult.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -101,6 +101,8 @@ describe('convex auditLogs', () => {
     });
 
     describe('getAuditLogs', () => {
+        const paginationOpts = { numItems: 100, cursor: null };
+
         test('returns audit logs sorted by date descending', async () => {
             // Create some audit logs directly
             await adminIdentity.run(async ctx => {
@@ -134,20 +136,22 @@ describe('convex auditLogs', () => {
                 });
             });
 
-            const logs = await adminIdentity.query(api.auditLogs.getAuditLogs, {});
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+                paginationOpts,
+            });
 
-            expect(logs.length).toBeGreaterThanOrEqual(3);
+            expect(result.page.length).toBeGreaterThanOrEqual(3);
             // Should be sorted descending (most recent first)
-            for (let i = 0; i < logs.length - 1; i++) {
-                const current = logs[i]?.createdAt;
-                const next = logs[i + 1]?.createdAt;
+            for (let i = 0; i < result.page.length - 1; i++) {
+                const current = result.page[i]?.createdAt;
+                const next = result.page[i + 1]?.createdAt;
                 if (current !== undefined && next !== undefined) {
                     expect(current).toBeGreaterThanOrEqual(next);
                 }
             }
         });
 
-        test('respects limit parameter', async () => {
+        test('respects numItems in paginationOpts', async () => {
             // Create more than the requested limit
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
@@ -164,11 +168,12 @@ describe('convex auditLogs', () => {
                 }
             });
 
-            const logs = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                limit: 5,
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+                paginationOpts: { numItems: 5, cursor: null },
             });
 
-            expect(logs.length).toBe(5);
+            expect(result.page.length).toBe(5);
+            expect(result.isDone).toBe(false);
         });
 
         test('filters by resourceType when provided', async () => {
@@ -204,16 +209,19 @@ describe('convex auditLogs', () => {
                 });
             });
 
-            const objectiveLogs = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
                 resourceType: 'objective',
+                paginationOpts,
             });
 
-            expect(objectiveLogs.every(log => log.resourceType === 'objective')).toBe(true);
+            expect(result.page.every(log => log.resourceType === 'objective')).toBe(true);
         });
 
-        test('returns empty array when no logs exist', async () => {
-            const logs = await adminIdentity.query(api.auditLogs.getAuditLogs, {});
-            expect(Array.isArray(logs)).toBe(true);
+        test('returns empty page when no logs exist', async () => {
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+                paginationOpts,
+            });
+            expect(Array.isArray(result.page)).toBe(true);
         });
 
         test('regular user can only see their own logs', async () => {
@@ -241,8 +249,10 @@ describe('convex auditLogs', () => {
             });
 
             // Regular user should only see their own logs
-            const userLogs = await userIdentity.query(api.auditLogs.getAuditLogs, {});
-            expect(userLogs.every(log => log.userId === userId)).toBe(true);
+            const result = await userIdentity.query(api.auditLogs.getAuditLogs, {
+                paginationOpts,
+            });
+            expect(result.page.every(log => log.userId === userId)).toBe(true);
         });
 
         test('admin can see all logs', async () => {
@@ -270,14 +280,18 @@ describe('convex auditLogs', () => {
             });
 
             // Admin should see all logs
-            const adminLogs = await adminIdentity.query(api.auditLogs.getAuditLogs, {});
-            const userIds = new Set(adminLogs.map(log => log.userId));
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+                paginationOpts,
+            });
+            const userIds = new Set(result.page.map(log => log.userId));
             expect(userIds.has(adminId)).toBe(true);
             expect(userIds.has(userId)).toBe(true);
         });
     });
 
     describe('getAuditLogsByResource', () => {
+        const paginationOpts = { numItems: 100, cursor: null };
+
         test('returns logs for a specific resource', async () => {
             // Create logs for multiple resources
             await adminIdentity.run(async ctx => {
@@ -311,22 +325,24 @@ describe('convex auditLogs', () => {
                 });
             });
 
-            const logs = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
                 resourceType: 'objective',
                 resourceId: 'obj-target',
+                paginationOpts,
             });
 
-            expect(logs.length).toBe(2);
-            expect(logs.every(log => log.resourceId === 'obj-target')).toBe(true);
+            expect(result.page.length).toBe(2);
+            expect(result.page.every(log => log.resourceId === 'obj-target')).toBe(true);
         });
 
-        test('returns empty array for non-existent resource', async () => {
-            const logs = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        test('returns empty page for non-existent resource', async () => {
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
                 resourceType: 'objective',
                 resourceId: 'non-existent',
+                paginationOpts,
             });
 
-            expect(logs).toEqual([]);
+            expect(result.page).toEqual([]);
         });
     });
 
@@ -464,9 +480,11 @@ describe('convex auditLogs', () => {
 
     describe('unauthenticated access', () => {
         test('getAuditLogs rejects when unauthenticated', async () => {
-            await expect(t.query(api.auditLogs.getAuditLogs, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
-            );
+            await expect(
+                t.query(api.auditLogs.getAuditLogs, {
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
         });
 
         test('getAuditLogsByResource rejects when unauthenticated', async () => {
@@ -474,6 +492,7 @@ describe('convex auditLogs', () => {
                 t.query(api.auditLogs.getAuditLogsByResource, {
                     resourceType: 'objective',
                     resourceId: 'obj-1',
+                    paginationOpts: { numItems: 10, cursor: null },
                 })
             ).rejects.toThrow(/Unauthenticated|User not authenticated/);
         });

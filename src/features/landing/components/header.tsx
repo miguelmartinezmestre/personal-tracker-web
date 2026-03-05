@@ -23,6 +23,7 @@ export default function Header() {
                         className="lg:hidden"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         aria-label={isMenuOpen ? t('aria.closeMenu') : t('aria.openMenu')}
+                        data-testid="header-menu-toggle"
                     >
                         {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                     </button>

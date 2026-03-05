@@ -252,7 +252,7 @@ export default function AchievementsLayout({
                         >
                             {individualAchievements.map(achievement => (
                                 <AchievementCard
-                                    key={String(achievement.definition._id)}
+                                    key={achievement.definition._id}
                                     definition={achievement.definition}
                                     currentProgress={achievement.currentProgress}
                                     isEarned={achievement.isEarned}
@@ -288,7 +288,7 @@ export default function AchievementsLayout({
                         >
                             {organizationAchievements.map(achievement => (
                                 <AchievementCard
-                                    key={String(achievement.definition._id)}
+                                    key={achievement.definition._id}
                                     definition={achievement.definition}
                                     currentProgress={achievement.currentProgress}
                                     isEarned={achievement.isEarned}

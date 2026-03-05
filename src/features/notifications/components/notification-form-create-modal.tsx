@@ -157,8 +157,8 @@ export default function CreateNotificationFormModal() {
                                         <SelectContent>
                                             {objectiveOptions.map(objective => (
                                                 <SelectItem
-                                                    key={String(objective._id)}
-                                                    value={String(objective._id)}
+                                                    key={objective._id}
+                                                    value={objective._id}
                                                 >
                                                     {objective.title}
                                                 </SelectItem>

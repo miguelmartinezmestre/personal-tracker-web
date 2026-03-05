@@ -97,7 +97,11 @@ export default function PasswordFormEdit() {
                         <FormItem>
                             <FormLabel>{t('password')}</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password" />
+                                <Input
+                                    {...field}
+                                    type="password"
+                                    data-testid="password-current-input"
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -110,7 +114,11 @@ export default function PasswordFormEdit() {
                         <FormItem>
                             <FormLabel>{t('confirmPassword')}</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password" />
+                                <Input
+                                    {...field}
+                                    type="password"
+                                    data-testid="password-confirm-input"
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -123,7 +131,11 @@ export default function PasswordFormEdit() {
                         <FormItem>
                             <FormLabel>{t('newPassword')}</FormLabel>
                             <FormControl>
-                                <Input {...field} type="password" />
+                                <Input
+                                    {...field}
+                                    type="password"
+                                    data-testid="password-new-input"
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -136,15 +148,24 @@ export default function PasswordFormEdit() {
                         type="button"
                         onClick={() => setOpen(false)}
                         disabled={isLoading}
+                        data-testid="password-cancel-button"
                     >
                         {t('cancel')}
                     </Button>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button type="submit" disabled={isLoading} data-testid="password-save-button">
                         {isLoading ? t('saving') : t('savePassword')}
                     </Button>
                 </DialogFooter>
-                {error && <p className="text-red-500">{error}</p>}
-                {message && <p className="text-green-500">{message}</p>}
+                {error && (
+                    <p className="text-red-500" data-testid="password-error-message">
+                        {error}
+                    </p>
+                )}
+                {message && (
+                    <p className="text-green-500" data-testid="password-success-message">
+                        {message}
+                    </p>
+                )}
             </form>
         </Form>
     );

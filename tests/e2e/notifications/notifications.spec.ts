@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-    createTestUser,
-    createObjective,
-    ensureDefaultCategories,
-} from '../../helpers/test-helpers';
+import { createObjective, ensureDefaultCategories } from '../../helpers/test-helpers';
 
 async function openNotificationCreateModal(
     page: import('@playwright/test').Page
@@ -65,10 +61,6 @@ async function createNotificationInModal(
 }
 
 test.describe('Notifications', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('view notifications list', async ({ page }) => {
         await page.goto('/dashboard/notifications');
         await page.waitForLoadState('load');

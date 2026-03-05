@@ -69,17 +69,23 @@ export default function CreateObjectiveFormModal() {
     });
 
     const categoriesQuery = useQuery({
-        ...convexQuery(api.categories.getCategoriesByUser, {}),
+        ...convexQuery(api.categories.getCategoriesByUser, {
+            paginationOpts: { numItems: 100, cursor: null },
+        }),
     });
 
     const categoryOptions = useMemo(
         () =>
-            (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
-                id: String(category._id),
-                value: category.name,
+            (categoriesQuery.data?.page ?? []).map((category: Doc<'categories'>) => ({
+                id: category._id,
                 label: category.name,
             })),
         [categoriesQuery.data]
+    );
+
+    const categoryIdToName = useMemo(
+        () => new Map<string, string>(categoryOptions.map(c => [c.id, c.label])),
+        [categoryOptions]
     );
 
     const form = useForm<CreateObjective>({
@@ -89,10 +95,13 @@ export default function CreateObjectiveFormModal() {
             onSubmit: objectiveSchema,
         },
         onSubmit: async ({ value }) => {
+            const categoryName = value.category
+                ? (categoryIdToName.get(value.category) ?? value.category)
+                : undefined;
             await createObjectiveMutation.mutateAsync({
                 title: value.title,
                 description: value.description ?? undefined,
-                category: value.category ?? undefined,
+                category: categoryName,
                 targetValue: Number(value.targetValue),
                 startValue: 0,
                 currentValue: 0,
@@ -221,7 +230,7 @@ export default function CreateObjectiveFormModal() {
                                                     categoryOptions.map(category => (
                                                         <SelectItem
                                                             key={category.id}
-                                                            value={category.value}
+                                                            value={category.id}
                                                         >
                                                             {category.label}
                                                         </SelectItem>

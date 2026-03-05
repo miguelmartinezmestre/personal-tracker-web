@@ -6,6 +6,9 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/convex/_generated/api';
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { FunctionReturnType } from 'convex/server';
+
+type UsersResult = FunctionReturnType<typeof api.admin.listUsers>;
 
 export default function UsersLayout({
     preloadedUsersQuery,
@@ -34,7 +37,7 @@ export default function UsersLayout({
                     <CardDescription>{t('userManagementDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UsersTable users={users} />
+                    <UsersTable initialUsers={users as UsersResult | undefined} />
                 </CardContent>
             </Card>
         </div>

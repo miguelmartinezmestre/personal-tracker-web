@@ -25,7 +25,7 @@ export default function UpdateProgressLayout({
     const unitLabel = objective?.unit ?? '';
     const targetValue = objective?.targetValue;
     const currentValue = objective?.currentValue;
-    const formatValue = (value: number) => (unitLabel ? `${value} ${unitLabel}` : String(value));
+    const formatValue = (value: number) => (unitLabel ? `${value} ${unitLabel}` : `${value}`);
 
     return (
         <div className="w-full min-w-0 space-y-6">

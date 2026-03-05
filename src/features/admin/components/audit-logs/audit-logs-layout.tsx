@@ -6,6 +6,9 @@ import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { FunctionReturnType } from 'convex/server';
+
+type AuditLogsResult = FunctionReturnType<typeof api.auditLogs.getAuditLogs>;
 
 export default function AuditLogsLayout({
     preloadedAuditLogsQuery,
@@ -35,7 +38,7 @@ export default function AuditLogsLayout({
                     <CardDescription>{t('auditLogManagementDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <AuditLogsTable logs={logs} />
+                    <AuditLogsTable initialLogs={(logs as AuditLogsResult) ?? undefined} />
                 </CardContent>
             </Card>
         </div>

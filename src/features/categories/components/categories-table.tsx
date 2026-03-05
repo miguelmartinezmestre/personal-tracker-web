@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { DataTable } from '@/features/table/components/table';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -7,7 +8,10 @@ import { api } from '@/convex/_generated/api';
 import type { Category } from '@/features/categories/schemas/category';
 import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
+import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
 import { useCategoriesTableColumns } from './categories-table-columns';
+
+const DEFAULT_PAGE_SIZE = 20;
 
 // Tipo que viene de Convex
 type ConvexCategory = {
@@ -39,20 +43,53 @@ interface CategoriesTableProps {
 }
 
 export default function CategoriesTable({ initialCategories }: CategoriesTableProps) {
-    const categories = useQuery({
-        ...convexQuery(api.categories.getCategoriesByUser, {}),
-        initialData: initialCategories,
-    });
-
-    // Columns
     const columns = useCategoriesTableColumns();
 
-    // Mapear los datos de Convex a Category
-    const mappedData = (categories.data ?? []).map(mapConvexCategoryToCategory);
+    const {
+        currentPage,
+        isDone,
+        getPaginationOpts,
+        updateCursor,
+        goToPage,
+        hasNextPage,
+        hasPreviousPage,
+    } = useServerPagination(DEFAULT_PAGE_SIZE);
+
+    const paginationOpts = getPaginationOpts(currentPage);
+    const isFirstPage = paginationOpts.cursor === null;
+
+    const categories = useQuery({
+        ...convexQuery(api.categories.getCategoriesByUser, { paginationOpts }),
+        initialData: isFirstPage ? initialCategories : undefined,
+    });
+
+    const hasData = categories.data !== undefined;
+    const continueCursor = categories.data?.continueCursor ?? null;
+    const pageIsDone = categories.data?.isDone ?? false;
+
+    useEffect(() => {
+        if (!hasData || categories.isFetching) return;
+        updateCursor(currentPage, continueCursor, pageIsDone);
+    }, [currentPage, hasData, continueCursor, pageIsDone, categories.isFetching, updateCursor]);
+
+    const mappedData = (categories.data?.page ?? []).map(mapConvexCategoryToCategory);
+    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div>
-            <DataTable columns={columns} data={mappedData} isLoading={categories.isLoading} />
+            <DataTable
+                columns={columns}
+                data={mappedData}
+                isLoading={categories.isLoading}
+                pagination={{
+                    currentPage,
+                    totalPages,
+                    onPageChange: goToPage,
+                    hasNextPage,
+                    hasPreviousPage,
+                    pageSize: DEFAULT_PAGE_SIZE,
+                }}
+            />
         </div>
     );
 }

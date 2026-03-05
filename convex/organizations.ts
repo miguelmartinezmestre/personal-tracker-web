@@ -1,4 +1,5 @@
 import { ConvexError, v } from 'convex/values';
+import { paginationOptsValidator } from 'convex/server';
 import { query, type QueryCtx } from './_generated/server';
 import { getAuthUserIdentity, getSession } from 'better-convex/auth';
 import type { Id } from './_generated/dataModel';
@@ -144,10 +145,15 @@ export const getActiveMember = query({
 });
 
 export const getOrganizationMembers = query({
-    args: { organizationId: v.string() },
+    args: {
+        organizationId: v.string(),
+        paginationOpts: paginationOptsValidator,
+    },
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return { members: [] };
+        if (!identity) {
+            throw new ConvexError('Unauthenticated');
+        }
 
         const userMembership = await ctx.db
             .query('member')
@@ -159,13 +165,14 @@ export const getOrganizationMembers = query({
             throw new ConvexError('Not authorized to view members');
         }
 
-        const members = await ctx.db
+        const paginatedMembers = await ctx.db
             .query('member')
             .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .collect();
+            .order('desc')
+            .paginate(args.paginationOpts);
 
-        const membersWithUsers = await Promise.all(
-            members.map(async member => {
+        const enrichedPage = await Promise.all(
+            paginatedMembers.page.map(async member => {
                 const user = await ctx.db
                     .query('user')
                     .filter(q => q.eq(q.field('_id'), member.userId as Id<'user'>))
@@ -188,7 +195,11 @@ export const getOrganizationMembers = query({
             })
         );
 
-        return { members: membersWithUsers };
+        return {
+            page: enrichedPage,
+            continueCursor: paginatedMembers.continueCursor,
+            isDone: paginatedMembers.isDone,
+        };
     },
 });
 

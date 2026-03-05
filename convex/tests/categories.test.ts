@@ -26,7 +26,7 @@ describe('convex categories', async () => {
             role: 'user',
             emailVerified: false,
         };
-        await createTestUser(t, user);
+        const userData = await createTestUser(t, user);
         userId = user.userId;
 
         const userOrgId = await createTestOrganization(t, {
@@ -35,22 +35,22 @@ describe('convex categories', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(userOrgId),
+            organizationId: userOrgId,
             userId: userId,
             role: 'owner',
         });
 
-        _userOrganizationId = String(userOrgId);
+        _userOrganizationId = userOrgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -66,7 +66,7 @@ describe('convex categories', async () => {
             role: 'admin',
             emailVerified: false,
         };
-        await createTestUser(t, admin);
+        const adminData = await createTestUser(t, admin);
 
         const adminOrgId = await createTestOrganization(t, {
             name: 'Categories Admin Org ' + adminRandom,
@@ -74,22 +74,22 @@ describe('convex categories', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(adminOrgId),
+            organizationId: adminOrgId,
             userId: admin.userId,
             role: 'owner',
         });
 
-        _adminOrganizationId = String(adminOrgId);
+        _adminOrganizationId = adminOrgId;
 
         adminIdentity = t.withIdentity({
-            subject: admin.userId,
+            subject: adminData.docId,
             role: admin.role,
             email: admin.email,
             name: admin.name,
             password: admin.password,
             emailVerified: admin.emailVerified,
             createdAt: Date.now(),
-            userId: admin.userId,
+            userId: adminData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -150,9 +150,14 @@ describe('convex categories', async () => {
     });
 
     describe('getCategoriesByUser', () => {
-        test('returns empty array when user has no categories', async () => {
-            const categories = await userIdentity.query(api.categories.getCategoriesByUser, {});
-            expect(categories).toEqual([]);
+        const paginationOpts = { numItems: 50, cursor: null };
+
+        test('returns empty page when user has no categories', async () => {
+            const result = await userIdentity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(result.page).toEqual([]);
+            expect(result.isDone).toBe(true);
         });
 
         test('returns only user own categories', async () => {
@@ -172,13 +177,51 @@ describe('convex categories', async () => {
                 color: '#f59e0b',
             });
 
-            const userCategories = await userIdentity.query(api.categories.getCategoriesByUser, {});
-            expect(userCategories).toHaveLength(2);
-            expect(userCategories.every(c => c.userId === userId)).toBe(true);
+            const result = await userIdentity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(result.page).toHaveLength(2);
+            expect(result.page.every(c => c.userId === userId)).toBe(true);
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(t.query(api.categories.getCategoriesByUser, {})).rejects.toThrow(
+            await expect(
+                t.query(api.categories.getCategoriesByUser, { paginationOpts })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        });
+    });
+
+    describe('getCategoryNamesForFilters', () => {
+        test('returns unique sorted category names for current user', async () => {
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: 'Work',
+                color: '#10b981',
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: ' Health ',
+                color: '#3b82f6',
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: 'Work',
+                color: '#f59e0b',
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: '   ',
+                color: '#111827',
+            });
+
+            await adminIdentity.mutation(api.categories.createCategory, {
+                name: 'Admin Category',
+                color: '#ef4444',
+            });
+
+            const result = await userIdentity.query(api.categories.getCategoryNamesForFilters, {});
+
+            expect(result).toEqual(['Health', 'Work']);
+        });
+
+        test('rejects unauthenticated users', async () => {
+            await expect(t.query(api.categories.getCategoryNamesForFilters, {})).rejects.toThrow(
                 /Unauthenticated|User not authenticated/
             );
         });

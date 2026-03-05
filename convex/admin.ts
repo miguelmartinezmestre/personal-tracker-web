@@ -112,11 +112,10 @@ export const listUserSessions = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
 
-        const sessions = await ctx.db
+        return await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', args.userId))
-            .collect();
-
-        return sessions;
+            .order('desc')
+            .paginate(args.paginationOpts);
     },
 });

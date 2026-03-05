@@ -216,7 +216,7 @@ export async function expectNotificationInList(page: Page, message: string): Pro
  * Asserts progress value is displayed.
  */
 export async function expectProgressValue(page: Page, value: number): Promise<void> {
-    await expect(page.getByText(String(value))).toBeVisible();
+    await expect(page.getByText(`${value}`)).toBeVisible();
 }
 
 /**
@@ -233,4 +233,31 @@ export async function expectSidebarVisible(page: Page): Promise<void> {
 export async function expectEmptyState(page: Page): Promise<void> {
     const emptyState = page.locator('[data-testid="empty-state"], [class*="empty"]');
     await expect(emptyState.first()).toBeVisible();
+}
+
+/**
+ * Asserts that a tab is active (has aria-selected or data-state="active").
+ */
+export async function expectTabActive(locator: Locator): Promise<void> {
+    await expect(locator).toHaveAttribute('data-state', 'active');
+}
+
+/**
+ * Asserts that a chart container is visible.
+ */
+export async function expectChartVisible(page: Page, testId: string): Promise<void> {
+    const chart = page.getByTestId(testId);
+    await expect(chart).toBeVisible({ timeout: 15000 });
+}
+
+/**
+ * Asserts that a stat card displays a specific value.
+ */
+export async function expectStatValue(
+    page: Page,
+    testIdPattern: string,
+    value: number
+): Promise<void> {
+    const card = page.locator(`[data-testid^="${testIdPattern}"]`).first();
+    await expect(card).toContainText(`${value}`);
 }

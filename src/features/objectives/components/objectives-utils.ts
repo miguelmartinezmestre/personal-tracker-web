@@ -4,7 +4,7 @@ import { savedObjectiveSchema } from '@/features/objectives/schemas/objective';
 
 export const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
     return savedObjectiveSchema.parse({
-        _id: String(objective._id),
+        _id: objective._id,
         title: objective.title,
         description: objective.description ?? null,
         category: objective.category ?? null,

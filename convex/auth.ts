@@ -1,5 +1,6 @@
 import { convex } from '@convex-dev/better-auth/plugins';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import {
     createApi,
     createClient,
@@ -24,6 +25,9 @@ import { ConvexError } from 'convex/values';
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 
 const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
+const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+const STRONG_PASSWORD_MESSAGE =
+    'La contraseña debe incluir al menos una mayúscula, una minúscula y un número';
 
 const authFunctions: AuthFunctions = internal.auth;
 
@@ -60,11 +64,25 @@ const createAuthOptions = (ctx: GenericCtx) =>
             },
             revokeSessionsOnPasswordReset: true,
         },
-        socialProviders: {
-            github: {
-                clientId: process.env.GITHUB_CLIENT_ID!,
-                clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-            },
+        hooks: {
+            before: createAuthMiddleware(async ctx => {
+                if (ctx.path !== '/sign-up/email') {
+                    return;
+                }
+
+                const password =
+                    (ctx.body as { password?: unknown } | undefined)?.password ?? undefined;
+
+                if (typeof password !== 'string' || password.length < 8) {
+                    return;
+                }
+
+                if (!STRONG_PASSWORD_REGEX.test(password)) {
+                    throw new APIError('BAD_REQUEST', {
+                        message: STRONG_PASSWORD_MESSAGE,
+                    });
+                }
+            }),
         },
         plugins: [
             convex({
@@ -116,7 +134,7 @@ export const auth = betterAuth(createAuthOptions({} as any));
 export const getCurrentUser = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated 3');
+        if (!identity) throw new ConvexError('Unauthenticated');
         return await ctx.db.get('user', identity.userId);
     },
 });

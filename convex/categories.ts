@@ -1,13 +1,35 @@
 import { v } from 'convex/values';
+import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './rls';
 
 export const getCategoriesByUser = queryWithRLS({
-    args: {},
-    handler: async ctx => {
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, args) => {
         return await ctx.db
             .query('categories')
-            .withIndex('by_user', q => q.eq('userId', String(ctx.userId)))
+            .withIndex('by_user', q => q.eq('userId', ctx.userId))
+            .order('desc')
+            .paginate(args.paginationOpts);
+    },
+});
+
+export const getCategoryNamesForFilters = queryWithRLS({
+    args: {},
+    handler: async ctx => {
+        const categories = await ctx.db
+            .query('categories')
+            .withIndex('by_user', q => q.eq('userId', ctx.userId))
             .collect();
+
+        return Array.from(
+            new Set(
+                categories
+                    .map(category => category.name.trim())
+                    .filter((name): name is string => name.length > 0)
+            )
+        ).sort((a, b) => a.localeCompare(b));
     },
 });
 
@@ -19,7 +41,7 @@ export const createCategory = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         const now = Date.now();
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
         const categoryId = await ctx.db.insert('categories', {
             userId: userId,
             organizationId: ctx.organizationId ?? '',
@@ -68,7 +90,7 @@ export const deleteCategory = mutationWithRLS({
 export const createDefaultCategories = mutationWithRLS({
     args: {},
     handler: async ctx => {
-        const user = String(ctx.userId);
+        const user = ctx.userId;
         const now = Date.now();
         const defaultCategories = [
             { name: 'Health & Fitness', color: '#10b981', icon: 'heart' },

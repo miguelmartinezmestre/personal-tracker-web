@@ -31,8 +31,10 @@ export default defineSchema({
     })
         .index('by_user', ['userId'])
         .index('by_user_scope', ['userId', 'scope'])
+        .index('by_user_scope_status', ['userId', 'scope', 'status'])
         .index('by_organization', ['organizationId'])
         .index('by_organization_scope', ['organizationId', 'scope'])
+        .index('by_organization_scope_status', ['organizationId', 'scope', 'status'])
         .index('by_status', ['status']),
 
     progressUpdates: defineTable({
@@ -83,7 +85,8 @@ export default defineSchema({
         .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
         .index('by_createdAt', ['createdAt'])
-        .index('by_resourceType', ['resourceType']),
+        .index('by_resourceType', ['resourceType'])
+        .index('by_resourceType_resourceId', ['resourceType', 'resourceId']),
 
     categories: defineTable({
         userId: v.string(),

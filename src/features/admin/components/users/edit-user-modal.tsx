@@ -72,7 +72,7 @@ export function EditUserModal({
                     <Edit className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent data-testid="user-edit-modal">
                 <DialogHeader>
                     <DialogTitle>{t('editUserModal.title')}</DialogTitle>
                     <DialogDescription>{t('editUserModal.description')}</DialogDescription>
@@ -80,16 +80,26 @@ export function EditUserModal({
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="email">{tCommon('fields.email')}</Label>
-                        <Input id="email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <Input
+                            id="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            data-testid="user-edit-email-input"
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="name">{tCommon('fields.name')}</Label>
-                        <Input id="name" value={name} onChange={e => setName(e.target.value)} />
+                        <Input
+                            id="name"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            data-testid="user-edit-name-input"
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="role">{tCommon('fields.role')}</Label>
                         <Select value={role} onValueChange={setRole}>
-                            <SelectTrigger>
+                            <SelectTrigger data-testid="user-edit-role-select">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -107,10 +117,18 @@ export function EditUserModal({
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)}>
+                    <Button
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                        data-testid="user-edit-cancel-button"
+                    >
                         {tCommon('actions.cancel')}
                     </Button>
-                    <Button onClick={() => updateUser.mutate()} disabled={updateUser.isPending}>
+                    <Button
+                        onClick={() => updateUser.mutate()}
+                        disabled={updateUser.isPending}
+                        data-testid="user-edit-save-button"
+                    >
                         {updateUser.isPending ? tCommon('actions.saving') : tCommon('actions.save')}
                     </Button>
                 </DialogFooter>

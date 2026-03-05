@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    createTestObjective,
+} from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
 
@@ -32,7 +37,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             role: 'user',
             emailVerified: false,
         };
-        await createTestUser(t, user1);
+        const user1Data = await createTestUser(t, user1);
         user1Id = user1.userId;
 
         const user1OrgId = await createTestOrganization(t, {
@@ -41,22 +46,22 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(user1OrgId),
+            organizationId: user1OrgId,
             userId: user1Id,
             role: 'owner',
         });
 
-        _user1OrganizationId = String(user1OrgId);
+        _user1OrganizationId = user1OrgId;
 
         user1Identity = t.withIdentity({
-            subject: user1.userId,
+            subject: user1Data.docId,
             role: user1.role,
             email: user1.email,
             name: user1.name,
             password: user1.password,
             emailVerified: user1.emailVerified,
             createdAt: Date.now(),
-            userId: user1.userId,
+            userId: user1Data.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -72,7 +77,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             role: 'user',
             emailVerified: false,
         };
-        await createTestUser(t, user2);
+        const user2Data = await createTestUser(t, user2);
         user2Id = user2.userId;
 
         const user2OrgId = await createTestOrganization(t, {
@@ -81,22 +86,22 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(user2OrgId),
+            organizationId: user2OrgId,
             userId: user2Id,
             role: 'owner',
         });
 
-        _user2OrganizationId = String(user2OrgId);
+        _user2OrganizationId = user2OrgId;
 
         user2Identity = t.withIdentity({
-            subject: user2.userId,
+            subject: user2Data.docId,
             role: user2.role,
             email: user2.email,
             name: user2.name,
             password: user2.password,
             emailVerified: user2.emailVerified,
             createdAt: Date.now(),
-            userId: user2.userId,
+            userId: user2Data.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -112,7 +117,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             role: 'admin',
             emailVerified: false,
         };
-        await createTestUser(t, admin);
+        const adminData = await createTestUser(t, admin);
         adminId = admin.userId;
 
         const adminOrgId = await createTestOrganization(t, {
@@ -121,22 +126,22 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(adminOrgId),
+            organizationId: adminOrgId,
             userId: adminId,
             role: 'owner',
         });
 
-        _adminOrganizationId = String(adminOrgId);
+        _adminOrganizationId = adminOrgId;
 
         adminIdentity = t.withIdentity({
-            subject: admin.userId,
+            subject: adminData.docId,
             role: admin.role,
             email: admin.email,
             name: admin.name,
             password: admin.password,
             emailVerified: admin.emailVerified,
             createdAt: Date.now(),
-            userId: admin.userId,
+            userId: adminData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -147,14 +152,18 @@ describe('convex RLS (Row-Level Security)', async () => {
     describe('objectives RLS', () => {
         test('user can only read their own objectives', async () => {
             // User 1 creates an objective
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
             });
 
             // User 2 creates an objective
-            const obj2Id = await user2Identity.mutation(api.objectives.createObjective, {
+            const obj2Id = await createTestObjective(t, {
+                userId: user2Id,
+                organizationId: _user2OrganizationId,
                 title: 'User 2 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -177,13 +186,17 @@ describe('convex RLS (Row-Level Security)', async () => {
 
         test('admin can read all objectives', async () => {
             // Users create objectives
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
             });
 
-            const obj2Id = await user2Identity.mutation(api.objectives.createObjective, {
+            const obj2Id = await createTestObjective(t, {
+                userId: user2Id,
+                organizationId: _user2OrganizationId,
                 title: 'User 2 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -203,7 +216,9 @@ describe('convex RLS (Row-Level Security)', async () => {
 
         test('user cannot modify another user objectives', async () => {
             // User 1 creates an objective
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -229,7 +244,9 @@ describe('convex RLS (Row-Level Security)', async () => {
 
         test('user cannot delete another user objectives', async () => {
             // User 1 creates an objective
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -266,21 +283,21 @@ describe('convex RLS (Row-Level Security)', async () => {
                 color: '#3b82f6',
             });
 
+            const paginationOpts = { numItems: 50, cursor: null };
+
             // User 1 can only see their category
-            const user1Categories = await user1Identity.query(
-                api.categories.getCategoriesByUser,
-                {}
-            );
-            expect(user1Categories).toHaveLength(1);
-            expect(user1Categories[0]?.name).toBe('User 1 Category');
+            const user1Categories = await user1Identity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(user1Categories.page).toHaveLength(1);
+            expect(user1Categories.page[0]?.name).toBe('User 1 Category');
 
             // User 2 can only see their category
-            const user2Categories = await user2Identity.query(
-                api.categories.getCategoriesByUser,
-                {}
-            );
-            expect(user2Categories).toHaveLength(1);
-            expect(user2Categories[0]?.name).toBe('User 2 Category');
+            const user2Categories = await user2Identity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(user2Categories.page).toHaveLength(1);
+            expect(user2Categories.page[0]?.name).toBe('User 2 Category');
         });
 
         test('user cannot modify another user categories', async () => {
@@ -297,11 +314,10 @@ describe('convex RLS (Row-Level Security)', async () => {
                     name: 'Hacked Name',
                 });
                 // If no error, verify the name wasn't changed
-                const categories = await user1Identity.query(
-                    api.categories.getCategoriesByUser,
-                    {}
-                );
-                expect(categories[0]?.name).toBe('User 1 Category');
+                const categories = await user1Identity.query(api.categories.getCategoriesByUser, {
+                    paginationOpts: { numItems: 50, cursor: null },
+                });
+                expect(categories.page[0]?.name).toBe('User 1 Category');
             } catch (error) {
                 // RLS blocked the operation - expected behavior
                 expect(error).toBeDefined();
@@ -312,13 +328,17 @@ describe('convex RLS (Row-Level Security)', async () => {
     describe('notifications RLS', () => {
         test('user can only read their own notifications', async () => {
             // Create objectives for each user
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
             });
 
-            const obj2Id = await user2Identity.mutation(api.objectives.createObjective, {
+            const obj2Id = await createTestObjective(t, {
+                userId: user2Id,
+                organizationId: _user2OrganizationId,
                 title: 'User 2 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -355,7 +375,9 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('user cannot modify another user notifications', async () => {
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -391,7 +413,9 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('user cannot delete another user notifications', async () => {
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -489,9 +513,11 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('unauthenticated user cannot access categories', async () => {
-            await expect(t.query(api.categories.getCategoriesByUser, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
-            );
+            await expect(
+                t.query(api.categories.getCategoriesByUser, {
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
         });
 
         test('unauthenticated user cannot access notifications', async () => {
@@ -531,7 +557,9 @@ describe('convex RLS (Row-Level Security)', async () => {
     describe('admin privileges', () => {
         test('admin can access all user data', async () => {
             // User 1 creates objective
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Secret Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -547,7 +575,9 @@ describe('convex RLS (Row-Level Security)', async () => {
 
         test('admin cannot modify another user personal objective', async () => {
             // User 1 creates objective
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'Original Title',
                 targetValue: 100,
                 currentValue: 0,
@@ -578,12 +608,16 @@ describe('convex RLS (Row-Level Security)', async () => {
             });
 
             // User 1 creates multiple objectives
-            await user1Identity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'Obj 1',
                 targetValue: 100,
                 currentValue: 0,
             });
-            await user1Identity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'Obj 2',
                 targetValue: 100,
                 currentValue: 0,
@@ -604,13 +638,17 @@ describe('convex RLS (Row-Level Security)', async () => {
 
         test('deleting data for one user does not affect another', async () => {
             // Both users create an objective
-            const obj1Id = await user1Identity.mutation(api.objectives.createObjective, {
+            const obj1Id = await createTestObjective(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 title: 'User 1 Obj',
                 targetValue: 100,
                 currentValue: 0,
             });
 
-            await user2Identity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: user2Id,
+                organizationId: _user2OrganizationId,
                 title: 'User 2 Obj',
                 targetValue: 100,
                 currentValue: 0,
