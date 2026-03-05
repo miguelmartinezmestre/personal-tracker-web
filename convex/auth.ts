@@ -60,12 +60,6 @@ const createAuthOptions = (ctx: GenericCtx) =>
             },
             revokeSessionsOnPasswordReset: true,
         },
-        socialProviders: {
-            github: {
-                clientId: process.env.GITHUB_CLIENT_ID!,
-                clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-            },
-        },
         plugins: [
             convex({
                 authConfig,
@@ -116,7 +110,7 @@ export const auth = betterAuth(createAuthOptions({} as any));
 export const getCurrentUser = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated 3');
+        if (!identity) throw new ConvexError('Unauthenticated');
         return await ctx.db.get('user', identity.userId);
     },
 });

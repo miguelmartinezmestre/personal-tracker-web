@@ -6,7 +6,7 @@ import { computeProgressPercent } from './utils/objectiveProgress';
 export const getDashboardStats = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
 
         const objectives = await ctx.db
             .query('objectives')
@@ -30,7 +30,7 @@ export const getMonthlyProgress = queryWithRLS({
         months: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
         const monthsToFetch = args.months ?? DASHBOARD.MONTHS_TO_SHOW;
 
         const objectives = await ctx.db
@@ -62,7 +62,7 @@ export const getMonthlyProgress = queryWithRLS({
                 u => u.updateDate >= monthStart && u.updateDate < monthEnd
             ).length;
 
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const monthKey = `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}`;
 
             monthsData.push({
                 month: monthKey,
@@ -80,7 +80,7 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
         const maxItems = args.limit ?? PAGINATION.DASHBOARD_LIMIT;
 
         const objectives = await ctx.db
@@ -114,7 +114,7 @@ export const getUpcomingDeadlines = queryWithRLS({
         days: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
         const daysAhead = args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD;
         const now = Date.now();
         const futureLimit = now + daysAhead * TIME.DAY_MS;
@@ -155,7 +155,7 @@ export const getRecentActivity = queryWithRLS({
         days: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
         const daysBack = args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK;
         const startDate = Date.now() - daysBack * TIME.DAY_MS;
 

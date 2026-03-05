@@ -164,6 +164,23 @@ async function rlsRules(
                 return false;
             },
         },
+        user: {
+            read: async (_, user) => {
+                if (isAdmin) return true;
+                const uid = user.userId ?? user._id;
+                return uid === userId;
+            },
+            insert: async () => false,
+            modify: async () => isAdmin,
+        },
+        session: {
+            read: async (_, session) => {
+                if (isAdmin) return true;
+                return session.userId === userId;
+            },
+            insert: async () => false,
+            modify: async () => isAdmin,
+        },
         categories: {
             read: async (_, category) => {
                 if (isAdmin) return true;
@@ -222,7 +239,7 @@ export const queryWithRLS = customQuery(
         const identity = await getAuthUserIdentity(ctx);
 
         if (!identity) {
-            throw new ConvexError('Unauthenticated 1');
+            throw new ConvexError('Unauthenticated');
         }
 
         const currentUser = await ctx.db
@@ -231,7 +248,7 @@ export const queryWithRLS = customQuery(
             .first();
 
         if (!currentUser) {
-            throw new ConvexError('Unauthenticated 2');
+            throw new ConvexError('Unauthenticated');
         }
 
         let organizationId = '';
@@ -248,13 +265,13 @@ export const queryWithRLS = customQuery(
             const membership = await ctx.db
                 .query('member')
                 .withIndex('userId', q =>
-                    q.eq('userId', currentUser.userId ?? String(currentUser._id))
+                    q.eq('userId', currentUser.userId ?? currentUser._id)
                 )
                 .first();
             organizationId = membership?.organizationId ?? '';
         }
 
-        const userId = currentUser.userId ?? String(currentUser._id);
+        const userId = currentUser.userId ?? currentUser._id;
         const role = currentUser.role ?? 'user';
 
         return {
@@ -276,7 +293,7 @@ export const mutationWithRLS = customMutation(
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) {
-            throw new ConvexError('Unauthenticated 4');
+            throw new ConvexError('Unauthenticated');
         }
 
         const currentUser = await ctx.db
@@ -284,7 +301,7 @@ export const mutationWithRLS = customMutation(
             .filter(q => q.eq(q.field('_id'), identity.userId))
             .first();
         if (!currentUser) {
-            throw new ConvexError('Unauthenticated 5');
+            throw new ConvexError('Unauthenticated');
         }
 
         let organizationId = '';
@@ -301,13 +318,13 @@ export const mutationWithRLS = customMutation(
             const membership = await ctx.db
                 .query('member')
                 .withIndex('userId', q =>
-                    q.eq('userId', currentUser.userId ?? String(currentUser._id))
+                    q.eq('userId', currentUser.userId ?? currentUser._id)
                 )
                 .first();
             organizationId = membership?.organizationId ?? '';
         }
 
-        const userId = currentUser.userId ?? String(currentUser._id);
+        const userId = currentUser.userId ?? currentUser._id;
         const role = currentUser.role ?? 'user';
 
         return {

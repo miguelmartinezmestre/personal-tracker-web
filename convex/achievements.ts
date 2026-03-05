@@ -32,7 +32,7 @@ export const getAchievementDefinitions = queryWithRLS({
 export const getUserAchievements = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -82,7 +82,7 @@ export const getOrganizationAchievements = queryWithRLS({
 export const getUserAchievementStats = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -117,7 +117,7 @@ export const getRecentAchievements = queryWithRLS({
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
         const limit = args.limit ?? 5;
 
         const obtainedAchievements = await ctx.db
@@ -140,7 +140,7 @@ export const getRecentAchievements = queryWithRLS({
 export const getUserAchievementProgress = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
 
         // Get all active individual achievement definitions
         const definitions = await ctx.db
@@ -156,7 +156,7 @@ export const getUserAchievementProgress = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        const earnedIds = new Set(obtainedAchievements.map(oa => String(oa.achievement)));
+        const earnedIds = new Set(obtainedAchievements.map(oa => oa.achievement));
 
         // Calculate progress for each achievement
         const objectivesCount = await ctx.db
@@ -182,7 +182,7 @@ export const getUserAchievementProgress = queryWithRLS({
         const streak = await calculateUserStreak(ctx, userId);
 
         const progressList = activeDefinitions.map(def => {
-            const isEarned = earnedIds.has(String(def._id));
+            const isEarned = earnedIds.has(def._id);
             let currentProgress = 0;
 
             switch (def.code) {
@@ -221,7 +221,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned
-                    ? obtainedAchievements.find(oa => String(oa.achievement) === String(def._id))
+                    ? obtainedAchievements.find(oa => oa.achievement === def._id)
                           ?.earnedAt
                     : undefined,
             };
@@ -234,7 +234,7 @@ export const getUserAchievementProgress = queryWithRLS({
 export const getUnviewedAchievementsCount = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const userId = String(ctx.userId);
+        const userId = ctx.userId;
 
         // Get unread achievement notifications
         const notifications = await ctx.db

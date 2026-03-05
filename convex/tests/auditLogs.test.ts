@@ -28,7 +28,7 @@ describe('convex auditLogs', () => {
             role: 'admin',
             emailVerified: true,
         };
-        await createTestUser(t, admin);
+        const adminData = await createTestUser(t, admin);
         adminId = admin.userId;
 
         const adminOrgId = await createTestOrganization(t, {
@@ -37,22 +37,22 @@ describe('convex auditLogs', () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(adminOrgId),
+            organizationId: adminOrgId,
             userId: adminId,
             role: 'owner',
         });
 
-        adminOrganizationId = String(adminOrgId);
+        adminOrganizationId = adminOrgId;
 
         adminIdentity = t.withIdentity({
-            subject: admin.userId,
+            subject: adminData.docId,
             role: admin.role,
             email: admin.email,
             name: admin.name,
             password: admin.password,
             emailVerified: admin.emailVerified,
             createdAt: Date.now(),
-            userId: admin.userId,
+            userId: adminData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -68,7 +68,7 @@ describe('convex auditLogs', () => {
             role: 'user',
             emailVerified: true,
         };
-        await createTestUser(t, user);
+        const userDataResult = await createTestUser(t, user);
         userId = user.userId;
 
         const userOrgId = await createTestOrganization(t, {
@@ -77,22 +77,22 @@ describe('convex auditLogs', () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(userOrgId),
+            organizationId: userOrgId,
             userId: userId,
             role: 'owner',
         });
 
-        userOrganizationId = String(userOrgId);
+        userOrganizationId = userOrgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userDataResult.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userDataResult.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
