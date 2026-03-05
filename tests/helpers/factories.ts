@@ -12,7 +12,7 @@ export const UserFactory = {
         return {
             username: `testuser-${shortId}`,
             email: `testuser-${shortId}@test.com`,
-            password: '12345678',
+            password: 'Password123',
             organizationSlug: `org-${shortId}`,
             ...overrides,
         };
@@ -30,7 +30,7 @@ export const UserFactory = {
         return {
             username: name,
             email: `${normalizedName}.${shortId}@example.com`,
-            password: '12345678',
+            password: 'Password123',
             organizationSlug: `org-${shortId}`,
             ...overrides,
         };

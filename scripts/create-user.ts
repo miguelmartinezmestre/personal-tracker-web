@@ -4,19 +4,19 @@
  *
  * Uso:
  *   npm run create-user
- *   npm run create-user -- --email admin@example.com --password password123 --name "Admin User" --role admin
- *   npm run create-user -- --email user@example.com --password password123 --name "Regular User"
+ *   npm run create-user -- --email admin@example.com --password Password123 --name "Admin User" --role admin
+ *   npm run create-user -- --email user@example.com --password Password123 --name "Regular User"
  *
  * O directamente con tsx/node:
  *   npx tsx scripts/create-user.ts
- *   npx tsx scripts/create-user.ts --email admin@example.com --password password123 --name "Admin User"
+ *   npx tsx scripts/create-user.ts --email admin@example.com --password Password123 --name "Admin User"
  */
 
 import 'dotenv/config';
 
 // Configuración por defecto
 const DEFAULT_EMAIL = 'admin@example.com';
-const DEFAULT_PASSWORD = 'admin123';
+const DEFAULT_PASSWORD = 'Admin12345';
 const DEFAULT_NAME = 'Admin User';
 const DEFAULT_ROLE = 'admin';
 

@@ -1,5 +1,6 @@
 import { convex } from '@convex-dev/better-auth/plugins';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import {
     createApi,
     createClient,
@@ -24,6 +25,9 @@ import { ConvexError } from 'convex/values';
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 
 const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
+const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+const STRONG_PASSWORD_MESSAGE =
+    'La contraseña debe incluir al menos una mayúscula, una minúscula y un número';
 
 const authFunctions: AuthFunctions = internal.auth;
 
@@ -59,6 +63,26 @@ const createAuthOptions = (ctx: GenericCtx) =>
                 console.log(`Password for user ${user.email} has been reset.`);
             },
             revokeSessionsOnPasswordReset: true,
+        },
+        hooks: {
+            before: createAuthMiddleware(async ctx => {
+                if (ctx.path !== '/sign-up/email') {
+                    return;
+                }
+
+                const password =
+                    (ctx.body as { password?: unknown } | undefined)?.password ?? undefined;
+
+                if (typeof password !== 'string' || password.length < 8) {
+                    return;
+                }
+
+                if (!STRONG_PASSWORD_REGEX.test(password)) {
+                    throw new APIError('BAD_REQUEST', {
+                        message: STRONG_PASSWORD_MESSAGE,
+                    });
+                }
+            }),
         },
         plugins: [
             convex({

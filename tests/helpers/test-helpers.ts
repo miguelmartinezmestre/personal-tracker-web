@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 
-export const DEFAULT_PASSWORD = '12345678';
+export const DEFAULT_PASSWORD = 'Password123';
 
 /**
  * Normalizes a name for use in email addresses by removing accents and special characters.
