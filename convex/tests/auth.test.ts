@@ -23,7 +23,7 @@ describe('convex auth', () => {
             emailVerified: false,
         };
 
-        await createTestUser(t, {
+        const userData = await createTestUser(t, {
             userId: user.userId,
             email: user.email,
             name: user.name,
@@ -33,37 +33,28 @@ describe('convex auth', () => {
         });
         userId = user.userId;
 
-        // Get the actual Convex _id of the user document (needed for ctx.db.get)
-        const userConvexId = await t.run(async ctx => {
-            const userDoc = await ctx.db
-                .query('user')
-                .filter(q => q.eq(q.field('userId'), userId))
-                .first();
-            return userDoc?._id;
-        });
-
         const orgId = await createTestOrganization(t, {
             name: 'Auth Org ' + randomSuffix,
             slug: 'auth-org-' + randomSuffix,
         });
 
         await createTestMember(t, {
-            organizationId: String(orgId),
+            organizationId: orgId,
             userId: userId,
             role: 'owner',
         });
 
-        _organizationId = String(orgId);
+        _organizationId = orgId;
 
         userIdentity = t.withIdentity({
-            subject: String(userConvexId),
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: String(userConvexId),
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,

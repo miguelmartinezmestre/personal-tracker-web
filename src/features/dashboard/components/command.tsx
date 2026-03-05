@@ -39,24 +39,29 @@ export default function CommandMenu() {
     const router = useRouter();
 
     return (
-        <CommandDialog open={open} onOpenChange={setOpen}>
-            <CommandInput placeholder={t('placeholder')} />
+        <CommandDialog open={open} onOpenChange={setOpen} data-testid="command-dialog">
+            <CommandInput placeholder={t('placeholder')} data-testid="command-input" />
             <CommandList>
                 <CommandEmpty>{t('empty')}</CommandEmpty>
 
                 <CommandGroup heading={t('navigation')}>
-                    <CommandItem onSelect={() => runCommand(() => router.push('/dashboard/home'))}>
+                    <CommandItem
+                        onSelect={() => runCommand(() => router.push('/dashboard/home'))}
+                        data-testid="command-item-home"
+                    >
                         <Home className="mr-2 h-4 w-4" />
                         <span>{tSidebar('home')}</span>
                     </CommandItem>
                     <CommandItem
                         onSelect={() => runCommand(() => router.push('/dashboard/objectives'))}
+                        data-testid="command-item-objectives"
                     >
                         <Goal className="mr-2 h-4 w-4" />
                         <span>{tSidebar('objectives')}</span>
                     </CommandItem>
                     <CommandItem
                         onSelect={() => runCommand(() => router.push('/dashboard/notifications'))}
+                        data-testid="command-item-notifications"
                     >
                         <Bell className="mr-2 h-4 w-4" />
                         <span>{tSidebar('notifications')}</span>
@@ -64,6 +69,7 @@ export default function CommandMenu() {
 
                     <CommandItem
                         onSelect={() => runCommand(() => router.push('/dashboard/sessions'))}
+                        data-testid="command-item-sessions"
                     >
                         <User className="mr-2 h-4 w-4" />
                         <span>{tSidebar('sessions')}</span>

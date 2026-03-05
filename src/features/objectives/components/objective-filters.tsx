@@ -40,8 +40,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
             { value: 'all', label: t('statusOptions.all') },
             { value: 'active', label: t('statusOptions.active') },
             { value: 'completed', label: t('statusOptions.completed') },
-            { value: 'paused', label: t('statusOptions.paused') },
-            { value: 'archived', label: t('statusOptions.archived') },
         ];
 
         const deadlineRangeOptions = [

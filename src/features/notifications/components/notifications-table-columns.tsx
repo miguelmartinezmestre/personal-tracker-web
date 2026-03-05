@@ -56,11 +56,12 @@ export function useNotificationsTableColumns({
             accessorKey: 'objective',
             header: t('table.columns.objective'),
             cell: ({ row }) => {
-                const objective = objectiveMap.get(String(row.original.objective));
+                const objectiveId = row.original.objective;
+                const objective = objectiveId ? objectiveMap.get(objectiveId) : undefined;
                 const label = objective?.title ?? t('table.unknownObjective');
                 return objective ? (
                     <Link
-                        href={`/dashboard/objectives/${String(row.original.objective)}`}
+                        href={`/dashboard/objectives/${row.original.objective}`}
                         prefetch={false}
                         className="text-primary hover:underline"
                     >

@@ -103,7 +103,11 @@ export default function ForgetPasswordForm() {
                     )}
                 />
 
-                <Button type="submit" className="w-full py-6 text-lg font-medium">
+                <Button
+                    type="submit"
+                    className="w-full py-6 text-lg font-medium"
+                    data-testid="forgot-password-submit"
+                >
                     {t('submit')}
                 </Button>
             </form>

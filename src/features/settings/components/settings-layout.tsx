@@ -12,7 +12,7 @@ export default function SettingsLayout() {
     const t = useTranslations('Settings');
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" data-testid="settings-page">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
                 <p className="text-muted-foreground">{t('description')}</p>
@@ -20,15 +20,27 @@ export default function SettingsLayout() {
 
             <Tabs defaultValue="account" className="space-y-4">
                 <TabsList className="grid w-full max-w-lg grid-cols-3">
-                    <TabsTrigger value="account" className="flex items-center gap-2">
+                    <TabsTrigger
+                        value="account"
+                        className="flex items-center gap-2"
+                        data-testid="settings-tab-account"
+                    >
                         <User className="h-4 w-4" />
                         {t('account')}
                     </TabsTrigger>
-                    <TabsTrigger value="password" className="flex items-center gap-2">
+                    <TabsTrigger
+                        value="password"
+                        className="flex items-center gap-2"
+                        data-testid="settings-tab-password"
+                    >
                         <Key className="h-4 w-4" />
                         {t('password')}
                     </TabsTrigger>
-                    <TabsTrigger value="danger" className="flex items-center gap-2">
+                    <TabsTrigger
+                        value="danger"
+                        className="flex items-center gap-2"
+                        data-testid="settings-tab-danger"
+                    >
                         <AlertTriangle className="h-4 w-4" />
                         {t('dangerZone')}
                     </TabsTrigger>

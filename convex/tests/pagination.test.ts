@@ -1,21 +1,14 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    createTestObjective,
+} from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
-
-const createObjective = async (
-    t: ReturnType<typeof initConvexTest>,
-    userIdentity: TestConvexForDataModel<DataModel>,
-    title: string
-) => {
-    return await userIdentity.mutation(api.objectives.createObjective, {
-        title,
-        targetValue: 100,
-        currentValue: 10,
-    });
-};
 
 describe('convex pagination', () => {
     const t = initConvexTest();
@@ -35,7 +28,7 @@ describe('convex pagination', () => {
             emailVerified: true,
         };
 
-        await createTestUser(t, user);
+        const userData = await createTestUser(t, user);
         userId = user.userId;
 
         const orgId = await createTestOrganization(t, {
@@ -44,22 +37,22 @@ describe('convex pagination', () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(orgId),
+            organizationId: orgId,
             userId: userId,
             role: 'owner',
         });
 
-        _organizationId = String(orgId);
+        _organizationId = orgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -69,7 +62,9 @@ describe('convex pagination', () => {
 
     test('getObjectivesByUser paginates', async () => {
         for (let i = 0; i < 15; i++) {
-            await userIdentity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId,
+                organizationId: _organizationId,
                 title: `Objective ${i}`,
                 targetValue: 100,
                 currentValue: 10,
@@ -89,7 +84,13 @@ describe('convex pagination', () => {
     });
 
     test('getUpdateProgressByObjectiveId paginates', async () => {
-        const objectiveId = await createObjective(t, userIdentity, 'Pagination Objective');
+        const objectiveId = await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Pagination Objective',
+            targetValue: 100,
+            currentValue: 10,
+        });
 
         for (let i = 0; i < 12; i++) {
             await userIdentity.mutation(api.update_progress.createUpdateProgress, {
@@ -114,7 +115,13 @@ describe('convex pagination', () => {
     });
 
     test('getNotificationsByUser paginates', async () => {
-        const objectiveId = await createObjective(t, userIdentity, 'Notifications Objective');
+        const objectiveId = await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Notifications Objective',
+            targetValue: 100,
+            currentValue: 10,
+        });
 
         for (let i = 0; i < 12; i++) {
             await userIdentity.mutation(api.notifications.createNotification, {

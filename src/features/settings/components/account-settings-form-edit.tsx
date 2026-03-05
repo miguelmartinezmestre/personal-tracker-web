@@ -116,7 +116,11 @@ export default function AccountSettingsFormEdit() {
                         <FormItem>
                             <FormLabel>{t('username')}</FormLabel>
                             <FormControl>
-                                <Input placeholder={t('placeholders.enterUsername')} {...field} />
+                                <Input
+                                    placeholder={t('placeholders.enterUsername')}
+                                    {...field}
+                                    data-testid="account-username-input"
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -133,6 +137,7 @@ export default function AccountSettingsFormEdit() {
                                     type="email"
                                     placeholder={t('placeholders.enterEmail')}
                                     {...field}
+                                    data-testid="account-email-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -141,13 +146,28 @@ export default function AccountSettingsFormEdit() {
                 />
 
                 <DialogFooter className="pt-4">
-                    <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        data-testid="account-cancel-button"
+                    >
                         {t('cancel')}
                     </Button>
-                    <Button type="submit">{t('saveAccount')}</Button>
+                    <Button type="submit" data-testid="account-save-button">
+                        {t('saveAccount')}
+                    </Button>
                 </DialogFooter>
-                {error && <p className="text-red-500">{error}</p>}
-                {message && <p className="text-green-500">{message}</p>}
+                {error && (
+                    <p className="text-red-500" data-testid="account-error-message">
+                        {error}
+                    </p>
+                )}
+                {message && (
+                    <p className="text-green-500" data-testid="account-success-message">
+                        {message}
+                    </p>
+                )}
             </form>
         </Form>
     );

@@ -129,6 +129,15 @@
             "objectivesCreated": "Objetivos creados",
             "objectivesCompleted": "Objetivos completados",
             "period": "Últimos {days} días"
+        },
+        "charts": {
+            "monthlyProgress": "Progreso mensual",
+            "monthlyProgressDescription": "Actualizaciones de progreso añadidas por mes",
+            "topObjectives": "Mejores objetivos",
+            "topObjectivesDescription": "Top 5 objetivos por avance completado",
+            "noDataAvailable": "Sin datos disponibles",
+            "updates": "Actualizaciones",
+            "progress": "Progreso"
         }
     },
     "HomePage": {
@@ -457,6 +466,15 @@
         "saveObjective": "Guardar objetivo",
         "category": "Categoría",
         "unit": "Unidad",
+        "scope": "Alcance",
+        "scopeOptions": {
+            "personal": "Personal",
+            "organization": "Organización"
+        },
+        "sections": {
+            "personal": "Mis objetivos",
+            "organization": "Objetivos de organización"
+        },
         "objectiveType": "Tipo de objetivo",
         "objectiveTypeDescription": "Selecciona como se mide este objetivo.",
         "objectiveTypeOptions": {
@@ -1022,6 +1040,12 @@
         "toast": {
             "deletedSuccess": "Actualización eliminada exitosamente",
             "deleteFailed": "Error al eliminar actualización"
+        },
+        "charts": {
+            "progressTimeline": "Línea temporal de progreso",
+            "progressTimelineDescription": "Progreso acumulado a lo largo del tiempo",
+            "value": "Valor",
+            "target": "Objetivo"
         }
     },
     "Header": {

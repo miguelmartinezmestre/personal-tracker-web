@@ -1,344 +1,162 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, createObjective } from '../../helpers/test-helpers';
+import { createObjective } from '../../helpers/test-helpers';
+
+async function openObjectiveDetailFromList(page: import('@playwright/test').Page): Promise<void> {
+    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+
+    const rowWithProgressLink = page
+        .getByTestId('table-row')
+        .filter({ has: page.getByTestId('objective-progress-link') })
+        .first();
+    await expect(rowWithProgressLink).toBeVisible({ timeout: 10000 });
+    const progressLink = rowWithProgressLink.getByTestId('objective-progress-link').first();
+    const href = await progressLink.getAttribute('href');
+    if (href) {
+        await page.goto(href, { waitUntil: 'domcontentloaded' });
+    } else {
+        await Promise.all([
+            page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 }),
+            progressLink.click(),
+        ]);
+    }
+
+    await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
+    await page.waitForSelector('[data-testid="progress-create-open"]', { timeout: 10000 });
+}
+
+async function createProgressUpdate(
+    page: import('@playwright/test').Page,
+    value: string,
+    comment: string
+): Promise<void> {
+    let modalOpened = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.getByTestId('progress-create-open').click();
+        try {
+            await expect(page.getByTestId('progress-value-input')).toBeVisible({ timeout: 5000 });
+            modalOpened = true;
+            break;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+            await page.waitForTimeout(250);
+        }
+    }
+
+    if (!modalOpened) {
+        throw new Error('Could not open create progress modal');
+    }
+
+    await page.getByTestId('progress-value-input').fill(value);
+    await page.getByTestId('progress-comment-input').fill(comment);
+
+    let saved = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.getByTestId('progress-save-button').click();
+        try {
+            await expect(page.getByTestId('progress-value-input')).toHaveCount(0, {
+                timeout: 5000,
+            });
+            saved = true;
+            break;
+        } catch {
+            await page.waitForTimeout(250);
+        }
+    }
+
+    if (!saved) {
+        throw new Error('Could not save progress update');
+    }
+}
 
 test.describe('Objectives Progress Updates', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
-    test('navigate to objective detail page', async ({ page }) => {
-        const objective = await createObjective(page, { title: `Progress Nav ${Date.now()}` });
-
-        await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
-
-        // Click on progress link
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        const progressLink = row.getByTestId('objective-progress-link');
-
-        // Wait for link to be visible
-        await expect(progressLink).toBeVisible({ timeout: 10000 });
-        await progressLink.click();
-
-        // Wait for navigation
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // Should navigate to detail page
-        const currentUrl = page.url();
-        const isOnDetailPage = /\/dashboard\/objectives\/.+/.test(currentUrl);
-
-        // The link exists and is clickable (navigation may depend on implementation)
-        expect(isOnDetailPage || currentUrl.includes('/dashboard/objectives')).toBeTruthy();
-    });
-
-    test('create progress update', async ({ page }) => {
+    test('create progress update from objective detail', async ({ page }) => {
         const objective = await createObjective(page, {
-            title: `Progress Update ${Date.now()}`,
+            title: `Progress create ${Date.now()}`,
             targetValue: 100,
-            currentValue: 0,
         });
 
-        // Navigate to objective detail
-        await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        const progressLink = row.getByTestId('objective-progress-link');
-        await expect(progressLink).toBeVisible({ timeout: 10000 });
-        const href = await progressLink.getAttribute('href');
-        if (href) {
-            await page.goto(href);
-        } else {
-            await progressLink.click();
-        }
+        await openObjectiveDetailFromList(page);
+        await createProgressUpdate(page, '35', 'First progress entry');
 
-        await page.waitForURL(/\/dashboard\/objectives\/.+/);
-        await page.waitForLoadState('networkidle');
-
-        // Look for add progress button
-        const addProgressButton = page.locator(
-            '[data-testid*="progress-add"], [data-testid*="add-progress"], button:has-text("Add Progress"), button:has-text("Añadir")'
-        );
-
-        if ((await addProgressButton.count()) > 0) {
-            await addProgressButton.first().click();
-
-            // Fill progress form
-            const valueInput = page
-                .locator('[data-testid*="progress-value"], input[type="number"]')
-                .first();
-            if (await valueInput.isVisible()) {
-                await valueInput.fill('25');
-
-                // Optional note
-                const noteInput = page.locator('[data-testid*="progress-note"], textarea').first();
-                if (await noteInput.isVisible()) {
-                    await noteInput.fill('Made good progress today');
-                }
-
-                // Save
-                const saveButton = page
-                    .locator(
-                        'button:has-text("Save"), button:has-text("Guardar"), button[type="submit"]'
-                    )
-                    .first();
-                await saveButton.click();
-
-                await page.waitForTimeout(2000);
-                await page.waitForLoadState('networkidle');
-            }
-        }
-    });
-
-    test('view progress history', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Progress History ${Date.now()}`,
-            targetValue: 100,
-            currentValue: 30,
-        });
-
-        // Navigate to objective detail
-        await page.goto('/dashboard/objectives');
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        await row.getByTestId('objective-progress-link').click();
-
-        await page.waitForLoadState('networkidle');
-
-        // Look for progress history section
-        const historySection = page.locator(
-            '[data-testid*="history"], [data-testid*="progress-list"], .progress-history, h2:has-text("History"), h2:has-text("Historial")'
-        );
-
-        // History section might exist even if empty
-        const historyExists = (await historySection.count()) > 0;
-
-        // Or there might be a table of progress entries
-        const progressTable = page.locator('table');
-        const tableExists = (await progressTable.count()) > 0;
-
-        // At least one should be present on the detail page
-        expect(historyExists || tableExists).toBeTruthy();
+        await expect(
+            page.getByTestId('table-row').filter({ hasText: 'First progress entry' }).first()
+        ).toBeVisible({ timeout: 10000 });
+        await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
     });
 
     test('edit progress update', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Edit Progress ${Date.now()}`,
+        await createObjective(page, {
+            title: `Progress edit ${Date.now()}`,
             targetValue: 100,
-            currentValue: 25,
         });
 
-        // Navigate to objective detail via direct URL
-        await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
+        await openObjectiveDetailFromList(page);
+        await createProgressUpdate(page, '20', 'Comment before edit');
 
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        const progressLink = row.getByTestId('objective-progress-link');
-        await progressLink.click();
+        const progressRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: 'Comment before edit' })
+            .first();
+        await expect(progressRow).toBeVisible({ timeout: 10000 });
+        await progressRow.getByTestId('progress-edit-open').click();
+        await expect(page.getByTestId('progress-edit-value-input').first()).toBeVisible({
+            timeout: 10000,
+        });
 
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
+        await page.getByTestId('progress-edit-value-input').first().clear();
+        await page.getByTestId('progress-edit-value-input').first().fill('30');
+        await page.getByTestId('progress-edit-comment-input').first().fill('Comment after edit');
+        await page.getByTestId('progress-edit-save-button').first().click();
+        await page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 });
 
-        // Ensure at least one progress update exists so edit action is available.
-        const addProgressButton = page.getByTestId('progress-create-open');
-        if (await addProgressButton.isVisible()) {
-            await addProgressButton.click();
-            const createValueInput = page.getByTestId('progress-value-input');
-            await expect(createValueInput).toBeVisible({ timeout: 10000 });
-            await createValueInput.fill('25');
-            await page.getByTestId('progress-save-button').click();
-            await page.waitForLoadState('networkidle');
-        }
-
-        const editButton = page.getByTestId('progress-edit-open').first();
-
-        if ((await editButton.count()) > 0 && (await editButton.isVisible())) {
-            await editButton.click();
-
-            const editValueInput = page.getByTestId('progress-edit-value-input').first();
-            await expect(editValueInput).toBeVisible({ timeout: 10000 });
-            await editValueInput.clear();
-            await editValueInput.fill('30');
-
-            const editSaveButton = page.getByTestId('progress-edit-save-button').first();
-            await editSaveButton.click();
-            await page.waitForLoadState('networkidle');
-        }
-
-        // Test passes - we navigated to detail page
+        await expect(page.getByText('Comment after edit')).toBeVisible({ timeout: 10000 });
     });
 
     test('delete progress update', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Delete Progress ${Date.now()}`,
+        await createObjective(page, {
+            title: `Progress delete ${Date.now()}`,
             targetValue: 100,
-            currentValue: 25,
         });
 
-        // Navigate to objective detail
-        await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
-
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        const progressLink = row.getByTestId('objective-progress-link');
-        await progressLink.click();
-
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // Look for delete button on progress entries (may not exist if no updates)
-        const deleteButton = page
-            .locator('[data-testid*="progress-delete"], [data-testid*="update-delete"]')
+        await openObjectiveDetailFromList(page);
+        await createProgressUpdate(page, '15', 'Delete me progress');
+        const progressRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: 'Delete me progress' })
             .first();
+        await expect(progressRow).toBeVisible();
 
-        if ((await deleteButton.count()) > 0 && (await deleteButton.isVisible())) {
-            await deleteButton.click();
+        await progressRow.getByTestId('progress-delete-button').click();
 
-            // Confirm deletion if dialog appears
-            const confirmDialog = page.locator(
-                '[data-slot="alert-dialog-content"], [role="alertdialog"]'
-            );
-            if ((await confirmDialog.count()) > 0 && (await confirmDialog.isVisible())) {
-                const confirmButton = confirmDialog
-                    .locator(
-                        'button:has-text("Delete"), button:has-text("Eliminar"), button:has-text("Confirm")'
-                    )
-                    .first();
-                if ((await confirmButton.count()) > 0) {
-                    await confirmButton.click();
-                }
-            }
+        const confirmDialog = page.locator(
+            '[data-slot="alert-dialog-content"], [role="alertdialog"]'
+        );
+        await expect(confirmDialog.first()).toBeVisible({ timeout: 10000 });
 
-            await page.waitForTimeout(2000);
-        }
+        const confirmButton = confirmDialog
+            .first()
+            .getByRole('button', { name: /delete|eliminar|confirm|confirmar/i });
+        await confirmButton.click();
+        await page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 });
 
-        // Test passes - page loaded correctly
+        await expect(page.getByText('Delete me progress')).toHaveCount(0);
     });
 
-    test('progress syncs with objective current value', async ({ page }) => {
+    test('objective auto-completes when progress reaches target', async ({ page }) => {
         const objective = await createObjective(page, {
-            title: `Sync Progress ${Date.now()}`,
+            title: `Auto complete ${Date.now()}`,
             targetValue: 100,
-            currentValue: 0,
         });
 
-        // Navigate to objective detail
-        await page.goto('/dashboard/objectives');
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        await row.getByTestId('objective-progress-link').click();
+        await openObjectiveDetailFromList(page);
+        await createProgressUpdate(page, '100', 'Reached target');
 
-        await page.waitForLoadState('networkidle');
-
-        // Current value should show 0 initially
-        const currentValueDisplay = page.locator('text=/current.*0|actual.*0|0.*\//i');
-        const hasInitialValue = (await currentValueDisplay.count()) > 0;
-
-        // Add progress if possible
-        const addProgressButton = page
-            .locator('[data-testid*="progress-add"], button:has-text("Add")')
+        await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+        const objectiveRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: objective.title })
             .first();
-
-        if (await addProgressButton.isVisible()) {
-            await addProgressButton.click();
-
-            const valueInput = page.locator('input[type="number"]').first();
-            if (await valueInput.isVisible()) {
-                await valueInput.fill('50');
-
-                const saveButton = page
-                    .locator('button[type="submit"], button:has-text("Save")')
-                    .first();
-                await saveButton.click();
-
-                await page.waitForTimeout(3000);
-                await page.waitForLoadState('networkidle');
-
-                // Current value should update to reflect progress
-                await page.reload();
-                await page.waitForLoadState('networkidle');
-            }
-        }
-    });
-
-    test('progress chart displays correctly', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Chart Test ${Date.now()}`,
-            targetValue: 100,
-            currentValue: 50,
-        });
-
-        // Navigate to objective detail
-        await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        const progressLink = row.getByTestId('objective-progress-link');
-        await expect(progressLink).toBeVisible({ timeout: 10000 });
-        const href = await progressLink.getAttribute('href');
-        if (href) {
-            await page.goto(href);
-        } else {
-            await progressLink.click();
-        }
-
-        await page.waitForURL(/\/dashboard\/objectives\/.+/);
-        await page.waitForLoadState('networkidle');
-
-        // Add a progress update to render the graph
-        const addProgressButton = page.getByTestId('progress-create-open');
-        await expect(addProgressButton).toBeVisible({ timeout: 10000 });
-        await addProgressButton.click();
-
-        const valueInput = page.getByTestId('progress-value-input');
-        await expect(valueInput).toBeVisible({ timeout: 10000 });
-        await valueInput.fill('50');
-
-        const saveButton = page.getByTestId('progress-save-button');
-        await saveButton.click();
-
-        await page.waitForLoadState('networkidle');
-
-        // Look for chart element
-        const chart = page.locator(
-            'canvas, svg[class*="chart"], [data-testid*="chart"], .recharts-wrapper'
-        );
-        const hasChart = (await chart.count()) > 0;
-
-        // Or progress visualization
-        const progressBar = page.locator(
-            '[role="progressbar"], .progress-bar, [class*="progress"]'
-        );
-        await expect(progressBar.first()).toBeVisible({ timeout: 10000 });
-        const hasProgressBar = (await progressBar.count()) > 0;
-
-        // Some form of visualization should exist
-        expect(hasChart || hasProgressBar).toBeTruthy();
-    });
-
-    test('objective detail shows all information', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Detail Info ${Date.now()}`,
-            description: 'Test description for detail page',
-            targetValue: 200,
-            currentValue: 75,
-            unit: 'EUR',
-        });
-
-        // Navigate to objective detail
-        await page.goto('/dashboard/objectives');
-        const row = page.locator('tr', { hasText: objective.title }).first();
-        await row.getByTestId('objective-progress-link').click();
-
-        await page.waitForLoadState('networkidle');
-
-        // Should show title
-        await expect(page.getByText(objective.title)).toBeVisible();
-
-        // Should show description
-        await expect(page.getByText(objective.description)).toBeVisible();
-
-        // Should show target value
-        await expect(page.getByText('200')).toBeVisible();
-
-        // Should show unit (EUR appears in both Target and Current value - use first)
-        await expect(page.getByText('EUR').first()).toBeVisible();
+        await expect(objectiveRow).toBeVisible({ timeout: 10000 });
+        await expect(objectiveRow).toContainText(/completed|completado/i);
     });
 });

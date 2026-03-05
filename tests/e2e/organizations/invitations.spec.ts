@@ -1,25 +1,21 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, createOrganization } from '../../helpers/test-helpers';
+import { createTestUserViaAPI, createOrganization } from '../../helpers/test-helpers';
 import { UserFactory } from '../../helpers/factories';
 
 test.describe('Organization Invitations', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('invite member by email', async ({ page }) => {
         const org = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
 
         // Navigate to organization detail
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for invite button
             const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
@@ -56,7 +52,7 @@ test.describe('Organization Invitations', () => {
                     await sendButton.click();
 
                     await page.waitForTimeout(2000);
-                    await page.waitForLoadState('networkidle');
+                    await page.waitForLoadState('load');
 
                     // Should show success message or invitation in list
                 }
@@ -68,14 +64,14 @@ test.describe('Organization Invitations', () => {
         const org = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for invitations tab or section
             const invitationsTab = page.locator(
@@ -84,7 +80,7 @@ test.describe('Organization Invitations', () => {
 
             if ((await invitationsTab.count()) > 0) {
                 await invitationsTab.first().click();
-                await page.waitForLoadState('networkidle');
+                await page.waitForLoadState('load');
 
                 // Should show pending invitations (or empty state)
             }
@@ -95,14 +91,14 @@ test.describe('Organization Invitations', () => {
         const org = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // First, send an invitation
             const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
@@ -146,7 +142,7 @@ test.describe('Organization Invitations', () => {
     test('view pending invitations received', async ({ page }) => {
         // Navigate to invitations page
         await page.goto('/dashboard/invitations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Page should load (even if empty)
         await expect(page).toHaveURL(/\/dashboard\/invitations/);
@@ -164,19 +160,19 @@ test.describe('Organization Invitations', () => {
         // User 1 sends invitation, User 2 accepts
 
         // Create first user and organization
-        const user1 = await createTestUser(page);
+        const user1 = await createTestUserViaAPI(page);
         const org = await createOrganization(page, { name: `Accept Org ${Date.now()}` });
 
         // Navigate to org and send invitation
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
 
@@ -208,7 +204,7 @@ test.describe('Organization Invitations', () => {
     test('decline invitation', async ({ page }) => {
         // Navigate to invitations page
         await page.goto('/dashboard/invitations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Look for decline button on any invitation
         const declineButton = page.locator(
@@ -234,14 +230,14 @@ test.describe('Organization Invitations', () => {
         const org = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for resend button on any pending invitation
             const resendButton = page.locator(
@@ -261,14 +257,14 @@ test.describe('Organization Invitations', () => {
         const org = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const orgRow = page.locator('tr', { hasText: org.name }).first();
         const viewLink = orgRow.locator('a, [data-testid*="view"]').first();
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Look for copy link button
             const copyLinkButton = page.locator(

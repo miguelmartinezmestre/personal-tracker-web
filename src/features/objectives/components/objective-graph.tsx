@@ -20,12 +20,7 @@ interface ObjectiveProgressGraphProps {
     unit?: string | null;
     targetValue?: number | null;
     startValue?: number | null;
-    direction?: string | null;
-    period?: string | null;
-    periodRange?: { start: number; end: number } | null;
     lastUpdated?: number | null;
-    deadline?: number | null;
-    updates?: { date: number; value: number }[];
     title?: string;
     description?: string;
 }
@@ -37,9 +32,6 @@ export function ObjectiveProgressGraph({
     unit,
     targetValue,
     startValue,
-    direction,
-    period,
-    periodRange,
     lastUpdated,
     title,
     description,
@@ -67,32 +59,14 @@ export function ObjectiveProgressGraph({
             currentValue: latestValue,
             targetValue: objectiveValue,
             startValue: startValue ?? null,
-            direction: direction ?? 'increase',
         })
     );
     const progressBarValue = clamp(progressPercent, 0, 100);
 
     const formatValue = (value: number) =>
         `${numberFormatter.format(value)}${unit ? ` ${unit}` : ''}`;
-    const periodLabel =
-        period && (period === 'weekly' || period === 'monthly' || period === 'custom')
-            ? tObjectives(`periodOptions.${period}`)
-            : null;
-    const shortDateFormatter = React.useMemo(
-        () => new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }),
-        []
-    );
-    const periodRangeLabel = periodRange
-        ? `${shortDateFormatter.format(new Date(periodRange.start))} - ${shortDateFormatter.format(
-              new Date(periodRange.end - 1)
-          )}`
-        : null;
-
     const descriptionText =
-        description ??
-        `${tObjectives('targetValue')}: ${formatValue(objectiveValue)}${
-            periodLabel ? ` (${periodLabel})` : ''
-        }`;
+        description ?? `${tObjectives('targetValue')}: ${formatValue(objectiveValue)}`;
 
     return (
         <Card>
@@ -123,15 +97,7 @@ export function ObjectiveProgressGraph({
                                 {longDateFormatter.format(new Date(lastUpdated))}
                             </span>
                         ) : null}
-                        {periodLabel ? (
-                            <span>
-                                {tObjectives('period')}: {periodLabel}
-                            </span>
-                        ) : null}
                     </div>
-                    {periodLabel && periodRangeLabel ? (
-                        <div className="text-xs text-muted-foreground">{periodRangeLabel}</div>
-                    ) : null}
                 </div>
             </CardContent>
         </Card>

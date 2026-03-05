@@ -13,6 +13,7 @@ const eslintConfig = [
     ...tseslint.configs.recommended,
     globalIgnores([
         '.next/**',
+        '.next-e2e/**',
         'out/**',
         'build/**',
         'next-env.d.ts',

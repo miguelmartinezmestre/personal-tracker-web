@@ -129,6 +129,15 @@
             "objectivesCreated": "Objectives created",
             "objectivesCompleted": "Objectives completed",
             "period": "Last {days} days"
+        },
+        "charts": {
+            "monthlyProgress": "Monthly Progress",
+            "monthlyProgressDescription": "Progress updates added per month",
+            "topObjectives": "Top Objectives",
+            "topObjectivesDescription": "Top 5 objectives by progress completion",
+            "noDataAvailable": "No data available",
+            "updates": "Updates",
+            "progress": "Progress"
         }
     },
     "HomePage": {
@@ -457,6 +466,15 @@
         "saveObjective": "Save Objective",
         "category": "Category",
         "unit": "Unit",
+        "scope": "Scope",
+        "scopeOptions": {
+            "personal": "Personal",
+            "organization": "Organization"
+        },
+        "sections": {
+            "personal": "My objectives",
+            "organization": "Organization objectives"
+        },
         "objectiveType": "Objective type",
         "objectiveTypeDescription": "Select how this objective is measured.",
         "objectiveTypeOptions": {
@@ -1022,6 +1040,12 @@
         "toast": {
             "deletedSuccess": "Update deleted successfully",
             "deleteFailed": "Failed to delete update"
+        },
+        "charts": {
+            "progressTimeline": "Progress Timeline",
+            "progressTimelineDescription": "Cumulative progress over time",
+            "value": "Value",
+            "target": "Target"
         }
     },
     "Header": {

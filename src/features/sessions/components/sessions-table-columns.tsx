@@ -59,7 +59,11 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
             header: t('status'),
             cell: ({ row }) => {
                 const { label, variant } = getSessionStatus(row.original);
-                return <Badge variant={variant}>{label}</Badge>;
+                return (
+                    <Badge variant={variant} data-testid={`session-status-badge`}>
+                        {label}
+                    </Badge>
+                );
             },
         },
         {
@@ -82,6 +86,7 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
                         onClick={async () => {
                             await invalidateSessionAsync({ token: session.token });
                         }}
+                        data-testid="session-revoke-button"
                     >
                         {isInvalidatingSession ? t('revoking') : t('revoke')}
                     </Button>

@@ -7,6 +7,7 @@
 
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { calculateUserStreakInternal } from '../achievements_utils/calculations';
 
 /**
  * Step: Calculate user statistics for achievement checking
@@ -33,8 +34,6 @@ export const calculateUserStats = internalMutation({
         const userUpdates = allUpdates.filter(pu => objectiveIds.includes(pu.objective));
 
         // Calculate streak
-        // Import the calculation function
-        const { calculateUserStreakInternal } = await import('../achievements_utils/calculations');
         const streak = await calculateUserStreakInternal(ctx, userId);
 
         // Count early bird completions
@@ -218,8 +217,6 @@ export const checkAllAchievements = internalMutation({
                 const allUpdates = await ctx.db.query('progressUpdates').collect();
                 const userUpdates = allUpdates.filter(pu => objectiveIds.includes(pu.objective));
 
-                const { calculateUserStreakInternal } =
-                    await import('../achievements_utils/calculations');
                 const streak = await calculateUserStreakInternal(ctx, userId);
 
                 const earlyCompletions = completedObjectives.filter(o => {

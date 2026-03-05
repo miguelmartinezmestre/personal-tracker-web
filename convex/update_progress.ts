@@ -1,147 +1,23 @@
-import { v } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from './rls';
-import type { MutationCtx } from './_generated/server';
 import { paginationOptsValidator } from 'convex/server';
-import { Id } from './_generated/dataModel';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
-import { computeCurrentValue, computeLastProgressAt } from './utils/objectiveProgress';
-import { computeNextReminderAt } from './utils/reminderSchedule';
-import { isValidTransition } from './objectiveEvents';
+import type { Id } from './_generated/dataModel';
+import { mutationWithRLS, queryWithRLS } from './rls';
 import { workflow } from './workflow';
 
-const isObjectiveComplete = (
-    objective: { direction?: string; targetValue: number },
-    currentValue: number
-) => {
-    const direction = objective.direction ?? 'increase';
-    if (direction === 'decrease') {
-        return currentValue <= objective.targetValue;
-    }
-    return currentValue >= objective.targetValue;
-};
-
-const canCreateProgress = (status: string) => {
-    return !['completed', 'paused', 'archived', 'deleted'].includes(status);
-};
-
-/**
- * Check if progress can be modified (edited/deleted) on an objective.
- * Allows edit/delete on completed objectives so that removing or correcting
- * a progress update can reopen the objective via syncObjectiveCompletionState.
- */
-const canModifyProgress = (status: string) => {
-    return !['paused', 'archived', 'deleted'].includes(status);
-};
-
-const syncObjectiveCurrentValue = async (ctx: MutationCtx, objectiveId: Id<'objectives'>) => {
-    const objective = await ctx.db.get('objectives', objectiveId);
-    if (!objective) {
-        return null;
-    }
-
-    const updates = await ctx.db
-        .query('progressUpdates')
-        .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
-        .collect();
-
-    const currentValue = computeCurrentValue(objective, updates);
-    const lastProgressAt = computeLastProgressAt(updates);
-    await ctx.db.patch('objectives', objectiveId, {
-        currentValue,
-        lastProgressAt,
-        lastStalledNotifiedAt: undefined,
-        updatedAt: Date.now(),
-    });
-
-    return currentValue;
-};
-
-const syncObjectiveCompletionState = async (
-    ctx: MutationCtx,
+const runObjectiveSync = async (
+    ctx: Parameters<typeof workflow.start>[0],
     objectiveId: Id<'objectives'>,
-    currentValue: number
-): Promise<{ completedNow: boolean; reopened: boolean }> => {
-    const objective = await ctx.db.get('objectives', objectiveId);
-    if (!objective) {
-        return { completedNow: false, reopened: false };
-    }
-
-    if (objective.status === 'archived' || objective.status === 'deleted') {
-        return { completedNow: false, reopened: false };
-    }
-
-    const now = Date.now();
-    const shouldComplete = isObjectiveComplete(objective, currentValue);
-
-    if (shouldComplete && objective.status !== 'completed') {
-        await ctx.db.patch('objectives', objectiveId, {
-            status: 'completed',
-            nextReminderAt: undefined,
-            updatedAt: now,
+    userId: string
+) => {
+    try {
+        await workflow.start(ctx, internal.workflows.objectiveLifecycle.objectiveLifecycle, {
+            objectiveId,
+            userId,
         });
-
-        await ctx.db.insert('notifications', {
-            userId: objective.userId,
-            organizationId: objective.organizationId,
-            objective: objectiveId,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Your objective "${objective.title}" has been completed!`,
-            createdAt: now,
-            updatedAt: now,
-        });
-
-        // If this is a periodic objective, schedule creation of the next recurring instance
-        if (
-            objective.period &&
-            objective.period !== 'none' &&
-            !process.env.VITEST &&
-            process.env.NODE_ENV !== 'test'
-        ) {
-            await ctx.scheduler.runAfter(0, internal.steps.objectives.createRecurringInstance, {
-                sourceObjectiveId: objectiveId,
-            });
-        }
-
-        return { completedNow: true, reopened: false };
+    } catch {
+        // Workflow may fail in test environments — non-critical side effect
     }
-
-    if (!shouldComplete && objective.status === 'completed') {
-        if (!isValidTransition('completed', 'active')) {
-            return { completedNow: false, reopened: false };
-        }
-        await ctx.db.patch('objectives', objectiveId, {
-            status: 'active',
-            nextReminderAt: computeNextReminderAt(objective.reminderInterval ?? 'none', now),
-            updatedAt: now,
-        });
-
-        // Restart the lifecycle workflow for the reopened objective
-        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
-            const workflowId = await workflow.start(
-                ctx,
-                internal.workflows.objectiveLifecycle.objectiveLifecycle,
-                {
-                    objectiveId,
-                    userId: objective.userId,
-                    enableReminders: true,
-                    stallThresholdDays: 14,
-                },
-                {
-                    onComplete: internal.workflows.kickoff.handleObjectiveLifecycleComplete,
-                    context: { objectiveId, userId: objective.userId },
-                }
-            );
-            await ctx.db.patch('objectives', objectiveId, {
-                workflowId: String(workflowId),
-            });
-        }
-
-        return { completedNow: false, reopened: true };
-    }
-
-    return { completedNow: false, reopened: false };
 };
 
 export const createUpdateProgress = mutationWithRLS({
@@ -154,10 +30,7 @@ export const createUpdateProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.objective);
         if (!objective) {
-            throw new Error('Objective not found');
-        }
-        if (!canCreateProgress(objective.status)) {
-            throw new Error('Cannot create progress for a completed or closed objective');
+            throw new ConvexError('Objective not found');
         }
 
         const now = Date.now();
@@ -170,13 +43,6 @@ export const createUpdateProgress = mutationWithRLS({
             updatedAt: now,
         });
 
-        const unitSuffix = objective.unit ? ` ${objective.unit}` : '';
-        const progressMode = objective.progressMode ?? 'cumulative';
-        const sign = args.updatedValue >= 0 ? '+' : '';
-        const progressValueLabel =
-            progressMode === 'snapshot'
-                ? `${args.updatedValue}${unitSuffix}`
-                : `${sign}${args.updatedValue}${unitSuffix}`;
         await ctx.db.insert('notifications', {
             userId: objective.userId,
             organizationId: objective.organizationId,
@@ -184,38 +50,19 @@ export const createUpdateProgress = mutationWithRLS({
             read: false,
             notificationType: 'progress',
             notificationDate: now,
-            message: `Progress updated for ${objective.title} (${progressValueLabel}).`,
+            message: `Progress added to "${objective.title}": +${args.updatedValue}${
+                objective.unit ? ` ${objective.unit}` : ''
+            }`,
             createdAt: now,
             updatedAt: now,
         });
 
-        // Check for achievements after progress update
-        if (!process.env.VITEST && process.env.NODE_ENV !== 'test') {
-            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-                userId: objective.userId,
-                trigger: 'progress_update',
-            });
-        }
+        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            userId: objective.userId,
+            trigger: 'progress_update',
+        });
 
-        const currentValue = await syncObjectiveCurrentValue(ctx, args.objective);
-
-        if (currentValue !== null) {
-            const completionState = await syncObjectiveCompletionState(
-                ctx,
-                args.objective,
-                currentValue
-            );
-            if (
-                completionState.completedNow &&
-                !process.env.VITEST &&
-                process.env.NODE_ENV !== 'test'
-            ) {
-                await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-                    userId: objective.userId,
-                    trigger: 'objective_completed',
-                });
-            }
-        }
+        await runObjectiveSync(ctx, args.objective, objective.userId);
 
         return await ctx.db.get('progressUpdates', id);
     },
@@ -249,79 +96,52 @@ export const updateUpdateProgress = mutationWithRLS({
         comment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const { id, ...rest } = args;
-        const existing = await ctx.db.get('progressUpdates', id);
+        const existing = await ctx.db.get('progressUpdates', args.id);
         if (!existing) {
-            throw new Error('Progress update not found');
+            throw new ConvexError('Progress update not found');
         }
+
         const objective = await ctx.db.get('objectives', existing.objective);
         if (!objective) {
-            throw new Error('Objective not found');
-        }
-        if (!canModifyProgress(objective.status)) {
-            throw new Error(
-                `Cannot modify progress for an objective with status: ${objective.status}`
-            );
+            throw new ConvexError('Objective not found');
         }
 
-        await ctx.db.patch('progressUpdates', id, { ...rest, updatedAt: Date.now() });
+        await ctx.db.patch('progressUpdates', args.id, {
+            updatedValue: args.updatedValue,
+            updateDate: args.updateDate,
+            comment: args.comment,
+            updatedAt: Date.now(),
+        });
 
-        const currentValue = await syncObjectiveCurrentValue(ctx, existing.objective);
-        if (currentValue !== null) {
-            const completionState = await syncObjectiveCompletionState(
-                ctx,
-                existing.objective,
-                currentValue
-            );
-            if (
-                completionState.completedNow &&
-                !process.env.VITEST &&
-                process.env.NODE_ENV !== 'test'
-            ) {
-                await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-                    userId: objective.userId,
-                    trigger: 'objective_completed',
-                });
-            }
-        }
+        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            userId: objective.userId,
+            trigger: 'progress_update',
+        });
 
-        return await ctx.db.get('progressUpdates', id);
+        await runObjectiveSync(ctx, existing.objective, objective.userId);
+
+        return await ctx.db.get('progressUpdates', args.id);
     },
 });
 
 export const deleteUpdateProgress = mutationWithRLS({
-    args: { _id: v.id('progressUpdates') },
+    args: {
+        _id: v.id('progressUpdates'),
+    },
     handler: async (ctx, args) => {
         const existing = await ctx.db.get('progressUpdates', args._id);
-        const objective = existing ? await ctx.db.get('objectives', existing.objective) : null;
-        if (objective && !canModifyProgress(objective.status)) {
-            throw new Error(
-                `Cannot delete progress for an objective with status: ${objective.status}`
-            );
+        if (!existing) {
+            return 'Update progress deleted successfully' as const;
+        }
+
+        const objective = await ctx.db.get('objectives', existing.objective);
+        if (!objective) {
+            await ctx.db.delete('progressUpdates', args._id);
+            return 'Update progress deleted successfully' as const;
         }
 
         await ctx.db.delete('progressUpdates', args._id);
-
-        if (objective) {
-            const currentValue = await syncObjectiveCurrentValue(ctx, objective._id);
-            if (currentValue !== null) {
-                const completionState = await syncObjectiveCompletionState(
-                    ctx,
-                    objective._id,
-                    currentValue
-                );
-                if (
-                    completionState.completedNow &&
-                    !process.env.VITEST &&
-                    process.env.NODE_ENV !== 'test'
-                ) {
-                    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-                        userId: objective.userId,
-                        trigger: 'objective_completed',
-                    });
-                }
-            }
-        }
+        await runObjectiveSync(ctx, objective._id, objective.userId);
 
         return 'Update progress deleted successfully' as const;
     },

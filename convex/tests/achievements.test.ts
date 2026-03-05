@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
+import {
+    createTestMember,
+    createTestObjective,
+    createTestOrganization,
+    createTestUser,
+} from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
 
@@ -23,7 +28,7 @@ describe('convex achievements', async () => {
             emailVerified: false,
         };
 
-        await createTestUser(t, user);
+        const userData = await createTestUser(t, user);
         userId = user.userId;
 
         const orgId = await createTestOrganization(t, {
@@ -32,22 +37,22 @@ describe('convex achievements', async () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(orgId),
+            organizationId: orgId,
             userId: userId,
             role: 'owner',
         });
 
-        organizationId = String(orgId);
+        organizationId = orgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -103,7 +108,9 @@ describe('convex achievements', async () => {
 
             const individualDefs = await userIdentity.query(
                 api.achievements.getAchievementDefinitions,
-                { type: 'individual' }
+                {
+                    type: 'individual',
+                }
             );
 
             const organizationDefs = await userIdentity.query(
@@ -237,13 +244,17 @@ describe('convex achievements', async () => {
         test('shows correct progress for objectives created', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            await userIdentity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Test Objective 1',
                 targetValue: 100,
                 currentValue: 0,
             });
 
-            await userIdentity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Test Objective 2',
                 targetValue: 100,
                 currentValue: 0,
@@ -264,14 +275,12 @@ describe('convex achievements', async () => {
         test('shows correct progress for objectives completed', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            const obj1 = await userIdentity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Test Objective 1',
                 targetValue: 100,
                 currentValue: 100,
-            });
-
-            await userIdentity.mutation(api.objectives.completeObjective, {
-                id: obj1,
             });
 
             const progress = await userIdentity.query(
@@ -296,6 +305,7 @@ describe('convex achievements', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
+                    scope: 'personal',
                     title: 'Early Bird Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -324,6 +334,7 @@ describe('convex achievements', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
+                    scope: 'personal',
                     title: 'No Deadline Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -353,6 +364,7 @@ describe('convex achievements', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
+                    scope: 'personal',
                     title: 'Late Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -429,8 +441,10 @@ describe('convex achievements', async () => {
         test('awards first_objective achievement when first objective is created', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Create first objective (this triggers achievement check internally)
-            await userIdentity.mutation(api.objectives.createObjective, {
+            // Create first objective
+            await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'My First Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -473,7 +487,9 @@ describe('convex achievements', async () => {
             });
 
             // Create another objective
-            await userIdentity.mutation(api.objectives.createObjective, {
+            await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Second Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -492,7 +508,9 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             // Create an objective
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            const objectiveId = await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Progress Threshold Test',
                 targetValue: 100,
                 currentValue: 0,
@@ -538,7 +556,9 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             // Create an objective
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            const objectiveId = await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
                 title: 'Streak Test Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -616,12 +636,12 @@ describe('convex achievements', async () => {
 
             // Add user as member
             await createTestMember(t, {
-                organizationId: String(orgId),
+                organizationId: orgId,
                 userId: userId,
                 role: 'owner',
             });
 
-            const organizationId = String(orgId);
+            const organizationId = orgId;
 
             const organizationAchievements = await userIdentity.query(
                 api.achievements.getOrganizationAchievements,

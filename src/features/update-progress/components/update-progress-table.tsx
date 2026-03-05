@@ -11,6 +11,7 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
 import { ObjectiveProgressGraph } from '@/features/objectives/components/objective-graph';
+import ObjectiveProgressTimeline from './objective-progress-timeline';
 import { useUpdateProgressTableColumns } from './update-progress-table-columns';
 import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
@@ -32,29 +33,6 @@ const MOBILE_SKELETON_ITEMS = [1, 2, 3];
 interface UpdateProgressTableProps {
     initialProgress: ProgressResult | undefined;
     initialObjective: ObjectiveResult | undefined;
-}
-
-/**
- * Compute the current period window using the same logic as the backend:
- * periodStart + periodLengthDays, cycling forward as needed.
- * This avoids mismatches between frontend calendar-based and backend offset-based periods.
- */
-function getPeriodRange(
-    period: string | undefined,
-    now: number,
-    periodStart?: number,
-    periodLengthDays?: number
-) {
-    if (!period || period === 'none') return null;
-    if (!periodStart || !periodLengthDays || periodLengthDays <= 0) return null;
-
-    const lengthMs = periodLengthDays * 24 * 60 * 60 * 1000;
-    if (now < periodStart) {
-        return { start: periodStart, end: periodStart + lengthMs };
-    }
-    const cycles = Math.floor((now - periodStart) / lengthMs);
-    const start = periodStart + cycles * lengthMs;
-    return { start, end: start + lengthMs };
 }
 
 export default function UpdateProgressTable({
@@ -90,55 +68,26 @@ export default function UpdateProgressTable({
     const updates = updateProgress.data?.page ?? [];
     const objectiveDoc = objective.data as
         | (Doc<'objectives'> & {
-              objectiveType?: string;
-              period?: string;
-              periodStart?: number;
-              periodLengthDays?: number;
               startValue?: number;
-              direction?: string;
-              progressMode?: string;
           })
         | undefined;
-    const objectiveType = objectiveDoc?.objectiveType ?? 'value';
-    const period = objectiveDoc?.period ?? 'none';
-    const progressMode = objectiveDoc?.progressMode ?? 'cumulative';
-    // Event-based accumulation: non-value types OR periodic objectives, BUT only in cumulative mode.
-    // In snapshot mode, each update is an absolute reading — display raw values.
-    const isEventBased =
-        progressMode === 'cumulative' &&
-        (objectiveType !== 'value' || (period && period !== 'none'));
-    const range = objectiveDoc
-        ? getPeriodRange(
-              period,
-              Date.now(),
-              objectiveDoc.periodStart,
-              objectiveDoc.periodLengthDays
-          )
-        : null;
+
     const sortedUpdates = [...updates].sort((a, b) => a.updateDate - b.updateDate);
-    const relevantUpdates = range
-        ? sortedUpdates.filter(
-              update => update.updateDate >= range.start && update.updateDate < range.end
-          )
-        : sortedUpdates;
+    const baseValue = objectiveDoc?.startValue ?? 0;
 
     type ProgressPoint = { date: number; currentValue: number; objective: number };
-    let runningTotal = 0;
-    const progressData: ProgressPoint[] = relevantUpdates.map((item: Doc<'progressUpdates'>) => {
-        const currentValue = isEventBased ? (runningTotal += item.updatedValue) : item.updatedValue;
+    let runningTotal = baseValue;
+    const progressData: ProgressPoint[] = sortedUpdates.map((item: Doc<'progressUpdates'>) => {
+        runningTotal += item.updatedValue;
         return {
             date: item.updateDate,
-            currentValue,
+            currentValue: runningTotal,
             objective: objectiveDoc?.targetValue ?? 0,
         };
     });
-    const lastUpdated = relevantUpdates.at(-1)?.updateDate ?? null;
+    const lastUpdated = sortedUpdates.at(-1)?.updateDate ?? null;
 
     // Prepare updates for velocity and streak calculations
-    const updatesForGraph = relevantUpdates.map((item: Doc<'progressUpdates'>) => ({
-        date: item.updateDate,
-        value: item.updatedValue,
-    }));
     const unitSuffix = objectiveDoc?.unit ? ` ${objectiveDoc.unit}` : '';
 
     return (
@@ -149,12 +98,15 @@ export default function UpdateProgressTable({
                     unit={objectiveDoc?.unit ?? null}
                     targetValue={objectiveDoc?.targetValue ?? null}
                     startValue={objectiveDoc?.startValue ?? null}
-                    direction={objectiveDoc?.direction ?? null}
-                    period={period}
-                    periodRange={range}
                     lastUpdated={lastUpdated}
-                    deadline={objectiveDoc?.deadline ?? null}
-                    updates={updatesForGraph}
+                />
+            )}
+
+            {progressData.length >= 2 && (
+                <ObjectiveProgressTimeline
+                    data={progressData}
+                    unit={objectiveDoc?.unit ?? null}
+                    targetValue={objectiveDoc?.targetValue ?? null}
                 />
             )}
 
@@ -170,14 +122,14 @@ export default function UpdateProgressTable({
                 ) : (
                     updates.map(progressRow => {
                         const defaultValues = {
-                            _id: String(progressRow._id),
+                            _id: progressRow._id,
                             updatedValue: progressRow.updatedValue,
                             updateDate: new Date(progressRow.updateDate),
                             comment: progressRow.comment ?? null,
                         } as unknown as UpdateProgress;
 
                         return (
-                            <Card key={String(progressRow._id)} className="w-full">
+                            <Card key={progressRow._id} className="w-full">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">

@@ -4,10 +4,8 @@ import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { api } from '@/convex/_generated/api';
-import { Id } from '@/convex/_generated/dataModel';
 import CreateUpdateProgressFormModal from './update-progress-form-create-modal';
 import UpdateProgressTable from './update-progress-table';
-import { CollaboratorManagementDialog } from '@/features/objectives/components/collaborator-management-dialog';
 
 interface UpdateProgressLayoutProps {
     preloadedProgressQuery: Preloaded<typeof api.update_progress.getUpdateProgressByObjectiveId>;
@@ -27,7 +25,7 @@ export default function UpdateProgressLayout({
     const unitLabel = objective?.unit ?? '';
     const targetValue = objective?.targetValue;
     const currentValue = objective?.currentValue;
-    const formatValue = (value: number) => (unitLabel ? `${value} ${unitLabel}` : String(value));
+    const formatValue = (value: number) => (unitLabel ? `${value} ${unitLabel}` : `${value}`);
 
     return (
         <div className="w-full min-w-0 space-y-6">
@@ -77,13 +75,6 @@ export default function UpdateProgressLayout({
                     )}
                 </div>
                 <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                    {objective && (
-                        <CollaboratorManagementDialog
-                            objectiveId={objective._id as Id<'objectives'>}
-                            ownerId={objective.userId}
-                            collaborators={objective.collaborators ?? []}
-                        />
-                    )}
                     <CreateUpdateProgressFormModal />
                 </div>
             </div>

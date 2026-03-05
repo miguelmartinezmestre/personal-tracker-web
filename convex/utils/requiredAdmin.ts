@@ -10,7 +10,7 @@ export async function requireAdmin(ctx: GenericMutationCtx<DataModel>) {
         throw new ConvexError('Unauthenticated');
     }
 
-    const user = await ctx.db.get('user', String(userId) as Id<'user'>);
+    const user = await ctx.db.get('user', userId as Id<'user'>);
 
     if (!user || user.role !== 'admin') {
         throw new ConvexError('Unauthenticated');

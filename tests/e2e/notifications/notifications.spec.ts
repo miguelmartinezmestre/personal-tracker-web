@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-    createTestUser,
-    createObjective,
-    ensureDefaultCategories,
-} from '../../helpers/test-helpers';
+import { createObjective, ensureDefaultCategories } from '../../helpers/test-helpers';
 
 async function openNotificationCreateModal(
     page: import('@playwright/test').Page
@@ -65,13 +61,9 @@ async function createNotificationInModal(
 }
 
 test.describe('Notifications', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-    });
-
     test('view notifications list', async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Notifications page should load
         await expect(page).toHaveURL(/\/dashboard\/notifications/);
@@ -86,7 +78,7 @@ test.describe('Notifications', () => {
 
     test('notification badge shows count in sidebar', async ({ page }) => {
         await page.goto('/dashboard/home');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Look for notification badge in sidebar
         const notificationBadge = page.locator(
@@ -108,7 +100,7 @@ test.describe('Notifications', () => {
         });
 
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         const message = `Test notification ${Date.now()}`;
         const wasCreated = await createNotificationInModal(page, objective.title, message);
@@ -130,7 +122,7 @@ test.describe('Notifications', () => {
         expect(wasCreated).toBeTruthy();
         await page.waitForTimeout(2000);
 
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Look for mark as read button
         const markReadButton = page.locator(
@@ -140,7 +132,7 @@ test.describe('Notifications', () => {
         if ((await markReadButton.count()) > 0) {
             await markReadButton.first().click();
             await page.waitForTimeout(2000);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Notification should be marked as read (visual change)
         }
@@ -148,7 +140,7 @@ test.describe('Notifications', () => {
 
     test('mark all notifications as read', async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Look for "Mark all as read" button
         const markAllButton = page.locator(
@@ -162,7 +154,7 @@ test.describe('Notifications', () => {
             if (isEnabled) {
                 await markAllButton.first().click();
                 await page.waitForTimeout(2000);
-                await page.waitForLoadState('networkidle');
+                await page.waitForLoadState('load');
             } else {
                 // Button is disabled - this is expected when there are no unread notifications
                 console.log('Mark all as read button is disabled (no unread notifications)');
@@ -201,13 +193,13 @@ test.describe('Notifications', () => {
             }
 
             await page.waitForTimeout(2000);
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
         }
     });
 
     test('notification types are displayed correctly', async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Notifications should show type badges or icons
         const typeBadge = page.locator('.badge, [class*="type"], [data-testid*="type"]');
@@ -233,7 +225,7 @@ test.describe('Notifications', () => {
         expect(wasCreated).toBeTruthy();
         await page.waitForTimeout(2000);
 
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Notification should show or link to the related objective
         const objectiveLink = page.locator(`text=${objective.title}`);
@@ -256,7 +248,7 @@ test.describe('Notifications', () => {
         expect(wasCreated).toBeTruthy();
         await page.waitForTimeout(2000);
 
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Click on the notification to navigate
         const notificationRow = page.locator('tr').filter({ hasText: clickMessage }).first();
@@ -264,7 +256,7 @@ test.describe('Notifications', () => {
 
         if (await clickableArea.isVisible()) {
             await clickableArea.click();
-            await page.waitForLoadState('networkidle');
+            await page.waitForLoadState('load');
 
             // Should navigate to objective detail
             await expect(page).toHaveURL(/\/dashboard\/objectives\//);
@@ -273,7 +265,7 @@ test.describe('Notifications', () => {
 
     test('filter notifications by read status', async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('load');
 
         // Look for read/unread filter
         const statusFilter = page.locator(
@@ -285,7 +277,7 @@ test.describe('Notifications', () => {
             const unreadFilter = page.locator('button:has-text("Unread"), [data-testid*="unread"]');
             if ((await unreadFilter.count()) > 0) {
                 await unreadFilter.first().click();
-                await page.waitForLoadState('networkidle');
+                await page.waitForLoadState('load');
             }
         }
     });

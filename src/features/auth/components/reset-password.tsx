@@ -106,6 +106,7 @@ export default function ResetPassword() {
                                     type="password"
                                     placeholder={tCommon('placeholders.min8Chars')}
                                     className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="reset-password-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -126,6 +127,7 @@ export default function ResetPassword() {
                                     type="password"
                                     placeholder={tCommon('placeholders.confirmPassword')}
                                     className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="reset-password-confirm-input"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -133,7 +135,11 @@ export default function ResetPassword() {
                     )}
                 />
 
-                <Button type="submit" className="w-full py-6 text-lg font-medium">
+                <Button
+                    type="submit"
+                    className="w-full py-6 text-lg font-medium"
+                    data-testid="reset-password-submit"
+                >
                     {t('resetPassword')}
                 </Button>
 

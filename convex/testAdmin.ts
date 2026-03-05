@@ -10,10 +10,11 @@ export const promoteSelfToAdmin = mutation({
 
         const user = await ctx.auth.getUserIdentity().catch(() => null);
 
-        await ctx.db.patch('user', String(user?.subject) as Id<'user'>, {
+        const userId = user?.subject as Id<'user'>;
+        await ctx.db.patch('user', userId, {
             role: 'admin',
         });
 
-        return { userId: String(user?.subject) };
+        return { userId };
     },
 });

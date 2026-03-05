@@ -15,9 +15,11 @@ export default function SessionsLayout({
     const sessions = usePreloadedAuthQuery(preloadedSessionsQuery);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" data-testid="sessions-page">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+                <h1 className="text-3xl font-bold tracking-tight" data-testid="sessions-title">
+                    {t('title')}
+                </h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
             <SessionsTable

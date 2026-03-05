@@ -17,6 +17,7 @@
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.next
 
 # mysql
 mysql-data
@@ -33,6 +34,6 @@ node_modules/
 **/_generated/**
 **/convex/_generated/**
 
-.next
-
 coverage/
+.vscode/
+

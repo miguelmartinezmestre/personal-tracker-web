@@ -11,10 +11,15 @@ export function UsersTable({ users }: { users: PaginationResult<Doc<'user'>> | n
     const columns = useUsersTableColumns();
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" data-testid="admin-users-table">
             <DataTable columns={columns} data={users?.page || []} />
             {users?.page?.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">{t('usersTable.empty')}</p>
+                <p
+                    className="text-center text-muted-foreground py-8"
+                    data-testid="admin-users-empty"
+                >
+                    {t('usersTable.empty')}
+                </p>
             )}
         </div>
     );

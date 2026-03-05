@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { z } from 'zod';
 import { CalendarIcon, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,8 +15,6 @@ import {
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import {
     Select,
     SelectContent,
@@ -25,43 +22,37 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/ui-utils/utils';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogFooter,
 } from '@/components/ui/dialog';
-import {
-    Objective,
-    savedObjectiveSchema,
-    directionSchema,
-    objectiveTypeSchema,
-    periodSchema,
-    reminderIntervalSchema,
-    progressModeSchema,
-} from '@/features/objectives/schemas/objective';
+import { Objective, savedObjectiveSchema } from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
+
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
-    const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
+    const queryClient = useQueryClient();
 
-    const updateObjective = useMutation({
+    const updateObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.updateObjective),
         onSuccess: () => {
-            // Invalidate all objectives queries regardless of pagination
-            queryClient.invalidateQueries({
-                queryKey: [api.objectives.getObjectivesByUser],
-            });
+            queryClient.invalidateQueries({ queryKey: [api.objectives.getObjectivesByUser] });
+            queryClient.invalidateQueries({ queryKey: [api.objectives.getOrganizationObjectives] });
+            queryClient.invalidateQueries({ queryKey: [api.objectives.getObjectiveById] });
         },
     });
 
@@ -70,21 +61,19 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     });
 
     const categoryOptions = useMemo(() => {
-        const options: Array<{ id: string; value: string; label: string }> = (
-            categoriesQuery.data ?? []
-        ).map((category: Doc<'categories'>) => ({
-            id: String(category._id),
-            value: category.name,
-            label: category.name,
-        }));
+        const options: Array<{ id: string; label: string }> = (categoriesQuery.data ?? []).map(
+            (category: Doc<'categories'>) => ({
+                id: category._id,
+                label: category.name,
+            })
+        );
 
         if (
             defaultValues.category &&
-            !options.some((option: { value: string }) => option.value === defaultValues.category)
+            !options.some(option => option.label === defaultValues.category)
         ) {
             options.unshift({
                 id: `missing-${defaultValues.category}`,
-                value: defaultValues.category,
                 label: defaultValues.category,
             });
         }
@@ -92,97 +81,51 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
         return options;
     }, [categoriesQuery.data, defaultValues.category]);
 
-    const objectiveTypeOptions = [
-        { value: 'value', label: t('objectiveTypeOptions.value') },
-        { value: 'count', label: t('objectiveTypeOptions.count') },
-        { value: 'money', label: t('objectiveTypeOptions.money') },
-        { value: 'duration', label: t('objectiveTypeOptions.duration') },
-    ];
+    const categoryIdToName = useMemo(
+        () => new Map(categoryOptions.map(c => [c.id, c.label])),
+        [categoryOptions]
+    );
 
-    const directionOptions = [
-        { value: 'increase', label: t('directionOptions.increase') },
-        { value: 'decrease', label: t('directionOptions.decrease') },
-    ];
+    const categoryNameToId = useMemo(
+        () => new Map(categoryOptions.map(c => [c.label, c.id])),
+        [categoryOptions]
+    );
 
-    const reminderIntervalOptions = [
-        { value: 'none', label: t('reminderIntervalOptions.none') },
-        { value: 'monthly', label: t('reminderIntervalOptions.monthly') },
-        { value: 'biweekly', label: t('reminderIntervalOptions.biweekly') },
-    ];
+    const initialValues = useMemo(
+        () => ({
+            ...defaultValues,
+            category: defaultValues.category
+                ? (categoryNameToId.get(defaultValues.category) ?? defaultValues.category)
+                : null,
+        }),
+        [defaultValues, categoryNameToId]
+    );
 
-    type ObjectiveType = z.infer<typeof objectiveTypeSchema>;
-    type Direction = z.infer<typeof directionSchema>;
-    type ReminderInterval = z.infer<typeof reminderIntervalSchema>;
-    type ProgressMode = z.infer<typeof progressModeSchema>;
-    type Period = z.infer<typeof periodSchema>;
-
-    const defaultUnitByType: Partial<Record<ObjectiveType, string>> = {
-        count: 'times',
-        money: 'EUR',
-        duration: 'minutes',
-    };
-
-    const progressModeOptions = [
-        { value: 'cumulative', label: t('progressModeOptions.cumulative') },
-        { value: 'snapshot', label: t('progressModeOptions.snapshot') },
-    ];
-
-    const periodOptions = [
-        { value: 'none', label: t('periodOptions.none') },
-        { value: 'weekly', label: t('periodOptions.weekly') },
-        { value: 'monthly', label: t('periodOptions.monthly') },
-        { value: 'custom', label: t('periodOptions.custom') },
-    ];
-
-    const initialValues = {
-        ...defaultValues,
-        objectiveType: defaultValues.objectiveType ?? 'value',
-        direction: defaultValues.direction ?? 'increase',
-        reminderInterval: defaultValues.reminderInterval ?? 'none',
-        progressMode: defaultValues.progressMode ?? 'cumulative',
-        period: defaultValues.period ?? 'none',
-    };
-
-    const form = useForm<z.infer<typeof savedObjectiveSchema>>({
+    const form = useForm<Objective>({
         defaultValues: initialValues,
         validators: {
             onChange: savedObjectiveSchema,
             onSubmit: savedObjectiveSchema,
         },
-        onSubmit: async ({ value }: { value: Objective }) => {
-            await onSubmit(value);
+        onSubmit: async ({ value }) => {
+            const categoryName = value.category
+                ? (categoryIdToName.get(value.category) ?? value.category)
+                : undefined;
+            await updateObjectiveMutation.mutateAsync({
+                id: value._id as Id<'objectives'>,
+                title: value.title,
+                description: value.description ?? undefined,
+                category: categoryName,
+                targetValue: value.targetValue,
+                deadline: value.deadline ?? undefined,
+                unit: value.unit ?? undefined,
+                scope: value.scope,
+            });
+
+            setOpen(false);
+            form.reset();
         },
     });
-
-    const onSubmit = async (values: Objective) => {
-        const updateData = {
-            id: values._id as Id<'objectives'>,
-            title: values.title,
-            description: values.description ?? undefined,
-            category: values.category ?? undefined,
-            startValue: values.startValue ?? undefined,
-            deadline: values.deadline ? new Date(values.deadline).getTime() : undefined,
-            unit: values.unit ?? undefined,
-            objectiveType: values.objectiveType ?? undefined,
-            direction: values.direction ?? undefined,
-            period: values.period ?? undefined,
-            periodStart:
-                values.period && values.period !== 'none'
-                    ? (values.periodStart ?? Date.now())
-                    : undefined,
-            periodLengthDays: values.periodLengthDays ?? undefined,
-            reminderInterval: values.reminderInterval ?? undefined,
-            progressMode: values.progressMode ?? undefined,
-        };
-
-        await updateObjective.mutateAsync(updateData);
-
-        setOpen(false);
-        form.reset();
-    };
-
-    const progressMode = form.state.values.progressMode ?? 'cumulative';
-    const selectedPeriod = form.state.values.period ?? 'none';
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -239,52 +182,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                             value={field.value || ''}
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        {t('optionalAddDetailsAboutYourObjective')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            name="category"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('category')}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || ''}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('selectACategory')} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {categoriesQuery.isLoading ? (
-                                                <SelectItem value="loading" disabled>
-                                                    {tCommon('loading')}
-                                                </SelectItem>
-                                            ) : categoryOptions.length === 0 ? (
-                                                <SelectItem value="empty" disabled>
-                                                    {t('categories.emptyTitle')}
-                                                </SelectItem>
-                                            ) : (
-                                                categoryOptions.map(category => (
-                                                    <SelectItem
-                                                        key={category.id ?? category.value}
-                                                        value={category.value}
-                                                    >
-                                                        {category.label}
-                                                    </SelectItem>
-                                                ))
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        {t('optionalCategorizeYourObjective')}
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -292,238 +189,72 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
-                                name="objectiveType"
+                                name="scope"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{t('smartForm.fields.objectiveType')}</FormLabel>
-                                        <Select
-                                            onValueChange={value => {
-                                                const nextType = value as ObjectiveType;
-                                                field.onChange(value);
-                                                if (
-                                                    !form.state.values.unit &&
-                                                    defaultUnitByType[nextType]
-                                                ) {
-                                                    form.setFieldValue(
-                                                        'unit',
-                                                        defaultUnitByType[nextType]
-                                                    );
-                                                }
-                                            }}
-                                            value={field.value || 'value'}
-                                        >
+                                        <FormLabel>{t('scope')}</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue
-                                                        placeholder={t(
-                                                            'smartForm.placeholders.objectiveType'
-                                                        )}
-                                                    />
+                                                <SelectTrigger data-testid="objective-edit-scope-select">
+                                                    <SelectValue placeholder={t('scope')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {objectiveTypeOptions.map(option => (
-                                                    <SelectItem
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
-                                                    </SelectItem>
-                                                ))}
+                                                <SelectItem value="personal">
+                                                    {t('scopeOptions.personal')}
+                                                </SelectItem>
+                                                <SelectItem value="organization">
+                                                    {t('scopeOptions.organization')}
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>
-                                            {t('objectiveTypeDescription')}
-                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
                             <FormField
-                                name="direction"
+                                name="category"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{t('smartForm.fields.direction')}</FormLabel>
+                                        <FormLabel>{t('category')}</FormLabel>
                                         <Select
-                                            onValueChange={value => {
-                                                const nextDirection = value as Direction;
-                                                field.onChange(nextDirection);
-                                            }}
-                                            value={field.value || 'increase'}
+                                            onValueChange={field.onChange}
+                                            value={field.value || ''}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue
-                                                        placeholder={t(
-                                                            'smartForm.placeholders.direction'
-                                                        )}
+                                                        placeholder={t('selectACategory')}
                                                     />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {directionOptions.map(option => (
-                                                    <SelectItem
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
+                                                {categoriesQuery.isLoading ? (
+                                                    <SelectItem value="loading" disabled>
+                                                        {tCommon('loading')}
                                                     </SelectItem>
-                                                ))}
+                                                ) : categoryOptions.length === 0 ? (
+                                                    <SelectItem value="empty" disabled>
+                                                        {t('categories.emptyTitle')}
+                                                    </SelectItem>
+                                                ) : (
+                                                    categoryOptions.map(category => (
+                                                        <SelectItem
+                                                            key={category.id}
+                                                            value={category.id}
+                                                        >
+                                                            {category.label}
+                                                        </SelectItem>
+                                                    ))
+                                                )}
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>
-                                            {t('directionDescription')}
-                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
-
-                        <FormField
-                            name="progressMode"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('progressMode')}</FormLabel>
-                                    <Select
-                                        onValueChange={value =>
-                                            field.onChange(value as ProgressMode)
-                                        }
-                                        value={field.value || 'cumulative'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t('progressMode')} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {progressModeOptions.map(option => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        {t('progressModeDescription')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            name="reminderInterval"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('reminderInterval')}</FormLabel>
-                                    <Select
-                                        onValueChange={value => {
-                                            const nextInterval = value as ReminderInterval;
-                                            field.onChange(nextInterval);
-                                        }}
-                                        value={field.value || 'none'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue
-                                                    placeholder={t(
-                                                        'smartForm.placeholders.reminderInterval'
-                                                    )}
-                                                />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {reminderIntervalOptions.map(option => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        {t('reminderIntervalDescription')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            name="period"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('period')}</FormLabel>
-                                    <Select
-                                        onValueChange={value => {
-                                            field.onChange(value as Period);
-                                            // Auto-set periodLengthDays for known periods
-                                            if (value === 'weekly') {
-                                                form.setFieldValue('periodLengthDays', 7);
-                                                form.setFieldValue('periodStart', Date.now());
-                                            } else if (value === 'monthly') {
-                                                form.setFieldValue('periodLengthDays', 30);
-                                                form.setFieldValue('periodStart', Date.now());
-                                            } else if (value === 'none') {
-                                                form.setFieldValue('periodLengthDays', null);
-                                                form.setFieldValue('periodStart', null);
-                                            } else if (value === 'custom') {
-                                                // Reset periodStart for custom period too
-                                                form.setFieldValue('periodStart', Date.now());
-                                            }
-                                        }}
-                                        value={field.value || 'none'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger data-testid="objective-edit-period-select">
-                                                <SelectValue placeholder={t('period')} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {periodOptions.map(option => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>{t('periodDescription')}</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {selectedPeriod === 'custom' && (
-                            <FormField
-                                name="periodLengthDays"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('periodLengthDays')}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                {...field}
-                                                value={field.value ?? ''}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        e.target.value
-                                                            ? Number.parseInt(e.target.value, 10)
-                                                            : null
-                                                    )
-                                                }
-                                                data-testid="objective-edit-period-length-input"
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            {t('periodLengthDaysDescription')}
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
@@ -540,12 +271,8 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                         Number.parseFloat(e.target.value)
                                                     )
                                                 }
-                                                disabled={true}
                                             />
                                         </FormControl>
-                                        <FormDescription>
-                                            {t('theGoalYouWantToAchieve')}
-                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -563,41 +290,11 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                 value={field.value || ''}
                                             />
                                         </FormControl>
-                                        <FormDescription>
-                                            {t('optionalUnitOfMeasurement')}
-                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
-
-                        <FormField
-                            name="currentValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {progressMode === 'cumulative'
-                                            ? t('initialValue')
-                                            : t('currentValue')}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            {...field}
-                                            disabled
-                                            data-testid="objective-edit-current-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {progressMode === 'cumulative'
-                                            ? t('initialValueDescription')
-                                            : t('yourCurrentProgress')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
 
                         <FormField
                             name="deadline"
@@ -608,7 +305,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button
-                                                    variant={'outline'}
+                                                    variant="outline"
                                                     className={cn(
                                                         'w-full pl-3 text-left font-normal',
                                                         !field.value && 'text-muted-foreground'
@@ -629,14 +326,13 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                                 selected={
                                                     field.value ? new Date(field.value) : undefined
                                                 }
-                                                onSelect={field.onChange}
+                                                onSelect={value =>
+                                                    field.onChange(value ? value.getTime() : null)
+                                                }
                                                 initialFocus
                                             />
                                         </PopoverContent>
                                     </Popover>
-                                    <FormDescription>
-                                        {t('optionalWhenDoYouWantToAchieveThisObjective')}
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

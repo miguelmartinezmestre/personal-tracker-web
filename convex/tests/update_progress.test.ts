@@ -24,7 +24,7 @@ describe('convex update_progress', () => {
             emailVerified: false,
         };
 
-        await createTestUser(t, user);
+        const userData = await createTestUser(t, user);
         userId = user.userId;
 
         const orgId = await createTestOrganization(t, {
@@ -33,22 +33,22 @@ describe('convex update_progress', () => {
         });
 
         await createTestMember(t, {
-            organizationId: String(orgId),
+            organizationId: orgId,
             userId: userId,
             role: 'owner',
         });
 
-        organizationId = String(orgId);
+        organizationId = orgId;
 
         userIdentity = t.withIdentity({
-            subject: user.userId,
+            subject: userData.docId,
             role: user.role,
             email: user.email,
             name: user.name,
             password: user.password,
             emailVerified: user.emailVerified,
             createdAt: Date.now(),
-            userId: user.userId,
+            userId: userData.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -59,9 +59,11 @@ describe('convex update_progress', () => {
             return await ctx.db.insert('objectives', {
                 userId: userId,
                 organizationId: organizationId,
+                scope: 'personal',
                 title: 'Test Objective',
                 targetValue: 100,
                 currentValue: 50,
+                startValue: 50,
                 status: 'active',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),

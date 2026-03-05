@@ -17,9 +17,7 @@ export function useUserSessionsTableColumns() {
         {
             accessorKey: '_id',
             header: t('userSessions.columns.id'),
-            cell: ({ row }) => (
-                <span className="font-mono text-xs">{String(row.original._id)}</span>
-            ),
+            cell: ({ row }) => <span className="font-mono text-xs">{row.original._id}</span>,
         },
         {
             accessorKey: 'expiresAt',

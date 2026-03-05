@@ -45,7 +45,7 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
             cell: ({ row }) => {
                 const progressRow = row.original;
                 const defaultValues = {
-                    _id: String(progressRow._id),
+                    _id: progressRow._id,
                     updatedValue: progressRow.updatedValue,
                     updateDate: new Date(progressRow.updateDate),
                     comment: progressRow.comment ?? null,

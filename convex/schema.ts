@@ -3,11 +3,7 @@ import { v } from 'convex/values';
 import authSchema from './authSchema';
 import {
     objectiveStatusValidator,
-    objectiveTypeValidator,
-    periodValidator,
-    directionValidator,
-    reminderIntervalValidator,
-    progressModeValidator,
+    objectiveScopeValidator,
     notificationTypeValidator,
     achievementTypeValidator,
     achievementCategoryValidator,
@@ -20,6 +16,7 @@ export default defineSchema({
     objectives: defineTable({
         organizationId: v.string(),
         userId: v.string(),
+        scope: objectiveScopeValidator,
         title: v.string(),
         description: v.optional(v.string()),
         category: v.optional(v.string()),
@@ -29,26 +26,13 @@ export default defineSchema({
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
         unit: v.optional(v.string()),
-        objectiveType: objectiveTypeValidator,
-        direction: directionValidator,
-        period: periodValidator,
-        periodStart: v.optional(v.number()),
-        periodLengthDays: v.optional(v.number()),
-        reminderInterval: reminderIntervalValidator,
-        nextReminderAt: v.optional(v.number()),
-        progressMode: progressModeValidator,
-        lastProgressAt: v.optional(v.number()),
-        lastStalledNotifiedAt: v.optional(v.number()),
-        lastDeadlineNotifiedAt: v.optional(v.number()),
-        collaborators: v.optional(v.array(v.string())),
         createdAt: v.number(),
         updatedAt: v.number(),
-        workflowId: v.optional(v.string()),
-        nextTickAt: v.optional(v.number()),
-        nextTickSeq: v.optional(v.number()),
     })
         .index('by_user', ['userId'])
+        .index('by_user_scope', ['userId', 'scope'])
         .index('by_organization', ['organizationId'])
+        .index('by_organization_scope', ['organizationId', 'scope'])
         .index('by_status', ['status']),
 
     progressUpdates: defineTable({
