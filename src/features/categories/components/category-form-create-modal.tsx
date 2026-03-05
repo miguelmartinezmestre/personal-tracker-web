@@ -35,7 +35,7 @@ import {
 import { categorySchema, CreateCategory } from '@/features/categories/schemas/category';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { categoryIconSchema } from '@/features/categories/schemas/category';
 
@@ -69,7 +69,7 @@ export default function CreateCategoryFormModal() {
         mutationFn: useConvexMutation(api.categories.createCategory),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
+                queryKey: [api.categories.getCategoriesByUser],
             });
         },
     });

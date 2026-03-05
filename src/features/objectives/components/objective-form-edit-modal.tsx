@@ -57,16 +57,18 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     });
 
     const categoriesQuery = useQuery({
-        ...convexQuery(api.categories.getCategoriesByUser, {}),
+        ...convexQuery(api.categories.getCategoriesByUser, {
+            paginationOpts: { numItems: 100, cursor: null },
+        }),
     });
 
     const categoryOptions = useMemo(() => {
-        const options: Array<{ id: string; label: string }> = (categoriesQuery.data ?? []).map(
-            (category: Doc<'categories'>) => ({
-                id: category._id,
-                label: category.name,
-            })
-        );
+        const options: Array<{ id: string; label: string }> = (
+            categoriesQuery.data?.page ?? []
+        ).map((category: Doc<'categories'>) => ({
+            id: category._id,
+            label: category.name,
+        }));
 
         if (
             defaultValues.category &&

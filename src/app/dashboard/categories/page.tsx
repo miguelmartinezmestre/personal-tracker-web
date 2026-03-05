@@ -8,7 +8,9 @@ export default async function CategoriesPage() {
     let preloadedCategoriesQuery: Preloaded<typeof api.categories.getCategoriesByUser>;
 
     try {
-        preloadedCategoriesQuery = await preloadAuthQuery(api.categories.getCategoriesByUser, {});
+        preloadedCategoriesQuery = await preloadAuthQuery(api.categories.getCategoriesByUser, {
+            paginationOpts: { numItems: 20, cursor: null },
+        });
     } catch (error) {
         console.error(error);
         redirect('/dashboard/home');

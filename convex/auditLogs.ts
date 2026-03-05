@@ -1,13 +1,13 @@
 import { v } from 'convex/values';
+import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS } from './rls';
 
 export const getAuditLogs = queryWithRLS({
     args: {
         resourceType: v.optional(v.string()),
-        limit: v.optional(v.number()),
+        paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        const limit = args.limit ?? 100;
         const resourceType = args.resourceType;
 
         if (resourceType !== undefined) {
@@ -15,14 +15,14 @@ export const getAuditLogs = queryWithRLS({
                 .query('auditLogs')
                 .withIndex('by_resourceType', q => q.eq('resourceType', resourceType))
                 .order('desc')
-                .take(limit);
+                .paginate(args.paginationOpts);
         }
 
         return await ctx.db
             .query('auditLogs')
             .withIndex('by_createdAt', q => q.gte('createdAt', 0))
             .order('desc')
-            .take(limit);
+            .paginate(args.paginationOpts);
     },
 });
 
@@ -30,14 +30,15 @@ export const getAuditLogsByResource = queryWithRLS({
     args: {
         resourceType: v.string(),
         resourceId: v.string(),
+        paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        const logs = await ctx.db
+        return await ctx.db
             .query('auditLogs')
-            .withIndex('by_resourceType', q => q.eq('resourceType', args.resourceType))
+            .withIndex('by_resourceType_resourceId', q =>
+                q.eq('resourceType', args.resourceType).eq('resourceId', args.resourceId)
+            )
             .order('desc')
-            .collect();
-
-        return logs.filter(log => log.resourceId === args.resourceId);
+            .paginate(args.paginationOpts);
     },
 });

@@ -150,9 +150,14 @@ describe('convex categories', async () => {
     });
 
     describe('getCategoriesByUser', () => {
-        test('returns empty array when user has no categories', async () => {
-            const categories = await userIdentity.query(api.categories.getCategoriesByUser, {});
-            expect(categories).toEqual([]);
+        const paginationOpts = { numItems: 50, cursor: null };
+
+        test('returns empty page when user has no categories', async () => {
+            const result = await userIdentity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(result.page).toEqual([]);
+            expect(result.isDone).toBe(true);
         });
 
         test('returns only user own categories', async () => {
@@ -172,13 +177,51 @@ describe('convex categories', async () => {
                 color: '#f59e0b',
             });
 
-            const userCategories = await userIdentity.query(api.categories.getCategoriesByUser, {});
-            expect(userCategories).toHaveLength(2);
-            expect(userCategories.every(c => c.userId === userId)).toBe(true);
+            const result = await userIdentity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(result.page).toHaveLength(2);
+            expect(result.page.every(c => c.userId === userId)).toBe(true);
         });
 
         test('rejects unauthenticated users', async () => {
-            await expect(t.query(api.categories.getCategoriesByUser, {})).rejects.toThrow(
+            await expect(
+                t.query(api.categories.getCategoriesByUser, { paginationOpts })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        });
+    });
+
+    describe('getCategoryNamesForFilters', () => {
+        test('returns unique sorted category names for current user', async () => {
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: 'Work',
+                color: '#10b981',
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: ' Health ',
+                color: '#3b82f6',
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: 'Work',
+                color: '#f59e0b',
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: '   ',
+                color: '#111827',
+            });
+
+            await adminIdentity.mutation(api.categories.createCategory, {
+                name: 'Admin Category',
+                color: '#ef4444',
+            });
+
+            const result = await userIdentity.query(api.categories.getCategoryNamesForFilters, {});
+
+            expect(result).toEqual(['Health', 'Work']);
+        });
+
+        test('rejects unauthenticated users', async () => {
+            await expect(t.query(api.categories.getCategoryNamesForFilters, {})).rejects.toThrow(
                 /Unauthenticated|User not authenticated/
             );
         });

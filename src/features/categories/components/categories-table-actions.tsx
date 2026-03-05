@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConvexMutation, convexQuery } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ export function useDeleteCategory() {
         mutationFn: useConvexMutation(api.categories.deleteCategory),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
+                queryKey: [api.categories.getCategoriesByUser],
             });
             toast.success(t('toast.deleteSuccess'));
         },

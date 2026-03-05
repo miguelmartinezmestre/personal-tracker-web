@@ -4,12 +4,14 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Preloaded } from 'convex/react';
 import { useTranslations } from 'next-intl';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
+import { FunctionReturnType } from 'convex/server';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +22,10 @@ import { DeleteConfirmationDialog } from '@/features/table/components/delete-con
 import { DataTable } from '@/features/table/components/table';
 import { ObjectivesFilters, type FilterOptions } from './objective-filters';
 import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
+import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const DEFAULT_PAGE_SIZE = 20;
 
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',
@@ -30,9 +36,8 @@ const DEFAULT_FILTERS: FilterOptions = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type ObjectivesResponse = {
-    page: Doc<'objectives'>[];
-};
+type PersonalResult = FunctionReturnType<typeof api.objectives.getObjectivesByUser>;
+type OrgResult = FunctionReturnType<typeof api.objectives.getOrganizationObjectives>;
 
 export const ResponsiveObjectivesView = React.forwardRef<
     HTMLDivElement,
@@ -48,19 +53,101 @@ export const ResponsiveObjectivesView = React.forwardRef<
 
     const [filters, setFilters] = React.useState<FilterOptions>(() => ({ ...DEFAULT_FILTERS }));
 
-    const personalObjectivesResult = usePreloadedAuthQuery(preloadedPersonalObjectivesQuery) as
-        | ObjectivesResponse
+    // Extract initial data from preloaded queries
+    const preloadedPersonal = usePreloadedAuthQuery(preloadedPersonalObjectivesQuery) as
+        | PersonalResult
         | undefined;
-    const organizationObjectivesResult = usePreloadedAuthQuery(
-        preloadedOrganizationObjectivesQuery
-    ) as ObjectivesResponse | undefined;
+    const preloadedOrg = usePreloadedAuthQuery(preloadedOrganizationObjectivesQuery) as
+        | OrgResult
+        | undefined;
+
+    // Personal objectives pagination
+    const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const {
+        currentPage: personalCurrentPage,
+        getPaginationOpts: getPersonalPaginationOpts,
+        updateCursor: updatePersonalCursor,
+        reset: resetPersonalPagination,
+    } = personalPagination;
+    const personalPaginationOpts = getPersonalPaginationOpts(personalCurrentPage);
+    const personalIsFirstPage = personalPaginationOpts.cursor === null;
+
+    const personalQuery = useQuery({
+        ...convexQuery(api.objectives.getObjectivesByUser, {
+            paginationOpts: personalPaginationOpts,
+            status: filters.status !== 'all' ? filters.status : undefined,
+            category: filters.category !== 'all' ? filters.category : undefined,
+        }),
+        initialData: personalIsFirstPage && filters.status === 'all' && filters.category === 'all'
+            ? preloadedPersonal
+            : undefined,
+    });
+
+    // Organization objectives pagination
+    const orgPagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const {
+        currentPage: orgCurrentPage,
+        getPaginationOpts: getOrgPaginationOpts,
+        updateCursor: updateOrgCursor,
+        reset: resetOrgPagination,
+    } = orgPagination;
+    const orgPaginationOpts = getOrgPaginationOpts(orgCurrentPage);
+    const orgIsFirstPage = orgPaginationOpts.cursor === null;
+
+    const orgQuery = useQuery({
+        ...convexQuery(api.objectives.getOrganizationObjectives, {
+            paginationOpts: orgPaginationOpts,
+            status: filters.status !== 'all' ? filters.status : undefined,
+            category: filters.category !== 'all' ? filters.category : undefined,
+        }),
+        initialData: orgIsFirstPage && filters.status === 'all' && filters.category === 'all'
+            ? preloadedOrg
+            : undefined,
+    });
+
+    const categoryOptionsQuery = useQuery(convexQuery(api.categories.getCategoryNamesForFilters, {}));
+
+    // Update personal cursor
+    const personalHasData = personalQuery.data !== undefined;
+    const personalContinueCursor = personalQuery.data?.continueCursor ?? null;
+    const personalPageIsDone = personalQuery.data?.isDone ?? false;
+
+    React.useEffect(() => {
+        if (!personalHasData || personalQuery.isFetching) return;
+        updatePersonalCursor(personalCurrentPage, personalContinueCursor, personalPageIsDone);
+    }, [
+        personalCurrentPage,
+        personalHasData,
+        personalContinueCursor,
+        personalPageIsDone,
+        personalQuery.isFetching,
+        updatePersonalCursor,
+    ]);
+
+    // Update org cursor
+    const orgHasData = orgQuery.data !== undefined;
+    const orgContinueCursor = orgQuery.data?.continueCursor ?? null;
+    const orgPageIsDone = orgQuery.data?.isDone ?? false;
+
+    React.useEffect(() => {
+        if (!orgHasData || orgQuery.isFetching) return;
+        updateOrgCursor(orgCurrentPage, orgContinueCursor, orgPageIsDone);
+    }, [
+        orgCurrentPage,
+        orgHasData,
+        orgContinueCursor,
+        orgPageIsDone,
+        orgQuery.isFetching,
+        updateOrgCursor,
+    ]);
+
     const personalObjectives = React.useMemo(
-        () => personalObjectivesResult?.page ?? [],
-        [personalObjectivesResult]
+        () => personalQuery.data?.page ?? [],
+        [personalQuery.data]
     );
     const organizationObjectives = React.useMemo(
-        () => organizationObjectivesResult?.page ?? [],
-        [organizationObjectivesResult]
+        () => orgQuery.data?.page ?? [],
+        [orgQuery.data]
     );
 
     const deleteObjectiveMutation = useMutation({
@@ -71,14 +158,25 @@ export const ResponsiveObjectivesView = React.forwardRef<
         },
     });
 
-    const categories = React.useMemo(() => {
-        const values = [...personalObjectives, ...organizationObjectives]
-            .map(objective => objective.category)
-            .filter((category): category is string => Boolean(category));
-        return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
-    }, [organizationObjectives, personalObjectives]);
+    const categories = categoryOptionsQuery.data ?? [];
 
-    const filterObjectives = React.useCallback(
+    const handleFiltersChange = React.useCallback(
+        (nextFilters: FilterOptions) => {
+            const shouldResetPagination =
+                nextFilters.status !== filters.status || nextFilters.category !== filters.category;
+
+            if (shouldResetPagination) {
+                resetPersonalPagination();
+                resetOrgPagination();
+            }
+
+            setFilters(nextFilters);
+        },
+        [filters.status, filters.category, resetOrgPagination, resetPersonalPagination]
+    );
+
+    // Client-side filters for search and deadlineRange (can't be done server-side in Convex)
+    const filterObjectivesClientSide = React.useCallback(
         (objectives: Doc<'objectives'>[]) => {
             const normalizedSearch = filters.search.trim().toLowerCase();
             const now = Date.now();
@@ -122,14 +220,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
                     }
                 }
 
-                if (filters.status !== 'all' && objective.status !== filters.status) {
-                    return false;
-                }
-
-                if (filters.category !== 'all' && objective.category !== filters.category) {
-                    return false;
-                }
-
                 if (filters.deadlineRange !== 'all' && !matchesDeadlineRange(objective.deadline)) {
                     return false;
                 }
@@ -137,17 +227,17 @@ export const ResponsiveObjectivesView = React.forwardRef<
                 return true;
             });
         },
-        [filters]
+        [filters.search, filters.deadlineRange]
     );
 
     const filteredPersonalObjectives = React.useMemo(
-        () => filterObjectives(personalObjectives),
-        [filterObjectives, personalObjectives]
+        () => filterObjectivesClientSide(personalObjectives),
+        [filterObjectivesClientSide, personalObjectives]
     );
 
     const filteredOrganizationObjectives = React.useMemo(
-        () => filterObjectives(organizationObjectives),
-        [filterObjectives, organizationObjectives]
+        () => filterObjectivesClientSide(organizationObjectives),
+        [filterObjectivesClientSide, organizationObjectives]
     );
 
     const statusLabels = React.useMemo(
@@ -321,11 +411,48 @@ export const ResponsiveObjectivesView = React.forwardRef<
         );
     };
 
+    const personalTotalPages = personalPagination.isDone
+        ? personalPagination.currentPage + 1
+        : personalPagination.currentPage + 2;
+    const orgTotalPages = orgPagination.isDone
+        ? orgPagination.currentPage + 1
+        : orgPagination.currentPage + 2;
+
+    const renderMobilePagination = (
+        pagination: ReturnType<typeof useServerPagination>,
+        totalPages: number
+    ) => {
+        if (!pagination.hasPreviousPage && !pagination.hasNextPage) return null;
+        return (
+            <div className="flex items-center justify-center gap-2 pt-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pagination.goToPage(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPreviousPage}
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                    {pagination.currentPage + 1} / {totalPages}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pagination.goToPage(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage}
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
+        );
+    };
+
     return (
         <div ref={ref} className="w-full min-w-0 space-y-4">
             <ObjectivesFilters
                 filters={filters}
-                onFiltersChange={setFilters}
+                onFiltersChange={handleFiltersChange}
                 categories={categories}
                 className="w-full"
             />
@@ -345,9 +472,22 @@ export const ResponsiveObjectivesView = React.forwardRef<
                             {filteredPersonalObjectives.map(renderObjectiveCard)}
                         </div>
                     )}
+                    {renderMobilePagination(personalPagination, personalTotalPages)}
                 </div>
                 <div className="hidden md:block">
-                    <DataTable columns={objectiveColumns} data={filteredPersonalObjectives} />
+                    <DataTable
+                        columns={objectiveColumns}
+                        data={filteredPersonalObjectives}
+                        isLoading={personalQuery.isLoading}
+                        pagination={{
+                            currentPage: personalPagination.currentPage,
+                            totalPages: personalTotalPages,
+                            onPageChange: personalPagination.goToPage,
+                            hasNextPage: personalPagination.hasNextPage,
+                            hasPreviousPage: personalPagination.hasPreviousPage,
+                            pageSize: DEFAULT_PAGE_SIZE,
+                        }}
+                    />
                 </div>
             </section>
 
@@ -366,9 +506,22 @@ export const ResponsiveObjectivesView = React.forwardRef<
                             {filteredOrganizationObjectives.map(renderObjectiveCard)}
                         </div>
                     )}
+                    {renderMobilePagination(orgPagination, orgTotalPages)}
                 </div>
                 <div className="hidden md:block">
-                    <DataTable columns={objectiveColumns} data={filteredOrganizationObjectives} />
+                    <DataTable
+                        columns={objectiveColumns}
+                        data={filteredOrganizationObjectives}
+                        isLoading={orgQuery.isLoading}
+                        pagination={{
+                            currentPage: orgPagination.currentPage,
+                            totalPages: orgTotalPages,
+                            onPageChange: orgPagination.goToPage,
+                            hasNextPage: orgPagination.hasNextPage,
+                            hasPreviousPage: orgPagination.hasPreviousPage,
+                            pageSize: DEFAULT_PAGE_SIZE,
+                        }}
+                    />
                 </div>
             </section>
         </div>

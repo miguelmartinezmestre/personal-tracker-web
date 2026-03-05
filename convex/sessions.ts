@@ -8,17 +8,18 @@ export const getSessionsByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
-    handler: async ctx => {
+    handler: async (ctx, args) => {
         const currentSession = await getSession(ctx);
 
-        const sessions = await ctx.db
+        const paginatedSessions = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', currentSession?.userId as string))
-            .collect();
+            .order('desc')
+            .paginate(args.paginationOpts);
 
         return {
             currentSession,
-            sessions,
+            ...paginatedSessions,
         };
     },
 });

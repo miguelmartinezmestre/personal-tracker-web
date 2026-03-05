@@ -5,6 +5,9 @@ import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import SessionsTable from './sessions-table';
 import { Preloaded } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { FunctionReturnType } from 'convex/server';
+
+type SessionsResult = FunctionReturnType<typeof api.sessions.getSessionsByUser>;
 
 export default function SessionsLayout({
     preloadedSessionsQuery,
@@ -23,10 +26,10 @@ export default function SessionsLayout({
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
             <SessionsTable
-                sessions={{
-                    currentSession: sessions?.currentSession ?? undefined,
-                    sessions: sessions?.sessions,
-                }}
+                initialSessions={(sessions as SessionsResult) ?? undefined}
+                currentSessionToken={
+                    (sessions as SessionsResult | undefined)?.currentSession?.token
+                }
             />
         </div>
     );

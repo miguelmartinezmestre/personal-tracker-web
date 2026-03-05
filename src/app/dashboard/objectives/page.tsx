@@ -30,10 +30,10 @@ export default async function ObjectivesPage() {
             await Promise.all([
                 getTranslations('Objectives'),
                 preloadAuthQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: { numItems: 1000, cursor: null },
+                    paginationOpts: { numItems: 20, cursor: null },
                 }),
                 preloadAuthQuery(api.objectives.getOrganizationObjectives, {
-                    paginationOpts: { numItems: 1000, cursor: null },
+                    paginationOpts: { numItems: 20, cursor: null },
                 }),
             ]);
     } catch (error) {

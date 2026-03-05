@@ -69,12 +69,14 @@ export default function CreateObjectiveFormModal() {
     });
 
     const categoriesQuery = useQuery({
-        ...convexQuery(api.categories.getCategoriesByUser, {}),
+        ...convexQuery(api.categories.getCategoriesByUser, {
+            paginationOpts: { numItems: 100, cursor: null },
+        }),
     });
 
     const categoryOptions = useMemo(
         () =>
-            (categoriesQuery.data ?? []).map((category: Doc<'categories'>) => ({
+            (categoriesQuery.data?.page ?? []).map((category: Doc<'categories'>) => ({
                 id: category._id,
                 label: category.name,
             })),

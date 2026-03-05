@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/features/table/components/table';
@@ -11,6 +11,9 @@ import { useConfirmRevokeAllSessions } from './user-sessions-table-actions';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
+import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export function UserSessions() {
     const t = useTranslations('Admin');
@@ -19,12 +22,37 @@ export function UserSessions() {
     const [userId, setUserId] = useState('');
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
 
+    const {
+        currentPage,
+        isDone,
+        getPaginationOpts,
+        updateCursor,
+        goToPage,
+        hasNextPage,
+        hasPreviousPage,
+        reset,
+    } = useServerPagination(DEFAULT_PAGE_SIZE);
+
+    const paginationOpts = getPaginationOpts(currentPage);
+
     const { data: sessions, isLoading } = useQuery(
-        convexQuery(api.admin.listUserSessions, {
-            userId,
-            paginationOpts: { numItems: 10, cursor: null },
-        })
+        convexQuery(
+            api.admin.listUserSessions,
+            userId ? { userId, paginationOpts } : 'skip'
+        )
     );
+
+    const hasData = sessions !== undefined;
+    const continueCursor = sessions?.continueCursor ?? null;
+    const pageIsDone = sessions?.isDone ?? false;
+
+    useEffect(() => {
+        if (!hasData) return;
+        updateCursor(currentPage, continueCursor, pageIsDone);
+    }, [currentPage, hasData, continueCursor, pageIsDone, updateCursor]);
+
+    const data = sessions?.page ?? [];
+    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="space-y-4">
@@ -33,7 +61,10 @@ export function UserSessions() {
                     type="text"
                     placeholder={tCommon('placeholders.userIdForSessions')}
                     value={userId}
-                    onChange={e => setUserId(e.target.value)}
+                    onChange={e => {
+                        reset();
+                        setUserId(e.target.value);
+                    }}
                     className="flex-1"
                     data-testid="user-sessions-userid-input"
                 />
@@ -51,8 +82,20 @@ export function UserSessions() {
             </div>
             {userId ? (
                 <>
-                    <DataTable columns={columns} data={sessions ?? []} isLoading={isLoading} />
-                    {sessions?.length === 0 && !isLoading && (
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={isLoading}
+                        pagination={{
+                            currentPage,
+                            totalPages,
+                            onPageChange: goToPage,
+                            hasNextPage,
+                            hasPreviousPage,
+                            pageSize: DEFAULT_PAGE_SIZE,
+                        }}
+                    />
+                    {data.length === 0 && !isLoading && (
                         <p className="text-center text-muted-foreground py-8">
                             {t('userSessions.emptyWithUser')}
                         </p>

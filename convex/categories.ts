@@ -1,13 +1,35 @@
 import { v } from 'convex/values';
+import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './rls';
 
 export const getCategoriesByUser = queryWithRLS({
-    args: {},
-    handler: async ctx => {
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    handler: async (ctx, args) => {
         return await ctx.db
             .query('categories')
             .withIndex('by_user', q => q.eq('userId', ctx.userId))
+            .order('desc')
+            .paginate(args.paginationOpts);
+    },
+});
+
+export const getCategoryNamesForFilters = queryWithRLS({
+    args: {},
+    handler: async ctx => {
+        const categories = await ctx.db
+            .query('categories')
+            .withIndex('by_user', q => q.eq('userId', ctx.userId))
             .collect();
+
+        return Array.from(
+            new Set(
+                categories
+                    .map(category => category.name.trim())
+                    .filter((name): name is string => name.length > 0)
+            )
+        ).sort((a, b) => a.localeCompare(b));
     },
 });
 

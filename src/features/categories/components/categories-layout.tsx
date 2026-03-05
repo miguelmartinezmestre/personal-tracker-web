@@ -4,8 +4,11 @@ import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { api } from '@/convex/_generated/api';
+import { FunctionReturnType } from 'convex/server';
 import CreateCategoryFormModal from './category-form-create-modal';
 import CategoriesTable from './categories-table';
+
+type CategoriesResult = FunctionReturnType<typeof api.categories.getCategoriesByUser>;
 
 interface CategoriesLayoutProps {
     preloadedCategoriesQuery: Preloaded<typeof api.categories.getCategoriesByUser>;
@@ -23,7 +26,7 @@ export default function CategoriesLayout({ preloadedCategoriesQuery }: Categorie
                     <CreateCategoryFormModal />
                 </div>
             </div>
-            <CategoriesTable initialCategories={categories ?? undefined} />
+            <CategoriesTable initialCategories={(categories as CategoriesResult) ?? undefined} />
         </div>
     );
 }

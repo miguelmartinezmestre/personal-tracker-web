@@ -34,7 +34,7 @@ import {
 import { savedCategorySchema, Category } from '@/features/categories/schemas/category';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { categoryIconSchema } from '@/features/categories/schemas/category';
 
@@ -62,7 +62,7 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
         mutationFn: useConvexMutation(api.categories.updateCategory),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: convexQuery(api.categories.getCategoriesByUser, {}).queryKey,
+                queryKey: [api.categories.getCategoriesByUser],
             });
         },
     });

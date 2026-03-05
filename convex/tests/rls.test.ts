@@ -283,21 +283,21 @@ describe('convex RLS (Row-Level Security)', async () => {
                 color: '#3b82f6',
             });
 
+            const paginationOpts = { numItems: 50, cursor: null };
+
             // User 1 can only see their category
-            const user1Categories = await user1Identity.query(
-                api.categories.getCategoriesByUser,
-                {}
-            );
-            expect(user1Categories).toHaveLength(1);
-            expect(user1Categories[0]?.name).toBe('User 1 Category');
+            const user1Categories = await user1Identity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(user1Categories.page).toHaveLength(1);
+            expect(user1Categories.page[0]?.name).toBe('User 1 Category');
 
             // User 2 can only see their category
-            const user2Categories = await user2Identity.query(
-                api.categories.getCategoriesByUser,
-                {}
-            );
-            expect(user2Categories).toHaveLength(1);
-            expect(user2Categories[0]?.name).toBe('User 2 Category');
+            const user2Categories = await user2Identity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+            expect(user2Categories.page).toHaveLength(1);
+            expect(user2Categories.page[0]?.name).toBe('User 2 Category');
         });
 
         test('user cannot modify another user categories', async () => {
@@ -314,11 +314,10 @@ describe('convex RLS (Row-Level Security)', async () => {
                     name: 'Hacked Name',
                 });
                 // If no error, verify the name wasn't changed
-                const categories = await user1Identity.query(
-                    api.categories.getCategoriesByUser,
-                    {}
-                );
-                expect(categories[0]?.name).toBe('User 1 Category');
+                const categories = await user1Identity.query(api.categories.getCategoriesByUser, {
+                    paginationOpts: { numItems: 50, cursor: null },
+                });
+                expect(categories.page[0]?.name).toBe('User 1 Category');
             } catch (error) {
                 // RLS blocked the operation - expected behavior
                 expect(error).toBeDefined();
@@ -514,9 +513,11 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('unauthenticated user cannot access categories', async () => {
-            await expect(t.query(api.categories.getCategoriesByUser, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
-            );
+            await expect(
+                t.query(api.categories.getCategoriesByUser, {
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
         });
 
         test('unauthenticated user cannot access notifications', async () => {

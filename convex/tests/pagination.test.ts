@@ -142,4 +142,93 @@ describe('convex pagination', () => {
         expect(page2.page.length).toBe(5);
         expect(page1.continueCursor).not.toBeNull();
     });
+
+    test('getCategoriesByUser paginates', async () => {
+        for (let i = 0; i < 15; i++) {
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: `Category ${i}`,
+                color: '#10b981',
+            });
+        }
+
+        const page1 = await userIdentity.query(api.categories.getCategoriesByUser, {
+            paginationOpts: { numItems: 5, cursor: null },
+        });
+        const page2 = await userIdentity.query(api.categories.getCategoriesByUser, {
+            paginationOpts: { numItems: 5, cursor: page1.continueCursor },
+        });
+
+        expect(page1.page.length).toBe(5);
+        expect(page2.page.length).toBe(5);
+        expect(page1.continueCursor).not.toBeNull();
+        expect(page1.isDone).toBe(false);
+    });
+
+    test('getAuditLogs paginates', async () => {
+        await userIdentity.run(async ctx => {
+            const now = Date.now();
+            for (let i = 0; i < 15; i++) {
+                await ctx.db.insert('auditLogs', {
+                    userId,
+                    organizationId: _organizationId,
+                    action: 'objective.created',
+                    resourceType: 'objective',
+                    resourceId: `obj-${i}`,
+                    severity: 'info',
+                    createdAt: now - i * 1000,
+                });
+            }
+        });
+
+        const page1 = await userIdentity.query(api.auditLogs.getAuditLogs, {
+            paginationOpts: { numItems: 5, cursor: null },
+        });
+        const page2 = await userIdentity.query(api.auditLogs.getAuditLogs, {
+            paginationOpts: { numItems: 5, cursor: page1.continueCursor },
+        });
+
+        expect(page1.page.length).toBe(5);
+        expect(page2.page.length).toBe(5);
+        expect(page1.continueCursor).not.toBeNull();
+        expect(page1.isDone).toBe(false);
+    });
+
+    test('getObjectivesByUser with status filter', async () => {
+        // Create mix of active and completed objectives
+        for (let i = 0; i < 5; i++) {
+            await createTestObjective(t, {
+                userId,
+                organizationId: _organizationId,
+                title: `Active ${i}`,
+                targetValue: 100,
+                currentValue: 10,
+                status: 'active',
+            });
+        }
+        for (let i = 0; i < 3; i++) {
+            await createTestObjective(t, {
+                userId,
+                organizationId: _organizationId,
+                title: `Completed ${i}`,
+                targetValue: 100,
+                currentValue: 100,
+                status: 'completed',
+            });
+        }
+
+        const activeResult = await userIdentity.query(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 50, cursor: null },
+            status: 'active',
+        });
+
+        const completedResult = await userIdentity.query(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 50, cursor: null },
+            status: 'completed',
+        });
+
+        expect(activeResult.page.every(o => o.status === 'active')).toBe(true);
+        expect(completedResult.page.every(o => o.status === 'completed')).toBe(true);
+        expect(activeResult.page.length).toBe(5);
+        expect(completedResult.page.length).toBe(3);
+    });
 });

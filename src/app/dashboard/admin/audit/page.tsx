@@ -9,7 +9,9 @@ export default async function AdminAuditPage() {
         redirect('/dashboard/home');
     }
 
-    const preloadedAuditLogsQuery = await preloadAuthQuery(api.auditLogs.getAuditLogs, {});
+    const preloadedAuditLogsQuery = await preloadAuthQuery(api.auditLogs.getAuditLogs, {
+        paginationOpts: { numItems: 20, cursor: null },
+    });
 
     return <AdminAuditLayout preloadedAuditLogsQuery={preloadedAuditLogsQuery} />;
 }
