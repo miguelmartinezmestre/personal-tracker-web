@@ -34,7 +34,10 @@ const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
 const buildDefaultOrganizationSlug = (userId: string) => {
-    const normalizedSuffix = userId.toLowerCase().replace(/[^a-z0-9]/g, '').slice(-12);
+    const normalizedSuffix = userId
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .slice(-12);
     return `${DEFAULT_ORGANIZATION_SLUG_BASE}-${normalizedSuffix || Date.now().toString(36)}`;
 };
 
@@ -83,93 +86,90 @@ export const authClient = createClient<DataModel, typeof schema>({
 
 // Auth options factory
 const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
-        baseURL: process.env.SITE_URL!,
-        user: {
-            deleteUser: {
-                enabled: true,
-            },
-        },
-        emailAndPassword: {
+    baseURL: process.env.SITE_URL!,
+    user: {
+        deleteUser: {
             enabled: true,
-            sendResetPassword: async ({ user, url, token }, _request) => {
-                console.log(
-                    `Sending reset password email to ${user.email} with url ${url} and token ${token}`
-                );
-                await (ctx as MutationCtx).runMutation(internal.email.sendTestEmail, {
-                    to: user.email,
-                    subject: 'Reset your password',
-                    text: `Click the link to reset your password: ${url}`,
-                });
-            },
-            onPasswordReset: async ({ user }, _request) => {
-                console.log(`Password for user ${user.email} has been reset.`);
-            },
-            revokeSessionsOnPasswordReset: true,
         },
-        databaseHooks: {
-            session: {
-                create: {
-                    before: async session => {
-                        if (!('runMutation' in ctx)) {
-                            return;
-                        }
-
-                        const activeOrganizationId: Id<'organization'> = await (
-                            ctx as RunnableCtx
-                        ).runMutation(
-                            internal.auth.ensureDefaultOrganizationForUser,
-                            {
-                                userId: session.userId as Id<'user'>,
-                            }
-                        );
-
-                        return {
-                            data: {
-                                ...session,
-                                activeOrganizationId: activeOrganizationId as string,
-                            },
-                        };
-                    },
-                },
-            },
+    },
+    emailAndPassword: {
+        enabled: true,
+        sendResetPassword: async ({ user, url, token }, _request) => {
+            console.log(
+                `Sending reset password email to ${user.email} with url ${url} and token ${token}`
+            );
+            await (ctx as MutationCtx).runMutation(internal.email.sendTestEmail, {
+                to: user.email,
+                subject: 'Reset your password',
+                text: `Click the link to reset your password: ${url}`,
+            });
         },
-        hooks: {
-            before: createAuthMiddleware(async ctx => {
-                if (ctx.path !== '/sign-up/email') {
-                    return;
-                }
+        onPasswordReset: async ({ user }, _request) => {
+            console.log(`Password for user ${user.email} has been reset.`);
+        },
+        revokeSessionsOnPasswordReset: true,
+    },
+    databaseHooks: {
+        session: {
+            create: {
+                before: async session => {
+                    if (!('runMutation' in ctx)) {
+                        return;
+                    }
 
-                const password =
-                    (ctx.body as { password?: unknown } | undefined)?.password ?? undefined;
-
-                if (typeof password !== 'string' || password.length < 8) {
-                    return;
-                }
-
-                if (!STRONG_PASSWORD_REGEX.test(password)) {
-                    throw new APIError('BAD_REQUEST', {
-                        message: STRONG_PASSWORD_MESSAGE,
+                    const activeOrganizationId: Id<'organization'> = await (
+                        ctx as RunnableCtx
+                    ).runMutation(internal.auth.ensureDefaultOrganizationForUser, {
+                        userId: session.userId as Id<'user'>,
                     });
-                }
-            }),
-        },
-        plugins: [
-            convex({
-                authConfig,
-                jwks: process.env.JWKS,
-            }),
-            admin(),
-            organization({
-                invitationExpiresIn: 60 * 60 * 24 * 2,
-                defaultRole: 'member',
-                sendInvitationEmail: async data => {
-                    const inviteLink = `${siteUrl}/invitations/${data.id}`;
-                    console.log('[auth:sendInvitationEmail] Invite link:', inviteLink);
+
+                    return {
+                        data: {
+                            ...session,
+                            activeOrganizationId: activeOrganizationId as string,
+                        },
+                    };
                 },
-            }),
-        ],
-        database: authClient.httpAdapter(ctx),
-    });
+            },
+        },
+    },
+    hooks: {
+        before: createAuthMiddleware(async ctx => {
+            if (ctx.path !== '/sign-up/email') {
+                return;
+            }
+
+            const password =
+                (ctx.body as { password?: unknown } | undefined)?.password ?? undefined;
+
+            if (typeof password !== 'string' || password.length < 8) {
+                return;
+            }
+
+            if (!STRONG_PASSWORD_REGEX.test(password)) {
+                throw new APIError('BAD_REQUEST', {
+                    message: STRONG_PASSWORD_MESSAGE,
+                });
+            }
+        }),
+    },
+    plugins: [
+        convex({
+            authConfig,
+            jwks: process.env.JWKS,
+        }),
+        admin(),
+        organization({
+            invitationExpiresIn: 60 * 60 * 24 * 2,
+            defaultRole: 'member',
+            sendInvitationEmail: async data => {
+                const inviteLink = `${siteUrl}/invitations/${data.id}`;
+                console.log('[auth:sendInvitationEmail] Invite link:', inviteLink);
+            },
+        }),
+    ],
+    database: authClient.httpAdapter(ctx),
+});
 // For queries/mutations: direct DB access
 export const getAuth = <Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) =>
     betterAuth({

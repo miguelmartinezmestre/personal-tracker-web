@@ -257,8 +257,8 @@ export const queryWithRLS = customQuery(
             const auth = getAuth(ctx);
             const session = await auth.api.getSession({ headers });
             organizationId =
-                (((session?.session as { activeOrganizationId?: string | null } | undefined)
-                    ?.activeOrganizationId as string | null | undefined) as
+                ((session?.session as { activeOrganizationId?: string | null } | undefined)
+                    ?.activeOrganizationId as string | null | undefined as
                     | Id<'organization'>
                     | null
                     | undefined) ?? null;
@@ -313,8 +313,8 @@ export const mutationWithRLS = customMutation(
             const auth = getAuth(ctx);
             const session = await auth.api.getSession({ headers });
             organizationId =
-                (((session?.session as { activeOrganizationId?: string | null } | undefined)
-                    ?.activeOrganizationId as string | null | undefined) as
+                ((session?.session as { activeOrganizationId?: string | null } | undefined)
+                    ?.activeOrganizationId as string | null | undefined as
                     | Id<'organization'>
                     | null
                     | undefined) ?? null;

@@ -1,9 +1,9 @@
 import { GenericMutationCtx, GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 export interface TestUserData {
-    docId: string;
+    docId: Id<'user'>;
     userId: string;
     email: string;
     name: string;
@@ -74,7 +74,7 @@ export async function createTestOrganization(
         slug: string;
         description?: string | null;
     }
-): Promise<string> {
+): Promise<Id<'organization'>> {
     const now = Date.now();
     return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         return await ctx.db.insert('organization', {
@@ -90,11 +90,11 @@ export async function createTestOrganization(
 export async function createTestMember(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
-        organizationId: string;
-        userId: string;
+        organizationId: Id<'organization'>;
+        userId: Id<'user'>;
         role: string;
     }
-): Promise<string> {
+): Promise<Id<'member'>> {
     const now = Date.now();
     return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         return await ctx.db.insert('member', {
@@ -109,8 +109,8 @@ export async function createTestMember(
 export async function createTestObjective(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
-        userId: string;
-        organizationId: string;
+        userId: Id<'user'>;
+        organizationId: Id<'organization'>;
         title: string;
         targetValue: number;
         currentValue?: number;
@@ -122,7 +122,7 @@ export async function createTestObjective(
         deadline?: number;
         unit?: string;
     }
-): Promise<string> {
+): Promise<Id<'objectives'>> {
     const now = Date.now();
     const startValue = options.startValue ?? options.currentValue ?? 0;
     return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
@@ -148,13 +148,13 @@ export async function createTestObjective(
 export async function createTestSession(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     options: {
-        userId: string;
+        userId: Id<'user'>;
         token: string;
         expiresAt: number;
         ipAddress?: string | null;
         userAgent?: string | null;
     }
-): Promise<string> {
+): Promise<Id<'session'>> {
     const now = Date.now();
     return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
         return await ctx.db.insert('session', {
