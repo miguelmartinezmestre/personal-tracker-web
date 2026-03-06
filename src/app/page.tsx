@@ -4,8 +4,12 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Target, LineChart, CheckCircle, Users, Calendar, Lightbulb } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
+import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
 
 export default async function RouteComponent() {
+    if (!(await checkPlatformSetUp())) redirect('/setup' as never);
+
     const t = await getTranslations('HomePage');
 
     return (

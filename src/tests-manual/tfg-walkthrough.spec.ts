@@ -845,16 +845,16 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         // ============================================================
         console.log('\n🔧 SECTION 14: Admin Panel\n');
 
-        // Promote the test user to admin so we can access the admin panel
-        // Note: This requires ALLOW_PROMOTE_DEV=true in the backend env
+        // Setup platform as admin so we can access the admin panel
+        // Note: This requires ALLOW_SETUP_TEST=true in the backend env
         let adminPromoted = false;
         try {
-            console.log('Promoting user to admin...');
+            console.log('Setting up platform as admin...');
             await promoteToAdmin(page);
-            console.log('User promoted to admin');
+            console.log('Platform setup complete, user is admin');
             adminPromoted = true;
         } catch (error) {
-            console.log('⚠️ Could not promote user to admin (ALLOW_PROMOTE_DEV may not be set)');
+            console.log('⚠️ Could not set up platform as admin (ALLOW_SETUP_TEST may not be set)');
             console.log('⚠️ Skipping admin panel screenshots');
         }
 

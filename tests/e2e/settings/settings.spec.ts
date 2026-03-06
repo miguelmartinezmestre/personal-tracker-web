@@ -2,179 +2,208 @@ import { test, expect } from '../../fixtures/test-base';
 import { SettingsPage } from '../../pages/settings.page';
 
 test.describe('Settings', () => {
-    test('navigating to settings shows all three tabs', async ({ authenticatedPage }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'navigating to settings shows all three tabs',
+        { tag: ['@REQ-AUTENTICACION-004'] },
+        async ({ authenticatedPage }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await expect(settings.settingsPage).toBeVisible({ timeout: 15000 });
-        await expect(settings.tabAccount).toBeVisible();
-        await expect(settings.tabPassword).toBeVisible();
-        await expect(settings.tabDanger).toBeVisible();
-    });
+            await expect(settings.settingsPage).toBeVisible({ timeout: 15000 });
+            await expect(settings.tabAccount).toBeVisible();
+            await expect(settings.tabPassword).toBeVisible();
+            await expect(settings.tabDanger).toBeVisible();
+        }
+    );
 
-    test('account tab: edit username and save', async ({ authenticatedPage }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'account tab: edit username and save',
+        { tag: ['@REQ-AUTENTICACION-004'] },
+        async ({ authenticatedPage }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToAccount();
-        await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
+            await settings.switchToAccount();
+            await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
-        const newName = `Updated User ${Date.now()}`;
-        await settings.usernameInput.clear();
-        await settings.usernameInput.fill(newName);
-        await settings.accountSaveButton.click();
+            const newName = `Updated User ${Date.now()}`;
+            await settings.usernameInput.clear();
+            await settings.usernameInput.fill(newName);
+            await settings.accountSaveButton.click();
 
-        // Should show success message
-        await expect(settings.accountSuccessMessage).toBeVisible({ timeout: 10000 });
-    });
+            // Should show success message
+            await expect(settings.accountSuccessMessage).toBeVisible({ timeout: 10000 });
+        }
+    );
 
-    test('account tab: edit email shows verification message', async ({ authenticatedPage }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'account tab: edit email shows verification message',
+        { tag: ['@REQ-AUTENTICACION-004'] },
+        async ({ authenticatedPage }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToAccount();
-        await expect(settings.emailInput).toBeVisible({ timeout: 10000 });
+            await settings.switchToAccount();
+            await expect(settings.emailInput).toBeVisible({ timeout: 10000 });
 
-        const newEmail = `newemail-${Date.now()}@test.com`;
-        await settings.emailInput.clear();
-        await settings.emailInput.fill(newEmail);
-        await settings.accountSaveButton.click();
+            const newEmail = `newemail-${Date.now()}@test.com`;
+            await settings.emailInput.clear();
+            await settings.emailInput.fill(newEmail);
+            await settings.accountSaveButton.click();
 
-        // Should show either success/verification message or error
-        // Use Playwright's async assertion with proper timeout
-        const successOrError = authenticatedPage.locator(
-            '[data-testid="account-success-message"], [data-testid="account-error-message"]'
-        );
-        await expect(successOrError.first()).toBeVisible({ timeout: 15000 });
-    });
+            // Should show either success/verification message or error
+            // Use Playwright's async assertion with proper timeout
+            const successOrError = authenticatedPage.locator(
+                '[data-testid="account-success-message"], [data-testid="account-error-message"]'
+            );
+            await expect(successOrError.first()).toBeVisible({ timeout: 15000 });
+        }
+    );
 
-    test('account tab: cancel does not save changes', async ({ authenticatedPage }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'account tab: cancel does not save changes',
+        { tag: ['@REQ-AUTENTICACION-004'] },
+        async ({ authenticatedPage }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToAccount();
-        await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
+            await settings.switchToAccount();
+            await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
-        // Get original value
-        const originalValue = await settings.usernameInput.inputValue();
+            // Get original value
+            const originalValue = await settings.usernameInput.inputValue();
 
-        // Type something different
-        await settings.usernameInput.clear();
-        await settings.usernameInput.fill('ShouldNotSave');
-        await settings.accountCancelButton.click();
+            // Type something different
+            await settings.usernameInput.clear();
+            await settings.usernameInput.fill('ShouldNotSave');
+            await settings.accountCancelButton.click();
 
-        // Reload page and check value is unchanged
-        await settings.goto();
-        await settings.switchToAccount();
-        await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
+            // Reload page and check value is unchanged
+            await settings.goto();
+            await settings.switchToAccount();
+            await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
-        const currentValue = await settings.usernameInput.inputValue();
-        expect(currentValue).not.toBe('ShouldNotSave');
-        // Original value might have been restored or page re-loaded with server value
-        expect(currentValue).toBe(originalValue);
-    });
+            const currentValue = await settings.usernameInput.inputValue();
+            expect(currentValue).not.toBe('ShouldNotSave');
+            // Original value might have been restored or page re-loaded with server value
+            expect(currentValue).toBe(originalValue);
+        }
+    );
 
-    test('password tab: change password successfully', async ({ authenticatedPage, testUser }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'password tab: change password successfully',
+        { tag: ['@REQ-AUTENTICACION-005'] },
+        async ({ authenticatedPage, testUser }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToPassword();
-        await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
+            await settings.switchToPassword();
+            await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-        const newPassword = 'newpassword123';
-        await settings.fillPasswordForm(testUser.password, testUser.password, newPassword);
-        await settings.passwordSaveButton.click();
+            const newPassword = 'newpassword123';
+            await settings.fillPasswordForm(testUser.password, testUser.password, newPassword);
+            await settings.passwordSaveButton.click();
 
-        // Should show success message or toast
-        await expect(settings.passwordSuccessMessage).toBeVisible({ timeout: 10000 });
-    });
+            // Should show success message or toast
+            await expect(settings.passwordSuccessMessage).toBeVisible({ timeout: 10000 });
+        }
+    );
 
-    test('password tab: wrong current password shows error', async ({ authenticatedPage }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'password tab: wrong current password shows error',
+        { tag: ['@REQ-AUTENTICACION-005'] },
+        async ({ authenticatedPage }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToPassword();
-        await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
+            await settings.switchToPassword();
+            await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-        await settings.fillPasswordForm('wrongpassword', 'wrongpassword', 'newpassword123');
-        await settings.passwordSaveButton.click();
+            await settings.fillPasswordForm('wrongpassword', 'wrongpassword', 'newpassword123');
+            await settings.passwordSaveButton.click();
 
-        // Should show error
-        await expect(settings.passwordErrorMessage).toBeVisible({ timeout: 10000 });
-    });
+            // Should show error
+            await expect(settings.passwordErrorMessage).toBeVisible({ timeout: 10000 });
+        }
+    );
 
-    test('password tab: passwords do not match shows validation error', async ({
-        authenticatedPage,
-        testUser,
-    }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'password tab: passwords do not match shows validation error',
+        { tag: ['@REQ-AUTENTICACION-005'] },
+        async ({ authenticatedPage, testUser }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToPassword();
-        await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
+            await settings.switchToPassword();
+            await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-        // Fill current password correctly but make confirm differ from current
-        // Zod superRefine validates password === confirmPassword at form level
-        // This produces a FormMessage error, not the onSubmit error paragraph
-        await settings.currentPasswordInput.fill(testUser.password);
-        await settings.confirmPasswordInput.fill('doesnotmatch');
-        await settings.newPasswordInput.fill('newpassword123');
-        await settings.passwordSaveButton.click();
+            // Fill current password correctly but make confirm differ from current
+            // Zod superRefine validates password === confirmPassword at form level
+            // This produces a FormMessage error, not the onSubmit error paragraph
+            await settings.currentPasswordInput.fill(testUser.password);
+            await settings.confirmPasswordInput.fill('doesnotmatch');
+            await settings.newPasswordInput.fill('newpassword123');
+            await settings.passwordSaveButton.click();
 
-        // Zod superRefine validates password === confirmPassword at form level,
-        // so the error appears via FormMessage (data-slot="form-message") not the onSubmit error
-        const formError = authenticatedPage.locator(
-            '[data-testid="password-error-message"], [data-slot="form-message"]'
-        );
-        await expect(formError.first()).toBeVisible({ timeout: 10000 });
-    });
+            // Zod superRefine validates password === confirmPassword at form level,
+            // so the error appears via FormMessage (data-slot="form-message") not the onSubmit error
+            const formError = authenticatedPage.locator(
+                '[data-testid="password-error-message"], [data-slot="form-message"]'
+            );
+            await expect(formError.first()).toBeVisible({ timeout: 10000 });
+        }
+    );
 
-    test('danger zone: delete button disabled until email confirmed', async ({
-        authenticatedPage,
-    }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'danger zone: delete button disabled until email confirmed',
+        { tag: ['@REQ-AUTENTICACION-008'] },
+        async ({ authenticatedPage }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToDanger();
-        await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
+            await settings.switchToDanger();
+            await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-        // Button should be disabled by default
-        await expect(settings.deleteAccountButton).toBeDisabled();
-    });
+            // Button should be disabled by default
+            await expect(settings.deleteAccountButton).toBeDisabled();
+        }
+    );
 
-    test('danger zone: delete button enabled after email and password filled', async ({
-        authenticatedPage,
-        testUser,
-    }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'danger zone: delete button enabled after email and password filled',
+        { tag: ['@REQ-AUTENTICACION-008'] },
+        async ({ authenticatedPage, testUser }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToDanger();
-        await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
+            await settings.switchToDanger();
+            await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-        // Fill email confirmation and password
-        await settings.fillDeleteAccountForm(testUser.email, testUser.password);
+            // Fill email confirmation and password
+            await settings.fillDeleteAccountForm(testUser.email, testUser.password);
 
-        // Button should now be enabled
-        await expect(settings.deleteAccountButton).toBeEnabled();
-    });
+            // Button should now be enabled
+            await expect(settings.deleteAccountButton).toBeEnabled();
+        }
+    );
 
-    test('danger zone: delete account redirects to landing', async ({
-        authenticatedPage,
-        testUser,
-    }) => {
-        const settings = new SettingsPage(authenticatedPage);
-        await settings.goto();
+    test(
+        'danger zone: delete account redirects to landing',
+        { tag: ['@REQ-AUTENTICACION-008'] },
+        async ({ authenticatedPage, testUser }) => {
+            const settings = new SettingsPage(authenticatedPage);
+            await settings.goto();
 
-        await settings.switchToDanger();
-        await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
+            await settings.switchToDanger();
+            await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-        await settings.fillDeleteAccountForm(testUser.email, testUser.password);
-        await settings.deleteAccountButton.click();
+            await settings.fillDeleteAccountForm(testUser.email, testUser.password);
+            await settings.deleteAccountButton.click();
 
-        // Should show success and redirect to landing
-        await expect(settings.deleteAccountSuccess).toBeVisible({ timeout: 15000 });
-        // Use regex without ^ anchor since waitForURL matches against full URL
-        await authenticatedPage.waitForURL(/\/$|\/login/, { timeout: 15000 });
-    });
+            // Should show success and redirect to landing
+            await expect(settings.deleteAccountSuccess).toBeVisible({ timeout: 15000 });
+            // Use regex without ^ anchor since waitForURL matches against full URL
+            await authenticatedPage.waitForURL(/\/$|\/login/, { timeout: 15000 });
+        }
+    );
 });

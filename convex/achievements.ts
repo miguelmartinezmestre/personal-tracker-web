@@ -1,8 +1,9 @@
 import { v } from 'convex/values';
+import type { GenericMutationCtx } from 'convex/server';
 import { internalMutation } from './_generated/server';
+import type { DataModel, Id } from './_generated/dataModel';
 import {
     calculateUserStreak,
-    calculateUserStreakInternal,
     calculateOrganizationStreak,
 } from './achievements_utils/calculations';
 import { queryWithRLS, mutationWithRLS } from './rls';
@@ -57,7 +58,7 @@ export const getUserAchievements = queryWithRLS({
 
 export const getOrganizationAchievements = queryWithRLS({
     args: {
-        organizationId: v.string(),
+        organizationId: v.id('organization'),
     },
     handler: async (ctx, args) => {
         const organizationAchievements = await ctx.db
@@ -273,23 +274,55 @@ export const seedAchievementDefinitions = mutationWithRLS({
     },
 });
 
+// --- Shared helper for evaluating and awarding achievements ---
+
+type MutationCtx = GenericMutationCtx<DataModel>;
+
+type EvaluateAndAwardParams = {
+    ctx: MutationCtx;
+    scopeType: 'individual' | 'organization';
+    /** Evaluate whether the given achievement code should be awarded. */
+    evaluate: (code: string) => Promise<boolean> | boolean;
+    /** Insert the earned record and create notifications. Called only after dedup check passes. */
+    award: (defId: Id<'achievementDefinitions'>, code: string, points: number) => Promise<void>;
+};
+
+async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
+    const { ctx, scopeType, evaluate, award } = params;
+
+    const definitions = await ctx.db
+        .query('achievementDefinitions')
+        .withIndex('by_type', q => q.eq('type', scopeType))
+        .collect();
+
+    const activeDefinitions = definitions.filter(d => d.isActive);
+
+    const newAchievements: string[] = [];
+
+    for (const def of activeDefinitions) {
+        const shouldAward = await evaluate(def.code);
+        if (shouldAward) {
+            await award(def._id, def.code, def.points);
+            newAchievements.push(def.code);
+        }
+    }
+
+    return { awarded: newAchievements };
+}
+
 // Internal mutation to check and award achievements (called from other mutations)
 export const checkUserAchievements = internalMutation({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
         trigger: v.string(), // 'objective_created' | 'objective_completed' | 'progress_update'
     },
     handler: async (ctx, args) => {
-        const { userId, trigger } = args;
+        const { userId, organizationId, trigger } = args;
         const now = Date.now();
-
-        // Get all individual achievement definitions
-        const definitions = await ctx.db
-            .query('achievementDefinitions')
-            .withIndex('by_type', q => q.eq('type', 'individual'))
-            .collect();
-
-        const activeDefinitions = definitions.filter(d => d.isActive);
+        if (!organizationId) {
+            throw new Error('No active organization selected');
+        }
 
         // Get user's already earned achievements
         const earnedAchievements = await ctx.db
@@ -325,84 +358,73 @@ export const checkUserAchievements = internalMutation({
             })
         ).then(results => results.flat());
 
-        const streak = await calculateUserStreakInternal(ctx, userId);
+        const streak = await calculateUserStreak(ctx, userId);
 
-        const newAchievements: string[] = [];
+        return evaluateAndAwardAchievements({
+            ctx,
+            scopeType: 'individual',
+            evaluate(code) {
+                if (earnedCodes.has(code)) return false;
 
-        for (const def of activeDefinitions) {
-            if (earnedCodes.has(def.code)) continue;
-
-            let shouldAward = false;
-
-            switch (def.code) {
-                case 'first_objective':
-                    shouldAward = trigger === 'objective_created' && objectives.length >= 1;
-                    break;
-                case 'objectives_created_5':
-                    shouldAward = trigger === 'objective_created' && objectives.length >= 5;
-                    break;
-                case 'objectives_created_15':
-                    shouldAward = trigger === 'objective_created' && objectives.length >= 15;
-                    break;
-                case 'objectives_created_30':
-                    shouldAward = trigger === 'objective_created' && objectives.length >= 30;
-                    break;
-                case 'objectives_completed_3':
-                    shouldAward =
-                        trigger === 'objective_completed' && completedObjectives.length >= 3;
-                    break;
-                case 'objectives_completed_10':
-                    shouldAward =
-                        trigger === 'objective_completed' && completedObjectives.length >= 10;
-                    break;
-                case 'objectives_completed_25':
-                    shouldAward =
-                        trigger === 'objective_completed' && completedObjectives.length >= 25;
-                    break;
-                case 'streak_3':
-                    shouldAward = trigger === 'progress_update' && streak >= 3;
-                    break;
-                case 'streak_7':
-                    shouldAward = trigger === 'progress_update' && streak >= 7;
-                    break;
-                case 'streak_14':
-                    shouldAward = trigger === 'progress_update' && streak >= 14;
-                    break;
-                case 'progress_updates_10':
-                    shouldAward = trigger === 'progress_update' && userUpdates.length >= 10;
-                    break;
-                case 'progress_updates_50':
-                    shouldAward = trigger === 'progress_update' && userUpdates.length >= 50;
-                    break;
-                case 'progress_updates_100':
-                    shouldAward = trigger === 'progress_update' && userUpdates.length >= 100;
-                    break;
-                case 'early_bird':
-                    if (trigger === 'objective_completed') {
-                        const earlyCompletions = completedObjectives.filter(o => {
-                            if (!o.deadline) return false;
-                            return o.updatedAt <= o.deadline;
-                        });
-                        shouldAward = earlyCompletions.length >= 1;
-                    }
-                    break;
-            }
-
-            if (shouldAward) {
+                switch (code) {
+                    case 'first_objective':
+                        return trigger === 'objective_created' && objectives.length >= 1;
+                    case 'objectives_created_5':
+                        return trigger === 'objective_created' && objectives.length >= 5;
+                    case 'objectives_created_15':
+                        return trigger === 'objective_created' && objectives.length >= 15;
+                    case 'objectives_created_30':
+                        return trigger === 'objective_created' && objectives.length >= 30;
+                    case 'objectives_completed_3':
+                        return trigger === 'objective_completed' && completedObjectives.length >= 3;
+                    case 'objectives_completed_10':
+                        return (
+                            trigger === 'objective_completed' && completedObjectives.length >= 10
+                        );
+                    case 'objectives_completed_25':
+                        return (
+                            trigger === 'objective_completed' && completedObjectives.length >= 25
+                        );
+                    case 'streak_3':
+                        return trigger === 'progress_update' && streak >= 3;
+                    case 'streak_7':
+                        return trigger === 'progress_update' && streak >= 7;
+                    case 'streak_14':
+                        return trigger === 'progress_update' && streak >= 14;
+                    case 'progress_updates_10':
+                        return trigger === 'progress_update' && userUpdates.length >= 10;
+                    case 'progress_updates_50':
+                        return trigger === 'progress_update' && userUpdates.length >= 50;
+                    case 'progress_updates_100':
+                        return trigger === 'progress_update' && userUpdates.length >= 100;
+                    case 'early_bird':
+                        if (trigger === 'objective_completed') {
+                            const earlyCompletions = completedObjectives.filter(o => {
+                                if (!o.deadline) return false;
+                                return o.updatedAt <= o.deadline;
+                            });
+                            return earlyCompletions.length >= 1;
+                        }
+                        return false;
+                    default:
+                        return false;
+                }
+            },
+            async award(defId, code, points) {
                 // Double-check dedup at insert time to prevent race conditions
                 const alreadyAwarded = await ctx.db
                     .query('obtainedAchievements')
                     .withIndex('by_user_achievement', q =>
-                        q.eq('userId', userId).eq('achievement', def._id)
+                        q.eq('userId', userId).eq('achievement', defId)
                     )
                     .first();
 
-                if (alreadyAwarded) continue;
+                if (alreadyAwarded) return;
 
                 // Award the achievement
                 await ctx.db.insert('obtainedAchievements', {
                     userId: userId,
-                    achievement: def._id,
+                    achievement: defId,
                     earnedAt: now,
                     createdAt: now,
                     updatedAt: now,
@@ -411,42 +433,30 @@ export const checkUserAchievements = internalMutation({
                 // Create notification
                 await ctx.db.insert('notifications', {
                     userId: userId,
-                    organizationId: '',
+                    organizationId,
                     objective: undefined,
                     read: false,
                     notificationType: 'achievement',
                     notificationDate: now,
-                    message: `Achievement unlocked: "${def.code}"! You earned ${def.points} points.`,
+                    message: `Achievement unlocked: "${code}"! You earned ${points} points.`,
                     createdAt: now,
                     updatedAt: now,
                 });
-
-                newAchievements.push(def.code);
-            }
-        }
-
-        return { awarded: newAchievements };
+            },
+        });
     },
 });
 
 // Check organization achievements
 export const checkOrganizationAchievements = internalMutation({
     args: {
-        organizationId: v.string(),
-        userId: v.string(),
+        organizationId: v.id('organization'),
+        userId: v.id('user'),
         trigger: v.string(),
     },
     handler: async (ctx, args) => {
         const { organizationId, userId, trigger } = args;
         const now = Date.now();
-
-        // Get organization achievement definitions
-        const definitions = await ctx.db
-            .query('achievementDefinitions')
-            .withIndex('by_type', q => q.eq('type', 'organization'))
-            .collect();
-
-        const activeDefinitions = definitions.filter(d => d.isActive);
 
         // Get organization's already earned achievements
         const earnedAchievements = await ctx.db
@@ -468,7 +478,7 @@ export const checkOrganizationAchievements = internalMutation({
             .withIndex('organizationId', q => q.eq('organizationId', organizationId))
             .collect();
 
-        const memberUserIds = members.map(m => m.userId);
+        const memberUserIds = members.map(m => m.userId as Id<'user'>);
 
         // Get objectives from organization members using indexed queries per user
         const organizationObjectives = await Promise.all(
@@ -485,58 +495,57 @@ export const checkOrganizationAchievements = internalMutation({
             o => o.status === 'completed'
         );
 
-        const newAchievements: string[] = [];
+        return evaluateAndAwardAchievements({
+            ctx,
+            scopeType: 'organization',
+            async evaluate(code) {
+                if (earnedCodes.has(code)) return false;
 
-        for (const def of activeDefinitions) {
-            if (earnedCodes.has(def.code)) continue;
-
-            let shouldAward = false;
-
-            switch (def.code) {
-                case 'organization_first_objective':
-                    shouldAward =
-                        trigger === 'objective_created' && organizationObjectives.length >= 1;
-                    break;
-                case 'organization_completed_5':
-                    shouldAward =
-                        trigger === 'objective_completed' &&
-                        completedOrganizationObjectives.length >= 5;
-                    break;
-                case 'organization_completed_15':
-                    shouldAward =
-                        trigger === 'objective_completed' &&
-                        completedOrganizationObjectives.length >= 15;
-                    break;
-                case 'organization_completed_30':
-                    shouldAward =
-                        trigger === 'objective_completed' &&
-                        completedOrganizationObjectives.length >= 30;
-                    break;
-                case 'organization_streak_7': {
-                    // Check if organization has had activity for 7 consecutive days
-                    const organizationStreak = await calculateOrganizationStreak(
-                        ctx,
-                        memberUserIds
-                    );
-                    shouldAward = trigger === 'progress_update' && organizationStreak >= 7;
-                    break;
+                switch (code) {
+                    case 'organization_first_objective':
+                        return (
+                            trigger === 'objective_created' && organizationObjectives.length >= 1
+                        );
+                    case 'organization_completed_5':
+                        return (
+                            trigger === 'objective_completed' &&
+                            completedOrganizationObjectives.length >= 5
+                        );
+                    case 'organization_completed_15':
+                        return (
+                            trigger === 'objective_completed' &&
+                            completedOrganizationObjectives.length >= 15
+                        );
+                    case 'organization_completed_30':
+                        return (
+                            trigger === 'objective_completed' &&
+                            completedOrganizationObjectives.length >= 30
+                        );
+                    case 'organization_streak_7': {
+                        const organizationStreak = await calculateOrganizationStreak(
+                            ctx,
+                            memberUserIds
+                        );
+                        return trigger === 'progress_update' && organizationStreak >= 7;
+                    }
+                    default:
+                        return false;
                 }
-            }
-
-            if (shouldAward) {
+            },
+            async award(defId, code, points) {
                 // Double-check dedup at insert time to prevent race conditions
                 const alreadyAwarded = await ctx.db
                     .query('organizationAchievements')
                     .withIndex('by_organization_achievement', q =>
-                        q.eq('organization', organizationId).eq('achievement', def._id)
+                        q.eq('organization', organizationId).eq('achievement', defId)
                     )
                     .first();
 
-                if (alreadyAwarded) continue;
+                if (alreadyAwarded) return;
 
                 await ctx.db.insert('organizationAchievements', {
                     organization: organizationId,
-                    achievement: def._id,
+                    achievement: defId,
                     earnedAt: now,
                     contributingUsers: [userId],
                     createdAt: now,
@@ -546,22 +555,18 @@ export const checkOrganizationAchievements = internalMutation({
                 // Notify all organization members
                 for (const member of members) {
                     await ctx.db.insert('notifications', {
-                        userId: member.userId,
+                        userId: member.userId as Id<'user'>,
                         organizationId: organizationId,
                         objective: undefined,
                         read: false,
                         notificationType: 'achievement',
                         notificationDate: now,
-                        message: `Organization achievement unlocked: "${def.code}"! The organization earned ${def.points} points.`,
+                        message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
                         createdAt: now,
                         updatedAt: now,
                     });
                 }
-
-                newAchievements.push(def.code);
-            }
-        }
-
-        return { awarded: newAchievements };
+            },
+        });
     },
 });

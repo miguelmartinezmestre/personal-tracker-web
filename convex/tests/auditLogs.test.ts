@@ -10,10 +10,10 @@ describe('convex auditLogs', () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
     let adminIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
-    let adminId: string;
-    let userOrganizationId: string;
-    let adminOrganizationId: string;
+    let userId: Id<'user'>;
+    let adminId: Id<'user'>;
+    let userOrganizationId: Id<'organization'>;
+    let adminOrganizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const userRandom = Math.random().toString(36).substring(2, 15);
@@ -29,7 +29,7 @@ describe('convex auditLogs', () => {
             emailVerified: true,
         };
         const adminData = await createTestUser(t, admin);
-        adminId = admin.userId;
+        adminId = adminData.docId;
 
         const adminOrgId = await createTestOrganization(t, {
             name: 'Audit Admin Org ' + adminRandom,
@@ -69,7 +69,7 @@ describe('convex auditLogs', () => {
             emailVerified: true,
         };
         const userDataResult = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userDataResult.docId;
 
         const userOrgId = await createTestOrganization(t, {
             name: 'Audit User Org ' + userRandom,
@@ -78,7 +78,7 @@ describe('convex auditLogs', () => {
 
         await createTestMember(t, {
             organizationId: userOrgId,
-            userId: userId,
+            userId,
             role: 'owner',
         });
 

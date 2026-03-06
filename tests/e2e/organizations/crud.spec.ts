@@ -17,7 +17,7 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
     const orgOption = page.getByRole('menuitem', { name: orgName });
     if ((await orgOption.count()) > 0) {
         await orgOption.first().click();
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
         return;
     }
 
@@ -30,7 +30,7 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
             !optionText.includes('sin organizaciones')
         ) {
             await firstOption.click();
-            await page.waitForLoadState('load');
+            await page.waitForLoadState('domcontentloaded');
             return;
         }
     }
@@ -41,7 +41,7 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
 test.describe('Organizations CRUD', () => {
     test('view organizations list', async ({ page }) => {
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Organizations page should load
         await expect(page).toHaveURL(/\/dashboard\/organizations/);
@@ -57,17 +57,17 @@ test.describe('Organizations CRUD', () => {
         const hasCreateButton = await createButton.isVisible();
 
         // There should be at least one organization or a create button
-        const orgList = page.locator('tr, [data-testid*="organization"]');
+        const orgList = page.getByTestId('table-row');
         const hasOrgs = (await orgList.count()) > 0;
 
         expect(hasCreateButton || hasOrgs).toBeTruthy();
     });
 
-    test('create new organization', async ({ page }) => {
+    test('create new organization', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {
         const orgData = OrganizationFactory.create();
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Wait for page to be ready
         await expect(page.getByTestId('organizations-title')).toBeVisible({
@@ -88,7 +88,7 @@ test.describe('Organizations CRUD', () => {
         await expect(page.getByText(orgData.name)).toBeVisible({ timeout: 10000 });
     });
 
-    test('edit organization name', async ({ page }) => {
+    test('edit organization name', { tag: ['@REQ-EQUIPOS-009'] }, async ({ page }) => {
         // Create a dedicated organization to edit so the test
         // does not depend on a specific default organization name.
         const organization = await createOrganization(page, {
@@ -96,7 +96,7 @@ test.describe('Organizations CRUD', () => {
         });
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         const orgTable = page.getByTestId('organizations-table');
         const row = orgTable
@@ -111,27 +111,25 @@ test.describe('Organizations CRUD', () => {
 
         const editButton = row.getByTestId('organization-edit-open');
 
-        if (await editButton.isVisible()) {
-            await editButton.click();
-            await page.waitForTimeout(500);
+        await expect(editButton).toBeVisible();
+        await editButton.click();
 
-            // Update name (uses data-testid="organization-edit-name-input")
-            const nameInput = page.getByTestId('organization-edit-name-input');
-            await expect(nameInput).toBeVisible({ timeout: 10000 });
+        // Update name (uses data-testid="organization-edit-name-input")
+        const nameInput = page.getByTestId('organization-edit-name-input');
+        await expect(nameInput).toBeVisible({ timeout: 10000 });
 
-            const newName = `Updated Org ${Date.now()}`;
-            await nameInput.fill(newName);
+        const newName = `Updated Org ${Date.now()}`;
+        await nameInput.fill(newName);
 
-            // Save (uses data-testid="organization-edit-save-button")
-            const saveButton = page.getByTestId('organization-edit-save-button');
-            await saveButton.click();
+        // Save (uses data-testid="organization-edit-save-button")
+        const saveButton = page.getByTestId('organization-edit-save-button');
+        await saveButton.click();
 
-            // Verify that the edit dialog closes successfully.
-            await expect(nameInput).toBeHidden({ timeout: 10000 });
-        }
+        // Verify that the edit dialog closes successfully.
+        await expect(nameInput).toBeHidden({ timeout: 10000 });
     });
 
-    test('delete organization', async ({ page }) => {
+    test('delete organization', { tag: ['@REQ-EQUIPOS-010', '@REQ-NF-025'] }, async ({ page }) => {
         // Create a dedicated organization to delete so the test
         // does not rely on the automatically created default organization.
         const organization = await createOrganization(page, {
@@ -139,7 +137,7 @@ test.describe('Organizations CRUD', () => {
         });
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         const orgTable = page.getByTestId('organizations-table');
         const row = orgTable
@@ -156,21 +154,20 @@ test.describe('Organizations CRUD', () => {
         // Find and click delete (uses data-testid="organization-delete-button")
         const deleteButton = row.getByTestId('organization-delete-button');
 
-        if (await deleteButton.isVisible()) {
-            await deleteButton.click();
+        await expect(deleteButton).toBeVisible();
+        await deleteButton.click();
 
-            // Confirm deletion
-            const confirmDialog = page.locator(
-                '[data-slot="alert-dialog-content"], [role="alertdialog"]'
-            );
-            await expect(confirmDialog).toBeVisible({ timeout: 5000 });
+        // Confirm deletion
+        const confirmDialog = page.locator(
+            '[data-slot="alert-dialog-content"], [role="alertdialog"]'
+        );
+        await expect(confirmDialog).toBeVisible({ timeout: 5000 });
 
-            const confirmButton = confirmDialog.getByTestId('delete-confirm-button');
-            await confirmButton.click();
+        const confirmButton = confirmDialog.getByTestId('delete-confirm-button');
+        await confirmButton.click();
 
-            // Verify that the confirmation dialog closes successfully.
-            await expect(confirmDialog).toBeHidden({ timeout: 10000 });
-        }
+        // Verify that the confirmation dialog closes successfully.
+        await expect(confirmDialog).toBeHidden({ timeout: 10000 });
     });
 
     test('switch active organization', async ({ page }) => {
@@ -178,12 +175,10 @@ test.describe('Organizations CRUD', () => {
         const newOrg = await createOrganization(page, { name: `Switch Org ${Date.now()}` });
 
         await page.goto('/dashboard/home');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Look for organization switcher
-        const orgSwitcher = page.locator(
-            '[data-testid*="org-switch"], [data-testid*="organization-switch"], [aria-label*="organization"]'
-        );
+        const orgSwitcher = page.getByTestId('organization-switcher');
 
         if ((await orgSwitcher.count()) > 0) {
             await orgSwitcher.first().click();
@@ -193,8 +188,7 @@ test.describe('Organizations CRUD', () => {
             if ((await orgOption.count()) > 0) {
                 await orgOption.click();
 
-                await page.waitForTimeout(2000);
-                await page.waitForLoadState('load');
+                await page.waitForLoadState('domcontentloaded');
 
                 // Active organization should change
             }
@@ -220,11 +214,9 @@ test.describe('Organizations CRUD', () => {
 
         // Try to switch to new organization
         await page.goto('/dashboard/home');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
-        const orgSwitcher = page.locator(
-            '[data-testid*="org-switch"], button:has-text("Organization")'
-        );
+        const orgSwitcher = page.getByTestId('organization-switcher');
 
         if ((await orgSwitcher.count()) > 0) {
             await orgSwitcher.first().click();
@@ -232,12 +224,11 @@ test.describe('Organizations CRUD', () => {
             const orgOption = page.getByRole('option', { name: newOrg.name });
             if ((await orgOption.count()) > 0) {
                 await orgOption.click();
-                await page.waitForTimeout(2000);
-                await page.waitForLoadState('load');
+                await page.waitForLoadState('domcontentloaded');
 
                 // Navigate to objectives
                 await page.goto('/dashboard/objectives');
-                await page.waitForLoadState('load');
+                await page.waitForLoadState('domcontentloaded');
 
                 // Objective from other org should NOT be visible
                 await expect(page.getByText(obj1.title)).toBeHidden();
@@ -249,15 +240,15 @@ test.describe('Organizations CRUD', () => {
         const org = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Click on organization to view details
-        const row = page.locator('tr', { hasText: org.name }).first();
-        const viewLink = row.locator('a, [data-testid*="view"]').first();
+        const row = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+        const viewLink = row.getByTestId('organization-detail-link');
 
         if (await viewLink.isVisible()) {
             await viewLink.click();
-            await page.waitForLoadState('load');
+            await page.waitForLoadState('domcontentloaded');
 
             // Should be on organization detail page
             await expect(page).toHaveURL(/\/dashboard\/organizations\/.+/);
@@ -267,7 +258,7 @@ test.describe('Organizations CRUD', () => {
         }
     });
 
-    test('validate organization name required', async ({ page }) => {
+    test('validate organization name required', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {
         await page.goto('/dashboard/organizations');
 
         await page.getByTestId('organization-create-open').click();
@@ -286,7 +277,7 @@ test.describe('Organizations CRUD', () => {
 
     test('organization shows member count', async ({ page }) => {
         await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Look for member count indicator
         const memberCount = page.getByText(/\d+.*member|\d+.*miembro/i);

@@ -6,7 +6,7 @@ import {
     createOrganization,
     createNotification,
     ensureDefaultCategories,
-    promoteToAdmin,
+    setupPlatformAsAdmin,
     loginUser,
     logoutUser,
     TestUserData,
@@ -62,10 +62,13 @@ export const test = base.extend<TestFixtures>({
         await use(page);
     },
 
-    adminPage: async ({ page }, use) => {
-        await createTestUserViaAPI(page);
-        await promoteToAdmin(page);
+    adminPage: async ({ browser }, use) => {
+        const adminContext = await browser.newContext({
+            storageState: 'tests/.auth/admin-user.json',
+        });
+        const page = await adminContext.newPage();
         await use(page);
+        await adminContext.close();
     },
 
     testUser: async ({ page }, use) => {
@@ -111,7 +114,7 @@ export const test = base.extend<TestFixtures>({
 
     makeAdmin: async ({ page }, use) => {
         await use(async () => {
-            await promoteToAdmin(page);
+            await setupPlatformAsAdmin(page);
         });
     },
 
@@ -140,7 +143,7 @@ export {
     createOrganization,
     createNotification,
     ensureDefaultCategories,
-    promoteToAdmin,
+    setupPlatformAsAdmin,
     loginUser,
     logoutUser,
 };

@@ -10,8 +10,11 @@ import { NotificationBell } from '@/features/notifications/components/notificati
 import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
+import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
+    if (!(await checkPlatformSetUp())) redirect('/setup' as never);
+
     let preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
 
     try {

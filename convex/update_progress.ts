@@ -8,7 +8,7 @@ import { workflow } from './workflow';
 const runObjectiveSync = async (
     ctx: Parameters<typeof workflow.start>[0],
     objectiveId: Id<'objectives'>,
-    userId: string
+    userId: Id<'user'>
 ) => {
     try {
         await workflow.start(ctx, internal.workflows.objectiveLifecycle.objectiveLifecycle, {
@@ -59,6 +59,7 @@ export const createUpdateProgress = mutationWithRLS({
 
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
             userId: objective.userId,
+            organizationId: objective.organizationId,
             trigger: 'progress_update',
         });
 
@@ -115,6 +116,7 @@ export const updateUpdateProgress = mutationWithRLS({
 
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
             userId: objective.userId,
+            organizationId: objective.organizationId,
             trigger: 'progress_update',
         });
 

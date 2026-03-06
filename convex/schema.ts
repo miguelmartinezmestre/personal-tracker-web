@@ -14,8 +14,8 @@ export default defineSchema({
     ...authSchema.tables,
 
     objectives: defineTable({
-        organizationId: v.string(),
-        userId: v.string(),
+        organizationId: v.id('organization'),
+        userId: v.id('user'),
         scope: objectiveScopeValidator,
         title: v.string(),
         description: v.optional(v.string()),
@@ -49,8 +49,8 @@ export default defineSchema({
         .index('by_objective_date', ['objective', 'updateDate']),
 
     notifications: defineTable({
-        userId: v.string(),
-        organizationId: v.string(),
+        userId: v.id('user'),
+        organizationId: v.id('organization'),
         objective: v.optional(v.id('objectives')),
         read: v.boolean(),
         notificationType: notificationTypeValidator,
@@ -67,8 +67,8 @@ export default defineSchema({
         .index('by_objective', ['objective']),
 
     auditLogs: defineTable({
-        userId: v.string(),
-        organizationId: v.string(),
+        userId: v.id('user'),
+        organizationId: v.id('organization'),
         action: v.string(),
         resourceType: v.string(), // 'objective' | 'progress_update' | 'organization' | 'organization_member' | 'category' | 'user' | 'session' | 'permission'
         resourceId: v.optional(v.string()), // ID of the affected resource
@@ -89,8 +89,8 @@ export default defineSchema({
         .index('by_resourceType_resourceId', ['resourceType', 'resourceId']),
 
     categories: defineTable({
-        userId: v.string(),
-        organizationId: v.string(),
+        userId: v.id('user'),
+        organizationId: v.id('organization'),
         name: v.string(),
         color: v.string(),
         icon: v.optional(v.string()),
@@ -118,7 +118,7 @@ export default defineSchema({
 
     // User achievements - which users earned which achievements
     obtainedAchievements: defineTable({
-        userId: v.string(),
+        userId: v.id('user'),
         achievement: v.id('achievementDefinitions'),
         earnedAt: v.number(),
         createdAt: v.number(),
@@ -129,13 +129,22 @@ export default defineSchema({
 
     // Organization achievements - which organizations earned which achievements
     organizationAchievements: defineTable({
-        organization: v.string(),
+        organization: v.id('organization'),
         achievement: v.id('achievementDefinitions'),
         earnedAt: v.number(),
-        contributingUsers: v.array(v.string()),
+        contributingUsers: v.array(v.id('user')),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
         .index('by_organization', ['organization'])
         .index('by_organization_achievement', ['organization', 'achievement']),
+
+    // Platform-wide settings created during initial setup wizard
+    platformSettings: defineTable({
+        platformName: v.string(),
+        defaultLanguage: v.string(),
+        registrationPolicy: v.string(),
+        setupCompletedAt: v.number(),
+        setupCompletedBy: v.id('user'),
+    }),
 });

@@ -2,8 +2,12 @@ import Footer from '@/features/landing/components/footer';
 import Header from '@/features/landing/components/header';
 import LoginForm from '@/features/auth/components/login-form';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
+import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
 
 export default async function Login() {
+    if (!(await checkPlatformSetUp())) redirect('/setup' as never);
+
     const t = await getTranslations('HomePage');
 
     return (

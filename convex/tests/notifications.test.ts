@@ -8,18 +8,17 @@ import {
     createTestObjective,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
-import type { Id } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex notifications', async () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
     let adminIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
+    let userId: Id<'user'>;
     let objectiveId: Id<'objectives'>;
-    let userOrganizationId: string;
-    let adminUserId: string;
-    let _adminOrganizationId: string;
+    let userOrganizationId: Id<'organization'>;
+    let adminUserId: Id<'user'>;
+    let _adminOrganizationId: Id<'organization'>;
     const DAY_MS = 24 * 60 * 60 * 1000;
 
     beforeEach(async () => {
@@ -36,7 +35,7 @@ describe('convex notifications', async () => {
             emailVerified: false,
         };
         const userData = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userData.docId;
 
         const userOrgId = await createTestOrganization(t, {
             name: 'Notifications User Org ' + userRandom,
@@ -45,7 +44,7 @@ describe('convex notifications', async () => {
 
         await createTestMember(t, {
             organizationId: userOrgId,
-            userId: userId,
+            userId,
             role: 'owner',
         });
 
@@ -76,7 +75,7 @@ describe('convex notifications', async () => {
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);
-        adminUserId = admin.userId;
+        adminUserId = adminData.docId;
 
         const adminOrgId = await createTestOrganization(t, {
             name: 'Notifications Admin Org ' + adminRandom,
@@ -85,7 +84,7 @@ describe('convex notifications', async () => {
 
         await createTestMember(t, {
             organizationId: adminOrgId,
-            userId: admin.userId,
+            userId: adminUserId,
             role: 'owner',
         });
 

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization } from './test_helpers';
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
-import { DataModel as BetterAuthDataModel } from '../betterAuth/_generated/dataModel';
 import { DataModel } from '../_generated/dataModel';
 
 type InvitationRecord = {
@@ -51,7 +50,7 @@ describe('convex invitations (better-auth)', () => {
             description: 'Invitations org',
         });
 
-        const invitationId = await t.run(async (ctx: GenericMutationCtx<BetterAuthDataModel>) => {
+        const invitationId = await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
             return await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'invitee@example.com',

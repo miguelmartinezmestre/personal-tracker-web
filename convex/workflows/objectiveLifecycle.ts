@@ -5,7 +5,7 @@ import { workflow } from '../workflow';
 export const objectiveLifecycle = workflow.define({
     args: {
         objectiveId: v.id('objectives'),
-        userId: v.string(),
+        userId: v.id('user'),
     },
     handler: async (
         step,

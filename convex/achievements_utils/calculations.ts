@@ -1,40 +1,17 @@
-import { QueryCtx, MutationCtx } from '../_generated/server';
-import { Doc } from '../_generated/dataModel';
+import type { GenericDatabaseReader } from 'convex/server';
+import type { DataModel } from '../_generated/dataModel';
+import { Doc, Id } from '../_generated/dataModel';
 import { TIME } from '../utils/constants';
 
+/** Minimal context needed for streak calculations — both QueryCtx and MutationCtx satisfy this. */
+type ReadCtx = { db: GenericDatabaseReader<DataModel> };
+
 /**
- * Calculate user streak for query context
- * Counts consecutive days with progress updates
+ * Compute a streak (consecutive days) from a list of items that each carry an `updateDate` timestamp.
+ * The array does NOT need to be pre-sorted.
  */
-export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promise<number> {
-    const objectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .collect();
-
-    const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
-
-    if (objectiveIds.length === 0) return 0;
-
-    // Fetch progress updates for each objective using indexed queries
-    const userUpdates = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
-            return updates;
-        })
-    )
-        .then(results => results.flat())
-        .then(updates =>
-            updates.sort(
-                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
-                    b.updateDate - a.updateDate
-            )
-        );
-
-    if (userUpdates.length === 0) return 0;
+export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
+    if (updates.length === 0) return 0;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -42,7 +19,7 @@ export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promis
 
     // Get unique days with activity
     const activityDays = new Set<number>();
-    for (const update of userUpdates) {
+    for (const update of updates) {
         const dayStart = new Date(update.updateDate);
         dayStart.setHours(0, 0, 0, 0);
         activityDays.add(dayStart.getTime());
@@ -73,12 +50,28 @@ export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promis
 }
 
 /**
- * Calculate user streak for mutation context (same logic, different ctx type)
+ * Fetch all progress updates for a set of objective IDs.
  */
-export async function calculateUserStreakInternal(
-    ctx: MutationCtx,
-    userId: string
-): Promise<number> {
+async function fetchProgressUpdates(
+    ctx: ReadCtx,
+    objectiveIds: Id<'objectives'>[]
+): Promise<Doc<'progressUpdates'>[]> {
+    return Promise.all(
+        objectiveIds.map(async objectiveId => {
+            const updates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                .collect();
+            return updates;
+        })
+    ).then(results => results.flat());
+}
+
+/**
+ * Calculate user streak — counts consecutive days with progress updates.
+ * Works with both QueryCtx and MutationCtx.
+ */
+export async function calculateUserStreak(ctx: ReadCtx, userId: Id<'user'>): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
         .withIndex('by_user', q => q.eq('userId', userId))
@@ -88,65 +81,17 @@ export async function calculateUserStreakInternal(
 
     if (objectiveIds.length === 0) return 0;
 
-    // Fetch progress updates for each objective using indexed queries
-    const userUpdates = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
-            return updates;
-        })
-    )
-        .then(results => results.flat())
-        .then(updates =>
-            updates.sort(
-                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
-                    b.updateDate - a.updateDate
-            )
-        );
+    const userUpdates = await fetchProgressUpdates(ctx, objectiveIds);
 
-    if (userUpdates.length === 0) return 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayMs = today.getTime();
-
-    const activityDays = new Set<number>();
-    for (const update of userUpdates) {
-        const dayStart = new Date(update.updateDate);
-        dayStart.setHours(0, 0, 0, 0);
-        activityDays.add(dayStart.getTime());
-    }
-
-    const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
-
-    const mostRecentDay = sortedDays[0];
-    if (mostRecentDay === undefined || mostRecentDay < todayMs - TIME.DAY_MS) {
-        return 0;
-    }
-
-    let streak = 0;
-    let expectedDay = mostRecentDay;
-
-    for (const day of sortedDays) {
-        if (day === expectedDay) {
-            streak++;
-            expectedDay -= TIME.DAY_MS;
-        } else if (day < expectedDay) {
-            break;
-        }
-    }
-
-    return streak;
+    return countStreakFromUpdates(userUpdates);
 }
 
 /**
- * Calculate organization streak based on all member activity
+ * Calculate organization streak based on all member activity.
  */
 export async function calculateOrganizationStreak(
-    ctx: QueryCtx,
-    memberUserIds: string[]
+    ctx: ReadCtx,
+    memberUserIds: Id<'user'>[]
 ): Promise<number> {
     // Get organization objectives using indexed queries per user
     const organizationObjectives = await Promise.all(
@@ -163,55 +108,7 @@ export async function calculateOrganizationStreak(
 
     if (objectiveIds.length === 0) return 0;
 
-    // Fetch progress updates for each objective using indexed queries
-    const organizationUpdates = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            const updates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
-            return updates;
-        })
-    )
-        .then(results => results.flat())
-        .then(updates =>
-            updates.sort(
-                (a: Doc<'progressUpdates'>, b: Doc<'progressUpdates'>) =>
-                    b.updateDate - a.updateDate
-            )
-        );
+    const organizationUpdates = await fetchProgressUpdates(ctx, objectiveIds);
 
-    if (organizationUpdates.length === 0) return 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayMs = today.getTime();
-
-    const activityDays = new Set<number>();
-    for (const update of organizationUpdates) {
-        const dayStart = new Date(update.updateDate);
-        dayStart.setHours(0, 0, 0, 0);
-        activityDays.add(dayStart.getTime());
-    }
-
-    const sortedDays = Array.from(activityDays).sort((a, b) => b - a);
-
-    const mostRecentDay = sortedDays[0];
-    if (mostRecentDay === undefined || mostRecentDay < todayMs - TIME.DAY_MS) {
-        return 0;
-    }
-
-    let streak = 0;
-    let expectedDay = mostRecentDay;
-
-    for (const day of sortedDays) {
-        if (day === expectedDay) {
-            streak++;
-            expectedDay -= TIME.DAY_MS;
-        } else if (day < expectedDay) {
-            break;
-        }
-    }
-
-    return streak;
+    return countStreakFromUpdates(organizationUpdates);
 }

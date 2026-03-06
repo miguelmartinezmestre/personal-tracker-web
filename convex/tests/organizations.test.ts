@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
+import { Id } from '../_generated/dataModel';
 
 describe('convex organizations', () => {
     const t = initConvexTest();
     let userIdentity: ReturnType<typeof t.withIdentity>;
-    let organizationId: string;
-    let memberUserId: string;
+    let organizationId: Id<'organization'>;
+    let memberUserId: Id<'user'>;
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);

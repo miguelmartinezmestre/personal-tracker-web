@@ -385,7 +385,7 @@ function buildCommandEnv(
 
     return {
         ...baseEnv,
-        ALLOW_PROMOTE_DEV: 'true',
+        ALLOW_SETUP_TEST: 'true',
         BASE_URL: baseUrl,
         BETTER_AUTH_SECRET: betterAuthSecret,
         CONVEX_SELF_HOSTED_ADMIN_KEY: adminKey,
@@ -684,7 +684,7 @@ async function main(): Promise<void> {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'ALLOW_PROMOTE_DEV', 'true'], {
+    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'ALLOW_SETUP_TEST', 'true'], {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });

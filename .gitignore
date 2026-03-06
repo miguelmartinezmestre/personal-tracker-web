@@ -29,6 +29,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/tests/.auth/
 
 # Convex generated files
 **/_generated/**
@@ -37,3 +38,4 @@ node_modules/
 coverage/
 .vscode/
 
+.next-e2e/

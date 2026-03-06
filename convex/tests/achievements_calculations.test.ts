@@ -5,16 +5,16 @@ import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
 import {
     calculateUserStreak,
-    calculateUserStreakInternal,
     calculateOrganizationStreak,
 } from '../achievements_utils/calculations';
 import { TIME } from '../utils/constants';
+import { Id } from '../_generated/dataModel';
 
 describe('achievements calculations', async () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
-    let organizationId: string;
+    let userId: Id<'user'>;
+    let organizationId: Id<'organization'>;
     const DAY_MS = TIME.DAY_MS;
 
     beforeEach(async () => {
@@ -30,7 +30,7 @@ describe('achievements calculations', async () => {
         };
 
         const userData = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userData.docId;
 
         const orgId = await createTestOrganization(t, {
             name: 'Calcs Org ' + randomSuffix,
@@ -39,7 +39,7 @@ describe('achievements calculations', async () => {
 
         await createTestMember(t, {
             organizationId: orgId,
-            userId: userId,
+            userId,
             role: 'owner',
         });
 
@@ -453,10 +453,10 @@ describe('achievements calculations', async () => {
         });
     });
 
-    describe('calculateUserStreakInternal', () => {
+    describe('calculateUserStreak', () => {
         test('returns 0 when user has no objectives', async () => {
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreakInternal(ctx, userId);
+                return calculateUserStreak(ctx, userId);
             });
 
             expect(streak).toBe(0);
@@ -495,7 +495,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreakInternal(ctx, userId);
+                return calculateUserStreak(ctx, userId);
             });
 
             expect(streak).toBe(5);
@@ -530,12 +530,11 @@ describe('achievements calculations', async () => {
                 emailVerified: false,
             };
 
-            await createTestUser(t, user2);
+            const user2Data = await createTestUser(t, user2);
 
             await createTestMember(t, {
                 organizationId: organizationId,
-                scope: 'personal',
-                userId: user2.userId,
+                userId: user2Data.docId,
                 role: 'member',
             });
 
@@ -555,7 +554,7 @@ describe('achievements calculations', async () => {
 
             const objectiveId2 = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: user2.userId,
+                    userId: user2Data.docId,
                     organizationId: organizationId,
                     scope: 'personal',
                     title: 'User2 Objective',
@@ -591,7 +590,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, [userId, user2.userId]);
+                return calculateOrganizationStreak(ctx, [userId, user2Data.docId]);
             });
 
             expect(streak).toBe(2);

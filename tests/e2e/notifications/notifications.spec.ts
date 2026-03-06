@@ -22,7 +22,6 @@ async function openNotificationCreateModal(
             return true;
         } catch {
             await page.keyboard.press('Escape').catch(() => undefined);
-            await page.waitForTimeout(300);
         }
     }
 
@@ -61,37 +60,41 @@ async function createNotificationInModal(
 }
 
 test.describe('Notifications', () => {
-    test('view notifications list', async ({ page }) => {
+    test('view notifications list', { tag: ['@REQ-NOTIFICACIONES-003'] }, async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Notifications page should load
         await expect(page).toHaveURL(/\/dashboard\/notifications/);
 
         // Should show notifications or empty state
         const emptyState = page.locator('text=/no.*notifications|sin notificaciones/i');
-        const notificationsList = page.locator('tr, [data-testid*="notification"]');
+        const notificationsList = page.getByTestId('table-row');
 
         const hasContent = (await emptyState.count()) > 0 || (await notificationsList.count()) > 0;
         expect(hasContent).toBeTruthy();
     });
 
-    test('notification badge shows count in sidebar', async ({ page }) => {
-        await page.goto('/dashboard/home');
-        await page.waitForLoadState('load');
+    test(
+        'notification badge shows count in sidebar',
+        { tag: ['@REQ-NOTIFICACIONES-003'] },
+        async ({ page }) => {
+            await page.goto('/dashboard/home');
+            await page.waitForLoadState('domcontentloaded');
 
-        // Look for notification badge in sidebar
-        const notificationBadge = page.locator(
-            '[data-testid*="notification-badge"], .badge, [class*="notification"]'
-        );
+            // Look for notification badge in sidebar
+            const notificationBadge = page.locator(
+                '[data-testid*="notification-badge"], .badge, [class*="notification"]'
+            );
 
-        // Badge might show count or just be present
-        // Verify sidebar link to notifications exists
-        const notificationLink = page.locator('a[href*="notification"]');
-        await expect(notificationLink.first()).toBeVisible();
-    });
+            // Badge might show count or just be present
+            // Verify sidebar link to notifications exists
+            const notificationLink = page.locator('a[href*="notification"]');
+            await expect(notificationLink.first()).toBeVisible();
+        }
+    );
 
-    test('create manual notification', async ({ page }) => {
+    test('create manual notification', { tag: ['@REQ-NOTIFICACIONES-001'] }, async ({ page }) => {
         // First create an objective to link the notification to
         await ensureDefaultCategories(page);
         const objective = await createObjective(page, {
@@ -100,14 +103,14 @@ test.describe('Notifications', () => {
         });
 
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         const message = `Test notification ${Date.now()}`;
         const wasCreated = await createNotificationInModal(page, objective.title, message);
         expect(wasCreated).toBeTruthy();
     });
 
-    test('mark notification as read', async ({ page }) => {
+    test('mark notification as read', { tag: ['@REQ-NOTIFICACIONES-002'] }, async ({ page }) => {
         // Create a notification first
         await ensureDefaultCategories(page);
         const objective = await createObjective(page, { ensureCategories: false });
@@ -120,49 +123,46 @@ test.describe('Notifications', () => {
             `Mark read test ${Date.now()}`
         );
         expect(wasCreated).toBeTruthy();
-        await page.waitForTimeout(2000);
 
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Look for mark as read button
-        const markReadButton = page.locator(
-            'button:has-text("Mark as read"), button:has-text("Marcar como leída"), [data-testid*="mark-read"]'
-        );
+        const markReadButton = page.getByTestId('notification-mark-read-button');
 
         if ((await markReadButton.count()) > 0) {
             await markReadButton.first().click();
-            await page.waitForTimeout(2000);
-            await page.waitForLoadState('load');
+            await page.waitForLoadState('domcontentloaded');
 
             // Notification should be marked as read (visual change)
         }
     });
 
-    test('mark all notifications as read', async ({ page }) => {
-        await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('load');
+    test(
+        'mark all notifications as read',
+        { tag: ['@REQ-NOTIFICACIONES-002'] },
+        async ({ page }) => {
+            await page.goto('/dashboard/notifications');
+            await page.waitForLoadState('domcontentloaded');
 
-        // Look for "Mark all as read" button
-        const markAllButton = page.locator(
-            'button:has-text("Mark all"), button:has-text("Marcar todas"), [data-testid*="mark-all"]'
-        );
+            // Look for "Mark all as read" button
+            const markAllButton = page.getByTestId('notification-mark-all-read-button');
 
-        if ((await markAllButton.count()) > 0) {
-            const isEnabled = await markAllButton.first().isEnabled();
+            if ((await markAllButton.count()) > 0) {
+                const isEnabled = await markAllButton.first().isEnabled();
 
-            // Button may be disabled if no unread notifications exist
-            if (isEnabled) {
-                await markAllButton.first().click();
-                await page.waitForTimeout(2000);
-                await page.waitForLoadState('load');
-            } else {
-                // Button is disabled - this is expected when there are no unread notifications
-                console.log('Mark all as read button is disabled (no unread notifications)');
+                // Button may be disabled if no unread notifications exist
+                if (isEnabled) {
+                    await markAllButton.first().click();
+                    await page.waitForLoadState('domcontentloaded');
+                } else {
+                    // Button is disabled - this is expected when there are no unread notifications
+                    console.log('Mark all as read button is disabled (no unread notifications)');
+                }
             }
-        }
 
-        // Test passes - we verified the button exists and behaves correctly
-    });
+            // Test passes - we verified the button exists and behaves correctly
+        }
+    );
 
     test('delete notification', async ({ page }) => {
         // Create a notification
@@ -176,36 +176,30 @@ test.describe('Notifications', () => {
         expect(wasCreated).toBeTruthy();
 
         // Now delete it
-        const row = page.locator('tr').filter({ hasText: deleteMessage }).first();
-        const deleteButton = row
-            .locator('[data-testid*="delete"], button[aria-label*="delete"]')
-            .first();
+        const row = page.getByTestId('table-row').filter({ hasText: deleteMessage }).first();
+        const deleteButton = row.getByTestId('notification-delete-button');
 
-        if (await deleteButton.isVisible()) {
-            await deleteButton.click();
+        await expect(deleteButton).toBeVisible();
+        await deleteButton.click();
 
-            // Confirm deletion
-            const confirmButton = page.locator(
-                '[role="dialog"] button:has-text("Delete"), [role="dialog"] button:has-text("Confirm")'
-            );
-            if ((await confirmButton.count()) > 0) {
-                await confirmButton.first().click();
-            }
-
-            await page.waitForTimeout(2000);
-            await page.waitForLoadState('load');
+        // Confirm deletion
+        const confirmButton = page.getByTestId('delete-confirm-button');
+        if ((await confirmButton.count()) > 0) {
+            await confirmButton.first().click();
         }
+
+        await page.waitForLoadState('domcontentloaded');
     });
 
     test('notification types are displayed correctly', async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Notifications should show type badges or icons
         const typeBadge = page.locator('.badge, [class*="type"], [data-testid*="type"]');
 
         // If there are notifications, they should have type indicators
-        const notifications = page.locator('tr, [data-testid*="notification-item"]');
+        const notifications = page.getByTestId('table-row');
         if ((await notifications.count()) > 0) {
             // Each notification should have type displayed
         }
@@ -223,9 +217,8 @@ test.describe('Notifications', () => {
         const relatedMessage = `Related objective test ${Date.now()}`;
         const wasCreated = await createNotificationInModal(page, objective.title, relatedMessage);
         expect(wasCreated).toBeTruthy();
-        await page.waitForTimeout(2000);
 
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Notification should show or link to the related objective
         const objectiveLink = page.locator(`text=${objective.title}`);
@@ -246,17 +239,19 @@ test.describe('Notifications', () => {
         const clickMessage = `Click test notification ${Date.now()}`;
         const wasCreated = await createNotificationInModal(page, objective.title, clickMessage);
         expect(wasCreated).toBeTruthy();
-        await page.waitForTimeout(2000);
 
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Click on the notification to navigate
-        const notificationRow = page.locator('tr').filter({ hasText: clickMessage }).first();
+        const notificationRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: clickMessage })
+            .first();
         const clickableArea = notificationRow.locator('a, [role="button"]').first();
 
         if (await clickableArea.isVisible()) {
             await clickableArea.click();
-            await page.waitForLoadState('load');
+            await page.waitForLoadState('domcontentloaded');
 
             // Should navigate to objective detail
             await expect(page).toHaveURL(/\/dashboard\/objectives\//);
@@ -265,7 +260,7 @@ test.describe('Notifications', () => {
 
     test('filter notifications by read status', async ({ page }) => {
         await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('load');
+        await page.waitForLoadState('domcontentloaded');
 
         // Look for read/unread filter
         const statusFilter = page.locator(
@@ -277,7 +272,7 @@ test.describe('Notifications', () => {
             const unreadFilter = page.locator('button:has-text("Unread"), [data-testid*="unread"]');
             if ((await unreadFilter.count()) > 0) {
                 await unreadFilter.first().click();
-                await page.waitForLoadState('load');
+                await page.waitForLoadState('domcontentloaded');
             }
         }
     });
