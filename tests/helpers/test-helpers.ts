@@ -91,7 +91,8 @@ export function generateTestUserData(options?: CreateTestUserOptions): TestUserD
             options?.customOrganizationSlug ?? createSafeSlug(options.customUsername, shortId);
     } else if (options?.usePresentableName) {
         const presentableNames = ['Miguel Garcia', 'Ana Martinez', 'Carlos Lopez'];
-        const randomName = presentableNames[Math.floor(Math.random() * presentableNames.length)];
+        const randomName =
+            presentableNames[Math.floor(Math.random() * presentableNames.length)] ?? 'Test User';
         username = randomName;
         email = `${normalizeForEmail(randomName)}.${shortId}@example.com`;
         organizationSlug = createSafeSlug(randomName, shortId);

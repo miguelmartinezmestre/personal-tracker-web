@@ -24,7 +24,7 @@ export const UserFactory = {
     createPresentable(overrides?: Partial<UserData>): UserData {
         const shortId = randomUUID().substring(0, 8);
         const names = ['Miguel Garcia', 'Ana Martinez', 'Carlos Lopez', 'Laura Sanchez'];
-        const name = names[Math.floor(Math.random() * names.length)];
+        const name = names[Math.floor(Math.random() * names.length)] ?? 'Test User';
         const normalizedName = name.toLowerCase().replace(/\s+/g, '.');
 
         return {
