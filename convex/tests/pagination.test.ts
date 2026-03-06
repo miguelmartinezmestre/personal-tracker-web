@@ -8,13 +8,13 @@ import {
     createTestObjective,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex pagination', () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
-    let _organizationId: string;
+    let userId: Id<'user'>;
+    let _organizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -29,7 +29,7 @@ describe('convex pagination', () => {
         };
 
         const userData = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userData.docId;
 
         const orgId = await createTestOrganization(t, {
             name: 'Test Organization ' + randomSuffix,
@@ -38,7 +38,7 @@ describe('convex pagination', () => {
 
         await createTestMember(t, {
             organizationId: orgId,
-            userId: userId,
+            userId,
             role: 'owner',
         });
 

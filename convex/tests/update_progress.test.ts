@@ -8,9 +8,9 @@ import { DataModel, Id } from '../_generated/dataModel';
 describe('convex update_progress', () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
+    let userId: Id<'user'>;
     let objectiveId: Id<'objectives'>;
-    let organizationId: string;
+    let organizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -25,7 +25,7 @@ describe('convex update_progress', () => {
         };
 
         const userData = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userData.docId;
 
         const orgId = await createTestOrganization(t, {
             name: 'Update Progress Org ' + randomSuffix,
@@ -34,7 +34,7 @@ describe('convex update_progress', () => {
 
         await createTestMember(t, {
             organizationId: orgId,
-            userId: userId,
+            userId,
             role: 'owner',
         });
 

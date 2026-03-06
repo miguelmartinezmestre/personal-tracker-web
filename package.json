@@ -10,7 +10,7 @@
         "start": "next start",
         "better-auth:generate": "npx @better-auth/cli generate -y --output convex/authSchema.ts --config convex/auth.ts",
         "lint": "eslint .",
-        "check-types": "tsc --noEmit",
+        "check-types": "tsc --noEmit && tsc --noEmit -p convex/tsconfig.json",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
         "test:e2e": "playwright test",

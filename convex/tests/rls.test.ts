@@ -8,7 +8,7 @@ import {
     createTestObjective,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex RLS (Row-Level Security)', async () => {
     const t = initConvexTest();
@@ -16,12 +16,12 @@ describe('convex RLS (Row-Level Security)', async () => {
     let user2Identity: TestConvexForDataModel<DataModel>;
     let adminIdentity: TestConvexForDataModel<DataModel>;
 
-    let user1Id: string;
-    let user2Id: string;
-    let adminId: string;
-    let _user1OrganizationId: string;
-    let _user2OrganizationId: string;
-    let _adminOrganizationId: string;
+    let user1Id: Id<'user'>;
+    let user2Id: Id<'user'>;
+    let adminId: Id<'user'>;
+    let _user1OrganizationId: Id<'organization'>;
+    let _user2OrganizationId: Id<'organization'>;
+    let _adminOrganizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const user1Random = Math.random().toString(36).substring(2, 15);
@@ -38,7 +38,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             emailVerified: false,
         };
         const user1Data = await createTestUser(t, user1);
-        user1Id = user1.userId;
+        user1Id = user1Data.docId;
 
         const user1OrgId = await createTestOrganization(t, {
             name: 'RLS Org 1 ' + user1Random,
@@ -78,7 +78,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             emailVerified: false,
         };
         const user2Data = await createTestUser(t, user2);
-        user2Id = user2.userId;
+        user2Id = user2Data.docId;
 
         const user2OrgId = await createTestOrganization(t, {
             name: 'RLS Org 2 ' + user2Random,
@@ -118,7 +118,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);
-        adminId = admin.userId;
+        adminId = adminData.docId;
 
         const adminOrgId = await createTestOrganization(t, {
             name: 'RLS Admin Org ' + adminRandom,

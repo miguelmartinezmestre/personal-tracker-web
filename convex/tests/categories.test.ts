@@ -3,15 +3,15 @@ import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex categories', async () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
     let adminIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
-    let _userOrganizationId: string;
-    let _adminOrganizationId: string;
+    let userId: Id<'user'>;
+    let _userOrganizationId: Id<'organization'>;
+    let _adminOrganizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const userRandom = Math.random().toString(36).substring(2, 15);
@@ -27,7 +27,7 @@ describe('convex categories', async () => {
             emailVerified: false,
         };
         const userData = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userData.docId;
 
         const userOrgId = await createTestOrganization(t, {
             name: 'Categories User Org ' + userRandom,
@@ -36,7 +36,7 @@ describe('convex categories', async () => {
 
         await createTestMember(t, {
             organizationId: userOrgId,
-            userId: userId,
+            userId,
             role: 'owner',
         });
 
@@ -75,7 +75,7 @@ describe('convex categories', async () => {
 
         await createTestMember(t, {
             organizationId: adminOrgId,
-            userId: admin.userId,
+            userId: adminData.docId,
             role: 'owner',
         });
 

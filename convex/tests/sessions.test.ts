@@ -9,8 +9,8 @@ import { DataModel, Id } from '../_generated/dataModel';
 describe('convex sessions', () => {
     const t = initConvexTest();
     let _userIdentity: TestConvexForDataModel<DataModel>;
-    let userId: string;
-    let sessionId: string;
+    let userId: Id<'user'>;
+    let sessionId: Id<'session'>;
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -25,7 +25,7 @@ describe('convex sessions', () => {
         };
 
         const userData = await createTestUser(t, user);
-        userId = user.userId;
+        userId = userData.docId;
 
         _userIdentity = t.withIdentity({
             subject: userData.docId,
@@ -43,7 +43,7 @@ describe('convex sessions', () => {
         });
 
         sessionId = await createTestSession(t, {
-            userId: userId,
+            userId,
             expiresAt: Date.now() + 1000000,
             token: 'test-token-' + randomSuffix,
             ipAddress: '127.0.0.1',
@@ -56,7 +56,7 @@ describe('convex sessions', () => {
 
         // Create another session
         await createTestSession(t, {
-            userId: userId,
+            userId,
             expiresAt: Date.now() + 1000000,
             token: 'test-token-2-' + randomSuffix,
             ipAddress: '127.0.0.1',
