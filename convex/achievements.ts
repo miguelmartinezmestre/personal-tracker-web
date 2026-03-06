@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { internalMutation } from './_generated/server';
+import type { Id } from './_generated/dataModel';
 import {
     calculateUserStreak,
     calculateUserStreakInternal,
@@ -57,7 +58,7 @@ export const getUserAchievements = queryWithRLS({
 
 export const getOrganizationAchievements = queryWithRLS({
     args: {
-        organizationId: v.string(),
+        organizationId: v.id('organization'),
     },
     handler: async (ctx, args) => {
         const organizationAchievements = await ctx.db
@@ -276,12 +277,16 @@ export const seedAchievementDefinitions = mutationWithRLS({
 // Internal mutation to check and award achievements (called from other mutations)
 export const checkUserAchievements = internalMutation({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
         trigger: v.string(), // 'objective_created' | 'objective_completed' | 'progress_update'
     },
     handler: async (ctx, args) => {
-        const { userId, trigger } = args;
+        const { userId, organizationId, trigger } = args;
         const now = Date.now();
+        if (!organizationId) {
+            throw new Error('No active organization selected');
+        }
 
         // Get all individual achievement definitions
         const definitions = await ctx.db
@@ -411,7 +416,7 @@ export const checkUserAchievements = internalMutation({
                 // Create notification
                 await ctx.db.insert('notifications', {
                     userId: userId,
-                    organizationId: '',
+                    organizationId,
                     objective: undefined,
                     read: false,
                     notificationType: 'achievement',
@@ -432,8 +437,8 @@ export const checkUserAchievements = internalMutation({
 // Check organization achievements
 export const checkOrganizationAchievements = internalMutation({
     args: {
-        organizationId: v.string(),
-        userId: v.string(),
+        organizationId: v.id('organization'),
+        userId: v.id('user'),
         trigger: v.string(),
     },
     handler: async (ctx, args) => {
@@ -468,7 +473,7 @@ export const checkOrganizationAchievements = internalMutation({
             .withIndex('organizationId', q => q.eq('organizationId', organizationId))
             .collect();
 
-        const memberUserIds = members.map(m => m.userId);
+        const memberUserIds = members.map(m => m.userId as Id<'user'>);
 
         // Get objectives from organization members using indexed queries per user
         const organizationObjectives = await Promise.all(
@@ -546,7 +551,7 @@ export const checkOrganizationAchievements = internalMutation({
                 // Notify all organization members
                 for (const member of members) {
                     await ctx.db.insert('notifications', {
-                        userId: member.userId,
+                        userId: member.userId as Id<'user'>,
                         organizationId: organizationId,
                         objective: undefined,
                         read: false,

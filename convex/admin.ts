@@ -6,6 +6,15 @@ import { mutationWithRLS, queryWithRLS } from './rls';
 import { getHeaders } from 'better-convex/auth';
 import { DataModel } from './_generated/dataModel';
 
+type AdminApi = {
+    banUser: (args: {
+        body: { userId: string; banReason?: string; banExpiresIn?: number };
+        headers: Headers;
+    }) => Promise<unknown>;
+    unbanUser: (args: { body: { userId: string }; headers: Headers }) => Promise<unknown>;
+    removeUser: (args: { body: { userId: string }; headers: Headers }) => Promise<unknown>;
+};
+
 export const listUsers = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
@@ -32,8 +41,9 @@ export const banUser = mutationWithRLS({
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
+        const adminApi = auth.api as unknown as AdminApi;
 
-        await auth.api.banUser({
+        await adminApi.banUser({
             body: {
                 userId: args.userId,
                 banReason: args.banReason,
@@ -55,8 +65,9 @@ export const unbanUser = mutationWithRLS({
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
+        const adminApi = auth.api as unknown as AdminApi;
 
-        await auth.api.unbanUser({
+        await adminApi.unbanUser({
             body: {
                 userId: args.userId,
             },
@@ -92,8 +103,9 @@ export const deleteUser = mutationWithRLS({
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
+        const adminApi = auth.api as unknown as AdminApi;
 
-        await auth.api.removeUser({
+        await adminApi.removeUser({
             body: {
                 userId: args.userId,
             },

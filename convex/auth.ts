@@ -20,14 +20,57 @@ import {
 import authConfig from './auth.config';
 import schema from './schema';
 import { admin, organization } from 'better-auth/plugins';
-import { ConvexError } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
+type RunnableCtx = MutationCtx | ActionCtx;
 
 const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 const STRONG_PASSWORD_MESSAGE =
     'La contraseña debe incluir al menos una mayúscula, una minúscula y un número';
+const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
+const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
+
+const buildDefaultOrganizationSlug = (userId: string) => {
+    const normalizedSuffix = userId.toLowerCase().replace(/[^a-z0-9]/g, '').slice(-12);
+    return `${DEFAULT_ORGANIZATION_SLUG_BASE}-${normalizedSuffix || Date.now().toString(36)}`;
+};
+
+export const ensureDefaultOrganizationForUser = internalMutation({
+    args: {
+        userId: v.id('user'),
+    },
+    handler: async (ctx, args) => {
+        const existingMembership = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', args.userId))
+            .first();
+
+        if (existingMembership) {
+            return existingMembership.organizationId as Id<'organization'>;
+        }
+
+        const now = Date.now();
+        const organizationId = await ctx.db.insert('organization', {
+            name: DEFAULT_ORGANIZATION_NAME,
+            slug: buildDefaultOrganizationSlug(args.userId),
+            createdAt: now,
+            metadata: null,
+            logo: null,
+        });
+
+        await ctx.db.insert('member', {
+            organizationId,
+            userId: args.userId,
+            role: 'owner',
+            createdAt: now,
+        });
+
+        return organizationId;
+    },
+});
 
 const authFunctions: AuthFunctions = internal.auth;
 
@@ -39,8 +82,7 @@ export const authClient = createClient<DataModel, typeof schema>({
 });
 
 // Auth options factory
-const createAuthOptions = (ctx: GenericCtx) =>
-    ({
+const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
         baseURL: process.env.SITE_URL!,
         user: {
             deleteUser: {
@@ -63,6 +105,33 @@ const createAuthOptions = (ctx: GenericCtx) =>
                 console.log(`Password for user ${user.email} has been reset.`);
             },
             revokeSessionsOnPasswordReset: true,
+        },
+        databaseHooks: {
+            session: {
+                create: {
+                    before: async session => {
+                        if (!('runMutation' in ctx)) {
+                            return;
+                        }
+
+                        const activeOrganizationId: Id<'organization'> = await (
+                            ctx as RunnableCtx
+                        ).runMutation(
+                            internal.auth.ensureDefaultOrganizationForUser,
+                            {
+                                userId: session.userId as Id<'user'>,
+                            }
+                        );
+
+                        return {
+                            data: {
+                                ...session,
+                                activeOrganizationId: activeOrganizationId as string,
+                            },
+                        };
+                    },
+                },
+            },
         },
         hooks: {
             before: createAuthMiddleware(async ctx => {
@@ -100,7 +169,7 @@ const createAuthOptions = (ctx: GenericCtx) =>
             }),
         ],
         database: authClient.httpAdapter(ctx),
-    }) satisfies BetterAuthOptions;
+    });
 // For queries/mutations: direct DB access
 export const getAuth = <Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) =>
     betterAuth({
@@ -150,7 +219,9 @@ export const getCurrentOrganization = query({
             headers,
         });
 
-        organizationId = session?.session.activeOrganizationId ?? null;
+        organizationId =
+            ((session?.session as { activeOrganizationId?: string | null } | undefined)
+                ?.activeOrganizationId as string | null | undefined) ?? null;
 
         return organizationId;
     },

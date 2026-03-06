@@ -42,9 +42,13 @@ export const createCategory = mutationWithRLS({
     handler: async (ctx, args) => {
         const now = Date.now();
         const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            throw new Error('No active organization selected');
+        }
         const categoryId = await ctx.db.insert('categories', {
             userId: userId,
-            organizationId: ctx.organizationId ?? '',
+            organizationId,
             name: args.name,
             color: args.color,
             icon: args.icon,
@@ -91,6 +95,10 @@ export const createDefaultCategories = mutationWithRLS({
     args: {},
     handler: async ctx => {
         const user = ctx.userId;
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            throw new Error('No active organization selected');
+        }
         const now = Date.now();
         const defaultCategories = [
             { name: 'Health & Fitness', color: '#10b981', icon: 'heart' },
@@ -108,7 +116,7 @@ export const createDefaultCategories = mutationWithRLS({
         for (const category of defaultCategories) {
             const id = await ctx.db.insert('categories', {
                 userId: user,
-                organizationId: ctx.organizationId ?? '',
+                organizationId,
                 name: category.name,
                 color: category.color,
                 icon: category.icon,

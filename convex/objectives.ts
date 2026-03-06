@@ -15,7 +15,7 @@ const EMPTY_PAGE = {
 const runObjectiveSync = async (
     ctx: Parameters<typeof workflow.start>[0],
     objectiveId: Id<'objectives'>,
-    userId: string
+    userId: Id<'user'>
 ) => {
     try {
         await workflow.start(ctx, internal.workflows.objectiveLifecycle.objectiveLifecycle, {
@@ -80,7 +80,8 @@ export const getOrganizationObjectives = queryWithRLS({
         category: v.optional(v.string()),
     },
     handler: async (ctx, { paginationOpts, status, category }) => {
-        if (!ctx.organizationId) {
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
             return EMPTY_PAGE;
         }
 
@@ -90,7 +91,7 @@ export const getOrganizationObjectives = queryWithRLS({
                 .query('objectives')
                 .withIndex('by_organization_scope_status', q =>
                     q
-                        .eq('organizationId', ctx.organizationId)
+                        .eq('organizationId', organizationId)
                         .eq('scope', 'organization')
                         .eq('status', status as never)
                 )
@@ -109,7 +110,7 @@ export const getOrganizationObjectives = queryWithRLS({
         const query = ctx.db
             .query('objectives')
             .withIndex('by_organization_scope', q =>
-                q.eq('organizationId', ctx.organizationId).eq('scope', 'organization')
+                q.eq('organizationId', organizationId).eq('scope', 'organization')
             )
             .order('desc');
 
@@ -148,15 +149,20 @@ export const createObjective = mutationWithRLS({
         const userId = ctx.userId;
         const now = Date.now();
         const scope = args.scope ?? 'personal';
+        const organizationId = ctx.organizationId;
 
-        if (scope === 'organization' && !ctx.organizationId) {
+        if (!organizationId) {
+            throw new ConvexError('No active organization selected');
+        }
+
+        if (scope === 'organization' && !organizationId) {
             throw new ConvexError('No active organization selected');
         }
 
         const startValue = args.startValue ?? args.currentValue ?? 0;
         const objectiveId = await ctx.db.insert('objectives', {
             userId,
-            organizationId: ctx.organizationId ?? '',
+            organizationId,
             scope,
             title: args.title,
             description: args.description,
@@ -173,6 +179,7 @@ export const createObjective = mutationWithRLS({
 
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
             userId,
+            organizationId,
             trigger: 'objective_created',
         });
 

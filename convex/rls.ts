@@ -8,6 +8,7 @@ import {
     wrapDatabaseWriter,
 } from 'convex-helpers/server/rowLevelSecurity';
 import type { DataModel } from './_generated/dataModel';
+import type { Id } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
 
 import type { DataModelFromSchemaDefinition } from 'convex/server';
@@ -18,15 +19,15 @@ import { getAuthUserIdentity, getHeaders } from 'better-convex/auth';
 export type BetterAuthDataModel = DataModelFromSchemaDefinition<typeof schema>;
 
 async function rlsRules(
-    userId: string,
+    userId: Id<'user'>,
     role: string,
     ctx: QueryCtx,
-    organizationId?: string | null
+    organizationId?: Id<'organization'> | null
 ) {
     const isAdmin = role === 'admin';
     const canAccessObjective = (objective: {
-        userId: string;
-        organizationId: string;
+        userId: Id<'user'>;
+        organizationId: Id<'organization'>;
         scope?: string;
     }) => {
         if (isAdmin) return true;
@@ -167,8 +168,7 @@ async function rlsRules(
         user: {
             read: async (_, user) => {
                 if (isAdmin) return true;
-                const uid = user.userId ?? user._id;
-                return uid === userId;
+                return user._id === userId;
             },
             insert: async () => false,
             modify: async () => isAdmin,
@@ -221,15 +221,15 @@ const config: RLSConfig = { defaultPolicy: 'deny' };
 
 type QueryRlsCtx = {
     db: GenericDatabaseReader<DataModel>;
-    userId: string;
-    organizationId: string;
+    userId: Id<'user'>;
+    organizationId: Id<'organization'> | null;
     role: string;
 };
 
 type MutationRlsCtx = {
     db: GenericDatabaseWriter<DataModel>;
-    userId: string;
-    organizationId: string;
+    userId: Id<'user'>;
+    organizationId: Id<'organization'> | null;
     role: string;
 };
 
@@ -251,25 +251,30 @@ export const queryWithRLS = customQuery(
             throw new ConvexError('Unauthenticated');
         }
 
-        let organizationId = '';
+        let organizationId: Id<'organization'> | null = null;
         try {
             const headers = await getHeaders(ctx);
             const auth = getAuth(ctx);
             const session = await auth.api.getSession({ headers });
-            organizationId = session?.session.activeOrganizationId ?? '';
+            organizationId =
+                (((session?.session as { activeOrganizationId?: string | null } | undefined)
+                    ?.activeOrganizationId as string | null | undefined) as
+                    | Id<'organization'>
+                    | null
+                    | undefined) ?? null;
         } catch {
-            organizationId = '';
+            organizationId = null;
         }
 
         if (!organizationId) {
             const membership = await ctx.db
                 .query('member')
-                .withIndex('userId', q => q.eq('userId', currentUser.userId ?? currentUser._id))
+                .withIndex('userId', q => q.eq('userId', currentUser._id))
                 .first();
-            organizationId = membership?.organizationId ?? '';
+            organizationId = (membership?.organizationId as Id<'organization'> | null) ?? null;
         }
 
-        const userId = currentUser.userId ?? currentUser._id;
+        const userId = currentUser._id;
         const role = currentUser.role ?? 'user';
 
         return {
@@ -280,7 +285,7 @@ export const queryWithRLS = customQuery(
                 config
             ),
             userId: userId,
-            organizationId: organizationId ?? '',
+            organizationId: organizationId,
             role: role,
         };
     })
@@ -302,25 +307,30 @@ export const mutationWithRLS = customMutation(
             throw new ConvexError('Unauthenticated');
         }
 
-        let organizationId = '';
+        let organizationId: Id<'organization'> | null = null;
         try {
             const headers = await getHeaders(ctx);
             const auth = getAuth(ctx);
             const session = await auth.api.getSession({ headers });
-            organizationId = session?.session.activeOrganizationId ?? '';
+            organizationId =
+                (((session?.session as { activeOrganizationId?: string | null } | undefined)
+                    ?.activeOrganizationId as string | null | undefined) as
+                    | Id<'organization'>
+                    | null
+                    | undefined) ?? null;
         } catch {
-            organizationId = '';
+            organizationId = null;
         }
 
         if (!organizationId) {
             const membership = await ctx.db
                 .query('member')
-                .withIndex('userId', q => q.eq('userId', currentUser.userId ?? currentUser._id))
+                .withIndex('userId', q => q.eq('userId', currentUser._id))
                 .first();
-            organizationId = membership?.organizationId ?? '';
+            organizationId = (membership?.organizationId as Id<'organization'> | null) ?? null;
         }
 
-        const userId = currentUser.userId ?? currentUser._id;
+        const userId = currentUser._id;
         const role = currentUser.role ?? 'user';
 
         return {
@@ -331,7 +341,7 @@ export const mutationWithRLS = customMutation(
                 config
             ),
             userId: userId,
-            organizationId: organizationId ?? '',
+            organizationId: organizationId,
             role: role,
         };
     })

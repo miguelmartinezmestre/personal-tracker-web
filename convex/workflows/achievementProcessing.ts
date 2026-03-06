@@ -37,8 +37,8 @@ type AchievementCheckResult = {
  */
 export const processAchievements = workflow.define({
     args: {
-        userId: v.string(),
-        organizationId: v.optional(v.string()),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
         trigger: v.string(), // 'objective_created' | 'objective_completed' | 'progress_update'
         checkOrganization: v.optional(v.boolean()),
     },
@@ -105,8 +105,8 @@ export const processAchievements = workflow.define({
  */
 export const processProgressAchievements = workflow.define({
     args: {
-        userId: v.string(),
-        organizationId: v.optional(v.string()),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
     },
     handler: async (step, args): Promise<{ awarded: string[] }> => {
         const { userId, organizationId } = args;
@@ -147,8 +147,8 @@ export const processProgressAchievements = workflow.define({
  */
 export const processCompletionAchievements = workflow.define({
     args: {
-        userId: v.string(),
-        organizationId: v.optional(v.string()),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
     },
     handler: async (step, args): Promise<{ awarded: string[] }> => {
         const { userId, organizationId } = args;

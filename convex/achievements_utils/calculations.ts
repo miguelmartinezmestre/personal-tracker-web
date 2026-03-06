@@ -1,12 +1,12 @@
 import { QueryCtx, MutationCtx } from '../_generated/server';
-import { Doc } from '../_generated/dataModel';
+import { Doc, Id } from '../_generated/dataModel';
 import { TIME } from '../utils/constants';
 
 /**
  * Calculate user streak for query context
  * Counts consecutive days with progress updates
  */
-export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promise<number> {
+export async function calculateUserStreak(ctx: QueryCtx, userId: Id<'user'>): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
         .withIndex('by_user', q => q.eq('userId', userId))
@@ -77,7 +77,7 @@ export async function calculateUserStreak(ctx: QueryCtx, userId: string): Promis
  */
 export async function calculateUserStreakInternal(
     ctx: MutationCtx,
-    userId: string
+    userId: Id<'user'>
 ): Promise<number> {
     const objectives = await ctx.db
         .query('objectives')
@@ -146,7 +146,7 @@ export async function calculateUserStreakInternal(
  */
 export async function calculateOrganizationStreak(
     ctx: QueryCtx,
-    memberUserIds: string[]
+    memberUserIds: Id<'user'>[]
 ): Promise<number> {
     // Get organization objectives using indexed queries per user
     const organizationObjectives = await Promise.all(

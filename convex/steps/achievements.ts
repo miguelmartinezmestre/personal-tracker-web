@@ -15,7 +15,7 @@ import { calculateUserStreakInternal } from '../achievements_utils/calculations'
  */
 export const calculateUserStats = internalMutation({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
     },
     handler: async (ctx, args) => {
         const { userId } = args;
@@ -58,8 +58,8 @@ export const calculateUserStats = internalMutation({
  */
 export const checkAchievementCategory = internalMutation({
     args: {
-        userId: v.string(),
-        organizationId: v.optional(v.string()),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
         category: v.string(), // 'objectives_created' | 'objectives_completed' | 'streak' | 'progress_updates' | 'early_bird'
         stats: v.object({
             totalObjectives: v.number(),
@@ -72,6 +72,9 @@ export const checkAchievementCategory = internalMutation({
     handler: async (ctx, args) => {
         const { userId, organizationId, category, stats } = args;
         const now = Date.now();
+        if (!organizationId) {
+            throw new Error('No active organization selected');
+        }
 
         // Get achievement definitions for this category
         const allDefinitions = await ctx.db.query('achievementDefinitions').collect();
@@ -142,7 +145,7 @@ export const checkAchievementCategory = internalMutation({
                     // Create notification
                     await ctx.db.insert('notifications', {
                         userId: userId,
-                        organizationId: organizationId ?? '',
+                        organizationId,
                         objective: undefined,
                         read: false,
                         notificationType: 'achievement',
@@ -179,8 +182,8 @@ function extractNumberFromCode(code: string): number {
  */
 export const checkOrganizationAchievementsCategory = internalMutation({
     args: {
-        organizationId: v.string(),
-        triggerUserId: v.string(),
+        organizationId: v.id('organization'),
+        triggerUserId: v.id('user'),
         category: v.string(),
     },
     handler: async (_, args) => {
@@ -200,8 +203,8 @@ export const checkOrganizationAchievementsCategory = internalMutation({
  */
 export const checkAllAchievements = internalMutation({
     args: {
-        userId: v.string(),
-        organizationId: v.optional(v.string()),
+        userId: v.id('user'),
+        organizationId: v.optional(v.id('organization')),
     },
     handler: async (ctx, args) => {
         const { userId } = args;
