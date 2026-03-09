@@ -1191,5 +1191,70 @@
     },
     "TextSelection": {
         "openIn": "Abrir en {provider}"
+    },
+    "Setup": {
+        "title": "Configuración de la Plataforma",
+        "subtitle": "Configura tu plataforma antes de comenzar",
+        "footer": "Paso {step} de {total}",
+        "steps": {
+            "platform": "Plataforma",
+            "admin": "Cuenta Admin",
+            "organization": "Organización",
+            "categories": "Categorías",
+            "registration": "Registro",
+            "summary": "Resumen"
+        },
+        "navigation": {
+            "next": "Siguiente",
+            "back": "Atrás",
+            "complete": "Completar Configuración",
+            "completing": "Configurando..."
+        },
+        "platformConfig": {
+            "title": "Configuración de la Plataforma",
+            "description": "Elige un nombre para tu plataforma y establece el idioma por defecto.",
+            "nameLabel": "Nombre de la Plataforma",
+            "namePlaceholder": "Mi Plataforma",
+            "languageLabel": "Idioma por Defecto"
+        },
+        "adminAccount": {
+            "title": "Cuenta de Administrador",
+            "description": "Crea la cuenta de administrador para esta plataforma."
+        },
+        "organization": {
+            "title": "Organización",
+            "description": "Configura tu primera organización.",
+            "nameLabel": "Nombre de la Organización",
+            "namePlaceholder": "Mi Organización",
+            "logoLabel": "URL del Logo (opcional)",
+            "logoPlaceholder": "https://ejemplo.com/logo.png",
+            "logoHint": "Proporciona una URL con la imagen del logo de tu organización."
+        },
+        "categories": {
+            "title": "Categorías por Defecto",
+            "description": "Personaliza las categorías predefinidas para objetivos. Puedes editarlas, añadir nuevas o eliminarlas.",
+            "addNew": "Nueva Categoría",
+            "newPlaceholder": "Nombre de la categoría",
+            "add": "Añadir"
+        },
+        "registrationPolicy": {
+            "title": "Política de Registro",
+            "description": "Elige quién puede crear cuentas en esta plataforma.",
+            "openLabel": "Registro Abierto",
+            "openDescription": "Cualquier persona puede crear una cuenta y unirse a la plataforma.",
+            "invitationLabel": "Solo por Invitación",
+            "invitationDescription": "Solo los usuarios con un enlace de invitación pueden registrarse.",
+            "invitationOnly": "Registro Solo por Invitación",
+            "invitationOnlyMessage": "Esta plataforma requiere una invitación para registrarse. Contacta con un administrador para obtener acceso."
+        },
+        "summary": {
+            "title": "Revisar Configuración",
+            "description": "Revisa tu configuración antes de completar la instalación."
+        },
+        "errors": {
+            "title": "Error",
+            "signUpFailed": "No se pudo crear la cuenta de administrador",
+            "setupFailed": "No se pudo completar la configuración de la plataforma. Inténtalo de nuevo."
+        }
     }
 }

@@ -1191,5 +1191,70 @@
     },
     "TextSelection": {
         "openIn": "Open in {provider}"
+    },
+    "Setup": {
+        "title": "Platform Setup",
+        "subtitle": "Configure your platform before getting started",
+        "footer": "Step {step} of {total}",
+        "steps": {
+            "platform": "Platform",
+            "admin": "Admin Account",
+            "organization": "Organization",
+            "categories": "Categories",
+            "registration": "Registration",
+            "summary": "Summary"
+        },
+        "navigation": {
+            "next": "Next",
+            "back": "Back",
+            "complete": "Complete Setup",
+            "completing": "Setting up..."
+        },
+        "platformConfig": {
+            "title": "Platform Configuration",
+            "description": "Choose a name for your platform and set the default language.",
+            "nameLabel": "Platform Name",
+            "namePlaceholder": "My Platform",
+            "languageLabel": "Default Language"
+        },
+        "adminAccount": {
+            "title": "Admin Account",
+            "description": "Create the administrator account for this platform."
+        },
+        "organization": {
+            "title": "Organization",
+            "description": "Set up your first organization.",
+            "nameLabel": "Organization Name",
+            "namePlaceholder": "My Organization",
+            "logoLabel": "Logo URL (optional)",
+            "logoPlaceholder": "https://example.com/logo.png",
+            "logoHint": "Provide a URL to your organization logo image."
+        },
+        "categories": {
+            "title": "Default Categories",
+            "description": "Customize the default objective categories. You can edit, add, or remove them.",
+            "addNew": "New Category",
+            "newPlaceholder": "Category name",
+            "add": "Add"
+        },
+        "registrationPolicy": {
+            "title": "Registration Policy",
+            "description": "Choose who can create accounts on this platform.",
+            "openLabel": "Open Registration",
+            "openDescription": "Anyone can create an account and join the platform.",
+            "invitationLabel": "Invitation Only",
+            "invitationDescription": "Only users with an invitation link can register.",
+            "invitationOnly": "Registration by Invitation Only",
+            "invitationOnlyMessage": "This platform requires an invitation to register. Please contact an administrator for access."
+        },
+        "summary": {
+            "title": "Review Configuration",
+            "description": "Review your settings before completing the setup."
+        },
+        "errors": {
+            "title": "Error",
+            "signUpFailed": "Failed to create admin account",
+            "setupFailed": "Failed to complete platform setup. Please try again."
+        }
     }
 }
