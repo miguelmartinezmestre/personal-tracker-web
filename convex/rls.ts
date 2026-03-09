@@ -214,6 +214,11 @@ async function rlsRules(
                 return false;
             },
         },
+        platformSettings: {
+            read: async () => isAdmin,
+            insert: async () => false,
+            modify: async () => false,
+        },
     } satisfies Rules<QueryCtx, DataModel>;
 }
 

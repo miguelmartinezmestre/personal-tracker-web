@@ -138,4 +138,13 @@ export default defineSchema({
     })
         .index('by_organization', ['organization'])
         .index('by_organization_achievement', ['organization', 'achievement']),
+
+    // Platform-wide settings created during initial setup wizard
+    platformSettings: defineTable({
+        platformName: v.string(),
+        defaultLanguage: v.string(),
+        registrationPolicy: v.string(),
+        setupCompletedAt: v.number(),
+        setupCompletedBy: v.id('user'),
+    }),
 });
