@@ -3,7 +3,6 @@ import { internalMutation } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import {
     calculateUserStreak,
-    calculateUserStreakInternal,
     calculateOrganizationStreak,
 } from './achievements_utils/calculations';
 import { queryWithRLS, mutationWithRLS } from './rls';
@@ -330,7 +329,7 @@ export const checkUserAchievements = internalMutation({
             })
         ).then(results => results.flat());
 
-        const streak = await calculateUserStreakInternal(ctx, userId);
+        const streak = await calculateUserStreak(ctx, userId);
 
         const newAchievements: string[] = [];
 

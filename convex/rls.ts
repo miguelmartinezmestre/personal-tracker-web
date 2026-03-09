@@ -1,4 +1,4 @@
-import { mutation, query, type QueryCtx } from './_generated/server';
+import { mutation, query, type MutationCtx, type QueryCtx } from './_generated/server';
 import type { GenericDatabaseReader, GenericDatabaseWriter } from 'convex/server';
 import { customCtx, customMutation, customQuery } from 'convex-helpers/server/customFunctions';
 import {
@@ -238,49 +238,69 @@ type MutationRlsCtx = {
     role: string;
 };
 
+type AuthContext = {
+    userId: Id<'user'>;
+    organizationId: Id<'organization'> | null;
+    role: string;
+};
+
+/**
+ * Extract the activeOrganizationId from a Better Auth session object.
+ */
+function extractOrganizationId(
+    session: { session?: { activeOrganizationId?: string | null } | null } | null
+): Id<'organization'> | null {
+    const raw = session?.session?.activeOrganizationId ?? null;
+    return raw as Id<'organization'> | null;
+}
+
+/**
+ * Shared auth + organization resolution logic used by both queryWithRLS and mutationWithRLS.
+ * Accepts both QueryCtx and MutationCtx since it only reads from the database.
+ */
+async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
+    const identity = await getAuthUserIdentity(ctx);
+    if (!identity) {
+        throw new ConvexError('Unauthenticated');
+    }
+
+    const currentUser = await ctx.db
+        .query('user')
+        .filter(q => q.eq(q.field('_id'), identity.userId))
+        .first();
+    if (!currentUser) {
+        throw new ConvexError('Unauthenticated');
+    }
+
+    let organizationId: Id<'organization'> | null = null;
+    try {
+        const headers = await getHeaders(ctx);
+        const auth = getAuth(ctx);
+        const session = await auth.api.getSession({ headers });
+        organizationId = extractOrganizationId(session);
+    } catch {
+        organizationId = null;
+    }
+
+    if (!organizationId) {
+        const membership = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', currentUser._id))
+            .first();
+        organizationId = (membership?.organizationId as Id<'organization'> | null) ?? null;
+    }
+
+    return {
+        userId: currentUser._id,
+        organizationId,
+        role: currentUser.role ?? 'user',
+    };
+}
+
 export const queryWithRLS = customQuery(
     query,
     customCtx(async (ctx): Promise<QueryRlsCtx> => {
-        const identity = await getAuthUserIdentity(ctx);
-
-        if (!identity) {
-            throw new ConvexError('Unauthenticated');
-        }
-
-        const currentUser = await ctx.db
-            .query('user')
-            .filter(q => q.eq(q.field('_id'), identity.userId))
-            .first();
-
-        if (!currentUser) {
-            throw new ConvexError('Unauthenticated');
-        }
-
-        let organizationId: Id<'organization'> | null = null;
-        try {
-            const headers = await getHeaders(ctx);
-            const auth = getAuth(ctx);
-            const session = await auth.api.getSession({ headers });
-            organizationId =
-                ((session?.session as { activeOrganizationId?: string | null } | undefined)
-                    ?.activeOrganizationId as string | null | undefined as
-                    | Id<'organization'>
-                    | null
-                    | undefined) ?? null;
-        } catch {
-            organizationId = null;
-        }
-
-        if (!organizationId) {
-            const membership = await ctx.db
-                .query('member')
-                .withIndex('userId', q => q.eq('userId', currentUser._id))
-                .first();
-            organizationId = (membership?.organizationId as Id<'organization'> | null) ?? null;
-        }
-
-        const userId = currentUser._id;
-        const role = currentUser.role ?? 'user';
+        const { userId, organizationId, role } = await resolveAuthContext(ctx);
 
         return {
             db: wrapDatabaseReader(
@@ -289,9 +309,9 @@ export const queryWithRLS = customQuery(
                 await rlsRules(userId, role, ctx, organizationId),
                 config
             ),
-            userId: userId,
-            organizationId: organizationId,
-            role: role,
+            userId,
+            organizationId,
+            role,
         };
     })
 );
@@ -299,44 +319,7 @@ export const queryWithRLS = customQuery(
 export const mutationWithRLS = customMutation(
     mutation,
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError('Unauthenticated');
-        }
-
-        const currentUser = await ctx.db
-            .query('user')
-            .filter(q => q.eq(q.field('_id'), identity.userId))
-            .first();
-        if (!currentUser) {
-            throw new ConvexError('Unauthenticated');
-        }
-
-        let organizationId: Id<'organization'> | null = null;
-        try {
-            const headers = await getHeaders(ctx);
-            const auth = getAuth(ctx);
-            const session = await auth.api.getSession({ headers });
-            organizationId =
-                ((session?.session as { activeOrganizationId?: string | null } | undefined)
-                    ?.activeOrganizationId as string | null | undefined as
-                    | Id<'organization'>
-                    | null
-                    | undefined) ?? null;
-        } catch {
-            organizationId = null;
-        }
-
-        if (!organizationId) {
-            const membership = await ctx.db
-                .query('member')
-                .withIndex('userId', q => q.eq('userId', currentUser._id))
-                .first();
-            organizationId = (membership?.organizationId as Id<'organization'> | null) ?? null;
-        }
-
-        const userId = currentUser._id;
-        const role = currentUser.role ?? 'user';
+        const { userId, organizationId, role } = await resolveAuthContext(ctx);
 
         return {
             db: wrapDatabaseWriter(
@@ -345,9 +328,9 @@ export const mutationWithRLS = customMutation(
                 await rlsRules(userId, role, ctx, organizationId),
                 config
             ),
-            userId: userId,
-            organizationId: organizationId,
-            role: role,
+            userId,
+            organizationId,
+            role,
         };
     })
 );
