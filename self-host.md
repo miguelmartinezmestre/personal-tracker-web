@@ -53,8 +53,8 @@ NEXT_PUBLIC_CONVEX_SITE_URL=http://127.0.0.1:3211
 # URL de la app
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Solo para dev/test
-ALLOW_PROMOTE_DEV=true
+# Solo para dev/test — habilita el endpoint /api/test/setup-platform
+ALLOW_SETUP_TEST=true
 ```
 
 Notas:
@@ -62,7 +62,13 @@ Notas:
 - Usa `.env.local` (no `.env`) para desarrollo local en Next.js.
 - Si tienes `CONVEX_DEPLOYMENT` de cloud en `.env.local`, comentalo o eliminalo.
 
-## 5) Configurar variables del backend (Convex)
+## 5) Primer acceso — Setup Wizard
+
+Al acceder a la app por primera vez (sin usuarios), seras redirigido automaticamente a `/setup`. El
+wizard guia la configuracion inicial: nombre de la plataforma, cuenta admin, organizacion,
+categorias y politica de registro.
+
+## 6) Configurar variables del backend (Convex)
 
 Genera un secreto nuevo (no lo subas a Git):
 
@@ -85,7 +91,7 @@ export CONVEX_SELF_HOSTED_URL=http://127.0.0.1:3210
 export CONVEX_SELF_HOSTED_ADMIN_KEY=convex-self-hosted|<TU_ADMIN_KEY>
 ```
 
-## 6) Arrancar entorno de desarrollo
+## 7) Arrancar entorno de desarrollo
 
 Terminal 1:
 
@@ -99,7 +105,7 @@ Terminal 2:
 pnpm dev
 ```
 
-## 7) Verificacion
+## 8) Verificacion
 
 - App: http://localhost:3000
 - Convex backend: http://127.0.0.1:3210/version

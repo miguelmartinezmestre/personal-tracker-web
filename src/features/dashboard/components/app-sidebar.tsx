@@ -32,6 +32,8 @@ import { cn } from '@/lib/ui-utils/utils';
 import { api } from '@/convex/_generated/api';
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 
 type ProjectNavItem = {
     name: string;
@@ -110,6 +112,9 @@ export function AppSidebar({
     const { isMobile, setOpenMobile } = useSidebar();
 
     const user = usePreloadedAuthQuery(preloadedUserQuery);
+    const { data: platformSettings } = useQuery(
+        convexQuery(api.setup.getPublicPlatformSettings, {})
+    );
 
     const isAdmin = user?.role === 'admin';
 
@@ -132,7 +137,8 @@ export function AppSidebar({
                         <Goal className="h-4 w-4 text-primary" />
                     </div>
                     <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">
-                        {t('appName', { defaultValue: 'Metrics App' })}
+                        {(platformSettings as { platformName?: string } | null)?.platformName ??
+                            t('appName', { defaultValue: 'Metrics App' })}
                     </span>
                 </div>
             </SidebarHeader>
