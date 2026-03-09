@@ -7,6 +7,7 @@ import {
     createNotification,
     ensureDefaultCategories,
     promoteToAdmin,
+    setupPlatformAsAdmin,
     loginUser,
     logoutUser,
     TestUserData,
@@ -141,6 +142,7 @@ export {
     createNotification,
     ensureDefaultCategories,
     promoteToAdmin,
+    setupPlatformAsAdmin,
     loginUser,
     logoutUser,
 };

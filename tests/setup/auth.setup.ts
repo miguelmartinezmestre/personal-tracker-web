@@ -119,15 +119,16 @@ setup('create shared admin user', async ({ page }) => {
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
 
-    // Promote to admin (use page.request instead of page.evaluate to avoid
+    // Complete platform setup as admin (use page.request instead of page.evaluate to avoid
     // "Execution context was destroyed" errors from page navigations)
-    const promoteResponse = await page.request.post('/api/test/promote-admin', {
+    const setupResponse = await page.request.post('/api/test/setup-platform', {
         headers: { ...headers, 'Content-Type': 'application/json' },
+        data: JSON.stringify({}),
     });
 
-    if (!promoteResponse.ok()) {
-        const body = await promoteResponse.text();
-        throw new Error(`Promote admin failed (${promoteResponse.status()}): ${body}`);
+    if (!setupResponse.ok()) {
+        const body = await setupResponse.text();
+        throw new Error(`Setup platform failed (${setupResponse.status()}): ${body}`);
     }
 
     // Reload to pick up admin state

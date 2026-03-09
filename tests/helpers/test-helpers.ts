@@ -825,21 +825,34 @@ export async function createNotification(
 }
 
 /**
- * Promotes the current logged-in user to admin role.
+ * Promotes the current logged-in user to admin role via the setup-platform test endpoint.
+ * This completes the platform setup wizard programmatically, which creates the admin user,
+ * organization, and default categories.
+ *
+ * @deprecated Use setupPlatformAsAdmin for new tests. This alias is kept for backward compatibility.
  */
 export async function promoteToAdmin(page: Page): Promise<void> {
+    return setupPlatformAsAdmin(page);
+}
+
+/**
+ * Completes platform setup for the current logged-in user, promoting them to admin.
+ * Uses the /api/test/setup-platform endpoint (requires ALLOW_SETUP_TEST=true).
+ */
+export async function setupPlatformAsAdmin(page: Page): Promise<void> {
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 
     for (let attempt = 0; attempt < 3; attempt++) {
         await page.evaluate(async () => {
-            const response = await fetch('/api/test/promote-admin', {
+            const response = await fetch('/api/test/setup-platform', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
             });
 
             if (!response.ok) {
                 const body = await response.text();
-                throw new Error(`Promote admin failed: ${response.status} ${body}`);
+                throw new Error(`Setup platform failed: ${response.status} ${body}`);
             }
 
             return await response.json();
@@ -854,7 +867,7 @@ export async function promoteToAdmin(page: Page): Promise<void> {
         await page.waitForTimeout(1000);
     }
 
-    throw new Error('Failed to promote current user to admin after retries');
+    throw new Error('Failed to setup platform as admin after retries');
 }
 
 /**
