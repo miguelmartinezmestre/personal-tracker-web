@@ -58,9 +58,9 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
             id: 'status',
             header: t('status'),
             cell: ({ row }) => {
-                const { label, variant } = getSessionStatus(row.original);
+                const { label, variant, status } = getSessionStatus(row.original);
                 return (
-                    <Badge variant={variant} data-testid={`session-status-badge`}>
+                    <Badge variant={variant} data-testid={`session-status-badge-${status}`}>
                         {label}
                     </Badge>
                 );

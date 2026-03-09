@@ -120,6 +120,7 @@ export function useNotificationsTableColumns({
                             size="sm"
                             onClick={toggleRead}
                             disabled={isSettingRead}
+                            data-testid="notification-mark-read-button"
                         >
                             {notification.read ? t('table.markUnread') : t('table.markRead')}
                         </Button>
@@ -135,7 +136,11 @@ export function useNotificationsTableColumns({
                             cancelLabel={t('confirm.cancel')}
                             isLoading={isDeletingNotification}
                             trigger={
-                                <Button variant="destructive" size="sm">
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    data-testid="notification-delete-button"
+                                >
                                     {t('table.delete')}
                                 </Button>
                             }

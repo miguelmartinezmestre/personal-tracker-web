@@ -111,6 +111,7 @@ export default function NotificationsTable({
                     variant="outline"
                     onClick={() => markAllRead()}
                     disabled={unreadCount === 0 || isMarkingAllRead}
+                    data-testid="notification-mark-all-read-button"
                 >
                     {t('markAllRead')}
                 </Button>
