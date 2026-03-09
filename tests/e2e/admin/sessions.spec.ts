@@ -1,13 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { createTestUser, promoteToAdmin } from '../../helpers/test-helpers';
+import { createTestUserViaAPI } from '../../helpers/test-helpers';
 
 test.describe('Admin Sessions', () => {
-    test.beforeEach(async ({ page }) => {
-        await createTestUser(page);
-        await promoteToAdmin(page);
-    });
-
-    test('view all user sessions', async ({ page }) => {
+    test('view all user sessions', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -23,7 +18,7 @@ test.describe('Admin Sessions', () => {
         expect(tableVisible).toBeTruthy();
     });
 
-    test('filter sessions by user', async ({ page }) => {
+    test('filter sessions by user', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -36,25 +31,24 @@ test.describe('Admin Sessions', () => {
 
         if (await userFilter.isVisible()) {
             await userFilter.fill('test');
-            await page.waitForTimeout(1000);
             await page.waitForLoadState('domcontentloaded');
 
             // Should filter sessions by user
         }
     });
 
-    test('admin can revoke any session', async ({ page, context }) => {
-        // Create another user with an active session
-        const newPage = await context.newPage();
-        await createTestUser(newPage);
-        // Don't close the page to keep the session active
-        await newPage.close();
+    test('admin can revoke any session', { tag: ['@REQ-ADMIN-004'] }, async ({ page, browser }) => {
+        // Create another user in a fresh context so it doesn't share admin cookies
+        const freshContext = await browser.newContext();
+        const newPage = await freshContext.newPage();
+        await createTestUserViaAPI(newPage);
+        await freshContext.close();
 
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
         // Find a session that's not the current admin's
-        const sessionRows = page.locator('tbody tr, [data-testid*="session-row"]');
+        const sessionRows = page.getByTestId('table-row');
 
         for (let i = 0; i < (await sessionRows.count()); i++) {
             const row = sessionRows.nth(i);
@@ -77,14 +71,13 @@ test.describe('Admin Sessions', () => {
                         await confirmButton.click();
                     }
 
-                    await page.waitForTimeout(2000);
                     break;
                 }
             }
         }
     });
 
-    test('sessions show user information', async ({ page }) => {
+    test('sessions show user information', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -97,7 +90,7 @@ test.describe('Admin Sessions', () => {
         await expect(userIdInput).toBeVisible();
     });
 
-    test('sessions show device information', async ({ page }) => {
+    test('sessions show device information', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -112,7 +105,7 @@ test.describe('Admin Sessions', () => {
         const hasColumn = (await userAgentColumn.count()) > 0;
     });
 
-    test('sessions show IP address', async ({ page }) => {
+    test('sessions show IP address', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -125,7 +118,7 @@ test.describe('Admin Sessions', () => {
         await expect(userIdInput).toBeVisible();
     });
 
-    test('sessions show last activity time', async ({ page }) => {
+    test('sessions show last activity time', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -138,7 +131,7 @@ test.describe('Admin Sessions', () => {
         await expect(userIdInput).toBeVisible();
     });
 
-    test('sessions pagination', async ({ page }) => {
+    test('sessions pagination', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -155,7 +148,7 @@ test.describe('Admin Sessions', () => {
         }
     });
 
-    test('filter by session status', async ({ page }) => {
+    test('filter by session status', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -177,7 +170,7 @@ test.describe('Admin Sessions', () => {
         }
     });
 
-    test('bulk revoke sessions', async ({ page }) => {
+    test('bulk revoke sessions', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -201,12 +194,12 @@ test.describe('Admin Sessions', () => {
         }
     });
 
-    test('sessions sorted by activity', async ({ page }) => {
+    test('sessions sorted by activity', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
         // Most recently active sessions should be first
-        const firstRow = page.locator('tbody tr, [data-testid*="session-row"]').first();
+        const firstRow = page.getByTestId('table-row').first();
 
         if (await firstRow.isVisible()) {
             // Should have recent activity
@@ -217,7 +210,7 @@ test.describe('Admin Sessions', () => {
         }
     });
 
-    test('export sessions', async ({ page }) => {
+    test('export sessions', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
@@ -231,19 +224,18 @@ test.describe('Admin Sessions', () => {
         }
     });
 
-    test('view session details', async ({ page }) => {
+    test('view session details', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
         await page.goto('/dashboard/admin/sessions');
         await page.waitForLoadState('domcontentloaded');
 
         // Click on a session to view details
-        const sessionRow = page.locator('tbody tr, [data-testid*="session-row"]').first();
+        const sessionRow = page.getByTestId('table-row').first();
         const viewButton = sessionRow.locator(
             'button:has-text("Details"), button:has-text("View"), [data-testid*="view"]'
         );
 
         if ((await viewButton.count()) > 0) {
             await viewButton.first().click();
-            await page.waitForTimeout(500);
 
             // Should show detailed session information
             const detailsPanel = page.locator('[role="dialog"], [data-testid*="details"]');

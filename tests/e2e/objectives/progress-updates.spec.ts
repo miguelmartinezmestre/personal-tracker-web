@@ -38,7 +38,6 @@ async function createProgressUpdate(
             break;
         } catch {
             await page.keyboard.press('Escape').catch(() => undefined);
-            await page.waitForTimeout(250);
         }
     }
 
@@ -59,7 +58,7 @@ async function createProgressUpdate(
             saved = true;
             break;
         } catch {
-            await page.waitForTimeout(250);
+            // Retry save on next iteration
         }
     }
 
@@ -69,22 +68,26 @@ async function createProgressUpdate(
 }
 
 test.describe('Objectives Progress Updates', () => {
-    test('create progress update from objective detail', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Progress create ${Date.now()}`,
-            targetValue: 100,
-        });
+    test(
+        'create progress update from objective detail',
+        { tag: ['@REQ-PROGRESO-001', '@REQ-OBJETIVOS-012'] },
+        async ({ page }) => {
+            const objective = await createObjective(page, {
+                title: `Progress create ${Date.now()}`,
+                targetValue: 100,
+            });
 
-        await openObjectiveDetailFromList(page);
-        await createProgressUpdate(page, '35', 'First progress entry');
+            await openObjectiveDetailFromList(page);
+            await createProgressUpdate(page, '35', 'First progress entry');
 
-        await expect(
-            page.getByTestId('table-row').filter({ hasText: 'First progress entry' }).first()
-        ).toBeVisible({ timeout: 10000 });
-        await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
-    });
+            await expect(
+                page.getByTestId('table-row').filter({ hasText: 'First progress entry' }).first()
+            ).toBeVisible({ timeout: 10000 });
+            await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
+        }
+    );
 
-    test('edit progress update', async ({ page }) => {
+    test('edit progress update', { tag: ['@REQ-PROGRESO-003'] }, async ({ page }) => {
         await createObjective(page, {
             title: `Progress edit ${Date.now()}`,
             targetValue: 100,
@@ -112,7 +115,7 @@ test.describe('Objectives Progress Updates', () => {
         await expect(page.getByText('Comment after edit')).toBeVisible({ timeout: 10000 });
     });
 
-    test('delete progress update', async ({ page }) => {
+    test('delete progress update', { tag: ['@REQ-PROGRESO-003'] }, async ({ page }) => {
         await createObjective(page, {
             title: `Progress delete ${Date.now()}`,
             targetValue: 100,
@@ -133,30 +136,32 @@ test.describe('Objectives Progress Updates', () => {
         );
         await expect(confirmDialog.first()).toBeVisible({ timeout: 10000 });
 
-        const confirmButton = confirmDialog
-            .first()
-            .getByRole('button', { name: /delete|eliminar|confirm|confirmar/i });
+        const confirmButton = confirmDialog.first().getByTestId('delete-confirm-button');
         await confirmButton.click();
         await page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 });
 
         await expect(page.getByText('Delete me progress')).toHaveCount(0);
     });
 
-    test('objective auto-completes when progress reaches target', async ({ page }) => {
-        const objective = await createObjective(page, {
-            title: `Auto complete ${Date.now()}`,
-            targetValue: 100,
-        });
+    test(
+        'objective auto-completes when progress reaches target',
+        { tag: ['@REQ-OBJETIVOS-007', '@REQ-PROGRESO-005'] },
+        async ({ page }) => {
+            const objective = await createObjective(page, {
+                title: `Auto complete ${Date.now()}`,
+                targetValue: 100,
+            });
 
-        await openObjectiveDetailFromList(page);
-        await createProgressUpdate(page, '100', 'Reached target');
+            await openObjectiveDetailFromList(page);
+            await createProgressUpdate(page, '100', 'Reached target');
 
-        await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-        const objectiveRow = page
-            .getByTestId('table-row')
-            .filter({ hasText: objective.title })
-            .first();
-        await expect(objectiveRow).toBeVisible({ timeout: 10000 });
-        await expect(objectiveRow).toContainText(/completed|completado/i);
-    });
+            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+            const objectiveRow = page
+                .getByTestId('table-row')
+                .filter({ hasText: objective.title })
+                .first();
+            await expect(objectiveRow).toBeVisible({ timeout: 10000 });
+            await expect(objectiveRow).toContainText(/completed|completado/i);
+        }
+    );
 });

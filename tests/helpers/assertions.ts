@@ -29,9 +29,6 @@ export async function expectOnRegister(page: Page): Promise<void> {
  * Asserts that an error alert is visible.
  */
 export async function expectErrorAlert(page: Page, message?: string | RegExp): Promise<void> {
-    // Wait a bit for error to appear
-    await page.waitForTimeout(1000);
-
     const alert = page.locator(
         '[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]'
     );
@@ -39,13 +36,22 @@ export async function expectErrorAlert(page: Page, message?: string | RegExp): P
         /error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i
     );
 
-    const hasAlert = (await alert.count()) > 0;
-    const hasErrorText = (await errorText.count()) > 0;
+    await expect
+        .poll(
+            async () => {
+                const hasAlert = (await alert.count()) > 0;
+                const hasErrorText = (await errorText.count()) > 0;
+                return hasAlert || hasErrorText;
+            },
+            { timeout: 5000, intervals: [200, 500, 1000] }
+        )
+        .toBe(true);
 
-    expect(hasAlert || hasErrorText).toBeTruthy();
-
-    if (message && hasAlert) {
-        await expect(alert.first()).toContainText(message);
+    if (message) {
+        const hasAlert = (await alert.count()) > 0;
+        if (hasAlert) {
+            await expect(alert.first()).toContainText(message);
+        }
     }
 }
 
@@ -72,4 +78,3 @@ export async function expectAdminMenuHidden(page: Page): Promise<void> {
     const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]');
     await expect(adminMenuItem).toHaveCount(0);
 }
-

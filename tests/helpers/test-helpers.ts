@@ -224,15 +224,16 @@ async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
 
     await trigger.click();
 
-    await page.waitForTimeout(250);
     const option = page.locator('[data-testid^="organization-option-"]').first();
-    if ((await option.count()) === 0) {
+    try {
+        await expect(option).toBeVisible({ timeout: 5000 });
+    } catch {
         await page.keyboard.press('Escape').catch(() => undefined);
         return false;
     }
 
     await option.click();
-    await page.waitForTimeout(500);
+    await expect(option).toBeHidden({ timeout: 5000 });
 
     return true;
 }
@@ -261,7 +262,6 @@ async function ensureOrganizationExists(page: Page): Promise<void> {
                 break;
             } catch {
                 await page.keyboard.press('Escape').catch(() => undefined);
-                await page.waitForTimeout(250);
             }
         }
 
@@ -314,8 +314,6 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
             return;
         }
-
-        await page.waitForTimeout(500);
     }
 
     // Some auth payloads do not expose active organization consistently.
@@ -364,28 +362,20 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
 
     await page.getByTestId('register-button').click();
 
-    const timeoutAt = Date.now() + 12000;
     let outcome: 'dashboard' | 'login' | 'session' | null = null;
 
-    while (Date.now() < timeoutAt) {
+    try {
+        await page.waitForURL(/\/(dashboard\/home|login)(\?|$)/, { timeout: 12000 });
         const currentUrl = page.url();
-
         if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
             outcome = 'dashboard';
-            break;
-        }
-
-        if (/\/login(\?|$)/.test(currentUrl)) {
+        } else {
             outcome = 'login';
-            break;
         }
-
+    } catch {
         if (await hasAuthenticatedSession(page)) {
             outcome = 'session';
-            break;
         }
-
-        await page.waitForTimeout(300);
     }
 
     if (!outcome) {
@@ -483,19 +473,33 @@ export async function createTestUserViaAPI(
     const origin = process.env.BASE_URL || 'http://localhost:3000';
     const headers = { Origin: origin };
 
-    // Step 1: Sign up via API
-    const signUpResponse = await page.request.post('/api/auth/sign-up/email', {
-        headers,
-        data: {
-            email: userData.email,
-            password: userData.password,
-            name: userData.username,
-        },
-    });
+    // Step 1: Sign up via API (with retry for transient network errors like ECONNRESET)
+    let signUpResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            signUpResponse = await page.request.post('/api/auth/sign-up/email', {
+                headers,
+                data: {
+                    email: userData.email,
+                    password: userData.password,
+                    name: userData.username,
+                },
+            });
+            break;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (attempt < 2 && /ECONNRESET|fetch failed|ECONNREFUSED/.test(message)) {
+                await page.waitForTimeout(1000); // Legitimate backoff for transient network error
+                continue;
+            }
+            throw error;
+        }
+    }
 
-    if (!signUpResponse.ok()) {
-        const body = await signUpResponse.text();
-        throw new Error(`Sign-up API failed (${signUpResponse.status()}): ${body}`);
+    if (!signUpResponse || !signUpResponse.ok()) {
+        const body = signUpResponse ? await signUpResponse.text() : 'No response';
+        const status = signUpResponse ? signUpResponse.status() : 0;
+        throw new Error(`Sign-up API failed (${status}): ${body}`);
     }
 
     // Step 2: Create organization via API
@@ -609,7 +613,6 @@ export async function createObjective(
             break;
         } catch {
             await page.keyboard.press('Escape').catch(() => undefined);
-            await page.waitForTimeout(250);
         }
     }
 
@@ -623,8 +626,7 @@ export async function createObjective(
 
     // Select category
     await page.getByTestId('objective-category-select').click();
-    await page.waitForTimeout(500); // Wait for dropdown animation
-    await page.waitForSelector('[role="option"]', { timeout: 10000 });
+    await expect(page.getByRole('option').first()).toBeVisible({ timeout: 10000 });
 
     // Try to find the category option with more flexibility
     const categoryOption = page
@@ -651,6 +653,22 @@ export async function createObjective(
     await expect(createdObjectiveRow).toBeVisible({ timeout: 15000 });
 
     return { title, description, category, targetValue, currentValue, unit };
+}
+
+const COLOR_NAME_TO_HEX: Record<string, string> = {
+    Red: '#ef4444',
+    Orange: '#f97316',
+    Yellow: '#eab308',
+    Green: '#22c55e',
+    Teal: '#14b8a6',
+    Blue: '#3b82f6',
+    Purple: '#a855f7',
+    Pink: '#ec4899',
+    Gray: '#6b7280',
+};
+
+function colorNameToHex(color: string): string | undefined {
+    return COLOR_NAME_TO_HEX[color];
 }
 
 export interface CreateCategoryOptions {
@@ -686,7 +704,6 @@ export async function createCategory(
             break;
         } catch {
             await page.keyboard.press('Escape').catch(() => undefined);
-            await page.waitForTimeout(250);
         }
     }
 
@@ -697,11 +714,9 @@ export async function createCategory(
     await page.getByTestId('category-name-input').fill(name);
     await page.getByTestId('category-color-select').click();
     await page.waitForSelector('[role="option"]', { timeout: 5000 });
-    const colorOption = page
-        .getByRole('option')
-        .filter({ hasText: new RegExp(color, 'i') })
-        .first();
-    if ((await colorOption.count()) > 0) {
+    const hex = colorNameToHex(color);
+    if (hex) {
+        const colorOption = page.getByTestId(`category-color-${hex}`);
         await colorOption.click();
     } else {
         await page.getByRole('option').first().click();
@@ -722,18 +737,21 @@ export async function createCategory(
  */
 export async function ensureDefaultCategories(page: Page): Promise<void> {
     await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector(
-        '[data-testid="category-create-open"], table, [data-testid*="categories"]',
-        {
-            timeout: 15000,
-        }
-    );
+    await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15000 });
 
-    const personalCategoryExists =
-        (await page
-            .getByTestId('table-row')
-            .filter({ hasText: /\bPersonal\b/i })
-            .count()) > 0;
+    // Wait for table to stabilise (Convex real-time data may arrive after initial render)
+    const personalCategoryExists = await expect
+        .poll(
+            async () =>
+                await page
+                    .getByTestId('table-row')
+                    .filter({ hasText: /\bPersonal\b/i })
+                    .count(),
+            { timeout: 5000, intervals: [500, 1000] }
+        )
+        .toBeGreaterThan(0)
+        .then(() => true)
+        .catch(() => false);
 
     if (!personalCategoryExists) {
         await createCategory(page, { name: 'Personal', color: 'Green' });
@@ -773,7 +791,7 @@ export async function createOrganization(
     await page.getByTestId('organization-save-button').click();
 
     // Wait for org to appear in list (Convex mutation is async)
-    await expect(page.locator('tr').filter({ hasText: name }).first()).toBeVisible({
+    await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
         timeout: 15000,
     });
 
@@ -803,7 +821,7 @@ export async function createNotification(
     const type = options?.type ?? 'reminder';
 
     await page.goto('/dashboard/notifications');
-    await page.waitForLoadState('load');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForSelector('[data-testid="notification-create-open"]', { timeout: 15000 });
 
     await page.getByTestId('notification-create-open').click();
@@ -829,42 +847,46 @@ export async function createNotification(
  * This completes the platform setup wizard programmatically, which creates the admin user,
  * organization, and default categories.
  *
- * @deprecated Use setupPlatformAsAdmin for new tests. This alias is kept for backward compatibility.
+ * @deprecated Prefer using the shared admin storageState from auth.setup.ts instead.
  */
 export async function promoteToAdmin(page: Page): Promise<void> {
     return setupPlatformAsAdmin(page);
 }
 
 /**
- * Completes platform setup for the current logged-in user, promoting them to admin.
- * Uses the /api/test/setup-platform endpoint (requires ALLOW_SETUP_TEST=true).
+ * Completes platform setup via /api/test/setup-platform, promoting the current user to admin.
+ * Only works on a fresh platform (no existing platformSettings).
+ * Requires ALLOW_SETUP_TEST=true.
+ *
+ * @deprecated Prefer using the shared admin storageState from auth.setup.ts instead.
  */
 export async function setupPlatformAsAdmin(page: Page): Promise<void> {
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 
     for (let attempt = 0; attempt < 3; attempt++) {
         await page.evaluate(async () => {
-            const response = await fetch('/api/test/setup-platform', {
+            const setupResponse = await fetch('/api/test/setup-platform', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({}),
             });
 
-            if (!response.ok) {
-                const body = await response.text();
-                throw new Error(`Setup platform failed: ${response.status} ${body}`);
+            if (!setupResponse.ok) {
+                const body = await setupResponse.text();
+                throw new Error(`Setup platform failed: ${setupResponse.status} ${body}`);
             }
 
-            return await response.json();
+            return await setupResponse.json();
         });
 
         await page.reload({ waitUntil: 'domcontentloaded' });
         const adminMenuItem = page.locator('a[href*="/dashboard/admin"], [data-testid*="admin"]');
-        if ((await adminMenuItem.count()) > 0) {
+        try {
+            await expect(adminMenuItem.first()).toBeVisible({ timeout: 5000 });
             return;
+        } catch {
+            // Retry on next iteration
         }
-
-        await page.waitForTimeout(1000);
     }
 
     throw new Error('Failed to setup platform as admin after retries');
@@ -876,6 +898,91 @@ export async function setupPlatformAsAdmin(page: Page): Promise<void> {
 export async function waitForToast(page: Page, message: string | RegExp): Promise<void> {
     const toast = page.locator('[data-sonner-toast]', { hasText: message });
     await expect(toast).toBeVisible({ timeout: 5000 });
+}
+
+/**
+ * Waits for Convex real-time data to appear in the DOM.
+ * Replaces `waitForLoadState('load') + waitForTimeout()` pattern.
+ */
+export async function waitForConvexData(
+    page: Page,
+    testId: string,
+    options?: { timeout?: number }
+): Promise<void> {
+    const timeout = options?.timeout ?? 15000;
+    await expect(page.getByTestId(testId)).toBeVisible({ timeout });
+}
+
+/**
+ * Opens a modal by clicking a trigger and waiting for content to appear.
+ * Retries with Escape if the modal doesn't open.
+ */
+export async function openModal(
+    page: Page,
+    triggerTestId: string,
+    contentTestId: string,
+    options?: { maxAttempts?: number; timeout?: number }
+): Promise<void> {
+    const maxAttempts = options?.maxAttempts ?? 3;
+    const timeout = options?.timeout ?? 5000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await page.getByTestId(triggerTestId).click();
+        try {
+            await expect(page.getByTestId(contentTestId)).toBeVisible({ timeout });
+            return;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+        }
+    }
+
+    throw new Error(`Could not open modal: trigger=${triggerTestId}, content=${contentTestId}`);
+}
+
+/**
+ * Selects an option from a dropdown/select trigger.
+ * Waits for options to appear before selecting.
+ */
+export async function selectDropdownOption(
+    page: Page,
+    triggerTestId: string,
+    optionText: string | RegExp,
+    options?: { timeout?: number; fallbackToFirst?: boolean }
+): Promise<void> {
+    const timeout = options?.timeout ?? 10000;
+    const fallbackToFirst = options?.fallbackToFirst ?? false;
+
+    await page.getByTestId(triggerTestId).click();
+    await expect(page.getByRole('option').first()).toBeVisible({ timeout });
+
+    const option = page.getByRole('option').filter({ hasText: optionText }).first();
+
+    if ((await option.count()) > 0) {
+        await option.click();
+        return;
+    }
+
+    if (fallbackToFirst) {
+        await page.getByRole('option').first().click();
+        return;
+    }
+
+    throw new Error(`Dropdown option not found: ${optionText}`);
+}
+
+/**
+ * Navigates to a page and waits for specific content to appear.
+ * Replaces `goto() + waitForLoadState('load')` pattern for Convex pages.
+ */
+export async function navigateAndWaitForContent(
+    page: Page,
+    path: string,
+    contentTestId: string,
+    options?: { timeout?: number }
+): Promise<void> {
+    const timeout = options?.timeout ?? 15000;
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId(contentTestId)).toBeVisible({ timeout });
 }
 
 /**

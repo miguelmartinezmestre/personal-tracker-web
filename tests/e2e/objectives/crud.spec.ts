@@ -35,7 +35,6 @@ async function createObjectiveFromModal(
             break;
         } catch {
             await page.keyboard.press('Escape').catch(() => undefined);
-            await page.waitForTimeout(250);
         }
     }
 
@@ -47,11 +46,7 @@ async function createObjectiveFromModal(
 
     if (params.scope === 'organization') {
         await page.getByTestId('objective-scope-select').click();
-        const organizationScopeOption = page
-            .getByRole('option')
-            .filter({ hasText: /organization|organizaci/i })
-            .first();
-        await organizationScopeOption.click();
+        await page.getByTestId('objective-scope-organization').click();
     }
 
     await selectObjectiveCategory(page);
@@ -69,34 +64,42 @@ test.describe('Objectives CRUD', () => {
         await ensureDefaultCategories(page);
     });
 
-    test('create personal objective', async ({ page }) => {
-        const title = `Personal objective ${Date.now()}`;
-        await openObjectivesPage(page);
+    test(
+        'create personal objective',
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
+        async ({ page }) => {
+            const title = `Personal objective ${Date.now()}`;
+            await openObjectivesPage(page);
 
-        await createObjectiveFromModal(page, {
-            title,
-            target: '120',
-            unit: 'points',
-        });
+            await createObjectiveFromModal(page, {
+                title,
+                target: '120',
+                unit: 'points',
+            });
 
-        await expect(objectiveRow(page, title)).toBeVisible({ timeout: 10000 });
-    });
+            await expect(objectiveRow(page, title)).toBeVisible({ timeout: 10000 });
+        }
+    );
 
-    test('create organization objective', async ({ page }) => {
-        const title = `Organization objective ${Date.now()}`;
-        await openObjectivesPage(page);
+    test(
+        'create organization objective',
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
+        async ({ page }) => {
+            const title = `Organization objective ${Date.now()}`;
+            await openObjectivesPage(page);
 
-        await createObjectiveFromModal(page, {
-            title,
-            target: '75',
-            unit: 'tasks',
-            scope: 'organization',
-        });
+            await createObjectiveFromModal(page, {
+                title,
+                target: '75',
+                unit: 'tasks',
+                scope: 'organization',
+            });
 
-        await expect(objectiveRow(page, title)).toBeVisible({ timeout: 10000 });
-    });
+            await expect(objectiveRow(page, title)).toBeVisible({ timeout: 10000 });
+        }
+    );
 
-    test('edit objective title and scope', async ({ page }) => {
+    test('edit objective title and scope', { tag: ['@REQ-OBJETIVOS-003'] }, async ({ page }) => {
         const originalTitle = `Edit objective ${Date.now()}`;
         const updatedTitle = `Edited objective ${Date.now()}`;
 
@@ -120,7 +123,6 @@ test.describe('Objectives CRUD', () => {
                 break;
             } catch {
                 await page.keyboard.press('Escape').catch(() => undefined);
-                await page.waitForTimeout(250);
             }
         }
 
@@ -135,16 +137,11 @@ test.describe('Objectives CRUD', () => {
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
                 await page.getByTestId('objective-edit-scope-select').click();
-                const organizationScopeOption = page
-                    .getByRole('option')
-                    .filter({ hasText: /organization|organizaci/i })
-                    .first();
-                await organizationScopeOption.click();
+                await page.getByTestId('objective-edit-scope-organization').click();
                 scopeChanged = true;
                 break;
             } catch {
                 await page.keyboard.press('Escape').catch(() => undefined);
-                await page.waitForTimeout(250);
             }
         }
 
@@ -161,7 +158,7 @@ test.describe('Objectives CRUD', () => {
         );
     });
 
-    test('delete objective with confirmation', async ({ page }) => {
+    test('delete objective with confirmation', { tag: ['@REQ-NF-025'] }, async ({ page }) => {
         const title = `Delete objective ${Date.now()}`;
         await openObjectivesPage(page);
         await createObjectiveFromModal(page, {
@@ -188,7 +185,7 @@ test.describe('Objectives CRUD', () => {
                 await confirmButton.click();
                 break;
             } catch {
-                await page.waitForTimeout(250);
+                // Retry click on next iteration
             }
         }
 
@@ -197,7 +194,7 @@ test.describe('Objectives CRUD', () => {
         await expect(page.getByTestId('table-row').filter({ hasText: title })).toHaveCount(0);
     });
 
-    test('filter objectives by search text', async ({ page }) => {
+    test('filter objectives by search text', { tag: ['@REQ-OBJETIVOS-002'] }, async ({ page }) => {
         const firstTitle = `Search Alpha ${Date.now()}`;
         const secondTitle = `Search Beta ${Date.now()}`;
 

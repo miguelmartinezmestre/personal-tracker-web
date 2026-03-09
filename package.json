@@ -21,7 +21,7 @@
         "test:e2e:ui": "playwright test --ui",
         "test:e2e:stack": "tsx scripts/run-e2e-stack.ts",
         "test:e2e:stack:full": "tsx scripts/run-e2e-stack.ts --config=playwright.full.config.ts",
-        "test:manual": "playwright test --config=tests-manual/playwright.manual.config.ts",
+        "test:manual": "playwright test --config=src/tests-manual/playwright.manual.config.ts",
         "check-translations": "node scripts/check-translations.js",
         "create-user": "tsx scripts/create-user.ts",
         "generate-admin-key": "cd infrastructure && docker compose exec backend ./generate_admin_key.sh",
