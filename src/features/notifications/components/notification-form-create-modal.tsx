@@ -134,19 +134,14 @@ export default function CreateNotificationFormModal() {
                                     </FormControl>
                                     <SelectContent>
                                         {objectiveOptions.map(objective => (
-                                            <SelectItem
-                                                key={objective._id}
-                                                value={objective._id}
-                                            >
+                                            <SelectItem key={objective._id} value={objective._id}>
                                                 {objective.title}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                                 <FormDescription>
-                                    {hasObjectives
-                                        ? t('form.objectiveHelper')
-                                        : t('noObjectives')}
+                                    {hasObjectives ? t('form.objectiveHelper') : t('noObjectives')}
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>

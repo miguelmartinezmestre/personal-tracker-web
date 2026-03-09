@@ -211,9 +211,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue
-                                                    placeholder={t('selectACategory')}
-                                                />
+                                                <SelectValue placeholder={t('selectACategory')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -254,9 +252,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                             type="number"
                                             {...field}
                                             onChange={e =>
-                                                field.onChange(
-                                                    Number.parseFloat(e.target.value)
-                                                )
+                                                field.onChange(Number.parseFloat(e.target.value))
                                             }
                                         />
                                     </FormControl>

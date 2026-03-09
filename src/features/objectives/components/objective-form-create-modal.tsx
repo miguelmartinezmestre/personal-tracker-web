@@ -199,9 +199,7 @@ export default function CreateObjectiveFormModal() {
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="objective-category-select">
-                                                <SelectValue
-                                                    placeholder={t('selectACategory')}
-                                                />
+                                                <SelectValue placeholder={t('selectACategory')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -244,9 +242,7 @@ export default function CreateObjectiveFormModal() {
                                             type="number"
                                             {...field}
                                             onChange={e =>
-                                                field.onChange(
-                                                    Number.parseFloat(e.target.value)
-                                                )
+                                                field.onChange(Number.parseFloat(e.target.value))
                                             }
                                             data-testid="objective-target-input"
                                         />

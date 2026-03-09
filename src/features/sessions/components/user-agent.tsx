@@ -79,9 +79,7 @@ function getDeviceIconAndName(
 
     // Desktop: differentiate by OS
     if (osName) {
-        const desktopMatch = Object.entries(DESKTOP_OS_ICONS).find(([key]) =>
-            osName.includes(key)
-        );
+        const desktopMatch = Object.entries(DESKTOP_OS_ICONS).find(([key]) => osName.includes(key));
         if (desktopMatch) {
             return { icon: desktopMatch[1].icon, deviceName: t(desktopMatch[1].nameKey) };
         }

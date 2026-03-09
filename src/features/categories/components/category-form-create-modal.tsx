@@ -181,10 +181,7 @@ export default function CreateCategoryFormModal() {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem
-                                            value="none"
-                                            data-testid="category-icon-none"
-                                        >
+                                        <SelectItem value="none" data-testid="category-icon-none">
                                             {tCommon('icons.tag')}
                                         </SelectItem>
                                         {iconOptions.map(icon => (

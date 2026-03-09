@@ -57,7 +57,7 @@ export default function UpdateProgressFormModal({
                     onSubmit: savedUpdateProgressSchema,
                 },
             }}
-            onSubmit={async (value) => {
+            onSubmit={async value => {
                 await updateUpdateProgress.mutateAsync({
                     id: value._id as Id<'progressUpdates'>,
                     updatedValue: value.updatedValue,
