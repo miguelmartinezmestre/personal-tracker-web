@@ -1,11 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useForm } from '@tanstack/react-form';
+import { useMemo } from 'react';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-    Form,
     FormControl,
     FormDescription,
     FormField,
@@ -25,21 +23,13 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/ui-utils/utils';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 import { CreateObjective, objectiveSchema } from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
 import { Doc } from '@/convex/_generated/dataModel';
+import FormModal from '@/components/form-modal';
 
 const defaultValues: CreateObjective = {
     title: '',
@@ -58,7 +48,6 @@ export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
     const queryClient = useQueryClient();
-    const [open, setOpen] = useState(false);
 
     const createObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
@@ -88,265 +77,248 @@ export default function CreateObjectiveFormModal() {
         [categoryOptions]
     );
 
-    const form = useForm<CreateObjective>({
-        defaultValues,
-        validators: {
-            onChange: objectiveSchema,
-            onSubmit: objectiveSchema,
-        },
-        onSubmit: async ({ value }) => {
-            const categoryName = value.category
-                ? (categoryIdToName.get(value.category) ?? value.category)
-                : undefined;
-            await createObjectiveMutation.mutateAsync({
-                title: value.title,
-                description: value.description ?? undefined,
-                category: categoryName,
-                targetValue: Number(value.targetValue),
-                startValue: 0,
-                currentValue: 0,
-                deadline: value.deadline ?? undefined,
-                scope: value.scope,
-                unit: value.unit ?? undefined,
-            });
-            setOpen(false);
-            form.reset();
-        },
-    });
-
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
+        <FormModal<CreateObjective>
+            trigger={
                 <Button className="gap-2" data-testid="objective-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{t('createObjective')}</DialogTitle>
-                    <DialogDescription>{t('createObjectiveDescription')}</DialogDescription>
-                </DialogHeader>
+            }
+            title={t('createObjective')}
+            description={t('createObjectiveDescription')}
+            formOptions={{
+                defaultValues,
+                validators: {
+                    onChange: objectiveSchema,
+                    onSubmit: objectiveSchema,
+                },
+            }}
+            onSubmit={async (value: CreateObjective) => {
+                const categoryName = value.category
+                    ? (categoryIdToName.get(value.category) ?? value.category)
+                    : undefined;
+                await createObjectiveMutation.mutateAsync({
+                    title: value.title,
+                    description: value.description ?? undefined,
+                    category: categoryName,
+                    targetValue: Number(value.targetValue),
+                    startValue: 0,
+                    currentValue: 0,
+                    deadline: value.deadline ?? undefined,
+                    scope: value.scope,
+                    unit: value.unit ?? undefined,
+                });
+            }}
+            submitLabel={t('saveObjective')}
+            cancelLabel={t('cancel')}
+            cancelTestId="objective-cancel-button"
+            submitTestId="objective-save-button"
+        >
+            {() => (
+                <>
+                    <FormField
+                        name="title"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('smartForm.fields.titleRequired')}</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder={t('enterObjectiveTitle')}
+                                        {...field}
+                                        data-testid="objective-title-input"
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    {t('giveYourObjectiveAClearConciseTitle')}
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                <Form {...form}>
-                    <form
-                        onSubmit={e => {
-                            e.preventDefault();
-                            form.handleSubmit();
-                        }}
-                        className="space-y-5 py-4"
-                    >
+                    <FormField
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('smartForm.fields.description')}</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder={t('describeObjectiveInDetail')}
+                                        className="resize-none min-h-[80px]"
+                                        {...field}
+                                        value={field.value || ''}
+                                        data-testid="objective-description-input"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField
-                            name="title"
+                            name="scope"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('smartForm.fields.titleRequired')}</FormLabel>
+                                    <FormLabel>{t('scope')}</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger data-testid="objective-scope-select">
+                                                <SelectValue placeholder={t('scope')} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem
+                                                value="personal"
+                                                data-testid="objective-scope-personal"
+                                            >
+                                                {t('scopeOptions.personal')}
+                                            </SelectItem>
+                                            <SelectItem
+                                                value="organization"
+                                                data-testid="objective-scope-organization"
+                                            >
+                                                {t('scopeOptions.organization')}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            name="category"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('smartForm.fields.category')}</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value || ''}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger data-testid="objective-category-select">
+                                                <SelectValue
+                                                    placeholder={t('selectACategory')}
+                                                />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {categoriesQuery.isLoading ? (
+                                                <SelectItem value="loading" disabled>
+                                                    {tCommon('loading')}
+                                                </SelectItem>
+                                            ) : categoryOptions.length === 0 ? (
+                                                <SelectItem value="empty" disabled>
+                                                    {t('categories.emptyTitle')}
+                                                </SelectItem>
+                                            ) : (
+                                                categoryOptions.map(category => (
+                                                    <SelectItem
+                                                        key={category.id}
+                                                        value={category.id}
+                                                    >
+                                                        {category.label}
+                                                    </SelectItem>
+                                                ))
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                            name="targetValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {t('smartForm.fields.targetValueRequired')}
+                                    </FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder={t('enterObjectiveTitle')}
+                                            type="number"
                                             {...field}
-                                            data-testid="objective-title-input"
+                                            onChange={e =>
+                                                field.onChange(
+                                                    Number.parseFloat(e.target.value)
+                                                )
+                                            }
+                                            data-testid="objective-target-input"
                                         />
                                     </FormControl>
-                                    <FormDescription>
-                                        {t('giveYourObjectiveAClearConciseTitle')}
-                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
 
                         <FormField
-                            name="description"
+                            name="unit"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('smartForm.fields.description')}</FormLabel>
+                                    <FormLabel>{t('smartForm.fields.unit')}</FormLabel>
                                     <FormControl>
-                                        <Textarea
-                                            placeholder={t('describeObjectiveInDetail')}
-                                            className="resize-none min-h-[80px]"
+                                        <Input
+                                            placeholder={t('unitExample')}
                                             {...field}
                                             value={field.value || ''}
-                                            data-testid="objective-description-input"
+                                            data-testid="objective-unit-input"
                                         />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
+                    </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField
-                                name="scope"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('scope')}</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger data-testid="objective-scope-select">
-                                                    <SelectValue placeholder={t('scope')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="personal">
-                                                    {t('scopeOptions.personal')}
-                                                </SelectItem>
-                                                <SelectItem value="organization">
-                                                    {t('scopeOptions.organization')}
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                name="category"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('smartForm.fields.category')}</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value || ''}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger data-testid="objective-category-select">
-                                                    <SelectValue
-                                                        placeholder={t('selectACategory')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {categoriesQuery.isLoading ? (
-                                                    <SelectItem value="loading" disabled>
-                                                        {tCommon('loading')}
-                                                    </SelectItem>
-                                                ) : categoryOptions.length === 0 ? (
-                                                    <SelectItem value="empty" disabled>
-                                                        {t('categories.emptyTitle')}
-                                                    </SelectItem>
-                                                ) : (
-                                                    categoryOptions.map(category => (
-                                                        <SelectItem
-                                                            key={category.id}
-                                                            value={category.id}
-                                                        >
-                                                            {category.label}
-                                                        </SelectItem>
-                                                    ))
+                    <FormField
+                        name="deadline"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>{t('smartForm.fields.deadline')}</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    'w-full pl-3 text-left font-normal',
+                                                    !field.value && 'text-muted-foreground'
                                                 )}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField
-                                name="targetValue"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t('smartForm.fields.targetValueRequired')}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                {...field}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        Number.parseFloat(e.target.value)
-                                                    )
-                                                }
-                                                data-testid="objective-target-input"
-                                            />
+                                                data-testid="objective-deadline-button"
+                                            >
+                                                {field.value ? (
+                                                    new Date(field.value).toLocaleDateString()
+                                                ) : (
+                                                    <span>{t('pickADate')}</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                name="unit"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('smartForm.fields.unit')}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder={t('unitExample')}
-                                                {...field}
-                                                value={field.value || ''}
-                                                data-testid="objective-unit-input"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <FormField
-                            name="deadline"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>{t('smartForm.fields.deadline')}</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button
-                                                    variant="outline"
-                                                    className={cn(
-                                                        'w-full pl-3 text-left font-normal',
-                                                        !field.value && 'text-muted-foreground'
-                                                    )}
-                                                    data-testid="objective-deadline-button"
-                                                >
-                                                    {field.value ? (
-                                                        new Date(field.value).toLocaleDateString()
-                                                    ) : (
-                                                        <span>{t('pickADate')}</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={
-                                                    field.value ? new Date(field.value) : undefined
-                                                }
-                                                onSelect={value =>
-                                                    field.onChange(value ? value.getTime() : null)
-                                                }
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <DialogFooter className="pt-4">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                data-testid="objective-cancel-button"
-                            >
-                                {t('cancel')}
-                            </Button>
-                            <Button type="submit" data-testid="objective-save-button">
-                                {t('saveObjective')}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={
+                                                field.value ? new Date(field.value) : undefined
+                                            }
+                                            onSelect={value =>
+                                                field.onChange(value ? value.getTime() : null)
+                                            }
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </>
+            )}
+        </FormModal>
     );
 }

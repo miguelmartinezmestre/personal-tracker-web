@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from '@tanstack/react-form';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-    Form,
     FormControl,
     FormDescription,
     FormField,
@@ -14,15 +11,6 @@ import {
     FormMessage,
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter,
-} from '@/components/ui/dialog';
 import {
     CreateOrganizationMember,
     organizationMemberSchema,
@@ -37,6 +25,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import { OrganizationRole } from '../types/roles';
+import FormModal from '@/components/form-modal';
 
 interface CreateOrganizationMemberFormModalProps {
     organizationId: string;
@@ -53,124 +42,95 @@ export default function CreateOrganizationMemberFormModal({
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
 
-    const [open, setOpen] = useState(false);
-    const form = useForm<CreateOrganizationMember>({
-        defaultValues: {
-            email: '',
-            role: 'member',
-            organizationId: organizationId,
-        },
-        validators: {
-            onChange: organizationMemberSchema,
-            onSubmit: organizationMemberSchema,
-        },
-        onSubmit: async ({ value }: { value: CreateOrganizationMember }) => {
-            await onSubmit(value);
-        },
-    });
-
-    const onSubmit = async (values: CreateOrganizationMember) => {
-        await createOrganizationMember.mutateAsync({
-            organizationId: organizationId,
-            email: values.email,
-            role: values.role as OrganizationRole,
-        });
-        setOpen(false);
-        form.reset();
-    };
-
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
+        <FormModal<CreateOrganizationMember>
+            trigger={
                 <Button className="gap-2" data-testid="organization-member-create-open">
                     <PlusCircle className="h-4 w-4" />
                     {t('createNewOrganizationMember')}
                 </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{t('createNewOrganizationMember')}</DialogTitle>
-                    <DialogDescription>
-                        {t('createNewOrganizationMemberDescription')}
-                    </DialogDescription>
-                </DialogHeader>
+            }
+            title={t('createNewOrganizationMember')}
+            description={t('createNewOrganizationMemberDescription')}
+            formOptions={{
+                defaultValues: {
+                    email: '',
+                    role: 'member',
+                    organizationId: organizationId,
+                },
+                validators: {
+                    onChange: organizationMemberSchema,
+                    onSubmit: organizationMemberSchema,
+                },
+            }}
+            onSubmit={async (values: CreateOrganizationMember) => {
+                await createOrganizationMember.mutateAsync({
+                    organizationId: organizationId,
+                    email: values.email,
+                    role: values.role as OrganizationRole,
+                });
+            }}
+            submitLabel={t('saveOrganizationMember')}
+            cancelLabel={t('cancel')}
+            cancelTestId="organization-member-cancel-button"
+            submitTestId="organization-member-save-button"
+        >
+            {() => (
+                <>
+                    <FormField
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('email')}</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder={t('enterEmail')}
+                                        type="email"
+                                        {...field}
+                                        value={field.value || ''}
+                                        onChange={e => field.onChange(e.target.value)}
+                                        data-testid="organization-member-email-input"
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    {t('giveYourOrganizationMemberAClearConciseEmail')}
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                <Form {...form}>
-                    <form
-                        onSubmit={e => {
-                            e.preventDefault();
-                            form.handleSubmit();
-                        }}
-                        className="space-y-5 py-4"
-                    >
-                        <FormField
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('email')}</FormLabel>
+                    <FormField
+                        name="role"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('role')}</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value || 'member'}
+                                >
                                     <FormControl>
-                                        <Input
-                                            placeholder={t('enterEmail')}
-                                            type="email"
-                                            {...field}
-                                            value={field.value || ''}
-                                            onChange={e => field.onChange(e.target.value)}
-                                            data-testid="organization-member-email-input"
-                                        />
+                                        <SelectTrigger data-testid="organization-member-role-select">
+                                            <SelectValue placeholder={t('selectRole')} />
+                                        </SelectTrigger>
                                     </FormControl>
-                                    <FormDescription>
-                                        {t('giveYourOrganizationMemberAClearConciseEmail')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            name="role"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('role')}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || 'member'}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger data-testid="organization-member-role-select">
-                                                <SelectValue placeholder={t('selectRole')} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {roleOptions.map(role => (
-                                                <SelectItem key={role.value} value={role.value}>
-                                                    {role.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormDescription>
-                                        {t('currentRoleOfYourOrganizationMember')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <DialogFooter className="pt-4">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                data-testid="organization-member-cancel-button"
-                            >
-                                {t('cancel')}
-                            </Button>
-                            <Button type="submit" data-testid="organization-member-save-button">
-                                {t('saveOrganizationMember')}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                                    <SelectContent>
+                                        {roleOptions.map(role => (
+                                            <SelectItem key={role.value} value={role.value}>
+                                                {role.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                    {t('currentRoleOfYourOrganizationMember')}
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </>
+            )}
+        </FormModal>
     );
 }
