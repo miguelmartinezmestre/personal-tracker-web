@@ -871,24 +871,6 @@ export async function setupPlatformAsAdmin(page: Page): Promise<void> {
 }
 
 /**
- * Takes a screenshot for documentation.
- */
-export async function takeScreenshot(
-    page: Page,
-    testName: string,
-    step: string,
-    _suffix?: string
-): Promise<void> {
-    // Screenshots disabled by default - enable for documentation
-    // const sanitize = (str: string) =>
-    //     str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    // const filename = `test-results/screenshots/${sanitize(testName)}-${sanitize(step)}.png`;
-    // await page.screenshot({ path: filename, fullPage: true, animations: 'disabled' });
-    void testName;
-    void step;
-}
-
-/**
  * Waits for a toast message to appear.
  */
 export async function waitForToast(page: Page, message: string | RegExp): Promise<void> {
