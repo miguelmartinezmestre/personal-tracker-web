@@ -247,10 +247,10 @@ type AuthContext = {
 /**
  * Extract the activeOrganizationId from a Better Auth session object.
  */
-function extractOrganizationId(
-    session: { session?: { activeOrganizationId?: string | null } | null } | null
-): Id<'organization'> | null {
-    const raw = session?.session?.activeOrganizationId ?? null;
+function extractOrganizationId(session: unknown): Id<'organization'> | null {
+    const raw =
+        (session as { session?: { activeOrganizationId?: string | null } } | null)?.session
+            ?.activeOrganizationId ?? null;
     return raw as Id<'organization'> | null;
 }
 

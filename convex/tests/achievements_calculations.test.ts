@@ -5,7 +5,6 @@ import { TestConvexForDataModel } from 'convex-test';
 import { DataModel } from '../_generated/dataModel';
 import {
     calculateUserStreak,
-    calculateUserStreakInternal,
     calculateOrganizationStreak,
 } from '../achievements_utils/calculations';
 import { TIME } from '../utils/constants';
@@ -454,10 +453,10 @@ describe('achievements calculations', async () => {
         });
     });
 
-    describe('calculateUserStreakInternal', () => {
+    describe('calculateUserStreak', () => {
         test('returns 0 when user has no objectives', async () => {
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreakInternal(ctx, userId);
+                return calculateUserStreak(ctx, userId);
             });
 
             expect(streak).toBe(0);
@@ -496,7 +495,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreakInternal(ctx, userId);
+                return calculateUserStreak(ctx, userId);
             });
 
             expect(streak).toBe(5);
