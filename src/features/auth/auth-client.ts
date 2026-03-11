@@ -26,7 +26,4 @@ export const authClient = createAuthClient({
 // Export mutation hooks for TanStack Query
 export const {
     useSignOutMutationOptions,
-    useSignInSocialMutationOptions,
-    useSignInMutationOptions,
-    useSignUpMutationOptions,
 } = createAuthMutations(authClient);

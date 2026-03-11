@@ -53,52 +53,6 @@ export function useOrganizations() {
 }
 
 /**
- * Hook para obtener una organización por su ID
- */
-export function useOrganization(organizationId: string | null) {
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getOrganizationsByUser, organizationId ? {} : 'skip')
-    );
-
-    const org = data?.find((o: OrganizationRaw) => o.id === organizationId);
-    return {
-        data: org
-            ? ({
-                  id: org.id,
-                  name: org.name,
-                  slug: org.slug,
-                  description: org.description ?? '',
-              } as Organization)
-            : null,
-        isPending: isPending,
-        isLoading: isLoading,
-    };
-}
-
-/**
- * Hook para obtener una organización por su slug
- */
-export function useOrganizationBySlug(slug: string | null) {
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getOrganizationsByUser, slug ? {} : 'skip')
-    );
-
-    const org = data?.find((o: OrganizationRaw) => o.slug === slug);
-    return {
-        data: org
-            ? ({
-                  id: org.id,
-                  name: org.name,
-                  slug: org.slug,
-                  description: org.description ?? '',
-              } as Organization)
-            : null,
-        isPending: isPending,
-        isLoading: isLoading,
-    };
-}
-
-/**
  * Hook para obtener una organización por slug o ID
  * Intenta buscar primero por slug, y si no encuentra, busca por ID
  * Esto permite que las rutas funcionen tanto con slugs como con IDs
