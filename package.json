@@ -36,8 +36,6 @@
         "@convex-dev/resend": "^0.2.3",
         "@convex-dev/workflow": "0.3.3",
         "@convex-dev/workpool": "^0.3.1",
-        "@hono/swagger-ui": "^0.5.2",
-        "@hono/zod-openapi": "^1.1.4",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-aspect-ratio": "^1.1.8",

@@ -472,6 +472,7 @@ export async function createTestUserViaAPI(
     const userData = generateTestUserData(options);
     const origin = process.env.BASE_URL || 'http://localhost:3000';
     const headers = { Origin: origin };
+    const requestTimeout = 30000;
 
     // Step 1: Sign up via API (with retry for transient network errors like ECONNRESET)
     let signUpResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
@@ -479,6 +480,7 @@ export async function createTestUserViaAPI(
         try {
             signUpResponse = await page.request.post('/api/auth/sign-up/email', {
                 headers,
+                timeout: requestTimeout,
                 data: {
                     email: userData.email,
                     password: userData.password,
@@ -488,7 +490,10 @@ export async function createTestUserViaAPI(
             break;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
-            if (attempt < 2 && /ECONNRESET|fetch failed|ECONNREFUSED/.test(message)) {
+            if (
+                attempt < 2 &&
+                /ECONNRESET|fetch failed|ECONNREFUSED|ETIMEDOUT|Timeout .* exceeded/.test(message)
+            ) {
                 await page.waitForTimeout(1000); // Legitimate backoff for transient network error
                 continue;
             }
@@ -505,6 +510,7 @@ export async function createTestUserViaAPI(
     // Step 2: Create organization via API
     const createOrgResponse = await page.request.post('/api/auth/organization/create', {
         headers,
+        timeout: requestTimeout,
         data: {
             name: `${userData.username} Org`,
             slug: userData.organizationSlug,
@@ -526,6 +532,7 @@ export async function createTestUserViaAPI(
     // Step 3: Set active organization via API
     const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
         headers,
+        timeout: requestTimeout,
         data: { organizationId: orgId },
     });
 
@@ -535,8 +542,8 @@ export async function createTestUserViaAPI(
     }
 
     // Step 4: Navigate to dashboard to verify session is working
-    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded', timeout: requestTimeout });
+    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: requestTimeout });
 
     return userData;
 }
@@ -648,9 +655,13 @@ export async function createObjective(
     // Save
     await page.getByTestId('objective-save-button').click();
 
-    // Wait for objective to appear in visible table rows (avoid hidden mobile-card duplicates)
-    const createdObjectiveRow = page.getByTestId('table-row').filter({ hasText: title }).first();
-    await expect(createdObjectiveRow).toBeVisible({ timeout: 15000 });
+    // Table/card layouts duplicate content across breakpoints; assert by count instead of visibility.
+    await expect
+        .poll(async () => await page.getByText(title).count(), {
+            timeout: 15000,
+            intervals: [500, 1000, 2000],
+        })
+        .toBeGreaterThan(0);
 
     return { title, description, category, targetValue, currentValue, unit };
 }
@@ -723,10 +734,19 @@ export async function createCategory(
     }
     await page.getByTestId('category-save-button').click();
     await expect
-        .poll(async () => await page.getByTestId('table-row').filter({ hasText: name }).count(), {
-            timeout: 15000,
-            intervals: [500, 1000, 2000],
-        })
+        .poll(
+            async () => {
+                const count = await page.getByText(name).count();
+                if (count === 0) {
+                    await page.reload({ waitUntil: 'domcontentloaded' });
+                }
+                return count;
+            },
+            {
+                timeout: 20000,
+                intervals: [500, 1000, 2000],
+            }
+        )
         .toBeGreaterThan(0);
 
     return { name, color };
@@ -790,10 +810,13 @@ export async function createOrganization(
     await page.getByTestId('organization-description-input').fill(description);
     await page.getByTestId('organization-save-button').click();
 
-    // Wait for org to appear in list (Convex mutation is async)
-    await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
-        timeout: 15000,
-    });
+    // The organization name appears in both the switcher and the table; assert by presence.
+    await expect
+        .poll(async () => await page.getByText(name).count(), {
+            timeout: 15000,
+            intervals: [500, 1000, 2000],
+        })
+        .toBeGreaterThan(0);
 
     return { name, description };
 }

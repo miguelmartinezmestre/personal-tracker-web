@@ -84,8 +84,9 @@ test.describe('Organizations CRUD', () => {
         // Save
         await page.getByTestId('organization-save-button').click();
 
-        // Verify organization appears
-        await expect(page.getByText(orgData.name)).toBeVisible({ timeout: 10000 });
+        // Verify organization appears in the table, not only in the switcher.
+        const createdRow = page.getByTestId('table-row').filter({ hasText: orgData.name }).first();
+        await expect(createdRow).toBeVisible({ timeout: 10000 });
     });
 
     test('edit organization name', { tag: ['@REQ-EQUIPOS-009'] }, async ({ page }) => {
