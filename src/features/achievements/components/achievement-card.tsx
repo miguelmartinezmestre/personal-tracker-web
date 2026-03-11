@@ -52,7 +52,15 @@ export function AchievementCard({
                 'transition-all hover:shadow-md cursor-pointer',
                 isEarned ? 'border-primary/50' : 'opacity-75'
             )}
+            tabIndex={0}
+            role="button"
             onClick={onClick}
+            onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick?.();
+                }
+            }}
             data-testid={`achievement-card-${definition.code}`}
         >
             <CardHeader className="flex flex-row items-center gap-4 pb-2">

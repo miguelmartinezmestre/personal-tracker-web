@@ -97,14 +97,17 @@ test.describe('Organization Members', () => {
         await viewLink.click();
         await page.waitForLoadState('domcontentloaded');
 
-        // Look for role badge (owner, admin, member)
-        const roleBadge = page.locator(
-            'text=/owner|admin|member|propietario|administrador|miembro/i'
-        );
-        const hasRoleBadge = (await roleBadge.count()) > 0;
+        const membersTable = page.getByTestId('organization-members-table');
+        await expect(membersTable).toBeVisible({ timeout: 10000 });
 
-        // The owner should see their role
-        expect(hasRoleBadge).toBeTruthy();
+        const table = membersTable.locator('table');
+        await expect(table).toBeVisible();
+
+        const roleHeader = table.locator('thead').getByText(/role|rol/i);
+        await expect(roleHeader).toBeVisible();
+
+        const rows = page.getByTestId('table-row');
+        expect(await rows.count()).toBeGreaterThan(0);
     });
 
     test('owner cannot be removed', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {

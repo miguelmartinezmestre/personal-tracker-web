@@ -30,7 +30,7 @@ export function DataTablePagination({
 
     // Generate page numbers to show (simple version showing current and nearby)
     const getPageNumbers = () => {
-        const pages: (number | 'ellipsis')[] = [];
+        const pages: (number | string)[] = [];
         const maxVisible = 5;
 
         if (totalPages <= maxVisible) {
@@ -45,19 +45,19 @@ export function DataTablePagination({
                 for (let i = 1; i <= 3; i++) {
                     pages.push(i);
                 }
-                pages.push('ellipsis');
+                pages.push('ellipsis-end');
                 pages.push(totalPages - 1);
             } else if (currentPage >= totalPages - 3) {
-                pages.push('ellipsis');
+                pages.push('ellipsis-start');
                 for (let i = totalPages - 4; i < totalPages; i++) {
                     pages.push(i);
                 }
             } else {
-                pages.push('ellipsis');
+                pages.push('ellipsis-start');
                 for (let i = currentPage - 1; i <= currentPage + 1; i++) {
                     pages.push(i);
                 }
-                pages.push('ellipsis');
+                pages.push('ellipsis-end');
                 pages.push(totalPages - 1);
             }
         }
@@ -107,10 +107,10 @@ export function DataTablePagination({
                     <ChevronLeft className="h-4 w-4" />
                     <span className="sr-only">{t('previous')}</span>
                 </Button>
-                {pageNumbers.map((page, index) =>
-                    page === 'ellipsis' ? (
+                {pageNumbers.map(page =>
+                    typeof page === 'string' ? (
                         <div
-                            key={`ellipsis-${index}`}
+                            key={page}
                             className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground"
                         >
                             ...

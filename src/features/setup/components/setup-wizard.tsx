@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -19,6 +19,21 @@ import StepOrganization from './step-organization';
 import StepCategories from './step-categories';
 import StepRegistrationPolicy from './step-registration-policy';
 import StepSummary from './step-summary';
+
+function getMessageOrFallback(message: string | undefined, fallback: string): string {
+    if (message) return message;
+    return fallback;
+}
+
+function getErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error) return err.message;
+    return fallback;
+}
+
+function emptyToUndefined(value: string | undefined): string | undefined {
+    if (value) return value;
+    return undefined;
+}
 
 export default function SetupWizard() {
     const router = useRouter();
@@ -49,6 +64,9 @@ export default function SetupWizard() {
         setError('');
         setIsSubmitting(true);
 
+        const signUpFailedMsg = t('errors.signUpFailed');
+        const setupFailedMsg = t('errors.setupFailed');
+
         try {
             // Step 1: Sign up the admin user
             const signUpResult = await authClient.signUp.email({
@@ -58,7 +76,9 @@ export default function SetupWizard() {
             });
 
             if (signUpResult.error) {
-                throw new Error(signUpResult.error.message ?? t('errors.signUpFailed'));
+                setError(getMessageOrFallback(signUpResult.error.message, signUpFailedMsg));
+                setIsSubmitting(false);
+                return;
             }
 
             // Step 2: Wait briefly for Convex to recognize the session
@@ -70,7 +90,7 @@ export default function SetupWizard() {
                 defaultLanguage: data.platform.defaultLanguage,
                 registrationPolicy: data.registration.policy,
                 organizationName: data.organization.name,
-                organizationLogo: data.organization.logo || undefined,
+                organizationLogo: emptyToUndefined(data.organization.logo),
                 categories: data.categories.map(c => ({
                     name: c.name,
                     color: c.color,
@@ -88,13 +108,12 @@ export default function SetupWizard() {
             // Step 5: Redirect to dashboard
             router.push('/dashboard/home');
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : t('errors.setupFailed');
-            setError(message);
+            setError(getErrorMessage(err, setupFailedMsg));
             setIsSubmitting(false);
         }
     }
 
-    function renderStep() {
+    const stepContent = useMemo(() => {
         switch (currentStepName) {
             case 'platform':
                 return (
@@ -134,7 +153,7 @@ export default function SetupWizard() {
             case 'summary':
                 return <StepSummary data={data} />;
         }
-    }
+    }, [currentStepName, data, updateStepData]);
 
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-8">
@@ -155,7 +174,7 @@ export default function SetupWizard() {
                         </Alert>
                     )}
 
-                    {renderStep()}
+                    {stepContent}
 
                     <div className="mt-8 flex justify-between">
                         <Button

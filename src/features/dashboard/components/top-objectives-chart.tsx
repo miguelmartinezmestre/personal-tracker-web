@@ -93,9 +93,9 @@ export default function TopObjectivesChart({
                                 ]}
                             />
                             <Bar dataKey="progress" radius={[0, 4, 4, 0]}>
-                                {chartData.map((entry, index) => (
+                                {chartData.map(entry => (
                                     <Cell
-                                        key={`cell-${index}`}
+                                        key={entry.name}
                                         fill={
                                             entry.status === 'completed'
                                                 ? 'hsl(var(--chart-2))'

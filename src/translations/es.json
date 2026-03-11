@@ -768,7 +768,17 @@
         "date": "Fecha",
         "status": "Estado",
         "closeSession": "Cerrar sesión",
-        "expiresAt": "Expira"
+        "expiresAt": "Expira",
+        "currentSession": "Actual",
+        "active": "Activa",
+        "expired": "Expirada",
+        "revoke": "Revocar",
+        "revoking": "Revocando...",
+        "sessionRevoked": "Sesión revocada",
+        "sessionRevokeFailed": "No se pudo revocar la sesión",
+        "revokeAllOtherSessions": "Cerrar las demás sesiones",
+        "allOtherSessionsRevoked": "Se cerraron {count} sesiones",
+        "allOtherSessionsRevokeFailed": "No se pudieron cerrar las demás sesiones"
     },
     "Organizations": {
         "title": "Organizaciones",

@@ -51,7 +51,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
 
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                 {data.map((category, index) => (
-                    <div key={index} className="flex items-center gap-2 rounded-md border p-2">
+                    <div key={category.name} className="flex items-center gap-2 rounded-md border p-2">
                         <Input
                             value={category.name}
                             onChange={e => updateCategory(index, { name: e.target.value })}

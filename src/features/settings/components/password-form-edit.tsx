@@ -19,6 +19,16 @@ import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { toast } from 'sonner';
 
+function getMessageOrFallback(message: string | undefined, fallback: string): string {
+    if (message) return message;
+    return fallback;
+}
+
+function getErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof Error) return err.message;
+    return fallback;
+}
+
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
     const [isLoading, setIsLoading] = useState(false);
@@ -57,16 +67,19 @@ export default function PasswordFormEdit() {
         setError('');
         setMessage('');
 
+        const fallbackMsg = t('passwordUpdateFailed');
+
         try {
             const result = await authClient.changePassword({
                 currentPassword: values.password,
                 newPassword: values.newPassword,
-                revokeOtherSessions: false, // Keep other sessions active
+                revokeOtherSessions: false,
             });
 
             if (result.error) {
-                setError(result.error.message || t('passwordUpdateFailed'));
-                toast.error(result.error.message || t('passwordUpdateFailed'));
+                const msg = getMessageOrFallback(result.error.message, fallbackMsg);
+                setError(msg);
+                toast.error(msg);
             } else {
                 setMessage(t('passwordUpdated'));
                 toast.success(t('passwordUpdated'));
@@ -74,19 +87,17 @@ export default function PasswordFormEdit() {
                 form.reset();
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : t('passwordUpdateFailed');
-            setError(errorMessage);
-            toast.error(errorMessage);
-        } finally {
-            setIsLoading(false);
+            const msg = getErrorMessage(err, fallbackMsg);
+            setError(msg);
+            toast.error(msg);
         }
+        setIsLoading(false);
     };
 
     return (
         <Form {...form}>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
+                action={() => {
                     form.handleSubmit();
                 }}
                 className="space-y-5 py-4"

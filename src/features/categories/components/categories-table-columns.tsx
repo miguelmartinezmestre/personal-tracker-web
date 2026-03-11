@@ -9,19 +9,19 @@ import type { Category } from '@/features/categories/schemas/category';
 import * as LucideIcons from 'lucide-react';
 import { useDeleteCategory } from './categories-table-actions';
 
+function renderIcon(iconName: string | undefined) {
+    if (!iconName) return null;
+    const icons = LucideIcons as unknown as Record<
+        string,
+        React.ComponentType<{ className?: string }>
+    >;
+    const IconComponent = icons[iconName];
+    return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
+}
+
 export function useCategoriesTableColumns() {
     const t = useTranslations('Objectives.categories');
     const { deleteCategoryAsync, isDeletingCategory } = useDeleteCategory();
-
-    const renderIcon = (iconName: string | undefined) => {
-        if (!iconName) return null;
-        const icons = LucideIcons as unknown as Record<
-            string,
-            React.ComponentType<{ className?: string }>
-        >;
-        const IconComponent = icons[iconName];
-        return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
-    };
 
     const columns: ColumnDef<Category>[] = [
         {

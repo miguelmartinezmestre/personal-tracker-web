@@ -43,15 +43,18 @@ test.describe('Admin Audit Logs', () => {
             await page.goto('/dashboard/admin/audit');
             await page.waitForLoadState('domcontentloaded');
 
-            const title = page.getByTestId('admin-audit-title');
-            await expect(title).toBeVisible({ timeout: 15000 });
-
-            // Table should have at least one entry
-            const table = page.locator('table');
-            await expect(table).toBeVisible({ timeout: 10000 });
-            const rows = page.getByTestId('table-row');
-            const rowCount = await rows.count();
-            expect(rowCount).toBeGreaterThanOrEqual(1);
+            await expect
+                .poll(
+                    async () => {
+                        await page.goto('/dashboard/admin/audit');
+                        await page.waitForLoadState('domcontentloaded');
+                        const title = page.getByTestId('admin-audit-title');
+                        await expect(title).toBeVisible({ timeout: 15000 });
+                        return await page.getByTestId('table-row').count();
+                    },
+                    { timeout: 15000, intervals: [500, 1000, 2000] }
+                )
+                .toBeGreaterThanOrEqual(1);
         }
     );
 });

@@ -18,24 +18,24 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/features/auth/schemas/reset-password';
-import { useSearchParams } from 'next/navigation';
 import { authClient } from '@/features/auth/auth-client';
-export default function ResetPassword() {
+
+interface ResetPasswordProps {
+    resetPasswordKey?: string;
+}
+
+export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) {
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
 
     const [registerError, setRegisterError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const searchParams = useSearchParams();
-
-    const resetPasswordKey = searchParams.get('token') ?? searchParams.get('key');
-
     const form = useForm<z.infer<typeof resetPasswordSchema>>({
         defaultValues: {
             password: '',
             confirmPassword: '',
-            resetPasswordKey: resetPasswordKey ?? '',
+            resetPasswordKey: resetPasswordKey || '',
         },
         validators: {
             onChange: resetPasswordSchema,
@@ -71,8 +71,7 @@ export default function ResetPassword() {
     return (
         <Form {...form}>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
+                action={() => {
                     form.handleSubmit();
                 }}
                 className="space-y-6"

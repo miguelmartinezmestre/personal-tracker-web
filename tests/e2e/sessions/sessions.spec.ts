@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/test-base';
+import { test, expect, loginUser } from '../../fixtures/test-base';
 
 test.describe('Sessions', () => {
     test(
@@ -92,6 +92,45 @@ test.describe('Sessions', () => {
             // Should have at least one data row (the current session)
             const rowCount = await dataRows.count();
             expect(rowCount).toBeGreaterThanOrEqual(1);
+        }
+    );
+
+    test(
+        'can close all other sessions except current',
+        { tag: ['@REQ-AUTENTICACION-009'] },
+        async ({ authenticatedPage, browser, testUser }) => {
+            const secondContext = await browser.newContext();
+            const secondPage = await secondContext.newPage();
+
+            try {
+                await loginUser(secondPage, testUser.email, testUser.password);
+
+                await authenticatedPage.goto('/dashboard/sessions');
+
+                const sessionsPage = authenticatedPage.getByTestId('sessions-page');
+                await expect(sessionsPage).toBeVisible({ timeout: 15000 });
+
+                const revokeOtherButton = authenticatedPage.getByTestId(
+                    'sessions-revoke-other-button'
+                );
+                await expect(revokeOtherButton).toBeEnabled({ timeout: 15000 });
+
+                await revokeOtherButton.click();
+
+                await expect
+                    .poll(async () => {
+                        await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+                        return await authenticatedPage.getByTestId('session-revoke-button').count();
+                    })
+                    .toBe(0);
+
+                await expect(authenticatedPage.getByTestId('table-row')).toHaveCount(1);
+                await expect(
+                    authenticatedPage.getByTestId('session-status-badge-current')
+                ).toBeVisible();
+            } finally {
+                await secondContext.close();
+            }
         }
     );
 });

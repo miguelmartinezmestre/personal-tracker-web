@@ -103,6 +103,32 @@ describe('convex auditLogs', () => {
     describe('getAuditLogs', () => {
         const paginationOpts = { numItems: 100, cursor: null };
 
+        test('creating an objective through mutationWithRLS writes an audit log', async () => {
+            const title = `Triggered objective ${Date.now()}`;
+
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title,
+                targetValue: 10,
+                currentValue: 0,
+                scope: 'personal',
+            });
+
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+                paginationOpts,
+            });
+
+            const matchingLogs = result.page.filter(
+                log =>
+                    log.resourceType === 'objective' &&
+                    log.resourceId === String(objectiveId) &&
+                    log.action === 'objective.created' &&
+                    log.userId === userId
+            );
+
+            expect(matchingLogs).toHaveLength(1);
+            expect(matchingLogs[0]?.organizationId).toBe(userOrganizationId);
+        });
+
         test('returns audit logs sorted by date descending', async () => {
             // Create some audit logs directly
             await adminIdentity.run(async ctx => {

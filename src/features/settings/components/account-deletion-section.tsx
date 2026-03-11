@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from 'next-intl';
 import { useDeleteAccount } from '@/features/settings/hooks/use-delete-account';
-import { authClient } from '@/features/auth/auth-client';
+import { useSession } from '@/features/auth/hooks/use-session';
 import { useRouter } from 'next/navigation';
 
 export default function AccountDeletionSection() {
     const t = useTranslations('Settings');
     const tCommon = useTranslations('Common');
-    const sessionQuery = authClient.useSession();
+    const sessionQuery = useSession();
     const sessionUser = sessionQuery?.data?.user;
     const deleteAccount = useDeleteAccount();
     const router = useRouter();

@@ -1,5 +1,24 @@
 import { test, expect } from '../../fixtures/test-base';
 
+async function openThemeMenu(
+    page: import('@playwright/test').Page,
+    option: 'light' | 'dark'
+): Promise<void> {
+    const toggle = page.getByTestId('theme-toggle');
+    const desiredOption = page.getByTestId(`theme-option-${option}`);
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await expect(toggle).toBeVisible({ timeout: 15000 });
+        await toggle.click();
+
+        if (await desiredOption.isVisible().catch(() => false)) {
+            return;
+        }
+    }
+
+    await expect(desiredOption).toBeVisible({ timeout: 5000 });
+}
+
 test.describe('Theme Switching', () => {
     test(
         'toggle dark mode applies dark class to html',
@@ -8,14 +27,8 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            // sr-only text is "Change theme" (en) or "Cambiar tema" (es)
-            const themeToggle = authenticatedPage.getByTestId('theme-toggle');
-            await expect(themeToggle).toBeVisible({ timeout: 15000 });
-            await themeToggle.click();
-
-            // Select dark mode from dropdown (rendered in a portal)
+            await openThemeMenu(authenticatedPage, 'dark');
             const darkOption = authenticatedPage.getByTestId('theme-option-dark');
-            await expect(darkOption).toBeVisible({ timeout: 5000 });
             await darkOption.click();
 
             // Wait for theme to apply
@@ -32,22 +45,17 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            const themeToggle = authenticatedPage.getByTestId('theme-toggle');
-            await expect(themeToggle).toBeVisible({ timeout: 15000 });
-
             // First set to dark
-            await themeToggle.click();
+            await openThemeMenu(authenticatedPage, 'dark');
             const darkOption = authenticatedPage.getByTestId('theme-option-dark');
-            await expect(darkOption).toBeVisible({ timeout: 5000 });
             await darkOption.click();
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
             });
 
             // Now switch to light
-            await themeToggle.click();
+            await openThemeMenu(authenticatedPage, 'light');
             const lightOption = authenticatedPage.getByTestId('theme-option-light');
-            await expect(lightOption).toBeVisible({ timeout: 5000 });
             await lightOption.click();
             await expect
                 .poll(async () => await authenticatedPage.locator('html').getAttribute('class'), {
@@ -64,13 +72,9 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            const themeToggle = authenticatedPage.getByTestId('theme-toggle');
-            await expect(themeToggle).toBeVisible({ timeout: 15000 });
-
             // Set dark mode
-            await themeToggle.click();
+            await openThemeMenu(authenticatedPage, 'dark');
             const darkOption = authenticatedPage.getByTestId('theme-option-dark');
-            await expect(darkOption).toBeVisible({ timeout: 5000 });
             await darkOption.click();
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
@@ -84,11 +88,8 @@ test.describe('Theme Switching', () => {
             });
 
             // Clean up: switch back to light
-            const toggle = authenticatedPage.getByTestId('theme-toggle');
-            await expect(toggle).toBeVisible({ timeout: 10000 });
-            await toggle.click();
+            await openThemeMenu(authenticatedPage, 'light');
             const lightOption = authenticatedPage.getByTestId('theme-option-light');
-            await expect(lightOption).toBeVisible({ timeout: 5000 });
             await lightOption.click();
         }
     );

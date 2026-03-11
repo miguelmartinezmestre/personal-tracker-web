@@ -12,7 +12,11 @@ import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
 import { ObjectiveProgressGraph } from '@/features/objectives/components/objective-graph';
-import ObjectiveProgressTimeline from './objective-progress-timeline';
+import dynamic from 'next/dynamic';
+
+const ObjectiveProgressTimeline = dynamic(() => import('./objective-progress-timeline'), {
+    ssr: false,
+});
 import { useUpdateProgressTableColumns } from './update-progress-table-columns';
 import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
@@ -95,15 +99,19 @@ export default function UpdateProgressTable({
     const baseValue = objectiveDoc?.startValue ?? 0;
 
     type ProgressPoint = { date: number; currentValue: number; objective: number };
-    let runningTotal = baseValue;
-    const progressData: ProgressPoint[] = sortedUpdates.map((item: Doc<'progressUpdates'>) => {
-        runningTotal += item.updatedValue;
-        return {
-            date: item.updateDate,
-            currentValue: runningTotal,
-            objective: objectiveDoc?.targetValue ?? 0,
-        };
-    });
+    const targetValue = objectiveDoc?.targetValue ?? 0;
+    const progressData: ProgressPoint[] = sortedUpdates.reduce<ProgressPoint[]>(
+        (acc, item: Doc<'progressUpdates'>) => {
+            const prev = acc.length > 0 ? acc[acc.length - 1]!.currentValue : baseValue;
+            acc.push({
+                date: item.updateDate,
+                currentValue: prev + item.updatedValue,
+                objective: targetValue,
+            });
+            return acc;
+        },
+        []
+    );
     const lastUpdated = sortedUpdates.at(-1)?.updateDate ?? null;
 
     // Prepare updates for velocity and streak calculations

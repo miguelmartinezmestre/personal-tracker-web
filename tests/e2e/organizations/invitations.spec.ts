@@ -18,41 +18,40 @@ test.describe('Organization Invitations', () => {
         await page.waitForLoadState('domcontentloaded');
 
         // Look for invite button
-        const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
+        const inviteButton = page.getByTestId('organization-member-create-open');
+        await expect(inviteButton).toBeVisible();
+        await inviteButton.click();
 
-        if ((await inviteButton.count()) > 0) {
-            await inviteButton.first().click();
+        // Fill invitation form
+        const emailInput = page
+            .locator('[data-testid="organization-member-email-input"], input[type="email"]')
+            .first();
+        await expect(emailInput).toBeVisible();
+        const inviteEmail = `invite-${Date.now()}@example.com`;
+        await emailInput.fill(inviteEmail);
 
-            // Fill invitation form
-            const emailInput = page
-                .locator('input[type="email"], [data-testid*="invite-email"]')
-                .first();
-            await expect(emailInput).toBeVisible();
-            const inviteEmail = `invite-${Date.now()}@example.com`;
-            await emailInput.fill(inviteEmail);
-
-            // Role selection if available
-            const roleSelect = page.locator('[data-testid*="role"], select:has-text("Role")');
-            if ((await roleSelect.count()) > 0) {
-                await roleSelect.first().click();
-                const memberOption = page.getByRole('option', { name: /member|miembro/i });
-                if ((await memberOption.count()) > 0) {
-                    await memberOption.click();
-                }
+        // Role selection if available
+        const roleSelect = page.locator('[data-testid*="role"], select:has-text("Role")');
+        if ((await roleSelect.count()) > 0) {
+            await roleSelect.first().click();
+            const memberOption = page.getByRole('option', { name: /member|miembro/i });
+            if ((await memberOption.count()) > 0) {
+                await memberOption.click();
             }
-
-            // Send invitation
-            const sendButton = page
-                .locator(
-                    'button:has-text("Send"), button:has-text("Invite"), button:has-text("Enviar")'
-                )
-                .first();
-            await sendButton.click();
-
-            await page.waitForLoadState('domcontentloaded');
-
-            // Should show success message or invitation in list
         }
+
+        // Send invitation
+        const sendButton = page.getByTestId('organization-member-save-button');
+        await expect(sendButton).toBeVisible();
+        await sendButton.click();
+
+        await page.waitForLoadState('domcontentloaded');
+
+        const invitationsTable = page.getByTestId('table-row');
+        const successState = page.locator(
+            'text=/invited|invitation sent|invitacion enviada|pending invitation/i'
+        );
+        expect((await invitationsTable.count()) > 0 || (await successState.count()) > 0).toBeTruthy();
     });
 
     test('view pending invitations sent', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {

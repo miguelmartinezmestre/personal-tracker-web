@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS } from './rls';
+import { internalMutation } from './_generated/server';
 
 export const getAuditLogs = queryWithRLS({
     args: {
@@ -40,5 +41,35 @@ export const getAuditLogsByResource = queryWithRLS({
             )
             .order('desc')
             .paginate(args.paginationOpts);
+    },
+});
+
+export const recordAuditLog = internalMutation({
+    args: {
+        userId: v.id('user'),
+        organizationId: v.id('organization'),
+        action: v.string(),
+        resourceType: v.string(),
+        resourceId: v.optional(v.string()),
+        severity: v.string(),
+        metadata: v.optional(
+            v.object({
+                before: v.optional(v.any()),
+                after: v.optional(v.any()),
+                context: v.optional(v.string()),
+            })
+        ),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.insert('auditLogs', {
+            userId: args.userId,
+            organizationId: args.organizationId,
+            action: args.action,
+            resourceType: args.resourceType,
+            resourceId: args.resourceId,
+            metadata: args.metadata,
+            severity: args.severity,
+            createdAt: Date.now(),
+        });
     },
 });

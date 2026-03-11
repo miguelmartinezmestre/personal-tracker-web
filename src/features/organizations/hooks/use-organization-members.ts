@@ -1,21 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
-import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { OrganizationRole } from '../types/roles';
-import { convexQuery } from '@convex-dev/react-query';
-
-interface OrganizationMemberRaw {
-    id: string;
-    organizationId: string;
-    userId: string;
-    role: string;
-    createdAt: number;
-    user?: { email?: string } | null;
-}
 
 /**
  * Tipos para las operaciones de miembros de organización
@@ -41,38 +28,6 @@ const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
     'organization-members',
     organizationId,
 ];
-
-/**
- * Hook para obtener los miembros de una organización
- */
-export function useOrganizationMembers(organizationId: string | null) {
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(
-            api.organizations.getOrganizationMembers,
-            organizationId
-                ? {
-                      organizationId,
-                      paginationOpts: { numItems: 100, cursor: null },
-                  }
-                : 'skip'
-        )
-    );
-
-    const members = data?.page?.map((member: OrganizationMemberRaw) => ({
-        id: member.id,
-        organizationId: member.organizationId,
-        userId: member.userId,
-        email: member.user?.email ?? '',
-        role: member.role as OrganizationRole,
-        createdAt: new Date(member.createdAt),
-    })) as OrganizationMember[] | undefined;
-
-    return {
-        data: members ?? [],
-        isPending: isPending,
-        isLoading: isLoading,
-    };
-}
 
 /**
  * Hook para crear un nuevo miembro de una organización

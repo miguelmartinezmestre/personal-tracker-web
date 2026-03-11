@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
@@ -12,6 +13,7 @@ export function useUserSessionsTableColumns() {
     const tCommon = useTranslations('Common');
 
     const { revokeSession, isRevokingSession } = useRevokeSession();
+    const [now] = useState(Date.now);
 
     const columns: ColumnDef<Doc<'session'>>[] = [
         {
@@ -25,7 +27,7 @@ export function useUserSessionsTableColumns() {
             cell: ({ row }) => {
                 const expiresAt = row.original.expiresAt;
                 const expiresAtDate = new Date(expiresAt);
-                const isExpired = expiresAtDate.getTime() < Date.now();
+                const isExpired = expiresAtDate.getTime() < now;
                 return (
                     <div>
                         <div className={isExpired ? 'text-red-500' : ''}>

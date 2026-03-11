@@ -2,12 +2,6 @@ import { useState, useCallback } from 'react';
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export interface PaginatedResult<T> {
-    page: T[];
-    continueCursor: string | null;
-    isDone: boolean;
-}
-
 export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
     const [currentPage, setCurrentPage] = useState(0);
     const [cursors, setCursors] = useState<(string | null)[]>([null]); // cursor for each page

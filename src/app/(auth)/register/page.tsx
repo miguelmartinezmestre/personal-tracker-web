@@ -14,9 +14,11 @@ interface RegisterProps {
 export default async function Register({ searchParams }: RegisterProps) {
     if (!(await checkPlatformSetUp())) redirect('/setup' as never);
 
-    const params = await searchParams;
-    const t = await getTranslations('HomePage');
-    const tSetup = await getTranslations('Setup');
+    const [params, t, tSetup] = await Promise.all([
+        searchParams,
+        getTranslations('HomePage'),
+        getTranslations('Setup'),
+    ]);
 
     // Check registration policy
     const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -49,7 +51,7 @@ export default async function Register({ searchParams }: RegisterProps) {
                     <h1 className="text-2xl font-bold text-center mb-6 text-primary">
                         {t('createAccount')}
                     </h1>
-                    <RegisterForm />
+                    <RegisterForm invitationToken={params.invitation} />
                 </div>
             </div>
             <Footer />

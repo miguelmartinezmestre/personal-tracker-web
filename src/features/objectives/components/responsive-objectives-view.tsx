@@ -23,7 +23,7 @@ import { DataTable } from '@/features/table/components/table';
 import { ObjectivesFilters, type FilterOptions } from './objective-filters';
 import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
 import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { MobilePagination } from './mobile-pagination';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -177,10 +177,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
     );
 
     // Client-side filters for search and deadlineRange (can't be done server-side in Convex)
+    const [now] = React.useState(Date.now);
     const filterObjectivesClientSide = React.useCallback(
         (objectives: Doc<'objectives'>[]) => {
             const normalizedSearch = filters.search.trim().toLowerCase();
-            const now = Date.now();
             const startOfToday = new Date(now);
             startOfToday.setHours(0, 0, 0, 0);
             const todayStart = startOfToday.getTime();
@@ -228,7 +228,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
                 return true;
             });
         },
-        [filters.search, filters.deadlineRange]
+        [filters.search, filters.deadlineRange, now]
     );
 
     const filteredPersonalObjectives = React.useMemo(
@@ -360,57 +360,61 @@ export const ResponsiveObjectivesView = React.forwardRef<
         [renderObjectiveActions, statusLabels, t]
     );
 
-    const renderObjectiveCard = (objective: Doc<'objectives'>) => {
-        const normalized = normalizeObjective(objective);
-        const progress = computeObjectiveProgressPercent({
-            currentValue: normalized.currentValue,
-            targetValue: normalized.targetValue,
-            startValue: normalized.startValue,
-        });
+    const renderObjectiveCard = React.useCallback(
+        (objective: Doc<'objectives'>) => {
+            const normalized = normalizeObjective(objective);
+            const progress = computeObjectiveProgressPercent({
+                currentValue: normalized.currentValue,
+                targetValue: normalized.targetValue,
+                startValue: normalized.startValue,
+            });
 
-        return (
-            <Card key={objective._id} className="w-full">
-                <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <p className="font-semibold truncate">{objective.title}</p>
-                            {objective.description ? (
-                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                    {objective.description}
-                                </p>
+            return (
+                <Card key={objective._id} className="w-full">
+                    <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="font-semibold truncate">{objective.title}</p>
+                                {objective.description ? (
+                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                        {objective.description}
+                                    </p>
+                                ) : null}
+                            </div>
+                            <StatusIndicator
+                                status={objective.status}
+                                deadline={objective.deadline ?? undefined}
+                                labels={statusLabels}
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="flex items-center gap-3">
+                            <CircularProgress value={progress} max={100} size="sm" />
+                            <div className="text-sm text-muted-foreground">
+                                {objective.currentValue}/{objective.targetValue}{' '}
+                                {objective.unit ?? ''}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            {objective.category ? (
+                                <Badge variant="secondary">{objective.category}</Badge>
+                            ) : null}
+                            {objective.deadline ? (
+                                <Badge variant="outline">
+                                    {new Date(objective.deadline).toLocaleDateString()}
+                                </Badge>
                             ) : null}
                         </div>
-                        <StatusIndicator
-                            status={objective.status}
-                            deadline={objective.deadline ?? undefined}
-                            labels={statusLabels}
-                        />
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <div className="flex items-center gap-3">
-                        <CircularProgress value={progress} max={100} size="sm" />
-                        <div className="text-sm text-muted-foreground">
-                            {objective.currentValue}/{objective.targetValue} {objective.unit ?? ''}
-                        </div>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        {objective.category ? (
-                            <Badge variant="secondary">{objective.category}</Badge>
-                        ) : null}
-                        {objective.deadline ? (
-                            <Badge variant="outline">
-                                {new Date(objective.deadline).toLocaleDateString()}
-                            </Badge>
-                        ) : null}
-                    </div>
-
-                    {renderObjectiveActions(objective)}
-                </CardContent>
-            </Card>
-        );
-    };
+                        {renderObjectiveActions(objective)}
+                    </CardContent>
+                </Card>
+            );
+        },
+        [statusLabels, renderObjectiveActions]
+    );
 
     const personalTotalPages = personalPagination.isDone
         ? personalPagination.currentPage + 1
@@ -418,36 +422,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
     const orgTotalPages = orgPagination.isDone
         ? orgPagination.currentPage + 1
         : orgPagination.currentPage + 2;
-
-    const renderMobilePagination = (
-        pagination: ReturnType<typeof useServerPagination>,
-        totalPages: number
-    ) => {
-        if (!pagination.hasPreviousPage && !pagination.hasNextPage) return null;
-        return (
-            <div className="flex items-center justify-center gap-2 pt-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => pagination.goToPage(pagination.currentPage - 1)}
-                    disabled={!pagination.hasPreviousPage}
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                    {pagination.currentPage + 1} / {totalPages}
-                </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => pagination.goToPage(pagination.currentPage + 1)}
-                    disabled={!pagination.hasNextPage}
-                >
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
-            </div>
-        );
-    };
 
     return (
         <div ref={ref} className="w-full min-w-0 space-y-4">
@@ -473,7 +447,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
                             {filteredPersonalObjectives.map(renderObjectiveCard)}
                         </div>
                     )}
-                    {renderMobilePagination(personalPagination, personalTotalPages)}
+                    <MobilePagination pagination={personalPagination} totalPages={personalTotalPages} />
                 </div>
                 <div className="hidden md:block">
                     <DataTable
@@ -507,7 +481,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
                             {filteredOrganizationObjectives.map(renderObjectiveCard)}
                         </div>
                     )}
-                    {renderMobilePagination(orgPagination, orgTotalPages)}
+                    <MobilePagination pagination={orgPagination} totalPages={orgTotalPages} />
                 </div>
                 <div className="hidden md:block">
                     <DataTable

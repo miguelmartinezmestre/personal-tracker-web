@@ -60,8 +60,7 @@ export default function ForgetPasswordForm() {
     return (
         <Form {...form}>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
+                action={() => {
                     form.handleSubmit();
                 }}
                 className="space-y-6"

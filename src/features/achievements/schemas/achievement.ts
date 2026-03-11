@@ -18,38 +18,11 @@ export const achievementDefinitionSchema = z.object({
     updatedAt: z.number(),
 });
 
-export const userAchievementSchema = z.object({
-    _id: z.string(),
-    user: z.string(),
-    achievement: z.string(),
-    earnedAt: z.number(),
-    createdAt: z.number(),
-    updatedAt: z.number(),
-    definition: achievementDefinitionSchema.optional().nullable(),
-});
-
-export const organizationAchievementSchema = z.object({
-    _id: z.string(),
-    organization: z.string(),
-    achievement: z.string(),
-    earnedAt: z.number(),
-    contributingUsers: z.array(z.string()),
-    createdAt: z.number(),
-    updatedAt: z.number(),
-    definition: achievementDefinitionSchema.optional().nullable(),
-});
-
 export const achievementProgressSchema = z.object({
     definition: achievementDefinitionSchema,
     currentProgress: z.number(),
     isEarned: z.boolean(),
     earnedAt: z.number().optional(),
-});
-
-export const achievementStatsSchema = z.object({
-    totalPoints: z.number(),
-    earnedCount: z.number(),
-    totalAvailable: z.number(),
 });
 
 export type AchievementTier = z.infer<typeof achievementTierSchema>;

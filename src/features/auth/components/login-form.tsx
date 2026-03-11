@@ -22,13 +22,14 @@ import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/auth-client';
 import { useSignOutMutationOptions } from '@/features/auth/auth-client';
 import { useMutation } from '@tanstack/react-query';
+import { useSession } from '@/features/auth/hooks/use-session';
 
 export default function LoginForm() {
     const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [loginError, setLoginError] = useState('');
-    const session = authClient.useSession();
+    const session = useSession();
 
     const signOutMutation = useMutation(
         useSignOutMutationOptions({
@@ -75,8 +76,7 @@ export default function LoginForm() {
     return (
         <Form {...form}>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
+                action={() => {
                     form.handleSubmit();
                 }}
                 className="space-y-6"

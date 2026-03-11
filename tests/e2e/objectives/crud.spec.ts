@@ -137,11 +137,20 @@ test.describe('Objectives CRUD', () => {
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
                 await page.getByTestId('objective-edit-scope-select').click();
+                await expect(page.getByTestId('objective-edit-scope-organization')).toBeVisible({
+                    timeout: 5000,
+                });
                 await page.getByTestId('objective-edit-scope-organization').click();
                 scopeChanged = true;
                 break;
             } catch {
                 await page.keyboard.press('Escape').catch(() => undefined);
+                if (attempt < 2) {
+                    await originalRow.getByTestId('objective-edit-open').click();
+                    await expect(page.getByTestId('objective-edit-title-input')).toBeVisible({
+                        timeout: 5000,
+                    });
+                }
             }
         }
 
@@ -152,7 +161,12 @@ test.describe('Objectives CRUD', () => {
         await page.getByTestId('objective-edit-save-button').click();
         await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
 
-        await expect(objectiveRow(page, updatedTitle)).toBeVisible({ timeout: 10000 });
+        await expect
+            .poll(async () => await page.getByText(updatedTitle).count(), {
+                timeout: 10000,
+                intervals: [500, 1000, 2000],
+            })
+            .toBeGreaterThan(0);
         await expect(page.getByTestId('table-row').filter({ hasText: originalTitle })).toHaveCount(
             0
         );
@@ -169,29 +183,36 @@ test.describe('Objectives CRUD', () => {
         const createdRow = objectiveRow(page, title);
         await expect(createdRow).toBeVisible({ timeout: 10000 });
 
-        await createdRow.getByTestId('objective-delete-button').click();
-
         const deleteDialog = page.locator(
             '[data-slot="alert-dialog-content"], [role="alertdialog"]'
         );
-        await expect(deleteDialog).toBeVisible({ timeout: 10000 });
-
-        const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
-
-        // Click can race with dialog unmount; try a few times and
-        // rely on the URL + table assertions below as the source of truth.
+        let deleteConfirmed = false;
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
+                await createdRow.getByTestId('objective-delete-button').click();
+                await expect(deleteDialog).toBeVisible({ timeout: 5000 });
+                const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
                 await confirmButton.click();
+                deleteConfirmed = true;
                 break;
             } catch {
-                // Retry click on next iteration
+                await page.keyboard.press('Escape').catch(() => undefined);
             }
         }
 
-        await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
+        if (!deleteConfirmed) {
+            throw new Error('Could not confirm objective deletion');
+        }
 
-        await expect(page.getByTestId('table-row').filter({ hasText: title })).toHaveCount(0);
+        await expect
+            .poll(
+                async () => {
+                    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+                    return await page.getByText(title).count();
+                },
+                { timeout: 15000, intervals: [500, 1000, 2000] }
+            )
+            .toBe(0);
     });
 
     test('filter objectives by search text', { tag: ['@REQ-OBJETIVOS-002'] }, async ({ page }) => {

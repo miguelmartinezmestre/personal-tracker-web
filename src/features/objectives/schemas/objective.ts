@@ -3,9 +3,6 @@ import { z } from 'zod';
 export const objectiveStatusSchema = z.enum(['active', 'completed']);
 export const objectiveScopeSchema = z.enum(['personal', 'organization']);
 
-export type ObjectiveStatus = z.infer<typeof objectiveStatusSchema>;
-export type ObjectiveScope = z.infer<typeof objectiveScopeSchema>;
-
 export const objectiveSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional().nullable(),

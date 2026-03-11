@@ -144,7 +144,7 @@ export default defineSchema({
         platformName: v.string(),
         defaultLanguage: v.string(),
         registrationPolicy: v.string(),
-        setupCompletedAt: v.number(),
-        setupCompletedBy: v.id('user'),
+        setupCompletedAt: v.optional(v.number()),
+        setupCompletedBy: v.optional(v.id('user')),
     }),
 });

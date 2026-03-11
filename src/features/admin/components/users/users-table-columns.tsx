@@ -39,8 +39,8 @@ export function useUsersTableColumns() {
                 if (Array.isArray(role)) {
                     return (
                         <div className="flex gap-1">
-                            {role.map((r, index) => (
-                                <Badge key={index}>{r}</Badge>
+                            {role.map(r => (
+                                <Badge key={r}>{r}</Badge>
                             ))}
                         </div>
                     );

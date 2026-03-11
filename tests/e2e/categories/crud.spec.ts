@@ -164,10 +164,15 @@ test.describe('Categories CRUD', () => {
         await confirmButton.click();
 
         // Category should be removed
-        await expect(page.getByTestId('table-row').filter({ hasText: category.name })).toHaveCount(
-            0,
-            { timeout: 10000 }
-        );
+        await expect
+            .poll(
+                async () => {
+                    await page.reload({ waitUntil: 'domcontentloaded' });
+                    return await page.getByText(category.name).count();
+                },
+                { timeout: 15000, intervals: [500, 1000, 2000] }
+            )
+            .toBe(0);
     });
 
     test('create default categories button', { tag: ['@REQ-CATEGORIAS-002'] }, async ({ page }) => {

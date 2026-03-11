@@ -7,6 +7,7 @@ import {
     wrapDatabaseReader,
     wrapDatabaseWriter,
 } from 'convex-helpers/server/rowLevelSecurity';
+import { auditLogTriggers } from './auditLogTriggers';
 import type { DataModel } from './_generated/dataModel';
 import type { Id } from './_generated/dataModel';
 import { ConvexError } from 'convex/values';
@@ -320,14 +321,22 @@ export const mutationWithRLS = customMutation(
     mutation,
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
         const { userId, organizationId, role } = await resolveAuthContext(ctx);
+        const triggerDb = auditLogTriggers.wrapDB({
+            db: ctx.db,
+            userId,
+            organizationId,
+            role,
+        }).db;
+
+        const rlsDb = wrapDatabaseWriter(
+            ctx,
+            triggerDb,
+            await rlsRules(userId, role, ctx, organizationId),
+            config
+        );
 
         return {
-            db: wrapDatabaseWriter(
-                ctx,
-                ctx.db,
-                await rlsRules(userId, role, ctx, organizationId),
-                config
-            ),
+            db: rlsDb,
             userId,
             organizationId,
             role,

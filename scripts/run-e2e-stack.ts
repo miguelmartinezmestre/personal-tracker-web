@@ -20,6 +20,7 @@ const E2E_CONVEX_PORT = process.env.E2E_CONVEX_PORT ?? '4210';
 const E2E_CONVEX_SITE_PORT = process.env.E2E_CONVEX_SITE_PORT ?? '4211';
 const E2E_FRONTEND_PORT = process.env.E2E_FRONTEND_PORT ?? '4300';
 const E2E_NEXT_DIST_DIR = process.env.E2E_NEXT_DIST_DIR ?? '.next-e2e';
+const E2E_FRONTEND_MODE = process.env.E2E_FRONTEND_MODE ?? 'dev';
 
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${E2E_CONVEX_PORT}`;
 const CONVEX_SITE_URL =
@@ -709,10 +710,23 @@ async function main(): Promise<void> {
 
     cleanupNextArtifacts(E2E_NEXT_DIST_DIR, nextDistDir);
 
+    if (E2E_FRONTEND_MODE === 'production') {
+        console.log('Building frontend for e2e...');
+        await runCommand(PNPM_COMMAND, ['exec', 'next', 'build'], {
+            env: commandEnv,
+            shell: USE_SHELL_FOR_PNPM,
+        });
+    }
+
     console.log('Starting frontend...');
     frontendLogTail = [];
 
-    frontendProcess = spawn(PNPM_COMMAND, ['dev', '--port', frontendPort], {
+    const frontendArgs =
+        E2E_FRONTEND_MODE === 'production'
+            ? ['exec', 'next', 'start', '--port', frontendPort]
+            : ['dev', '--port', frontendPort];
+
+    frontendProcess = spawn(PNPM_COMMAND, frontendArgs, {
         cwd: process.cwd(),
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,

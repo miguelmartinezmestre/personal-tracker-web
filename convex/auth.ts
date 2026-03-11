@@ -22,6 +22,7 @@ import schema from './schema';
 import { admin, organization } from 'better-auth/plugins';
 import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
+import { authAuditTriggers } from './authAuditTriggers';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
@@ -81,7 +82,7 @@ export const authClient = createClient<DataModel, typeof schema>({
     authFunctions,
     schema,
     internalMutation, // Optional: custom mutation wrapper for triggers
-    triggers: {},
+    triggers: authAuditTriggers,
 });
 
 // Auth options factory

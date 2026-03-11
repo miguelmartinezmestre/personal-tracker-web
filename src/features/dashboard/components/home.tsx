@@ -8,8 +8,16 @@ import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/features/dashboard/components/stat-card';
-import MonthlyProgressChart from '@/features/dashboard/components/monthly-progress-chart';
-import TopObjectivesChart from '@/features/dashboard/components/top-objectives-chart';
+import dynamic from 'next/dynamic';
+
+const MonthlyProgressChart = dynamic(
+    () => import('@/features/dashboard/components/monthly-progress-chart'),
+    { ssr: false }
+);
+const TopObjectivesChart = dynamic(
+    () => import('@/features/dashboard/components/top-objectives-chart'),
+    { ssr: false }
+);
 
 export default function Home({
     preloadedUserQuery,

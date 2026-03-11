@@ -46,7 +46,7 @@ export default function OrganizationDetailClient({
                     <CreateOrganizationMemberFormModal organizationId={organization.id} />
                 </div>
             </div>
-            <OrganizationMembersTable organizationId={organization.id} />
+            <OrganizationMembersTable key={organization.id} organizationId={organization.id} />
         </>
     );
 }
