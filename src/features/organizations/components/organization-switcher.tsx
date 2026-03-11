@@ -13,19 +13,22 @@ import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+import { useActiveOrganization, useActiveMember } from '@/features/organizations/hooks/use-active-organization';
+import { useOrganizations } from '@/features/organizations/hooks/use-organizations';
+import { useSession } from '@/features/auth/hooks/use-session';
 
 export function OrganizationSwitcher() {
     const t = useTranslations('OrganizationSwitcher');
     const router = useRouter();
-    const activeOrganizationQuery = authClient.useActiveOrganization();
-    const activeMemberQuery = authClient.useActiveMember();
-    const listOrganizationsQuery = authClient.useListOrganizations();
-    const sessionQuery = authClient.useSession();
+    const activeOrganizationQuery = useActiveOrganization();
+    const activeMemberQuery = useActiveMember();
+    const organizationsQuery = useOrganizations();
+    const sessionQuery = useSession();
 
     const sessionActiveOrganizationId =
         sessionQuery.data?.session?.activeOrganizationId ?? undefined;
     const activeOrganization = activeOrganizationQuery.data ?? null;
-    const organizations = listOrganizationsQuery.data ?? [];
+    const organizations = organizationsQuery.data ?? [];
     const activeOrganizationId =
         activeOrganization?.id ??
         activeMemberQuery.data?.organizationId ??
@@ -33,7 +36,7 @@ export function OrganizationSwitcher() {
     const isLoadingData =
         activeOrganizationQuery.isPending ||
         activeMemberQuery.isPending ||
-        listOrganizationsQuery.isPending;
+        organizationsQuery.isPending;
 
     // Set active organization mutation
     const setActiveMutation = useMutation({

@@ -18,19 +18,33 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/auth-client';
 import { useSignOutMutationOptions } from '@/features/auth/auth-client';
 import { useMutation } from '@tanstack/react-query';
+import { useSession } from '@/features/auth/hooks/use-session';
 
-export default function RegisterForm() {
+function extractOrgList(result: unknown): Array<{ id: string }> {
+    const data = (result as { data?: Array<{ id: string }> })?.data;
+    return data ?? [];
+}
+
+function extractErrorMessage(error: unknown, fallback = 'Error during registration'): string {
+    if (error instanceof Error) return error.message;
+    return fallback;
+}
+
+interface RegisterFormProps {
+    invitationToken?: string | null;
+}
+
+export default function RegisterForm({ invitationToken }: RegisterFormProps) {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [registerError, setRegisterError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const session = authClient.useSession();
+    const session = useSession();
 
     const signOutMutation = useMutation(
         useSignOutMutationOptions({
@@ -38,9 +52,6 @@ export default function RegisterForm() {
             onError: () => {},
         })
     );
-
-    // Get invitation token from URL if coming from an invitation link
-    const invitationToken = searchParams.get('invitation');
 
     const form = useForm<z.infer<typeof registerSchema>>({
         defaultValues: {
@@ -62,8 +73,10 @@ export default function RegisterForm() {
         setRegisterError('');
         setIsSubmitting(true);
 
+        const hasExistingSession = Boolean(session.data?.user);
+
         try {
-            if (session.data?.user) {
+            if (hasExistingSession) {
                 await signOutMutation.mutateAsync();
             }
 
@@ -82,8 +95,7 @@ export default function RegisterForm() {
                                 });
 
                                 const orgsResult = await authClient.organization.list();
-                                const organizations =
-                                    (orgsResult as { data?: Array<{ id: string }> })?.data ?? [];
+                                const organizations = extractOrgList(orgsResult);
 
                                 const firstOrg = organizations[0];
                                 if (firstOrg) {
@@ -96,9 +108,7 @@ export default function RegisterForm() {
                             router.push('/dashboard/home');
                         } catch (error: unknown) {
                             console.error('Error after registration:', error);
-                            setRegisterError(
-                                error instanceof Error ? error.message : 'Error during registration'
-                            );
+                            setRegisterError(extractErrorMessage(error));
                             setIsSubmitting(false);
                         }
                     },
@@ -109,7 +119,7 @@ export default function RegisterForm() {
                 }
             );
         } catch (error: unknown) {
-            setRegisterError(error instanceof Error ? error.message : t('errors.registerFallback'));
+            setRegisterError(extractErrorMessage(error, t('errors.registerFallback')));
             setIsSubmitting(false);
         }
     }
@@ -117,8 +127,7 @@ export default function RegisterForm() {
     return (
         <Form {...form}>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
+                action={() => {
                     form.handleSubmit();
                 }}
                 className="space-y-6"

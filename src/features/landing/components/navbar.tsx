@@ -3,7 +3,7 @@ import { ThemeToggle } from '@/features/theme/theme-switcher';
 import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/features/auth/auth-client';
+import { useSession } from '@/features/auth/hooks/use-session';
 import type { Route } from 'next';
 
 type LinkItem = { name: string; href: Route };
@@ -18,7 +18,7 @@ export default function NavBar() {
         { name: t('login'), href: '/login' },
     ]);
 
-    const sessionQuery = authClient.useSession();
+    const sessionQuery = useSession();
     const isAuthenticated = Boolean(sessionQuery?.data?.user);
 
     return (

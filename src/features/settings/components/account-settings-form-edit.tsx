@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
@@ -18,11 +18,12 @@ import { accountDetailsSchema } from '@/features/settings/schemas/account-detail
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
+import { useSession } from '@/features/auth/hooks/use-session';
 
 export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
     const tCommon = useTranslations('Common');
-    const sessionQuery = authClient.useSession();
+    const sessionQuery = useSession();
     const sessionUser = sessionQuery?.data?.user;
     const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
@@ -30,8 +31,8 @@ export default function AccountSettingsFormEdit() {
 
     const form = useForm<z.infer<typeof accountDetailsSchema>>({
         defaultValues: {
-            email: '',
-            username: '',
+            email: sessionUser?.email ?? '',
+            username: sessionUser?.name ?? '',
         },
         validators: {
             onChange: accountDetailsSchema,
@@ -84,15 +85,6 @@ export default function AccountSettingsFormEdit() {
         setOpen(false);
     };
 
-    useEffect(() => {
-        if (sessionUser) {
-            form.reset({
-                email: sessionUser.email ?? '',
-                username: sessionUser.name ?? '',
-            });
-        }
-    }, [sessionUser, sessionUser?.email, sessionUser?.name, form]);
-
     if (sessionQuery?.isPending) {
         return (
             <div className="flex justify-center items-center py-8">
@@ -104,8 +96,7 @@ export default function AccountSettingsFormEdit() {
     return (
         <Form {...form}>
             <form
-                onSubmit={e => {
-                    e.preventDefault();
+                action={() => {
                     form.handleSubmit();
                 }}
                 className="space-y-5 py-4"
