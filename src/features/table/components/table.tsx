@@ -65,8 +65,8 @@ export function DataTable<TData extends RowData, TValue>({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            {columns.map((_, index) => (
-                                <TableHead key={index}>
+                            {columns.map((_, colIdx) => (
+                                <TableHead key={`skeleton-head-${colIdx}`}>
                                     <Skeleton className="h-8 w-full" />
                                 </TableHead>
                             ))}
@@ -76,11 +76,11 @@ export function DataTable<TData extends RowData, TValue>({
                         {Array(5)
                             .fill(0)
                             .map((_, rowIndex) => (
-                                <TableRow key={rowIndex}>
+                                <TableRow key={`skeleton-row-${rowIndex}`}>
                                     {Array(columns.length)
                                         .fill(0)
                                         .map((_, cellIndex) => (
-                                            <TableCell key={cellIndex}>
+                                            <TableCell key={`skeleton-cell-${rowIndex}-${cellIndex}`}>
                                                 <Skeleton className="h-6 w-full" />
                                             </TableCell>
                                         ))}
@@ -178,5 +178,3 @@ export function DataTable<TData extends RowData, TValue>({
         </div>
     );
 }
-
-export { DataTableAdvanced } from './data-table-advanced';

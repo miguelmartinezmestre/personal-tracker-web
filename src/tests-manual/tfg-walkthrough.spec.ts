@@ -28,7 +28,6 @@
  * 16. Responsive Views (Mobile, Tablet, Desktop)
  * 17. Table Features (Search, Filter, Export CSV/Excel)
  * 18. Sidebar Navigation
- * 19. OpenAPI Documentation
  */
 
 import { test, expect, Page } from '@playwright/test';
@@ -1072,20 +1071,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         }
 
         // ============================================================
-        // SECTION 19: OPENAPI DOCUMENTATION
-        // ============================================================
-        console.log('\n📚 SECTION 19: OpenAPI Documentation\n');
-
-        await page.goto('/api/ui');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000);
-
-        // Check if Swagger UI is visible
-        if (page.url().includes('/api/ui')) {
-            await takeTFGScreenshot(page, 'openapi-swagger-ui', 'OpenAPI Swagger UI documentation');
-        }
-
-        // ============================================================
         // FINAL SUMMARY
         // ============================================================
         console.log('\n' + '='.repeat(60));
@@ -1112,7 +1097,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         console.log(' 16. Language Switching (EN/ES)');
         console.log(' 17. Responsive Views (Mobile/Tablet)');
         console.log(' 18. Sidebar Navigation');
-        console.log(' 19. OpenAPI Documentation');
         console.log('='.repeat(60));
     });
 });

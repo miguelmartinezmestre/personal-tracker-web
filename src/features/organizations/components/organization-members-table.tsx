@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/features/table/components/table';
@@ -36,7 +36,6 @@ export default function OrganizationMembersTable({
 }: OrganizationMembersTableProps) {
     const t = useTranslations('OrganizationMembers');
     const deleteOrganizationMember = useDeleteOrganizationMember();
-    const [activeOrganizationId, setActiveOrganizationId] = useState(organizationId);
 
     const {
         currentPage,
@@ -46,22 +45,15 @@ export default function OrganizationMembersTable({
         goToPage,
         hasNextPage,
         hasPreviousPage,
-        reset,
     } = useServerPagination(DEFAULT_PAGE_SIZE);
 
-    useEffect(() => {
-        setActiveOrganizationId(organizationId);
-        reset();
-    }, [organizationId, reset]);
-
     const paginationOpts = getPaginationOpts(currentPage);
-    const isSyncingOrganization = activeOrganizationId !== organizationId;
 
     const membersQuery = useQuery(
         convexQuery(
             api.organizations.getOrganizationMembers,
-            !isSyncingOrganization && activeOrganizationId
-                ? { organizationId: activeOrganizationId, paginationOpts }
+            organizationId
+                ? { organizationId, paginationOpts }
                 : 'skip'
         )
     );
@@ -71,14 +63,13 @@ export default function OrganizationMembersTable({
     const pageIsDone = membersQuery.data?.isDone ?? false;
 
     useEffect(() => {
-        if (isSyncingOrganization || !hasData || membersQuery.isFetching) return;
+        if (!hasData || membersQuery.isFetching) return;
         updateCursor(currentPage, continueCursor, pageIsDone);
     }, [
         currentPage,
         hasData,
         continueCursor,
         pageIsDone,
-        isSyncingOrganization,
         membersQuery.isFetching,
         updateCursor,
     ]);

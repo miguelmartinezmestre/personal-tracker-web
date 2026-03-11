@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,9 @@ interface UseSessionsTableColumnsProps {
 export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTableColumnsProps) {
     const t = useTranslations('Sessions');
     const { invalidateSessionAsync, isInvalidatingSession } = useInvalidateSession();
+    const [now] = useState(Date.now);
 
     const getSessionStatus = (session: SessionDocument) => {
-        const now = Date.now();
         const isExpired = session.expiresAt < now;
         const isCurrentSession = currentSessionToken === session.token;
 

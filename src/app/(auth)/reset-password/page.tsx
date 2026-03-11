@@ -27,7 +27,7 @@ export default async function ResetPasswordPage({
                     <h1 className="text-2xl font-bold text-center mb-6 text-primary">
                         {t('resetPassword')}
                     </h1>
-                    <ResetPassword />
+                    <ResetPassword resetPasswordKey={resetPasswordKey as string} />
                 </div>
             </div>
             <Footer />

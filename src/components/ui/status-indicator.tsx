@@ -25,10 +25,11 @@ interface StatusIndicatorProps {
 
 const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
     ({ status, deadline, className, labels, ...props }, ref) => {
+        const [now] = React.useState(Date.now);
         const mergedLabels: Required<StatusLabels> = { ...DEFAULT_LABELS, ...labels };
         const normalizedStatus = status.toLowerCase();
         const isOverdue =
-            normalizedStatus === 'active' && typeof deadline === 'number' && deadline < Date.now();
+            normalizedStatus === 'active' && typeof deadline === 'number' && deadline < now;
 
         const resolved = isOverdue
             ? {
