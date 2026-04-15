@@ -7,6 +7,9 @@ import { redirect } from 'next/navigation';
 
 export default async function ObjectiveDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
+    if (!id || typeof id !== 'string') {
+        redirect('/dashboard/objectives');
+    }
     const objectiveId = id as Id<'objectives'>;
 
     let preloadedProgressQuery: Preloaded<
@@ -22,8 +25,7 @@ export default async function ObjectiveDetailPage({ params }: { params: Promise<
             }),
             preloadAuthQuery(api.objectives.getObjectiveById, { id: objectiveId }),
         ]);
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

@@ -23,15 +23,57 @@ import { authClient } from '@/features/auth/auth-client';
 import { useSignOutMutationOptions } from '@/features/auth/auth-client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
+import { getErrorMessage } from '@/lib/error-utils';
 
-function extractOrgList(result: unknown): Array<{ id: string }> {
-    const data = (result as { data?: Array<{ id: string }> })?.data;
-    return data ?? [];
+interface FormInputFieldProps {
+    name: 'username' | 'email' | 'password' | 'confirmPassword';
+    label: string;
+    placeholder: string;
+    type?: string;
+    testId: string;
 }
 
-function extractErrorMessage(error: unknown, fallback = 'Error during registration'): string {
-    if (error instanceof Error) return error.message;
-    return fallback;
+function FormInputField({ name, label, placeholder, type = 'text', testId }: FormInputFieldProps) {
+    return (
+        <FormField
+            name={name}
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="text-gray-700">{label}</FormLabel>
+                    <FormControl>
+                        <Input
+                            {...field}
+                            type={type}
+                            placeholder={placeholder}
+                            className="focus:ring-2 focus:ring-primary/20"
+                            data-testid={testId}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    );
+}
+
+interface OrganizationListResponse {
+    data?: Array<{ id: string }>;
+}
+
+function extractOrgList(result: unknown): Array<{ id: string }> {
+    if (result === null || typeof result !== 'object') {
+        return [];
+    }
+    const data = (result as OrganizationListResponse).data;
+    if (!Array.isArray(data)) {
+        return [];
+    }
+    return data.filter((org): org is { id: string } =>
+        typeof org === 'object' &&
+        org !== null &&
+        'id' in org &&
+        typeof org.id === 'string'
+    );
 }
 
 interface RegisterFormProps {
@@ -107,8 +149,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
 
                             router.push('/dashboard/home');
                         } catch (error: unknown) {
-                            console.error('Error after registration:', error);
-                            setRegisterError(extractErrorMessage(error));
+                            setRegisterError(getErrorMessage(error, t('errors.registerFallback')));
                             setIsSubmitting(false);
                         }
                     },
@@ -119,7 +160,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                 }
             );
         } catch (error: unknown) {
-            setRegisterError(extractErrorMessage(error, t('errors.registerFallback')));
+            setRegisterError(getErrorMessage(error, t('errors.registerFallback')));
             setIsSubmitting(false);
         }
     }
@@ -140,87 +181,35 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                     </Alert>
                 )}
 
-                <FormField
+                <FormInputField
                     name="username"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">
-                                {tCommon('fields.username')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    placeholder={tCommon('placeholders.username')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="register-username-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+                    label={tCommon('fields.username')}
+                    placeholder={tCommon('placeholders.username')}
+                    testId="register-username-input"
                 />
 
-                <FormField
+                <FormInputField
                     name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">
-                                {tCommon('fields.email')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    type="email"
-                                    placeholder={tCommon('placeholders.email')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="register-email-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+                    type="email"
+                    label={tCommon('fields.email')}
+                    placeholder={tCommon('placeholders.email')}
+                    testId="register-email-input"
                 />
 
-                <FormField
+                <FormInputField
                     name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">
-                                {tCommon('fields.password')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    type="password"
-                                    placeholder={tCommon('placeholders.min8Chars')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="register-password-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+                    type="password"
+                    label={tCommon('fields.password')}
+                    placeholder={tCommon('placeholders.min8Chars')}
+                    testId="register-password-input"
                 />
 
-                <FormField
+                <FormInputField
                     name="confirmPassword"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="text-gray-700">
-                                {tCommon('fields.confirmPassword')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    type="password"
-                                    placeholder={tCommon('placeholders.confirmPassword')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="register-confirm-password-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+                    type="password"
+                    label={tCommon('fields.confirmPassword')}
+                    placeholder={tCommon('placeholders.confirmPassword')}
+                    testId="register-confirm-password-input"
                 />
 
                 <Button

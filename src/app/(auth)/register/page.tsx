@@ -6,13 +6,14 @@ import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
+import { env } from '@/lib/env';
 
 interface RegisterProps {
     searchParams: Promise<{ invitation?: string }>;
 }
 
 export default async function Register({ searchParams }: RegisterProps) {
-    if (!(await checkPlatformSetUp())) redirect('/setup' as never);
+    if (!(await checkPlatformSetUp())) redirect('/setup');
 
     const [params, t, tSetup] = await Promise.all([
         searchParams,
@@ -20,8 +21,7 @@ export default async function Register({ searchParams }: RegisterProps) {
         getTranslations('Setup'),
     ]);
 
-    // Check registration policy
-    const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    const client = new ConvexHttpClient(env.NEXT_PUBLIC_CONVEX_URL);
     const settings = await client.query(api.setup.getPublicPlatformSettings);
 
     if (settings?.registrationPolicy === 'invitation-only' && !params.invitation) {

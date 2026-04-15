@@ -87,7 +87,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
 
         return (
             <div ref={ref} className={cn('space-y-4', className)}>
-                {/* Search Bar */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -99,9 +98,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                     />
                 </div>
 
-                {/* Filter Controls */}
                 <div className="flex flex-wrap gap-2 items-center">
-                    {/* Status Filter */}
                     <Select
                         value={filters.status}
                         onValueChange={value => handleFilterChange('status', value)}
@@ -122,7 +119,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         </SelectContent>
                     </Select>
 
-                    {/* Category Filter */}
                     <Select
                         value={filters.category}
                         onValueChange={value => handleFilterChange('category', value)}
@@ -149,7 +145,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         </SelectContent>
                     </Select>
 
-                    {/* Deadline Range Filter */}
                     <Select
                         value={filters.deadlineRange}
                         onValueChange={value => handleFilterChange('deadlineRange', value)}
@@ -173,7 +168,6 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         </SelectContent>
                     </Select>
 
-                    {/* Advanced Filters */}
                     <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" className="relative">

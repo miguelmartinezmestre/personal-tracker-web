@@ -1,7 +1,15 @@
 import { z } from 'zod';
+import { OBJECTIVE_STATUS, OBJECTIVE_SCOPE } from '@/convex/utils/constants';
 
-export const objectiveStatusSchema = z.enum(['active', 'completed']);
-export const objectiveScopeSchema = z.enum(['personal', 'organization']);
+export const objectiveStatusSchema = z.enum([
+    OBJECTIVE_STATUS.ACTIVE,
+    OBJECTIVE_STATUS.COMPLETED,
+]);
+
+export const objectiveScopeSchema = z.enum([
+    OBJECTIVE_SCOPE.PERSONAL,
+    OBJECTIVE_SCOPE.ORGANIZATION,
+]);
 
 export const objectiveSchema = z.object({
     title: z.string().min(1),

@@ -24,6 +24,7 @@ import { ObjectivesFilters, type FilterOptions } from './objective-filters';
 import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
 import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
 import { MobilePagination } from './mobile-pagination';
+import type { ObjectiveStatus } from '@/convex/utils/constants';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -53,7 +54,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
 
     const [filters, setFilters] = React.useState<FilterOptions>(() => ({ ...DEFAULT_FILTERS }));
 
-    // Extract initial data from preloaded queries
     const preloadedPersonal = usePreloadedAuthQuery(preloadedPersonalObjectivesQuery) as
         | PersonalResult
         | undefined;
@@ -61,7 +61,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
         | OrgResult
         | undefined;
 
-    // Personal objectives pagination
     const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const {
         currentPage: personalCurrentPage,
@@ -75,7 +74,8 @@ export const ResponsiveObjectivesView = React.forwardRef<
     const personalQuery = useQuery({
         ...convexQuery(api.objectives.getObjectivesByUser, {
             paginationOpts: personalPaginationOpts,
-            status: filters.status !== 'all' ? filters.status : undefined,
+            status:
+                filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined,
             category: filters.category !== 'all' ? filters.category : undefined,
         }),
         initialData:
@@ -84,7 +84,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
                 : undefined,
     });
 
-    // Organization objectives pagination
     const orgPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const {
         currentPage: orgCurrentPage,
@@ -98,7 +97,8 @@ export const ResponsiveObjectivesView = React.forwardRef<
     const orgQuery = useQuery({
         ...convexQuery(api.objectives.getOrganizationObjectives, {
             paginationOpts: orgPaginationOpts,
-            status: filters.status !== 'all' ? filters.status : undefined,
+            status:
+                filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined,
             category: filters.category !== 'all' ? filters.category : undefined,
         }),
         initialData:
@@ -111,7 +111,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
         convexQuery(api.categories.getCategoryNamesForFilters, {})
     );
 
-    // Update personal cursor
     const personalHasData = personalQuery.data !== undefined;
     const personalContinueCursor = personalQuery.data?.continueCursor ?? null;
     const personalPageIsDone = personalQuery.data?.isDone ?? false;
@@ -128,7 +127,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
         updatePersonalCursor,
     ]);
 
-    // Update org cursor
     const orgHasData = orgQuery.data !== undefined;
     const orgContinueCursor = orgQuery.data?.continueCursor ?? null;
     const orgPageIsDone = orgQuery.data?.isDone ?? false;
@@ -176,7 +174,6 @@ export const ResponsiveObjectivesView = React.forwardRef<
         [filters.status, filters.category, resetOrgPagination, resetPersonalPagination]
     );
 
-    // Client-side filters for search and deadlineRange (can't be done server-side in Convex)
     const [now] = React.useState(Date.now);
     const filterObjectivesClientSide = React.useCallback(
         (objectives: Doc<'objectives'>[]) => {
