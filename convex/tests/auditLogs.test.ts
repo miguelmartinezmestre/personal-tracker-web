@@ -19,7 +19,6 @@ describe('convex auditLogs', () => {
         const userRandom = Math.random().toString(36).substring(2, 15);
         const adminRandom = Math.random().toString(36).substring(2, 15);
 
-        // Create admin user
         const admin = {
             userId: 'test-admin-audit-' + adminRandom,
             email: 'admin-audit@example.com-' + adminRandom,
@@ -59,7 +58,6 @@ describe('convex auditLogs', () => {
             banned: false,
         });
 
-        // Create regular user
         const user = {
             userId: 'test-user-audit-' + userRandom,
             email: 'user-audit@example.com-' + userRandom,
@@ -130,7 +128,6 @@ describe('convex auditLogs', () => {
         });
 
         test('returns audit logs sorted by date descending', async () => {
-            // Create some audit logs directly
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
@@ -167,7 +164,6 @@ describe('convex auditLogs', () => {
             });
 
             expect(result.page.length).toBeGreaterThanOrEqual(3);
-            // Should be sorted descending (most recent first)
             for (let i = 0; i < result.page.length - 1; i++) {
                 const current = result.page[i]?.createdAt;
                 const next = result.page[i + 1]?.createdAt;
@@ -178,7 +174,6 @@ describe('convex auditLogs', () => {
         });
 
         test('respects numItems in paginationOpts', async () => {
-            // Create more than the requested limit
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 for (let i = 0; i < 10; i++) {
@@ -203,7 +198,6 @@ describe('convex auditLogs', () => {
         });
 
         test('filters by resourceType when provided', async () => {
-            // Create logs with different resource types
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
@@ -251,7 +245,6 @@ describe('convex auditLogs', () => {
         });
 
         test('regular user can only see their own logs', async () => {
-            // Create logs for both users
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
@@ -274,7 +267,6 @@ describe('convex auditLogs', () => {
                 });
             });
 
-            // Regular user should only see their own logs
             const result = await userIdentity.query(api.auditLogs.getAuditLogs, {
                 paginationOpts,
             });
@@ -282,7 +274,6 @@ describe('convex auditLogs', () => {
         });
 
         test('admin can see all logs', async () => {
-            // Create logs for both users
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
@@ -305,7 +296,6 @@ describe('convex auditLogs', () => {
                 });
             });
 
-            // Admin should see all logs
             const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
                 paginationOpts,
             });
@@ -319,7 +309,6 @@ describe('convex auditLogs', () => {
         const paginationOpts = { numItems: 100, cursor: null };
 
         test('returns logs for a specific resource', async () => {
-            // Create logs for multiple resources
             await adminIdentity.run(async ctx => {
                 const now = Date.now();
                 await ctx.db.insert('auditLogs', {
@@ -434,7 +423,6 @@ describe('convex auditLogs', () => {
                     organizationId: adminOrganizationId,
                     action: 'category.defaults_created',
                     resourceType: 'category',
-                    // No resourceId
                     severity: 'info',
                     createdAt: Date.now(),
                 });
@@ -446,18 +434,7 @@ describe('convex auditLogs', () => {
     });
 
     describe('RLS rules', () => {
-        // Note: RLS rules are enforced at the mutation/query level via wrappers.
-        // Direct db access via `run` bypasses RLS. The immutability of audit logs
-        // is enforced by the `modify: async () => false` rule in rls.ts which
-        // prevents any mutations from modifying audit log records.
-        // These tests verify that the RLS configuration is correct by checking
-        // that the rule exists and returns false.
-
         test('audit logs immutability is enforced via RLS config', async () => {
-            // This test verifies the audit log immutability configuration
-            // by checking that audit logs can be created but the modify rule
-            // in rls.ts always returns false, preventing modifications.
-
             let logId: Id<'auditLogs'>;
 
             await adminIdentity.run(async ctx => {
@@ -471,20 +448,12 @@ describe('convex auditLogs', () => {
                 });
             });
 
-            // Verify the log was created successfully
             const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
             expect(log).not.toBeNull();
             expect(log?.action).toBe('objective.created');
-
-            // Note: Direct db.patch/db.delete via `run` bypasses RLS.
-            // In production, modifications are blocked by the mutationWithRLS wrapper
-            // which checks `auditLogs.modify: async () => false` in rls.ts line 179-182.
         });
 
         test('audit logs do not have updatedAt field (immutable by design)', async () => {
-            // Verify that the new schema doesn't include updatedAt,
-            // reinforcing the immutability design
-
             let logId: Id<'auditLogs'>;
 
             await adminIdentity.run(async ctx => {

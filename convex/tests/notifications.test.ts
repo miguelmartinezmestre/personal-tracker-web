@@ -25,7 +25,6 @@ describe('convex notifications', async () => {
         const userRandom = Math.random().toString(36).substring(2, 15);
         const adminRandom = Math.random().toString(36).substring(2, 15);
 
-        // Create user
         const user = {
             userId: 'test-user-notifications-' + userRandom,
             email: 'notifications-test@example.com-' + userRandom,
@@ -65,7 +64,6 @@ describe('convex notifications', async () => {
             banned: false,
         });
 
-        // Create admin
         const admin = {
             userId: 'test-admin-notifications-' + adminRandom,
             email: 'notifications-admin@example.com-' + adminRandom,
@@ -105,7 +103,6 @@ describe('convex notifications', async () => {
             banned: false,
         });
 
-        // Create a test objective for notifications
         objectiveId = (await createTestObjective(t, {
             userId: userId,
             organizationId: userOrganizationId,
@@ -205,7 +202,6 @@ describe('convex notifications', async () => {
         });
 
         test('returns user notifications ordered by date descending', async () => {
-            // Create notifications with different dates
             await userIdentity.mutation(api.notifications.createNotification, {
                 objective: objectiveId,
                 notificationType: 'reminder',
@@ -232,14 +228,12 @@ describe('convex notifications', async () => {
         });
 
         test('returns only user own notifications', async () => {
-            // Create notification for test user
             await userIdentity.mutation(api.notifications.createNotification, {
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'User notification',
             });
 
-            // Create objective and notification for admin
             const adminObjectiveId = (await createTestObjective(t, {
                 userId: adminUserId,
                 organizationId: _adminOrganizationId,
@@ -295,13 +289,11 @@ describe('convex notifications', async () => {
                 message: 'Test',
             });
 
-            // First mark as read
             await userIdentity.mutation(api.notifications.setNotificationRead, {
                 id: notification!._id,
                 read: true,
             });
 
-            // Then mark as unread
             const updated = await userIdentity.mutation(api.notifications.setNotificationRead, {
                 id: notification!._id,
                 read: false,
@@ -345,7 +337,6 @@ describe('convex notifications', async () => {
 
     describe('markAllNotificationsRead', () => {
         test('marks all unread notifications as read', async () => {
-            // Create multiple unread notifications
             await userIdentity.mutation(api.notifications.createNotification, {
                 objective: objectiveId,
                 notificationType: 'reminder',
@@ -399,7 +390,6 @@ describe('convex notifications', async () => {
         });
 
         test('only updates unread notifications', async () => {
-            // Create one read and one unread notification
             const read = await userIdentity.mutation(api.notifications.createNotification, {
                 objective: objectiveId,
                 notificationType: 'reminder',
@@ -466,7 +456,6 @@ describe('convex notifications', async () => {
 
     describe('runDeadlineNotificationsCron', () => {
         test('creates notifications for objectives due today', async () => {
-            // Create objective due today
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
@@ -477,7 +466,7 @@ describe('convex notifications', async () => {
                     targetValue: 100,
                     currentValue: 50,
                     status: 'active',
-                    deadline: now + 3600000, // 1 hour from now
+                    deadline: now + 3600000,
                     createdAt: now,
                     updatedAt: now,
                 });
@@ -492,7 +481,6 @@ describe('convex notifications', async () => {
         });
 
         test('creates notifications for overdue objectives', async () => {
-            // Create overdue objective
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
@@ -503,7 +491,7 @@ describe('convex notifications', async () => {
                     targetValue: 100,
                     currentValue: 50,
                     status: 'active',
-                    deadline: now - DAY_MS, // 1 day ago
+                    deadline: now - DAY_MS,
                     createdAt: now,
                     updatedAt: now,
                 });
@@ -528,7 +516,7 @@ describe('convex notifications', async () => {
                     targetValue: 100,
                     currentValue: 50,
                     status: 'active',
-                    deadline: now + 2 * DAY_MS, // 2 days from now
+                    deadline: now + 2 * DAY_MS,
                     createdAt: now,
                     updatedAt: now,
                 });
@@ -564,7 +552,6 @@ describe('convex notifications', async () => {
                 {}
             );
 
-            // Should scan but not create notification for completed objective
             expect(result.scanned).toBeGreaterThan(0);
         });
 
@@ -634,14 +621,12 @@ describe('convex notifications', async () => {
                 });
             });
 
-            // Run cron twice
             await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
             const result = await t.mutation(
                 internal.notifications.runDeadlineNotificationsCron,
                 {}
             );
 
-            // Second run should skip because notification already exists
             expect(result.skipped).toBeGreaterThanOrEqual(0);
         });
     });

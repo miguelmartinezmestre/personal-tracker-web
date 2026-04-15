@@ -31,7 +31,6 @@ test.describe('Theme Switching', () => {
             const darkOption = authenticatedPage.getByTestId('theme-option-dark');
             await darkOption.click();
 
-            // Wait for theme to apply
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
             });
@@ -45,7 +44,6 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            // First set to dark
             await openThemeMenu(authenticatedPage, 'dark');
             const darkOption = authenticatedPage.getByTestId('theme-option-dark');
             await darkOption.click();
@@ -53,7 +51,6 @@ test.describe('Theme Switching', () => {
                 timeout: 5000,
             });
 
-            // Now switch to light
             await openThemeMenu(authenticatedPage, 'light');
             const lightOption = authenticatedPage.getByTestId('theme-option-light');
             await lightOption.click();
@@ -72,7 +69,6 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            // Set dark mode
             await openThemeMenu(authenticatedPage, 'dark');
             const darkOption = authenticatedPage.getByTestId('theme-option-dark');
             await darkOption.click();
@@ -80,14 +76,12 @@ test.describe('Theme Switching', () => {
                 timeout: 5000,
             });
 
-            // Reload page
             await authenticatedPage.reload();
             await authenticatedPage.waitForLoadState('domcontentloaded');
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
             });
 
-            // Clean up: switch back to light
             await openThemeMenu(authenticatedPage, 'light');
             const lightOption = authenticatedPage.getByTestId('theme-option-light');
             await lightOption.click();

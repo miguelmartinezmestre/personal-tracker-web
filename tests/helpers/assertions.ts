@@ -1,80 +1,71 @@
 import { Page, expect } from '@playwright/test';
 
-/**
- * Custom assertions for the test suite.
- */
-
-/**
- * Asserts that the user is on the dashboard.
- */
 export async function expectOnDashboard(page: Page): Promise<void> {
     await expect(page).toHaveURL(/\/dashboard\//);
 }
 
-/**
- * Asserts that the user is on the login page.
- */
 export async function expectOnLogin(page: Page): Promise<void> {
     await expect(page).toHaveURL(/\/login$/);
 }
 
-/**
- * Asserts that the user is on the register page.
- */
 export async function expectOnRegister(page: Page): Promise<void> {
     await expect(page).toHaveURL(/\/register$/);
 }
 
-/**
- * Asserts that an error alert is visible.
- */
 export async function expectErrorAlert(page: Page, message?: string | RegExp): Promise<void> {
     const alert = page.locator(
         '[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]'
-    );
+    ).first();
+
     const errorText = page.getByText(
         /error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i
-    );
+    ).first();
 
-    await expect
-        .poll(
-            async () => {
-                const hasAlert = (await alert.count()) > 0;
-                const hasErrorText = (await errorText.count()) > 0;
-                return hasAlert || hasErrorText;
-            },
-            { timeout: 5000, intervals: [200, 500, 1000] }
-        )
-        .toBe(true);
+    const timeout = Date.now() + 5000;
+    let foundError = false;
+
+    while (Date.now() < timeout && !foundError) {
+        const hasAlert = await alert.isVisible().catch(() => false);
+        const hasErrorText = await errorText.isVisible().catch(() => false);
+        foundError = hasAlert || hasErrorText;
+
+        if (!foundError) {
+            await page.waitForTimeout(100);
+        }
+    }
+
+    expect(foundError).toBe(true);
 
     if (message) {
-        const hasAlert = (await alert.count()) > 0;
+        const hasAlert = await alert.isVisible().catch(() => false);
         if (hasAlert) {
-            await expect(alert.first()).toContainText(message);
+            await expect(alert).toContainText(message);
         }
     }
 }
 
-/**
- * Asserts that the welcome message contains the username.
- */
 export async function expectWelcomeMessage(page: Page, username: string): Promise<void> {
     const welcomeMessage = page.getByTestId('welcome-message');
     await expect(welcomeMessage).toContainText(username);
 }
 
-/**
- * Asserts that the admin menu is visible (user is admin).
- */
 export async function expectAdminMenuVisible(page: Page): Promise<void> {
+    const adminNavLink = page.getByRole('navigation').getByRole('link', { name: /admin/i });
     const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]').first();
-    await expect(adminMenuItem).toBeVisible();
+
+    try {
+        await expect(adminNavLink).toBeVisible({ timeout: 3000 });
+    } catch {
+        await expect(adminMenuItem).toBeVisible({ timeout: 3000 });
+    }
 }
 
-/**
- * Asserts that the admin menu is not visible (user is not admin).
- */
 export async function expectAdminMenuHidden(page: Page): Promise<void> {
+    const adminNavLink = page.getByRole('navigation').getByRole('link', { name: /admin/i });
     const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]');
-    await expect(adminMenuItem).toHaveCount(0);
+
+    const navCount = await adminNavLink.count();
+    const itemCount = await adminMenuItem.count();
+
+    expect(navCount + itemCount).toBe(0);
 }

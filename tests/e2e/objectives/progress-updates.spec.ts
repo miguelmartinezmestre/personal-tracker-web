@@ -58,7 +58,6 @@ async function createProgressUpdate(
             saved = true;
             break;
         } catch {
-            // Retry save on next iteration
         }
     }
 

@@ -72,10 +72,8 @@ describe('convex achievements', async () => {
         });
 
         test('does not duplicate achievements on second seed', async () => {
-            // First seed
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Second seed should skip
             const result = await userIdentity.mutation(
                 api.achievements.seedAchievementDefinitions,
                 {}
@@ -88,7 +86,6 @@ describe('convex achievements', async () => {
 
     describe('getAchievementDefinitions', () => {
         test('returns all active achievement definitions', async () => {
-            // Seed first
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             const definitions = await userIdentity.query(
@@ -135,7 +132,6 @@ describe('convex achievements', async () => {
         test('returns user achievements with definitions', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Manually award an achievement for testing
             await userIdentity.run(async ctx => {
                 const firstDef = await ctx.db.query('achievementDefinitions').first();
 
@@ -172,7 +168,6 @@ describe('convex achievements', async () => {
         test('calculates points correctly when user has achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Award an achievement
             const awardedPoints = await userIdentity.run(async ctx => {
                 const def = await ctx.db
                     .query('achievementDefinitions')
@@ -203,7 +198,6 @@ describe('convex achievements', async () => {
         test('returns limited number of achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Award multiple achievements
             await userIdentity.run(async ctx => {
                 const defs = await ctx.db.query('achievementDefinitions').take(3);
 
@@ -390,7 +384,6 @@ describe('convex achievements', async () => {
         test('returns count of unread achievement notifications', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Create an unread achievement notification
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('notifications', {
                     userId: userId,
@@ -441,7 +434,6 @@ describe('convex achievements', async () => {
         test('awards first_objective achievement when first objective is created', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Create first objective
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -450,25 +442,16 @@ describe('convex achievements', async () => {
                 currentValue: 0,
             });
 
-            // Wait a bit for the scheduled function to run
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Check if achievement was awarded
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 
-            const _firstObjectiveAchievement = achievements.find(
-                a => a.definition?.code === 'first_objective'
-            );
-
-            // Note: In a real test environment, the scheduled function might not run
-            // This test verifies the structure is correct
             expect(achievements).toBeDefined();
         });
 
         test('does not award same achievement twice', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Award achievement manually first
             await userIdentity.run(async ctx => {
                 const def = await ctx.db
                     .query('achievementDefinitions')
@@ -486,7 +469,6 @@ describe('convex achievements', async () => {
                 }
             });
 
-            // Create another objective
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -507,7 +489,6 @@ describe('convex achievements', async () => {
         test('progress achievement logic validates correct threshold', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Create an objective
             const objectiveId = await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -516,7 +497,6 @@ describe('convex achievements', async () => {
                 currentValue: 0,
             });
 
-            // Create exactly 10 progress updates
             for (let i = 1; i <= 10; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
@@ -530,7 +510,6 @@ describe('convex achievements', async () => {
                 });
             }
 
-            // Check progress manually
             const progress = await userIdentity.query(
                 api.achievements.getUserAchievementProgress,
                 {}
@@ -544,8 +523,6 @@ describe('convex achievements', async () => {
             if (progressUpdateProgress) {
                 expect(progressUpdateProgress.currentProgress).toBe(10);
                 expect(progressUpdateProgress.definition.threshold).toBe(10);
-
-                // Since progress equals threshold, achievement should be earnable
                 expect(progressUpdateProgress.currentProgress).toBeGreaterThanOrEqual(
                     progressUpdateProgress.definition.threshold
                 );
@@ -555,7 +532,6 @@ describe('convex achievements', async () => {
         test('streak achievement tracks consecutive daily updates', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
-            // Create an objective
             const objectiveId = await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -566,10 +542,9 @@ describe('convex achievements', async () => {
 
             const DAY_MS = 24 * 60 * 60 * 1000;
             const today = new Date();
-            today.setHours(12, 0, 0, 0); // Noon to avoid timezone issues
+            today.setHours(12, 0, 0, 0);
             const todayMs = today.getTime();
 
-            // Create progress updates for 3 consecutive days
             for (let i = 0; i < 3; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
@@ -583,7 +558,6 @@ describe('convex achievements', async () => {
                 });
             }
 
-            // Check progress
             const progress = await userIdentity.query(
                 api.achievements.getUserAchievementProgress,
                 {}
@@ -593,7 +567,6 @@ describe('convex achievements', async () => {
 
             expect(streak3Progress).toBeDefined();
             if (streak3Progress) {
-                // Streak calculation depends on consecutive days, should be >= 0
                 expect(streak3Progress.currentProgress).toBeGreaterThanOrEqual(0);
                 expect(streak3Progress.definition.threshold).toBe(3);
             }
@@ -628,13 +601,11 @@ describe('convex achievements', async () => {
 
     describe('organization achievements', () => {
         test('getOrganizationAchievements returns empty for new organization', async () => {
-            // Create an organization
             const orgId = await createTestOrganization(t, {
                 name: 'Test Organization',
                 slug: 'test-organization',
             });
 
-            // Add user as member
             await createTestMember(t, {
                 organizationId: orgId,
                 userId: userId,

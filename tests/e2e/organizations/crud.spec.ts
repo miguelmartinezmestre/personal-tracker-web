@@ -43,20 +43,15 @@ test.describe('Organizations CRUD', () => {
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        // Organizations page should load
         await expect(page).toHaveURL(/\/dashboard\/organizations/);
 
-        // Wait for page to be ready (title indicates layout rendered)
         await expect(page.getByTestId('organizations-title')).toBeVisible({
             timeout: 15000,
         });
 
-        // Should see the user's initial organization (created during registration)
-        // Or create button
         const createButton = page.getByTestId('organization-create-open');
         const hasCreateButton = await createButton.isVisible();
 
-        // There should be at least one organization or a create button
         const orgList = page.getByTestId('table-row');
         const hasOrgs = (await orgList.count()) > 0;
 
@@ -69,29 +64,22 @@ test.describe('Organizations CRUD', () => {
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        // Wait for page to be ready
         await expect(page.getByTestId('organizations-title')).toBeVisible({
             timeout: 15000,
         });
 
-        // Open create modal
         await page.getByTestId('organization-create-open').click();
 
-        // Fill form
         await page.getByTestId('organization-name-input').fill(orgData.name);
         await page.getByTestId('organization-description-input').fill(orgData.description);
 
-        // Save
         await page.getByTestId('organization-save-button').click();
 
-        // Verify organization appears in the table, not only in the switcher.
         const createdRow = page.getByTestId('table-row').filter({ hasText: orgData.name }).first();
         await expect(createdRow).toBeVisible({ timeout: 10000 });
     });
 
     test('edit organization name', { tag: ['@REQ-EQUIPOS-009'] }, async ({ page }) => {
-        // Create a dedicated organization to edit so the test
-        // does not depend on a specific default organization name.
         const organization = await createOrganization(page, {
             name: `Edit Org ${Date.now()}`,
         });
@@ -115,24 +103,19 @@ test.describe('Organizations CRUD', () => {
         await expect(editButton).toBeVisible();
         await editButton.click();
 
-        // Update name (uses data-testid="organization-edit-name-input")
         const nameInput = page.getByTestId('organization-edit-name-input');
         await expect(nameInput).toBeVisible({ timeout: 10000 });
 
         const newName = `Updated Org ${Date.now()}`;
         await nameInput.fill(newName);
 
-        // Save (uses data-testid="organization-edit-save-button")
         const saveButton = page.getByTestId('organization-edit-save-button');
         await saveButton.click();
 
-        // Verify that the edit dialog closes successfully.
         await expect(nameInput).toBeHidden({ timeout: 10000 });
     });
 
     test('delete organization', { tag: ['@REQ-EQUIPOS-010', '@REQ-NF-025'] }, async ({ page }) => {
-        // Create a dedicated organization to delete so the test
-        // does not rely on the automatically created default organization.
         const organization = await createOrganization(page, {
             name: `Delete Org ${Date.now()}`,
         });
@@ -152,13 +135,11 @@ test.describe('Organizations CRUD', () => {
             (await row.locator('[data-testid="table-cell"]').first().textContent())?.trim() ?? '';
         await setActiveOrganization(page, organizationName);
 
-        // Find and click delete (uses data-testid="organization-delete-button")
         const deleteButton = row.getByTestId('organization-delete-button');
 
         await expect(deleteButton).toBeVisible();
         await deleteButton.click();
 
-        // Confirm deletion
         const confirmDialog = page.locator(
             '[data-slot="alert-dialog-content"], [role="alertdialog"]'
         );
@@ -167,34 +148,27 @@ test.describe('Organizations CRUD', () => {
         const confirmButton = confirmDialog.getByTestId('delete-confirm-button');
         await confirmButton.click();
 
-        // Verify that the confirmation dialog closes successfully.
         await expect(confirmDialog).toBeHidden({ timeout: 10000 });
     });
 
     test('switch active organization', async ({ page }) => {
-        // Create a second organization
         const newOrg = await createOrganization(page, { name: `Switch Org ${Date.now()}` });
 
         await page.goto('/dashboard/home');
         await page.waitForLoadState('domcontentloaded');
 
-        // Look for organization switcher
         const orgSwitcher = page.getByTestId('organization-switcher');
 
         if ((await orgSwitcher.count()) > 0) {
             await orgSwitcher.first().click();
 
-            // Select the new organization
             const orgOption = page.getByRole('option', { name: newOrg.name });
             if ((await orgOption.count()) > 0) {
                 await orgOption.click();
 
                 await page.waitForLoadState('domcontentloaded');
-
-                // Active organization should change
             }
         } else {
-            // Organization switcher might be in sidebar or header
             const sidebarSwitcher = page.locator(
                 'aside [data-testid*="org"], header [data-testid*="org"]'
             );
@@ -205,15 +179,12 @@ test.describe('Organizations CRUD', () => {
     });
 
     test('data isolation between organizations', async ({ page }) => {
-        // Create objective in first organization (ensureCategories runs inside createObjective)
         const obj1 = await createObjective(page, {
             title: `Org1 Objective ${Date.now()}`,
         });
 
-        // Create second organization
         const newOrg = await createOrganization(page, { name: `Isolated Org ${Date.now()}` });
 
-        // Try to switch to new organization
         await page.goto('/dashboard/home');
         await page.waitForLoadState('domcontentloaded');
 
@@ -227,11 +198,9 @@ test.describe('Organizations CRUD', () => {
                 await orgOption.click();
                 await page.waitForLoadState('domcontentloaded');
 
-                // Navigate to objectives
                 await page.goto('/dashboard/objectives');
                 await page.waitForLoadState('domcontentloaded');
 
-                // Objective from other org should NOT be visible
                 await expect(page.getByText(obj1.title)).toBeHidden();
             }
         }
@@ -243,7 +212,6 @@ test.describe('Organizations CRUD', () => {
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        // Click on organization to view details
         const row = page.getByTestId('table-row').filter({ hasText: org.name }).first();
         const viewLink = row.getByTestId('organization-detail-link');
 
@@ -251,10 +219,8 @@ test.describe('Organizations CRUD', () => {
             await viewLink.click();
             await page.waitForLoadState('domcontentloaded');
 
-            // Should be on organization detail page
             await expect(page).toHaveURL(/\/dashboard\/organizations\/.+/);
 
-            // Should show organization info
             await expect(page.getByText(org.name)).toBeVisible();
         }
     });
@@ -264,10 +230,8 @@ test.describe('Organizations CRUD', () => {
 
         await page.getByTestId('organization-create-open').click();
 
-        // Try to save without name
         await page.getByTestId('organization-save-button').click();
 
-        // Should show validation error or stay on form
         const errorMessage = page.locator('text=/required|requerido|name/i');
         const hasError = (await errorMessage.count()) > 0;
 
@@ -280,10 +244,8 @@ test.describe('Organizations CRUD', () => {
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        // Look for member count indicator
         const memberCount = page.getByText(/\d+.*member|\d+.*miembro/i);
 
-        // Organizations should show member count (at least 1 - the owner)
         if ((await memberCount.count()) > 0) {
             await expect(memberCount.first()).toBeVisible();
         }

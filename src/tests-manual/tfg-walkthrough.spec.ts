@@ -1,35 +1,4 @@
 /* eslint-disable max-lines */
-/**
- * TFG Walkthrough Test - COMPREHENSIVE FEATURE DOCUMENTATION
- *
- * This test captures screenshots of ALL major features for the TFG thesis documentation.
- * Based on the complete feature inventory in features.md (21 sections).
- *
- * Screenshots are saved to: apps/front/test-results/screenshots/tfg/
- *
- * Run with: pnpm test:e2e:manual
- *
- * FEATURES COVERED:
- * 1. Landing Page & Public Pages
- * 2. Authentication (Login, Register, Forgot Password, Reset Password)
- * 3. Dashboard Home (Stats, Analytics, Achievements Widget)
- * 4. Objectives Management (CRUD, Status, Periods, Types)
- * 5. Progress Updates (Add, Edit, History)
- * 6. Categories (Create, Edit, Color/Icon selection)
- * 7. Notifications (List, Mark Read, Filters)
- * 8. Achievements (Individual, Organization, Progress, Filters)
- * 9. Organizations Management (Create, Members, Roles)
- * 10. Organization Members (Add, Role management)
- * 11. Sessions (Active sessions, Device info)
- * 12. Settings (Account, Password)
- * 13. Admin Panel (Users, Sessions, Audit Logs)
- * 14. Theme Switching (Light/Dark)
- * 15. Language Switching (i18n - ES/EN)
- * 16. Responsive Views (Mobile, Tablet, Desktop)
- * 17. Table Features (Search, Filter, Export CSV/Excel)
- * 18. Sidebar Navigation
- */
-
 import { test, expect, Page } from '@playwright/test';
 import {
     createTestUser,
@@ -42,50 +11,34 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Screenshot counter for ordered filenames
 let screenshotCounter = 0;
 
-// Directory for TFG screenshots
 const SCREENSHOT_DIR = 'test-results/screenshots/tfg';
 
-/**
- * Takes a screenshot with consistent formatting for TFG documentation.
- * - Hides toasts and other transient UI elements
- * - Uses a consistent viewport
- * - Saves with numbered prefix for ordering
- */
 async function takeTFGScreenshot(page: Page, name: string, description?: string) {
-    // Ensure directory exists
     const dir = path.join(process.cwd(), SCREENSHOT_DIR);
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
 
-    // Hide toasts, dev elements, and other transient UI elements
     await page.evaluate(() => {
-        // Hide Sonner toasts
         document.querySelectorAll('[data-sonner-toaster]').forEach(el => {
             (el as HTMLElement).style.display = 'none';
         });
-        // Hide any loading spinners
         document.querySelectorAll('[data-loading]').forEach(el => {
             (el as HTMLElement).style.display = 'none';
         });
-        // Hide development issue badges (like "2 Issues" badge)
         document.querySelectorAll('[class*="Issues"], [class*="issues"]').forEach(el => {
             (el as HTMLElement).style.display = 'none';
         });
-        // Hide Next.js dev indicator
         document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-toast]').forEach(el => {
             (el as HTMLElement).style.display = 'none';
         });
-        // Hide any error overlays
         document
             .querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]')
             .forEach(el => {
                 (el as HTMLElement).style.display = 'none';
             });
-        // Hide debug badges (red badges with numbers)
         document
             .querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]')
             .forEach(el => {
@@ -96,10 +49,8 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
             });
     });
 
-    // Wait for any animations to settle
     await page.waitForTimeout(300);
 
-    // Format filename with counter for ordering
     screenshotCounter++;
     const paddedCounter = `${screenshotCounter}`.padStart(2, '0');
     const sanitizedName = name
@@ -110,16 +61,13 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
 
     await page.screenshot({
         path: path.join(dir, filename),
-        fullPage: false, // Capture only viewport for consistency
+        fullPage: false,
         animations: 'disabled',
     });
 
     console.log(`📸 Screenshot ${paddedCounter}: ${name}${description ? ` - ${description}` : ''}`);
 }
 
-/**
- * Helper to safely click an element if it exists
- */
 async function safeClick(page: Page, selector: string, timeout = 2000): Promise<boolean> {
     try {
         const element = page.locator(selector).first();
@@ -132,15 +80,11 @@ async function safeClick(page: Page, selector: string, timeout = 2000): Promise<
 }
 
 test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
-    test.setTimeout(120000); // 2 minutes for the full walkthrough
+    test.setTimeout(120000);
 
     test('Complete application walkthrough with screenshots', async ({ page }) => {
-        // Set consistent viewport for all screenshots
         await page.setViewportSize({ width: 1440, height: 900 });
 
-        // ============================================================
-        // SECTION 1: LANDING PAGE & PUBLIC PAGES
-        // ============================================================
         console.log('\n🏠 SECTION 1: Landing Page & Public Pages\n');
 
         await page.goto('/');
@@ -151,7 +95,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Landing page with hero section and CTA buttons'
         );
 
-        // Scroll to features section
         await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.8));
         await page.waitForTimeout(500);
         await takeTFGScreenshot(
@@ -160,42 +103,32 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Features section with 6 feature cards'
         );
 
-        // Scroll to CTA section
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
         await page.waitForTimeout(500);
         await takeTFGScreenshot(page, 'landing-page-cta', 'Call-to-action section');
 
-        // ============================================================
-        // SECTION 2: AUTHENTICATION FLOW (Complete)
-        // ============================================================
         console.log('\n🔐 SECTION 2: Authentication Flow\n');
 
-        // Login page
         await page.goto('/login');
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-login-page', 'Login form with email/password');
 
-        // Show login validation
         await page.getByTestId('login-button').click();
         await page.waitForTimeout(300);
         await takeTFGScreenshot(page, 'auth-login-validation', 'Login form validation errors');
 
-        // Register page
         await page.goto('/register');
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-register-page', 'Registration form');
 
-        // Forgot password page
         await page.goto('/forget-password');
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-forgot-password', 'Forgot password form');
 
-        // Reset password page (with simulated token)
         await page.goto('/reset-password?token=demo-token');
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-reset-password', 'Reset password form');
 
-        // Create a test user with presentable name for TFG documentation
         const user = await createTFGTestUser(page, 'Miguel Garcia');
         console.log(`✅ Created test user: ${user.username} (${user.email})`);
         await takeTFGScreenshot(
@@ -204,34 +137,25 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Successful login - redirected to dashboard'
         );
 
-        // ============================================================
-        // SECTION 3: DASHBOARD HOME (Analytics & Stats)
-        // ============================================================
         console.log('\n📊 SECTION 3: Dashboard Home\n');
 
         await page.goto('/dashboard/home');
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(1000); // Wait for data to load
+        await page.waitForTimeout(1000);
         await takeTFGScreenshot(
             page,
             'dashboard-home-initial',
             'Dashboard home with welcome message'
         );
 
-        // ============================================================
-        // SECTION 4: CATEGORIES (for objectives)
-        // ============================================================
         console.log('\n🏷️ SECTION 4: Categories Management\n');
 
-        // Categories are usually managed through objectives or a dedicated page
-        // Let's check if there's a categories section in the objectives form
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
         await page.getByTestId('objective-create-open').click();
         await page.waitForTimeout(500);
 
-        // Click on category select to show categories
         const categorySelect = page.getByTestId('objective-category-select');
         if (await categorySelect.isVisible()) {
             await categorySelect.click();
@@ -242,24 +166,18 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 'Categories dropdown in objective form'
             );
 
-            // Press Escape to close
             await page.keyboard.press('Escape');
         }
 
-        // Close the modal
         await page.keyboard.press('Escape');
         await page.waitForTimeout(300);
 
-        // ============================================================
-        // SECTION 5: OBJECTIVES MANAGEMENT (Complete)
-        // ============================================================
         console.log('\n🎯 SECTION 5: Objectives Management\n');
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'objectives-empty-state', 'Objectives list - empty state');
 
-        // Open create objective modal
         await page.getByTestId('objective-create-open').click();
         await page.waitForTimeout(500);
         await takeTFGScreenshot(
@@ -268,7 +186,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Create objective modal - empty form'
         );
 
-        // Fill in a VALUE-BASED objective
         await page.getByTestId('objective-title-input').fill('Learn TypeScript');
         await page
             .getByTestId('objective-description-input')
@@ -282,7 +199,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Objective form - Value-based objective'
         );
 
-        // Save the objective
         await page.getByTestId('objective-save-button').click();
         await page.waitForTimeout(1000);
         await takeTFGScreenshot(
@@ -291,7 +207,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Objectives list with first objective'
         );
 
-        // Create an EVENT-BASED objective with WEEKLY period
         await page.getByTestId('objective-create-open').click();
         await page.waitForTimeout(300);
         await page.getByTestId('objective-title-input').fill('Weekly Exercise');
@@ -302,7 +217,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.getByTestId('objective-unit-input').fill('sessions');
         await page.getByTestId('objective-current-input').fill('2');
 
-        // Try to select objective type if available and enabled
         const objTypeSelect = page
             .locator('[data-testid*="objective-type"]:not([disabled])')
             .or(page.locator('[data-testid*="objectiveType"]:not([disabled])'));
@@ -322,7 +236,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        // Try to select period if available and enabled
         const periodSelect = page.locator('[data-testid*="period"]:not([disabled])');
         if (
             await periodSelect
@@ -343,7 +256,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.getByTestId('objective-save-button').click();
         await page.waitForTimeout(500);
 
-        // Create more objectives for variety
         const objectivesToCreate = [
             { title: 'Read 12 Books this Year', target: '12', unit: 'books', current: '3' },
             { title: 'Run 500km Marathon Training', target: '500', unit: 'km', current: '127' },
@@ -367,28 +279,21 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Objectives list with multiple objectives'
         );
 
-        // ============================================================
-        // SECTION 6: OBJECTIVE DETAIL & PROGRESS UPDATES
-        // ============================================================
         console.log('\n📈 SECTION 6: Objective Detail & Progress Updates\n');
 
-        // Navigate to objectives list first
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
 
-        // Click on the objective row to see details
         const objectiveLink = page
             .locator('tr:has-text("Learn TypeScript") a, a:has-text("Learn TypeScript")')
             .first();
         if (await objectiveLink.isVisible({ timeout: 2000 }).catch(() => false)) {
             await objectiveLink.click();
         } else {
-            // Fallback: try clicking the row text
             await page.getByText('Learn TypeScript').first().click();
         }
 
-        // Wait for navigation to objective detail page
         try {
             await page.waitForURL(/\/dashboard\/objectives\/[a-z0-9]+/, { timeout: 5000 });
         } catch {
@@ -403,7 +308,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Objective detail view with progress'
         );
 
-        // Try to add a progress update
         const addProgressBtn = page
             .getByTestId('progress-add-button')
             .or(
@@ -416,7 +320,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.waitForTimeout(300);
             await takeTFGScreenshot(page, 'progress-update-modal', 'Add progress update modal');
 
-            // Fill progress form
             const progressValueInput = page
                 .locator('[data-testid*="progress-value"]')
                 .or(page.locator('input[type="number"]').first());
@@ -436,7 +339,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                     'Progress update form filled'
                 );
 
-                // Submit
                 const submitBtn = page
                     .locator('button[type="submit"]')
                     .or(
@@ -456,7 +358,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             }
         }
 
-        // Try to see quick actions (Complete, Pause, Archive)
         const quickActionsContainer = page
             .locator('[data-testid="quick-actions"]')
             .or(page.locator('.quick-actions'));
@@ -468,16 +369,12 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // ============================================================
-        // SECTION 7: OBJECTIVES FILTERING & TABLE FEATURES
-        // ============================================================
         console.log('\n🔍 SECTION 7: Objectives Filtering & Table Features\n');
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
 
-        // Look for search/filter input
         const searchInput = page
             .locator('[data-testid*="search"]')
             .or(
@@ -496,7 +393,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await searchInput.first().clear();
         }
 
-        // Look for column filters
         const filterButton = page
             .locator('button:has-text("Filter")')
             .or(
@@ -511,7 +407,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        // Look for export buttons (CSV/Excel)
         const exportButton = page
             .locator('button:has-text("Export")')
             .or(
@@ -530,7 +425,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        // Look for column visibility toggle
         const columnsButton = page
             .locator('button:has-text("Columns")')
             .or(
@@ -549,9 +443,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        // ============================================================
-        // SECTION 8: NOTIFICATIONS
-        // ============================================================
         console.log('\n🔔 SECTION 8: Notifications\n');
 
         await page.goto('/dashboard/notifications');
@@ -559,7 +450,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
         await takeTFGScreenshot(page, 'notifications-list', 'Notifications list');
 
-        // Look for mark all read button
         const markAllReadBtn = page
             .locator('button:has-text("Mark all")')
             .or(
@@ -575,16 +465,12 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // ============================================================
-        // SECTION 9: ACHIEVEMENTS (Individual & Organization)
-        // ============================================================
         console.log('\n🏆 SECTION 9: Achievements\n');
 
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
 
-        // Check if achievements need seeding - Initialize BEFORE taking screenshots
         const seedButton = page.getByTestId('achievements-seed-button');
         const initButton = page.locator('button:has-text("Initialize")').or(seedButton);
         if (
@@ -595,9 +481,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         ) {
             console.log('📝 Initializing achievements...');
             await initButton.first().click();
-            // Wait for achievements to be created in the database
             await page.waitForTimeout(3000);
-            // Reload to see the initialized achievements
             await page.reload();
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(1000);
@@ -610,7 +494,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Achievements overview with stats cards'
         );
 
-        // Show stats cards detail
         const statsSection = page.getByTestId('achievements-stats');
         if (await statsSection.isVisible()) {
             await takeTFGScreenshot(
@@ -620,7 +503,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // Filter buttons
         const achievementFilterAll = page.getByTestId('achievements-filter-all');
         const achievementFilterEarned = page.getByTestId('achievements-filter-earned');
         const achievementFilterLocked = page.getByTestId('achievements-filter-locked');
@@ -650,7 +532,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.waitForTimeout(300);
         }
 
-        // Tab switching - Individual achievements
         const individualTab = page.getByTestId('achievements-tab-individual');
         if (await individualTab.isVisible()) {
             await individualTab.click();
@@ -662,7 +543,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // Tab switching - Organization achievements
         const organizationAchievementsTab = page.getByTestId('achievements-tab-organization');
         if (await organizationAchievementsTab.isVisible()) {
             await organizationAchievementsTab.click();
@@ -674,9 +554,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // ============================================================
-        // SECTION 10: ORGANIZATIONS MANAGEMENT
-        // ============================================================
         console.log('\n👥 SECTION 10: Organizations Management\n');
 
         await page.goto('/dashboard/organizations');
@@ -688,7 +565,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Organizations list - empty state'
         );
 
-        // Create an organization
         const createOrganizationButton = page.getByTestId('organization-create-open');
         if (await createOrganizationButton.isVisible()) {
             await createOrganizationButton.click();
@@ -699,7 +575,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 'Create organization modal'
             );
 
-            // Fill organization form
             const organizationNameInput = page.getByTestId('organization-name-input');
             const organizationDescInput = page
                 .getByTestId('organization-description-input')
@@ -718,7 +593,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 'Organization creation form filled'
             );
 
-            // Save organization
             const saveOrganizationBtn = page.getByTestId('organization-save-button');
             if (await saveOrganizationBtn.isVisible()) {
                 await saveOrganizationBtn.click();
@@ -729,7 +603,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                     'Organizations list with created organization'
                 );
 
-                // Navigate to organization detail
                 const organizationLink = page.getByText('Development Organization');
                 if (await organizationLink.isVisible()) {
                     await organizationLink.click();
@@ -741,12 +614,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                         'Organization detail view'
                     );
 
-                    // ============================================================
-                    // SECTION 11: ORGANIZATION MEMBERS
-                    // ============================================================
                     console.log('\n👤 SECTION 11: Organization Members\n');
 
-                    // Look for add member button
                     const addMemberBtn = page
                         .locator('button:has-text("Add Member")')
                         .or(
@@ -765,7 +634,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                         await page.keyboard.press('Escape');
                     }
 
-                    // Show current members list
                     await takeTFGScreenshot(
                         page,
                         'organization-members-list',
@@ -777,18 +645,13 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        // ============================================================
-        // SECTION 12: SESSIONS
-        // ============================================================
         console.log('\n📱 SECTION 12: Sessions\n');
 
         await page.goto('/dashboard/sessions');
         await page.waitForLoadState('networkidle');
 
-        // Wait for sessions to load - they might take a moment to sync
         await page.waitForTimeout(2000);
 
-        // Check if we have "No results" - if so, reload and wait
         const noResults = page.locator('text=No results');
         if (await noResults.isVisible({ timeout: 1000 }).catch(() => false)) {
             console.log('⚠️ Sessions table is empty, reloading...');
@@ -797,7 +660,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.waitForTimeout(2000);
         }
 
-        // Wait for session data to appear
         const sessionRow = page.locator('table tbody tr').first();
         try {
             await sessionRow.waitFor({ state: 'visible', timeout: 5000 });
@@ -808,7 +670,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
 
         await takeTFGScreenshot(page, 'sessions-list', 'Active sessions list with device info');
 
-        // Try to show session details (user agent, IP, etc.)
         const sessionCard = page
             .locator('[data-testid*="session-card"]')
             .or(page.locator('.session-item').first())
@@ -821,9 +682,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         }
 
-        // ============================================================
-        // SECTION 13: SETTINGS
-        // ============================================================
         console.log('\n⚙️ SECTION 13: Settings\n');
 
         await page.goto('/dashboard/settings');
@@ -831,7 +689,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
         await takeTFGScreenshot(page, 'settings-account-tab', 'Settings - Account tab');
 
-        // Switch to password tab
         const passwordTabBtn = page.getByRole('tab', { name: /password|contraseña/i });
         if (await passwordTabBtn.isVisible()) {
             await passwordTabBtn.click();
@@ -839,13 +696,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await takeTFGScreenshot(page, 'settings-password-tab', 'Settings - Password tab');
         }
 
-        // ============================================================
-        // SECTION 14: ADMIN PANEL (promote user to admin first)
-        // ============================================================
         console.log('\n🔧 SECTION 14: Admin Panel\n');
-
-        // Setup platform as admin so we can access the admin panel
-        // Note: This requires ALLOW_SETUP_TEST=true in the backend env
         let adminPromoted = false;
         try {
             console.log('Setting up platform as admin...');
@@ -862,31 +713,24 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(500);
 
-            // Now we should have access to the admin panel
             await takeTFGScreenshot(page, 'admin-panel-users', 'Admin panel - Users tab');
 
-            // Sessions tab
             await page.goto('/dashboard/admin/sessions');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(300);
             await takeTFGScreenshot(page, 'admin-panel-sessions', 'Admin panel - Sessions tab');
 
-            // Audit tab
             await page.goto('/dashboard/admin/audit');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(300);
             await takeTFGScreenshot(page, 'admin-panel-audit', 'Admin panel - Audit logs');
         }
 
-        // ============================================================
-        // SECTION 15: THEME SWITCHING (Light/Dark Mode)
-        // ============================================================
         console.log('\n🌓 SECTION 15: Theme Switching\n');
 
         await page.goto('/dashboard/home');
         await page.waitForLoadState('networkidle');
 
-        // Find theme switcher
         const themeSwitcher = page
             .locator('[data-testid="theme-switcher"]')
             .or(
@@ -908,7 +752,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 'Theme switcher dropdown (Light/Dark/System)'
             );
 
-            // Switch to dark mode
             const darkModeOption = page
                 .getByRole('menuitem', { name: /dark|oscuro/i })
                 .or(page.locator('[data-value="dark"]'));
@@ -917,7 +760,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 await page.waitForTimeout(500);
                 await takeTFGScreenshot(page, 'theme-dark-dashboard', 'Dashboard in dark mode');
 
-                // Take dark mode screenshots of key pages
                 await page.goto('/dashboard/objectives');
                 await page.waitForLoadState('networkidle');
                 await takeTFGScreenshot(page, 'theme-dark-objectives', 'Objectives in dark mode');
@@ -930,7 +772,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                     'Achievements in dark mode'
                 );
 
-                // Switch back to light mode
                 const themeSwitcherAgain = page
                     .locator('[data-testid="theme-switcher"]')
                     .or(page.locator('button[aria-label*="theme" i]'));
@@ -948,16 +789,12 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             }
         }
 
-        // ============================================================
-        // SECTION 16: LANGUAGE SWITCHING (i18n)
-        // ============================================================
         console.log('\n🌍 SECTION 16: Language Switching\n');
 
         await page.goto('/dashboard/home');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
 
-        // Find language switcher by test ID
         const langSwitcher = page.getByTestId('language-switcher');
 
         if (await langSwitcher.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -969,14 +806,12 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 'Language switcher (English/Español)'
             );
 
-            // Switch to Spanish
             const spanishOption = page.getByTestId('language-option-es');
             if (await spanishOption.isVisible({ timeout: 1000 }).catch(() => false)) {
                 await spanishOption.click();
                 await page.waitForTimeout(500);
                 await takeTFGScreenshot(page, 'language-spanish-ui', 'UI in Spanish');
 
-                // Switch back to English
                 await langSwitcher.click();
                 await page.waitForTimeout(200);
                 const englishOption = page.getByTestId('language-option-en');
@@ -989,12 +824,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             console.log('⚠️ Language switcher not found');
         }
 
-        // ============================================================
-        // SECTION 17: RESPONSIVE VIEWS
-        // ============================================================
         console.log('\n📱 SECTION 17: Responsive Views\n');
 
-        // Mobile view (iPhone 12/13)
         await page.setViewportSize({ width: 390, height: 844 });
 
         await page.goto('/dashboard/home');
@@ -1007,7 +838,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(300);
         await takeTFGScreenshot(page, 'responsive-mobile-objectives', 'Objectives on mobile');
 
-        // Look for mobile menu/hamburger
         const mobileMenu = page
             .locator('button[aria-label*="menu" i]')
             .or(
@@ -1022,7 +852,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        // Tablet view (iPad)
         await page.setViewportSize({ width: 820, height: 1180 });
 
         await page.goto('/dashboard/objectives');
@@ -1035,19 +864,14 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(300);
         await takeTFGScreenshot(page, 'responsive-tablet-achievements', 'Achievements on tablet');
 
-        // Reset to desktop
         await page.setViewportSize({ width: 1440, height: 900 });
 
-        // ============================================================
-        // SECTION 18: SIDEBAR NAVIGATION
-        // ============================================================
         console.log('\n📋 SECTION 18: Sidebar Navigation\n');
 
         await page.goto('/dashboard/home');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
 
-        // Capture sidebar - it should be visible on desktop viewport
         const sidebar = page.getByTestId('app-sidebar');
         if (await sidebar.isVisible({ timeout: 2000 }).catch(() => false)) {
             await takeTFGScreenshot(
@@ -1056,7 +880,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 'Sidebar navigation with all menu items'
             );
         } else {
-            // Fallback: try to find any aside element
             const asideSidebar = page.locator('aside').first();
             if (await asideSidebar.isVisible({ timeout: 1000 }).catch(() => false)) {
                 await takeTFGScreenshot(
@@ -1070,9 +893,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             }
         }
 
-        // ============================================================
-        // FINAL SUMMARY
-        // ============================================================
         console.log('\n' + '='.repeat(60));
         console.log('✅ TFG WALKTHROUGH COMPLETE!');
         console.log('='.repeat(60));

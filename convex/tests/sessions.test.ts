@@ -54,7 +54,6 @@ describe('convex sessions', () => {
     test('createTestSession creates sessions for user', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        // Create another session
         await createTestSession(t, {
             userId,
             expiresAt: Date.now() + 1000000,
@@ -63,7 +62,6 @@ describe('convex sessions', () => {
             userAgent: 'test-agent',
         });
 
-        // Verify sessions directly from the component using filter (index not available in test env)
         const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
             return await ctx.db
                 .query('session')
@@ -84,7 +82,6 @@ describe('convex sessions', () => {
     });
 
     test('session can be retrieved after creation', async () => {
-        // Verify that the session created in beforeEach can be retrieved
         const session = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
             return await ctx.db.get(sessionId as unknown as Id<'session'>);
         });

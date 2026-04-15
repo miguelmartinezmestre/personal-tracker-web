@@ -14,19 +14,10 @@ describe('convex auth', () => {
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        const user = {
+        const userData = await createTestUser(t, {
             userId: 'test-user-123-' + randomSuffix,
             email: 'test@example.com-' + randomSuffix,
             name: 'Test User ' + randomSuffix,
-            password: 'test-password',
-            role: 'admin',
-            emailVerified: false,
-        };
-
-        const userData = await createTestUser(t, {
-            userId: user.userId,
-            email: user.email,
-            name: user.name,
             password: 'test-password',
             role: 'admin',
             emailVerified: false,
@@ -48,11 +39,11 @@ describe('convex auth', () => {
 
         userIdentity = t.withIdentity({
             subject: userData.docId,
-            role: user.role,
-            email: user.email,
-            name: user.name,
-            password: user.password,
-            emailVerified: user.emailVerified,
+            role: userData.role ?? 'admin',
+            email: userData.email,
+            name: userData.name,
+            password: 'test-password',
+            emailVerified: false,
             createdAt: Date.now(),
             userId: userData.docId,
             image: 'https://example.com/image.png',

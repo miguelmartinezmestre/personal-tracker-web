@@ -15,7 +15,6 @@ interface CreateUserSessionOpts {
 async function createUserSession(page: Page, opts: CreateUserSessionOpts) {
     const userData = generateTestUserData();
 
-    // Sign up via API
     const signUpResponse = await page.request.post('/api/auth/sign-up/email', {
         headers,
         data: {
@@ -30,7 +29,6 @@ async function createUserSession(page: Page, opts: CreateUserSessionOpts) {
         throw new Error(`Sign-up failed (${signUpResponse.status()}): ${body}`);
     }
 
-    // Create organization
     const createOrgResponse = await page.request.post('/api/auth/organization/create', {
         headers,
         data: {
@@ -51,7 +49,6 @@ async function createUserSession(page: Page, opts: CreateUserSessionOpts) {
         throw new Error('Create org did not return an organization ID');
     }
 
-    // Set active organization
     const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
         headers,
         data: { organizationId: orgId },
@@ -62,8 +59,6 @@ async function createUserSession(page: Page, opts: CreateUserSessionOpts) {
         throw new Error(`Set active org failed (${setActiveResponse.status()}): ${body}`);
     }
 
-    // Complete platform setup BEFORE navigating to dashboard (the dashboard layout
-    // redirects to /setup when platformSettings doesn't exist yet)
     if (opts.setupPlatform) {
         const setupResponse = await page.request.post('/api/test/setup-platform', {
             headers: { ...headers, 'Content-Type': 'application/json' },
@@ -76,16 +71,12 @@ async function createUserSession(page: Page, opts: CreateUserSessionOpts) {
         }
     }
 
-    // Navigate to dashboard to ensure cookies are set
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
 
-    // Save storage state
     await page.context().storageState({ path: opts.storageStatePath });
 }
 
-// Force serial execution: admin must be created FIRST (with only 1 user in DB)
-// so that setup-platform succeeds, before the regular user is registered.
 setup.describe.configure({ mode: 'serial' });
 
 setup('create shared admin user', async ({ page }) => {

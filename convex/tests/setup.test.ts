@@ -17,7 +17,6 @@ describe('convex setup', () => {
         test('returns true when platformSettings exist', async () => {
             const t = convexTest(schema, modules);
 
-            // Manually insert a platformSettings record
             await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Admin',
@@ -120,18 +119,28 @@ describe('convex setup', () => {
                 return id;
             });
 
+            const asUser = t.withIdentity({
+                subject: userId,
+                role: null,
+                email: 'admin@test.com',
+                name: 'Admin',
+                emailVerified: true,
+                createdAt: Date.now(),
+                userId: userId,
+                image: null,
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
             await expect(
-                t.mutation(
-                    api.setup.completeSetup,
-                    {
-                        platformName: 'New Platform',
-                        defaultLanguage: 'en',
-                        registrationPolicy: 'open',
-                        organizationName: 'New Org',
-                        categories: [],
-                    },
-                    { identity: { subject: userId, tokenIdentifier: `test|${userId}` } }
-                )
+                asUser.mutation(api.setup.completeSetup, {
+                    platformName: 'New Platform',
+                    defaultLanguage: 'en',
+                    registrationPolicy: 'open',
+                    organizationName: 'New Org',
+                    categories: [],
+                })
             ).rejects.toThrow();
         });
 
@@ -150,23 +159,28 @@ describe('convex setup', () => {
                 name: 'User 2',
             });
 
+            const asUser1 = t.withIdentity({
+                subject: user1.docId,
+                role: user1.role ?? null,
+                email: user1.email,
+                name: user1.name,
+                emailVerified: true,
+                createdAt: Date.now(),
+                userId: user1.docId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
             await expect(
-                t.mutation(
-                    api.setup.completeSetup,
-                    {
-                        platformName: 'Test Platform',
-                        defaultLanguage: 'en',
-                        registrationPolicy: 'open',
-                        organizationName: 'Test Org',
-                        categories: [],
-                    },
-                    {
-                        identity: {
-                            subject: user1.docId,
-                            tokenIdentifier: `test|${user1.docId}`,
-                        },
-                    }
-                )
+                asUser1.mutation(api.setup.completeSetup, {
+                    platformName: 'Test Platform',
+                    defaultLanguage: 'en',
+                    registrationPolicy: 'open',
+                    organizationName: 'Test Org',
+                    categories: [],
+                })
             ).rejects.toThrow();
         });
 
@@ -179,7 +193,6 @@ describe('convex setup', () => {
                 name: 'Admin User',
             });
 
-            // Create org + membership (simulating what the session hook does)
             const orgId = await createTestOrganization(t, {
                 name: 'Personal Organization',
                 slug: 'personal-org',
@@ -191,7 +204,6 @@ describe('convex setup', () => {
                 role: 'owner',
             });
 
-            // Use withIdentity to simulate auth for better-convex/auth's getAuthUserIdentity
             const userIdentity = t.withIdentity({
                 subject: user.docId,
                 role: user.role ?? null,
@@ -220,19 +232,16 @@ describe('convex setup', () => {
             expect(result.success).toBe(true);
             expect(result.organizationId).toBeDefined();
 
-            // Verify user was promoted to admin
             const updatedUser = await t.run(async ctx => {
                 return await ctx.db.get(user.docId);
             });
             expect(updatedUser?.role).toBe('admin');
 
-            // Verify organization was renamed
             const org = await t.run(async ctx => {
                 return await ctx.db.get(result.organizationId as Id<'organization'>);
             });
             expect(org?.name).toBe('My Company');
 
-            // Verify categories were created
             const categories = await t.run(async ctx => {
                 return await ctx.db.query('categories').collect();
             });
@@ -240,7 +249,6 @@ describe('convex setup', () => {
             expect(categories.map(c => c.name)).toContain('Health');
             expect(categories.map(c => c.name)).toContain('Career');
 
-            // Verify platformSettings was inserted
             const settings = await t.run(async ctx => {
                 return await ctx.db.query('platformSettings').first();
             });

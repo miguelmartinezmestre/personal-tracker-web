@@ -16,7 +16,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-confirm-password-input').fill(user.password);
             await page.getByTestId('register-button').click();
 
-            // Should navigate to dashboard after successful registration
             await page.waitForURL(/\/dashboard/, { timeout: 30000 });
             await expectOnDashboard(page);
         }
@@ -29,13 +28,11 @@ test.describe('User Registration', () => {
             const user = UserFactory.create();
 
             await page.goto('/register');
-            // Leave username empty
             await page.getByTestId('register-email-input').fill(user.email);
             await page.getByTestId('register-password-input').fill(user.password);
             await page.getByTestId('register-confirm-password-input').fill(user.password);
             await page.getByTestId('register-button').click();
 
-            // Should show validation error and stay on register page
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -53,7 +50,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-confirm-password-input').fill(user.password);
             await page.getByTestId('register-button').click();
 
-            // Should stay on register page due to validation
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -71,7 +67,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-confirm-password-input').fill('short');
             await page.getByTestId('register-button').click();
 
-            // Should stay on register page
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -89,7 +84,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-confirm-password-input').fill('12345678');
             await page.getByTestId('register-button').click();
 
-            // Should stay on register page due to strong password policy
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -107,7 +101,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-confirm-password-input').fill('differentpassword');
             await page.getByTestId('register-button').click();
 
-            // Should stay on register page
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -118,7 +111,6 @@ test.describe('User Registration', () => {
         async ({ page }) => {
             const user = UserFactory.create();
 
-            // Register user first time
             await page.goto('/register');
             await page.getByTestId('register-username-input').fill(user.username);
             await page.getByTestId('register-email-input').fill(user.email);
@@ -127,7 +119,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-button').click();
             await page.waitForURL(/\/dashboard/, { timeout: 30000 });
 
-            // Clear cookies and try to register with same email
             await page.context().clearCookies();
             await page.goto('/register');
 
@@ -138,7 +129,6 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-confirm-password-input').fill(secondUser.password);
             await page.getByTestId('register-button').click();
 
-            // Should show error
             await expectErrorAlert(page);
         }
     );

@@ -161,12 +161,17 @@ test.describe('Objectives CRUD', () => {
         await page.getByTestId('objective-edit-save-button').click();
         await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
 
-        await expect
-            .poll(async () => await page.getByText(updatedTitle).count(), {
-                timeout: 10000,
-                intervals: [500, 1000, 2000],
-            })
-            .toBeGreaterThan(0);
+        let titleCount = 0;
+        const maxTime = Date.now() + 10000;
+
+        while (Date.now() < maxTime && titleCount === 0) {
+            titleCount = await page.getByText(updatedTitle).count();
+            if (titleCount === 0) {
+                await page.waitForTimeout(200);
+            }
+        }
+
+        expect(titleCount).toBeGreaterThan(0);
         await expect(page.getByTestId('table-row').filter({ hasText: originalTitle })).toHaveCount(
             0
         );
@@ -204,15 +209,19 @@ test.describe('Objectives CRUD', () => {
             throw new Error('Could not confirm objective deletion');
         }
 
-        await expect
-            .poll(
-                async () => {
-                    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-                    return await page.getByText(title).count();
-                },
-                { timeout: 15000, intervals: [500, 1000, 2000] }
-            )
-            .toBe(0);
+        let titleCount = -1;
+        const maxTime = Date.now() + 15000;
+
+        while (Date.now() < maxTime && titleCount !== 0) {
+            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+            titleCount = await page.getByText(title).count();
+
+            if (titleCount !== 0) {
+                await page.waitForTimeout(500);
+            }
+        }
+
+        expect(titleCount).toBe(0);
     });
 
     test('filter objectives by search text', { tag: ['@REQ-OBJETIVOS-002'] }, async ({ page }) => {

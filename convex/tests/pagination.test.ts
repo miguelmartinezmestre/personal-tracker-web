@@ -194,7 +194,6 @@ describe('convex pagination', () => {
     });
 
     test('getObjectivesByUser with status filter', async () => {
-        // Create mix of active and completed objectives
         for (let i = 0; i < 5; i++) {
             await createTestObjective(t, {
                 userId,

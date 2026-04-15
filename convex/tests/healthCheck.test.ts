@@ -14,13 +14,11 @@ describe('convex healthCheck', async () => {
         });
 
         test('is accessible without authentication', async () => {
-            // Health check should work without user identity
             const result = await t.query(api.healthCheck.get, {});
             expect(result).toBe('OK');
         });
 
         test('returns consistent response', async () => {
-            // Multiple calls should return the same result
             const result1 = await t.query(api.healthCheck.get, {});
             const result2 = await t.query(api.healthCheck.get, {});
             const result3 = await t.query(api.healthCheck.get, {});
