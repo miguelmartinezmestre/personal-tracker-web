@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { ColumnDef } from '@tanstack/react-table';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
+import type { Doc } from '@/convex/_generated/dataModel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
@@ -108,7 +108,7 @@ export function useNotificationsTableColumns({
                 const notification = row.original;
                 const toggleRead = () => {
                     setNotificationRead({
-                        id: notification._id as Id<'notifications'>,
+                        id: notification._id,
                         read: !notification.read,
                     });
                 };
@@ -127,7 +127,7 @@ export function useNotificationsTableColumns({
                         <DeleteConfirmationDialog
                             onConfirm={async () => {
                                 await deleteNotificationAsync({
-                                    id: notification._id as Id<'notifications'>,
+                                    id: notification._id,
                                 });
                             }}
                             title={t('confirm.deleteTitle')}

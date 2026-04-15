@@ -13,7 +13,6 @@ import { useCategoriesTableColumns } from './categories-table-columns';
 
 const DEFAULT_PAGE_SIZE = 20;
 
-// Tipo que viene de Convex
 type ConvexCategory = {
     _id: Id<'categories'>;
     _creationTime: number;
@@ -26,13 +25,22 @@ type ConvexCategory = {
     updatedAt: number;
 };
 
-// Función para mapear de Convex a Category
 function mapConvexCategoryToCategory(convexCategory: ConvexCategory): Category {
+    const validIcon: Category['icon'] =
+        convexCategory.icon === 'target' ||
+        convexCategory.icon === 'chart' ||
+        convexCategory.icon === 'check' ||
+        convexCategory.icon === 'calendar' ||
+        convexCategory.icon === 'lightbulb' ||
+        convexCategory.icon === 'users'
+            ? convexCategory.icon
+            : undefined;
+
     return {
         id: convexCategory._id,
         name: convexCategory.name,
         color: convexCategory.color,
-        icon: convexCategory.icon as Category['icon'],
+        icon: validIcon,
     };
 }
 

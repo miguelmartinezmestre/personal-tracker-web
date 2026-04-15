@@ -118,7 +118,7 @@ export default function CreateNotificationFormModal() {
                                 <FormLabel>{t('form.objective')}</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
-                                    value={field.value || ''}
+                                    value={(field.value as string) || ''}
                                     disabled={isObjectiveLoading || !hasObjectives}
                                 >
                                     <FormControl>
@@ -157,7 +157,7 @@ export default function CreateNotificationFormModal() {
                                     <Input
                                         placeholder={t('form.typePlaceholder')}
                                         {...field}
-                                        value={field.value || ''}
+                                        value={(field.value as string) || ''}
                                         onChange={e => field.onChange(e.target.value)}
                                         data-testid="notification-type-input"
                                     />
@@ -178,7 +178,7 @@ export default function CreateNotificationFormModal() {
                                         placeholder={t('form.messagePlaceholder')}
                                         className="resize-none min-h-[80px]"
                                         {...field}
-                                        value={field.value || ''}
+                                        value={(field.value as string) || ''}
                                         data-testid="notification-message-input"
                                     />
                                 </FormControl>
@@ -204,7 +204,9 @@ export default function CreateNotificationFormModal() {
                                                 )}
                                             >
                                                 {field.value ? (
-                                                    new Date(field.value).toLocaleDateString()
+                                                    new Date(
+                                                        field.value as Date | number | string
+                                                    ).toLocaleDateString()
                                                 ) : (
                                                     <span>{t('form.pickADate')}</span>
                                                 )}
@@ -215,7 +217,9 @@ export default function CreateNotificationFormModal() {
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
-                                            selected={field.value || undefined}
+                                            selected={
+                                                (field.value as Date | undefined) || undefined
+                                            }
                                             onSelect={field.onChange}
                                             initialFocus
                                         />

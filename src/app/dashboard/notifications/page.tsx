@@ -17,8 +17,7 @@ export default async function NotificationsPage() {
                 paginationOpts: { numItems: 100, cursor: null },
             }),
         ]);
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

@@ -17,6 +17,10 @@ export const categoryIconSchema = z.enum([
     'home',
     'map',
     'target',
+    'chart',
+    'check',
+    'calendar',
+    'lightbulb',
     'trending-up',
     'star',
     'award',
@@ -28,7 +32,7 @@ export const categoryIconSchema = z.enum([
 ]);
 
 export const categorySchema = z.object({
-    name: z.string().min(1, 'Name is required').max(50, 'Name must be less than 50 characters'),
+    name: z.string().min(1).max(50),
     color: categoryColorSchema,
     icon: categoryIconSchema.optional(),
 });

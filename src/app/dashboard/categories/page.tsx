@@ -11,8 +11,7 @@ export default async function CategoriesPage() {
         preloadedCategoriesQuery = await preloadAuthQuery(api.categories.getCategoriesByUser, {
             paginationOpts: { numItems: 20, cursor: null },
         });
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

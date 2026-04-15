@@ -6,16 +6,11 @@ import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
 import EditCategoryFormModal from '@/features/categories/components/category-form-edit-modal';
 import type { Category } from '@/features/categories/schemas/category';
-import * as LucideIcons from 'lucide-react';
+import { getLucideIcon } from '@/lib/icons';
 import { useDeleteCategory } from './categories-table-actions';
 
 function renderIcon(iconName: string | undefined) {
-    if (!iconName) return null;
-    const icons = LucideIcons as unknown as Record<
-        string,
-        React.ComponentType<{ className?: string }>
-    >;
-    const IconComponent = icons[iconName];
+    const IconComponent = getLucideIcon(iconName);
     return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
 }
 
