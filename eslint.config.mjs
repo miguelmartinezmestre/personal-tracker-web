@@ -6,6 +6,7 @@ import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginReact from 'eslint-plugin-react';
 import globals from 'globals';
 import pluginNext from '@next/eslint-plugin-next';
+import convexPlugin from '@convex-dev/eslint-plugin';
 
 const eslintConfig = [
     js.configs.recommended,
@@ -63,6 +64,18 @@ const eslintConfig = [
             globals: {
                 ...globals.node,
             },
+        },
+    },
+    {
+        files: ['convex/**/*.ts'],
+        plugins: {
+            '@convex-dev': convexPlugin,
+        },
+        rules: {
+            '@convex-dev/no-old-registered-function-syntax': 'error',
+            '@convex-dev/require-args-validator': 'error',
+            '@convex-dev/explicit-table-ids': 'error',
+            '@convex-dev/import-wrong-runtime': 'off',
         },
     },
     {

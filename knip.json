@@ -1,90 +1,38 @@
 {
     "$schema": "https://unpkg.com/knip@5/schema.json",
-    "workspaces": {
-        ".": {
-            "entry": ["scripts/**/*.{ts,js,mjs}", "test.setup.ts"],
-            "ignore": [
-                "**/node_modules/**",
-                "**/dist/**",
-                "**/.next/**",
-                "**/coverage/**",
-                "**/build/**",
-                "**/*.d.ts",
-                "**/_generated/**",
-                "**/test-results/**",
-                "**/playwright-report/**",
-                "mysql-data/**",
-                "data/**"
-            ]
-        },
-        "apps/front": {
-            "entry": ["src/app/**/*.{ts,tsx}", "src/**/*.test.{ts,tsx}", "scripts/**/*.{ts,js}"],
-            "ignore": [
-                "**/node_modules/**",
-                "**/dist/**",
-                "**/.next/**",
-                "**/coverage/**",
-                "**/build/**",
-                "**/*.d.ts",
-                "**/_generated/**",
-                "**/test-results/**",
-                "**/playwright-report/**"
-            ],
-            "ignoreDependencies": [
-                "@eslint/eslintrc",
-                "@vitejs/plugin-react",
-                "@vitest/coverage-v8",
-                "baseline-browser-mapping",
-                "eslint-config-next",
-                "tailwindcss",
-                "tw-animate-css"
-            ]
-        },
-        "packages/backend": {
-            "entry": ["convex/**/*.ts", "test.setup.ts"],
-            "ignore": ["**/node_modules/**", "**/_generated/**", "**/*.d.ts"]
-        },
-        "packages/ui": {
-            "entry": ["src/**/*.{ts,tsx}"],
-            "ignore": ["**/node_modules/**", "**/dist/**", "**/*.d.ts", "**/*.css"],
-            "ignoreDependencies": ["@tailwindcss/postcss"]
-        }
-    },
+    "entry": [
+        "next.config.ts",
+        "proxy.ts",
+        "src/app/**/*.{ts,tsx}",
+        "convex/**/*.ts",
+        "scripts/**/*.{ts,mjs,js}",
+        "vitest.config.ts"
+    ],
+    "project": ["src/**/*.{ts,tsx}", "convex/**/*.ts", "scripts/**/*.{ts,mjs,js}"],
     "ignore": [
-        "apps/**/dist/**",
-        "apps/**/coverage/**",
-        "apps/**/.next/**",
-        "packages/**/dist/**",
-        "packages/**/_generated/**",
+        "**/node_modules/**",
+        "**/.next/**",
+        "**/.next-e2e/**",
+        "**/dist/**",
+        "**/coverage/**",
+        "**/build/**",
         "**/*.d.ts",
-        "node_modules/**",
+        "**/_generated/**",
+        "**/test-results/**",
+        "**/playwright-report/**",
+        "tests/**",
+        "convex/tests/**",
+        "src/components/ui/**",
+        "src/tests-manual/**",
         "mysql-data/**",
-        "data/**",
-        "packages/backend/convex/achievements.ts",
-        "packages/backend/convex/auditLogs.ts",
-        "packages/backend/convex/betterAuth/adapter.ts",
-        "packages/backend/convex/betterAuth/auth.ts",
-        "packages/backend/convex/categories.ts",
-        "packages/backend/convex/crons.ts",
-        "packages/backend/convex/dashboard.ts",
-        "packages/backend/convex/healthCheck.ts",
-        "packages/backend/convex/http.ts",
-        "packages/backend/convex/notifications.ts",
-        "packages/backend/convex/objectives.ts",
-        "packages/backend/convex/sessions.ts",
-        "packages/backend/convex/teamMembers.ts",
-        "packages/backend/convex/teams.ts",
-        "packages/backend/convex/update_progress.ts",
-        "packages/backend/convex/users.ts"
+        "data/**"
     ],
     "ignoreDependencies": [
         "rimraf",
         "postcss",
         "postcss-load-config",
         "jsdom",
-        "@repo/backend",
-        "vite",
-        "next"
+        "vite"
     ],
     "ignoreExportsUsedInFile": true
 }

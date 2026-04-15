@@ -1,14 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Full Playwright suite (cross-browser), excluding suites migrated to Vitest.
- */
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
     workers: 2,
 
-    // Timeouts
     timeout: 60000,
     expect: {
         timeout: 10000,
@@ -19,7 +15,6 @@ export default defineConfig({
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
-        // Use data-testid attribute for test selectors
         testIdAttribute: 'data-testid',
     },
 
@@ -47,9 +42,7 @@ export default defineConfig({
         },
     ],
 
-    // Global setup to ensure backend is ready
     globalSetup: './tests/config/global-setup.ts',
 
-    // Ignore manual and suites migrated to Vitest
     testIgnore: ['**/tests-manual/**', '**/e2e/admin/**'],
 });
