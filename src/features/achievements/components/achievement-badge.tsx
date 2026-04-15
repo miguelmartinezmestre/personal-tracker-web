@@ -4,6 +4,7 @@ import { cn } from '@/lib/ui-utils/utils';
 import { Trophy, Target, CheckCircle, Flame, TrendingUp, Clock, Users, Lock } from 'lucide-react';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTranslations } from 'next-intl';
 
 const TIER_COLORS: Record<AchievementTier, string> = {
     bronze: 'bg-amber-600 text-amber-50',
@@ -48,6 +49,7 @@ export function AchievementBadge({
     size = 'md',
     showTooltip = true,
 }: AchievementBadgeProps) {
+    const t = useTranslations('Achievements.card');
     const IconComponent = ICON_MAP[icon] || Trophy;
 
     const sizeClasses = {
@@ -91,7 +93,9 @@ export function AchievementBadge({
                 <TooltipContent>
                     <p className="font-semibold">{name}</p>
                     {description && <p className="text-xs text-muted-foreground">{description}</p>}
-                    {!earned && <p className="text-xs text-muted-foreground mt-1">Locked</p>}
+                    {!earned && (
+                        <p className="text-xs text-muted-foreground mt-1">{t('locked')}</p>
+                    )}
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

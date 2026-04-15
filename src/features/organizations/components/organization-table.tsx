@@ -74,12 +74,9 @@ export default function OrganizationsTable() {
             header: '',
             id: 'go-to-activity',
             cell: ({ row }) => {
-                // Use ID for the URL - ensure we're using the actual ID, not slug
-                // Explicitly check that we're not accidentally using the slug
                 const organizationId = row.original.id;
                 const organizationSlug = row.original.slug;
 
-                // Ensure we have a valid ID (not empty, not the slug)
                 if (organizationId && organizationId !== organizationSlug) {
                     return (
                         <Link
@@ -91,16 +88,6 @@ export default function OrganizationsTable() {
                         </Link>
                     );
                 }
-
-                // Fallback: if ID is missing or equals slug, log error but don't render link
-                console.error(
-                    '[OrganizationsTable] Cannot create link - invalid organization ID:',
-                    {
-                        id: organizationId,
-                        slug: organizationSlug,
-                        name: row.original.name,
-                    }
-                );
 
                 return null;
             },

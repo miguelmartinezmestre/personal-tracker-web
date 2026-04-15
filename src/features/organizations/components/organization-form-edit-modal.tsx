@@ -94,7 +94,7 @@ export default function EditOrganizationFormModal({
                                         placeholder={t('describeOrganizationInDetail')}
                                         className="resize-none min-h-[80px]"
                                         {...field}
-                                        value={field.value || ''}
+                                        value={(field.value as string) || ''}
                                         data-testid="organization-edit-description-input"
                                     />
                                 </FormControl>

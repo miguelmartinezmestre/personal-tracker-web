@@ -38,7 +38,6 @@ export function OrganizationSwitcher() {
         activeMemberQuery.isPending ||
         organizationsQuery.isPending;
 
-    // Set active organization mutation
     const setActiveMutation = useMutation({
         mutationFn: async (organizationId: string) => {
             return await authClient.organization.setActive({
@@ -46,7 +45,6 @@ export function OrganizationSwitcher() {
             });
         },
         onSuccess: () => {
-            // Refresh to update the session
             router.refresh();
         },
     });
@@ -70,48 +68,71 @@ export function OrganizationSwitcher() {
                 <Button
                     variant="outline"
                     data-testid="organization-switcher"
-                    className="w-9 justify-center px-0 sm:min-w-[140px] sm:w-auto sm:justify-start sm:px-3"
+                    className="h-9 w-auto min-w-[140px] justify-start gap-2 border-2 border-primary/20 bg-primary/5 px-3 hover:bg-primary/10 hover:border-primary/30"
                     disabled={setActiveMutation.isPending || isLoadingData}
                 >
                     {setActiveMutation.isPending || isLoadingData ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                         <>
-                            <Building className="h-4 w-4 sm:mr-2" />
-                            <span className="hidden truncate sm:inline">{displayName}</span>
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                                <Building className="h-3 w-3 text-primary" />
+                            </div>
+                            <span className="truncate font-medium">{displayName}</span>
+                            <div
+                                className="ml-1 h-2 w-2 rounded-full bg-green-500"
+                                title={t('activeOrganization') || 'Active organization'}
+                            />
                         </>
                     )}
                     <span className="sr-only">{t('label')}</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                    {t('organizations')}
+            <DropdownMenuContent align="end" className="w-72">
+                <div className="border-b px-3 py-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {t('activeOrganization') || 'Active Organization'}
+                    </p>
+                    <p className="mt-1 truncate text-sm font-semibold">{displayName}</p>
                 </div>
-                {isLoadingData ? (
-                    <DropdownMenuItem disabled>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        {t('loading')}
-                    </DropdownMenuItem>
-                ) : organizations.length > 0 ? (
-                    organizations.map(organization => (
-                        <DropdownMenuItem
-                            key={organization.id}
-                            onClick={() => handleOrganizationChange(organization.id)}
-                            data-testid={`organization-option-${organization.id}`}
-                            className="flex items-center gap-3 cursor-pointer"
-                        >
-                            <span className="flex-1 truncate">{organization.name}</span>
-                            {organization.id === activeOrganizationId && (
-                                <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                            )}
+                <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                    {t('switchOrganization') || 'Switch to:'}
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                    {isLoadingData ? (
+                        <DropdownMenuItem disabled>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            {t('loading')}
                         </DropdownMenuItem>
-                    ))
-                ) : (
-                    <DropdownMenuItem disabled>
-                        <span className="text-muted-foreground">{t('noOrganizations')}</span>
-                    </DropdownMenuItem>
-                )}
+                    ) : organizations.length > 0 ? (
+                        organizations.map(organization => (
+                            <DropdownMenuItem
+                                key={organization.id}
+                                onClick={() => handleOrganizationChange(organization.id)}
+                                data-testid={`organization-option-${organization.id}`}
+                                className="flex items-center gap-3 cursor-pointer"
+                                disabled={organization.id === activeOrganizationId}
+                            >
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+                                    <Building className="h-3 w-3" />
+                                </div>
+                                <span className="flex-1 truncate">{organization.name}</span>
+                                {organization.id === activeOrganizationId ? (
+                                    <span className="text-xs text-primary font-medium">
+                                        {t('current') || 'Current'}
+                                    </span>
+                                ) : null}
+                                {organization.id === activeOrganizationId && (
+                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                                )}
+                            </DropdownMenuItem>
+                        ))
+                    ) : (
+                        <DropdownMenuItem disabled>
+                            <span className="text-muted-foreground">{t('noOrganizations')}</span>
+                        </DropdownMenuItem>
+                    )}
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => router.push('/dashboard/organizations')}

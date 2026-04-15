@@ -19,8 +19,7 @@ export default async function UsersPage() {
                 cursor: null,
             },
         });
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

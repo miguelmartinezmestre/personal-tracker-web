@@ -46,6 +46,8 @@ export function AchievementCard({
 
     const formattedEarnedDate = earnedAt ? new Date(earnedAt).toLocaleDateString() : null;
 
+    const tier = definition.tier;
+
     return (
         <Card
             className={cn(
@@ -66,7 +68,7 @@ export function AchievementCard({
             <CardHeader className="flex flex-row items-center gap-4 pb-2">
                 <AchievementBadge
                     icon={definition.icon}
-                    tier={definition.tier as AchievementTier}
+                    tier={tier}
                     name={t(`definitions.${definition.code}.name`, {
                         defaultValue: definition.code,
                     })}
@@ -82,11 +84,11 @@ export function AchievementCard({
                             })}
                         </h3>
                         <Badge
-                            variant={TIER_BADGE_VARIANTS[definition.tier as AchievementTier]}
+                            variant={TIER_BADGE_VARIANTS[tier]}
                             className="text-xs"
                         >
-                            {t(`tiers.${definition.tier}`, {
-                                defaultValue: TIER_LABELS[definition.tier as AchievementTier],
+                            {t(`tiers.${tier}`, {
+                                defaultValue: TIER_LABELS[tier],
                             })}
                         </Badge>
                     </div>

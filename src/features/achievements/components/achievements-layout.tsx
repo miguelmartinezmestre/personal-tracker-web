@@ -82,11 +82,7 @@ export default function AchievementsLayout({
     );
 
     const handleSeedAchievements = async () => {
-        try {
-            await seedMutation.mutateAsync({});
-        } catch (error) {
-            console.error('Error seeding achievements:', error);
-        }
+        await seedMutation.mutateAsync({});
     };
 
     if (isLoading) {
@@ -131,7 +127,7 @@ export default function AchievementsLayout({
                             disabled={seedMutation.isPending}
                             data-testid="achievements-seed-button"
                         >
-                            {seedMutation.isPending ? 'Seeding...' : 'Initialize Achievements'}
+                            {seedMutation.isPending ? t('seed.seeding') : t('seed.initialize')}
                         </Button>
                     </div>
                 )}

@@ -12,7 +12,6 @@ interface OrganizationDetailClientProps {
 export default function OrganizationDetailClient({
     organizationId,
 }: OrganizationDetailClientProps) {
-    // Use organization hook to get organization by ID
     const { data: organization, isLoading } = useOrganizationByIdentifier(organizationId);
 
     if (isLoading) {

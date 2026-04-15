@@ -87,7 +87,7 @@ export default function CreateOrganizationMemberFormModal({
                                         placeholder={t('enterEmail')}
                                         type="email"
                                         {...field}
-                                        value={field.value || ''}
+                                        value={(field.value as string) || ''}
                                         onChange={e => field.onChange(e.target.value)}
                                         data-testid="organization-member-email-input"
                                     />
@@ -107,7 +107,7 @@ export default function CreateOrganizationMemberFormModal({
                                 <FormLabel>{t('role')}</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
-                                    value={field.value || 'member'}
+                                    value={(field.value as string) || 'member'}
                                 >
                                     <FormControl>
                                         <SelectTrigger data-testid="organization-member-role-select">

@@ -4,9 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/auth-client';
 import { OrganizationRole } from '../types/roles';
 
-/**
- * Tipos para las operaciones de miembros de organización
- */
 export interface CreateOrganizationMemberParams {
     organizationId: string;
     email: string;
@@ -29,10 +26,6 @@ const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
     organizationId,
 ];
 
-/**
- * Hook para crear un nuevo miembro de una organización
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
- */
 export function useCreateOrganizationMember() {
     const queryClient = useQueryClient();
 
@@ -52,10 +45,6 @@ export function useCreateOrganizationMember() {
     });
 }
 
-/**
- * Hook para actualizar un miembro de una organización
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
- */
 export function useUpdateOrganizationMember() {
     const queryClient = useQueryClient();
 
@@ -75,10 +64,6 @@ export function useUpdateOrganizationMember() {
     });
 }
 
-/**
- * Hook para eliminar un miembro de una organización
- * Abstrae la implementación de Convex para permitir cambiar de tecnología en el futuro
- */
 export function useDeleteOrganizationMember() {
     const queryClient = useQueryClient();
 
