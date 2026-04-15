@@ -23,14 +23,14 @@ import { admin, organization } from 'better-auth/plugins';
 import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
+import { ERROR_CODES } from './utils/constants';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
 
-const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
+import { env } from './lib/env';
+
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-const STRONG_PASSWORD_MESSAGE =
-    'La contraseña debe incluir al menos una mayúscula, una minúscula y un número';
 const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
@@ -41,6 +41,12 @@ const buildDefaultOrganizationSlug = (userId: string) => {
         .slice(-12);
     return `${DEFAULT_ORGANIZATION_SLUG_BASE}-${normalizedSuffix || Date.now().toString(36)}`;
 };
+
+interface AuthSession {
+    session?: {
+        activeOrganizationId?: string | null;
+    };
+}
 
 export const ensureDefaultOrganizationForUser = internalMutation({
     args: {
@@ -81,13 +87,12 @@ const authFunctions: AuthFunctions = internal.auth;
 export const authClient = createClient<DataModel, typeof schema>({
     authFunctions,
     schema,
-    internalMutation, // Optional: custom mutation wrapper for triggers
+    internalMutation,
     triggers: authAuditTriggers,
 });
 
-// Auth options factory
 const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
-    baseURL: process.env.SITE_URL!,
+    baseURL: env.SITE_URL,
     user: {
         deleteUser: {
             enabled: true,
@@ -95,19 +100,14 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
     },
     emailAndPassword: {
         enabled: true,
-        sendResetPassword: async ({ user, url, token }, _request) => {
-            console.log(
-                `Sending reset password email to ${user.email} with url ${url} and token ${token}`
-            );
+        sendResetPassword: async ({ user, url }, _request) => {
             await (ctx as MutationCtx).runMutation(internal.email.sendTestEmail, {
                 to: user.email,
                 subject: 'Reset your password',
                 text: `Click the link to reset your password: ${url}`,
             });
         },
-        onPasswordReset: async ({ user }, _request) => {
-            console.log(`Password for user ${user.email} has been reset.`);
-        },
+        onPasswordReset: async () => {},
         revokeSessionsOnPasswordReset: true,
     },
     databaseHooks: {
@@ -127,7 +127,7 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
                     return {
                         data: {
                             ...session,
-                            activeOrganizationId: activeOrganizationId as string,
+                            activeOrganizationId,
                         },
                     };
                 },
@@ -149,7 +149,9 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
 
             if (!STRONG_PASSWORD_REGEX.test(password)) {
                 throw new APIError('BAD_REQUEST', {
-                    message: STRONG_PASSWORD_MESSAGE,
+                    code: ERROR_CODES.WEAK_PASSWORD,
+                    message:
+                        'Password must include at least one uppercase letter, one lowercase letter, and one number',
                 });
             }
         }),
@@ -163,23 +165,17 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
         organization({
             invitationExpiresIn: 60 * 60 * 24 * 2,
             defaultRole: 'member',
-            sendInvitationEmail: async data => {
-                const inviteLink = `${siteUrl}/invitations/${data.id}`;
-                console.log('[auth:sendInvitationEmail] Invite link:', inviteLink);
-            },
+            sendInvitationEmail: async () => {},
         }),
     ],
     database: authClient.httpAdapter(ctx),
 });
-// For queries/mutations: direct DB access
 export const getAuth = <Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) =>
     betterAuth({
         ...createAuthOptions(ctx),
         database: authClient.adapter(ctx, createAuthOptions),
     });
-// For actions/HTTP routes: HTTP adapter
 export const createAuth = (ctx: ActionCtx) => betterAuth(createAuthOptions(ctx));
-// Generate internal CRUD functions
 export const {
     create,
     deleteMany,
@@ -191,25 +187,25 @@ export const {
     getLatestJwks,
     rotateKeys,
 } = createApi(schema, createAuth, {
-    internalMutation, // Optional: same wrapper as createClient
+    internalMutation,
 });
-// Generate trigger handlers
+
 export const { beforeCreate, beforeDelete, beforeUpdate, onCreate, onDelete, onUpdate } =
     authClient.triggersApi();
-// Export for Better Auth CLI
-// biome-ignore lint/suspicious/noExplicitAny: Required for CLI
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required for BetterAuth CLI
-export const auth = betterAuth(createAuthOptions({} as any));
+
+export const auth = betterAuth(createAuthOptions({} as GenericCtx));
 
 export const getCurrentUser = query({
+    args: v.object({}),
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError('Unauthenticated');
+        if (!identity) throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         return await ctx.db.get('user', identity.userId);
     },
 });
 
 export const getCurrentOrganization = query({
+    args: v.object({}),
     handler: async ctx => {
         let organizationId: string | null = null;
 
@@ -220,9 +216,8 @@ export const getCurrentOrganization = query({
             headers,
         });
 
-        organizationId =
-            ((session?.session as { activeOrganizationId?: string | null } | undefined)
-                ?.activeOrganizationId as string | null | undefined) ?? null;
+        const authSession = session as AuthSession | null;
+        organizationId = authSession?.session?.activeOrganizationId ?? null;
 
         return organizationId;
     },

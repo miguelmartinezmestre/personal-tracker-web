@@ -50,7 +50,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
         updateCursor(currentPage, continueCursor, pageIsDone);
     }, [currentPage, hasData, continueCursor, pageIsDone, users.isFetching, updateCursor]);
 
-    const data = (users.data?.page ?? []) as Doc<'user'>[];
+    const data: Doc<'user'>[] = users.data?.page ?? [];
     const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (

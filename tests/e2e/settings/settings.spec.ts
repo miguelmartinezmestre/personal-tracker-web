@@ -27,40 +27,18 @@ test.describe('Settings', () => {
             await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
             const newName = `Updated User ${Date.now()}`;
-            await settings.usernameInput.clear();
             await settings.usernameInput.fill(newName);
             await settings.accountSaveButton.click();
 
-            await expect
-                .poll(
-                    async () => {
-                        if (await settings.accountSuccessMessage.isVisible().catch(() => false)) {
-                            return true;
-                        }
+            // Wait for save to complete - check for success toast or message
+            await expect(
+                isolatedAuthenticatedPage.getByText(/profile updated|perfil actualizado/i).first()
+            ).toBeVisible({ timeout: 15000 });
 
-                        const sessionResponse =
-                            await isolatedAuthenticatedPage.request.get('/api/auth/get-session');
-                        if (sessionResponse.ok()) {
-                            const payload = (await sessionResponse.json()) as
-                                | {
-                                      user?: { name?: string | null } | null;
-                                      data?: { user?: { name?: string | null } | null } | null;
-                                  }
-                                | null;
-                            const sessionName =
-                                payload?.data?.user?.name ?? payload?.user?.name ?? null;
-                            if (sessionName === newName) {
-                                return true;
-                            }
-                        }
-
-                        await settings.goto();
-                        await settings.switchToAccount();
-                        return (await settings.usernameInput.inputValue()) === newName;
-                    },
-                    { timeout: 30000, intervals: [500, 1000, 2000] }
-                )
-                .toBe(true);
+            // Verify the change persisted by reloading
+            await settings.goto();
+            await settings.switchToAccount();
+            await expect(settings.usernameInput).toHaveValue(newName, { timeout: 10000 });
         }
     );
 
@@ -82,17 +60,20 @@ test.describe('Settings', () => {
             await settings.emailInput.fill(newEmail);
             await settings.accountSaveButton.click();
 
-            // The account form reports either a verification message or a backend validation error.
-            await expect
-                .poll(
-                    async () => {
-                        const successCount = await settings.accountSuccessMessage.count();
-                        const errorCount = await settings.accountErrorMessage.count();
-                        return successCount + errorCount;
-                    },
-                    { timeout: 30000, intervals: [500, 1000, 2000] }
-                )
-                .toBeGreaterThan(0);
+            const maxTime = Date.now() + 30000;
+            let messageCount = 0;
+
+            while (Date.now() < maxTime && messageCount === 0) {
+                const successCount = await settings.accountSuccessMessage.count();
+                const errorCount = await settings.accountErrorMessage.count();
+                messageCount = successCount + errorCount;
+
+                if (messageCount === 0) {
+                    await isolatedAuthenticatedPage.waitForTimeout(500);
+                }
+            }
+
+            expect(messageCount).toBeGreaterThan(0);
         }
     );
 
@@ -109,15 +90,12 @@ test.describe('Settings', () => {
                 timeout: 10000,
             });
 
-            // Get original value
             const originalValue = await settings.usernameInput.inputValue();
 
-            // Type something different
             await settings.usernameInput.clear();
             await settings.usernameInput.fill('ShouldNotSave');
             await settings.accountCancelButton.click();
 
-            // Reload page and check value is unchanged
             await settings.goto();
             await settings.switchToAccount();
             await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
@@ -146,7 +124,6 @@ test.describe('Settings', () => {
             );
             await settings.passwordSaveButton.click();
 
-            // Should show success message or toast
             await expect(settings.passwordSuccessMessage).toBeVisible({ timeout: 10000 });
         }
     );
@@ -164,7 +141,6 @@ test.describe('Settings', () => {
             await settings.fillPasswordForm('wrongpassword', 'wrongpassword', 'newpassword123');
             await settings.passwordSaveButton.click();
 
-            // Should show error
             await expect(settings.passwordErrorMessage).toBeVisible({ timeout: 10000 });
         }
     );
@@ -179,16 +155,11 @@ test.describe('Settings', () => {
             await settings.switchToPassword();
             await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-            // Fill current password correctly but make confirm differ from current
-            // Zod superRefine validates password === confirmPassword at form level
-            // This produces a FormMessage error, not the onSubmit error paragraph
             await settings.currentPasswordInput.fill(isolatedTestUser.password);
             await settings.confirmPasswordInput.fill('doesnotmatch');
             await settings.newPasswordInput.fill('newpassword123');
             await settings.passwordSaveButton.click();
 
-            // Zod superRefine validates password === confirmPassword at form level,
-            // so the error appears via FormMessage (data-slot="form-message") not the onSubmit error
             const formError = isolatedAuthenticatedPage.locator(
                 '[data-testid="password-error-message"], [data-slot="form-message"]'
             );
@@ -206,7 +177,6 @@ test.describe('Settings', () => {
             await settings.switchToDanger();
             await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-            // Button should be disabled by default
             await expect(settings.deleteAccountButton).toBeDisabled();
         }
     );
@@ -221,13 +191,8 @@ test.describe('Settings', () => {
             await settings.switchToDanger();
             await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-            // Fill email confirmation and password
-            await settings.fillDeleteAccountForm(
-                isolatedTestUser.email,
-                isolatedTestUser.password
-            );
+            await settings.fillDeleteAccountForm(isolatedTestUser.email, isolatedTestUser.password);
 
-            // Button should now be enabled
             await expect(settings.deleteAccountButton).toBeEnabled();
         }
     );
@@ -242,15 +207,10 @@ test.describe('Settings', () => {
             await settings.switchToDanger();
             await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-            await settings.fillDeleteAccountForm(
-                isolatedTestUser.email,
-                isolatedTestUser.password
-            );
+            await settings.fillDeleteAccountForm(isolatedTestUser.email, isolatedTestUser.password);
             await settings.deleteAccountButton.click();
 
-            // Should show success and redirect to landing
             await expect(settings.deleteAccountSuccess).toBeVisible({ timeout: 15000 });
-            // Use regex without ^ anchor since waitForURL matches against full URL
             await isolatedAuthenticatedPage.waitForURL(/\/$|\/login/, { timeout: 15000 });
         }
     );

@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation';
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ConvexQueryClient } from '@convex-dev/react-query';
+import { env } from '@/lib/env';
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
 
 const convexQueryClient = new ConvexQueryClient(convex);
 
@@ -44,11 +45,9 @@ export function BetterConvexProvider({
                 client={convex}
                 initialToken={token}
                 onMutationUnauthorized={() => {
-                    console.log('Mutation unauthorized');
                     router.push('/login');
                 }}
-                onQueryUnauthorized={({ queryName }) => {
-                    console.log('Query unauthorized', queryName);
+                onQueryUnauthorized={() => {
                     router.push('/login');
                 }}
             >

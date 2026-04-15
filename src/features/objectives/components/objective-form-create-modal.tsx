@@ -52,8 +52,12 @@ export default function CreateObjectiveFormModal() {
     const createObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getObjectivesByUser] });
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getOrganizationObjectives] });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getObjectivesByUser }],
+            });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getOrganizationObjectives }],
+            });
         },
     });
 
@@ -147,7 +151,7 @@ export default function CreateObjectiveFormModal() {
                                         placeholder={t('describeObjectiveInDetail')}
                                         className="resize-none min-h-[80px]"
                                         {...field}
-                                        value={field.value || ''}
+                                        value={(field.value as string) || ''}
                                         data-testid="objective-description-input"
                                     />
                                 </FormControl>
@@ -162,7 +166,10 @@ export default function CreateObjectiveFormModal() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('scope')}</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value as string | undefined}
+                                    >
                                         <FormControl>
                                             <SelectTrigger data-testid="objective-scope-select">
                                                 <SelectValue placeholder={t('scope')} />
@@ -195,7 +202,7 @@ export default function CreateObjectiveFormModal() {
                                     <FormLabel>{t('smartForm.fields.category')}</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
-                                        value={field.value || ''}
+                                        value={(field.value as string) || ''}
                                     >
                                         <FormControl>
                                             <SelectTrigger data-testid="objective-category-select">
@@ -261,7 +268,7 @@ export default function CreateObjectiveFormModal() {
                                         <Input
                                             placeholder={t('unitExample')}
                                             {...field}
-                                            value={field.value || ''}
+                                            value={(field.value as string) || ''}
                                             data-testid="objective-unit-input"
                                         />
                                     </FormControl>
@@ -288,7 +295,9 @@ export default function CreateObjectiveFormModal() {
                                                 data-testid="objective-deadline-button"
                                             >
                                                 {field.value ? (
-                                                    new Date(field.value).toLocaleDateString()
+                                                    new Date(
+                                                        field.value as number
+                                                    ).toLocaleDateString()
                                                 ) : (
                                                     <span>{t('pickADate')}</span>
                                                 )}
@@ -300,7 +309,9 @@ export default function CreateObjectiveFormModal() {
                                         <Calendar
                                             mode="single"
                                             selected={
-                                                field.value ? new Date(field.value) : undefined
+                                                field.value
+                                                    ? new Date(field.value as number)
+                                                    : undefined
                                             }
                                             onSelect={value =>
                                                 field.onChange(value ? value.getTime() : null)

@@ -1,26 +1,12 @@
 #!/usr/bin/env node
-/**
- * Script para crear un usuario inicial en la aplicación
- *
- * Uso:
- *   npm run create-user
- *   npm run create-user -- --email admin@example.com --password Password123 --name "Admin User" --role admin
- *   npm run create-user -- --email user@example.com --password Password123 --name "Regular User"
- *
- * O directamente con tsx/node:
- *   npx tsx scripts/create-user.ts
- *   npx tsx scripts/create-user.ts --email admin@example.com --password Password123 --name "Admin User"
- */
 
 import 'dotenv/config';
 
-// Configuración por defecto
 const DEFAULT_EMAIL = 'admin@example.com';
 const DEFAULT_PASSWORD = 'Admin12345';
 const DEFAULT_NAME = 'Admin User';
 const DEFAULT_ROLE = 'admin';
 
-// Parsear argumentos de línea de comandos
 function parseArgs() {
     const args = process.argv.slice(2);
     const parsed: Record<string, string> = {};
@@ -50,13 +36,11 @@ async function createUser() {
         console.log(`   Nombre: ${name}`);
         console.log(`   Rol: ${role}`);
 
-        // Usar la API HTTP de better-auth para crear el usuario
         const siteUrl =
             process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
         const authUrl = `${siteUrl}/api/auth`;
 
         try {
-            // Crear usuario usando sign-up
             console.log(`\n📡 Enviando petición a: ${authUrl}/sign-up/email`);
             const signUpResponse = await fetch(`${authUrl}/sign-up/email`, {
                 method: 'POST',
@@ -80,7 +64,6 @@ async function createUser() {
             }
 
             if (!signUpResponse.ok) {
-                // Si el usuario ya existe
                 if (
                     signUpResponse.status === 409 ||
                     responseText.includes('already exists') ||
@@ -101,7 +84,6 @@ async function createUser() {
             console.log(`   Email: ${signUpData.user?.email || email}`);
             console.log(`   Nombre: ${signUpData.user?.name || name}`);
 
-            // Si se especificó un rol admin, intentar asignarlo
             if (role && (role === 'admin' || role === 'ADMIN')) {
                 console.log(`\n🔐 Intentando asignar rol '${role}' al usuario...`);
                 console.log(
@@ -118,7 +100,6 @@ async function createUser() {
             console.log(`   Password: ${password}`);
             console.log(`\n💡 Puedes iniciar sesión en: ${siteUrl}/login`);
         } catch (error: unknown) {
-            // Si el usuario ya existe, informar
             const message = error instanceof Error ? error.message : String(error);
             if (
                 message?.includes('already exists') ||
@@ -147,5 +128,4 @@ async function createUser() {
     }
 }
 
-// Ejecutar el script
 createUser();

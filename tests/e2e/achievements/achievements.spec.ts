@@ -51,7 +51,6 @@ test.describe('Achievements', () => {
 
             await achievements.filterBy('earned');
 
-            // The earned filter is now active (button should have default variant)
             await expect(achievements.filterEarned).toBeVisible();
         }
     );
@@ -66,7 +65,6 @@ test.describe('Achievements', () => {
 
             await achievements.filterBy('locked');
 
-            // The locked filter is now active
             await expect(achievements.filterLocked).toBeVisible();
         }
     );
@@ -79,14 +77,11 @@ test.describe('Achievements', () => {
             await achievements.goto();
             await expect(achievements.tabs).toBeVisible({ timeout: 15000 });
 
-            // Individual tab should be active by default
             await expect(achievements.contentIndividual).toBeVisible();
 
-            // Switch to organization
             await achievements.switchToOrganization();
             await expect(achievements.contentOrganization).toBeVisible();
 
-            // Switch back to individual
             await achievements.switchToIndividual();
             await expect(achievements.contentIndividual).toBeVisible();
         }
@@ -100,12 +95,9 @@ test.describe('Achievements', () => {
             await achievements.goto();
             await expect(achievements.achievementsPage).toBeVisible({ timeout: 15000 });
 
-            // The seed button might or might not be visible depending on state
-            // Just verify the page is functional
             const hasSeedButton = await achievements.seedButton.isVisible().catch(() => false);
             const hasStats = await achievements.statsSection.isVisible().catch(() => false);
 
-            // One of these should be true
             expect(hasSeedButton || hasStats).toBeTruthy();
         }
     );

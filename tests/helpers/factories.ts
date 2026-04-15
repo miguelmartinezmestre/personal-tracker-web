@@ -1,12 +1,6 @@
 import { randomUUID } from 'crypto';
 
-/**
- * Factory for generating test user data.
- */
 export const UserFactory = {
-    /**
-     * Generates unique user data.
-     */
     create(overrides?: Partial<UserData>): UserData {
         const shortId = randomUUID().substring(0, 8);
         return {
@@ -18,9 +12,6 @@ export const UserFactory = {
         };
     },
 
-    /**
-     * Generates user data with a presentable name.
-     */
     createPresentable(overrides?: Partial<UserData>): UserData {
         const shortId = randomUUID().substring(0, 8);
         const names = ['Miguel Garcia', 'Ana Martinez', 'Carlos Lopez', 'Laura Sanchez'];
@@ -44,13 +35,7 @@ export interface UserData {
     organizationSlug: string;
 }
 
-/**
- * Factory for generating test objective data.
- */
 export const ObjectiveFactory = {
-    /**
-     * Generates unique objective data.
-     */
     create(overrides?: Partial<ObjectiveData>): ObjectiveData {
         const shortId = randomUUID().substring(0, 8);
         return {
@@ -64,9 +49,6 @@ export const ObjectiveFactory = {
         };
     },
 
-    /**
-     * Generates objective data for a fitness goal.
-     */
     createFitness(overrides?: Partial<ObjectiveData>): ObjectiveData {
         return {
             title: 'Run a Marathon',
@@ -79,9 +61,6 @@ export const ObjectiveFactory = {
         };
     },
 
-    /**
-     * Generates objective data for a learning goal.
-     */
     createLearning(overrides?: Partial<ObjectiveData>): ObjectiveData {
         return {
             title: 'Learn TypeScript',
@@ -94,9 +73,6 @@ export const ObjectiveFactory = {
         };
     },
 
-    /**
-     * Generates objective data for a financial goal.
-     */
     createFinancial(overrides?: Partial<ObjectiveData>): ObjectiveData {
         return {
             title: 'Save for Vacation',
@@ -119,13 +95,7 @@ export interface ObjectiveData {
     unit: string;
 }
 
-/**
- * Factory for generating test category data.
- */
 export const CategoryFactory = {
-    /**
-     * Generates unique category data.
-     */
     create(overrides?: Partial<CategoryData>): CategoryData {
         const shortId = randomUUID().substring(0, 8);
         return {
@@ -135,9 +105,6 @@ export const CategoryFactory = {
         };
     },
 
-    /**
-     * Predefined category templates.
-     */
     personal(): CategoryData {
         return { name: 'Personal', color: 'Green' };
     },
@@ -160,13 +127,7 @@ export interface CategoryData {
     color: string;
 }
 
-/**
- * Factory for generating test organization data.
- */
 export const OrganizationFactory = {
-    /**
-     * Generates unique organization data.
-     */
     create(overrides?: Partial<OrganizationData>): OrganizationData {
         const shortId = randomUUID().substring(0, 8);
         return {
@@ -176,9 +137,6 @@ export const OrganizationFactory = {
         };
     },
 
-    /**
-     * Generates organization data for a team.
-     */
     createTeam(overrides?: Partial<OrganizationData>): OrganizationData {
         const shortId = randomUUID().substring(0, 8);
         return {
@@ -194,13 +152,7 @@ export interface OrganizationData {
     description: string;
 }
 
-/**
- * Factory for generating test notification data.
- */
 export const NotificationFactory = {
-    /**
-     * Generates unique notification data.
-     */
     create(overrides?: Partial<NotificationData>): NotificationData {
         const shortId = randomUUID().substring(0, 8);
         return {
@@ -216,13 +168,7 @@ export interface NotificationData {
     type: string;
 }
 
-/**
- * Factory for generating test progress update data.
- */
 export const ProgressUpdateFactory = {
-    /**
-     * Generates progress update data.
-     */
     create(overrides?: Partial<ProgressUpdateData>): ProgressUpdateData {
         return {
             value: 10,

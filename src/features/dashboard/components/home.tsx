@@ -58,7 +58,6 @@ export default function Home({
                 </p>
             </div>
 
-            {/* Objectives stats */}
             <div className="grid grid-cols-2 gap-4" data-testid="dashboard-stats">
                 <StatCard
                     label={t('stats.active')}
@@ -72,7 +71,6 @@ export default function Home({
                 />
             </div>
 
-            {/* Charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <MonthlyProgressChart
                     preloadedMonthlyProgressQuery={preloadedMonthlyProgressQuery}
@@ -81,7 +79,6 @@ export default function Home({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Achievements widget */}
                 <div className="md:col-span-1">
                     <AchievementsWidget
                         preloadedUserAchievementStatsQuery={preloadedUserAchievementStatsQuery}
@@ -89,7 +86,6 @@ export default function Home({
                     />
                 </div>
 
-                {/* Upcoming deadlines */}
                 <Card className="md:col-span-1" data-testid="upcoming-deadlines">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
@@ -119,7 +115,6 @@ export default function Home({
                     </CardContent>
                 </Card>
 
-                {/* Recent activity */}
                 <Card className="md:col-span-1" data-testid="recent-activity">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('recentActivity')}</CardTitle>

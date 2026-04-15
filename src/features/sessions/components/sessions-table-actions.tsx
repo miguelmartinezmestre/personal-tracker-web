@@ -37,7 +37,7 @@ export function useInvalidateAllOtherSessions() {
     const queryClient = useQueryClient();
 
     const { mutate, mutateAsync, isPending } = useMutation<
-        { message: string; revokedCount: number },
+        { readonly success: true; readonly revokedCount: number },
         Error,
         { currentToken: string }
     >({

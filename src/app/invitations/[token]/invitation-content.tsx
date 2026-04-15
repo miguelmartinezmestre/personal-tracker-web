@@ -34,12 +34,10 @@ export default function InvitationContent({ token }: InvitationContentProps) {
             });
             setStatus('accepted');
 
-            // Redirect after 2 seconds
             setTimeout(() => {
                 router.push('/dashboard/organizations');
             }, 2000);
-        } catch (error) {
-            console.error('Error accepting invitation:', error);
+        } catch {
             setStatus('error');
             setErrorMessage(t('errorAccepting'));
         }
@@ -53,7 +51,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         router.push(`/login?callbackURL=/invitations/${token}`);
     }
 
-    // Loading state
     if (sessionQuery?.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -65,7 +62,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
-    // Error state
     if (status === 'error') {
         return (
             <div className="flex min-h-screen items-center justify-center p-4">
@@ -85,7 +81,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
-    // Accepted state
     if (status === 'accepted') {
         return (
             <div className="flex min-h-screen items-center justify-center p-4">
@@ -103,7 +98,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
-    // Not logged in - need to register or login
     if (!sessionQuery?.data?.user && status === 'ready') {
         return (
             <div className="flex min-h-screen items-center justify-center p-4">
@@ -132,7 +126,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
-    // Logged in - show accept button
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">

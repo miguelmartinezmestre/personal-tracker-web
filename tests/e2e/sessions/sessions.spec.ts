@@ -10,7 +10,6 @@ test.describe('Sessions', () => {
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
 
-            // Should show a table with sessions
             const table = authenticatedPage.locator('table');
             await expect(table).toBeVisible({ timeout: 10000 });
         }
@@ -25,11 +24,9 @@ test.describe('Sessions', () => {
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
 
-            // Wait for actual data rows (table-row testid only exists on data rows, not "No Results")
             const dataRow = authenticatedPage.getByTestId('table-row').first();
             await expect(dataRow).toBeVisible({ timeout: 15000 });
 
-            // The current session badge should be visible (uses data-testid with status suffix)
             const currentBadge = authenticatedPage.getByTestId('session-status-badge-current');
             await expect(currentBadge.first()).toBeVisible({ timeout: 10000 });
         }
@@ -44,17 +41,14 @@ test.describe('Sessions', () => {
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
 
-            // Wait for actual data rows
             const dataRow = authenticatedPage.getByTestId('table-row').first();
             await expect(dataRow).toBeVisible({ timeout: 15000 });
 
-            // Find the current session badge
             const currentBadge = authenticatedPage
                 .getByTestId('session-status-badge-current')
                 .first();
             await expect(currentBadge).toBeVisible({ timeout: 10000 });
 
-            // Current session's row should not contain a revoke button
             const currentRow = currentBadge.locator('xpath=ancestor::tr');
             const revokeInCurrentRow = currentRow.getByTestId('session-revoke-button');
             await expect(revokeInCurrentRow).toHaveCount(0);
@@ -81,15 +75,12 @@ test.describe('Sessions', () => {
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
 
-            // Table should be visible
             const table = authenticatedPage.locator('table');
             await expect(table).toBeVisible({ timeout: 10000 });
 
-            // Wait for actual data rows (not just "No Results")
             const dataRows = authenticatedPage.getByTestId('table-row');
             await expect(dataRows.first()).toBeVisible({ timeout: 15000 });
 
-            // Should have at least one data row (the current session)
             const rowCount = await dataRows.count();
             expect(rowCount).toBeGreaterThanOrEqual(1);
         }
@@ -117,13 +108,21 @@ test.describe('Sessions', () => {
 
                 await revokeOtherButton.click();
 
-                await expect
-                    .poll(async () => {
-                        await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
-                        return await authenticatedPage.getByTestId('session-revoke-button').count();
-                    })
-                    .toBe(0);
+                let revokeCount = -1;
+                const maxTime = Date.now() + 15000;
 
+                while (Date.now() < maxTime && revokeCount !== 0) {
+                    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+                    revokeCount = await authenticatedPage
+                        .getByTestId('session-revoke-button')
+                        .count();
+
+                    if (revokeCount !== 0) {
+                        await authenticatedPage.waitForTimeout(500);
+                    }
+                }
+
+                expect(revokeCount).toBe(0);
                 await expect(authenticatedPage.getByTestId('table-row')).toHaveCount(1);
                 await expect(
                     authenticatedPage.getByTestId('session-status-badge-current')

@@ -13,13 +13,54 @@ const PNPM_COMMAND = 'pnpm';
 const DOCKER_COMMAND = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const USE_SHELL_FOR_PNPM = process.platform === 'win32';
 
-const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';
-const COMPOSE_PROJECT = 'metricas-e2e';
+// Parse forwarded args early - needed for browser detection
+const rawForwardedPlaywrightArgs = process.argv.slice(2);
+const forwardedPlaywrightArgs =
+    rawForwardedPlaywrightArgs[0] === '--'
+        ? rawForwardedPlaywrightArgs.slice(1)
+        : rawForwardedPlaywrightArgs;
 
-const E2E_CONVEX_PORT = process.env.E2E_CONVEX_PORT ?? '4210';
-const E2E_CONVEX_SITE_PORT = process.env.E2E_CONVEX_SITE_PORT ?? '4211';
-const E2E_FRONTEND_PORT = process.env.E2E_FRONTEND_PORT ?? '4300';
-const E2E_NEXT_DIST_DIR = process.env.E2E_NEXT_DIST_DIR ?? '.next-e2e';
+const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';
+
+// Detect browser project from args to isolate environments
+function detectBrowserProject(args: string[]): string | null {
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--project' && args[i + 1]) {
+            return args[i + 1];
+        }
+        if (args[i].startsWith('--project=')) {
+            return args[i].split('=')[1];
+        }
+    }
+    return null;
+}
+
+const BROWSER_PROJECT = detectBrowserProject(forwardedPlaywrightArgs);
+const COMPOSE_PROJECT = BROWSER_PROJECT ? `metricas-e2e-${BROWSER_PROJECT}` : 'metricas-e2e';
+
+// Port offsets per browser for isolation
+const PORT_OFFSETS: Record<string, { convex: number; site: number; frontend: number }> = {
+    chromium: { convex: 0, site: 0, frontend: 0 },
+    firefox: { convex: 10, site: 10, frontend: 10 },
+    webkit: { convex: 20, site: 20, frontend: 20 },
+};
+
+const PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.convex ?? 0) : 0;
+const SITE_PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.site ?? 0) : 0;
+const FRONTEND_PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.frontend ?? 0) : 0;
+
+const BASE_CONVEX_PORT = 4210;
+const BASE_SITE_PORT = 4211;
+const BASE_FRONTEND_PORT = 4300;
+
+const E2E_CONVEX_PORT = process.env.E2E_CONVEX_PORT ?? String(BASE_CONVEX_PORT + PORT_OFFSET);
+const E2E_CONVEX_SITE_PORT =
+    process.env.E2E_CONVEX_SITE_PORT ?? String(BASE_SITE_PORT + SITE_PORT_OFFSET);
+const E2E_FRONTEND_PORT =
+    process.env.E2E_FRONTEND_PORT ?? String(BASE_FRONTEND_PORT + FRONTEND_PORT_OFFSET);
+const E2E_NEXT_DIST_DIR =
+    process.env.E2E_NEXT_DIST_DIR ??
+    (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
 const E2E_FRONTEND_MODE = process.env.E2E_FRONTEND_MODE ?? 'dev';
 
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${E2E_CONVEX_PORT}`;
@@ -33,12 +74,6 @@ const HTTP_REQUEST_TIMEOUT_MS = 3_000;
 const FRONTEND_STOP_TIMEOUT_MS = 10_000;
 const SHOW_NEXT_LOGS = process.env.E2E_SHOW_NEXT_LOGS === 'true';
 const FRONTEND_LOG_TAIL_LIMIT = 120;
-
-const rawForwardedPlaywrightArgs = process.argv.slice(2);
-const forwardedPlaywrightArgs =
-    rawForwardedPlaywrightArgs[0] === '--'
-        ? rawForwardedPlaywrightArgs.slice(1)
-        : rawForwardedPlaywrightArgs;
 
 let frontendProcess: ChildProcess | null = null;
 let cleanupInProgress = false;
@@ -641,10 +676,16 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 
 async function main(): Promise<void> {
-    console.log('Resetting previous isolated Convex stack...');
+    const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
+    console.log(`Resetting previous isolated Convex stack${browserLabel}...`);
     await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
 
-    console.log('Starting isolated Convex docker compose...');
+    console.log(`Starting isolated Convex docker compose${browserLabel}...`);
+    console.log(`  - Convex backend: port ${E2E_CONVEX_PORT}`);
+    console.log(`  - Convex site: port ${E2E_CONVEX_SITE_PORT}`);
+    console.log(`  - Frontend: port ${E2E_FRONTEND_PORT}`);
+    console.log(`  - Docker project: ${COMPOSE_PROJECT}`);
+    console.log(`  - Build directory: ${E2E_NEXT_DIST_DIR}`);
     await dockerCompose(['up', '-d']);
 
     console.log('Waiting for Convex backend readiness...');
@@ -753,13 +794,13 @@ async function main(): Promise<void> {
         }
     );
 
-    console.log('Running Playwright e2e suite...');
+    console.log(`Running Playwright e2e suite${browserLabel}...`);
     await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });
 
-    console.log('E2E suite finished successfully.');
+    console.log(`E2E suite finished successfully${browserLabel}.`);
 }
 
 main()
@@ -767,7 +808,8 @@ main()
         await cleanup();
     })
     .catch(async error => {
-        console.error('\nE2E stack execution failed.');
+        const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
+        console.error(`\nE2E stack execution failed${browserLabel}.`);
         if (error instanceof Error) {
             console.error(error.message);
         } else {

@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -17,7 +18,6 @@ describe('convex categories', async () => {
         const userRandom = Math.random().toString(36).substring(2, 15);
         const adminRandom = Math.random().toString(36).substring(2, 15);
 
-        // Create user
         const user = {
             userId: 'test-user-categories-' + userRandom,
             email: 'categories-test@example.com-' + userRandom,
@@ -57,7 +57,6 @@ describe('convex categories', async () => {
             banned: false,
         });
 
-        // Create admin
         const admin = {
             userId: 'test-admin-categories-' + adminRandom,
             email: 'categories-admin@example.com-' + adminRandom,
@@ -161,7 +160,6 @@ describe('convex categories', async () => {
         });
 
         test('returns only user own categories', async () => {
-            // Create categories for the test user
             await userIdentity.mutation(api.categories.createCategory, {
                 name: 'My Category 1',
                 color: '#10b981',
@@ -171,7 +169,6 @@ describe('convex categories', async () => {
                 color: '#3b82f6',
             });
 
-            // Create category for admin user
             await adminIdentity.mutation(api.categories.createCategory, {
                 name: 'Admin Category',
                 color: '#f59e0b',
@@ -241,7 +238,7 @@ describe('convex categories', async () => {
 
             const updated = await userIdentity.run(async ctx => ctx.db.get(categoryId));
             expect(updated?.name).toBe('New Name');
-            expect(updated?.color).toBe('#10b981'); // Color should remain unchanged
+            expect(updated?.color).toBe('#10b981');
             expect(updated?.userId).toBe(userId);
         });
 

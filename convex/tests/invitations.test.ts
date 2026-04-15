@@ -1,8 +1,8 @@
+/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization } from './test_helpers';
-import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
-import { DataModel } from '../_generated/dataModel';
+import { TIME } from '../utils/constants';
 
 type InvitationRecord = {
     _id: string;
@@ -23,14 +23,10 @@ type MemberRecord = {
     createdAt: number;
 };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 describe('convex invitations (better-auth)', () => {
     const t = initConvexTest();
 
-    beforeEach(() => {
-        // Nothing to do here, tests will create their own users
-    });
+    beforeEach(() => {});
 
     test('inviteMember creates pending invitation', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
@@ -56,7 +52,7 @@ describe('convex invitations (better-auth)', () => {
                 email: 'invitee@example.com',
                 role: 'member',
                 status: 'pending',
-                expiresAt: Date.now() + DAY_MS,
+                expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
                 inviterId: 'inviter-1-' + randomSuffix,
             });
@@ -105,7 +101,7 @@ describe('convex invitations (better-auth)', () => {
                 email: 'invitee2@example.com',
                 role: 'member',
                 status: 'pending',
-                expiresAt: Date.now() + DAY_MS,
+                expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
                 inviterId: 'inviter-2-' + randomSuffix,
             });
@@ -124,7 +120,6 @@ describe('convex invitations (better-auth)', () => {
         const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db.get(invitationId)
         );
-        // Use filter instead of index (index not available in test env)
         const members = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db
                 .query('member')
@@ -167,7 +162,7 @@ describe('convex invitations (better-auth)', () => {
                 email: 'reject@example.com',
                 role: 'member',
                 status: 'pending',
-                expiresAt: Date.now() + DAY_MS,
+                expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
                 inviterId: 'inviter-3-' + randomSuffix,
             });
@@ -208,8 +203,8 @@ describe('convex invitations (better-auth)', () => {
                 email: 'expired@example.com',
                 role: 'member',
                 status: 'pending',
-                expiresAt: Date.now() - DAY_MS,
-                createdAt: Date.now() - DAY_MS * 2,
+                expiresAt: Date.now() - TIME.DAY_MS,
+                createdAt: Date.now() - TIME.DAY_MS * 2,
                 inviterId: 'inviter-4-' + randomSuffix,
             });
         });

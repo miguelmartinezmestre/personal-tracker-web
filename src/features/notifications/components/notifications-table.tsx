@@ -28,8 +28,6 @@ export default function NotificationsTable({
     initialObjectives,
 }: NotificationsTableProps) {
     const t = useTranslations('Notifications');
-
-    // Pagination state
     const {
         currentPage,
         isDone,
@@ -40,8 +38,6 @@ export default function NotificationsTable({
         hasPreviousPage,
         reset,
     } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    // Fetch notifications with pagination (use initial data for first page)
     const paginationOpts = getPaginationOpts(currentPage);
     const isFirstPage = paginationOpts.cursor === null;
     const notifications = useQuery({
@@ -50,8 +46,6 @@ export default function NotificationsTable({
         }),
         initialData: isFirstPage ? initialNotifications : undefined,
     });
-
-    // Fetch objectives once (for mapping, doesn't need pagination)
     const objectives = useQuery({
         ...convexQuery(api.objectives.getObjectivesByUser, {
             paginationOpts: { numItems: 100, cursor: null },
@@ -61,8 +55,6 @@ export default function NotificationsTable({
     const hasNotificationsData = notifications.data !== undefined;
     const notificationsContinueCursor = notifications.data?.continueCursor ?? null;
     const notificationsIsDone = notifications.data?.isDone ?? false;
-
-    // Update cursor when data changes
     useEffect(() => {
         if (!hasNotificationsData || notifications.isFetching) {
             return;
@@ -77,28 +69,17 @@ export default function NotificationsTable({
         notifications.isFetching,
         updateCursor,
     ]);
-
-    // Actions
     const { markAllRead, isMarkingAllRead } = useMarkAllNotificationsRead(reset);
-
-    // Build objective map for columns
-    const objectiveMap = new Map(
-        (objectives.data?.page ?? []).map((objective: Doc<'objectives'>) => [
-            objective._id,
-            objective,
-        ])
-    );
-
-    // Columns
+    const objectivesPage: Doc<'objectives'>[] = objectives.data?.page ?? [];
+    const objectiveMap = new Map(objectivesPage.map(objective => [objective._id, objective]));
     const columns = useNotificationsTableColumns({
-        objectiveMap: objectiveMap as Map<string, Doc<'objectives'>>,
+        objectiveMap,
         onMutationSuccess: reset,
     });
 
-    const data = (notifications.data?.page ?? []) as Doc<'notifications'>[];
+    const data: Doc<'notifications'>[] = notifications.data?.page ?? [];
     const unreadCount = data.filter(notification => !notification.read).length;
 
-    // Calculate total pages (estimate, since we don't know the exact total)
     const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (

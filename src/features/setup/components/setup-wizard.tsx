@@ -12,6 +12,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/auth-client';
 import { useSetupWizard } from '../hooks/use-setup-wizard';
+import { getMessageOrFallback, getErrorMessage, emptyToUndefined } from '@/lib/error-utils';
 import SetupProgress from './setup-progress';
 import StepPlatformConfig from './step-platform-config';
 import StepAdminAccount from './step-admin-account';
@@ -19,21 +20,6 @@ import StepOrganization from './step-organization';
 import StepCategories from './step-categories';
 import StepRegistrationPolicy from './step-registration-policy';
 import StepSummary from './step-summary';
-
-function getMessageOrFallback(message: string | undefined, fallback: string): string {
-    if (message) return message;
-    return fallback;
-}
-
-function getErrorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    return fallback;
-}
-
-function emptyToUndefined(value: string | undefined): string | undefined {
-    if (value) return value;
-    return undefined;
-}
 
 export default function SetupWizard() {
     const router = useRouter();
@@ -68,7 +54,6 @@ export default function SetupWizard() {
         const setupFailedMsg = t('errors.setupFailed');
 
         try {
-            // Step 1: Sign up the admin user
             const signUpResult = await authClient.signUp.email({
                 name: data.admin.username,
                 email: data.admin.email,
@@ -81,10 +66,8 @@ export default function SetupWizard() {
                 return;
             }
 
-            // Step 2: Wait briefly for Convex to recognize the session
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            // Step 3: Complete the platform setup
             const result = await completeSetup({
                 platformName: data.platform.platformName,
                 defaultLanguage: data.platform.defaultLanguage,
@@ -98,14 +81,12 @@ export default function SetupWizard() {
                 })),
             });
 
-            // Step 4: Set the active organization
             if (result.organizationId) {
                 await authClient.organization.setActive({
                     organizationId: result.organizationId,
                 });
             }
 
-            // Step 5: Redirect to dashboard
             router.push('/dashboard/home');
         } catch (err: unknown) {
             setError(getErrorMessage(err, setupFailedMsg));

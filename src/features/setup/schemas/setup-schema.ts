@@ -4,15 +4,15 @@ import { categoryColorSchema, categoryIconSchema } from '@/features/categories/s
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 
 export const platformConfigSchema = z.object({
-    platformName: z.string().min(1, 'Platform name is required').max(100),
+    platformName: z.string().min(1).max(100),
     defaultLanguage: z.enum(['en', 'es']),
 });
 
 export const adminAccountSchema = z
     .object({
-        username: z.string().min(3, 'Username must be at least 3 characters'),
-        email: z.string().email('Invalid email address'),
-        password: z.string().min(8, 'Password must be at least 8 characters'),
+        username: z.string().min(3),
+        email: z.string().email(),
+        password: z.string().min(8),
         confirmPassword: z.string().min(8),
     })
     .superRefine((values, ctx) => {
@@ -35,8 +35,8 @@ export const adminAccountSchema = z
     });
 
 export const organizationSchema = z.object({
-    name: z.string().min(1, 'Organization name is required').max(100),
-    logo: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    name: z.string().min(1).max(100),
+    logo: z.string().url().optional().or(z.literal('')),
 });
 
 export const setupCategorySchema = z.object({

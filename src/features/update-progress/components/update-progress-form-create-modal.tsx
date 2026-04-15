@@ -127,7 +127,9 @@ export default function CreateUpdateProgressFormModal() {
                                                     !field.value && 'text-muted-foreground'
                                                 )}
                                             >
-                                                {field.value ? (
+                                                {field.value &&
+                                                (typeof field.value === 'string' ||
+                                                    typeof field.value === 'number') ? (
                                                     new Date(field.value).toLocaleDateString()
                                                 ) : (
                                                     <span>{t('pickADate')}</span>
@@ -139,7 +141,13 @@ export default function CreateUpdateProgressFormModal() {
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
-                                            selected={field.value || undefined}
+                                            selected={
+                                                field.value &&
+                                                (typeof field.value === 'string' ||
+                                                    typeof field.value === 'number')
+                                                    ? new Date(field.value)
+                                                    : undefined
+                                            }
                                             onSelect={field.onChange}
                                             initialFocus
                                         />

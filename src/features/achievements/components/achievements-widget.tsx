@@ -12,7 +12,6 @@ import type { AchievementTier } from '@/features/achievements/schemas/achievemen
 import { Preloaded } from 'convex/react';
 import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
 
-// Hoist static array outside component to avoid recreation on every render
 const SKELETON_COUNTS = [1, 2, 3, 4];
 
 export function AchievementsWidget({
@@ -84,7 +83,6 @@ export function AchievementsWidget({
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {/* Stats */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="group/stat flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 hover:from-yellow-500/20 hover:to-yellow-500/10 transition-all duration-300">
                             <div className="relative">
@@ -117,7 +115,6 @@ export function AchievementsWidget({
                         </div>
                     </div>
 
-                    {/* Recent Achievements */}
                     {recentAchievements != null && recentAchievements.length > 0 ? (
                         <div className="space-y-2">
                             <p className="text-xs text-muted-foreground font-medium">

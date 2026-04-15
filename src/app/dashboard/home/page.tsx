@@ -38,8 +38,7 @@ export default async function HomePage() {
             preloadAuthQuery(api.dashboard.getMonthlyProgress, {}),
             preloadAuthQuery(api.dashboard.getObjectivesWithMostProgress, {}),
         ]);
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/login');
     }
 

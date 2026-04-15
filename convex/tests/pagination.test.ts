@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -194,7 +195,6 @@ describe('convex pagination', () => {
     });
 
     test('getObjectivesByUser with status filter', async () => {
-        // Create mix of active and completed objectives
         for (let i = 0; i < 5; i++) {
             await createTestObjective(t, {
                 userId,

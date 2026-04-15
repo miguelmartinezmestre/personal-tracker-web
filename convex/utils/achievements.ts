@@ -47,7 +47,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
         icon: 'Target',
         points: 100,
     },
-    // Individual - Completion
     {
         code: 'objectives_completed_3',
         type: 'individual',
@@ -75,7 +74,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
         icon: 'CheckCircle',
         points: 150,
     },
-    // Individual - Streak
     {
         code: 'streak_3',
         type: 'individual',
@@ -103,7 +101,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
         icon: 'Flame',
         points: 100,
     },
-    // Individual - Activity
     {
         code: 'progress_updates_10',
         type: 'individual',
@@ -131,7 +128,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
         icon: 'TrendingUp',
         points: 80,
     },
-    // Individual - Special
     {
         code: 'early_bird',
         type: 'individual',
@@ -141,7 +137,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
         icon: 'Clock',
         points: 40,
     },
-    // Organization achievements
     {
         code: 'organization_first_objective',
         type: 'organization',

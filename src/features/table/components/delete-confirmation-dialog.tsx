@@ -43,8 +43,6 @@ export function DeleteConfirmationDialog({
     const t = useTranslations('DeleteConfirmation');
     const [internalIsLoading, setInternalIsLoading] = useState(false);
     const onConfirmRef = useRef(onConfirm);
-
-    // Keep the ref updated
     onConfirmRef.current = onConfirm;
 
     const isLoading = externalIsLoading || internalIsLoading;
@@ -56,7 +54,6 @@ export function DeleteConfirmationDialog({
         try {
             await onConfirmRef.current();
         } catch {
-            // Don't re-throw - let the dialog close
         } finally {
             setInternalIsLoading(false);
         }

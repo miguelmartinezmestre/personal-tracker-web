@@ -20,8 +20,8 @@ services:
     container_name: convex-backend-metricas
     image: ghcr.io/get-convex/convex-backend:latest
     depends_on:
-      - mysql                              # garantiza orden de arranque
-    restart: on-failure                   # reintenta hasta arrancar con éxito
+      - mysql
+    restart: on-failure
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
@@ -65,7 +65,7 @@ services:
     container_name: convex-dashboard-metricas
     image: ghcr.io/get-convex/convex-dashboard:latest
     depends_on:
-      - backend                            # arranca tras backend
+      - backend
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:

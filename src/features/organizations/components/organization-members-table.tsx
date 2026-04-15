@@ -14,6 +14,7 @@ import { DeleteConfirmationDialog } from '@/features/table/components/delete-con
 import { toast } from 'sonner';
 import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { OrganizationRole } from '../types/roles';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -53,7 +54,7 @@ export default function OrganizationMembersTable({
         convexQuery(
             api.organizations.getOrganizationMembers,
             organizationId
-                ? { organizationId, paginationOpts }
+                ? { organizationId: organizationId as Id<'organization'>, paginationOpts }
                 : 'skip'
         )
     );
@@ -65,14 +66,7 @@ export default function OrganizationMembersTable({
     useEffect(() => {
         if (!hasData || membersQuery.isFetching) return;
         updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [
-        currentPage,
-        hasData,
-        continueCursor,
-        pageIsDone,
-        membersQuery.isFetching,
-        updateCursor,
-    ]);
+    }, [currentPage, hasData, continueCursor, pageIsDone, membersQuery.isFetching, updateCursor]);
 
     const members: OrganizationMember[] = (membersQuery.data?.page ?? []).map(
         (member: OrganizationMemberRaw) => ({

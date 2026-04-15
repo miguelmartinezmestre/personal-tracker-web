@@ -6,7 +6,7 @@ import { preloadAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@/convex/_generated/api';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
-import { createTranslator } from 'next-intl';
+import type { AwaitedTranslations } from '@/lib/i18n-types';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,8 +22,7 @@ export default async function ObjectivesPage() {
     let preloadedOrganizationObjectivesQuery: Preloaded<
         typeof api.objectives.getOrganizationObjectives
     >;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-intl createTranslator generic
-    let t: ReturnType<typeof createTranslator<Record<string, any>, 'Objectives'>>;
+    let t: AwaitedTranslations<'Objectives'>;
 
     try {
         [t, preloadedPersonalObjectivesQuery, preloadedOrganizationObjectivesQuery] =
@@ -36,8 +35,7 @@ export default async function ObjectivesPage() {
                     paginationOpts: { numItems: 20, cursor: null },
                 }),
             ]);
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

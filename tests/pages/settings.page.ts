@@ -2,22 +2,16 @@ import { Page, Locator } from '@playwright/test';
 
 export class SettingsPage {
     readonly page: Page;
-
-    // Layout
     readonly settingsPage: Locator;
     readonly tabAccount: Locator;
     readonly tabPassword: Locator;
     readonly tabDanger: Locator;
-
-    // Account form
     readonly usernameInput: Locator;
     readonly emailInput: Locator;
     readonly accountSaveButton: Locator;
     readonly accountCancelButton: Locator;
     readonly accountSuccessMessage: Locator;
     readonly accountErrorMessage: Locator;
-
-    // Password form
     readonly currentPasswordInput: Locator;
     readonly newPasswordInput: Locator;
     readonly confirmPasswordInput: Locator;
@@ -25,8 +19,6 @@ export class SettingsPage {
     readonly passwordCancelButton: Locator;
     readonly passwordSuccessMessage: Locator;
     readonly passwordErrorMessage: Locator;
-
-    // Danger zone
     readonly deleteEmailInput: Locator;
     readonly deletePasswordInput: Locator;
     readonly deleteAccountButton: Locator;
@@ -35,22 +27,16 @@ export class SettingsPage {
 
     constructor(page: Page) {
         this.page = page;
-
-        // Layout
         this.settingsPage = page.getByTestId('settings-page');
         this.tabAccount = page.getByTestId('settings-tab-account');
         this.tabPassword = page.getByTestId('settings-tab-password');
         this.tabDanger = page.getByTestId('settings-tab-danger');
-
-        // Account form
         this.usernameInput = page.getByTestId('account-username-input');
         this.emailInput = page.getByTestId('account-email-input');
         this.accountSaveButton = page.getByTestId('account-save-button');
         this.accountCancelButton = page.getByTestId('account-cancel-button');
         this.accountSuccessMessage = page.getByTestId('account-success-message');
         this.accountErrorMessage = page.getByTestId('account-error-message');
-
-        // Password form
         this.currentPasswordInput = page.getByTestId('password-current-input');
         this.newPasswordInput = page.getByTestId('password-new-input');
         this.confirmPasswordInput = page.getByTestId('password-confirm-input');
@@ -58,8 +44,6 @@ export class SettingsPage {
         this.passwordCancelButton = page.getByTestId('password-cancel-button');
         this.passwordSuccessMessage = page.getByTestId('password-success-message');
         this.passwordErrorMessage = page.getByTestId('password-error-message');
-
-        // Danger zone
         this.deleteEmailInput = page.getByTestId('delete-account-email-input');
         this.deletePasswordInput = page.getByTestId('delete-account-password-input');
         this.deleteAccountButton = page.getByTestId('delete-account-button');

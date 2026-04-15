@@ -13,8 +13,7 @@ export default async function AchievementsPage() {
             preloadAuthQuery(api.achievements.getUserAchievementStats, {}),
             preloadAuthQuery(api.achievements.getUserAchievementProgress, {}),
         ]);
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

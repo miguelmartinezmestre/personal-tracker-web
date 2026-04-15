@@ -7,9 +7,6 @@ import { convexQuery } from '@convex-dev/react-query';
 
 const INVITATIONS_QUERY_KEY = ['user-invitations'];
 
-/**
- * Invitation types based on BetterAuth organization plugin
- */
 export type InvitationRole = 'owner' | 'admin' | 'member';
 
 interface InvitationRaw {
@@ -44,25 +41,34 @@ export interface Invitation {
     expiresAt?: Date;
 }
 
-/**
- * Hook to get pending invitations for the current user
- */
 export function usePendingInvitations() {
     const { data, isPending, isLoading } = useQuery(
         convexQuery(api.organizations.getUserInvitations, {})
     );
 
-    const invitations = data?.map((inv: InvitationRaw) => ({
-        id: inv.id,
-        email: inv.email,
-        role: inv.role as InvitationRole,
-        organizationId: inv.organizationId,
-        status: inv.status as 'pending' | 'accepted' | 'rejected' | 'cancelled',
-        createdAt: new Date(inv.createdAt),
-        expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : undefined,
-        organization: inv.organization,
-        inviter: inv.inviter,
-    })) as Invitation[] | undefined;
+    const invitations: Invitation[] | undefined = data?.map((inv: InvitationRaw) => {
+        const validRoles: InvitationRole[] = ['owner', 'admin', 'member'];
+        const role = validRoles.includes(inv.role as InvitationRole)
+            ? (inv.role as InvitationRole)
+            : 'member';
+
+        const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'] as const;
+        const status = validStatuses.includes(inv.status as (typeof validStatuses)[number])
+            ? (inv.status as (typeof validStatuses)[number])
+            : 'pending';
+
+        return {
+            id: inv.id,
+            email: inv.email,
+            role,
+            organizationId: inv.organizationId,
+            status,
+            createdAt: new Date(inv.createdAt),
+            expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : undefined,
+            organization: inv.organization,
+            inviter: inv.inviter,
+        };
+    });
 
     return {
         data: invitations ?? [],
@@ -71,10 +77,6 @@ export function usePendingInvitations() {
     };
 }
 
-/**
- * Hook to accept a pending invitation
- * Uses BetterAuth's acceptInvitation under the hood
- */
 export function useAcceptInvitation() {
     const queryClient = useQueryClient();
 
@@ -95,10 +97,6 @@ export function useAcceptInvitation() {
     });
 }
 
-/**
- * Hook to reject a pending invitation
- * Uses BetterAuth's rejectInvitation under the hood
- */
 export function useRejectInvitation() {
     const queryClient = useQueryClient();
 
@@ -115,4 +113,3 @@ export function useRejectInvitation() {
         },
     });
 }
-

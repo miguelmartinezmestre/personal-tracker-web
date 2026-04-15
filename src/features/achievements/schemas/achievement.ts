@@ -1,8 +1,22 @@
 import { z } from 'zod';
+import { ACHIEVEMENT_TYPE, ACHIEVEMENT_CATEGORY, ACHIEVEMENT_TIER } from '@/convex/utils/constants';
 
-export const achievementTypeSchema = z.enum(['individual', 'organization']);
-export const achievementCategorySchema = z.enum(['milestone', 'streak', 'completion', 'activity']);
-export const achievementTierSchema = z.enum(['bronze', 'silver', 'gold', 'platinum']);
+export const achievementTypeSchema = z.enum([
+    ACHIEVEMENT_TYPE.INDIVIDUAL,
+    ACHIEVEMENT_TYPE.ORGANIZATION,
+]);
+export const achievementCategorySchema = z.enum([
+    ACHIEVEMENT_CATEGORY.MILESTONE,
+    ACHIEVEMENT_CATEGORY.STREAK,
+    ACHIEVEMENT_CATEGORY.COMPLETION,
+    ACHIEVEMENT_CATEGORY.ACTIVITY,
+]);
+export const achievementTierSchema = z.enum([
+    ACHIEVEMENT_TIER.BRONZE,
+    ACHIEVEMENT_TIER.SILVER,
+    ACHIEVEMENT_TIER.GOLD,
+    ACHIEVEMENT_TIER.PLATINUM,
+]);
 
 export const achievementDefinitionSchema = z.object({
     _id: z.string(),

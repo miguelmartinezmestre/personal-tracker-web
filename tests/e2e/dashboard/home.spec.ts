@@ -22,11 +22,9 @@ test.describe('Dashboard Home', () => {
             const statsGrid = authenticatedPage.getByTestId('dashboard-stats');
             await expect(statsGrid).toBeVisible({ timeout: 15000 });
 
-            // Stat cards should be visible (even if values are 0)
             const statCards = authenticatedPage.locator('[data-testid^="stat-card-"]');
             await expect(statCards.first()).toBeVisible({ timeout: 10000 });
 
-            // Should have at least 2 stat cards (active + completed)
             const count = await statCards.count();
             expect(count).toBeGreaterThanOrEqual(2);
         }

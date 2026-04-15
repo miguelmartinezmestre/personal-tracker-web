@@ -44,9 +44,13 @@ export default function UpdateProgressTable({
     const tTable = useTranslations('Table');
     const params = useParams();
     const objectiveIdParam = params.id;
-    const objectiveId = (
-        Array.isArray(objectiveIdParam) ? objectiveIdParam[0] : objectiveIdParam
-    ) as Id<'objectives'>;
+    const rawObjectiveId = Array.isArray(objectiveIdParam) ? objectiveIdParam[0] : objectiveIdParam;
+
+    if (!rawObjectiveId || typeof rawObjectiveId !== 'string') {
+        throw new Error('Invalid objective ID');
+    }
+
+    const objectiveId: Id<'objectives'> = rawObjectiveId as Id<'objectives'>;
 
     const {
         currentPage,
@@ -85,7 +89,6 @@ export default function UpdateProgressTable({
 
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress(objectiveId);
 
-    // Columns
     const columns = useUpdateProgressTableColumns({ objectiveId });
 
     const updates = updateProgress.data?.page ?? [];
@@ -102,7 +105,10 @@ export default function UpdateProgressTable({
     const targetValue = objectiveDoc?.targetValue ?? 0;
     const progressData: ProgressPoint[] = sortedUpdates.reduce<ProgressPoint[]>(
         (acc, item: Doc<'progressUpdates'>) => {
-            const prev = acc.length > 0 ? acc[acc.length - 1]!.currentValue : baseValue;
+            const prev = acc.length > 0 ? acc[acc.length - 1]?.currentValue : baseValue;
+            if (prev === undefined) {
+                throw new Error('Unexpected undefined value in progress calculation');
+            }
             acc.push({
                 date: item.updateDate,
                 currentValue: prev + item.updatedValue,
@@ -114,7 +120,6 @@ export default function UpdateProgressTable({
     );
     const lastUpdated = sortedUpdates.at(-1)?.updateDate ?? null;
 
-    // Prepare updates for velocity and streak calculations
     const unitSuffix = objectiveDoc?.unit ? ` ${objectiveDoc.unit}` : '';
 
     const totalPages = isDone ? currentPage + 1 : currentPage + 2;
@@ -155,7 +160,7 @@ export default function UpdateProgressTable({
                             updatedValue: progressRow.updatedValue,
                             updateDate: new Date(progressRow.updateDate),
                             comment: progressRow.comment ?? null,
-                        } as unknown as UpdateProgress;
+                        } satisfies UpdateProgress;
 
                         return (
                             <Card key={progressRow._id} className="w-full">

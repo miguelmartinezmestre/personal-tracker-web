@@ -74,7 +74,6 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
                 const session = row.original;
                 const { status } = getSessionStatus(session);
 
-                // Don't show revoke button for current session or expired sessions
                 if (status === 'current' || status === 'expired') {
                     return null;
                 }

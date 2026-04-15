@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
 
 export default async function Login() {
-    if (!(await checkPlatformSetUp())) redirect('/setup' as never);
+    if (!(await checkPlatformSetUp())) redirect('/setup');
 
     const t = await getTranslations('HomePage');
 

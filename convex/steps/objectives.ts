@@ -1,6 +1,8 @@
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 
+const LIST_LIMIT = 1000;
+
 export const syncObjectiveFromProgress = internalMutation({
     args: {
         objectiveId: v.id('objectives'),
@@ -14,7 +16,7 @@ export const syncObjectiveFromProgress = internalMutation({
         const updates = await ctx.db
             .query('progressUpdates')
             .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-            .collect();
+            .take(LIST_LIMIT);
 
         const progressTotal = updates.reduce((sum, update) => sum + update.updatedValue, 0);
         const baseValue = objective.startValue ?? 0;

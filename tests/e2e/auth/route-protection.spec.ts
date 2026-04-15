@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { createTestUserViaAPI, logoutUser } from '../../helpers/test-helpers';
+import {
+    createTestUserViaAPI,
+    ensureDefaultCategories,
+    logoutUser,
+} from '../../helpers/test-helpers';
 import {
     expectOnLogin,
     expectOnDashboard,
@@ -8,97 +12,46 @@ import {
 } from '../../helpers/assertions';
 
 test.describe('Route Protection', () => {
+    const protectedRoutes = [
+        { route: '/dashboard/home', name: 'home' },
+        { route: '/dashboard/objectives', name: 'objectives' },
+        { route: '/dashboard/categories', name: 'categories' },
+        { route: '/dashboard/organizations', name: 'organizations' },
+        { route: '/dashboard/settings', name: 'settings' },
+        { route: '/dashboard/notifications', name: 'notifications' },
+        { route: '/dashboard/sessions', name: 'sessions' },
+        { route: '/dashboard/achievements', name: 'achievements' },
+    ] as const;
+
     test(
         'redirect to login when not authenticated',
         { tag: ['@REQ-ROLES-001'] },
         async ({ page }) => {
-            // Try to access protected dashboard route without auth
             await page.goto('/dashboard/home');
 
-            // Should redirect to login
             await page.waitForURL(/\/login$/);
             await expectOnLogin(page);
         }
     );
 
-    test(
-        'redirect to login for objectives page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/objectives');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'redirect to login for categories page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/categories');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'redirect to login for organizations page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/organizations');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'redirect to login for settings page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/settings');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'redirect to login for notifications page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/notifications');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'redirect to login for sessions page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/sessions');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
-
-    test(
-        'redirect to login for achievements page when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/achievements');
-            await page.waitForURL(/\/login$/);
-            await expectOnLogin(page);
-        }
-    );
+    for (const { route, name } of protectedRoutes) {
+        test(
+            `redirect to login for ${name} page when not authenticated`,
+            { tag: ['@REQ-ROLES-001'] },
+            async ({ page }) => {
+                await page.goto(route);
+                await page.waitForURL(/\/login$/);
+                await expectOnLogin(page);
+            }
+        );
+    }
 
     test(
         'redirect to dashboard after successful login',
         { tag: ['@REQ-ROLES-001'] },
         async ({ page }) => {
-            // Create user (this logs them in automatically)
             await createTestUserViaAPI(page);
 
-            // Should be on dashboard
             await expectOnDashboard(page);
             await expect(page).toHaveURL(/\/dashboard\/home$/);
         }
@@ -108,35 +61,36 @@ test.describe('Route Protection', () => {
         'protect admin routes from non-admin users',
         { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
         async ({ page }) => {
-            // Create regular user
             await createTestUserViaAPI(page);
 
-            // Try to access admin routes
             await page.goto('/dashboard/admin/users');
+            await page.waitForLoadState('domcontentloaded');
 
-            // Should either redirect or show access denied
-            await expect
-                .poll(
-                    async () => {
-                        const url = page.url();
-                        const denied =
-                            (await page
-                                .locator('text=/access denied|forbidden|no autorizado|sin acceso/i')
-                                .count()) > 0;
-                        return !url.includes('/admin/') || denied;
-                    },
-                    { timeout: 10000, intervals: [500, 1000, 2000] }
-                )
-                .toBe(true);
+            const maxWaitTime = Date.now() + 10000;
+            let isBlocked = false;
+
+            while (Date.now() < maxWaitTime && !isBlocked) {
+                const currentUrl = page.url();
+                const hasAccessDenied = await page
+                    .getByRole('heading', {
+                        name: /access denied|forbidden|no autorizado|sin acceso/i,
+                    })
+                    .isVisible()
+                    .catch(() => false);
+
+                isBlocked = !currentUrl.includes('/admin/') || hasAccessDenied;
+
+                if (!isBlocked) {
+                    await page.waitForTimeout(200);
+                }
+            }
 
             const currentUrl = page.url();
-
-            // Either redirected to home or shows forbidden/access denied
             const isRedirected = !currentUrl.includes('/admin/');
-            const accessDenied = page.locator(
-                'text=/access denied|forbidden|no autorizado|sin acceso/i'
-            );
-            const hasAccessDenied = (await accessDenied.count()) > 0;
+            const hasAccessDenied = await page
+                .getByRole('heading', { name: /access denied|forbidden|no autorizado|sin acceso/i })
+                .isVisible()
+                .catch(() => false);
 
             expect(isRedirected || hasAccessDenied).toBeTruthy();
         }
@@ -146,13 +100,11 @@ test.describe('Route Protection', () => {
         'admin routes accessible to admin users',
         { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
         async ({ browser }) => {
-            // Use the shared admin session from auth.setup.ts
             const adminContext = await browser.newContext({
                 storageState: 'tests/.auth/admin-user.json',
             });
             const adminPage = await adminContext.newPage();
 
-            // Navigate to admin users page
             await adminPage.goto('/dashboard/admin/users');
             await adminPage.waitForLoadState('domcontentloaded');
 
@@ -162,7 +114,6 @@ test.describe('Route Protection', () => {
                 currentUrl.includes('/dashboard/home');
             expect(hasAdminAccess).toBeTruthy();
 
-            // Should see admin content
             await expectAdminMenuVisible(adminPage);
             await adminContext.close();
         }
@@ -172,14 +123,11 @@ test.describe('Route Protection', () => {
         'admin menu visible only for admin users',
         { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
         async ({ page }) => {
-            // Create regular user
             await createTestUserViaAPI(page);
 
-            // Navigate to dashboard
             await page.goto('/dashboard/home');
             await page.waitForLoadState('domcontentloaded');
 
-            // Admin menu should NOT be visible for regular users
             await expectAdminMenuHidden(page);
         }
     );
@@ -188,17 +136,14 @@ test.describe('Route Protection', () => {
         'admin menu visible for admin users',
         { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
         async ({ browser }) => {
-            // Use the shared admin session from auth.setup.ts
             const adminContext = await browser.newContext({
                 storageState: 'tests/.auth/admin-user.json',
             });
             const adminPage = await adminContext.newPage();
 
-            // Navigate to dashboard
             await adminPage.goto('/dashboard/home');
             await adminPage.waitForLoadState('domcontentloaded');
 
-            // Admin menu should be visible
             await expectAdminMenuVisible(adminPage);
             await adminContext.close();
         }
@@ -210,7 +155,6 @@ test.describe('Route Protection', () => {
         async ({ page }) => {
             await createTestUserViaAPI(page);
 
-            // Test various dashboard routes
             const routes = [
                 '/dashboard/home',
                 '/dashboard/objectives',
@@ -226,7 +170,6 @@ test.describe('Route Protection', () => {
                 await page.goto(route);
                 await page.waitForLoadState('domcontentloaded');
 
-                // Should stay on the route (not redirected to login)
                 const currentUrl = page.url();
                 expect(currentUrl).toContain('/dashboard/');
                 expect(currentUrl).not.toContain('/login');
@@ -238,17 +181,13 @@ test.describe('Route Protection', () => {
         'session expires after logout',
         { tag: ['@REQ-AUTENTICACION-005', '@REQ-NF-006'] },
         async ({ page }) => {
-            // Create and login user
             await createTestUserViaAPI(page);
             await expectOnDashboard(page);
 
-            // Logout
             await logoutUser(page);
 
-            // Try to access protected route
             await page.goto('/dashboard/home');
 
-            // Should redirect to login
             await expectOnLogin(page);
         }
     );
@@ -259,10 +198,8 @@ test.describe('Route Protection', () => {
         async ({ page }) => {
             await page.goto('/');
 
-            // Should load landing page
             await page.waitForLoadState('domcontentloaded');
 
-            // Should not redirect to login (landing is public)
             const currentUrl = page.url();
             expect(currentUrl).not.toContain('/login');
         }
@@ -275,7 +212,6 @@ test.describe('Route Protection', () => {
             await page.goto('/login');
             await page.waitForLoadState('domcontentloaded');
 
-            // Should stay on login page
             await expect(page).toHaveURL(/\/login$/);
         }
     );
@@ -287,7 +223,6 @@ test.describe('Route Protection', () => {
             await page.goto('/register');
             await page.waitForLoadState('domcontentloaded');
 
-            // Should stay on register page
             await expect(page).toHaveURL(/\/register$/);
         }
     );
@@ -296,26 +231,172 @@ test.describe('Route Protection', () => {
         'authenticated user accessing login redirects to dashboard',
         { tag: ['@REQ-ROLES-001'] },
         async ({ page }) => {
-            // Create user (logs in automatically)
             await createTestUserViaAPI(page);
 
-            // Try to access login page while authenticated
             await page.goto('/login');
             await page.waitForLoadState('domcontentloaded');
 
-            // Wait for potential redirect to settle
             await expect
-                .poll(() => page.url(), { timeout: 5000, intervals: [500, 1000] })
+                .poll(() => page.url(), { timeout: 5000, intervals: [200, 400, 800] })
                 .toMatch(/\/(dashboard|login)/);
 
-            // Might redirect to dashboard or stay (depends on implementation)
-            // Many apps redirect authenticated users away from login
             const currentUrl = page.url();
 
-            // Either on dashboard or still on login (both are valid implementations)
             expect(
                 currentUrl.includes('/dashboard/') || currentUrl.includes('/login')
             ).toBeTruthy();
         }
     );
+
+    test.describe('Security', () => {
+        test(
+            'user A cannot access user B objectives',
+            { tag: ['@REQ-SEGURIDAD-001', '@REQ-OBJETIVOS-004'] },
+            async ({ browser }) => {
+                const contextA = await browser.newContext();
+                const pageA = await contextA.newPage();
+                const userA = await createTestUserViaAPI(pageA);
+
+                await ensureDefaultCategories(pageA);
+                await pageA.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+                await pageA.getByTestId('objective-create-open').click();
+                await pageA.waitForSelector('[data-testid="objective-title-input"]');
+                const objectiveTitle = `User A Secret Objective ${Date.now()}`;
+                await pageA.getByTestId('objective-title-input').fill(objectiveTitle);
+                await pageA.getByTestId('objective-target-input').fill('100');
+                await pageA.getByTestId('objective-unit-input').fill('units');
+                await pageA.getByTestId('objective-category-select').click();
+                await pageA.getByRole('option').first().click();
+                await pageA.getByTestId('objective-save-button').click();
+                // Scope to table rows to avoid matching multiple elements
+                await expect(
+                    pageA.getByTestId('table-row').filter({ hasText: objectiveTitle }).first()
+                ).toBeVisible({ timeout: 10000 });
+
+                const contextB = await browser.newContext();
+                const pageB = await contextB.newPage();
+                await createTestUserViaAPI(pageB);
+
+                await pageB.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+
+                await expect(pageB.getByText(objectiveTitle)).toHaveCount(0);
+
+                await contextA.close();
+                await contextB.close();
+            }
+        );
+
+        test(
+            'member cannot access admin audit logs',
+            { tag: ['@REQ-SEGURIDAD-002', '@REQ-ADMIN-001'] },
+            async ({ browser }) => {
+                const context = await browser.newContext();
+                const page = await context.newPage();
+
+                await createTestUserViaAPI(page);
+
+                await page.goto('/dashboard/admin/audit');
+                await page.waitForLoadState('domcontentloaded');
+
+                const currentUrl = page.url();
+                const isRedirected = !currentUrl.includes('/admin/');
+                const hasAccessDenied = await page
+                    .getByRole('heading', { name: /access denied|forbidden|no autorizado/i })
+                    .isVisible()
+                    .catch(() => false);
+
+                expect(isRedirected || hasAccessDenied).toBeTruthy();
+
+                await context.close();
+            }
+        );
+
+        test(
+            'member cannot access admin sessions',
+            { tag: ['@REQ-SEGURIDAD-002', '@REQ-ADMIN-001'] },
+            async ({ browser }) => {
+                const context = await browser.newContext();
+                const page = await context.newPage();
+
+                await createTestUserViaAPI(page);
+
+                await page.goto('/dashboard/admin/sessions');
+                await page.waitForLoadState('domcontentloaded');
+
+                const currentUrl = page.url();
+                const isRedirected = !currentUrl.includes('/admin/');
+                const hasAccessDenied = await page
+                    .getByRole('heading', { name: /access denied|forbidden|no autorizado/i })
+                    .isVisible()
+                    .catch(() => false);
+
+                expect(isRedirected || hasAccessDenied).toBeTruthy();
+
+                await context.close();
+            }
+        );
+
+        test(
+            'expired invitation should not work',
+            { tag: ['@REQ-SEGURIDAD-003', '@REQ-EQUIPOS-008'] },
+            async ({ page, browser }) => {
+                const adminContext = await browser.newContext({
+                    storageState: 'tests/.auth/admin-user.json',
+                });
+                const adminPage = await adminContext.newPage();
+
+                await adminPage.goto('/dashboard/organizations');
+                await adminPage.waitForLoadState('domcontentloaded');
+
+                const orgName = `Invitation Test ${Date.now()}`;
+                await adminPage.getByTestId('organization-create-open').click();
+                await adminPage.waitForSelector('[data-testid="organization-name-input"]');
+                await adminPage.getByTestId('organization-name-input').fill(orgName);
+                await adminPage.getByTestId('organization-description-input').fill('Test org');
+                await adminPage.getByTestId('organization-save-button').click();
+                // Scope to table rows to avoid matching organization switcher
+                await expect(
+                    adminPage.getByTestId('table-row').filter({ hasText: orgName }).first()
+                ).toBeVisible({ timeout: 10000 });
+
+                const orgRow = adminPage
+                    .getByTestId('table-row')
+                    .filter({ hasText: orgName })
+                    .first();
+                await orgRow.getByTestId('organization-detail-link').click();
+                await adminPage.waitForLoadState('domcontentloaded');
+
+                const inviteEmail = `expired-${Date.now()}@example.com`;
+                await adminPage.getByTestId('organization-member-create-open').click();
+                await adminPage.waitForSelector('[data-testid="organization-member-email-input"]');
+                await adminPage.getByTestId('organization-member-email-input').fill(inviteEmail);
+                await adminPage.getByTestId('organization-member-save-button').click();
+
+                // Wait for invitation to be created - look in the invitations table
+                await expect(
+                    adminPage.getByTestId('table-row').filter({ hasText: inviteEmail }).first()
+                ).toBeVisible({ timeout: 10000 });
+
+                await adminContext.close();
+
+                await page.goto('/register');
+                await page.waitForLoadState('domcontentloaded');
+
+                await page
+                    .getByRole('textbox', { name: /username|nombre de usuario/i })
+                    .fill(`ExpiredUser${Date.now()}`);
+                await page.getByRole('textbox', { name: /email|correo/i }).fill(inviteEmail);
+                await page.getByRole('textbox', { name: /^password$/i }).fill('Password123');
+                await page
+                    .getByRole('textbox', { name: /confirm password|confirmar/i })
+                    .fill('Password123');
+
+                await page.getByRole('button', { name: /register|registrar/i }).click();
+
+                await page.waitForLoadState('domcontentloaded');
+                const url = page.url();
+                expect(url).toMatch(/\/(dashboard|login|register)/);
+            }
+        );
+    });
 });

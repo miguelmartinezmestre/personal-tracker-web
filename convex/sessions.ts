@@ -37,7 +37,7 @@ export const invalidateSession = mutationWithRLS({
             },
         });
 
-        return { message: 'Session invalidated' } as const;
+        return { success: true } as const;
     },
 });
 
@@ -62,6 +62,6 @@ export const invalidateAllOtherSessions = mutationWithRLS({
             }
         }
 
-        return { message: 'All other sessions invalidated', revokedCount } as const;
+        return { success: true, revokedCount } as const;
     },
 });

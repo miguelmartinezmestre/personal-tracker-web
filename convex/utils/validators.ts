@@ -23,7 +23,7 @@ export const notificationTypeValidator = v.union(
     v.literal(NOTIFICATION_TYPE.PROGRESS),
     v.literal(NOTIFICATION_TYPE.STATUS),
     v.literal(NOTIFICATION_TYPE.ACHIEVEMENT),
-    v.literal('reminder')
+    v.literal(NOTIFICATION_TYPE.REMINDER)
 );
 
 export const achievementTypeValidator = v.union(

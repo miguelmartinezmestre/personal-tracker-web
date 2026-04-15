@@ -80,7 +80,9 @@ export function DataTable<TData extends RowData, TValue>({
                                     {Array(columns.length)
                                         .fill(0)
                                         .map((_, cellIndex) => (
-                                            <TableCell key={`skeleton-cell-${rowIndex}-${cellIndex}`}>
+                                            <TableCell
+                                                key={`skeleton-cell-${rowIndex}-${cellIndex}`}
+                                            >
                                                 <Skeleton className="h-6 w-full" />
                                             </TableCell>
                                         ))}

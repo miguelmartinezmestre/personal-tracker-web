@@ -18,16 +18,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { toast } from 'sonner';
-
-function getMessageOrFallback(message: string | undefined, fallback: string): string {
-    if (message) return message;
-    return fallback;
-}
-
-function getErrorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    return fallback;
-}
+import { getMessageOrFallback, getErrorMessage } from '@/lib/error-utils';
 
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
@@ -51,13 +42,11 @@ export default function PasswordFormEdit() {
     });
 
     const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
-        // Validate that password confirmation matches
         if (values.password !== values.confirmPassword) {
             setError(t('passwordMismatch'));
             return;
         }
 
-        // Validate that new password is different from current
         if (values.password === values.newPassword) {
             setError(t('passwordSameAsOld'));
             return;

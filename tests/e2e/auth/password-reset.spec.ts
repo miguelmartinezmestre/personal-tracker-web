@@ -23,8 +23,6 @@ test.describe('Password Reset', () => {
             await page.getByTestId('email-input').fill(user.email);
             await page.getByTestId('forgot-password-submit').click();
 
-            // Should show success message (even if email doesn't exist, for security)
-            // The success alert uses data-slot="alert" with default variant
             const successAlert = page.locator('[data-slot="alert"]').filter({
                 hasText: /success|sent|enviado|éxito/i,
             });
@@ -38,12 +36,10 @@ test.describe('Password Reset', () => {
         async ({ page }) => {
             await page.goto('/reset-password?token=invalid-token-12345');
 
-            // The page renders if token query param exists (server checks presence, not validity)
             await page.getByTestId('reset-password-input').fill('newpassword123');
             await page.getByTestId('reset-password-confirm-input').fill('newpassword123');
             await page.getByTestId('reset-password-submit').click();
 
-            // Should show error about invalid token (Alert with variant="destructive")
             const errorAlert = page.locator('[data-slot="alert"]').filter({
                 hasText: /error|invalid|inválido|expirado|expired/i,
             });
@@ -61,7 +57,6 @@ test.describe('Password Reset', () => {
             await page.getByTestId('reset-password-confirm-input').fill('differentpassword');
             await page.getByTestId('reset-password-submit').click();
 
-            // Should stay on the page (validation prevents submission)
             await expect(page).toHaveURL(/\/reset-password/);
         }
     );
@@ -72,7 +67,6 @@ test.describe('Password Reset', () => {
         async ({ page }) => {
             await page.goto('/forget-password');
 
-            // Use a more specific locator to avoid matching navbar links
             const loginLink = page.getByRole('link', { name: /login|iniciar sesión/i }).first();
             if ((await loginLink.count()) > 0) {
                 await loginLink.click();

@@ -11,7 +11,8 @@ export default async function ResetPasswordPage({
 }) {
     const params = await searchParams;
 
-    const resetPasswordKey = params.token ?? params.key;
+    const rawKey = params.token ?? params.key;
+    const resetPasswordKey = Array.isArray(rawKey) ? rawKey[0] : rawKey;
 
     if (!resetPasswordKey) {
         redirect('/forget-password');
@@ -27,7 +28,7 @@ export default async function ResetPasswordPage({
                     <h1 className="text-2xl font-bold text-center mb-6 text-primary">
                         {t('resetPassword')}
                     </h1>
-                    <ResetPassword resetPasswordKey={resetPasswordKey as string} />
+                    <ResetPassword resetPasswordKey={resetPasswordKey} />
                 </div>
             </div>
             <Footer />

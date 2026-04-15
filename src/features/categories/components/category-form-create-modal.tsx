@@ -1,9 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     FormControl,
@@ -27,6 +25,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { categoryIconSchema } from '@/features/categories/schemas/category';
+import { getLucideIcon } from '@/lib/icons';
 import FormModal from '@/components/form-modal';
 
 const defaultValues: CreateCategory = {
@@ -50,11 +49,7 @@ const colorOptions = [
 const iconOptions = categoryIconSchema.options;
 
 const renderIcon = (iconName: string) => {
-    const icons = LucideIcons as unknown as Record<
-        string,
-        React.ComponentType<{ className?: string }>
-    >;
-    const IconComponent = icons[iconName];
+    const IconComponent = getLucideIcon(iconName);
     return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
 };
 
@@ -123,7 +118,10 @@ export default function CreateCategoryFormModal() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>{t('fields.color')}</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
+                                <Select
+                                    value={field.value as string | undefined}
+                                    onValueChange={field.onChange}
+                                >
                                     <FormControl>
                                         <SelectTrigger data-testid="category-color-select">
                                             <SelectValue placeholder={t('fields.color')} />
@@ -168,7 +166,7 @@ export default function CreateCategoryFormModal() {
                             <FormItem>
                                 <FormLabel>{t('fields.icon')}</FormLabel>
                                 <Select
-                                    value={field.value ?? 'none'}
+                                    value={(field.value as string | undefined) ?? 'none'}
                                     onValueChange={value =>
                                         field.onChange(value === 'none' ? undefined : value)
                                     }

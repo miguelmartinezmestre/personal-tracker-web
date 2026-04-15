@@ -26,7 +26,6 @@ export const SETUP_STEPS = [
 
 export type SetupStep = (typeof SETUP_STEPS)[number];
 
-/** Steps that have associated data (excludes 'summary') */
 export type DataStep = Exclude<SetupStep, 'summary'>;
 
 export interface SetupData {

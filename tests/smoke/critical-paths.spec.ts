@@ -8,15 +8,6 @@ import {
 } from '../helpers/test-helpers';
 import { randomUUID } from 'crypto';
 
-/**
- * Smoke Tests - Critical User Paths
- *
- * This test suite covers the most critical user flows and should run quickly (~2 min).
- * Use for CI/CD pipelines and quick validation.
- *
- * Run with: pnpm playwright test tests/smoke/
- */
-
 test.describe('Critical Paths - Smoke Tests', () => {
     test(
         'complete user journey: register, create objective, update progress, complete, view achievements',
@@ -35,7 +26,6 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const password = DEFAULT_PASSWORD;
             const organizationSlug = `org-${uuid}`;
 
-            // Step 1: Register new user
             await page.goto('/register');
             await page.waitForSelector('[data-testid="register-username-input"]');
 
@@ -49,18 +39,14 @@ test.describe('Critical Paths - Smoke Tests', () => {
             }
             await page.getByTestId('register-button').click();
 
-            // Wait for navigation to dashboard
             await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
             await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 
-            // Verify welcome message
             const welcomeMessage = page.getByTestId('welcome-message');
             await expect(welcomeMessage).toContainText(username);
 
-            // Step 2: Ensure categories exist
             await ensureDefaultCategories(page);
 
-            // Step 3: Create an objective
             const objectiveTitle = `Smoke Test Goal ${uuid}`;
 
             await page.goto('/dashboard/objectives');
@@ -86,12 +72,10 @@ test.describe('Critical Paths - Smoke Tests', () => {
             await page.getByTestId('objective-unit-input').fill('points');
             await page.getByTestId('objective-save-button').click();
 
-            // Verify objective created
             await expect(
                 page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first()
             ).toBeVisible({ timeout: 10000 });
 
-            // Step 4: Navigate to objective detail and add progress
             const createdObjectiveRow = page
                 .getByTestId('table-row')
                 .filter({ hasText: objectiveTitle })
@@ -99,10 +83,8 @@ test.describe('Critical Paths - Smoke Tests', () => {
             await createdObjectiveRow.getByTestId('objective-progress-link').click();
             await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
 
-            // Verify on detail page
             await expect(page.getByRole('main').first()).toContainText(objectiveTitle);
 
-            // Step 5: Add progress to completion
             await page.getByTestId('progress-create-open').click();
             await page.waitForSelector('[data-testid="progress-value-input"]');
             await page.getByTestId('progress-value-input').fill('100');
@@ -112,33 +94,26 @@ test.describe('Critical Paths - Smoke Tests', () => {
             await page.getByTestId('progress-save-button').click();
             await page.waitForLoadState('domcontentloaded');
 
-            // Step 6: Check achievements page
             await page.goto('/dashboard/achievements');
             await page.waitForLoadState('domcontentloaded');
             await expect(page).toHaveURL(/\/dashboard\/achievements/);
 
-            // Step 7: Logout
             await logoutUser(page);
 
-            // Step 8: Verify redirect to login
             await page.goto('/dashboard/home');
             await expect(page).toHaveURL(/\/login$/);
 
-            console.log('✅ Critical path smoke test completed successfully');
+            console.log('Critical path smoke test completed successfully');
         }
     );
 
     test('login flow works correctly', { tag: ['@REQ-AUTENTICACION-002'] }, async ({ page }) => {
-        // Create user
         const { email, username } = await createTestUserViaAPI(page);
 
-        // Logout
         await logoutUser(page);
 
-        // Login
         await loginUser(page, email);
 
-        // Verify logged in
         await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
         const welcomeMessage = page.getByTestId('welcome-message');
         await expect(welcomeMessage).toContainText(username);
@@ -166,12 +141,11 @@ test.describe('Critical Paths - Smoke Tests', () => {
                 timeout: 10000,
             });
 
-            // Verify page loaded (not redirected to login)
             expect(page.url()).toContain('/dashboard/');
             expect(page.url()).not.toContain('/login');
         }
 
-        console.log('✅ Navigation smoke test completed successfully');
+        console.log('Navigation smoke test completed successfully');
     });
 
     test(
@@ -184,7 +158,6 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const uuid = randomUUID().substring(0, 8);
             const title = `CRUD Test ${uuid}`;
 
-            // Create
             await page.goto('/dashboard/objectives');
             await page.getByTestId('objective-create-open').click();
             await page.getByTestId('objective-title-input').fill(title);
@@ -208,12 +181,10 @@ test.describe('Critical Paths - Smoke Tests', () => {
                 timeout: 10000,
             });
 
-            // Read (view in list)
             await expect(
                 page.getByTestId('table-row').filter({ hasText: title }).first()
             ).toBeVisible();
 
-            // Update (smoke-level): open and close edit dialog to ensure it's reachable
             const editTitleInput = page.getByTestId('objective-edit-title-input');
             let editDialogOpened = false;
 
@@ -244,7 +215,6 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
             await expect(editTitleInput).toBeHidden({ timeout: 10000 });
 
-            // Delete
             const updatedRow = page.getByTestId('table-row').filter({ hasText: title }).first();
             await updatedRow.getByTestId('objective-delete-button').click();
             const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
@@ -256,9 +226,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
                     await deleteDialog.getByTestId('delete-confirm-button').click();
                     confirmedDelete = true;
                     break;
-                } catch {
-                    // retry
-                }
+                } catch {}
             }
 
             if (!confirmedDelete) {
@@ -270,7 +238,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
                 timeout: 10000,
             });
 
-            console.log('✅ CRUD smoke test completed successfully');
+            console.log('CRUD smoke test completed successfully');
         }
     );
 
@@ -278,7 +246,6 @@ test.describe('Critical Paths - Smoke Tests', () => {
         'authentication protection works',
         { tag: ['@REQ-ROLES-001', '@REQ-NF-006'] },
         async ({ page }) => {
-            // Without auth, protected routes should redirect to login
             await page.goto('/dashboard/home');
             await expect(page).toHaveURL(/\/login$/);
 
@@ -288,29 +255,26 @@ test.describe('Critical Paths - Smoke Tests', () => {
             await page.goto('/dashboard/settings');
             await expect(page).toHaveURL(/\/login$/);
 
-            console.log('✅ Auth protection smoke test completed successfully');
+            console.log('Auth protection smoke test completed successfully');
         }
     );
 
     test('form validation works', { tag: ['@REQ-NF-018'] }, async ({ page }) => {
         await createTestUserViaAPI(page);
 
-        // Test objective form validation
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
         await page.getByTestId('objective-create-open').click();
         await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 5000 });
 
-        // Try to submit empty form
         await page.getByTestId('objective-save-button').click();
 
-        // Should show validation error (Zod/TanStack form messages vary)
         const errorMessage = page.locator(
             'text=/required|requerido|at least|al menos|character|caracter|invalid|inválido/i'
         );
         await expect(errorMessage.first()).toBeVisible({ timeout: 5000 });
 
-        console.log('✅ Form validation smoke test completed successfully');
+        console.log('Form validation smoke test completed successfully');
     });
 
     test('data persists after page reload', { tag: ['@REQ-OBJETIVOS-001'] }, async ({ page }) => {
@@ -320,7 +284,6 @@ test.describe('Critical Paths - Smoke Tests', () => {
         const uuid = randomUUID().substring(0, 8);
         const title = `Persist Test ${uuid}`;
 
-        // Create objective
         await page.goto('/dashboard/objectives');
         await page.getByTestId('objective-create-open').click();
         await page.getByTestId('objective-title-input').fill(title);
@@ -342,11 +305,9 @@ test.describe('Critical Paths - Smoke Tests', () => {
             timeout: 10000,
         });
 
-        // Reload page
         await page.reload();
         await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
 
-        // Data should persist
         await expect(page.getByTestId('table-row').filter({ hasText: title }).first()).toBeVisible({
             timeout: 10000,
         });

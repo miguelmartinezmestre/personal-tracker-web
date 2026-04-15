@@ -3,9 +3,10 @@ import { convexClient } from '@convex-dev/better-auth/client/plugins';
 import { adminClient } from 'better-auth/client/plugins';
 import { organizationClient } from 'better-auth/client/plugins';
 import { createAuthMutations } from 'better-convex/react';
+import { env } from '@/lib/env';
 
 export const authClient = createAuthClient({
-    baseURL: process.env.NEXT_PUBLIC_SITE_URL!,
+    baseURL: env.NEXT_PUBLIC_SITE_URL,
     plugins: [
         convexClient(),
         adminClient(),
@@ -23,7 +24,4 @@ export const authClient = createAuthClient({
     ],
 });
 
-// Export mutation hooks for TanStack Query
-export const {
-    useSignOutMutationOptions,
-} = createAuthMutations(authClient);
+export const { useSignOutMutationOptions } = createAuthMutations(authClient);

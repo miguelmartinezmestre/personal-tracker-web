@@ -1,6 +1,10 @@
 import { v } from 'convex/values';
+import { ConvexError } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './rls';
+import { ERROR_CODES } from './utils/constants';
+
+const LIST_LIMIT = 1000;
 
 export const getCategoriesByUser = queryWithRLS({
     args: {
@@ -21,7 +25,7 @@ export const getCategoryNamesForFilters = queryWithRLS({
         const categories = await ctx.db
             .query('categories')
             .withIndex('by_user', q => q.eq('userId', ctx.userId))
-            .collect();
+            .take(LIST_LIMIT);
 
         return Array.from(
             new Set(
@@ -44,7 +48,7 @@ export const createCategory = mutationWithRLS({
         const userId = ctx.userId;
         const organizationId = ctx.organizationId;
         if (!organizationId) {
-            throw new Error('No active organization selected');
+            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
         const categoryId = await ctx.db.insert('categories', {
             userId: userId,
@@ -71,7 +75,7 @@ export const updateCategory = mutationWithRLS({
         const { id, ...rest } = args;
         const existing = await ctx.db.get('categories', id);
         if (!existing) {
-            throw new Error('Category not found');
+            throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
         }
 
         const result = await ctx.db.patch('categories', id, { ...rest, updatedAt: Date.now() });
@@ -97,7 +101,7 @@ export const createDefaultCategories = mutationWithRLS({
         const user = ctx.userId;
         const organizationId = ctx.organizationId;
         if (!organizationId) {
-            throw new Error('No active organization selected');
+            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
         const now = Date.now();
         const defaultCategories = [

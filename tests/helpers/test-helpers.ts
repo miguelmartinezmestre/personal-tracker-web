@@ -3,40 +3,28 @@ import { randomUUID } from 'crypto';
 
 export const DEFAULT_PASSWORD = 'Password123';
 
-/**
- * Normalizes a name for use in email addresses by removing accents and special characters.
- */
 function normalizeForEmail(name: string): string {
     return name
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/\s+/g, '.')
-        .replace(/[^a-z0-9.]/g, ''); // Keep only alphanumeric and dots
+        .replace(/[^a-z0-9.]/g, '');
 }
 
-/**
- * Normalizes a name for use in organization slugs.
- * Only allows lowercase letters, numbers, and hyphens (per organizationSlug schema validation).
- * Also truncates to max 20 characters to stay under BetterAuth's 30 character limit.
- */
 function normalizeForSlug(name: string): string {
     const normalized = name
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks (accents)
-        .replace(/\s+/g, '-') // Replace spaces with hyphens
-        .replace(/[^a-z0-9-]/g, '') // Keep only alphanumeric and hyphens
-        .replace(/-+/g, '-') // Collapse multiple hyphens to one
-        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
 
-    // Truncate to max 20 characters to stay under BetterAuth's 30 character limit
     return normalized.substring(0, 20);
 }
 
-/**
- * Creates a safe organization slug that is guaranteed to be under 30 characters.
- */
 function createSafeSlug(name: string, suffix: string): string {
     const normalized = normalizeForSlug(name);
     const maxBaseLength = 30 - 1 - suffix.length;
@@ -280,9 +268,7 @@ async function ensureOrganizationExists(page: Page): Promise<void> {
         ).toBeVisible({
             timeout: 15000,
         });
-    } catch {
-        // Best effort only. Some flows can continue without creating an organization here.
-    }
+    } catch {}
 }
 
 async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
@@ -316,13 +302,9 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
         }
     }
 
-    // Some auth payloads do not expose active organization consistently.
-    // If explicit activation did not succeed, continue with best-effort dashboard navigation.
     try {
         await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    } catch {
-        // Keep the current state and let downstream assertions report if navigation is broken.
-    }
+    } catch {}
 }
 
 async function ensureAuthenticatedState(page: Page): Promise<void> {
@@ -354,7 +336,6 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
     await page.getByTestId('register-password-input').fill(userData.password);
     await page.getByTestId('register-confirm-password-input').fill(userData.password);
 
-    // Support both register form variants (with and without organization slug input).
     const organizationSlugInput = page.getByTestId('register-organization-slug-input');
     if ((await organizationSlugInput.count()) > 0) {
         await organizationSlugInput.fill(userData.organizationSlug);
@@ -417,10 +398,6 @@ async function recoverAuthenticatedUser(page: Page, userData: TestUserData): Pro
     }
 }
 
-/**
- * Creates a test user by registering through the UI.
- * Handles both direct dashboard redirect and login redirect scenarios.
- */
 export async function createTestUser(
     page: Page,
     options?: CreateTestUserOptions
@@ -448,9 +425,7 @@ export async function createTestUser(
             if (attempt < maxAttempts) {
                 try {
                     await page.context().clearCookies();
-                } catch {
-                    // Ignore cleanup failures and proceed to the next attempt.
-                }
+                } catch {}
                 continue;
             }
         }
@@ -460,11 +435,6 @@ export async function createTestUser(
     throw new Error(`Failed to create test user after ${maxAttempts} attempt(s): ${reason}`);
 }
 
-/**
- * Creates a test user via API calls instead of UI registration.
- * Uses page.request which shares cookies with the browser context,
- * so the page is authenticated after the API calls complete.
- */
 export async function createTestUserViaAPI(
     page: Page,
     options?: CreateTestUserOptions
@@ -474,7 +444,6 @@ export async function createTestUserViaAPI(
     const headers = { Origin: origin };
     const requestTimeout = 30000;
 
-    // Step 1: Sign up via API (with retry for transient network errors like ECONNRESET)
     let signUpResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -494,7 +463,7 @@ export async function createTestUserViaAPI(
                 attempt < 2 &&
                 /ECONNRESET|fetch failed|ECONNREFUSED|ETIMEDOUT|Timeout .* exceeded/.test(message)
             ) {
-                await page.waitForTimeout(1000); // Legitimate backoff for transient network error
+                await page.waitForTimeout(1000);
                 continue;
             }
             throw error;
@@ -507,7 +476,6 @@ export async function createTestUserViaAPI(
         throw new Error(`Sign-up API failed (${status}): ${body}`);
     }
 
-    // Step 2: Create organization via API
     const createOrgResponse = await page.request.post('/api/auth/organization/create', {
         headers,
         timeout: requestTimeout,
@@ -529,7 +497,6 @@ export async function createTestUserViaAPI(
         throw new Error('Create org API did not return an organization ID');
     }
 
-    // Step 3: Set active organization via API
     const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
         headers,
         timeout: requestTimeout,
@@ -541,16 +508,12 @@ export async function createTestUserViaAPI(
         throw new Error(`Set active org API failed (${setActiveResponse.status()}): ${body}`);
     }
 
-    // Step 4: Navigate to dashboard to verify session is working
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded', timeout: requestTimeout });
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: requestTimeout });
 
     return userData;
 }
 
-/**
- * Logs in an existing user.
- */
 export async function loginUser(
     page: Page,
     email: string,
@@ -561,9 +524,6 @@ export async function loginUser(
     await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 }
 
-/**
- * Logs out the current user by clearing cookies.
- */
 export async function logoutUser(page: Page): Promise<void> {
     await page.context().clearCookies();
 }
@@ -587,9 +547,6 @@ export interface ObjectiveData {
     unit: string;
 }
 
-/**
- * Creates an objective through the UI.
- */
 export async function createObjective(
     page: Page,
     options?: CreateObjectiveOptions
@@ -602,7 +559,6 @@ export async function createObjective(
     const currentValue = options?.currentValue ?? 0;
     const unit = options?.unit ?? 'units';
 
-    // Ensure categories exist first if not explicitly disabled
     if (options?.ensureCategories !== false) {
         await ensureDefaultCategories(page);
     }
@@ -610,7 +566,6 @@ export async function createObjective(
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-testid="objective-create-open"]', { timeout: 15000 });
 
-    // Open create modal
     let modalOpened = false;
     for (let attempt = 0; attempt < 3; attempt++) {
         await page.getByTestId('objective-create-open').click();
@@ -627,15 +582,12 @@ export async function createObjective(
         throw new Error('Could not open create objective modal');
     }
 
-    // Fill form
     await page.getByTestId('objective-title-input').fill(title);
     await page.getByTestId('objective-description-input').fill(description);
 
-    // Select category
     await page.getByTestId('objective-category-select').click();
     await expect(page.getByRole('option').first()).toBeVisible({ timeout: 10000 });
 
-    // Try to find the category option with more flexibility
     const categoryOption = page
         .getByRole('option')
         .filter({ hasText: new RegExp(category, 'i') })
@@ -643,19 +595,15 @@ export async function createObjective(
     if ((await categoryOption.count()) > 0) {
         await categoryOption.click();
     } else {
-        // Fallback: click the first available option
         const firstOption = page.getByRole('option').first();
         await firstOption.click();
     }
 
-    // Fill numeric values
     await page.getByTestId('objective-target-input').fill(`${targetValue}`);
     await page.getByTestId('objective-unit-input').fill(unit);
 
-    // Save
     await page.getByTestId('objective-save-button').click();
 
-    // Table/card layouts duplicate content across breakpoints; assert by count instead of visibility.
     await expect
         .poll(async () => await page.getByText(title).count(), {
             timeout: 15000,
@@ -692,9 +640,6 @@ export interface CategoryData {
     color: string;
 }
 
-/**
- * Creates a category through the UI.
- */
 export async function createCategory(
     page: Page,
     options?: CreateCategoryOptions
@@ -733,47 +678,41 @@ export async function createCategory(
         await page.getByRole('option').first().click();
     }
     await page.getByTestId('category-save-button').click();
-    await expect
-        .poll(
-            async () => {
-                const count = await page.getByText(name).count();
-                if (count === 0) {
-                    await page.reload({ waitUntil: 'domcontentloaded' });
-                }
-                return count;
-            },
-            {
-                timeout: 20000,
-                intervals: [500, 1000, 2000],
-            }
-        )
-        .toBeGreaterThan(0);
 
+    let count = 0;
+    const maxTime = Date.now() + 20000;
+
+    while (Date.now() < maxTime && count === 0) {
+        count = await page.getByText(name).count();
+        if (count === 0) {
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(500);
+        }
+    }
+
+    expect(count).toBeGreaterThan(0);
     return { name, color };
 }
 
-/**
- * Ensures default categories exist for the current user.
- */
 export async function ensureDefaultCategories(page: Page): Promise<void> {
     await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15000 });
 
-    // Wait for table to stabilise (Convex real-time data may arrive after initial render)
-    const personalCategoryExists = await expect
-        .poll(
-            async () =>
-                await page
-                    .getByTestId('table-row')
-                    .filter({ hasText: /\bPersonal\b/i })
-                    .count(),
-            { timeout: 5000, intervals: [500, 1000] }
-        )
-        .toBeGreaterThan(0)
-        .then(() => true)
-        .catch(() => false);
+    let personalCategoryCount = 0;
+    const maxTime = Date.now() + 5000;
 
-    if (!personalCategoryExists) {
+    while (Date.now() < maxTime && personalCategoryCount === 0) {
+        personalCategoryCount = await page
+            .getByTestId('table-row')
+            .filter({ hasText: /\bPersonal\b/i })
+            .count();
+
+        if (personalCategoryCount === 0) {
+            await page.waitForTimeout(300);
+        }
+    }
+
+    if (personalCategoryCount === 0) {
         await createCategory(page, { name: 'Personal', color: 'Green' });
     }
 }
@@ -788,9 +727,6 @@ export interface OrganizationData {
     description: string;
 }
 
-/**
- * Creates an organization through the UI.
- */
 export async function createOrganization(
     page: Page,
     options?: CreateOrganizationOptions
@@ -802,7 +738,6 @@ export async function createOrganization(
     await page.goto('/dashboard/organizations');
     await page.waitForURL(/\/dashboard\/organizations(\?|$)/, { timeout: 15000 });
 
-    // Wait for organizations page to be ready
     await page.waitForSelector('[data-testid="organizations-title"]', { timeout: 15000 });
     await page.getByTestId('organization-create-open').click();
     await page.waitForSelector('[data-testid="organization-name-input"]', { timeout: 5000 });
@@ -810,14 +745,17 @@ export async function createOrganization(
     await page.getByTestId('organization-description-input').fill(description);
     await page.getByTestId('organization-save-button').click();
 
-    // The organization name appears in both the switcher and the table; assert by presence.
-    await expect
-        .poll(async () => await page.getByText(name).count(), {
-            timeout: 15000,
-            intervals: [500, 1000, 2000],
-        })
-        .toBeGreaterThan(0);
+    let nameCount = 0;
+    const maxTime = Date.now() + 15000;
 
+    while (Date.now() < maxTime && nameCount === 0) {
+        nameCount = await page.getByText(name).count();
+        if (nameCount === 0) {
+            await page.waitForTimeout(500);
+        }
+    }
+
+    expect(nameCount).toBeGreaterThan(0);
     return { name, description };
 }
 
@@ -831,9 +769,6 @@ export interface NotificationData {
     type: string;
 }
 
-/**
- * Creates a notification through the UI.
- */
 export async function createNotification(
     page: Page,
     objectiveTitle: string,
@@ -865,24 +800,10 @@ export async function createNotification(
     return { message, type };
 }
 
-/**
- * Promotes the current logged-in user to admin role via the setup-platform test endpoint.
- * This completes the platform setup wizard programmatically, which creates the admin user,
- * organization, and default categories.
- *
- * @deprecated Prefer using the shared admin storageState from auth.setup.ts instead.
- */
 export async function promoteToAdmin(page: Page): Promise<void> {
     return setupPlatformAsAdmin(page);
 }
 
-/**
- * Completes platform setup via /api/test/setup-platform, promoting the current user to admin.
- * Only works on a fresh platform (no existing platformSettings).
- * Requires ALLOW_SETUP_TEST=true.
- *
- * @deprecated Prefer using the shared admin storageState from auth.setup.ts instead.
- */
 export async function setupPlatformAsAdmin(page: Page): Promise<void> {
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 
@@ -907,26 +828,17 @@ export async function setupPlatformAsAdmin(page: Page): Promise<void> {
         try {
             await expect(adminMenuItem.first()).toBeVisible({ timeout: 5000 });
             return;
-        } catch {
-            // Retry on next iteration
-        }
+        } catch {}
     }
 
     throw new Error('Failed to setup platform as admin after retries');
 }
 
-/**
- * Waits for a toast message to appear.
- */
 export async function waitForToast(page: Page, message: string | RegExp): Promise<void> {
     const toast = page.locator('[data-sonner-toast]', { hasText: message });
     await expect(toast).toBeVisible({ timeout: 5000 });
 }
 
-/**
- * Waits for Convex real-time data to appear in the DOM.
- * Replaces `waitForLoadState('load') + waitForTimeout()` pattern.
- */
 export async function waitForConvexData(
     page: Page,
     testId: string,
@@ -936,10 +848,6 @@ export async function waitForConvexData(
     await expect(page.getByTestId(testId)).toBeVisible({ timeout });
 }
 
-/**
- * Opens a modal by clicking a trigger and waiting for content to appear.
- * Retries with Escape if the modal doesn't open.
- */
 export async function openModal(
     page: Page,
     triggerTestId: string,
@@ -962,10 +870,6 @@ export async function openModal(
     throw new Error(`Could not open modal: trigger=${triggerTestId}, content=${contentTestId}`);
 }
 
-/**
- * Selects an option from a dropdown/select trigger.
- * Waits for options to appear before selecting.
- */
 export async function selectDropdownOption(
     page: Page,
     triggerTestId: string,
@@ -993,10 +897,6 @@ export async function selectDropdownOption(
     throw new Error(`Dropdown option not found: ${optionText}`);
 }
 
-/**
- * Navigates to a page and waits for specific content to appear.
- * Replaces `goto() + waitForLoadState('load')` pattern for Convex pages.
- */
 export async function navigateAndWaitForContent(
     page: Page,
     path: string,
@@ -1008,9 +908,6 @@ export async function navigateAndWaitForContent(
     await expect(page.getByTestId(contentTestId)).toBeVisible({ timeout });
 }
 
-/**
- * Gets the page origin URL.
- */
 export function getPageOrigin(page: Page): string {
     const url = page.url();
     try {

@@ -1,10 +1,10 @@
+/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestSession, createTestUser } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { GenericQueryCtx } from 'convex/server';
-import { DataModel, Id } from '../_generated/dataModel';
+import { Id } from '../_generated/dataModel';
 
 describe('convex sessions', () => {
     const t = initConvexTest();
@@ -54,7 +54,6 @@ describe('convex sessions', () => {
     test('createTestSession creates sessions for user', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        // Create another session
         await createTestSession(t, {
             userId,
             expiresAt: Date.now() + 1000000,
@@ -63,7 +62,6 @@ describe('convex sessions', () => {
             userAgent: 'test-agent',
         });
 
-        // Verify sessions directly from the component using filter (index not available in test env)
         const sessions = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
             return await ctx.db
                 .query('session')
@@ -84,7 +82,6 @@ describe('convex sessions', () => {
     });
 
     test('session can be retrieved after creation', async () => {
-        // Verify that the session created in beforeEach can be retrieved
         const session = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
             return await ctx.db.get(sessionId as unknown as Id<'session'>);
         });

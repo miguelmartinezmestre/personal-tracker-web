@@ -1,6 +1,7 @@
-import { GenericMutationCtx, GenericSchema, SchemaDefinition } from 'convex/server';
+import { GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import { MutationCtx } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
 
 export interface TestUserData {
     docId: Id<'user'>;
@@ -23,7 +24,7 @@ export async function createTestUser(
 ): Promise<TestUserData> {
     const { userId, email, name, role, emailVerified } = options;
 
-    const docId = await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+    const docId = await t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('user', {
             name: name,
             email: email,
@@ -76,7 +77,7 @@ export async function createTestOrganization(
     }
 ): Promise<Id<'organization'>> {
     const now = Date.now();
-    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+    return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('organization', {
             name: options.name,
             slug: options.slug,
@@ -96,7 +97,7 @@ export async function createTestMember(
     }
 ): Promise<Id<'member'>> {
     const now = Date.now();
-    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+    return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('member', {
             organizationId: options.organizationId,
             userId: options.userId,
@@ -125,7 +126,7 @@ export async function createTestObjective(
 ): Promise<Id<'objectives'>> {
     const now = Date.now();
     const startValue = options.startValue ?? options.currentValue ?? 0;
-    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+    return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
             userId: options.userId,
             organizationId: options.organizationId,
@@ -156,7 +157,7 @@ export async function createTestSession(
     }
 ): Promise<Id<'session'>> {
     const now = Date.now();
-    return t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+    return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('session', {
             userId: options.userId,
             expiresAt: options.expiresAt,

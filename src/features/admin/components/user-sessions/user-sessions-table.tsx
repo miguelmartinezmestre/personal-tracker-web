@@ -12,6 +12,7 @@ import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import type { Id } from '@/convex/_generated/dataModel';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -36,7 +37,10 @@ export function UserSessions() {
     const paginationOpts = getPaginationOpts(currentPage);
 
     const { data: sessions, isLoading } = useQuery(
-        convexQuery(api.admin.listUserSessions, userId ? { userId, paginationOpts } : 'skip')
+        convexQuery(
+            api.admin.listUserSessions,
+            userId ? { userId: userId as Id<'user'>, paginationOpts } : 'skip'
+        )
     );
 
     const hasData = sessions !== undefined;
