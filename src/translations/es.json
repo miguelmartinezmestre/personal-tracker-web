@@ -318,6 +318,10 @@
         "toast": {
             "unlocked": "¡Logro desbloqueado!",
             "points": "+{points} puntos"
+        },
+        "seed": {
+            "initialize": "Inicializar logros",
+            "seeding": "Inicializando..."
         }
     },
     "Notifications": {
@@ -403,7 +407,10 @@
         "loading": "Cargando...",
         "noOrganization": "Sin organización",
         "noOrganizations": "Sin organizaciones",
-        "manageOrganizations": "Gestionar organizaciones"
+        "manageOrganizations": "Gestionar organizaciones",
+        "activeOrganization": "Organización activa",
+        "current": "Actual",
+        "switchOrganization": "Cambiar a:"
     },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
@@ -817,7 +824,26 @@
         "settings": "Configuracion",
         "account": "Cuenta",
         "passwordSettingsDescription": "Edita tus configuraciones de contrasena aqui.",
-        "notificationsPlaceholder": "Cambia tus notificaciones aqui.",
+        "notificationsPlaceholder": "Cambia tus notificaciones aquí.",
+        "notifications": "Notificaciones",
+        "notificationSettings": "Configuración de Notificaciones",
+        "notificationsDescription": "Gestiona cómo y cuándo recibes notificaciones.",
+        "preferencesSaved": "Preferencias guardadas",
+        "preferencesSavedDescription": "Tus preferencias de notificación han sido actualizadas.",
+        "preferencesError": "Error",
+        "preferencesErrorDescription": "No se pudieron actualizar las preferencias. Por favor, inténtalo de nuevo.",
+        "achievementNotifications": "Notificaciones de Logros",
+        "achievementNotificationsDescription": "Recibe notificaciones cuando desbloquees logros y ganes puntos.",
+        "deadlineNotifications": "Recordatorios de Fechas Límite",
+        "deadlineNotificationsDescription": "Recibe recordatorios cuando tus objetivos tengan fechas límite próximas.",
+        "progressNotifications": "Alertas de Progreso y Rachas",
+        "progressNotificationsDescription": "Recibe notificaciones sobre tus actualizaciones de progreso y hitos de rachas.",
+        "organizationNotifications": "Notificaciones de Organización",
+        "organizationNotificationsDescription": "Recibe notificaciones sobre logros organizacionales y actividades de miembros.",
+        "emailDigest": "Resumen por Email",
+        "emailDigestDescription": "Recibe un resumen semanal de tus logros y progreso por correo electrónico.",
+        "comingSoon": "Próximamente",
+        "privacyNote": "Nota de privacidad: Todas las notificaciones están habilitadas por defecto para mantener la compatibilidad. Puedes desactivar cualquier tipo de notificación en cualquier momento. Tus desbloqueos de logros siempre se registran independientemente de la configuración de notificaciones.",
         "title": "Configuración",
         "description": "Gestiona tus configuraciones para mantener un seguimiento de tu progreso.",
         "accountSettings": "Configuración de cuenta",

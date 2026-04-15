@@ -318,6 +318,10 @@
         "toast": {
             "unlocked": "Achievement Unlocked!",
             "points": "+{points} points"
+        },
+        "seed": {
+            "initialize": "Initialize Achievements",
+            "seeding": "Seeding..."
         }
     },
     "Notifications": {
@@ -403,7 +407,10 @@
         "loading": "Loading...",
         "noOrganization": "No organization",
         "noOrganizations": "No organizations",
-        "manageOrganizations": "Manage organizations"
+        "manageOrganizations": "Manage organizations",
+        "activeOrganization": "Active organization",
+        "current": "Current",
+        "switchOrganization": "Switch to:"
     },
     "ThemeSwitcher": {
         "toggle": "Change theme",
@@ -832,6 +839,25 @@
             "enterEmail": "Enter email"
         },
         "notificationsPlaceholder": "Change your notifications here.",
+        "notifications": "Notifications",
+        "notificationSettings": "Notification Settings",
+        "notificationsDescription": "Manage how and when you receive notifications.",
+        "preferencesSaved": "Preferences saved",
+        "preferencesSavedDescription": "Your notification preferences have been updated.",
+        "preferencesError": "Error",
+        "preferencesErrorDescription": "Failed to update preferences. Please try again.",
+        "achievementNotifications": "Achievement Notifications",
+        "achievementNotificationsDescription": "Receive notifications when you unlock achievements and earn points.",
+        "deadlineNotifications": "Deadline Reminders",
+        "deadlineNotificationsDescription": "Get reminded when your objectives have upcoming deadlines.",
+        "progressNotifications": "Progress & Streak Alerts",
+        "progressNotificationsDescription": "Receive notifications about your progress updates and streak milestones.",
+        "organizationNotifications": "Organization Notifications",
+        "organizationNotificationsDescription": "Receive notifications about organization-wide achievements and member activities.",
+        "emailDigest": "Email Digest",
+        "emailDigestDescription": "Receive a weekly summary of your achievements and progress via email.",
+        "comingSoon": "Coming Soon",
+        "privacyNote": "Privacy Note: All notifications are enabled by default to maintain backward compatibility. You can disable any notification type above at any time. Your achievement unlocks are always tracked regardless of notification settings.",
         "cancel": "Cancel",
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
