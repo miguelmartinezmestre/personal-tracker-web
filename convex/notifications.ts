@@ -1,9 +1,11 @@
-import { v } from 'convex/values';
+import { v, ConvexError } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
 import type { Doc } from './_generated/dataModel';
 import { paginationOptsValidator } from 'convex/server';
 import { notificationTypeValidator } from './utils/validators';
+import { ERROR_CODES } from './utils/constants';
+import type { NotificationType } from './utils/constants';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEADLINE_SOON_DAYS = 3;
@@ -70,7 +72,9 @@ export const getUnreadNotificationCount = queryWithRLS({
         const userId = ctx.userId;
         const unreadNotifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+            .withIndex('by_user_read', q =>
+                q.eq('userId', userId).eq('read', false)
+            )
             .collect();
 
         return { count: unreadNotifications.length };
@@ -88,7 +92,7 @@ export const createNotification = mutationWithRLS({
         const userId = ctx.userId;
 
         const objective = await ctx.db.get('objectives', args.objective);
-        if (!objective) throw new Error('Objective not found');
+        if (!objective) throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
 
         const role = ctx.role;
         const isAdmin = role === 'admin' || role === 'ADMIN';
@@ -98,7 +102,7 @@ export const createNotification = mutationWithRLS({
             Boolean(ctx.organizationId) &&
             objective.organizationId === ctx.organizationId;
         if (!isAdmin && !isOwner && !isOrganizationMember) {
-            throw new Error('Not authorized to create notifications for this objective');
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
 
         const now = Date.now();
@@ -109,12 +113,7 @@ export const createNotification = mutationWithRLS({
             organizationId: objective.organizationId,
             objective: args.objective,
             read: false,
-            notificationType: args.notificationType as
-                | 'deadline'
-                | 'progress'
-                | 'status'
-                | 'achievement'
-                | 'reminder',
+            notificationType: args.notificationType as NotificationType,
             notificationDate,
             message: args.message,
             createdAt: now,
@@ -140,10 +139,11 @@ export const markAllNotificationsRead = mutationWithRLS({
     args: {},
     handler: async ctx => {
         const userId = ctx.userId;
-        // Only fetch unread notifications using the by_user_read index
         const unreadNotifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+            .withIndex('by_user_read', q =>
+                q.eq('userId', userId).eq('read', false)
+            )
             .collect();
         const now = Date.now();
 
@@ -164,7 +164,7 @@ export const deleteNotification = mutationWithRLS({
     },
     handler: async (ctx, args) => {
         await ctx.db.delete('notifications', args.id);
-        return 'Notification deleted successfully' as const;
+        return { success: true } as const;
     },
 });
 
@@ -175,7 +175,6 @@ export const runDeadlineNotificationsCron = internalMutation({
         const dayStart = startOfDayUtc(now);
         const dayEnd = dayStart + DAY_MS;
 
-        // Only scan active objectives (not completed/archived/deleted/paused)
         const objectives = (await ctx.db
             .query('objectives')
             .withIndex('by_status', q => q.eq('status', 'active'))

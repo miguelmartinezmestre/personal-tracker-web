@@ -1,6 +1,7 @@
-import { v } from 'convex/values';
+import { v, ConvexError } from 'convex/values';
 import type { GenericMutationCtx } from 'convex/server';
 import { internalMutation } from './_generated/server';
+import { internal } from './_generated/api';
 import type { DataModel, Id } from './_generated/dataModel';
 import {
     calculateUserStreak,
@@ -9,6 +10,39 @@ import {
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
 import { achievementTypeValidator } from './utils/validators';
+import { ERROR_CODES } from './utils/constants';
+
+async function shouldSendAchievementNotification(
+    ctx: GenericMutationCtx<DataModel>,
+    userId: Id<'user'>
+): Promise<boolean> {
+    const preferences = await ctx.db
+        .query('notificationPreferences')
+        .withIndex('by_user', q => q.eq('userId', userId))
+        .first();
+
+    if (!preferences) {
+        return true;
+    }
+
+    return preferences.achievementNotifications ?? true;
+}
+
+async function shouldSendOrganizationNotification(
+    ctx: GenericMutationCtx<DataModel>,
+    userId: Id<'user'>
+): Promise<boolean> {
+    const preferences = await ctx.db
+        .query('notificationPreferences')
+        .withIndex('by_user', q => q.eq('userId', userId))
+        .first();
+
+    if (!preferences) {
+        return true;
+    }
+
+    return preferences.organizationNotifications ?? true;
+}
 
 export const getAchievementDefinitions = queryWithRLS({
     args: {
@@ -40,17 +74,14 @@ export const getUserAchievements = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        // Get achievement definitions for each earned achievement
-        const achievementsWithDetails = await Promise.all(
-            obtainedAchievements.map(async oa => {
-                const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
-                return {
-                    ...oa,
-                    definition,
-                    user: oa.userId,
-                };
-            })
-        );
+        const definitions = await ctx.db.query('achievementDefinitions').collect();
+        const defMap = new Map(definitions.map(d => [d._id, d]));
+
+        const achievementsWithDetails = obtainedAchievements.map(oa => ({
+            ...oa,
+            definition: defMap.get(oa.achievement),
+            user: oa.userId,
+        }));
 
         return achievementsWithDetails;
     },
@@ -66,15 +97,13 @@ export const getOrganizationAchievements = queryWithRLS({
             .withIndex('by_organization', q => q.eq('organization', args.organizationId))
             .collect();
 
-        const achievementsWithDetails = await Promise.all(
-            organizationAchievements.map(async oa => {
-                const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
-                return {
-                    ...oa,
-                    definition,
-                };
-            })
-        );
+        const definitions = await ctx.db.query('achievementDefinitions').collect();
+        const defMap = new Map(definitions.map(d => [d._id, d]));
+
+        const achievementsWithDetails = organizationAchievements.map(oa => ({
+            ...oa,
+            definition: defMap.get(oa.achievement),
+        }));
 
         return achievementsWithDetails;
     },
@@ -90,18 +119,16 @@ export const getUserAchievementStats = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
+        const allDefinitions = await ctx.db.query('achievementDefinitions').collect();
+        const defMap = new Map(allDefinitions.map(d => [d._id, d]));
+
         let totalPoints = 0;
         for (const oa of obtainedAchievements) {
-            const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
+            const definition = defMap.get(oa.achievement);
             if (definition) {
                 totalPoints += definition.points;
             }
         }
-
-        const allDefinitions = await ctx.db
-            .query('achievementDefinitions')
-            .filter(q => q.eq(q.field('isActive'), true))
-            .collect();
 
         const individualDefinitions = allDefinitions.filter(d => d.type === 'individual');
 
@@ -127,12 +154,12 @@ export const getRecentAchievements = queryWithRLS({
             .order('desc')
             .take(limit);
 
-        const achievementsWithDetails = await Promise.all(
-            obtainedAchievements.map(async oa => {
-                const definition = await ctx.db.get('achievementDefinitions', oa.achievement);
-                return definition;
-            })
-        );
+        const definitions = await ctx.db.query('achievementDefinitions').collect();
+        const defMap = new Map(definitions.map(d => [d._id, d]));
+
+        const achievementsWithDetails = obtainedAchievements
+            .map(oa => defMap.get(oa.achievement))
+            .filter((def): def is NonNullable<typeof def> => def !== null);
 
         return achievementsWithDetails;
     },
@@ -143,7 +170,6 @@ export const getUserAchievementProgress = queryWithRLS({
     handler: async ctx => {
         const userId = ctx.userId;
 
-        // Get all active individual achievement definitions
         const definitions = await ctx.db
             .query('achievementDefinitions')
             .withIndex('by_type', q => q.eq('type', 'individual'))
@@ -151,7 +177,6 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const activeDefinitions = definitions.filter(d => d.isActive);
 
-        // Get user's earned achievements
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
             .withIndex('by_user', q => q.eq('userId', userId))
@@ -159,7 +184,6 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const earnedIds = new Set(obtainedAchievements.map(oa => oa.achievement));
 
-        // Calculate progress for each achievement
         const objectivesCount = await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('userId', userId))
@@ -167,7 +191,6 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
 
-        // Collect progress updates for each objective using indexed queries
         const userObjectiveIds = objectivesCount.map(o => o._id);
         const userProgressUpdates = await Promise.all(
             userObjectiveIds.map(async objectiveId => {
@@ -179,7 +202,6 @@ export const getUserAchievementProgress = queryWithRLS({
             })
         ).then(results => results.flat());
 
-        // Calculate streak (simplified - consecutive days with progress)
         const streak = await calculateUserStreak(ctx, userId);
 
         const progressList = activeDefinitions.map(def => {
@@ -209,7 +231,6 @@ export const getUserAchievementProgress = queryWithRLS({
                     currentProgress = userProgressUpdates.length;
                     break;
                 case 'early_bird':
-                    // Count objectives completed before deadline
                     currentProgress = completedObjectives.filter(o => {
                         if (!o.deadline) return false;
                         return o.updatedAt <= o.deadline;
@@ -236,7 +257,6 @@ export const getUnviewedAchievementsCount = queryWithRLS({
     handler: async ctx => {
         const userId = ctx.userId;
 
-        // Get unread achievement notifications
         const notifications = await ctx.db
             .query('notifications')
             .withIndex('by_user_type_read', q =>
@@ -248,12 +268,11 @@ export const getUnviewedAchievementsCount = queryWithRLS({
     },
 });
 
-export const seedAchievementDefinitions = mutationWithRLS({
+export const seedAchievementDefinitionsInternal = internalMutation({
     args: {},
     handler: async ctx => {
         const now = Date.now();
 
-        // Check if already seeded
         const existing = await ctx.db.query('achievementDefinitions').first();
         if (existing) {
             return { message: 'Achievements already seeded', count: 0 };
@@ -274,16 +293,19 @@ export const seedAchievementDefinitions = mutationWithRLS({
     },
 });
 
-// --- Shared helper for evaluating and awarding achievements ---
+export const seedAchievementDefinitions = mutationWithRLS({
+    args: {},
+    handler: async (ctx): Promise<{ message: string; count: number }> => {
+        return await ctx.runMutation(internal.achievements.seedAchievementDefinitionsInternal, {});
+    },
+});
 
 type MutationCtx = GenericMutationCtx<DataModel>;
 
 type EvaluateAndAwardParams = {
     ctx: MutationCtx;
     scopeType: 'individual' | 'organization';
-    /** Evaluate whether the given achievement code should be awarded. */
     evaluate: (code: string) => Promise<boolean> | boolean;
-    /** Insert the earned record and create notifications. Called only after dedup check passes. */
     award: (defId: Id<'achievementDefinitions'>, code: string, points: number) => Promise<void>;
 };
 
@@ -310,36 +332,31 @@ async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
     return { awarded: newAchievements };
 }
 
-// Internal mutation to check and award achievements (called from other mutations)
 export const checkUserAchievements = internalMutation({
     args: {
         userId: v.id('user'),
         organizationId: v.optional(v.id('organization')),
-        trigger: v.string(), // 'objective_created' | 'objective_completed' | 'progress_update'
+        trigger: v.string(),
     },
     handler: async (ctx, args) => {
         const { userId, organizationId, trigger } = args;
         const now = Date.now();
         if (!organizationId) {
-            throw new Error('No active organization selected');
+            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
 
-        // Get user's already earned achievements
         const earnedAchievements = await ctx.db
             .query('obtainedAchievements')
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
+        const definitions = await ctx.db.query('achievementDefinitions').collect();
+        const defMap = new Map(definitions.map(d => [d._id, d]));
+
         const earnedCodes = new Set(
-            await Promise.all(
-                earnedAchievements.map(async ea => {
-                    const def = await ctx.db.get('achievementDefinitions', ea.achievement);
-                    return def?.code;
-                })
-            )
+            earnedAchievements.map(ea => defMap.get(ea.achievement)?.code).filter(Boolean)
         );
 
-        // Get current stats
         const objectives = await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('userId', userId))
@@ -411,7 +428,6 @@ export const checkUserAchievements = internalMutation({
                 }
             },
             async award(defId, code, points) {
-                // Double-check dedup at insert time to prevent race conditions
                 const alreadyAwarded = await ctx.db
                     .query('obtainedAchievements')
                     .withIndex('by_user_achievement', q =>
@@ -421,7 +437,6 @@ export const checkUserAchievements = internalMutation({
 
                 if (alreadyAwarded) return;
 
-                // Award the achievement
                 await ctx.db.insert('obtainedAchievements', {
                     userId: userId,
                     achievement: defId,
@@ -430,24 +445,25 @@ export const checkUserAchievements = internalMutation({
                     updatedAt: now,
                 });
 
-                // Create notification
-                await ctx.db.insert('notifications', {
-                    userId: userId,
-                    organizationId,
-                    objective: undefined,
-                    read: false,
-                    notificationType: 'achievement',
-                    notificationDate: now,
-                    message: `Achievement unlocked: "${code}"! You earned ${points} points.`,
-                    createdAt: now,
-                    updatedAt: now,
-                });
+                const shouldNotify = await shouldSendAchievementNotification(ctx, userId);
+                if (shouldNotify) {
+                    await ctx.db.insert('notifications', {
+                        userId: userId,
+                        organizationId,
+                        objective: undefined,
+                        read: false,
+                        notificationType: 'achievement',
+                        notificationDate: now,
+                        message: `Achievement unlocked: "${code}"! You earned ${points} points.`,
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                }
             },
         });
     },
 });
 
-// Check organization achievements
 export const checkOrganizationAchievements = internalMutation({
     args: {
         organizationId: v.id('organization'),
@@ -458,19 +474,16 @@ export const checkOrganizationAchievements = internalMutation({
         const { organizationId, userId, trigger } = args;
         const now = Date.now();
 
-        // Get organization's already earned achievements
         const earnedAchievements = await ctx.db
             .query('organizationAchievements')
             .withIndex('by_organization', q => q.eq('organization', organizationId))
             .collect();
 
+        const definitions = await ctx.db.query('achievementDefinitions').collect();
+        const defMap = new Map(definitions.map(d => [d._id, d]));
+
         const earnedCodes = new Set(
-            await Promise.all(
-                earnedAchievements.map(async ea => {
-                    const def = await ctx.db.get('achievementDefinitions', ea.achievement);
-                    return def?.code;
-                })
-            )
+            earnedAchievements.map(ea => defMap.get(ea.achievement)?.code).filter(Boolean)
         );
 
         const members = await ctx.db
@@ -480,7 +493,6 @@ export const checkOrganizationAchievements = internalMutation({
 
         const memberUserIds = members.map(m => m.userId as Id<'user'>);
 
-        // Get objectives from organization members using indexed queries per user
         const organizationObjectives = await Promise.all(
             memberUserIds.map(async memberId => {
                 const userObjectives = await ctx.db
@@ -533,7 +545,6 @@ export const checkOrganizationAchievements = internalMutation({
                 }
             },
             async award(defId, code, points) {
-                // Double-check dedup at insert time to prevent race conditions
                 const alreadyAwarded = await ctx.db
                     .query('organizationAchievements')
                     .withIndex('by_organization_achievement', q =>
@@ -552,19 +563,24 @@ export const checkOrganizationAchievements = internalMutation({
                     updatedAt: now,
                 });
 
-                // Notify all organization members
                 for (const member of members) {
-                    await ctx.db.insert('notifications', {
-                        userId: member.userId as Id<'user'>,
-                        organizationId: organizationId,
-                        objective: undefined,
-                        read: false,
-                        notificationType: 'achievement',
-                        notificationDate: now,
-                        message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
-                        createdAt: now,
-                        updatedAt: now,
-                    });
+                    const shouldNotify = await shouldSendOrganizationNotification(
+                        ctx,
+                        member.userId as Id<'user'>
+                    );
+                    if (shouldNotify) {
+                        await ctx.db.insert('notifications', {
+                            userId: member.userId as Id<'user'>,
+                            organizationId: organizationId,
+                            objective: undefined,
+                            read: false,
+                            notificationType: 'achievement',
+                            notificationDate: now,
+                            message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
+                            createdAt: now,
+                            updatedAt: now,
+                        });
+                    }
                 }
             },
         });

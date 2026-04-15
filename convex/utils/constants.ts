@@ -1,44 +1,22 @@
-/**
- * Time constants in milliseconds
- */
 export const TIME = {
-    /** Milliseconds in a minute */
     MINUTE_MS: 60 * 1000,
-    /** Milliseconds in an hour */
     HOUR_MS: 60 * 60 * 1000,
-    /** Milliseconds in a day */
     DAY_MS: 24 * 60 * 60 * 1000,
-    /** Milliseconds in a week */
     WEEK_MS: 7 * 24 * 60 * 60 * 1000,
 } as const;
 
-/**
- * Pagination defaults
- */
 export const PAGINATION = {
-    /** Default page size for lists */
     DEFAULT_PAGE_SIZE: 10,
-    /** Maximum page size allowed */
     MAX_PAGE_SIZE: 100,
-    /** Default limit for dashboard items */
     DASHBOARD_LIMIT: 5,
 } as const;
 
-/**
- * Dashboard configuration
- */
 export const DASHBOARD = {
-    /** Number of months to show in monthly progress chart */
     MONTHS_TO_SHOW: 6,
-    /** Days to look ahead for upcoming deadlines */
     DEADLINE_DAYS_AHEAD: 7,
-    /** Days to look back for recent activity */
     ACTIVITY_DAYS_BACK: 30,
 } as const;
 
-/**
- * Objective status values
- */
 export const OBJECTIVE_STATUS = {
     ACTIVE: 'active',
     COMPLETED: 'completed',
@@ -46,9 +24,6 @@ export const OBJECTIVE_STATUS = {
 
 export type ObjectiveStatus = (typeof OBJECTIVE_STATUS)[keyof typeof OBJECTIVE_STATUS];
 
-/**
- * Objective scope values
- */
 export const OBJECTIVE_SCOPE = {
     PERSONAL: 'personal',
     ORGANIZATION: 'organization',
@@ -56,21 +31,16 @@ export const OBJECTIVE_SCOPE = {
 
 export type ObjectiveScope = (typeof OBJECTIVE_SCOPE)[keyof typeof OBJECTIVE_SCOPE];
 
-/**
- * Notification types
- */
 export const NOTIFICATION_TYPE = {
     DEADLINE: 'deadline',
     PROGRESS: 'progress',
     STATUS: 'status',
     ACHIEVEMENT: 'achievement',
+    REMINDER: 'reminder',
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
 
-/**
- * Achievement types
- */
 export const ACHIEVEMENT_TYPE = {
     INDIVIDUAL: 'individual',
     ORGANIZATION: 'organization',
@@ -78,9 +48,6 @@ export const ACHIEVEMENT_TYPE = {
 
 export type AchievementType = (typeof ACHIEVEMENT_TYPE)[keyof typeof ACHIEVEMENT_TYPE];
 
-/**
- * Achievement categories
- */
 export const ACHIEVEMENT_CATEGORY = {
     MILESTONE: 'milestone',
     STREAK: 'streak',
@@ -90,9 +57,6 @@ export const ACHIEVEMENT_CATEGORY = {
 
 export type AchievementCategory = (typeof ACHIEVEMENT_CATEGORY)[keyof typeof ACHIEVEMENT_CATEGORY];
 
-/**
- * Achievement tiers
- */
 export const ACHIEVEMENT_TIER = {
     BRONZE: 'bronze',
     SILVER: 'silver',
@@ -102,9 +66,6 @@ export const ACHIEVEMENT_TIER = {
 
 export type AchievementTier = (typeof ACHIEVEMENT_TIER)[keyof typeof ACHIEVEMENT_TIER];
 
-/**
- * User roles
- */
 export const USER_ROLE = {
     USER: 'user',
     ADMIN: 'admin',
@@ -112,9 +73,6 @@ export const USER_ROLE = {
 
 export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
 
-/**
- * Organization roles
- */
 export const ORGANIZATION_ROLE = {
     OWNER: 'owner',
     ADMIN: 'admin',
@@ -122,3 +80,55 @@ export const ORGANIZATION_ROLE = {
 } as const;
 
 export type OrganizationRole = (typeof ORGANIZATION_ROLE)[keyof typeof ORGANIZATION_ROLE];
+
+/**
+ * Error codes for internationalization
+ * Frontend should map these codes to localized messages
+ *
+ * Spanish translations (for reference):
+ * - AUTH_REQUIRED: 'Debes iniciar sesión para realizar esta acción'
+ * - FORBIDDEN: 'No tienes permiso para realizar esta acción'
+ * - WEAK_PASSWORD: 'La contraseña debe incluir al menos una mayúscula, una minúscula y un número'
+ * - NO_ACTIVE_ORG: 'No hay una organización activa seleccionada'
+ * - ORG_NOT_FOUND: 'Organización no encontrada'
+ * - OBJECTIVE_NOT_FOUND: 'Objetivo no encontrado'
+ * - PROGRESS_NOT_FOUND: 'Actualización de progreso no encontrada'
+ * - CATEGORY_NOT_FOUND: 'Categoría no encontrada'
+ * - USER_NOT_FOUND: 'Usuario no encontrado'
+ * - NOT_OBJECTIVE_OWNER: 'No eres el propietario de este objetivo'
+ * - NOT_AUTHORIZED_OBJECTIVE: 'No tienes permiso para editar este objetivo'
+ * - NOT_AUTHORIZED_NOTIFICATION: 'No tienes permiso para crear notificaciones para este objetivo'
+ * - PLATFORM_ALREADY_CONFIGURED: 'La plataforma ya está configurada'
+ * - SETUP_USER_COUNT: 'La configuración solo puede completarse cuando existe exactamente un usuario'
+ * - SETUP_USER_MISMATCH: 'La configuración debe ser completada por el único usuario registrado'
+ * - SETUP_AUTH_REQUIRED: 'Se requiere autenticación para completar la configuración'
+ * - INTERNAL_ERROR: 'Error interno del servidor'
+ * - VALIDATION_ERROR: 'Error de validación'
+ */
+export const ERROR_CODES = {
+    AUTH_REQUIRED: 'AUTH_REQUIRED',
+    FORBIDDEN: 'FORBIDDEN',
+    WEAK_PASSWORD: 'WEAK_PASSWORD',
+
+    NO_ACTIVE_ORG: 'NO_ACTIVE_ORG',
+    ORG_NOT_FOUND: 'ORG_NOT_FOUND',
+
+    OBJECTIVE_NOT_FOUND: 'OBJECTIVE_NOT_FOUND',
+    PROGRESS_NOT_FOUND: 'PROGRESS_NOT_FOUND',
+    CATEGORY_NOT_FOUND: 'CATEGORY_NOT_FOUND',
+    USER_NOT_FOUND: 'USER_NOT_FOUND',
+
+    NOT_OBJECTIVE_OWNER: 'NOT_OBJECTIVE_OWNER',
+    NOT_AUTHORIZED_OBJECTIVE: 'NOT_AUTHORIZED_OBJECTIVE',
+    NOT_AUTHORIZED_NOTIFICATION: 'NOT_AUTHORIZED_NOTIFICATION',
+
+    PLATFORM_ALREADY_CONFIGURED: 'PLATFORM_ALREADY_CONFIGURED',
+    SETUP_USER_COUNT: 'SETUP_USER_COUNT',
+    SETUP_USER_MISMATCH: 'SETUP_USER_MISMATCH',
+    SETUP_AUTH_REQUIRED: 'SETUP_AUTH_REQUIRED',
+
+    INTERNAL_ERROR: 'INTERNAL_ERROR',
+    VALIDATION_ERROR: 'VALIDATION_ERROR',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

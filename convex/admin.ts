@@ -1,10 +1,9 @@
 import { v } from 'convex/values';
 import { getAuth } from './auth';
-import { GenericMutationCtx, paginationOptsValidator } from 'convex/server';
+import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { getHeaders } from 'better-convex/auth';
-import { DataModel } from './_generated/dataModel';
 
 type AdminApi = {
     banUser: (args: {
@@ -15,15 +14,18 @@ type AdminApi = {
     removeUser: (args: { body: { userId: string }; headers: Headers }) => Promise<unknown>;
 };
 
+function getAdminApi(auth: { api: unknown }): AdminApi {
+    return auth.api as AdminApi;
+}
+
 export const listUsers = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         searchValue: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
+        await requireAdmin(ctx);
 
-        // Get all users from BetterAuth user table with pagination
         const result = await ctx.db.query('user').paginate(args.paginationOpts);
 
         return result;
@@ -41,7 +43,7 @@ export const banUser = mutationWithRLS({
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
-        const adminApi = auth.api as unknown as AdminApi;
+        const adminApi = getAdminApi(auth);
 
         await adminApi.banUser({
             body: {
@@ -65,7 +67,7 @@ export const unbanUser = mutationWithRLS({
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
-        const adminApi = auth.api as unknown as AdminApi;
+        const adminApi = getAdminApi(auth);
 
         await adminApi.unbanUser({
             body: {
@@ -103,7 +105,7 @@ export const deleteUser = mutationWithRLS({
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
-        const adminApi = auth.api as unknown as AdminApi;
+        const adminApi = getAdminApi(auth);
 
         await adminApi.removeUser({
             body: {
@@ -122,11 +124,11 @@ export const listUserSessions = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        await requireAdmin(ctx as unknown as GenericMutationCtx<DataModel>);
+        await requireAdmin(ctx);
 
         return await ctx.db
             .query('session')
-            .withIndex('userId', q => q.eq('userId', args.userId))
+            .withIndex('userId', (q: any) => q.eq('userId', args.userId))
             .order('desc')
             .paginate(args.paginationOpts);
     },

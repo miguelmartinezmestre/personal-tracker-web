@@ -38,10 +38,8 @@ export const computeNextReminderAt = (
     }
 
     if (interval === 'biweekly') {
-        // In product terms this is "twice per month" (1st and 15th).
         return computeNextBiweeklyLikeReminderAt(now);
     }
 
-    // Backward-compatible fallback for unknown values.
     return now + 14 * DAY_MS;
 };

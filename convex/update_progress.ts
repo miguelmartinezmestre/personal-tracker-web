@@ -4,19 +4,33 @@ import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { workflow } from './workflow';
+import { ERROR_CODES } from './utils/constants';
 
 const runObjectiveSync = async (
     ctx: Parameters<typeof workflow.start>[0],
     objectiveId: Id<'objectives'>,
-    userId: Id<'user'>
+    userId: Id<'user'>,
+    organizationId?: Id<'organization'> | null
 ) => {
     try {
         await workflow.start(ctx, internal.workflows.objectiveLifecycle.objectiveLifecycle, {
             objectiveId,
             userId,
         });
-    } catch {
-        // Workflow may fail in test environments — non-critical side effect
+    } catch (error) {
+        if (organizationId) {
+            await ctx.runMutation(internal.auditLogs.recordAuditLog, {
+                userId,
+                organizationId,
+                action: 'WORKFLOW_ERROR',
+                resourceType: 'progress_update',
+                resourceId: objectiveId,
+                metadata: {
+                    context: `Objective lifecycle workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+                severity: 'warning',
+            });
+        }
     }
 };
 
@@ -30,7 +44,7 @@ export const createUpdateProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.objective);
         if (!objective) {
-            throw new ConvexError('Objective not found');
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
         const now = Date.now();
@@ -63,7 +77,7 @@ export const createUpdateProgress = mutationWithRLS({
             trigger: 'progress_update',
         });
 
-        await runObjectiveSync(ctx, args.objective, objective.userId);
+        await runObjectiveSync(ctx, args.objective, objective.userId, objective.organizationId);
 
         return await ctx.db.get('progressUpdates', id);
     },
@@ -99,12 +113,12 @@ export const updateUpdateProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const existing = await ctx.db.get('progressUpdates', args.id);
         if (!existing) {
-            throw new ConvexError('Progress update not found');
+            throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
         }
 
         const objective = await ctx.db.get('objectives', existing.objective);
         if (!objective) {
-            throw new ConvexError('Objective not found');
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
         await ctx.db.patch('progressUpdates', args.id, {
@@ -120,7 +134,7 @@ export const updateUpdateProgress = mutationWithRLS({
             trigger: 'progress_update',
         });
 
-        await runObjectiveSync(ctx, existing.objective, objective.userId);
+        await runObjectiveSync(ctx, existing.objective, objective.userId, objective.organizationId);
 
         return await ctx.db.get('progressUpdates', args.id);
     },
@@ -133,18 +147,18 @@ export const deleteUpdateProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const existing = await ctx.db.get('progressUpdates', args._id);
         if (!existing) {
-            return 'Update progress deleted successfully' as const;
+            return { success: true } as const;
         }
 
         const objective = await ctx.db.get('objectives', existing.objective);
         if (!objective) {
             await ctx.db.delete('progressUpdates', args._id);
-            return 'Update progress deleted successfully' as const;
+            return { success: true } as const;
         }
 
         await ctx.db.delete('progressUpdates', args._id);
-        await runObjectiveSync(ctx, objective._id, objective.userId);
+        await runObjectiveSync(ctx, objective._id, objective.userId, objective.organizationId);
 
-        return 'Update progress deleted successfully' as const;
+        return { success: true } as const;
     },
 });

@@ -14,6 +14,7 @@ import { ConvexError } from 'convex/values';
 
 import type { DataModelFromSchemaDefinition } from 'convex/server';
 import schema from './schema';
+import { ERROR_CODES } from './utils/constants';
 import { getAuth } from './auth';
 import { getAuthUserIdentity, getHeaders } from 'better-convex/auth';
 
@@ -92,14 +93,24 @@ async function rlsRules(
             },
             insert: async (_, notification) => {
                 if (isAdmin) return true;
-                if (notification.userId === userId) return true;
-                if (
-                    organizationId &&
-                    notification.organizationId &&
-                    notification.organizationId === organizationId
-                )
-                    return true;
-                return false;
+                if (!notification.objective) {
+                    if (notification.userId === userId) return true;
+                    return Boolean(
+                        organizationId &&
+                            notification.organizationId &&
+                            notification.organizationId === organizationId
+                    );
+                }
+                const objective = await ctx.db.get('objectives', notification.objective);
+                if (!objective) return false;
+
+                const isOwner = objective.userId === userId;
+                const isOrganizationMember =
+                    objective.scope === 'organization' &&
+                    Boolean(organizationId) &&
+                    objective.organizationId === organizationId;
+
+                return isOwner || isOrganizationMember;
             },
             modify: async (_, notification) => {
                 if (isAdmin) return true;
@@ -129,7 +140,7 @@ async function rlsRules(
                 return true;
             },
             insert: async () => {
-                return true;
+                return isAdmin;
             },
             modify: async () => {
                 return isAdmin;
@@ -245,24 +256,31 @@ type AuthContext = {
     role: string;
 };
 
-/**
- * Extract the activeOrganizationId from a Better Auth session object.
- */
-function extractOrganizationId(session: unknown): Id<'organization'> | null {
-    const raw =
-        (session as { session?: { activeOrganizationId?: string | null } } | null)?.session
-            ?.activeOrganizationId ?? null;
-    return raw as Id<'organization'> | null;
+interface AuthSession {
+    session?: {
+        activeOrganizationId?: string | null;
+    };
 }
 
-/**
- * Shared auth + organization resolution logic used by both queryWithRLS and mutationWithRLS.
- * Accepts both QueryCtx and MutationCtx since it only reads from the database.
- */
+function extractOrganizationId(session: unknown): Id<'organization'> | null {
+    if (session === null || typeof session !== 'object') {
+        return null;
+    }
+
+    const authSession = session as AuthSession;
+    const raw = authSession.session?.activeOrganizationId ?? null;
+
+    if (typeof raw !== 'string') {
+        return null;
+    }
+
+    return raw as Id<'organization'>;
+}
+
 async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
     const identity = await getAuthUserIdentity(ctx);
     if (!identity) {
-        throw new ConvexError('Unauthenticated');
+        throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
     const currentUser = await ctx.db
@@ -270,7 +288,7 @@ async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthCont
         .filter(q => q.eq(q.field('_id'), identity.userId))
         .first();
     if (!currentUser) {
-        throw new ConvexError('Unauthenticated');
+        throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
     let organizationId: Id<'organization'> | null = null;

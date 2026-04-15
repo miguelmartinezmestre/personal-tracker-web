@@ -13,14 +13,10 @@ export const getDashboardStats = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        const totalObjectives = objectives.length;
-        const completedObjectives = objectives.filter(o => o.status === 'completed').length;
-        const pendingObjectives = objectives.filter(o => o.status === 'active').length;
-
         return {
-            totalObjectives,
-            completedObjectives,
-            pendingObjectives,
+            totalObjectives: objectives.length,
+            completedObjectives: objectives.filter(o => o.status === 'completed').length,
+            pendingObjectives: objectives.filter(o => o.status === 'active').length,
         };
     },
 });
@@ -38,7 +34,6 @@ export const getMonthlyProgress = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        // Query progress updates per-objective using index (avoids full table scan)
         const userUpdates = (
             await Promise.all(
                 objectives.map(o =>
@@ -125,17 +120,17 @@ export const getUpcomingDeadlines = queryWithRLS({
             .collect();
 
         const upcomingDeadlines = objectives
-            .filter(o => {
+            .filter((o): o is typeof o & { deadline: number } => {
                 if (!o.deadline) return false;
                 if (o.status === 'completed') return false;
                 return o.deadline >= now && o.deadline <= futureLimit;
             })
             .map(o => {
-                const daysRemaining = Math.ceil((o.deadline! - now) / TIME.DAY_MS);
+                const daysRemaining = Math.ceil((o.deadline - now) / TIME.DAY_MS);
                 return {
                     id: o._id,
                     title: o.title,
-                    deadline: o.deadline!,
+                    deadline: o.deadline,
                     daysRemaining,
                     progress: computeProgressPercent({
                         currentValue: o.currentValue,
@@ -164,7 +159,6 @@ export const getRecentActivity = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .collect();
 
-        // Query progress updates per-objective using index (avoids full table scan)
         const recentUpdates = (
             await Promise.all(
                 objectives.map(o =>
