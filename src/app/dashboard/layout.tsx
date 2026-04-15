@@ -12,15 +12,21 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
 
-export default async function Layout({ children }: { children: React.ReactNode }) {
-    if (!(await checkPlatformSetUp())) redirect('/setup' as never);
+export default async function Layout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    const isPlatformSetUp = await checkPlatformSetUp();
+    if (!isPlatformSetUp) {
+        redirect('/setup');
+    }
 
     let preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
 
     try {
         preloadedUserQuery = await preloadAuthQuery(api.auth.getCurrentUser);
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/login');
     }
 

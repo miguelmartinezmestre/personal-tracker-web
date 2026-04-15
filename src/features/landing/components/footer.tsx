@@ -13,9 +13,6 @@ export default function Footer() {
                         &copy; {new Date().getFullYear()} {t('title')}
                     </p>
                     <div className="flex space-x-4">
-                        {/* <Link href="/privacidad" className="hover:underline">
-                            Política de Privacidad
-                        </Link> */}
                     </div>
                 </div>
             </div>

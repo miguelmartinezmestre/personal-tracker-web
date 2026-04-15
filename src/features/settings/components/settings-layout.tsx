@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import AccountSettingsFormEdit from './account-settings-form-edit';
 import PasswordFormEdit from './password-form-edit';
 import AccountDeletionSection from './account-deletion-section';
+import NotificationPreferencesForm from './notification-preferences-form';
 import { useTranslations } from 'next-intl';
-import { User, Key, AlertTriangle } from 'lucide-react';
+import { User, Key, AlertTriangle, Bell } from 'lucide-react';
 
 export default function SettingsLayout() {
     const t = useTranslations('Settings');
@@ -19,7 +20,7 @@ export default function SettingsLayout() {
             </div>
 
             <Tabs defaultValue="account" className="space-y-4">
-                <TabsList className="grid w-full max-w-lg grid-cols-3">
+                <TabsList className="grid w-full max-w-lg grid-cols-4">
                     <TabsTrigger
                         value="account"
                         className="flex items-center gap-2"
@@ -27,6 +28,14 @@ export default function SettingsLayout() {
                     >
                         <User className="h-4 w-4" />
                         {t('account')}
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="notifications"
+                        className="flex items-center gap-2"
+                        data-testid="settings-tab-notifications"
+                    >
+                        <Bell className="h-4 w-4" />
+                        {t('notifications')}
                     </TabsTrigger>
                     <TabsTrigger
                         value="password"
@@ -56,6 +65,10 @@ export default function SettingsLayout() {
                             <AccountSettingsFormEdit />
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="notifications">
+                    <NotificationPreferencesForm />
                 </TabsContent>
 
                 <TabsContent value="password">

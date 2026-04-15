@@ -49,13 +49,11 @@ function getDeviceIconAndName(
 ): { icon: LucideIcon; deviceName: string } {
     const modelOrVendor = deviceModel || deviceVendor;
 
-    // Simple device types with a fixed icon
     const simpleDevice = DEVICE_TYPE_ICONS[deviceType];
     if (simpleDevice) {
         return { icon: simpleDevice.icon, deviceName: modelOrVendor || t(simpleDevice.nameKey) };
     }
 
-    // Mobile: differentiate by OS
     if (deviceType === 'mobile') {
         if (osName?.includes('iOS')) {
             return { icon: Apple, deviceName: modelOrVendor || t('iphone') };
@@ -66,7 +64,6 @@ function getDeviceIconAndName(
         return { icon: Smartphone, deviceName: modelOrVendor || t('smartphone') };
     }
 
-    // Tablet: differentiate by OS
     if (deviceType === 'tablet') {
         if (osName?.includes('iOS')) {
             return { icon: Apple, deviceName: modelOrVendor || t('ipad') };
@@ -77,7 +74,6 @@ function getDeviceIconAndName(
         return { icon: Tablet, deviceName: modelOrVendor || t('tablet') };
     }
 
-    // Desktop: differentiate by OS
     if (osName) {
         const desktopMatch = Object.entries(DESKTOP_OS_ICONS).find(([key]) => osName.includes(key));
         if (desktopMatch) {
@@ -111,7 +107,6 @@ export function UserAgentIcon({
         t
     );
 
-    // Handle bots
     if (/bot|crawler|spider|crawling/i.test(userAgent)) {
         icon = Bot;
         deviceName = t('botCrawler');

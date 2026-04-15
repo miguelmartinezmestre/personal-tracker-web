@@ -13,6 +13,15 @@ interface UseUpdateProgressTableColumnsProps {
     objectiveId: Id<'objectives'>;
 }
 
+function mapDocToUpdateProgress(doc: Doc<'progressUpdates'>): UpdateProgress {
+    return {
+        _id: doc._id.toString(),
+        updatedValue: doc.updatedValue,
+        updateDate: new Date(doc.updateDate),
+        comment: doc.comment ?? null,
+    };
+}
+
 export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgressTableColumnsProps) {
     const t = useTranslations('UpdateProgress');
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress(objectiveId);
@@ -44,15 +53,9 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
             id: 'edit',
             cell: ({ row }) => {
                 const progressRow = row.original;
-                const defaultValues = {
-                    _id: progressRow._id,
-                    updatedValue: progressRow.updatedValue,
-                    updateDate: new Date(progressRow.updateDate),
-                    comment: progressRow.comment ?? null,
-                } as unknown as UpdateProgress;
                 return (
                     <UpdateProgressFormModal
-                        defaultValues={defaultValues}
+                        defaultValues={mapDocToUpdateProgress(progressRow)}
                         objectiveId={objectiveId}
                     />
                 );
@@ -67,7 +70,7 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
                             await deleteUpdateProgressAsync({
-                                _id: progressRow._id as Id<'progressUpdates'>,
+                                _id: progressRow._id,
                             });
                         }}
                         title={t('confirm.deleteTitle')}

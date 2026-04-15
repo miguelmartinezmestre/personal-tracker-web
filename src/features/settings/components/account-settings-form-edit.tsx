@@ -55,7 +55,6 @@ export default function AccountSettingsFormEdit() {
         const currentName = sessionUser.name ?? '';
         const currentEmail = sessionUser.email ?? '';
 
-        // 1) Update profile name (immediate)
         if (values.username !== currentName) {
             const { error: updateError } = await authClient.updateUser({
                 name: values.username,
@@ -66,7 +65,6 @@ export default function AccountSettingsFormEdit() {
             }
         }
 
-        // 2) Change email (requires verification; not immediate)
         if (values.email !== currentEmail) {
             const { error: changeError } = await authClient.changeEmail({
                 newEmail: values.email,

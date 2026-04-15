@@ -4,7 +4,7 @@ const DEFAULT_PAGE_SIZE = 20;
 
 export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
     const [currentPage, setCurrentPage] = useState(0);
-    const [cursors, setCursors] = useState<(string | null)[]>([null]); // cursor for each page
+    const [cursors, setCursors] = useState<(string | null)[]>([null]);
     const [isDone, setIsDone] = useState(false);
 
     const getPaginationOpts = useCallback(
@@ -26,11 +26,10 @@ export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE)
             }
 
             const newCursors = [...prev];
-            // Ensure array is large enough
             while (newCursors.length <= page) {
                 newCursors.push(null);
             }
-            newCursors[nextIndex] = cursor; // Store cursor for NEXT page
+            newCursors[nextIndex] = cursor;
             return newCursors;
         });
         setIsDone(prev => (prev === done ? prev : done));

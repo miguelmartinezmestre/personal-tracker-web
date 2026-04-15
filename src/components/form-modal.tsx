@@ -15,33 +15,19 @@ import {
 import { Form } from '@/components/ui/form-tanstack';
 
 type FormModalProps<TFormValues extends Record<string, unknown>> = {
-    /** The trigger element that opens the modal */
     trigger: ReactNode;
-    /** Dialog title */
     title: string;
-    /** Optional dialog description */
     description?: string;
-    /** TanStack Form options (defaultValues, validators, etc.) — onSubmit is handled internally */
     formOptions: Omit<FormOptions<TFormValues, undefined>, 'onSubmit'>;
-    /** The async submit handler — called with validated form values */
     onSubmit: (values: TFormValues) => Promise<void>;
-    /** Render function receiving the form instance — return the form fields */
     children: (form: ReturnType<typeof useForm<TFormValues, undefined>>) => ReactNode;
-    /** Submit button label */
     submitLabel: string;
-    /** Cancel button label */
     cancelLabel: string;
-    /** Optional label shown while the mutation is pending */
     pendingLabel?: string;
-    /** Whether the submit action is pending (disables the submit button) */
     isPending?: boolean;
-    /** Extra disabled condition for the submit button */
     submitDisabled?: boolean;
-    /** Optional CSS class for DialogContent */
     contentClassName?: string;
-    /** data-testid for the cancel button */
     cancelTestId?: string;
-    /** data-testid for the submit button */
     submitTestId?: string;
 };
 

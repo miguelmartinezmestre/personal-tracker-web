@@ -7,7 +7,21 @@ import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/ui-utils/utils';
 import { Label } from '@/components/ui/label';
 
-// Define a generic type for the form instance
+type FieldState<TValue = unknown> = {
+    value: TValue;
+    meta?: {
+        isTouched?: boolean;
+        errors?: string[];
+    };
+};
+
+type Field<TValue = unknown> = {
+    name: string;
+    state: FieldState<TValue>;
+    handleBlur: () => void;
+    handleChange: (value: TValue) => void;
+};
+
 type FormInstance = {
     state?: {
         submitCount?: number;
@@ -15,23 +29,11 @@ type FormInstance = {
     };
     Field: React.ComponentType<{
         name: string;
-        children: (field: {
-            name: string;
-            state: {
-                value: any;
-                meta?: {
-                    isTouched?: boolean;
-                    errors?: string[];
-                };
-            };
-            handleBlur: () => void;
-            handleChange: (value: any) => void;
-        }) => React.ReactNode;
+        children: (field: Field<unknown>) => React.ReactNode;
     }>;
     [key: string]: unknown;
 };
 
-// Provide TanStack form instance to descendants
 const TanstackFormContext = React.createContext<FormInstance | null>(null);
 
 type TanstackFormProviderProps = {
@@ -61,17 +63,19 @@ type FormFieldContextValue = {
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({ name: '', error: undefined });
 
-type RHFCompatibleField = {
+export type FormFieldBridgeValue = string | number | readonly string[] | undefined;
+
+export type RHFCompatibleField<TValue = FormFieldBridgeValue> = {
     name: string;
-    value: any;
-    onChange: (value: any) => void;
+    value: TValue;
+    onChange: (value: unknown) => void;
     onBlur: () => void;
 };
 
 type FormFieldProps = {
     name: string;
-    control?: unknown; // Ignored; kept for compatibility with existing usage
-    render: (args: { field: RHFCompatibleField }) => React.ReactNode;
+    control?: unknown;
+    render: (args: { field: RHFCompatibleField<FormFieldBridgeValue> }) => React.ReactNode;
 };
 
 function FormField({ name, render }: FormFieldProps) {
@@ -86,14 +90,14 @@ function FormField({ name, render }: FormFieldProps) {
                 );
                 const firstError: string | undefined =
                     isTouched || hasSubmitted ? field.state?.meta?.errors?.[0] : undefined;
-                const adaptedField: RHFCompatibleField = {
+                const adaptedField: RHFCompatibleField<FormFieldBridgeValue> = {
                     name: field.name,
-                    value: field.state.value,
+                    value: field.state.value as FormFieldBridgeValue,
                     onBlur: field.handleBlur,
-                    onChange: arg => {
+                    onChange: (arg: unknown) => {
                         const nextValue =
                             arg && typeof arg === 'object' && 'target' in arg
-                                ? (arg as { target: { value: any } }).target.value
+                                ? (arg as { target: { value: unknown } }).target.value
                                 : arg;
                         field.handleChange(nextValue);
                     },

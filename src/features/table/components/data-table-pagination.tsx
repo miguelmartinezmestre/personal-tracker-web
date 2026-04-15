@@ -23,12 +23,10 @@ export function DataTablePagination({
 }: DataTablePaginationProps) {
     const t = useTranslations('Table');
 
-    // Don't show pagination if there's only one page and we know there's no more data
     if (totalPages <= 1 && !hasNextPage) {
         return null;
     }
 
-    // Generate page numbers to show (simple version showing current and nearby)
     const getPageNumbers = () => {
         const pages: (number | string)[] = [];
         const maxVisible = 5;
@@ -38,7 +36,6 @@ export function DataTablePagination({
                 pages.push(i);
             }
         } else {
-            // Always show first page
             pages.push(0);
 
             if (currentPage <= 2) {
@@ -67,7 +64,6 @@ export function DataTablePagination({
 
     const pageNumbers = getPageNumbers();
 
-    // Calculate showing info
     const startItem = currentPage * pageSize + 1;
     const endItem = totalItems
         ? Math.min((currentPage + 1) * pageSize, totalItems)

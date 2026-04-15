@@ -118,7 +118,6 @@ export function AppSidebar({
 
     const isAdmin = user?.role === 'admin';
 
-    // Construir la lista de proyectos incluyendo admin si es necesario
     const projects = useMemo(() => {
         return isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
     }, [isAdmin]);
