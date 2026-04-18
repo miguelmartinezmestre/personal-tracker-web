@@ -20,7 +20,9 @@
         "test:e2e:full": "playwright test --config=playwright.full.config.ts",
         "test:e2e:ui": "playwright test --ui",
         "test:e2e:stack": "tsx scripts/run-e2e-stack.ts",
-        "test:e2e:stack:full": "tsx scripts/run-e2e-stack.ts --config=playwright.full.config.ts",
+        "test:e2e:stack:chromium": "tsx scripts/run-e2e-stack.ts --config=playwright.full.config.ts --project=chromium",
+        "test:e2e:stack:firefox": "tsx scripts/run-e2e-stack.ts --config=playwright.full.config.ts --project=firefox",
+        "test:e2e:stack:webkit": "tsx scripts/run-e2e-stack.ts --config=playwright.full.config.ts --project=webkit",
         "test:manual": "playwright test --config=src/tests-manual/playwright.manual.config.ts",
         "check-translations": "node scripts/check-translations.js",
         "create-user": "tsx scripts/create-user.ts",
@@ -100,6 +102,7 @@
         "zod": "4.1.11"
     },
     "devDependencies": {
+        "@edge-runtime/vm": "^3.0.0",
         "@convex-dev/eslint-plugin": "^1.1.0",
         "@eslint/eslintrc": "3.3.1",
         "@eslint/js": "^9.39.1",
