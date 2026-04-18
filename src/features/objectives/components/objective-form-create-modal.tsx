@@ -52,8 +52,12 @@ export default function CreateObjectiveFormModal() {
     const createObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getObjectivesByUser] });
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getOrganizationObjectives] });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getObjectivesByUser }],
+            });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getOrganizationObjectives }],
+            });
         },
     });
 

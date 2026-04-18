@@ -93,9 +93,7 @@ export function AchievementBadge({
                 <TooltipContent>
                     <p className="font-semibold">{name}</p>
                     {description && <p className="text-xs text-muted-foreground">{description}</p>}
-                    {!earned && (
-                        <p className="text-xs text-muted-foreground mt-1">{t('locked')}</p>
-                    )}
+                    {!earned && <p className="text-xs text-muted-foreground mt-1">{t('locked')}</p>}
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

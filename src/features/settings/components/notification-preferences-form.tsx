@@ -29,16 +29,23 @@ export default function NotificationPreferencesForm() {
             organizationNotifications?: boolean;
             emailDigestEnabled?: boolean;
         }) => {
-            return await convex.mutation(api.notificationPreferences.updateUserPreferences, updates);
+            return await convex.mutation(
+                api.notificationPreferences.updateUserPreferences,
+                updates
+            );
         },
         onSuccess: () => {
             toast.success(t('preferencesSaved') || 'Preferences saved', {
-                description: t('preferencesSavedDescription') || 'Your notification preferences have been updated.',
+                description:
+                    t('preferencesSavedDescription') ||
+                    'Your notification preferences have been updated.',
             });
         },
         onError: () => {
             toast.error(t('preferencesError') || 'Error', {
-                description: t('preferencesErrorDescription') || 'Failed to update preferences. Please try again.',
+                description:
+                    t('preferencesErrorDescription') ||
+                    'Failed to update preferences. Please try again.',
             });
         },
     });

@@ -1,10 +1,7 @@
 import { z } from 'zod';
 import { OBJECTIVE_STATUS, OBJECTIVE_SCOPE } from '@/convex/utils/constants';
 
-export const objectiveStatusSchema = z.enum([
-    OBJECTIVE_STATUS.ACTIVE,
-    OBJECTIVE_STATUS.COMPLETED,
-]);
+export const objectiveStatusSchema = z.enum([OBJECTIVE_STATUS.ACTIVE, OBJECTIVE_STATUS.COMPLETED]);
 
 export const objectiveScopeSchema = z.enum([
     OBJECTIVE_SCOPE.PERSONAL,

@@ -19,10 +19,13 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { useSession } from '@/features/auth/hooks/use-session';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '@/convex/_generated/api';
 
 export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
     const tCommon = useTranslations('Common');
+    const queryClient = useQueryClient();
     const sessionQuery = useSession();
     const sessionUser = sessionQuery?.data?.user;
     const [, setOpen] = useState(false);
@@ -63,6 +66,10 @@ export default function AccountSettingsFormEdit() {
                 setError(updateError.message || tCommon('genericErrorDescription'));
                 return;
             }
+            // Refetch session to get updated user data
+            await queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.organizations.getCurrentSession }],
+            });
         }
 
         if (values.email !== currentEmail) {

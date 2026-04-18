@@ -39,9 +39,15 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     const updateObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.updateObjective),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getObjectivesByUser] });
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getOrganizationObjectives] });
-            queryClient.invalidateQueries({ queryKey: [api.objectives.getObjectiveById] });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getObjectivesByUser }],
+            });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getOrganizationObjectives }],
+            });
+            queryClient.refetchQueries({
+                queryKey: ['convex', { api: api.objectives.getObjectiveById }],
+            });
         },
     });
 

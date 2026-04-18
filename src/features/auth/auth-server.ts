@@ -15,13 +15,8 @@ import { env } from '@/lib/env';
  * const preloadedUser = await preloadAuthQuery(api.auth.getCurrentUser);
  * return <AppSidebar preloadedUserQuery={preloadedUser} />;
  */
-export const {
-    handler,
-    preloadAuthQuery,
-    getToken,
-    fetchAuthQuery,
-    fetchAuthMutation,
-} = convexBetterAuthNextJs({
-    convexUrl: env.NEXT_PUBLIC_CONVEX_URL,
-    convexSiteUrl: env.NEXT_PUBLIC_CONVEX_SITE_URL,
-});
+export const { handler, preloadAuthQuery, getToken, fetchAuthQuery, fetchAuthMutation } =
+    convexBetterAuthNextJs({
+        convexUrl: env.NEXT_PUBLIC_CONVEX_URL,
+        convexSiteUrl: env.NEXT_PUBLIC_CONVEX_SITE_URL,
+    });

@@ -13,7 +13,10 @@ import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/auth-client';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
-import { useActiveOrganization, useActiveMember } from '@/features/organizations/hooks/use-active-organization';
+import {
+    useActiveOrganization,
+    useActiveMember,
+} from '@/features/organizations/hooks/use-active-organization';
 import { useOrganizations } from '@/features/organizations/hooks/use-organizations';
 import { useSession } from '@/features/auth/hooks/use-session';
 

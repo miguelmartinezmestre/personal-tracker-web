@@ -162,24 +162,7 @@ export function useDeleteOrganization() {
                 organizationId: values.id,
             });
         },
-        onMutate: async values => {
-            await queryClient.cancelQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
-            const previous = queryClient.getQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY);
-
-            if (previous) {
-                queryClient.setQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY, old =>
-                    old?.filter(org => org.id !== values.id)
-                );
-            }
-
-            return { previous };
-        },
-        onError: (_error, _values, context) => {
-            if (context?.previous) {
-                queryClient.setQueryData(ORGANIZATIONS_QUERY_KEY, context.previous);
-            }
-        },
-        onSettled: () => {
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ORGANIZATIONS_QUERY_KEY,
             });

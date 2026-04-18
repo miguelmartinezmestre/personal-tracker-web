@@ -50,7 +50,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
         updateCursor(currentPage, continueCursor, pageIsDone);
     }, [currentPage, hasData, continueCursor, pageIsDone, logs.isFetching, updateCursor]);
 
-    const data = (logs.data?.page ?? []) as Doc<'auditLogs'>[];
+    const data: Doc<'auditLogs'>[] = logs.data?.page ?? [];
     const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (

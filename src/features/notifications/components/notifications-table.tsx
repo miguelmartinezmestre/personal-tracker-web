@@ -71,9 +71,7 @@ export default function NotificationsTable({
     ]);
     const { markAllRead, isMarkingAllRead } = useMarkAllNotificationsRead(reset);
     const objectivesPage: Doc<'objectives'>[] = objectives.data?.page ?? [];
-    const objectiveMap = new Map(
-        objectivesPage.map(objective => [objective._id, objective])
-    );
+    const objectiveMap = new Map(objectivesPage.map(objective => [objective._id, objective]));
     const columns = useNotificationsTableColumns({
         objectiveMap,
         onMutationSuccess: reset,

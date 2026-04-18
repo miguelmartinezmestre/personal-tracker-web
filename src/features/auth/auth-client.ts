@@ -24,6 +24,4 @@ export const authClient = createAuthClient({
     ],
 });
 
-export const {
-    useSignOutMutationOptions,
-} = createAuthMutations(authClient);
+export const { useSignOutMutationOptions } = createAuthMutations(authClient);

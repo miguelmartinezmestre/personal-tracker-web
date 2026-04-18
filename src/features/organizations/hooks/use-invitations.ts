@@ -53,8 +53,8 @@ export function usePendingInvitations() {
             : 'member';
 
         const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'] as const;
-        const status = validStatuses.includes(inv.status as typeof validStatuses[number])
-            ? (inv.status as typeof validStatuses[number])
+        const status = validStatuses.includes(inv.status as (typeof validStatuses)[number])
+            ? (inv.status as (typeof validStatuses)[number])
             : 'pending';
 
         return {
@@ -113,4 +113,3 @@ export function useRejectInvitation() {
         },
     });
 }
-

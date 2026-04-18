@@ -71,7 +71,9 @@ export function InvitationCard({
                                 {invitation.email}
                             </CardDescription>
                         </div>
-                        <Badge variant={getRoleBadgeVariant(invitation.role)}>{invitation.role}</Badge>
+                        <Badge variant={getRoleBadgeVariant(invitation.role)}>
+                            {invitation.role}
+                        </Badge>
                     </div>
                 </CardHeader>
                 <CardContent>

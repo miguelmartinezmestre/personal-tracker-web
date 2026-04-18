@@ -74,8 +74,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
     const personalQuery = useQuery({
         ...convexQuery(api.objectives.getObjectivesByUser, {
             paginationOpts: personalPaginationOpts,
-            status:
-                filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined,
+            status: filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined,
             category: filters.category !== 'all' ? filters.category : undefined,
         }),
         initialData:
@@ -97,8 +96,7 @@ export const ResponsiveObjectivesView = React.forwardRef<
     const orgQuery = useQuery({
         ...convexQuery(api.objectives.getOrganizationObjectives, {
             paginationOpts: orgPaginationOpts,
-            status:
-                filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined,
+            status: filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined,
             category: filters.category !== 'all' ? filters.category : undefined,
         }),
         initialData:
@@ -444,7 +442,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
                             {filteredPersonalObjectives.map(renderObjectiveCard)}
                         </div>
                     )}
-                    <MobilePagination pagination={personalPagination} totalPages={personalTotalPages} />
+                    <MobilePagination
+                        pagination={personalPagination}
+                        totalPages={personalTotalPages}
+                    />
                 </div>
                 <div className="hidden md:block">
                     <DataTable

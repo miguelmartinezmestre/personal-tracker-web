@@ -83,10 +83,7 @@ export function AchievementCard({
                                 defaultValue: definition.code,
                             })}
                         </h3>
-                        <Badge
-                            variant={TIER_BADGE_VARIANTS[tier]}
-                            className="text-xs"
-                        >
+                        <Badge variant={TIER_BADGE_VARIANTS[tier]} className="text-xs">
                             {t(`tiers.${tier}`, {
                                 defaultValue: TIER_LABELS[tier],
                             })}

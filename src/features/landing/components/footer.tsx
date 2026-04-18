@@ -12,8 +12,7 @@ export default function Footer() {
                     <p>
                         &copy; {new Date().getFullYear()} {t('title')}
                     </p>
-                    <div className="flex space-x-4">
-                    </div>
+                    <div className="flex space-x-4"></div>
                 </div>
             </div>
         </footer>

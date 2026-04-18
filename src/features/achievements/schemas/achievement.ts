@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import {
-    ACHIEVEMENT_TYPE,
-    ACHIEVEMENT_CATEGORY,
-    ACHIEVEMENT_TIER,
-} from '@/convex/utils/constants';
+import { ACHIEVEMENT_TYPE, ACHIEVEMENT_CATEGORY, ACHIEVEMENT_TIER } from '@/convex/utils/constants';
 
 export const achievementTypeSchema = z.enum([
     ACHIEVEMENT_TYPE.INDIVIDUAL,

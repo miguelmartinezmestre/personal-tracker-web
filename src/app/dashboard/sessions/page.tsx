@@ -11,8 +11,7 @@ export default async function SessionsPage() {
         preloadedSessionsQuery = await preloadAuthQuery(api.sessions.getSessionsByUser, {
             paginationOpts: { numItems: 20, cursor: null },
         });
-    } catch (error) {
-        console.error(error);
+    } catch {
         redirect('/dashboard/home');
     }
 

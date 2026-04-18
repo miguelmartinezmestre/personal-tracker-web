@@ -68,11 +68,9 @@ function extractOrgList(result: unknown): Array<{ id: string }> {
     if (!Array.isArray(data)) {
         return [];
     }
-    return data.filter((org): org is { id: string } =>
-        typeof org === 'object' &&
-        org !== null &&
-        'id' in org &&
-        typeof org.id === 'string'
+    return data.filter(
+        (org): org is { id: string } =>
+            typeof org === 'object' && org !== null && 'id' in org && typeof org.id === 'string'
     );
 }
 
