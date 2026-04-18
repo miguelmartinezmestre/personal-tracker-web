@@ -9,7 +9,7 @@ export default defineConfig({
         },
     },
     test: {
-        environment: "edge-runtime",
+        environment: 'edge-runtime',
         reporters: ['tree'],
         include: ['convex/tests/**/*.test.ts'],
         exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
