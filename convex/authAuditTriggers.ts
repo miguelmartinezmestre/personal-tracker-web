@@ -1,4 +1,4 @@
-import type { GenericMutationCtx } from 'convex/server';
+import type { MutationCtx } from './_generated/server';
 import type { Triggers as BetterAuthTriggers } from '@convex-dev/better-auth';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
@@ -6,7 +6,7 @@ import type { DataModel, Id } from './_generated/dataModel';
 type BetterAuthSchema = typeof schema;
 
 const resolveOrganizationId = async (
-    ctx: GenericMutationCtx<DataModel>,
+    ctx: MutationCtx,
     explicitOrganizationId?: string | null,
     fallbackUserId?: string | null
 ): Promise<Id<'organization'> | null> => {
@@ -35,7 +35,7 @@ const resolveOrganizationId = async (
 };
 
 const insertAuthAuditLog = async (
-    ctx: GenericMutationCtx<DataModel>,
+    ctx: MutationCtx,
     args: {
         action: string;
         resourceType: string;
@@ -49,11 +49,7 @@ const insertAuthAuditLog = async (
         };
     }
 ) => {
-    const organizationId = await resolveOrganizationId(
-        ctx,
-        args.organizationId,
-        args.userId
-    );
+    const organizationId = await resolveOrganizationId(ctx, args.organizationId, args.userId);
     const normalizedUserId = ctx.db.normalizeId('user', args.userId);
 
     if (!organizationId || !normalizedUserId) {

@@ -53,7 +53,7 @@ export const completeSetup = mutation({
             throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
 
-        const allUsers = await ctx.db.query('user').collect();
+        const allUsers = await ctx.db.query('user').take(1);
         if (allUsers.length !== 1) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_COUNT);
         }

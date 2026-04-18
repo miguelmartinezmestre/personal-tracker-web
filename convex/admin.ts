@@ -34,7 +34,7 @@ export const listUsers = queryWithRLS({
 
 export const banUser = mutationWithRLS({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
         banReason: v.optional(v.string()),
         banExpires: v.optional(v.number()),
     },
@@ -60,7 +60,7 @@ export const banUser = mutationWithRLS({
 
 export const unbanUser = mutationWithRLS({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
     },
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
@@ -98,7 +98,7 @@ export const updateUserRole = mutationWithRLS({
 
 export const deleteUser = mutationWithRLS({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
     },
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
@@ -120,7 +120,7 @@ export const deleteUser = mutationWithRLS({
 
 export const listUserSessions = queryWithRLS({
     args: {
-        userId: v.string(),
+        userId: v.id('user'),
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
@@ -128,7 +128,7 @@ export const listUserSessions = queryWithRLS({
 
         return await ctx.db
             .query('session')
-            .withIndex('userId', (q: any) => q.eq('userId', args.userId))
+            .withIndex('userId', q => q.eq('userId', args.userId))
             .order('desc')
             .paginate(args.paginationOpts);
     },

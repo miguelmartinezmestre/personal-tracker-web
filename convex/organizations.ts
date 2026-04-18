@@ -1,5 +1,7 @@
 import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
+
+const LIST_LIMIT = 1000;
 import { query, type QueryCtx } from './_generated/server';
 import { getAuthUserIdentity, getSession } from 'better-convex/auth';
 import type { Id } from './_generated/dataModel';
@@ -70,9 +72,9 @@ export const getOrganizationsByUser = query({
         const memberships = await ctx.db
             .query('member')
             .withIndex('userId', q => q.eq('userId', identity.userId))
-            .collect();
+            .take(LIST_LIMIT);
 
-        const allOrgs = await ctx.db.query('organization').collect();
+        const allOrgs = await ctx.db.query('organization').take(LIST_LIMIT);
         const orgMap = new Map(allOrgs.map(o => [o._id, o]));
 
         const organizations = memberships
@@ -102,12 +104,10 @@ export const getActiveOrganization = query({
         const currentSession = await resolveCurrentSession(ctx);
         if (!currentSession?.activeOrganizationId) return null;
 
-        const org = await ctx.db
-            .query('organization')
-            .filter(q =>
-                q.eq(q.field('_id'), currentSession.activeOrganizationId as Id<'organization'>)
-            )
-            .first();
+        const org = await ctx.db.get(
+            'organization',
+            currentSession.activeOrganizationId as Id<'organization'>
+        );
 
         if (!org) return null;
 
@@ -131,8 +131,9 @@ export const getActiveMember = query({
 
         const member = await ctx.db
             .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', activeOrganizationId))
-            .filter(q => q.eq(q.field('userId'), currentSession.userId))
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', activeOrganizationId).eq('userId', currentSession.userId)
+            )
             .first();
 
         if (!member) return null;
@@ -149,7 +150,7 @@ export const getActiveMember = query({
 
 export const getOrganizationMembers = query({
     args: {
-        organizationId: v.string(),
+        organizationId: v.id('organization'),
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
@@ -160,8 +161,9 @@ export const getOrganizationMembers = query({
 
         const userMembership = await ctx.db
             .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .filter(q => q.eq(q.field('userId'), identity.userId))
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', args.organizationId).eq('userId', identity.userId)
+            )
             .first();
 
         if (!userMembership) {
@@ -174,7 +176,7 @@ export const getOrganizationMembers = query({
             .order('desc')
             .paginate(args.paginationOpts);
 
-        const allUsers = await ctx.db.query('user').collect();
+        const allUsers = await ctx.db.query('user').take(LIST_LIMIT);
         const userMap = new Map(allUsers.map(u => [u._id, u]));
 
         const enrichedPage = paginatedMembers.page.map(member => {
@@ -210,21 +212,18 @@ export const getUserInvitations = query({
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];
 
-        const user = await ctx.db
-            .query('user')
-            .filter(q => q.eq(q.field('_id'), identity.userId as Id<'user'>))
-            .first();
+        const user = await ctx.db.get('user', identity.userId as Id<'user'>);
         if (!user) throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
 
         const now = Date.now();
         const invitations = await ctx.db
             .query('invitation')
-            .withIndex('email', q => q.eq('email', user.email))
-            .filter(q => q.and(q.eq(q.field('status'), 'pending'), q.gt(q.field('expiresAt'), now)))
-            .collect();
+            .withIndex('by_status_expiresAt', q => q.eq('status', 'pending').gt('expiresAt', now))
+            .filter(q => q.eq(q.field('email'), user.email))
+            .take(LIST_LIMIT);
 
-        const allOrgs = await ctx.db.query('organization').collect();
-        const allUsers = await ctx.db.query('user').collect();
+        const allOrgs = await ctx.db.query('organization').take(LIST_LIMIT);
+        const allUsers = await ctx.db.query('user').take(LIST_LIMIT);
         const orgMap = new Map(allOrgs.map(o => [o._id, o]));
         const userMap = new Map(allUsers.map(u => [u._id, u]));
 
@@ -262,15 +261,16 @@ export const getUserInvitations = query({
 });
 
 export const getOrganizationInvitations = query({
-    args: { organizationId: v.string() },
+    args: { organizationId: v.id('organization') },
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];
 
         const userMembership = await ctx.db
             .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .filter(q => q.eq(q.field('userId'), identity.userId))
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', args.organizationId).eq('userId', identity.userId)
+            )
             .first();
 
         if (!userMembership || !['admin', 'owner'].includes(userMembership.role)) {
@@ -280,9 +280,9 @@ export const getOrganizationInvitations = query({
         const invitations = await ctx.db
             .query('invitation')
             .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .collect();
+            .take(LIST_LIMIT);
 
-        const allUsers = await ctx.db.query('user').collect();
+        const allUsers = await ctx.db.query('user').take(LIST_LIMIT);
         const userMap = new Map(allUsers.map(u => [u._id, u]));
 
         const invitationsWithDetails = invitations.map(invitation => {

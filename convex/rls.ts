@@ -1,5 +1,11 @@
-import { mutation, query, type MutationCtx, type QueryCtx } from './_generated/server';
-import type { GenericDatabaseReader, GenericDatabaseWriter } from 'convex/server';
+import {
+    mutation,
+    query,
+    type MutationCtx,
+    type QueryCtx,
+    type DatabaseReader,
+    type DatabaseWriter,
+} from './_generated/server';
 import { customCtx, customMutation, customQuery } from 'convex-helpers/server/customFunctions';
 import {
     Rules,
@@ -97,8 +103,8 @@ async function rlsRules(
                     if (notification.userId === userId) return true;
                     return Boolean(
                         organizationId &&
-                            notification.organizationId &&
-                            notification.organizationId === organizationId
+                        notification.organizationId &&
+                        notification.organizationId === organizationId
                     );
                 }
                 const objective = await ctx.db.get('objectives', notification.objective);
@@ -237,14 +243,14 @@ async function rlsRules(
 const config: RLSConfig = { defaultPolicy: 'deny' };
 
 type QueryRlsCtx = {
-    db: GenericDatabaseReader<DataModel>;
+    db: DatabaseReader;
     userId: Id<'user'>;
     organizationId: Id<'organization'> | null;
     role: string;
 };
 
 type MutationRlsCtx = {
-    db: GenericDatabaseWriter<DataModel>;
+    db: DatabaseWriter;
     userId: Id<'user'>;
     organizationId: Id<'organization'> | null;
     role: string;
@@ -283,10 +289,7 @@ async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthCont
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const currentUser = await ctx.db
-        .query('user')
-        .filter(q => q.eq(q.field('_id'), identity.userId))
-        .first();
+    const currentUser = await ctx.db.get('user', identity.userId);
     if (!currentUser) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
@@ -305,6 +308,7 @@ async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthCont
         const membership = await ctx.db
             .query('member')
             .withIndex('userId', q => q.eq('userId', currentUser._id))
+            .order('desc')
             .first();
         organizationId = (membership?.organizationId as Id<'organization'> | null) ?? null;
     }

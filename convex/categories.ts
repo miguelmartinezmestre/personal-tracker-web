@@ -4,6 +4,8 @@ import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { ERROR_CODES } from './utils/constants';
 
+const LIST_LIMIT = 1000;
+
 export const getCategoriesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
@@ -23,7 +25,7 @@ export const getCategoryNamesForFilters = queryWithRLS({
         const categories = await ctx.db
             .query('categories')
             .withIndex('by_user', q => q.eq('userId', ctx.userId))
-            .collect();
+            .take(LIST_LIMIT);
 
         return Array.from(
             new Set(

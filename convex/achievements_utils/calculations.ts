@@ -1,9 +1,10 @@
-import type { GenericDatabaseReader } from 'convex/server';
-import type { DataModel } from '../_generated/dataModel';
+import type { DatabaseReader } from '../_generated/server';
 import { Doc, Id } from '../_generated/dataModel';
 import { TIME } from '../utils/constants';
 
-type ReadCtx = { db: GenericDatabaseReader<DataModel> };
+const LIST_LIMIT = 1000;
+
+type ReadCtx = { db: DatabaseReader };
 
 export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
     if (updates.length === 0) return 0;
@@ -46,11 +47,11 @@ async function fetchProgressUpdates(
     objectiveIds: Id<'objectives'>[]
 ): Promise<Doc<'progressUpdates'>[]> {
     return Promise.all(
-        objectiveIds.map(async objectiveId => {
+        objectiveIds.slice(0, 100).map(async objectiveId => {
             const updates = await ctx.db
                 .query('progressUpdates')
                 .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .collect();
+                .take(50);
             return updates;
         })
     ).then(results => results.flat());
@@ -60,7 +61,7 @@ export async function calculateUserStreak(ctx: ReadCtx, userId: Id<'user'>): Pro
     const objectives = await ctx.db
         .query('objectives')
         .withIndex('by_user', q => q.eq('userId', userId))
-        .collect();
+        .take(LIST_LIMIT);
 
     const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
 
@@ -76,11 +77,11 @@ export async function calculateOrganizationStreak(
     memberUserIds: Id<'user'>[]
 ): Promise<number> {
     const organizationObjectives = await Promise.all(
-        memberUserIds.map(async userId => {
+        memberUserIds.slice(0, 100).map(async userId => {
             const userObjectives = await ctx.db
                 .query('objectives')
                 .withIndex('by_user', q => q.eq('userId', userId))
-                .collect();
+                .take(50);
             return userObjectives;
         })
     ).then(results => results.flat());

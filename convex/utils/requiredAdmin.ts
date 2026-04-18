@@ -1,10 +1,10 @@
 import { ConvexError } from 'convex/values';
-import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
-import { DataModel, Id } from '../_generated/dataModel';
+import { MutationCtx, QueryCtx } from '../_generated/server';
+import { Id } from '../_generated/dataModel';
 import { getAuthUserId } from 'better-convex/auth';
 import { ERROR_CODES } from './constants';
 
-type AdminContext = GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>;
+type AdminContext = MutationCtx | QueryCtx;
 
 export async function requireAdmin(ctx: AdminContext) {
     const userId = await getAuthUserId(ctx);

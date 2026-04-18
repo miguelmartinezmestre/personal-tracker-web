@@ -32,9 +32,22 @@ export default defineSchema({
         .index('by_user', ['userId'])
         .index('by_user_scope', ['userId', 'scope'])
         .index('by_user_scope_status', ['userId', 'scope', 'status'])
+        .index('by_user_status', ['userId', 'status'])
+        .index('by_user_status_deadline', ['userId', 'status', 'deadline'])
+        .index('by_user_createdAt', ['userId', 'createdAt'])
+        .index('by_user_status_updatedAt', ['userId', 'status', 'updatedAt'])
+        .index('by_user_scope_status_category', ['userId', 'scope', 'status', 'category'])
+        .index('by_user_scope_category', ['userId', 'scope', 'category'])
         .index('by_organization', ['organizationId'])
         .index('by_organization_scope', ['organizationId', 'scope'])
         .index('by_organization_scope_status', ['organizationId', 'scope', 'status'])
+        .index('by_organization_scope_status_category', [
+            'organizationId',
+            'scope',
+            'status',
+            'category',
+        ])
+        .index('by_organization_scope_category', ['organizationId', 'scope', 'category'])
         .index('by_status', ['status']),
 
     progressUpdates: defineTable({
@@ -64,7 +77,8 @@ export default defineSchema({
         .index('by_user_date', ['userId', 'notificationDate'])
         .index('by_user_read', ['userId', 'read'])
         .index('by_user_type_read', ['userId', 'notificationType', 'read'])
-        .index('by_objective', ['objective']),
+        .index('by_objective', ['objective'])
+        .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate']),
 
     auditLogs: defineTable({
         userId: v.id('user'),
@@ -129,12 +143,22 @@ export default defineSchema({
         organization: v.id('organization'),
         achievement: v.id('achievementDefinitions'),
         earnedAt: v.number(),
-        contributingUsers: v.array(v.id('user')),
+        contributorCount: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
         .index('by_organization', ['organization'])
         .index('by_organization_achievement', ['organization', 'achievement']),
+
+    organizationAchievementContributors: defineTable({
+        organizationAchievementId: v.id('organizationAchievements'),
+        userId: v.id('user'),
+        contributedAt: v.number(),
+        contributionValue: v.optional(v.number()),
+    })
+        .index('by_organizationAchievement', ['organizationAchievementId'])
+        .index('by_user', ['userId'])
+        .index('by_organizationAchievement_user', ['organizationAchievementId', 'userId']),
 
     platformSettings: defineTable({
         platformName: v.string(),
@@ -156,4 +180,33 @@ export default defineSchema({
     })
         .index('by_user', ['userId'])
         .index('by_user_achievement', ['userId', 'achievementNotifications']),
+
+    // Override member table from authSchema to add compound index
+    member: defineTable({
+        organizationId: v.string(),
+        userId: v.string(),
+        role: v.string(),
+        createdAt: v.number(),
+    })
+        .index('organizationId', ['organizationId'])
+        .index('userId', ['userId'])
+        .index('role', ['role'])
+        .index('by_organizationId_and_userId', ['organizationId', 'userId']),
+
+    // Override invitation table from authSchema to add compound index
+    invitation: defineTable({
+        organizationId: v.string(),
+        email: v.string(),
+        role: v.optional(v.string()),
+        status: v.string(),
+        expiresAt: v.number(),
+        createdAt: v.number(),
+        inviterId: v.string(),
+    })
+        .index('organizationId', ['organizationId'])
+        .index('email', ['email'])
+        .index('role', ['role'])
+        .index('status', ['status'])
+        .index('inviterId', ['inviterId'])
+        .index('by_status_expiresAt', ['status', 'expiresAt']),
 });

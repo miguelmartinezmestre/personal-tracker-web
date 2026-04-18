@@ -1,11 +1,14 @@
 import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
+import { internalMutation } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { objectiveScopeValidator, objectiveStatusValidator } from './utils/validators';
 import { workflow } from './workflow';
 import { ERROR_CODES } from './utils/constants';
+
+const BATCH_SIZE = 50;
 
 const EMPTY_PAGE = {
     page: [],
@@ -59,8 +62,16 @@ export const getObjectivesByUser = queryWithRLS({
                 .order('desc');
 
             if (category && category !== 'all') {
-                return await query
-                    .filter(q => q.eq(q.field('category'), category))
+                return await ctx.db
+                    .query('objectives')
+                    .withIndex('by_user_scope_status_category', q =>
+                        q
+                            .eq('userId', userId)
+                            .eq('scope', 'personal')
+                            .eq('status', status)
+                            .eq('category', category)
+                    )
+                    .order('desc')
                     .paginate(paginationOpts);
             }
 
@@ -69,14 +80,16 @@ export const getObjectivesByUser = queryWithRLS({
 
         const query = ctx.db
             .query('objectives')
-            .withIndex('by_user_scope', q =>
-                q.eq('userId', userId).eq('scope', 'personal')
-            )
+            .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
             .order('desc');
 
         if (category && category !== 'all') {
-            return await query
-                .filter(q => q.eq(q.field('category'), category))
+            return await ctx.db
+                .query('objectives')
+                .withIndex('by_user_scope_category', q =>
+                    q.eq('userId', userId).eq('scope', 'personal').eq('category', category)
+                )
+                .order('desc')
                 .paginate(paginationOpts);
         }
 
@@ -100,13 +113,24 @@ export const getOrganizationObjectives = queryWithRLS({
             const query = ctx.db
                 .query('objectives')
                 .withIndex('by_organization_scope_status', q =>
-                    q.eq('organizationId', organizationId).eq('scope', 'organization').eq('status', status)
+                    q
+                        .eq('organizationId', organizationId)
+                        .eq('scope', 'organization')
+                        .eq('status', status)
                 )
                 .order('desc');
 
             if (category && category !== 'all') {
-                return await query
-                    .filter(q => q.eq(q.field('category'), category))
+                return await ctx.db
+                    .query('objectives')
+                    .withIndex('by_organization_scope_status_category', q =>
+                        q
+                            .eq('organizationId', organizationId)
+                            .eq('scope', 'organization')
+                            .eq('status', status)
+                            .eq('category', category)
+                    )
+                    .order('desc')
                     .paginate(paginationOpts);
             }
 
@@ -121,8 +145,15 @@ export const getOrganizationObjectives = queryWithRLS({
             .order('desc');
 
         if (category && category !== 'all') {
-            return await query
-                .filter(q => q.eq(q.field('category'), category))
+            return await ctx.db
+                .query('objectives')
+                .withIndex('by_organization_scope_category', q =>
+                    q
+                        .eq('organizationId', organizationId)
+                        .eq('scope', 'organization')
+                        .eq('category', category)
+                )
+                .order('desc')
                 .paginate(paginationOpts);
         }
 
@@ -237,6 +268,79 @@ export const updateObjective = mutationWithRLS({
     },
 });
 
+export const deleteObjectiveContinue = internalMutation({
+    args: {
+        objectiveId: v.id('objectives'),
+        skipProgress: v.number(),
+        skipNotifications: v.number(),
+    },
+    handler: async (ctx, args) => {
+        let totalProgressDeleted = args.skipProgress;
+        let totalNotificationsDeleted = args.skipNotifications;
+
+        // Delete next batch of progressUpdates
+        const progressUpdates = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+            .take(BATCH_SIZE);
+
+        for (const update of progressUpdates) {
+            await ctx.db.delete('progressUpdates', update._id);
+        }
+
+        totalProgressDeleted += progressUpdates.length;
+
+        // If there are more progressUpdates, continue
+        if (progressUpdates.length === BATCH_SIZE) {
+            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+                objectiveId: args.objectiveId,
+                skipProgress: totalProgressDeleted,
+                skipNotifications: args.skipNotifications,
+            });
+            return {
+                status: 'in_progress',
+                deleted: { progress: totalProgressDeleted, notifications: args.skipNotifications },
+            };
+        }
+
+        // ProgressUpdates done, now delete notifications in batches
+        const notifications = await ctx.db
+            .query('notifications')
+            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+            .take(BATCH_SIZE);
+
+        for (const notification of notifications) {
+            await ctx.db.delete('notifications', notification._id);
+        }
+
+        totalNotificationsDeleted += notifications.length;
+
+        // If there are more notifications, continue
+        if (notifications.length === BATCH_SIZE) {
+            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+                objectiveId: args.objectiveId,
+                skipProgress: totalProgressDeleted,
+                skipNotifications: totalNotificationsDeleted,
+            });
+            return {
+                status: 'in_progress',
+                deleted: {
+                    progress: totalProgressDeleted,
+                    notifications: totalNotificationsDeleted,
+                },
+            };
+        }
+
+        // All related data deleted, now delete the objective itself
+        await ctx.db.delete('objectives', args.objectiveId);
+
+        return {
+            status: 'completed',
+            deleted: { progress: totalProgressDeleted, notifications: totalNotificationsDeleted },
+        };
+    },
+});
+
 export const deleteObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
@@ -247,25 +351,22 @@ export const deleteObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
-        const progressUpdates = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', args.id))
-            .collect();
-
-        for (const progressUpdate of progressUpdates) {
-            await ctx.db.delete('progressUpdates', progressUpdate._id);
+        // Check permissions
+        if (objective.scope === 'personal' && objective.userId !== ctx.userId) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
 
-        const notifications = await ctx.db
-            .query('notifications')
-            .withIndex('by_objective', q => q.eq('objective', args.id))
-            .collect();
-
-        for (const notification of notifications) {
-            await ctx.db.delete('notifications', notification._id);
+        if (objective.scope === 'organization' && objective.organizationId !== ctx.organizationId) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
 
-        await ctx.db.delete('objectives', args.id);
-        return { success: true };
+        // Start batch deletion process
+        await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+            objectiveId: args.id,
+            skipProgress: 0,
+            skipNotifications: 0,
+        });
+
+        return { status: 'deletion_started', objectiveId: args.id };
     },
 });
