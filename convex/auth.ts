@@ -150,7 +150,8 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
             if (!STRONG_PASSWORD_REGEX.test(password)) {
                 throw new APIError('BAD_REQUEST', {
                     code: ERROR_CODES.WEAK_PASSWORD,
-                    message: 'Password must include at least one uppercase letter, one lowercase letter, and one number',
+                    message:
+                        'Password must include at least one uppercase letter, one lowercase letter, and one number',
                 });
             }
         }),
