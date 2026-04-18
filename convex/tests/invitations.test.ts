@@ -1,8 +1,7 @@
+/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization } from './test_helpers';
-import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
-import { DataModel } from '../_generated/dataModel';
 import { TIME } from '../utils/constants';
 
 type InvitationRecord = {
