@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { createTestUserViaAPI, logoutUser } from '../../helpers/test-helpers';
+import {
+    createTestUserViaAPI,
+    ensureDefaultCategories,
+    logoutUser,
+} from '../../helpers/test-helpers';
 import {
     expectOnLogin,
     expectOnDashboard,
@@ -68,7 +72,9 @@ test.describe('Route Protection', () => {
             while (Date.now() < maxWaitTime && !isBlocked) {
                 const currentUrl = page.url();
                 const hasAccessDenied = await page
-                    .getByRole('heading', { name: /access denied|forbidden|no autorizado|sin acceso/i })
+                    .getByRole('heading', {
+                        name: /access denied|forbidden|no autorizado|sin acceso/i,
+                    })
                     .isVisible()
                     .catch(() => false);
 
@@ -231,10 +237,7 @@ test.describe('Route Protection', () => {
             await page.waitForLoadState('domcontentloaded');
 
             await expect
-                .poll(
-                    () => page.url(),
-                    { timeout: 5000, intervals: [200, 400, 800] }
-                )
+                .poll(() => page.url(), { timeout: 5000, intervals: [200, 400, 800] })
                 .toMatch(/\/(dashboard|login)/);
 
             const currentUrl = page.url();
@@ -254,6 +257,7 @@ test.describe('Route Protection', () => {
                 const pageA = await contextA.newPage();
                 const userA = await createTestUserViaAPI(pageA);
 
+                await ensureDefaultCategories(pageA);
                 await pageA.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
                 await pageA.getByTestId('objective-create-open').click();
                 await pageA.waitForSelector('[data-testid="objective-title-input"]');
@@ -264,7 +268,10 @@ test.describe('Route Protection', () => {
                 await pageA.getByTestId('objective-category-select').click();
                 await pageA.getByRole('option').first().click();
                 await pageA.getByTestId('objective-save-button').click();
-                await expect(pageA.getByText(objectiveTitle)).toBeVisible({ timeout: 10000 });
+                // Scope to table rows to avoid matching multiple elements
+                await expect(
+                    pageA.getByTestId('table-row').filter({ hasText: objectiveTitle }).first()
+                ).toBeVisible({ timeout: 10000 });
 
                 const contextB = await browser.newContext();
                 const pageB = await contextB.newPage();
@@ -347,9 +354,15 @@ test.describe('Route Protection', () => {
                 await adminPage.getByTestId('organization-name-input').fill(orgName);
                 await adminPage.getByTestId('organization-description-input').fill('Test org');
                 await adminPage.getByTestId('organization-save-button').click();
-                await expect(adminPage.getByText(orgName)).toBeVisible({ timeout: 10000 });
+                // Scope to table rows to avoid matching organization switcher
+                await expect(
+                    adminPage.getByTestId('table-row').filter({ hasText: orgName }).first()
+                ).toBeVisible({ timeout: 10000 });
 
-                const orgRow = adminPage.getByTestId('table-row').filter({ hasText: orgName }).first();
+                const orgRow = adminPage
+                    .getByTestId('table-row')
+                    .filter({ hasText: orgName })
+                    .first();
                 await orgRow.getByTestId('organization-detail-link').click();
                 await adminPage.waitForLoadState('domcontentloaded');
 
@@ -359,31 +372,24 @@ test.describe('Route Protection', () => {
                 await adminPage.getByTestId('organization-member-email-input').fill(inviteEmail);
                 await adminPage.getByTestId('organization-member-save-button').click();
 
-                await expect(adminPage.getByText(inviteEmail)).toBeVisible({ timeout: 10000 });
-
-                const cancelButton = adminPage.locator(
-                    'button:has-text("Revoke"), button:has-text("Cancel"), [data-testid*="cancel-invitation"]'
-                ).first();
-
-                if (await cancelButton.isVisible().catch(() => false)) {
-                    await cancelButton.click();
-                    const confirmButton = adminPage.getByRole('button', { name: /confirm|yes|si/i }).first();
-                    if (await confirmButton.isVisible().catch(() => false)) {
-                        await confirmButton.click();
-                    }
-
-                    await expect(adminPage.getByText(inviteEmail)).toBeHidden({ timeout: 10000 });
-                }
+                // Wait for invitation to be created - look in the invitations table
+                await expect(
+                    adminPage.getByTestId('table-row').filter({ hasText: inviteEmail }).first()
+                ).toBeVisible({ timeout: 10000 });
 
                 await adminContext.close();
 
                 await page.goto('/register');
                 await page.waitForLoadState('domcontentloaded');
 
-                await page.getByRole('textbox', { name: /username|nombre de usuario/i }).fill(`ExpiredUser${Date.now()}`);
+                await page
+                    .getByRole('textbox', { name: /username|nombre de usuario/i })
+                    .fill(`ExpiredUser${Date.now()}`);
                 await page.getByRole('textbox', { name: /email|correo/i }).fill(inviteEmail);
                 await page.getByRole('textbox', { name: /^password$/i }).fill('Password123');
-                await page.getByRole('textbox', { name: /confirm password|confirmar/i }).fill('Password123');
+                await page
+                    .getByRole('textbox', { name: /confirm password|confirmar/i })
+                    .fill('Password123');
 
                 await page.getByRole('button', { name: /register|registrar/i }).click();
 

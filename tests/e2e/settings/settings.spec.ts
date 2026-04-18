@@ -27,46 +27,18 @@ test.describe('Settings', () => {
             await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
             const newName = `Updated User ${Date.now()}`;
-            await settings.usernameInput.clear();
             await settings.usernameInput.fill(newName);
             await settings.accountSaveButton.click();
 
-            const maxTime = Date.now() + 30000;
-            let success = false;
+            // Wait for save to complete - check for success toast or message
+            await expect(
+                isolatedAuthenticatedPage.getByText(/profile updated|perfil actualizado/i).first()
+            ).toBeVisible({ timeout: 15000 });
 
-            while (Date.now() < maxTime && !success) {
-                if (await settings.accountSuccessMessage.isVisible().catch(() => false)) {
-                    success = true;
-                    break;
-                }
-
-                const sessionResponse = await isolatedAuthenticatedPage.request.get('/api/auth/get-session');
-                if (sessionResponse.ok()) {
-                    const payload = (await sessionResponse.json()) as
-                        | {
-                              user?: { name?: string | null } | null;
-                              data?: { user?: { name?: string | null } | null } | null;
-                          }
-                        | null;
-                    const sessionName = payload?.data?.user?.name ?? payload?.user?.name ?? null;
-                    if (sessionName === newName) {
-                        success = true;
-                        break;
-                    }
-                }
-
-                await settings.goto();
-                await settings.switchToAccount();
-                const inputValue = await settings.usernameInput.inputValue();
-                if (inputValue === newName) {
-                    success = true;
-                    break;
-                }
-
-                await isolatedAuthenticatedPage.waitForTimeout(500);
-            }
-
-            expect(success).toBe(true);
+            // Verify the change persisted by reloading
+            await settings.goto();
+            await settings.switchToAccount();
+            await expect(settings.usernameInput).toHaveValue(newName, { timeout: 10000 });
         }
     );
 
@@ -219,10 +191,7 @@ test.describe('Settings', () => {
             await settings.switchToDanger();
             await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-            await settings.fillDeleteAccountForm(
-                isolatedTestUser.email,
-                isolatedTestUser.password
-            );
+            await settings.fillDeleteAccountForm(isolatedTestUser.email, isolatedTestUser.password);
 
             await expect(settings.deleteAccountButton).toBeEnabled();
         }
@@ -238,10 +207,7 @@ test.describe('Settings', () => {
             await settings.switchToDanger();
             await expect(settings.deleteAccountButton).toBeVisible({ timeout: 10000 });
 
-            await settings.fillDeleteAccountForm(
-                isolatedTestUser.email,
-                isolatedTestUser.password
-            );
+            await settings.fillDeleteAccountForm(isolatedTestUser.email, isolatedTestUser.password);
             await settings.deleteAccountButton.click();
 
             await expect(settings.deleteAccountSuccess).toBeVisible({ timeout: 15000 });

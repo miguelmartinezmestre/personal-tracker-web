@@ -27,7 +27,9 @@ test.describe('Admin Users', () => {
             while (Date.now() < maxWaitTime && !isBlocked) {
                 const url = nonAdminPage.url();
                 const hasAccessDenied = await nonAdminPage
-                    .getByRole('heading', { name: /access denied|forbidden|no autorizado|sin acceso/i })
+                    .getByRole('heading', {
+                        name: /access denied|forbidden|no autorizado|sin acceso/i,
+                    })
                     .isVisible()
                     .catch(() => false);
 

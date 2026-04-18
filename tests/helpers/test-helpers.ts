@@ -268,8 +268,7 @@ async function ensureOrganizationExists(page: Page): Promise<void> {
         ).toBeVisible({
             timeout: 15000,
         });
-    } catch {
-    }
+    } catch {}
 }
 
 async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
@@ -305,8 +304,7 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
 
     try {
         await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    } catch {
-    }
+    } catch {}
 }
 
 async function ensureAuthenticatedState(page: Page): Promise<void> {
@@ -427,8 +425,7 @@ export async function createTestUser(
             if (attempt < maxAttempts) {
                 try {
                     await page.context().clearCookies();
-                } catch {
-                }
+                } catch {}
                 continue;
             }
         }
@@ -831,8 +828,7 @@ export async function setupPlatformAsAdmin(page: Page): Promise<void> {
         try {
             await expect(adminMenuItem.first()).toBeVisible({ timeout: 5000 });
             return;
-        } catch {
-        }
+        } catch {}
     }
 
     throw new Error('Failed to setup platform as admin after retries');

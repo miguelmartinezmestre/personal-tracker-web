@@ -4,11 +4,9 @@ export const AuthSelectors = {
     usernameInput: (page: Page): Locator =>
         page.getByRole('textbox', { name: /username|nombre de usuario/i }),
 
-    emailInput: (page: Page): Locator =>
-        page.getByRole('textbox', { name: /email|correo/i }),
+    emailInput: (page: Page): Locator => page.getByRole('textbox', { name: /email|correo/i }),
 
-    passwordInput: (page: Page): Locator =>
-        page.getByRole('textbox', { name: /^password$/i }),
+    passwordInput: (page: Page): Locator => page.getByRole('textbox', { name: /^password$/i }),
 
     confirmPasswordInput: (page: Page): Locator =>
         page.getByRole('textbox', { name: /confirm password|confirmar/i }),
@@ -54,8 +52,7 @@ export const TableSelectors = {
             ? page.getByRole('row').filter({ hasText: text }).first()
             : page.getByRole('row').first(),
 
-    tableCell: (page: Page, text: string): Locator =>
-        page.getByRole('cell', { name: text }),
+    tableCell: (page: Page, text: string): Locator => page.getByRole('cell', { name: text }),
 
     tableHeader: (page: Page, name: string | RegExp): Locator =>
         page.getByRole('columnheader', { name }),
@@ -72,8 +69,7 @@ export const DialogSelectors = {
     cancelButton: (page: Page): Locator =>
         page.getByRole('button', { name: /cancel|no|close|cerrar/i }),
 
-    closeButton: (page: Page): Locator =>
-        page.getByRole('button', { name: /close|x|cerrar/i }),
+    closeButton: (page: Page): Locator => page.getByRole('button', { name: /close|x|cerrar/i }),
 };
 
 export const MessageSelectors = {

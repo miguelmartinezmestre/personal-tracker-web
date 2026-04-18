@@ -226,8 +226,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
                     await deleteDialog.getByTestId('delete-confirm-button').click();
                     confirmedDelete = true;
                     break;
-                } catch {
-                }
+                } catch {}
             }
 
             if (!confirmedDelete) {

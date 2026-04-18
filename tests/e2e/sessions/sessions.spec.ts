@@ -113,7 +113,9 @@ test.describe('Sessions', () => {
 
                 while (Date.now() < maxTime && revokeCount !== 0) {
                     await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
-                    revokeCount = await authenticatedPage.getByTestId('session-revoke-button').count();
+                    revokeCount = await authenticatedPage
+                        .getByTestId('session-revoke-button')
+                        .count();
 
                     if (revokeCount !== 0) {
                         await authenticatedPage.waitForTimeout(500);

@@ -13,13 +13,15 @@ export async function expectOnRegister(page: Page): Promise<void> {
 }
 
 export async function expectErrorAlert(page: Page, message?: string | RegExp): Promise<void> {
-    const alert = page.locator(
-        '[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]'
-    ).first();
+    const alert = page
+        .locator(
+            '[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]'
+        )
+        .first();
 
-    const errorText = page.getByText(
-        /error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i
-    ).first();
+    const errorText = page
+        .getByText(/error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i)
+        .first();
 
     const timeout = Date.now() + 5000;
     let foundError = false;

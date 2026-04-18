@@ -46,7 +46,9 @@ test.describe('Organization Invitations', () => {
         const successState = page.locator(
             'text=/invited|invitation sent|invitacion enviada|pending invitation/i'
         );
-        expect((await invitationsTable.count()) > 0 || (await successState.count()) > 0).toBeTruthy();
+        expect(
+            (await invitationsTable.count()) > 0 || (await successState.count()) > 0
+        ).toBeTruthy();
     });
 
     test('view pending invitations sent', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
