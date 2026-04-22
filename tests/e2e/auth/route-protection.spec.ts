@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import {
     createTestUserViaAPI,
+    ensureAuthenticatedState,
     ensureDefaultCategories,
+    loginUser,
     logoutUser,
 } from '../../helpers/test-helpers';
 import {
@@ -25,7 +27,7 @@ test.describe('Route Protection', () => {
 
     test(
         'redirect to login when not authenticated',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/dashboard/home');
 
@@ -48,7 +50,7 @@ test.describe('Route Protection', () => {
 
     test(
         'redirect to dashboard after successful login',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
             await createTestUserViaAPI(page);
 
@@ -59,7 +61,7 @@ test.describe('Route Protection', () => {
 
     test(
         'protect admin routes from non-admin users',
-        { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
+        { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002', '@cross-browser'] },
         async ({ page }) => {
             await createTestUserViaAPI(page);
 
@@ -98,7 +100,7 @@ test.describe('Route Protection', () => {
 
     test(
         'admin routes accessible to admin users',
-        { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
+        { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002', '@cross-browser'] },
         async ({ browser }) => {
             const adminContext = await browser.newContext({
                 storageState: 'tests/.auth/admin-user.json',
@@ -140,6 +142,7 @@ test.describe('Route Protection', () => {
                 storageState: 'tests/.auth/admin-user.json',
             });
             const adminPage = await adminContext.newPage();
+            await ensureAuthenticatedState(adminPage);
 
             await adminPage.goto('/dashboard/home');
             await adminPage.waitForLoadState('domcontentloaded');
@@ -179,7 +182,7 @@ test.describe('Route Protection', () => {
 
     test(
         'session expires after logout',
-        { tag: ['@REQ-AUTENTICACION-005', '@REQ-NF-006'] },
+        { tag: ['@REQ-AUTENTICACION-005', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             await createTestUserViaAPI(page);
             await expectOnDashboard(page);
@@ -194,7 +197,7 @@ test.describe('Route Protection', () => {
 
     test(
         'landing page accessible without authentication',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/');
 
@@ -207,7 +210,7 @@ test.describe('Route Protection', () => {
 
     test(
         'login page accessible without authentication',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/login');
             await page.waitForLoadState('domcontentloaded');
@@ -218,7 +221,7 @@ test.describe('Route Protection', () => {
 
     test(
         'register page accessible without authentication',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/register');
             await page.waitForLoadState('domcontentloaded');
@@ -229,7 +232,7 @@ test.describe('Route Protection', () => {
 
     test(
         'authenticated user accessing login redirects to dashboard',
-        { tag: ['@REQ-ROLES-001'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
             await createTestUserViaAPI(page);
 
@@ -266,7 +269,11 @@ test.describe('Route Protection', () => {
                 await pageA.getByTestId('objective-target-input').fill('100');
                 await pageA.getByTestId('objective-unit-input').fill('units');
                 await pageA.getByTestId('objective-category-select').click();
-                await pageA.getByRole('option').first().click();
+                const enabledCategoryOptions = pageA.locator(
+                    '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
+                );
+                await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
+                await enabledCategoryOptions.first().click();
                 await pageA.getByTestId('objective-save-button').click();
                 // Scope to table rows to avoid matching multiple elements
                 await expect(
@@ -275,9 +282,14 @@ test.describe('Route Protection', () => {
 
                 const contextB = await browser.newContext();
                 const pageB = await contextB.newPage();
-                await createTestUserViaAPI(pageB);
+                const userB = await createTestUserViaAPI(pageB);
 
-                await pageB.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+                try {
+                    await pageB.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+                } catch {
+                    await loginUser(pageB, userB.email, userB.password);
+                    await pageB.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+                }
 
                 await expect(pageB.getByText(objectiveTitle)).toHaveCount(0);
 
@@ -298,14 +310,22 @@ test.describe('Route Protection', () => {
                 await page.goto('/dashboard/admin/audit');
                 await page.waitForLoadState('domcontentloaded');
 
-                const currentUrl = page.url();
-                const isRedirected = !currentUrl.includes('/admin/');
-                const hasAccessDenied = await page
-                    .getByRole('heading', { name: /access denied|forbidden|no autorizado/i })
-                    .isVisible()
-                    .catch(() => false);
-
-                expect(isRedirected || hasAccessDenied).toBeTruthy();
+                await expect
+                    .poll(
+                        async () => {
+                            const currentUrl = page.url();
+                            const isRedirected = !currentUrl.includes('/admin/');
+                            const hasAccessDenied = await page
+                                .getByRole('heading', {
+                                    name: /access denied|forbidden|no autorizado/i,
+                                })
+                                .isVisible()
+                                .catch(() => false);
+                            return isRedirected || hasAccessDenied;
+                        },
+                        { timeout: 10000, intervals: [200, 500, 1000] }
+                    )
+                    .toBeTruthy();
 
                 await context.close();
             }
@@ -323,14 +343,22 @@ test.describe('Route Protection', () => {
                 await page.goto('/dashboard/admin/sessions');
                 await page.waitForLoadState('domcontentloaded');
 
-                const currentUrl = page.url();
-                const isRedirected = !currentUrl.includes('/admin/');
-                const hasAccessDenied = await page
-                    .getByRole('heading', { name: /access denied|forbidden|no autorizado/i })
-                    .isVisible()
-                    .catch(() => false);
-
-                expect(isRedirected || hasAccessDenied).toBeTruthy();
+                await expect
+                    .poll(
+                        async () => {
+                            const currentUrl = page.url();
+                            const isRedirected = !currentUrl.includes('/admin/');
+                            const hasAccessDenied = await page
+                                .getByRole('heading', {
+                                    name: /access denied|forbidden|no autorizado/i,
+                                })
+                                .isVisible()
+                                .catch(() => false);
+                            return isRedirected || hasAccessDenied;
+                        },
+                        { timeout: 10000, intervals: [200, 500, 1000] }
+                    )
+                    .toBeTruthy();
 
                 await context.close();
             }
@@ -344,6 +372,7 @@ test.describe('Route Protection', () => {
                     storageState: 'tests/.auth/admin-user.json',
                 });
                 const adminPage = await adminContext.newPage();
+                await ensureAuthenticatedState(adminPage);
 
                 await adminPage.goto('/dashboard/organizations');
                 await adminPage.waitForLoadState('domcontentloaded');
@@ -372,10 +401,12 @@ test.describe('Route Protection', () => {
                 await adminPage.getByTestId('organization-member-email-input').fill(inviteEmail);
                 await adminPage.getByTestId('organization-member-save-button').click();
 
-                // Wait for invitation to be created - look in the invitations table
-                await expect(
-                    adminPage.getByTestId('table-row').filter({ hasText: inviteEmail }).first()
-                ).toBeVisible({ timeout: 10000 });
+                // Invitation creation is async; wait until the modal closes (indicates the
+                // inviteMember mutation resolved) before proceeding. The email itself is not
+                // rendered on the detail page (members table only shows accepted members).
+                await expect(adminPage.getByTestId('organization-member-email-input')).toBeHidden({
+                    timeout: 10000,
+                });
 
                 await adminContext.close();
 

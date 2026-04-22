@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-base';
 import { createOrganization } from '../../helpers/test-helpers';
 
 test.describe('Organization Members', () => {

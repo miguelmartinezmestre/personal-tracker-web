@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/admin-test-base';
 import { createObjective } from '../../helpers/test-helpers';
 
 test.describe('Admin Audit Logs', () => {

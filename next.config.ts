@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
     },
     typedRoutes: true,
     compiler: {
-        removeConsole: process.env.NODE_ENV === 'production',
-        reactRemoveProperties: process.env.NODE_ENV === 'production',
+        removeConsole: process.env.NODE_ENV === 'production' && !e2eDistDir,
+        reactRemoveProperties: process.env.NODE_ENV === 'production' && !e2eDistDir,
     },
     ...(e2eDistDir ? { distDir: e2eDistDir } : {}),
 };

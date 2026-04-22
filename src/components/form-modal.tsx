@@ -69,8 +69,10 @@ export default function FormModal<TFormValues extends Record<string, unknown>>({
 
                 <Form {...form}>
                     <form
-                        action={() => {
-                            form.handleSubmit();
+                        onSubmit={event => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void form.handleSubmit();
                         }}
                         className="space-y-5 py-4"
                     >

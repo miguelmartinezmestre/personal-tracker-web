@@ -1,12 +1,106 @@
 import { test, expect } from '@playwright/test';
 import {
     createTestUserViaAPI,
+    ensureAuthenticatedState,
     ensureDefaultCategories,
     loginUser,
     logoutUser,
     DEFAULT_PASSWORD,
 } from '../helpers/test-helpers';
 import { randomUUID } from 'crypto';
+
+async function fillAndAssert(
+    locator: import('@playwright/test').Locator,
+    value: string
+): Promise<void> {
+    await locator.click();
+    await locator.fill(value);
+    await expect(locator).toHaveValue(value);
+}
+
+async function completeRegistrationAndWaitForDashboard(
+    page: import('@playwright/test').Page,
+    params: { username: string; email: string; password: string; organizationSlug: string }
+): Promise<void> {
+    await page.goto('/register');
+    await page.waitForSelector('[data-testid="register-username-input"]');
+
+    await fillAndAssert(page.getByTestId('register-username-input'), params.username);
+    await fillAndAssert(page.getByTestId('register-email-input'), params.email);
+    await fillAndAssert(page.getByTestId('register-password-input'), params.password);
+    await fillAndAssert(page.getByTestId('register-confirm-password-input'), params.password);
+
+    const organizationSlugInput = page.getByTestId('register-organization-slug-input');
+    if ((await organizationSlugInput.count()) > 0) {
+        await fillAndAssert(organizationSlugInput, params.organizationSlug);
+    }
+
+    await page.getByTestId('register-button').click();
+
+    const deadline = Date.now() + 20_000;
+    while (Date.now() < deadline) {
+        const currentUrl = page.url();
+        if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
+            return;
+        }
+
+        try {
+            const response = await page.request.get('/api/auth/get-session');
+            if (response.ok()) {
+                const payload = (await response.json()) as
+                    | { data?: { session?: unknown; user?: unknown } | null }
+                    | { session?: unknown; user?: unknown }
+                    | null;
+                const data: { session?: unknown; user?: unknown } | null =
+                    payload && typeof payload === 'object' && 'data' in payload
+                        ? (payload.data ?? null)
+                        : (payload as { session?: unknown; user?: unknown } | null);
+                if (data?.session && data?.user) {
+                    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+                    return;
+                }
+            }
+        } catch {}
+
+        await page.waitForTimeout(500);
+    }
+
+    throw new Error('Registration did not reach dashboard in time');
+}
+
+async function selectAvailableObjectiveCategory(
+    page: import('@playwright/test').Page
+): Promise<void> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.getByTestId('objective-category-select').click();
+
+        const enabledCategoryOptions = page.locator(
+            '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
+        );
+
+        try {
+            await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 5000 });
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+            await ensureDefaultCategories(page);
+            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+            await page.getByTestId('objective-create-open').click();
+            await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 10000 });
+            await page.waitForTimeout(1000);
+            continue;
+        }
+
+        const personalOption = enabledCategoryOptions.filter({ hasText: /personal/i }).first();
+        if ((await personalOption.count()) > 0) {
+            await personalOption.click();
+        } else {
+            await enabledCategoryOptions.first().click();
+        }
+        return;
+    }
+
+    throw new Error('No enabled objective category option became available');
+}
 
 test.describe('Critical Paths - Smoke Tests', () => {
     test(
@@ -26,25 +120,18 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const password = DEFAULT_PASSWORD;
             const organizationSlug = `org-${uuid}`;
 
-            await page.goto('/register');
-            await page.waitForSelector('[data-testid="register-username-input"]');
-
-            await page.getByTestId('register-username-input').fill(username);
-            await page.getByTestId('register-email-input').fill(email);
-            await page.getByTestId('register-password-input').fill(password);
-            await page.getByTestId('register-confirm-password-input').fill(password);
-            const organizationSlugInput = page.getByTestId('register-organization-slug-input');
-            if ((await organizationSlugInput.count()) > 0) {
-                await organizationSlugInput.fill(organizationSlug);
-            }
-            await page.getByTestId('register-button').click();
-
-            await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
+            await completeRegistrationAndWaitForDashboard(page, {
+                username,
+                email,
+                password,
+                organizationSlug,
+            });
             await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 
             const welcomeMessage = page.getByTestId('welcome-message');
             await expect(welcomeMessage).toContainText(username);
 
+            await ensureAuthenticatedState(page);
             await ensureDefaultCategories(page);
 
             const objectiveTitle = `Smoke Test Goal ${uuid}`;
@@ -57,17 +144,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
             await page.getByTestId('objective-title-input').fill(objectiveTitle);
             await page.getByTestId('objective-description-input').fill('Testing critical path');
-            await page.getByTestId('objective-category-select').click();
-            await expect(page.getByRole('option').first()).toBeVisible({ timeout: 10000 });
-            const personalOption = page
-                .getByRole('option')
-                .filter({ hasText: /personal/i })
-                .first();
-            if ((await personalOption.count()) > 0) {
-                await personalOption.click();
-            } else {
-                await page.getByRole('option').first().click();
-            }
+            await selectAvailableObjectiveCategory(page);
             await page.getByTestId('objective-target-input').fill('100');
             await page.getByTestId('objective-unit-input').fill('points');
             await page.getByTestId('objective-save-button').click();
@@ -107,52 +184,62 @@ test.describe('Critical Paths - Smoke Tests', () => {
         }
     );
 
-    test('login flow works correctly', { tag: ['@REQ-AUTENTICACION-002'] }, async ({ page }) => {
-        const { email, username } = await createTestUserViaAPI(page);
+    test(
+        'login flow works correctly',
+        { tag: ['@REQ-AUTENTICACION-002', '@cross-browser'] },
+        async ({ page }) => {
+            const { email, username } = await createTestUserViaAPI(page);
 
-        await logoutUser(page);
+            await logoutUser(page);
 
-        await loginUser(page, email);
+            await loginUser(page, email);
+            await ensureAuthenticatedState(page);
 
-        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
-        const welcomeMessage = page.getByTestId('welcome-message');
-        await expect(welcomeMessage).toContainText(username);
+            await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
+            const welcomeMessage = page.getByTestId('welcome-message');
+            await expect(welcomeMessage).toContainText(username);
 
-        console.log('✅ Login smoke test completed successfully');
-    });
-
-    test('navigation between main pages works', { tag: ['@REQ-NF-021'] }, async ({ page }) => {
-        await createTestUserViaAPI(page);
-
-        const pages = [
-            { route: '/dashboard/home', check: /home/i },
-            { route: '/dashboard/objectives', check: /objectives|objetivos/i },
-            { route: '/dashboard/categories', check: /categories|categorías/i },
-            { route: '/dashboard/organizations', check: /organizations|organizaciones/i },
-            { route: '/dashboard/notifications', check: /notifications|notificaciones/i },
-            { route: '/dashboard/achievements', check: /achievements|logros/i },
-            { route: '/dashboard/sessions', check: /sessions|sesiones/i },
-            { route: '/dashboard/settings', check: /settings|configuración/i },
-        ];
-
-        for (const { route } of pages) {
-            await page.goto(route);
-            await page.waitForURL(new RegExp(`${route.replace('/', '\\/')}(\\?|$)`), {
-                timeout: 10000,
-            });
-
-            expect(page.url()).toContain('/dashboard/');
-            expect(page.url()).not.toContain('/login');
+            console.log('✅ Login smoke test completed successfully');
         }
+    );
 
-        console.log('Navigation smoke test completed successfully');
-    });
+    test(
+        'navigation between main pages works',
+        { tag: ['@REQ-NF-021', '@cross-browser'] },
+        async ({ page }) => {
+            await createTestUserViaAPI(page);
+
+            const pages = [
+                { route: '/dashboard/home', check: /home/i },
+                { route: '/dashboard/objectives', check: /objectives|objetivos/i },
+                { route: '/dashboard/categories', check: /categories|categorías/i },
+                { route: '/dashboard/organizations', check: /organizations|organizaciones/i },
+                { route: '/dashboard/notifications', check: /notifications|notificaciones/i },
+                { route: '/dashboard/achievements', check: /achievements|logros/i },
+                { route: '/dashboard/sessions', check: /sessions|sesiones/i },
+                { route: '/dashboard/settings', check: /settings|configuración/i },
+            ];
+
+            for (const { route } of pages) {
+                await page.goto(route);
+                await page.waitForURL(new RegExp(`${route.replace('/', '\\/')}(\\?|$)`), {
+                    timeout: 10000,
+                });
+
+                expect(page.url()).toContain('/dashboard/');
+                expect(page.url()).not.toContain('/login');
+            }
+
+            console.log('Navigation smoke test completed successfully');
+        }
+    );
 
     test(
         'CRUD operations work for objectives',
         { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-003', '@REQ-NF-025'] },
         async ({ page }) => {
             await createTestUserViaAPI(page);
+            await ensureAuthenticatedState(page);
             await ensureDefaultCategories(page);
 
             const uuid = randomUUID().substring(0, 8);
@@ -161,17 +248,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
             await page.goto('/dashboard/objectives');
             await page.getByTestId('objective-create-open').click();
             await page.getByTestId('objective-title-input').fill(title);
-            await page.getByTestId('objective-category-select').click();
-            await page.waitForSelector('[role="option"]', { timeout: 10000 });
-            const catOption = page
-                .getByRole('option')
-                .filter({ hasText: /personal/i })
-                .first();
-            if ((await catOption.count()) > 0) {
-                await catOption.click();
-            } else {
-                await page.getByRole('option').first().click();
-            }
+            await selectAvailableObjectiveCategory(page);
             await page.getByTestId('objective-target-input').fill('50');
             await page.getByTestId('objective-unit-input').fill('items');
             await page.getByTestId('objective-save-button').click();
@@ -244,7 +321,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
     test(
         'authentication protection works',
-        { tag: ['@REQ-ROLES-001', '@REQ-NF-006'] },
+        { tag: ['@REQ-ROLES-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/dashboard/home');
             await expect(page).toHaveURL(/\/login$/);
@@ -259,7 +336,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
         }
     );
 
-    test('form validation works', { tag: ['@REQ-NF-018'] }, async ({ page }) => {
+    test('form validation works', { tag: ['@REQ-NF-018', '@cross-browser'] }, async ({ page }) => {
         await createTestUserViaAPI(page);
 
         await page.goto('/dashboard/objectives');
@@ -277,41 +354,50 @@ test.describe('Critical Paths - Smoke Tests', () => {
         console.log('Form validation smoke test completed successfully');
     });
 
-    test('data persists after page reload', { tag: ['@REQ-OBJETIVOS-001'] }, async ({ page }) => {
-        await createTestUserViaAPI(page);
-        await ensureDefaultCategories(page);
+    test(
+        'data persists after page reload',
+        { tag: ['@REQ-OBJETIVOS-001', '@cross-browser'] },
+        async ({ page }) => {
+            await createTestUserViaAPI(page);
+            await ensureAuthenticatedState(page);
+            await ensureDefaultCategories(page);
 
-        const uuid = randomUUID().substring(0, 8);
-        const title = `Persist Test ${uuid}`;
+            const uuid = randomUUID().substring(0, 8);
+            const title = `Persist Test ${uuid}`;
 
-        await page.goto('/dashboard/objectives');
-        await page.getByTestId('objective-create-open').click();
-        await page.getByTestId('objective-title-input').fill(title);
-        await page.getByTestId('objective-category-select').click();
-        await page.waitForSelector('[role="option"]', { timeout: 10000 });
-        const persistOption = page
-            .getByRole('option')
-            .filter({ hasText: /personal/i })
-            .first();
-        if ((await persistOption.count()) > 0) {
-            await persistOption.click();
-        } else {
-            await page.getByRole('option').first().click();
+            await page.goto('/dashboard/objectives');
+            await page.getByTestId('objective-create-open').click();
+            await page.getByTestId('objective-title-input').fill(title);
+            await page.getByTestId('objective-category-select').click();
+            await page.waitForSelector('[role="option"]', { timeout: 10000 });
+            const persistOption = page
+                .getByRole('option')
+                .filter({ hasText: /personal/i })
+                .first();
+            if ((await persistOption.count()) > 0) {
+                await persistOption.click();
+            } else {
+                await page.getByRole('option').first().click();
+            }
+            await page.getByTestId('objective-target-input').fill('100');
+            await page.getByTestId('objective-unit-input').fill('units');
+            await page.getByTestId('objective-save-button').click();
+            await expect(
+                page.getByTestId('table-row').filter({ hasText: title }).first()
+            ).toBeVisible({
+                timeout: 10000,
+            });
+
+            await page.reload();
+            await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
+
+            await expect(
+                page.getByTestId('table-row').filter({ hasText: title }).first()
+            ).toBeVisible({
+                timeout: 10000,
+            });
+
+            console.log('✅ Data persistence smoke test completed successfully');
         }
-        await page.getByTestId('objective-target-input').fill('100');
-        await page.getByTestId('objective-unit-input').fill('units');
-        await page.getByTestId('objective-save-button').click();
-        await expect(page.getByTestId('table-row').filter({ hasText: title }).first()).toBeVisible({
-            timeout: 10000,
-        });
-
-        await page.reload();
-        await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
-
-        await expect(page.getByTestId('table-row').filter({ hasText: title }).first()).toBeVisible({
-            timeout: 10000,
-        });
-
-        console.log('✅ Data persistence smoke test completed successfully');
-    });
+    );
 });

@@ -467,7 +467,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 t.query(api.objectives.getObjectivesByUser, {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
 
         test('unauthenticated user cannot access categories', async () => {
@@ -475,7 +475,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 t.query(api.categories.getCategoriesByUser, {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
 
         test('unauthenticated user cannot access notifications', async () => {
@@ -483,12 +483,12 @@ describe('convex RLS (Row-Level Security)', async () => {
                 t.query(api.notifications.getNotificationsByUser, {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
 
         test('unauthenticated user cannot access achievements', async () => {
             await expect(t.query(api.achievements.getUserAchievements, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
@@ -499,7 +499,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                     targetValue: 100,
                     currentValue: 0,
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
 
         test('unauthenticated user cannot create categories', async () => {
@@ -508,7 +508,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                     name: 'Test',
                     color: '#000000',
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -543,7 +543,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                     id: obj1Id,
                     title: 'Admin Updated Title',
                 })
-            ).rejects.toThrow('Not authorized to edit this objective');
+            ).rejects.toThrow(/Not authorized to edit this objective|NOT_AUTHORIZED_OBJECTIVE/);
 
             const obj = await user1Identity.query(api.objectives.getObjectiveById, {
                 id: obj1Id,

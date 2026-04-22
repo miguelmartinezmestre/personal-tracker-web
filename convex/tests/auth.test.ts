@@ -55,7 +55,9 @@ describe('convex auth', () => {
     });
 
     test('getCurrentUser throws when unauthenticated', async () => {
-        await expect(t.query(api.auth.getCurrentUser, {})).rejects.toThrow(/Unauthenticated/);
+        await expect(t.query(api.auth.getCurrentUser, {})).rejects.toThrow(
+            /Unauthenticated|AUTH_REQUIRED/
+        );
     });
 
     test('getCurrentUser returns user when authenticated', async () => {

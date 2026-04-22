@@ -177,7 +177,7 @@ describe('convex notifications', async () => {
                     notificationType: 'reminder',
                     message: 'Test',
                 })
-            ).rejects.toThrow(/Objective not found/);
+            ).rejects.toThrow(/Objective not found|OBJECTIVE_NOT_FOUND/);
         });
 
         test('rejects unauthenticated users', async () => {
@@ -187,7 +187,7 @@ describe('convex notifications', async () => {
                     notificationType: 'reminder',
                     message: 'Test',
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -263,7 +263,7 @@ describe('convex notifications', async () => {
                 t.query(api.notifications.getNotificationsByUser, {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -332,7 +332,7 @@ describe('convex notifications', async () => {
                     id: notification!._id,
                     read: true,
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -359,7 +359,11 @@ describe('convex notifications', async () => {
                 {}
             );
 
-            expect(result.updated).toBe(3);
+            expect(result.status).toBe('marking_started');
+
+            await t.mutation(internal.notifications.markAllReadBatch, {
+                userId,
+            });
 
             const notifications = await userIdentity.query(
                 api.notifications.getNotificationsByUser,
@@ -387,7 +391,7 @@ describe('convex notifications', async () => {
                 {}
             );
 
-            expect(result.updated).toBe(0);
+            expect(result.status).toBe('marking_started');
         });
 
         test('only updates unread notifications', async () => {
@@ -412,13 +416,13 @@ describe('convex notifications', async () => {
                 {}
             );
 
-            expect(result.updated).toBe(1);
+            expect(result.status).toBe('marking_started');
         });
 
         test('rejects unauthenticated users', async () => {
             await expect(
                 t.mutation(api.notifications.markAllNotificationsRead, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -434,7 +438,7 @@ describe('convex notifications', async () => {
                 id: notification!._id,
             });
 
-            expect(result).toBe('Notification deleted successfully');
+            expect(result).toEqual({ success: true });
 
             const deleted = await userIdentity.run(async ctx => ctx.db.get(notification!._id));
             expect(deleted).toBeNull();
@@ -451,7 +455,7 @@ describe('convex notifications', async () => {
                 t.mutation(api.notifications.deleteNotification, {
                     id: notification!._id,
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 

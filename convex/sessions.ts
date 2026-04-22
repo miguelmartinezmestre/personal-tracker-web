@@ -1,8 +1,10 @@
-import { v } from 'convex/values';
+import { v, ConvexError } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
+import { mutation } from './_generated/server';
 import { getAuth } from './auth';
-import { getHeaders, getSession } from 'better-convex/auth';
+import { getHeaders, getSession, getAuthUserIdentity } from 'better-convex/auth';
+import { ERROR_CODES } from './utils/constants';
 
 export const getSessionsByUser = queryWithRLS({
     args: {
@@ -41,23 +43,28 @@ export const invalidateSession = mutationWithRLS({
     },
 });
 
-export const invalidateAllOtherSessions = mutationWithRLS({
+// Use a plain `mutation` (not `mutationWithRLS`) so we can delete session
+// rows directly even though RLS forbids regular users from writing to the
+// `session` table. We enforce ownership manually: only the currently
+// authenticated user's session rows can be deleted. Using the RLS-wrapped
+// mutation made deletes silently fail, leaving ghost sessions in the table.
+export const invalidateAllOtherSessions = mutation({
     args: { currentToken: v.string() },
     handler: async (ctx, args) => {
-        const headers = await getHeaders(ctx);
-        const auth = getAuth(ctx);
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
 
-        const sessions = await auth.api.listSessions({ headers });
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', identity.userId as string))
+            .collect();
 
         let revokedCount = 0;
         for (const session of sessions) {
             if (session.token !== args.currentToken) {
-                await auth.api.revokeSession({
-                    headers,
-                    body: {
-                        token: session.token,
-                    },
-                });
+                await ctx.db.delete(session._id);
                 revokedCount++;
             }
         }

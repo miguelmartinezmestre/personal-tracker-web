@@ -1,12 +1,12 @@
 import { test as base, Page, BrowserContext, expect } from '@playwright/test';
 import {
-    DEFAULT_PASSWORD,
     createTestUserViaAPI,
     createObjective,
     createCategory,
     createOrganization,
     createNotification,
     ensureDefaultCategories,
+    ensureAuthenticatedState,
     setupPlatformAsAdmin,
     loginUser,
     logoutUser,
@@ -17,53 +17,10 @@ import {
     NotificationData,
 } from '../helpers/test-helpers';
 
-interface SessionUserPayload {
-    user?: {
-        email?: string | null;
-        name?: string | null;
-    } | null;
-    session?: {
-        activeOrganizationId?: string | null;
-    } | null;
-    data?: {
-        user?: {
-            email?: string | null;
-            name?: string | null;
-        } | null;
-        session?: {
-            activeOrganizationId?: string | null;
-        } | null;
-    } | null;
-}
-
 interface IsolatedSessionFixture {
     context: BrowserContext;
     page: Page;
     user: TestUserData;
-}
-
-async function loadAuthenticatedUser(page: Page): Promise<TestUserData> {
-    const response = await page.request.get('/api/auth/get-session');
-
-    if (!response.ok()) {
-        throw new Error(`Failed to load authenticated session (${response.status()})`);
-    }
-
-    const payload = (await response.json()) as SessionUserPayload | null;
-    const data = payload?.data ?? payload;
-    const email = data?.user?.email ?? undefined;
-    const username = data?.user?.name ?? undefined;
-
-    if (!email || !username) {
-        throw new Error('Authenticated session did not expose user email and name');
-    }
-
-    return {
-        email,
-        username,
-        password: DEFAULT_PASSWORD,
-        organizationSlug: data?.session?.activeOrganizationId ?? 'shared-org',
-    };
 }
 
 export interface TestFixtures {
@@ -92,16 +49,24 @@ export interface TestFixtures {
 }
 
 export const test = base.extend<TestFixtures>({
-    authenticatedPage: async ({ page }, use) => {
-        await use(page);
-    },
-
     isolatedSession: async ({ browser }, use) => {
         const context = await browser.newContext();
         const page = await context.newPage();
         const user = await createTestUserViaAPI(page);
         await use({ context, page, user });
         await context.close();
+    },
+
+    context: async ({ isolatedSession }, use) => {
+        await use(isolatedSession.context);
+    },
+
+    page: async ({ isolatedSession }, use) => {
+        await use(isolatedSession.page);
+    },
+
+    authenticatedPage: async ({ isolatedSession }, use) => {
+        await use(isolatedSession.page);
     },
 
     isolatedAuthenticatedPage: async ({ isolatedSession }, use) => {
@@ -117,9 +82,8 @@ export const test = base.extend<TestFixtures>({
         await adminContext.close();
     },
 
-    testUser: async ({ authenticatedPage }, use) => {
-        const userData = await loadAuthenticatedUser(authenticatedPage);
-        await use(userData);
+    testUser: async ({ isolatedSession }, use) => {
+        await use(isolatedSession.user);
     },
 
     isolatedTestUser: async ({ isolatedSession }, use) => {

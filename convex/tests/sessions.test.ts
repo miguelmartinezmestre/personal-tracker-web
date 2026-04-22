@@ -78,7 +78,7 @@ describe('convex sessions', () => {
             t.query(api.sessions.getSessionsByUser, {
                 paginationOpts: { numItems: 10, cursor: null },
             })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });
 
     test('session can be retrieved after creation', async () => {

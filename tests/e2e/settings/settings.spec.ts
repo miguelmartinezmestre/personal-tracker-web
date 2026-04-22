@@ -19,21 +19,28 @@ test.describe('Settings', () => {
     test(
         'account tab: edit username and save',
         { tag: ['@REQ-AUTENTICACION-004'] },
-        async ({ isolatedAuthenticatedPage }) => {
+        async ({ isolatedAuthenticatedPage, isolatedTestUser }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();
 
             await settings.switchToAccount();
             await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
+            // The form is built from useSession() data. Wait for the session to hydrate
+            // so the email default is populated; otherwise submit fails Zod validation
+            // silently and no success message is shown.
+            await expect(settings.usernameInput).toHaveValue(isolatedTestUser.username, {
+                timeout: 10000,
+            });
+            await expect(settings.emailInput).toHaveValue(isolatedTestUser.email, {
+                timeout: 10000,
+            });
+
             const newName = `Updated User ${Date.now()}`;
             await settings.usernameInput.fill(newName);
             await settings.accountSaveButton.click();
 
-            // Wait for save to complete - check for success toast or message
-            await expect(
-                isolatedAuthenticatedPage.getByText(/profile updated|perfil actualizado/i).first()
-            ).toBeVisible({ timeout: 15000 });
+            await expect(settings.accountSuccessMessage).toBeVisible({ timeout: 15000 });
 
             // Verify the change persisted by reloading
             await settings.goto();
@@ -99,7 +106,7 @@ test.describe('Settings', () => {
             await settings.goto();
             await settings.switchToAccount();
             await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
-
+            await expect(settings.usernameInput).toHaveValue(originalValue, { timeout: 10000 });
             const currentValue = await settings.usernameInput.inputValue();
             expect(currentValue).not.toBe('ShouldNotSave');
             expect(currentValue).toBe(originalValue);

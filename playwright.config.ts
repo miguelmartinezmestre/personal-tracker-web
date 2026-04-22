@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
-    workers: 2,
+    workers: 4,
 
     timeout: 90000,
     expect: {
@@ -24,7 +24,8 @@ export default defineConfig({
     projects: [
         {
             name: 'setup',
-            testMatch: /.*\.setup\.ts/,
+            testMatch: /.*auth\.stack\.setup\.ts/,
+            workers: 1,
             use: {
                 ...devices['Desktop Chrome'],
                 launchOptions: {
@@ -35,9 +36,9 @@ export default defineConfig({
         {
             name: 'authenticated',
             dependencies: ['setup'],
+            workers: 4,
             use: {
                 ...devices['Desktop Chrome'],
-                storageState: 'tests/.auth/regular-user.json',
                 launchOptions: {
                     args: ['--disable-animations'],
                 },
@@ -58,6 +59,7 @@ export default defineConfig({
         {
             name: 'auth-and-smoke',
             dependencies: ['setup'],
+            workers: 4,
             use: {
                 ...devices['Desktop Chrome'],
                 launchOptions: {
@@ -69,9 +71,9 @@ export default defineConfig({
         {
             name: 'admin',
             dependencies: ['setup'],
+            workers: 1,
             use: {
                 ...devices['Desktop Chrome'],
-                storageState: 'tests/.auth/admin-user.json',
                 launchOptions: {
                     args: ['--disable-animations'],
                 },

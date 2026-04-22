@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-base';
 import { createOrganization, createObjective } from '../../helpers/test-helpers';
 import { OrganizationFactory } from '../../helpers/factories';
 
@@ -12,10 +13,20 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
         return;
     }
 
+    const currentOrganizationText = (await switcher.textContent())?.trim() ?? '';
+    if (currentOrganizationText.includes(orgName)) {
+        return;
+    }
+
     await switcher.click();
 
     const orgOption = page.getByRole('menuitem', { name: orgName });
     if ((await orgOption.count()) > 0) {
+        if ((await orgOption.first().getAttribute('aria-disabled')) === 'true') {
+            await page.keyboard.press('Escape');
+            return;
+        }
+
         await orgOption.first().click();
         await page.waitForLoadState('domcontentloaded');
         return;
@@ -143,12 +154,30 @@ test.describe('Organizations CRUD', () => {
         const confirmDialog = page.locator(
             '[data-slot="alert-dialog-content"], [role="alertdialog"]'
         );
-        await expect(confirmDialog).toBeVisible({ timeout: 5000 });
+        let deleteConfirmed = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                if (attempt > 0) {
+                    await expect(deleteButton).toBeVisible({ timeout: 10000 });
+                    await deleteButton.click();
+                }
 
-        const confirmButton = confirmDialog.getByTestId('delete-confirm-button');
-        await confirmButton.click();
+                const activeDialog = confirmDialog.first();
+                await expect(activeDialog).toBeVisible({ timeout: 5000 });
 
-        await expect(confirmDialog).toBeHidden({ timeout: 10000 });
+                const confirmButton = activeDialog.getByTestId('delete-confirm-button');
+                await expect(confirmButton).toBeEnabled({ timeout: 5000 });
+                await confirmButton.click();
+
+                deleteConfirmed = true;
+                break;
+            } catch {
+                await page.keyboard.press('Escape').catch(() => undefined);
+            }
+        }
+
+        expect(deleteConfirmed).toBe(true);
+        await expect(confirmDialog.first()).toBeHidden({ timeout: 10000 });
     });
 
     test('switch active organization', async ({ page }) => {

@@ -1,5 +1,7 @@
 import { Page, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 export const DEFAULT_PASSWORD = 'Password123';
 
@@ -281,7 +283,7 @@ async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise
 }
 
 async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<void> {
-    if ((await hasActiveOrganization(page)) || (await hasOrganizationSelectedInUI(page))) {
+    if ((await hasActiveOrganization(page)) && (await hasOrganizationSelectedInUI(page))) {
         return;
     }
 
@@ -290,14 +292,25 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
         const organizationIds = await getOrganizationIds(page);
         for (const organizationId of organizationIds) {
             if (await setActiveOrganizationViaBrowser(page, organizationId)) {
-                await page.goto('/dashboard/home');
+                await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
                 await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
-                return;
+                if (await hasOrganizationSelectedInUI(page)) {
+                    return;
+                }
             }
         }
 
         if (await setActiveOrganizationViaUi(page)) {
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+            if (await hasOrganizationSelectedInUI(page)) {
+                return;
+            }
+        }
+
+        await page
+            .goto('/dashboard/home', { waitUntil: 'domcontentloaded' })
+            .catch(() => undefined);
+        if ((await hasActiveOrganization(page)) && (await hasOrganizationSelectedInUI(page))) {
             return;
         }
     }
@@ -307,22 +320,61 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
     } catch {}
 }
 
-async function ensureAuthenticatedState(page: Page): Promise<void> {
+export async function ensureAuthenticatedState(page: Page): Promise<void> {
     await waitForAuthenticatedSession(page);
-    await ensureOrganizationExists(page);
+    const ensureOrganizationResponse = await page.request.post('/api/test/ensure-organization', {
+        headers: { 'Content-Type': 'application/json' },
+        data: JSON.stringify({ createPersonalCategory: true }),
+    });
+    if (!ensureOrganizationResponse.ok()) {
+        const body = await ensureOrganizationResponse.text();
+        throw new Error(
+            `Ensure organization API failed (${ensureOrganizationResponse.status()}): ${body}`
+        );
+    }
     await ensureActiveOrganization(page);
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 }
 
 async function loginWithCredentials(page: Page, email: string, password: string): Promise<void> {
-    await page.waitForSelector('[data-testid="email-input"]', { timeout: 10000 });
-    await page.getByTestId('email-input').clear();
-    await page.getByTestId('password-input').clear();
-    await page.getByTestId('email-input').fill(email);
-    await page.getByTestId('password-input').fill(password);
-    await page.getByTestId('login-button').click();
-    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
-    await ensureAuthenticatedState(page);
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.waitForSelector('[data-testid="email-input"]', { timeout: 10000 });
+        await page.getByTestId('email-input').clear();
+        await page.getByTestId('password-input').clear();
+        await page.getByTestId('email-input').fill(email);
+        await page.getByTestId('password-input').fill(password);
+        await page.getByTestId('login-button').click();
+
+        const loginDeadline = Date.now() + 15_000;
+        while (Date.now() < loginDeadline) {
+            const currentUrl = page.url();
+            if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
+                break;
+            }
+
+            try {
+                if (await hasAuthenticatedSession(page)) {
+                    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+                    break;
+                }
+            } catch {}
+
+            await page.waitForTimeout(500);
+        }
+
+        try {
+            if (!/\/dashboard\/home(\?|$)/.test(page.url())) {
+                await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+            }
+            await ensureAuthenticatedState(page);
+            return;
+        } catch {
+            if (attempt === 2) {
+                throw new Error('Login did not reach an authenticated dashboard state');
+            }
+            await page.goto('/login', { waitUntil: 'domcontentloaded' }).catch(() => undefined);
+        }
+    }
 }
 
 async function completeRegistrationFlow(page: Page, userData: TestUserData): Promise<void> {
@@ -510,6 +562,8 @@ export async function createTestUserViaAPI(
 
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded', timeout: requestTimeout });
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: requestTimeout });
+    await setActiveOrganizationViaBrowser(page, orgId);
+    await ensureAuthenticatedState(page);
 
     return userData;
 }
@@ -521,6 +575,9 @@ export async function loginUser(
 ): Promise<void> {
     await page.goto('/login');
     await loginWithCredentials(page, email, password);
+    if (!/\/dashboard\/home(\?|$)/.test(page.url())) {
+        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+    }
     await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 }
 
@@ -586,17 +643,20 @@ export async function createObjective(
     await page.getByTestId('objective-description-input').fill(description);
 
     await page.getByTestId('objective-category-select').click();
-    await expect(page.getByRole('option').first()).toBeVisible({ timeout: 10000 });
 
-    const categoryOption = page
-        .getByRole('option')
-        .filter({ hasText: new RegExp(category, 'i') })
-        .first();
+    // Only consider options that are not placeholders ("loading"/"empty") which render
+    // with data-disabled / aria-disabled. Radix re-renders briefly during open; wait
+    // for at least one enabled option to appear.
+    const enabledOptions = page.locator(
+        '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
+    );
+    await expect(enabledOptions.first()).toBeVisible({ timeout: 10000 });
+
+    const categoryOption = enabledOptions.filter({ hasText: new RegExp(category, 'i') }).first();
     if ((await categoryOption.count()) > 0) {
         await categoryOption.click();
     } else {
-        const firstOption = page.getByRole('option').first();
-        await firstOption.click();
+        await enabledOptions.first().click();
     }
 
     await page.getByTestId('objective-target-input').fill(`${targetValue}`);
@@ -640,53 +700,65 @@ export interface CategoryData {
     color: string;
 }
 
+async function getConvexAuthToken(page: Page): Promise<string> {
+    const deadline = Date.now() + 15_000;
+
+    while (Date.now() < deadline) {
+        try {
+            const response = await page.request.get('/api/auth/convex/token');
+            if (!response.ok()) {
+                await page.waitForTimeout(500);
+                continue;
+            }
+
+            const payload = (await response.json()) as { token?: string } | null;
+            if (typeof payload?.token === 'string' && payload.token.length > 0) {
+                return payload.token;
+            }
+        } catch {}
+
+        await page.waitForTimeout(500);
+    }
+
+    throw new Error('Convex auth token response did not include a token');
+}
+
+async function createConvexClient(page: Page): Promise<ConvexHttpClient> {
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_SELF_HOSTED_URL;
+    if (!convexUrl) {
+        throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured for Playwright tests');
+    }
+
+    const client = new ConvexHttpClient(convexUrl);
+    client.setAuth(await getConvexAuthToken(page));
+    return client;
+}
+
 export async function createCategory(
     page: Page,
     options?: CreateCategoryOptions
 ): Promise<CategoryData> {
     const uuid = randomUUID();
     const name = options?.name ?? `test-category-${uuid.substring(0, 8)}`;
-    const color = options?.color ?? 'Green';
+    const color = options?.color ?? 'Blue';
+
+    await ensureAuthenticatedState(page);
+    const client = await createConvexClient(page);
+    await client.mutation(api.categories.createCategory, {
+        name,
+        color,
+    });
 
     await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-testid="category-create-open"]', { timeout: 15000 });
-
-    let modalOpened = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.getByTestId('category-create-open').click();
-        try {
-            await page.waitForSelector('[data-testid="category-name-input"]', { timeout: 5000 });
-            modalOpened = true;
-            break;
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-        }
-    }
-
-    if (!modalOpened) {
-        throw new Error('Could not open create category modal');
-    }
-
-    await page.getByTestId('category-name-input').fill(name);
-    await page.getByTestId('category-color-select').click();
-    await page.waitForSelector('[role="option"]', { timeout: 5000 });
-    const hex = colorNameToHex(color);
-    if (hex) {
-        const colorOption = page.getByTestId(`category-color-${hex}`);
-        await colorOption.click();
-    } else {
-        await page.getByRole('option').first().click();
-    }
-    await page.getByTestId('category-save-button').click();
 
     let count = 0;
-    const maxTime = Date.now() + 20000;
+    const maxTime = Date.now() + 20_000;
 
     while (Date.now() < maxTime && count === 0) {
-        count = await page.getByText(name).count();
+        count = await page.getByTestId('table-row').filter({ hasText: name }).count();
         if (count === 0) {
             await page.reload({ waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(500);
+            await page.waitForTimeout(1000);
         }
     }
 
@@ -694,27 +766,61 @@ export async function createCategory(
     return { name, color };
 }
 
+const PERSONAL_ROW = /\bPersonal\b/i;
+
+function personalCategoryTableRowCount(page: Page) {
+    return page.getByTestId('table-row').filter({ hasText: PERSONAL_ROW }).count();
+}
+
+async function hasVisiblePersonalCategory(page: Page): Promise<boolean> {
+    if ((await personalCategoryTableRowCount(page)) > 0) {
+        return true;
+    }
+
+    return page
+        .getByText(PERSONAL_ROW)
+        .first()
+        .isVisible()
+        .catch(() => false);
+}
+
 export async function ensureDefaultCategories(page: Page): Promise<void> {
     await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15_000 });
 
-    let personalCategoryCount = 0;
-    const maxTime = Date.now() + 5000;
+    let hasPersonalCategory = false;
+    const maxWait = Date.now() + 8_000;
 
-    while (Date.now() < maxTime && personalCategoryCount === 0) {
-        personalCategoryCount = await page
-            .getByTestId('table-row')
-            .filter({ hasText: /\bPersonal\b/i })
-            .count();
+    while (Date.now() < maxWait && !hasPersonalCategory) {
+        hasPersonalCategory = await hasVisiblePersonalCategory(page);
 
-        if (personalCategoryCount === 0) {
+        if (!hasPersonalCategory) {
             await page.waitForTimeout(300);
         }
     }
 
-    if (personalCategoryCount === 0) {
-        await createCategory(page, { name: 'Personal', color: 'Green' });
+    if (hasPersonalCategory) {
+        return;
     }
+
+    // Parallel workers can race: only one "Personal" is needed; the other may hit duplicate/constraint errors.
+    try {
+        await createCategory(page, { name: 'Personal' });
+    } catch {
+        // Another worker may have created Personal; verify below.
+    }
+
+    const maxVerify = Date.now() + 15_000;
+    while (Date.now() < maxVerify) {
+        hasPersonalCategory = await hasVisiblePersonalCategory(page);
+        if (hasPersonalCategory) {
+            return;
+        }
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(400);
+    }
+
+    await expect(page.getByText(PERSONAL_ROW).first()).toBeVisible({ timeout: 5_000 });
 }
 
 export interface CreateOrganizationOptions {

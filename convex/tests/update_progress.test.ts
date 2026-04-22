@@ -179,7 +179,7 @@ describe('convex update_progress', () => {
             _id: progressUpdateId,
         });
 
-        expect(result).toBe('Update progress deleted successfully');
+        expect(result).toEqual({ success: true });
 
         const deleted = await userIdentity.run(async ctx => ctx.db.get(progressUpdateId));
         expect(deleted).toBeNull();
@@ -192,7 +192,7 @@ describe('convex update_progress', () => {
                 updatedValue: 75,
                 updateDate: Date.now(),
             })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });
 
     test('updateUpdateProgress updates updatedAt timestamp', async () => {

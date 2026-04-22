@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-base';
 import { createObjective, ensureDefaultCategories } from '../../helpers/test-helpers';
 
 async function openNotificationCreateModal(

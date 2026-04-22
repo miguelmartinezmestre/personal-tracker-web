@@ -144,7 +144,7 @@ describe('convex categories', async () => {
                     name: 'Test',
                     color: '#000000',
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -184,7 +184,7 @@ describe('convex categories', async () => {
         test('rejects unauthenticated users', async () => {
             await expect(
                 t.query(api.categories.getCategoriesByUser, { paginationOpts })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -219,7 +219,7 @@ describe('convex categories', async () => {
 
         test('rejects unauthenticated users', async () => {
             await expect(t.query(api.categories.getCategoryNamesForFilters, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
     });
@@ -321,7 +321,7 @@ describe('convex categories', async () => {
                     id: categoryId,
                     name: 'Hacked',
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -346,7 +346,7 @@ describe('convex categories', async () => {
 
             await expect(
                 t.mutation(api.categories.deleteCategory, { id: categoryId })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 
@@ -394,7 +394,7 @@ describe('convex categories', async () => {
 
         test('rejects unauthenticated users', async () => {
             await expect(t.mutation(api.categories.createDefaultCategories, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
     });

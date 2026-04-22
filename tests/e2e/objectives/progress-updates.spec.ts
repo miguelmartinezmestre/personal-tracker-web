@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-base';
 import { createObjective } from '../../helpers/test-helpers';
 
 async function openObjectiveDetailFromList(page: import('@playwright/test').Page): Promise<void> {
@@ -150,7 +150,26 @@ test.describe('Objectives Progress Updates', () => {
                 targetValue: 100,
             });
 
-            await openObjectiveDetailFromList(page);
+            // Navigate directly to the objective we just created instead of
+            // `openObjectiveDetailFromList`, which opens the first row with a
+            // progress link — that may not be the objective under test when
+            // other tests have already populated the list.
+            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+            const createdRow = page
+                .getByTestId('table-row')
+                .filter({ hasText: objective.title })
+                .first();
+            await expect(createdRow).toBeVisible({ timeout: 10000 });
+            const progressLink = createdRow.getByTestId('objective-progress-link').first();
+            const href = await progressLink.getAttribute('href');
+            if (href) {
+                await page.goto(href, { waitUntil: 'domcontentloaded' });
+            } else {
+                await progressLink.click();
+                await page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 });
+            }
+            await page.waitForSelector('[data-testid="progress-create-open"]', { timeout: 10000 });
+
             await createProgressUpdate(page, '100', 'Reached target');
 
             await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -160,17 +179,23 @@ test.describe('Objectives Progress Updates', () => {
                 .first();
             await expect(objectiveRow).toBeVisible({ timeout: 10000 });
 
-            // Check for status badge - can be "completed", "completado", or "100%" progress
-            const statusCell = objectiveRow.locator('td').nth(4); // Status column
-            await expect(statusCell).toBeVisible({ timeout: 5000 });
-
-            // The status can be shown as "Completed" or "100%" progress
-            const statusText = await statusCell.textContent();
-            const isCompleted =
-                /completed|completado/i.test(statusText || '') ||
-                statusText?.includes('100%') ||
-                statusText?.includes('100');
-            expect(isCompleted).toBe(true);
+            await expect
+                .poll(
+                    async () => {
+                        const row = page
+                            .getByTestId('table-row')
+                            .filter({ hasText: objective.title })
+                            .first();
+                        const statusText = (await row.textContent()) ?? '';
+                        return (
+                            /completed|completado/i.test(statusText) ||
+                            statusText.includes('100%') ||
+                            statusText.includes('100')
+                        );
+                    },
+                    { timeout: 15000, intervals: [500, 1000] }
+                )
+                .toBe(true);
         }
     );
 });

@@ -1,24 +1,51 @@
 #!/usr/bin/env node
+/* eslint-disable max-lines -- Docker + Next + Playwright orchestration (single entry) */
 
 import { spawn, type ChildProcess, type SpawnOptionsWithoutStdio } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 import process from 'node:process';
+import {
+    runParallelBrowserPlaywright,
+    shouldRunParallelBrowserPlaywright,
+} from './e2e-parallel-playwright';
 import { symmetricEncrypt } from 'better-auth/crypto';
 import { generateExportedKeyPair } from 'better-auth/plugins';
 
 const PNPM_COMMAND = 'pnpm';
 const DOCKER_COMMAND = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const USE_SHELL_FOR_PNPM = process.platform === 'win32';
+const E2E_BUILD_META_FILE = 'build-meta.json';
+const BUILD_FINGERPRINT_INPUTS = ['package.json', 'pnpm-lock.yaml', 'next.config.ts'];
+const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex'];
+const BUILD_FINGERPRINT_FILE_PREFIXES = ['tsconfig'];
 
-// Parse forwarded args early - needed for browser detection
-const rawForwardedPlaywrightArgs = process.argv.slice(2);
-const forwardedPlaywrightArgs =
-    rawForwardedPlaywrightArgs[0] === '--'
-        ? rawForwardedPlaywrightArgs.slice(1)
-        : rawForwardedPlaywrightArgs;
+function parseScriptArgs(rawArgs: string[]): {
+    forwardedPlaywrightArgs: string[];
+    rebuild: boolean;
+} {
+    const normalizedArgs = rawArgs[0] === '--' ? rawArgs.slice(1) : rawArgs;
+    const forwardedPlaywrightArgs: string[] = [];
+    let rebuild = false;
+
+    for (const arg of normalizedArgs) {
+        if (arg === '--rebuild') {
+            rebuild = true;
+            continue;
+        }
+
+        forwardedPlaywrightArgs.push(arg);
+    }
+
+    return { forwardedPlaywrightArgs, rebuild };
+}
+
+const { forwardedPlaywrightArgs, rebuild: rebuildFromArgs } = parseScriptArgs(
+    process.argv.slice(2)
+);
+const SHOULD_FORCE_REBUILD = rebuildFromArgs || process.env.E2E_FORCE_BUILD === 'true';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';
 
@@ -61,7 +88,7 @@ const E2E_FRONTEND_PORT =
 const E2E_NEXT_DIST_DIR =
     process.env.E2E_NEXT_DIST_DIR ??
     (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
-const E2E_FRONTEND_MODE = process.env.E2E_FRONTEND_MODE ?? 'dev';
+const E2E_FRONTEND_MODE = process.env.E2E_FRONTEND_MODE ?? 'production';
 
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${E2E_CONVEX_PORT}`;
 const CONVEX_SITE_URL =
@@ -82,6 +109,10 @@ let frontendLogTail: Array<string> = [];
 
 interface RunCommandOptions extends SpawnOptionsWithoutStdio {
     ignoreExitCode?: boolean;
+}
+
+interface E2EBuildMeta {
+    fingerprint: string;
 }
 
 function formatCommand(command: string, args: Array<string>): string {
@@ -383,30 +414,111 @@ function sanitizeEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     return sanitized as NodeJS.ProcessEnv;
 }
 
-function cleanupNextArtifacts(baseDistDir: string, nextDistDir: string): void {
-    const cwd = process.cwd();
-    const candidateDirectories = new Set<string>();
+function cleanupNextArtifacts(nextDistDir: string): void {
+    const directoryPath = join(process.cwd(), nextDistDir);
+    if (!existsSync(directoryPath)) {
+        return;
+    }
 
-    candidateDirectories.add(nextDistDir);
+    rmSync(directoryPath, { recursive: true, force: true });
+}
 
-    for (const entry of readdirSync(cwd, { withFileTypes: true })) {
-        if (!entry.isDirectory()) {
+function collectBuildFingerprintFiles(relativePath: string, files: Set<string>): void {
+    const absolutePath = join(process.cwd(), relativePath);
+    if (!existsSync(absolutePath)) {
+        return;
+    }
+
+    const entries = readdirSync(absolutePath, { withFileTypes: true }).sort((left, right) =>
+        left.name.localeCompare(right.name)
+    );
+
+    for (const entry of entries) {
+        const childRelativePath = join(relativePath, entry.name);
+        if (entry.isDirectory()) {
+            collectBuildFingerprintFiles(childRelativePath, files);
             continue;
         }
 
-        if (entry.name === baseDistDir || entry.name.startsWith(`${baseDistDir}-`)) {
-            candidateDirectories.add(entry.name);
+        files.add(childRelativePath);
+    }
+}
+
+function getBuildFingerprintFiles(): string[] {
+    const files = new Set<string>();
+
+    for (const file of BUILD_FINGERPRINT_INPUTS) {
+        const absolutePath = join(process.cwd(), file);
+        if (existsSync(absolutePath)) {
+            files.add(file);
         }
     }
 
-    for (const directory of candidateDirectories) {
-        const directoryPath = join(cwd, directory);
-        if (!existsSync(directoryPath)) {
+    for (const directory of BUILD_FINGERPRINT_DIRECTORIES) {
+        collectBuildFingerprintFiles(directory, files);
+    }
+
+    const rootEntries = readdirSync(process.cwd(), { withFileTypes: true });
+    for (const entry of rootEntries) {
+        if (!entry.isFile()) {
             continue;
         }
 
-        rmSync(directoryPath, { recursive: true, force: true });
+        if (
+            BUILD_FINGERPRINT_FILE_PREFIXES.some(prefix => entry.name.startsWith(prefix)) &&
+            entry.name.endsWith('.json')
+        ) {
+            files.add(entry.name);
+        }
     }
+
+    return [...files].sort((left, right) => left.localeCompare(right));
+}
+
+function computeBuildFingerprint(): string {
+    const fingerprint = createHash('sha256');
+
+    for (const relativePath of getBuildFingerprintFiles()) {
+        fingerprint.update(relativePath);
+        fingerprint.update('\0');
+        fingerprint.update(readFileSync(join(process.cwd(), relativePath)));
+        fingerprint.update('\0');
+    }
+
+    return fingerprint.digest('hex');
+}
+
+function getBuildMetaPath(nextDistDir: string): string {
+    return join(process.cwd(), nextDistDir, E2E_BUILD_META_FILE);
+}
+
+function readBuildMeta(nextDistDir: string): E2EBuildMeta | null {
+    const buildMetaPath = getBuildMetaPath(nextDistDir);
+    if (!existsSync(buildMetaPath)) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(readFileSync(buildMetaPath, 'utf8')) as E2EBuildMeta;
+    } catch {
+        return null;
+    }
+}
+
+function hasReusableBuild(nextDistDir: string, fingerprint: string): boolean {
+    const buildIdPath = join(process.cwd(), nextDistDir, 'BUILD_ID');
+    if (!existsSync(buildIdPath)) {
+        return false;
+    }
+
+    const buildMeta = readBuildMeta(nextDistDir);
+    return buildMeta?.fingerprint === fingerprint;
+}
+
+function writeBuildMeta(nextDistDir: string, fingerprint: string): void {
+    const buildMetaPath = getBuildMetaPath(nextDistDir);
+    mkdirSync(join(process.cwd(), nextDistDir), { recursive: true });
+    writeFileSync(buildMetaPath, JSON.stringify({ fingerprint }, null, 2));
 }
 
 function buildCommandEnv(
@@ -749,14 +861,27 @@ async function main(): Promise<void> {
         shell: USE_SHELL_FOR_PNPM,
     });
 
-    cleanupNextArtifacts(E2E_NEXT_DIST_DIR, nextDistDir);
-
     if (E2E_FRONTEND_MODE === 'production') {
-        console.log('Building frontend for e2e...');
-        await runCommand(PNPM_COMMAND, ['exec', 'next', 'build'], {
-            env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
-        });
+        const buildFingerprint = computeBuildFingerprint();
+        const shouldReuseBuild =
+            !SHOULD_FORCE_REBUILD && hasReusableBuild(nextDistDir, buildFingerprint);
+
+        if (shouldReuseBuild) {
+            console.log('Reusing cached frontend build for e2e.');
+        } else {
+            if (SHOULD_FORCE_REBUILD) {
+                console.log('Forcing frontend rebuild for e2e.');
+            } else {
+                console.log('Frontend sources changed, rebuilding e2e build.');
+            }
+
+            cleanupNextArtifacts(nextDistDir);
+            await runCommand(PNPM_COMMAND, ['exec', 'next', 'build'], {
+                env: commandEnv,
+                shell: USE_SHELL_FOR_PNPM,
+            });
+            writeBuildMeta(nextDistDir, buildFingerprint);
+        }
     }
 
     console.log('Starting frontend...');
@@ -794,11 +919,21 @@ async function main(): Promise<void> {
         }
     );
 
-    console.log(`Running Playwright e2e suite${browserLabel}...`);
-    await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
+    const useParallelBrowsers =
+        BROWSER_PROJECT === null &&
+        forwardedPlaywrightArgs.length > 0 &&
+        shouldRunParallelBrowserPlaywright(forwardedPlaywrightArgs);
+
+    if (useParallelBrowsers) {
+        console.log(`Running Playwright e2e suite (parallel browsers)${browserLabel}...`);
+        await runParallelBrowserPlaywright(commandEnv, forwardedPlaywrightArgs);
+    } else {
+        console.log(`Running Playwright e2e suite${browserLabel}...`);
+        await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
+            env: commandEnv,
+            shell: USE_SHELL_FOR_PNPM,
+        });
+    }
 
     console.log(`E2E suite finished successfully${browserLabel}.`);
 }

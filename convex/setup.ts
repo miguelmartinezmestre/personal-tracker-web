@@ -1,6 +1,6 @@
 import { query, mutation } from './_generated/server';
 import { ConvexError, v } from 'convex/values';
-import { getAuthUserIdentity } from 'better-convex/auth';
+import { getAuthUserIdentity, getSession } from 'better-convex/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
 
@@ -53,7 +53,7 @@ export const completeSetup = mutation({
             throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
 
-        const allUsers = await ctx.db.query('user').take(1);
+        const allUsers = await ctx.db.query('user').collect();
         if (allUsers.length !== 1) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_COUNT);
         }
@@ -121,5 +121,97 @@ export const completeSetup = mutation({
         });
 
         return { success: true, organizationId };
+    },
+});
+
+export const ensureTestOrganization = mutation({
+    args: {
+        organizationName: v.optional(v.string()),
+        createPersonalCategory: v.optional(v.boolean()),
+    },
+    handler: async (ctx, args) => {
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
+        }
+
+        const currentSession = await getSession(ctx);
+        if (!currentSession) {
+            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
+        }
+
+        const userId = identity.userId as Id<'user'>;
+        const now = Date.now();
+
+        let membership = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .first();
+
+        let organizationId: Id<'organization'>;
+
+        if (membership) {
+            organizationId = membership.organizationId as Id<'organization'>;
+        } else {
+            const suffix = Math.random().toString(36).slice(2, 10);
+            const organizationName = args.organizationName ?? `Test Org ${suffix}`;
+            organizationId = await ctx.db.insert('organization', {
+                name: organizationName,
+                slug: organizationName
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, ''),
+                createdAt: now,
+                metadata: JSON.stringify({
+                    description: 'Automatically created for E2E tests',
+                }),
+                logo: null,
+            });
+
+            await ctx.db.insert('member', {
+                organizationId,
+                userId,
+                role: 'owner',
+                createdAt: now,
+            });
+        }
+
+        if (currentSession.activeOrganizationId !== organizationId) {
+            await ctx.db.patch(currentSession._id, {
+                activeOrganizationId: organizationId,
+            });
+        }
+
+        if (args.createPersonalCategory !== false) {
+            const existingPersonalCategory = await ctx.db
+                .query('categories')
+                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                .filter(q => q.eq(q.field('name'), 'Personal'))
+                .first();
+
+            if (!existingPersonalCategory) {
+                await ctx.db.insert('categories', {
+                    userId,
+                    organizationId,
+                    name: 'Personal',
+                    color: '#3b82f6',
+                    icon: 'user',
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            }
+        }
+
+        membership = await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', organizationId).eq('userId', userId)
+            )
+            .first();
+
+        return {
+            organizationId,
+            memberId: membership?._id ?? null,
+        };
     },
 });
