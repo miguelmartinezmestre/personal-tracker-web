@@ -197,7 +197,12 @@ async function rlsRules(
                 return session.userId === userId;
             },
             insert: async () => false,
-            modify: async () => isAdmin,
+            modify: async (_, session) => {
+                if (isAdmin) return true;
+                // Allow users to delete/modify their own session rows so they can
+                // revoke individual sessions or close all other sessions.
+                return session.userId === userId;
+            },
         },
         categories: {
             read: async (_, category) => {

@@ -71,6 +71,6 @@ describe('convex organizations', () => {
                 organizationId,
                 paginationOpts: { numItems: 20, cursor: null },
             })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });
 });

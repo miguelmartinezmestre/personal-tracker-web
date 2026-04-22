@@ -577,26 +577,26 @@ describe('convex achievements', async () => {
     describe('authentication', () => {
         test('getAchievementDefinitions rejects unauthenticated users', async () => {
             await expect(t.query(api.achievements.getAchievementDefinitions, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('getUserAchievements rejects unauthenticated users', async () => {
             await expect(t.query(api.achievements.getUserAchievements, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('getUserAchievementStats rejects unauthenticated users', async () => {
             await expect(t.query(api.achievements.getUserAchievementStats, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('seedAchievementDefinitions rejects unauthenticated users', async () => {
             await expect(
                 t.mutation(api.achievements.seedAchievementDefinitions, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 

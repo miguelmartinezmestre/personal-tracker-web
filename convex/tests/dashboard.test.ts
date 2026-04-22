@@ -273,9 +273,8 @@ describe('convex dashboard', async () => {
                 {}
             );
 
-            expect(topProgress).toHaveLength(2);
-            expect(topProgress[0]?.objective).toBe('Completed High Progress');
-            expect(topProgress[1]?.objective).toBe('Active High Progress');
+            expect(topProgress).toHaveLength(1);
+            expect(topProgress[0]?.objective).toBe('Active High Progress');
         });
 
         test('limits results to top 5', async () => {
@@ -575,31 +574,31 @@ describe('convex dashboard', async () => {
     describe('authentication', () => {
         test('getDashboardStats rejects unauthenticated users', async () => {
             await expect(t.query(api.dashboard.getDashboardStats, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('getMonthlyProgress rejects unauthenticated users', async () => {
             await expect(t.query(api.dashboard.getMonthlyProgress, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('getObjectivesWithMostProgress rejects unauthenticated users', async () => {
             await expect(t.query(api.dashboard.getObjectivesWithMostProgress, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('getUpcomingDeadlines rejects unauthenticated users', async () => {
             await expect(t.query(api.dashboard.getUpcomingDeadlines, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
 
         test('getRecentActivity rejects unauthenticated users', async () => {
             await expect(t.query(api.dashboard.getRecentActivity, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated/
+                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
     });

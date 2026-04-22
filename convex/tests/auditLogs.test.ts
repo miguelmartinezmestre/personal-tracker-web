@@ -480,7 +480,7 @@ describe('convex auditLogs', () => {
                 t.query(api.auditLogs.getAuditLogs, {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
 
         test('getAuditLogsByResource rejects when unauthenticated', async () => {
@@ -490,7 +490,7 @@ describe('convex auditLogs', () => {
                     resourceId: 'obj-1',
                     paginationOpts: { numItems: 10, cursor: null },
                 })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated/);
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 });
