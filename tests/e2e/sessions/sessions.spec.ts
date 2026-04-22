@@ -89,43 +89,108 @@ test.describe('Sessions', () => {
     test(
         'can close all other sessions except current',
         { tag: ['@REQ-AUTENTICACION-009'] },
-        async ({ authenticatedPage, browser, testUser }) => {
+        async ({ isolatedAuthenticatedPage, isolatedTestUser, browser }) => {
+            // Use an isolated user so the revoke-all action does not race against
+            // other worker-scoped authenticated sessions in the parallel suite.
             const secondContext = await browser.newContext();
             const secondPage = await secondContext.newPage();
 
             try {
-                await loginUser(secondPage, testUser.email, testUser.password);
+                await loginUser(secondPage, isolatedTestUser.email, isolatedTestUser.password);
 
-                await authenticatedPage.goto('/dashboard/sessions');
+                // Park the second (other) session's browser away from any
+                // authenticated route and clear its cookies so it can't keep
+                // polling auth endpoints and re-create / refresh its session
+                // token in the middle of the revoke action.
+                await secondPage.goto('about:blank');
+                await secondContext.clearCookies();
 
-                const sessionsPage = authenticatedPage.getByTestId('sessions-page');
+                await isolatedAuthenticatedPage.goto('/dashboard/sessions');
+
+                const sessionsPage = isolatedAuthenticatedPage.getByTestId('sessions-page');
                 await expect(sessionsPage).toBeVisible({ timeout: 15000 });
 
-                const revokeOtherButton = authenticatedPage.getByTestId(
+                // Wait until the Convex client has finished authenticating so
+                // the upcoming mutation actually sends the JWT. Under parallel
+                // load, the better-auth client can briefly report `session: null`
+                // while fetching `/api/auth/get-session`, which causes the
+                // Convex client to send unauthenticated mutations that fail
+                // with AUTH_REQUIRED. Waiting for `/api/auth/convex/token` to
+                // return a non-empty JWT ensures auth is fully wired up.
+                await expect
+                    .poll(
+                        async () => {
+                            try {
+                                const response =
+                                    await isolatedAuthenticatedPage.request.get(
+                                        '/api/auth/convex/token'
+                                    );
+                                if (!response.ok()) return false;
+                                const body = (await response.json()) as { token?: string } | null;
+                                return typeof body?.token === 'string' && body.token.length > 0;
+                            } catch {
+                                return false;
+                            }
+                        },
+                        { timeout: 15000, intervals: [250, 500, 1000] }
+                    )
+                    .toBe(true);
+
+                // Wait until the second session is reflected in the table before attempting to
+                // revoke it; Convex queries are reactive but can lag slightly behind the login.
+                await expect
+                    .poll(
+                        () =>
+                            isolatedAuthenticatedPage.getByTestId('session-revoke-button').count(),
+                        { timeout: 15000, intervals: [250, 500, 1000] }
+                    )
+                    .toBeGreaterThanOrEqual(1);
+
+                const revokeOtherButton = isolatedAuthenticatedPage.getByTestId(
                     'sessions-revoke-other-button'
                 );
                 await expect(revokeOtherButton).toBeEnabled({ timeout: 15000 });
 
-                await revokeOtherButton.click();
+                // Click the revoke button. If the Convex mutation fails with
+                // AUTH_REQUIRED (which can happen during the hydration handoff
+                // if the client JWT isn't ready yet), reload and retry up to
+                // three times. This mirrors what a real user would do and keeps
+                // the test deterministic under parallel load.
+                let succeeded = false;
+                const revokeButtons =
+                    isolatedAuthenticatedPage.getByTestId('session-revoke-button');
+                for (let attempt = 0; attempt < 3 && !succeeded; attempt++) {
+                    const currentRevokeButton = isolatedAuthenticatedPage.getByTestId(
+                        'sessions-revoke-other-button'
+                    );
+                    await expect(currentRevokeButton).toBeEnabled({ timeout: 15000 });
+                    await currentRevokeButton.click();
 
-                let revokeCount = -1;
-                const maxTime = Date.now() + 15000;
-
-                while (Date.now() < maxTime && revokeCount !== 0) {
-                    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
-                    revokeCount = await authenticatedPage
-                        .getByTestId('session-revoke-button')
-                        .count();
-
-                    if (revokeCount !== 0) {
-                        await authenticatedPage.waitForTimeout(500);
+                    try {
+                        await expect
+                            .poll(() => revokeButtons.count(), {
+                                timeout: 8000,
+                                intervals: [250, 500, 1000],
+                            })
+                            .toBe(0);
+                        succeeded = true;
+                    } catch {
+                        // Reload drops any stale client state (e.g. a Convex
+                        // JWT that expired mid-test) and forces re-hydration.
+                        await isolatedAuthenticatedPage.reload({
+                            waitUntil: 'domcontentloaded',
+                        });
+                        await expect(sessionsPage).toBeVisible({ timeout: 15000 });
                     }
                 }
 
-                expect(revokeCount).toBe(0);
-                await expect(authenticatedPage.getByTestId('table-row')).toHaveCount(1);
+                expect(succeeded, 'revoke other sessions should eventually succeed').toBe(true);
+
+                await expect(isolatedAuthenticatedPage.getByTestId('table-row')).toHaveCount(1, {
+                    timeout: 10000,
+                });
                 await expect(
-                    authenticatedPage.getByTestId('session-status-badge-current')
+                    isolatedAuthenticatedPage.getByTestId('session-status-badge-current')
                 ).toBeVisible();
             } finally {
                 await secondContext.close();

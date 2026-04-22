@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-base';
 import { ensureDefaultCategories } from '../../helpers/test-helpers';
 
 async function openObjectivesPage(page: import('@playwright/test').Page): Promise<void> {
@@ -130,9 +130,6 @@ test.describe('Objectives CRUD', () => {
             throw new Error('Could not open edit objective modal');
         }
 
-        await page.getByTestId('objective-edit-title-input').clear();
-        await page.getByTestId('objective-edit-title-input').fill(updatedTitle);
-
         let scopeChanged = false;
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
@@ -157,6 +154,11 @@ test.describe('Objectives CRUD', () => {
         if (!scopeChanged) {
             throw new Error('Could not change objective scope in edit modal');
         }
+
+        const editTitleInput = page.getByTestId('objective-edit-title-input');
+        await editTitleInput.clear();
+        await editTitleInput.fill(updatedTitle);
+        await expect(editTitleInput).toHaveValue(updatedTitle);
 
         await page.getByTestId('objective-edit-save-button').click();
         await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });

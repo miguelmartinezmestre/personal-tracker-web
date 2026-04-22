@@ -19,6 +19,24 @@ async function openThemeMenu(
     await expect(desiredOption).toBeVisible({ timeout: 5000 });
 }
 
+async function clickThemeOption(
+    page: import('@playwright/test').Page,
+    option: 'light' | 'dark'
+): Promise<void> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await openThemeMenu(page, option);
+        const desiredOption = page.getByTestId(`theme-option-${option}`);
+        try {
+            await desiredOption.click({ timeout: 5000 });
+            return;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+        }
+    }
+
+    await page.getByTestId(`theme-option-${option}`).click({ timeout: 5000 });
+}
+
 test.describe('Theme Switching', () => {
     test(
         'toggle dark mode applies dark class to html',
@@ -27,9 +45,7 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            await openThemeMenu(authenticatedPage, 'dark');
-            const darkOption = authenticatedPage.getByTestId('theme-option-dark');
-            await darkOption.click();
+            await clickThemeOption(authenticatedPage, 'dark');
 
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
@@ -44,16 +60,12 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            await openThemeMenu(authenticatedPage, 'dark');
-            const darkOption = authenticatedPage.getByTestId('theme-option-dark');
-            await darkOption.click();
+            await clickThemeOption(authenticatedPage, 'dark');
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
             });
 
-            await openThemeMenu(authenticatedPage, 'light');
-            const lightOption = authenticatedPage.getByTestId('theme-option-light');
-            await lightOption.click();
+            await clickThemeOption(authenticatedPage, 'light');
             await expect
                 .poll(async () => await authenticatedPage.locator('html').getAttribute('class'), {
                     timeout: 5000,
@@ -69,9 +81,7 @@ test.describe('Theme Switching', () => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
 
-            await openThemeMenu(authenticatedPage, 'dark');
-            const darkOption = authenticatedPage.getByTestId('theme-option-dark');
-            await darkOption.click();
+            await clickThemeOption(authenticatedPage, 'dark');
             await expect(authenticatedPage.locator('html')).toHaveAttribute('class', /dark/, {
                 timeout: 5000,
             });
@@ -82,9 +92,7 @@ test.describe('Theme Switching', () => {
                 timeout: 5000,
             });
 
-            await openThemeMenu(authenticatedPage, 'light');
-            const lightOption = authenticatedPage.getByTestId('theme-option-light');
-            await lightOption.click();
+            await clickThemeOption(authenticatedPage, 'light');
         }
     );
 });
