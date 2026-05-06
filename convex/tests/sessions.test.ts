@@ -1,10 +1,10 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestSession, createTestUser } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
-import { Id } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
+import type { GenericQueryCtx } from 'convex/server';
 
 describe('convex sessions', () => {
     const t = initConvexTest();

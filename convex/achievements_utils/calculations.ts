@@ -1,10 +1,44 @@
 import type { DatabaseReader } from '../_generated/server';
 import { Doc, Id } from '../_generated/dataModel';
-import { TIME } from '../utils/constants';
+import { TIME, ERROR_CODES } from '../utils/constants';
+import { ConvexError } from 'convex/values';
 
-const LIST_LIMIT = 1000;
+const PAGE_SIZE = 500;
 
 type ReadCtx = { db: DatabaseReader };
+
+async function validateUserOrganizationMembership(
+    ctx: ReadCtx,
+    userId: Id<'user'>,
+    organizationId: Id<'organization'>
+): Promise<void> {
+    const membership = await ctx.db
+        .query('member')
+        .withIndex('by_organizationId_and_userId', q =>
+            q.eq('organizationId', organizationId).eq('userId', userId)
+        )
+        .first();
+
+    if (!membership) {
+        throw new ConvexError(ERROR_CODES.FORBIDDEN);
+    }
+}
+
+async function validateObjectivesOrganization(
+    ctx: ReadCtx,
+    objectiveIds: Id<'objectives'>[],
+    organizationId: Id<'organization'>
+): Promise<void> {
+    for (const objectiveId of objectiveIds) {
+        const objective = await ctx.db.get('objectives', objectiveId);
+        if (!objective) {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+        }
+        if (objective.organizationId !== organizationId) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+    }
+}
 
 export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
     if (updates.length === 0) return 0;
@@ -44,53 +78,113 @@ export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): 
 
 async function fetchProgressUpdates(
     ctx: ReadCtx,
-    objectiveIds: Id<'objectives'>[]
+    objectiveIds: Id<'objectives'>[],
+    organizationId: Id<'organization'>,
+    userId?: Id<'user'>
 ): Promise<Doc<'progressUpdates'>[]> {
-    return Promise.all(
-        objectiveIds.slice(0, 100).map(async objectiveId => {
-            const updates = await ctx.db
+    await validateObjectivesOrganization(ctx, objectiveIds, organizationId);
+
+    if (objectiveIds.length === 0) return [];
+
+    const updates: Doc<'progressUpdates'>[] = [];
+    const objectiveIdsSet = new Set(objectiveIds);
+
+    if (userId) {
+        let cursor: string | null = null;
+        let isDone = false;
+
+        while (!isDone) {
+            const page = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_user_date', q => q.eq('userId', userId))
+                .paginate({ numItems: PAGE_SIZE, cursor });
+
+            updates.push(...page.page.filter(update => objectiveIdsSet.has(update.objective)));
+            isDone = page.isDone;
+            cursor = page.continueCursor;
+        }
+
+        return updates;
+    }
+
+    for (const objectiveId of objectiveIds) {
+        let cursor: string | null = null;
+        let isDone = false;
+
+        while (!isDone) {
+            const page = await ctx.db
                 .query('progressUpdates')
                 .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .take(50);
-            return updates;
-        })
-    ).then(results => results.flat());
+                .paginate({ numItems: PAGE_SIZE, cursor });
+
+            updates.push(...page.page);
+            isDone = page.isDone;
+            cursor = page.continueCursor;
+        }
+    }
+
+    return updates;
 }
 
-export async function calculateUserStreak(ctx: ReadCtx, userId: Id<'user'>): Promise<number> {
-    const objectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(LIST_LIMIT);
+export async function calculateUserStreak(
+    ctx: ReadCtx,
+    userId: Id<'user'>,
+    organizationId: Id<'organization'>
+): Promise<number> {
+    await validateUserOrganizationMembership(ctx, userId, organizationId);
+
+    const objectives: Doc<'objectives'>[] = [];
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('objectives')
+            .withIndex('by_user_organization', q =>
+                q.eq('userId', userId).eq('organizationId', organizationId)
+            )
+            .paginate({ numItems: PAGE_SIZE, cursor });
+
+        objectives.push(...page.page);
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
 
     const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
 
     if (objectiveIds.length === 0) return 0;
 
-    const userUpdates = await fetchProgressUpdates(ctx, objectiveIds);
+    const userUpdates = await fetchProgressUpdates(ctx, objectiveIds, organizationId, userId);
 
     return countStreakFromUpdates(userUpdates);
 }
 
 export async function calculateOrganizationStreak(
     ctx: ReadCtx,
-    memberUserIds: Id<'user'>[]
+    organizationId: Id<'organization'>
 ): Promise<number> {
-    const organizationObjectives = await Promise.all(
-        memberUserIds.slice(0, 100).map(async userId => {
-            const userObjectives = await ctx.db
-                .query('objectives')
-                .withIndex('by_user', q => q.eq('userId', userId))
-                .take(50);
-            return userObjectives;
-        })
-    ).then(results => results.flat());
+    const organizationObjectives: Doc<'objectives'>[] = [];
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_scope', q =>
+                q.eq('organizationId', organizationId).eq('scope', 'organization')
+            )
+            .paginate({ numItems: PAGE_SIZE, cursor });
+
+        organizationObjectives.push(...page.page);
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
 
     const objectiveIds = organizationObjectives.map((o: Doc<'objectives'>) => o._id);
 
     if (objectiveIds.length === 0) return 0;
 
-    const organizationUpdates = await fetchProgressUpdates(ctx, objectiveIds);
+    const organizationUpdates = await fetchProgressUpdates(ctx, objectiveIds, organizationId);
 
     return countStreakFromUpdates(organizationUpdates);
 }

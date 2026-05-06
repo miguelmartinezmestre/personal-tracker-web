@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/features/auth/schemas/reset-password';
 import { authClient } from '@/features/auth/auth-client';
+import { useFormSubmit } from '@/hooks/use-form-submit';
 
 interface ResetPasswordProps {
     resetPasswordKey?: string;
@@ -46,7 +47,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
         },
     });
 
-    async function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
+    async function handleResetPassword(values: z.infer<typeof resetPasswordSchema>) {
         setRegisterError('');
         setSuccessMessage('');
 
@@ -67,6 +68,8 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
 
         setSuccessMessage(t('resetPasswordSuccess'));
     }
+
+    const { submit: onSubmit, isSubmitting } = useFormSubmit(handleResetPassword);
 
     return (
         <Form {...form}>
@@ -137,9 +140,10 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
+                    disabled={isSubmitting}
                     data-testid="reset-password-submit"
                 >
-                    {t('resetPassword')}
+                    {isSubmitting ? tCommon('loading') : t('resetPassword')}
                 </Button>
 
                 <div className="text-center mt-4">

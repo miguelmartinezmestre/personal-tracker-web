@@ -1,8 +1,10 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization } from './test_helpers';
 import { TIME } from '../utils/constants';
+import type { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import type { DataModel } from '../_generated/dataModel';
 
 type InvitationRecord = {
     _id: string;
@@ -214,5 +216,79 @@ describe('convex invitations (better-auth)', () => {
         );
         const record = invitation as InvitationRecord;
         expect(record.expiresAt).toBeLessThan(Date.now());
+    });
+
+    test('getUserInvitations finds matching email beyond 1000 unrelated pending invitations', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const targetEmail = `target-${randomSuffix}@example.com`;
+
+        const inviter = await createTestUser(t, {
+            userId: 'inviter-many-' + randomSuffix,
+            email: 'inviter-many@example.com-' + randomSuffix,
+            name: 'Many Inviter ' + randomSuffix,
+            password: 'test-password',
+            role: 'admin',
+            emailVerified: true,
+        });
+
+        const target = await createTestUser(t, {
+            userId: 'target-many-' + randomSuffix,
+            email: targetEmail,
+            name: 'Target Invitee ' + randomSuffix,
+            password: 'test-password',
+            role: 'user',
+            emailVerified: true,
+        });
+
+        const organizationId = await createTestOrganization(t, {
+            name: 'Many Invitations Org ' + randomSuffix,
+            slug: 'many-invitations-org-' + randomSuffix,
+        });
+
+        await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+            const now = Date.now();
+            for (let i = 0; i < 1001; i++) {
+                await ctx.db.insert('invitation', {
+                    organizationId,
+                    email: `other-${i}-${randomSuffix}@example.com`,
+                    role: 'member',
+                    status: 'pending',
+                    expiresAt: now + TIME.DAY_MS + i,
+                    createdAt: now,
+                    inviterId: inviter.docId,
+                });
+            }
+
+            await ctx.db.insert('invitation', {
+                organizationId,
+                email: targetEmail,
+                role: 'admin',
+                status: 'pending',
+                expiresAt: now + TIME.DAY_MS * 2,
+                createdAt: now,
+                inviterId: inviter.docId,
+            });
+        });
+
+        const targetIdentity = t.withIdentity({
+            subject: target.docId,
+            role: 'user',
+            email: target.email,
+            name: target.name,
+            password: target.password,
+            emailVerified: true,
+            createdAt: Date.now(),
+            userId: target.docId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        const invitations = await targetIdentity.query(api.organizations.getUserInvitations, {});
+
+        expect(invitations).toHaveLength(1);
+        expect(invitations[0]?.email).toBe(targetEmail);
+        expect(invitations[0]?.organizationId).toBe(organizationId);
     });
 });

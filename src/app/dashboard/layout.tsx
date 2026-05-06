@@ -37,7 +37,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
                         <OrganizationSwitcher />
                         <NotificationBell />
-                        <ThemeToggle />
+                        <ThemeToggle testId="dashboard-theme-toggle" />
                         <LanguageSwitcher />
                         <SignOutButton />
                     </div>

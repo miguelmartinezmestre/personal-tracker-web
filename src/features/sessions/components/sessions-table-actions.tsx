@@ -5,6 +5,7 @@ import { useConvexMutation, convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import type { Id } from '@/convex/_generated/dataModel';
 
 const sessionsQueryKey = convexQuery(api.sessions.getSessionsByUser, {
     paginationOpts: { numItems: 20, cursor: null },
@@ -39,7 +40,7 @@ export function useInvalidateAllOtherSessions() {
     const { mutate, mutateAsync, isPending } = useMutation<
         { readonly success: true; readonly revokedCount: number },
         Error,
-        { currentToken: string }
+        { currentSessionId: Id<'session'> }
     >({
         mutationFn: useConvexMutation(api.sessions.invalidateAllOtherSessions),
         onSuccess: result => {

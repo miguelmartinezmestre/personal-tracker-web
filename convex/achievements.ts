@@ -1,18 +1,19 @@
 import { v, ConvexError } from 'convex/values';
 import type { MutationCtx } from './_generated/server';
-import { internalMutation } from './_generated/server';
+import { internalMutation, mutation } from './_generated/server';
 import { internal } from './_generated/api';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import {
     calculateUserStreak,
     calculateOrganizationStreak,
+    countStreakFromUpdates,
 } from './achievements_utils/calculations';
 import { addContributor, getContributors } from './achievements_utils/helpers';
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS } from './rls';
 import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
 import { achievementTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
-
+import { getAuthUserIdentity } from 'better-convex/auth';
 const LIST_LIMIT = 1000;
 const BATCH_SIZE = 100;
 const ACHIEVEMENT_BATCH_SIZE = 50;
@@ -47,6 +48,73 @@ async function shouldSendOrganizationNotification(
     }
 
     return preferences.organizationNotifications ?? true;
+}
+
+async function notifyOrganizationAchievementUnlocked(
+    ctx: MutationCtx,
+    organizationId: Id<'organization'>,
+    code: string,
+    points: number,
+    now: number
+): Promise<void> {
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+            .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor });
+
+        for (const member of page.page) {
+            const uid = member.userId as Id<'user'>;
+            const shouldNotify = await shouldSendOrganizationNotification(ctx, uid);
+            if (shouldNotify) {
+                await ctx.db.insert('notifications', {
+                    userId: uid,
+                    organizationId,
+                    objective: undefined,
+                    read: false,
+                    notificationType: 'achievement',
+                    notificationDate: now,
+                    message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            }
+        }
+
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
+}
+
+async function countProgressUpdatesForObjectives(
+    ctx: MutationCtx,
+    userId: Id<'user'>,
+    objectiveIds: Id<'objectives'>[]
+): Promise<number> {
+    if (objectiveIds.length === 0) {
+        return 0;
+    }
+
+    const objectiveIdsSet = new Set(objectiveIds);
+    let total = 0;
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_user_date', q => q.eq('userId', userId))
+            .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor });
+
+        total += page.page.filter(update => objectiveIdsSet.has(update.objective)).length;
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
+
+    return total;
 }
 
 export const getAchievementDefinitions = queryWithRLS({
@@ -207,25 +275,38 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const earnedIds = new Set(obtainedAchievements.map(oa => oa.achievement));
 
-        const objectivesCount = await ctx.db
-            .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .take(LIST_LIMIT);
+        const objectivesCount = ctx.organizationId
+            ? await ctx.db
+                  .query('objectives')
+                  .withIndex('by_user_organization', q =>
+                      q.eq('userId', userId).eq('organizationId', ctx.organizationId!)
+                  )
+                  .take(LIST_LIMIT)
+            : await ctx.db
+                  .query('objectives')
+                  .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
+                  .take(LIST_LIMIT);
 
         const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
+        let progressUpdatesCount = 0;
+        let progressUpdatesForObjectives: Doc<'progressUpdates'>[] = [];
 
-        const userObjectiveIds = objectivesCount.map(o => o._id);
-        const userProgressUpdates = await Promise.all(
-            userObjectiveIds.slice(0, BATCH_SIZE).map(async objectiveId => {
-                const updates = await ctx.db
-                    .query('progressUpdates')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                    .take(50);
-                return updates;
-            })
-        ).then(results => results.flat());
+        if (objectivesCount.length > 0) {
+            const objectiveIdsSet = new Set(objectivesCount.map(objective => objective._id));
+            const userProgressUpdates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_user_date', q => q.eq('userId', userId))
+                .take(LIST_LIMIT);
 
-        const streak = await calculateUserStreak(ctx, userId);
+            progressUpdatesForObjectives = userProgressUpdates.filter(update =>
+                objectiveIdsSet.has(update.objective)
+            );
+            progressUpdatesCount = progressUpdatesForObjectives.length;
+        }
+
+        const streak = ctx.organizationId
+            ? countStreakFromUpdates(progressUpdatesForObjectives)
+            : 0;
 
         const progressList = activeDefinitions.map(def => {
             const isEarned = earnedIds.has(def._id);
@@ -251,7 +332,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 case 'progress_updates_10':
                 case 'progress_updates_50':
                 case 'progress_updates_100':
-                    currentProgress = userProgressUpdates.length;
+                    currentProgress = progressUpdatesCount;
                     break;
                 case 'early_bird':
                     currentProgress = completedObjectives.filter(o => {
@@ -316,9 +397,18 @@ export const seedAchievementDefinitionsInternal = internalMutation({
     },
 });
 
-export const seedAchievementDefinitions = mutationWithRLS({
+export const seedAchievementDefinitions = mutation({
     args: {},
     handler: async (ctx): Promise<{ message: string; count: number }> => {
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
+
+        const userId = identity.userId as Id<'user'>;
+
+        await ctx.runQuery(internal.setup.requireAdminInternal, { userId });
+
         return await ctx.runMutation(internal.achievements.seedAchievementDefinitionsInternal, {});
     },
 });
@@ -356,19 +446,31 @@ async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
 export const checkUserAchievements = internalMutation({
     args: {
         userId: v.id('user'),
-        organizationId: v.optional(v.id('organization')),
+        organizationId: v.id('organization'),
         trigger: v.string(),
-        skip: v.optional(v.number()),
+        objectivesContinueCursor: v.optional(v.union(v.string(), v.null())),
         progressUpdatesCount: v.optional(v.number()),
+        cumulativeObjectiveCount: v.optional(v.number()),
+        cumulativeCompletedCount: v.optional(v.number()),
+        cumulativeEarlyBirdCount: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const { userId, organizationId, trigger } = args;
         const now = Date.now();
-        const skip = args.skip || 0;
-        let progressUpdatesCount = args.progressUpdatesCount || 0;
+        let progressUpdatesCount = args.progressUpdatesCount ?? 0;
+        let cumulativeObjectiveCount = args.cumulativeObjectiveCount ?? 0;
+        let cumulativeCompletedCount = args.cumulativeCompletedCount ?? 0;
+        let cumulativeEarlyBirdCount = args.cumulativeEarlyBirdCount ?? 0;
 
-        if (!organizationId) {
-            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
+        const membership = await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', organizationId).eq('userId', userId)
+            )
+            .first();
+
+        if (!membership) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
         const earnedAchievements = await ctx.db
@@ -383,33 +485,33 @@ export const checkUserAchievements = internalMutation({
             earnedAchievements.map(ea => defMap.get(ea.achievement)?.code).filter(Boolean)
         );
 
-        // Get objectives in batches - only take a limited batch at a time
-        const objectivesBatch = await ctx.db
+        const objectivesPage = await ctx.db
             .query('objectives')
             .withIndex('by_user', q => q.eq('userId', userId))
-            .take(ACHIEVEMENT_BATCH_SIZE);
+            .filter(q => q.eq(q.field('organizationId'), organizationId))
+            .paginate({
+                numItems: ACHIEVEMENT_BATCH_SIZE,
+                cursor: args.objectivesContinueCursor ?? null,
+            });
 
-        const completedObjectivesInBatch = objectivesBatch.filter(o => o.status === 'completed');
+        const objectivesBatch = objectivesPage.page;
+        cumulativeObjectiveCount += objectivesBatch.length;
+        cumulativeCompletedCount += objectivesBatch.filter(o => o.status === 'completed').length;
+        cumulativeEarlyBirdCount += objectivesBatch.filter(
+            o => o.status === 'completed' && o.deadline != null && o.updatedAt <= o.deadline
+        ).length;
 
-        // Only get progress updates for this batch of objectives
         const objectiveIds = objectivesBatch.map(o => o._id);
+
         if (objectiveIds.length > 0) {
-            const batchProgressUpdates = await Promise.all(
-                objectiveIds.map(async objectiveId => {
-                    const updates = await ctx.db
-                        .query('progressUpdates')
-                        .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                        .take(50);
-                    return updates;
-                })
-            ).then(results => results.flat());
-            progressUpdatesCount += batchProgressUpdates.length;
+            progressUpdatesCount += await countProgressUpdatesForObjectives(
+                ctx,
+                userId,
+                objectiveIds
+            );
         }
 
-        const streak = await calculateUserStreak(ctx, userId);
-
-        // Get total counts using aggregation (more efficient)
-        const allObjectivesCount = skip + objectivesBatch.length;
+        const streak = await calculateUserStreak(ctx, userId, organizationId);
 
         const result = await evaluateAndAwardAchievements({
             ctx,
@@ -419,28 +521,19 @@ export const checkUserAchievements = internalMutation({
 
                 switch (code) {
                     case 'first_objective':
-                        return trigger === 'objective_created' && allObjectivesCount >= 1;
+                        return trigger === 'objective_created' && cumulativeObjectiveCount >= 1;
                     case 'objectives_created_5':
-                        return trigger === 'objective_created' && allObjectivesCount >= 5;
+                        return trigger === 'objective_created' && cumulativeObjectiveCount >= 5;
                     case 'objectives_created_15':
-                        return trigger === 'objective_created' && allObjectivesCount >= 15;
+                        return trigger === 'objective_created' && cumulativeObjectiveCount >= 15;
                     case 'objectives_created_30':
-                        return trigger === 'objective_created' && allObjectivesCount >= 30;
+                        return trigger === 'objective_created' && cumulativeObjectiveCount >= 30;
                     case 'objectives_completed_3':
-                        return (
-                            trigger === 'objective_completed' &&
-                            completedObjectivesInBatch.length >= 3
-                        );
+                        return trigger === 'objective_completed' && cumulativeCompletedCount >= 3;
                     case 'objectives_completed_10':
-                        return (
-                            trigger === 'objective_completed' &&
-                            completedObjectivesInBatch.length >= 10
-                        );
+                        return trigger === 'objective_completed' && cumulativeCompletedCount >= 10;
                     case 'objectives_completed_25':
-                        return (
-                            trigger === 'objective_completed' &&
-                            completedObjectivesInBatch.length >= 25
-                        );
+                        return trigger === 'objective_completed' && cumulativeCompletedCount >= 25;
                     case 'streak_3':
                         return trigger === 'progress_update' && streak >= 3;
                     case 'streak_7':
@@ -455,11 +548,7 @@ export const checkUserAchievements = internalMutation({
                         return trigger === 'progress_update' && progressUpdatesCount >= 100;
                     case 'early_bird':
                         if (trigger === 'objective_completed') {
-                            const earlyCompletions = completedObjectivesInBatch.filter(o => {
-                                if (!o.deadline) return false;
-                                return o.updatedAt <= o.deadline;
-                            });
-                            return earlyCompletions.length >= 1;
+                            return cumulativeEarlyBirdCount >= 1;
                         }
                         return false;
                     default:
@@ -501,22 +590,23 @@ export const checkUserAchievements = internalMutation({
             },
         });
 
-        // If we got a full batch, there might be more objectives to process
-        // Note: achievements evaluation doesn't strictly need continuation since
-        // we get the counts via aggregation, but we keep the structure for consistency
-        if (objectivesBatch.length === ACHIEVEMENT_BATCH_SIZE) {
+        if (!objectivesPage.isDone) {
             await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
                 userId,
                 organizationId,
                 trigger,
-                skip: skip + ACHIEVEMENT_BATCH_SIZE,
+                objectivesContinueCursor: objectivesPage.continueCursor,
                 progressUpdatesCount,
+                cumulativeObjectiveCount,
+                cumulativeCompletedCount,
+                cumulativeEarlyBirdCount,
             });
             return {
                 ...result,
                 status: 'in_progress',
                 processedBatch: objectivesBatch.length,
-                totalProcessed: skip + objectivesBatch.length,
+                cumulativeObjectiveCount,
+                cumulativeCompletedCount,
             };
         }
 
@@ -529,16 +619,15 @@ export const checkOrganizationAchievements = internalMutation({
         organizationId: v.id('organization'),
         userId: v.id('user'),
         trigger: v.string(),
-        memberSkip: v.optional(v.number()),
-        objectivesCount: v.optional(v.number()),
-        completedCount: v.optional(v.number()),
+        orgObjectivesContinueCursor: v.optional(v.union(v.string(), v.null())),
+        orgScopedObjectivesCount: v.optional(v.number()),
+        orgScopedCompletedCount: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const { organizationId, userId, trigger } = args;
         const now = Date.now();
-        const memberSkip = args.memberSkip || 0;
-        let objectivesCount = args.objectivesCount || 0;
-        let completedCount = args.completedCount || 0;
+        let orgScopedObjectivesCount = args.orgScopedObjectivesCount ?? 0;
+        let orgScopedCompletedCount = args.orgScopedCompletedCount ?? 0;
 
         const earnedAchievements = await ctx.db
             .query('organizationAchievements')
@@ -552,33 +641,21 @@ export const checkOrganizationAchievements = internalMutation({
             earnedAchievements.map(ea => defMap.get(ea.achievement)?.code).filter(Boolean)
         );
 
-        // Get members in batches
-        const members = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-            .take(ACHIEVEMENT_BATCH_SIZE);
+        const objectivesPage = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_scope', q =>
+                q.eq('organizationId', organizationId).eq('scope', 'organization')
+            )
+            .paginate({
+                numItems: ACHIEVEMENT_BATCH_SIZE,
+                cursor: args.orgObjectivesContinueCursor ?? null,
+            });
 
-        const memberUserIds = members.map(m => m.userId as Id<'user'>);
+        const batchObjectives = objectivesPage.page;
+        orgScopedObjectivesCount += batchObjectives.length;
+        orgScopedCompletedCount += batchObjectives.filter(o => o.status === 'completed').length;
 
-        // Get objectives for this batch of members only
-        const batchObjectives = await Promise.all(
-            memberUserIds.map(async memberId => {
-                const userObjectives = await ctx.db
-                    .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', memberId))
-                    .take(50);
-                return userObjectives;
-            })
-        ).then(results => results.flat());
-
-        objectivesCount += batchObjectives.length;
-        completedCount += batchObjectives.filter(o => o.status === 'completed').length;
-
-        // Calculate streak for this batch of members
-        let organizationStreak = 0;
-        if (memberUserIds.length > 0) {
-            organizationStreak = await calculateOrganizationStreak(ctx, memberUserIds);
-        }
+        const organizationStreak = await calculateOrganizationStreak(ctx, organizationId);
 
         const result = await evaluateAndAwardAchievements({
             ctx,
@@ -588,13 +665,13 @@ export const checkOrganizationAchievements = internalMutation({
 
                 switch (code) {
                     case 'organization_first_objective':
-                        return trigger === 'objective_created' && objectivesCount >= 1;
+                        return trigger === 'objective_created' && orgScopedObjectivesCount >= 1;
                     case 'organization_completed_5':
-                        return trigger === 'objective_completed' && completedCount >= 5;
+                        return trigger === 'objective_completed' && orgScopedCompletedCount >= 5;
                     case 'organization_completed_15':
-                        return trigger === 'objective_completed' && completedCount >= 15;
+                        return trigger === 'objective_completed' && orgScopedCompletedCount >= 15;
                     case 'organization_completed_30':
-                        return trigger === 'objective_completed' && completedCount >= 30;
+                        return trigger === 'objective_completed' && orgScopedCompletedCount >= 30;
                     case 'organization_streak_7': {
                         return trigger === 'progress_update' && organizationStreak >= 7;
                     }
@@ -621,51 +698,35 @@ export const checkOrganizationAchievements = internalMutation({
                     updatedAt: now,
                 });
 
-                // Add the triggering user as the first contributor
                 await addContributor(ctx, orgAchievementId, userId, 1);
 
-                for (const member of members) {
-                    const shouldNotify = await shouldSendOrganizationNotification(
-                        ctx,
-                        member.userId as Id<'user'>
-                    );
-                    if (shouldNotify) {
-                        await ctx.db.insert('notifications', {
-                            userId: member.userId as Id<'user'>,
-                            organizationId: organizationId,
-                            objective: undefined,
-                            read: false,
-                            notificationType: 'achievement',
-                            notificationDate: now,
-                            message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
-                            createdAt: now,
-                            updatedAt: now,
-                        });
-                    }
-                }
+                await notifyOrganizationAchievementUnlocked(ctx, organizationId, code, points, now);
             },
         });
 
-        // If we got a full batch of members, there might be more to process
-        if (members.length === ACHIEVEMENT_BATCH_SIZE) {
+        if (!objectivesPage.isDone) {
             await ctx.scheduler.runAfter(0, internal.achievements.checkOrganizationAchievements, {
                 organizationId,
                 userId,
                 trigger,
-                memberSkip: memberSkip + ACHIEVEMENT_BATCH_SIZE,
-                objectivesCount,
-                completedCount,
+                orgObjectivesContinueCursor: objectivesPage.continueCursor,
+                orgScopedObjectivesCount,
+                orgScopedCompletedCount,
             });
             return {
                 ...result,
                 status: 'in_progress',
-                processedBatch: members.length,
-                totalMembersProcessed: memberSkip + members.length,
-                objectivesCount,
-                completedCount,
+                processedBatch: batchObjectives.length,
+                orgScopedObjectivesCount,
+                orgScopedCompletedCount,
             };
         }
 
-        return { ...result, status: 'completed', objectivesCount, completedCount };
+        return {
+            ...result,
+            status: 'completed',
+            orgScopedObjectivesCount,
+            orgScopedCompletedCount,
+        };
     },
 });

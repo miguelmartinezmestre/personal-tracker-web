@@ -31,23 +31,15 @@ export const getMonthlyProgress = queryWithRLS({
         const userId = ctx.userId;
         const monthsToFetch = args.months ?? DASHBOARD.MONTHS_TO_SHOW;
 
-        const objectives = await ctx.db
-            .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
+        const now = new Date();
+        const oldestDate = new Date(now.getFullYear(), now.getMonth() - (monthsToFetch - 1), 1);
+        const startDate = oldestDate.getTime();
+
+        const userUpdates = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_user_date', q => q.eq('userId', userId).gte('updateDate', startDate))
             .take(LIST_LIMIT);
 
-        const userUpdates = (
-            await Promise.all(
-                objectives.map(o =>
-                    ctx.db
-                        .query('progressUpdates')
-                        .withIndex('by_objective', q => q.eq('objective', o._id))
-                        .take(100)
-                )
-            )
-        ).flat();
-
-        const now = new Date();
         const monthsData: { month: string; monthKey: string; count: number }[] = [];
 
         for (let i = monthsToFetch - 1; i >= 0; i--) {
@@ -79,9 +71,8 @@ export const getObjectivesWithMostProgress = queryWithRLS({
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const maxItems = args.limit ?? PAGINATION.DASHBOARD_LIMIT;
-        const fetchLimit = maxItems * 3; // Fetch more to allow for good sorting
+        const fetchLimit = maxItems * 3;
 
-        // Only fetch active objectives using the status index, exclude completed
         const objectives = await ctx.db
             .query('objectives')
             .withIndex('by_user_status', q => q.eq('userId', userId).eq('status', 'active'))
@@ -118,7 +109,6 @@ export const getUpcomingDeadlines = queryWithRLS({
         const now = Date.now();
         const futureLimit = now + daysAhead * TIME.DAY_MS;
 
-        // Use index to fetch only active objectives with deadlines in range
         const objectives = await ctx.db
             .query('objectives')
             .withIndex('by_user_status_deadline', q =>
@@ -161,13 +151,11 @@ export const getRecentActivity = queryWithRLS({
         const daysBack = args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK;
         const startDate = Date.now() - daysBack * TIME.DAY_MS;
 
-        // Fetch recent objectives for this user using index
         const recentObjectivesPromise = ctx.db
             .query('objectives')
             .withIndex('by_user_createdAt', q => q.eq('userId', userId).gte('createdAt', startDate))
             .take(100);
 
-        // Fetch recently completed objectives using index with status filter
         const recentlyCompletedPromise = ctx.db
             .query('objectives')
             .withIndex('by_user_status_updatedAt', q =>
@@ -175,31 +163,16 @@ export const getRecentActivity = queryWithRLS({
             )
             .take(100);
 
-        // Get user's objective IDs for filtering progress updates
-        const userObjectives = await ctx.db
-            .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
+        const recentUpdatesPromise = ctx.db
+            .query('progressUpdates')
+            .withIndex('by_user_date', q => q.eq('userId', userId).gte('updateDate', startDate))
             .take(100);
 
-        // Find all progress updates in the date range and filter by user's objectives
-        // Since we can't query by userId directly on progressUpdates, we iterate through
-        // objectives but use take() to limit the work per objective
-        const progressUpdatesPromises = userObjectives.slice(0, 20).map(o =>
-            ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective_date', q =>
-                    q.eq('objective', o._id).gte('updateDate', startDate)
-                )
-                .take(50)
-        );
-
-        const [recentObjectives, recentlyCompleted, progressUpdatesResults] = await Promise.all([
+        const [recentObjectives, recentlyCompleted, recentUpdates] = await Promise.all([
             recentObjectivesPromise,
             recentlyCompletedPromise,
-            Promise.all(progressUpdatesPromises),
+            recentUpdatesPromise,
         ]);
-
-        const recentUpdates = progressUpdatesResults.flat();
 
         return {
             progressUpdatesCount: recentUpdates.length,

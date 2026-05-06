@@ -6,8 +6,8 @@ import {
     DEFAULT_PASSWORD,
     loginUser,
     promoteToAdmin,
-    createTFGTestUser,
-} from '../tests/test-helpers';
+} from '../../tests/helpers/test-helpers';
+import { createAdminSession } from '../../tests/setup/create-admin-session';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -79,6 +79,22 @@ async function safeClick(page: Page, selector: string, timeout = 2000): Promise<
     }
 }
 
+async function safeFill(
+    page: Page,
+    selector: string,
+    value: string,
+    timeout = 2000
+): Promise<boolean> {
+    try {
+        const element = page.locator(selector).first();
+        await element.waitFor({ state: 'visible', timeout });
+        await element.fill(value);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
     test.setTimeout(120000);
 
@@ -107,6 +123,9 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
         await takeTFGScreenshot(page, 'landing-page-cta', 'Call-to-action section');
 
+        await createAdminSession(page);
+        await page.context().clearCookies();
+
         console.log('\n🔐 SECTION 2: Authentication Flow\n');
 
         await page.goto('/login');
@@ -129,7 +148,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-reset-password', 'Reset password form');
 
-        const user = await createTFGTestUser(page, 'Miguel Garcia');
+        const user = await createTestUser(page, { usePresentableName: true });
         console.log(`✅ Created test user: ${user.username} (${user.email})`);
         await takeTFGScreenshot(
             page,
@@ -192,7 +211,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             .fill('Complete the TypeScript fundamentals course and build 3 real-world projects');
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('hours');
-        await page.getByTestId('objective-current-input').fill('25');
+        await safeFill(page, '[data-testid="objective-current-input"]', '25');
         await takeTFGScreenshot(
             page,
             'objectives-form-value-based',
@@ -215,7 +234,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             .fill('Exercise at least 5 times per week');
         await page.getByTestId('objective-target-input').fill('5');
         await page.getByTestId('objective-unit-input').fill('sessions');
-        await page.getByTestId('objective-current-input').fill('2');
+        await safeFill(page, '[data-testid="objective-current-input"]', '2');
 
         const objTypeSelect = page
             .locator('[data-testid*="objective-type"]:not([disabled])')
@@ -268,7 +287,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.getByTestId('objective-title-input').fill(obj.title);
             await page.getByTestId('objective-target-input').fill(obj.target);
             await page.getByTestId('objective-unit-input').fill(obj.unit);
-            await page.getByTestId('objective-current-input').fill(obj.current);
+            await safeFill(page, '[data-testid="objective-current-input"]', obj.current);
             await page.getByTestId('objective-save-button').click();
             await page.waitForTimeout(500);
         }
@@ -603,7 +622,10 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                     'Organizations list with created organization'
                 );
 
-                const organizationLink = page.getByText('Development Organization');
+                const organizationLink = page
+                    .getByTestId('organizations-table')
+                    .getByTestId('organization-detail-link')
+                    .first();
                 if (await organizationLink.isVisible()) {
                     await organizationLink.click();
                     await page.waitForLoadState('networkidle');

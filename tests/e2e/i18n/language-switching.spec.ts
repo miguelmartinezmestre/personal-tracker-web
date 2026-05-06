@@ -15,7 +15,9 @@ async function switchLanguage(
         await openLanguageMenu(page);
         const optionLocator = page.getByTestId(`language-option-${option}`);
         await expect(optionLocator).toBeVisible({ timeout: 5000 });
-        await optionLocator.click();
+        await optionLocator.evaluate(element => {
+            (element as HTMLElement).click();
+        });
         await page.waitForLoadState('domcontentloaded');
 
         try {

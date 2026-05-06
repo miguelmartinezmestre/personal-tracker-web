@@ -17,5 +17,5 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'] },
         },
     ],
-    globalSetup: '../tests/global-setup.ts',
+    globalSetup: '../../tests/config/global-setup.ts',
 });

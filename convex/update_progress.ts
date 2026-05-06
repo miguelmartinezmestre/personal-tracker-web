@@ -5,6 +5,12 @@ import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { workflow } from './workflow';
 import { ERROR_CODES } from './utils/constants';
+import {
+    validateProgressDelta,
+    validateUpdateDate,
+    validateObjectiveNotCompleted,
+} from './utils/objectiveDomain';
+import { shouldSendProgressNotification } from './notificationPreferences';
 
 const runObjectiveSync = async (
     ctx: Parameters<typeof workflow.start>[0],
@@ -47,9 +53,16 @@ export const createUpdateProgress = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
+        validateUpdateDate(args.updateDate);
+
+        validateProgressDelta(args.updatedValue);
+
+        validateObjectiveNotCompleted(objective.status);
+
         const now = Date.now();
         const id = await ctx.db.insert('progressUpdates', {
             objective: args.objective,
+            userId: objective.userId,
             updatedValue: args.updatedValue,
             updateDate: args.updateDate,
             comment: args.comment,
@@ -57,19 +70,22 @@ export const createUpdateProgress = mutationWithRLS({
             updatedAt: now,
         });
 
-        await ctx.db.insert('notifications', {
-            userId: objective.userId,
-            organizationId: objective.organizationId,
-            objective: args.objective,
-            read: false,
-            notificationType: 'progress',
-            notificationDate: now,
-            message: `Progress added to "${objective.title}": +${args.updatedValue}${
-                objective.unit ? ` ${objective.unit}` : ''
-            }`,
-            createdAt: now,
-            updatedAt: now,
-        });
+        const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
+        if (notifyProgress) {
+            await ctx.db.insert('notifications', {
+                userId: objective.userId,
+                organizationId: objective.organizationId,
+                objective: args.objective,
+                read: false,
+                notificationType: 'progress',
+                notificationDate: now,
+                message: `Progress added to "${objective.title}": +${args.updatedValue}${
+                    objective.unit ? ` ${objective.unit}` : ''
+                }`,
+                createdAt: now,
+                updatedAt: now,
+            });
+        }
 
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
             userId: objective.userId,
@@ -120,6 +136,12 @@ export const updateUpdateProgress = mutationWithRLS({
         if (!objective) {
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
+
+        validateUpdateDate(args.updateDate);
+
+        validateProgressDelta(args.updatedValue);
+
+        validateObjectiveNotCompleted(objective.status);
 
         await ctx.db.patch('progressUpdates', args.id, {
             updatedValue: args.updatedValue,

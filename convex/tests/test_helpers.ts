@@ -8,6 +8,7 @@ export interface TestUserData {
     userId: string;
     email: string;
     name: string;
+    password?: string;
     role?: string;
 }
 
@@ -45,6 +46,7 @@ export async function createTestUser(
         userId,
         email,
         name,
+        password: options.password,
         role,
     };
 }

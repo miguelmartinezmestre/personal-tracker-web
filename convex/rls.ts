@@ -88,46 +88,35 @@ async function rlsRules(
         notifications: {
             read: async (_, notification) => {
                 if (isAdmin) return true;
-                if (notification.userId === userId) return true;
-                if (
-                    organizationId &&
-                    notification.organizationId &&
-                    notification.organizationId === organizationId
-                )
-                    return true;
-                return false;
+
+                return notification.userId === userId;
             },
             insert: async (_, notification) => {
                 if (isAdmin) return true;
-                if (!notification.objective) {
-                    if (notification.userId === userId) return true;
-                    return Boolean(
-                        organizationId &&
-                        notification.organizationId &&
-                        notification.organizationId === organizationId
-                    );
-                }
+                if (notification.userId === userId) return true;
+                if (!notification.objective) return false;
                 const objective = await ctx.db.get('objectives', notification.objective);
-                if (!objective) return false;
-
-                const isOwner = objective.userId === userId;
-                const isOrganizationMember =
-                    objective.scope === 'organization' &&
-                    Boolean(organizationId) &&
-                    objective.organizationId === organizationId;
-
-                return isOwner || isOrganizationMember;
+                if (!objective || notification.userId !== objective.userId) return false;
+                return canAccessObjective(objective);
             },
             modify: async (_, notification) => {
                 if (isAdmin) return true;
-                if (notification.userId === userId) return true;
-                if (
-                    organizationId &&
-                    notification.organizationId &&
-                    notification.organizationId === organizationId
-                )
-                    return true;
-                return false;
+
+                return notification.userId === userId;
+            },
+        },
+        notificationPreferences: {
+            read: async (_, row) => {
+                if (isAdmin) return true;
+                return row.userId === userId;
+            },
+            insert: async (_, row) => {
+                if (isAdmin) return true;
+                return row.userId === userId;
+            },
+            modify: async (_, row) => {
+                if (isAdmin) return true;
+                return row.userId === userId;
             },
         },
         auditLogs: {
@@ -183,6 +172,29 @@ async function rlsRules(
                 return false;
             },
         },
+        organizationAchievementContributors: {
+            read: async (_, row) => {
+                if (isAdmin) return true;
+                if (row.userId === userId) return true;
+                const orgAchievement = await ctx.db.get(
+                    'organizationAchievements',
+                    row.organizationAchievementId
+                );
+                if (!orgAchievement) return false;
+                return Boolean(organizationId) && orgAchievement.organization === organizationId;
+            },
+            insert: async () => false,
+            modify: async () => false,
+        },
+        member: {
+            read: async (_, member) => {
+                if (isAdmin) return true;
+                if (member.userId === userId) return true;
+                return Boolean(organizationId) && member.organizationId === organizationId;
+            },
+            insert: async () => false,
+            modify: async () => false,
+        },
         user: {
             read: async (_, user) => {
                 if (isAdmin) return true;
@@ -199,8 +211,7 @@ async function rlsRules(
             insert: async () => false,
             modify: async (_, session) => {
                 if (isAdmin) return true;
-                // Allow users to delete/modify their own session rows so they can
-                // revoke individual sessions or close all other sessions.
+
                 return session.userId === userId;
             },
         },

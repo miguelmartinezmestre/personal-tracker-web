@@ -6,16 +6,20 @@ import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { useRevokeSession } from './user-sessions-table-actions';
-import { Doc } from '@/convex/_generated/dataModel';
+import { api } from '@/convex/_generated/api';
+import { FunctionReturnType } from 'convex/server';
+import type { Id } from '@/convex/_generated/dataModel';
 
-export function useUserSessionsTableColumns() {
+type AdminSessionRow = FunctionReturnType<typeof api.admin.listUserSessions>['page'][number];
+
+export function useUserSessionsTableColumns(targetUserId: Id<'user'> | undefined) {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
 
     const { revokeSession, isRevokingSession } = useRevokeSession();
     const [now] = useState(Date.now);
 
-    const columns: ColumnDef<Doc<'session'>>[] = [
+    const columns: ColumnDef<AdminSessionRow>[] = [
         {
             accessorKey: '_id',
             header: t('userSessions.columns.id'),
@@ -63,8 +67,11 @@ export function useUserSessionsTableColumns() {
                 <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => revokeSession({ sessionToken: row.original.token })}
-                    disabled={isRevokingSession}
+                    onClick={() => {
+                        if (!targetUserId) return;
+                        revokeSession({ userId: targetUserId, sessionId: row.original._id });
+                    }}
+                    disabled={isRevokingSession || !targetUserId}
                     data-testid="session-terminate-button"
                 >
                     <Trash2 className="h-4 w-4" />

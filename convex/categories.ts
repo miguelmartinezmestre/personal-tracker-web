@@ -50,10 +50,27 @@ export const createCategory = mutationWithRLS({
         if (!organizationId) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
+
+        const trimmedName = args.name.trim();
+        if (!trimmedName) {
+            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        const existingCategory = await ctx.db
+            .query('categories')
+            .withIndex('by_organization_name', q =>
+                q.eq('organizationId', organizationId).eq('name', trimmedName)
+            )
+            .first();
+
+        if (existingCategory) {
+            throw new ConvexError(ERROR_CODES.DUPLICATE_CATEGORY_NAME);
+        }
+
         const categoryId = await ctx.db.insert('categories', {
             userId: userId,
             organizationId,
-            name: args.name,
+            name: trimmedName,
             color: args.color,
             icon: args.icon,
             createdAt: now,
@@ -78,6 +95,27 @@ export const updateCategory = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
         }
 
+        if (rest.name !== undefined) {
+            const trimmedName = rest.name.trim();
+            if (!trimmedName) {
+                throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+            }
+
+            const duplicateCategory = await ctx.db
+                .query('categories')
+                .withIndex('by_organization_name', q =>
+                    q.eq('organizationId', existing.organizationId).eq('name', trimmedName)
+                )
+                .filter(q => q.neq(q.field('_id'), id))
+                .first();
+
+            if (duplicateCategory) {
+                throw new ConvexError(ERROR_CODES.DUPLICATE_CATEGORY_NAME);
+            }
+
+            rest.name = trimmedName;
+        }
+
         const result = await ctx.db.patch('categories', id, { ...rest, updatedAt: Date.now() });
 
         return result;
@@ -89,6 +127,24 @@ export const deleteCategory = mutationWithRLS({
         id: v.id('categories'),
     },
     handler: async (ctx, args) => {
+        const category = await ctx.db.get('categories', args.id);
+        if (!category) {
+            throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
+        }
+
+        if (category.organizationId !== ctx.organizationId) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
+        const hasObjectives = await ctx.db
+            .query('objectives')
+            .withIndex('by_categoryId', q => q.eq('categoryId', args.id))
+            .first();
+
+        if (hasObjectives) {
+            throw new ConvexError(ERROR_CODES.CATEGORY_HAS_OBJECTIVES);
+        }
+
         const result = await ctx.db.delete('categories', args.id);
 
         return result;
@@ -118,16 +174,25 @@ export const createDefaultCategories = mutationWithRLS({
 
         const results = [];
         for (const category of defaultCategories) {
-            const id = await ctx.db.insert('categories', {
-                userId: user,
-                organizationId,
-                name: category.name,
-                color: category.color,
-                icon: category.icon,
-                createdAt: now,
-                updatedAt: now,
-            });
-            results.push(await ctx.db.get('categories', id));
+            const exists = await ctx.db
+                .query('categories')
+                .withIndex('by_organization_name', q =>
+                    q.eq('organizationId', organizationId).eq('name', category.name)
+                )
+                .first();
+
+            if (!exists) {
+                const id = await ctx.db.insert('categories', {
+                    userId: user,
+                    organizationId,
+                    name: category.name,
+                    color: category.color,
+                    icon: category.icon,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+                results.push(await ctx.db.get('categories', id));
+            }
         }
 
         return results;

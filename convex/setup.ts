@@ -1,6 +1,7 @@
-import { query, mutation } from './_generated/server';
+import { query, mutation, internalMutation, internalQuery } from './_generated/server';
+import { internal } from './_generated/api';
 import { ConvexError, v } from 'convex/values';
-import { getAuthUserIdentity, getSession } from 'better-convex/auth';
+import { getAuthUserIdentity } from 'better-convex/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
 
@@ -124,24 +125,42 @@ export const completeSetup = mutation({
     },
 });
 
-export const ensureTestOrganization = mutation({
+export const getUserByIdInternal = internalQuery({
+    args: { userId: v.id('user') },
+    handler: async (ctx, args) => {
+        return await ctx.db.get(args.userId);
+    },
+});
+
+export const requireAdminInternal = internalQuery({
+    args: { userId: v.id('user') },
+    handler: async (ctx, args) => {
+        const user = await ctx.db.get(args.userId);
+        if (!user || user.role !== 'admin') {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+        return user;
+    },
+});
+
+export const ensureTestOrganizationInternal = internalMutation({
     args: {
+        userId: v.id('user'),
         organizationName: v.optional(v.string()),
         createPersonalCategory: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
-        }
-
-        const currentSession = await getSession(ctx);
-        if (!currentSession) {
-            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
-        }
-
-        const userId = identity.userId as Id<'user'>;
+        const userId = args.userId;
         const now = Date.now();
+
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .collect();
+        const currentSession =
+            sessions.length === 0
+                ? null
+                : sessions.reduce((best, s) => (s.updatedAt >= best.updatedAt ? s : best));
 
         let membership = await ctx.db
             .query('member')
@@ -176,7 +195,7 @@ export const ensureTestOrganization = mutation({
             });
         }
 
-        if (currentSession.activeOrganizationId !== organizationId) {
+        if (currentSession && currentSession.activeOrganizationId !== organizationId) {
             await ctx.db.patch(currentSession._id, {
                 activeOrganizationId: organizationId,
             });
@@ -213,5 +232,33 @@ export const ensureTestOrganization = mutation({
             organizationId,
             memberId: membership?._id ?? null,
         };
+    },
+});
+
+export const ensureTestOrganization = mutation({
+    args: {
+        organizationName: v.optional(v.string()),
+        createPersonalCategory: v.optional(v.boolean()),
+    },
+    handler: async (
+        ctx,
+        args
+    ): Promise<{ organizationId: Id<'organization'>; memberId: Id<'member'> | null }> => {
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
+        }
+
+        const userId = identity.userId as Id<'user'>;
+
+        if (process.env.ALLOW_SETUP_TEST !== 'true') {
+            await ctx.runQuery(internal.setup.requireAdminInternal, { userId });
+        }
+
+        return await ctx.runMutation(internal.setup.ensureTestOrganizationInternal, {
+            userId,
+            organizationName: args.organizationName,
+            createPersonalCategory: args.createPersonalCategory,
+        });
     },
 });

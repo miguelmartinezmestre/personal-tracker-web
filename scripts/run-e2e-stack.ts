@@ -7,10 +7,6 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 import process from 'node:process';
-import {
-    runParallelBrowserPlaywright,
-    shouldRunParallelBrowserPlaywright,
-} from './e2e-parallel-playwright';
 import { symmetricEncrypt } from 'better-auth/crypto';
 import { generateExportedKeyPair } from 'better-auth/plugins';
 
@@ -49,7 +45,6 @@ const SHOULD_FORCE_REBUILD = rebuildFromArgs || process.env.E2E_FORCE_BUILD === 
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';
 
-// Detect browser project from args to isolate environments
 function detectBrowserProject(args: string[]): string | null {
     for (let i = 0; i < args.length; i++) {
         if (args[i] === '--project' && args[i + 1]) {
@@ -65,11 +60,8 @@ function detectBrowserProject(args: string[]): string | null {
 const BROWSER_PROJECT = detectBrowserProject(forwardedPlaywrightArgs);
 const COMPOSE_PROJECT = BROWSER_PROJECT ? `metricas-e2e-${BROWSER_PROJECT}` : 'metricas-e2e';
 
-// Port offsets per browser for isolation
 const PORT_OFFSETS: Record<string, { convex: number; site: number; frontend: number }> = {
     chromium: { convex: 0, site: 0, frontend: 0 },
-    firefox: { convex: 10, site: 10, frontend: 10 },
-    webkit: { convex: 20, site: 20, frontend: 20 },
 };
 
 const PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.convex ?? 0) : 0;
@@ -534,6 +526,7 @@ function buildCommandEnv(
     return {
         ...baseEnv,
         ALLOW_SETUP_TEST: 'true',
+        E2E_SETUP_SECRET: baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
         BASE_URL: baseUrl,
         BETTER_AUTH_SECRET: betterAuthSecret,
         CONVEX_SELF_HOSTED_ADMIN_KEY: adminKey,
@@ -844,6 +837,21 @@ async function main(): Promise<void> {
     });
     await runCommand(
         PNPM_COMMAND,
+        [
+            'exec',
+            'convex',
+            'env',
+            'set',
+            'E2E_SETUP_SECRET',
+            commandEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
+        ],
+        {
+            env: commandEnv,
+            shell: USE_SHELL_FOR_PNPM,
+        }
+    );
+    await runCommand(
+        PNPM_COMMAND,
         ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_SECRET', betterAuthSecret],
         {
             env: commandEnv,
@@ -919,21 +927,11 @@ async function main(): Promise<void> {
         }
     );
 
-    const useParallelBrowsers =
-        BROWSER_PROJECT === null &&
-        forwardedPlaywrightArgs.length > 0 &&
-        shouldRunParallelBrowserPlaywright(forwardedPlaywrightArgs);
-
-    if (useParallelBrowsers) {
-        console.log(`Running Playwright e2e suite (parallel browsers)${browserLabel}...`);
-        await runParallelBrowserPlaywright(commandEnv, forwardedPlaywrightArgs);
-    } else {
-        console.log(`Running Playwright e2e suite${browserLabel}...`);
-        await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
-            env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
-        });
-    }
+    console.log(`Running Playwright e2e suite${browserLabel}...`);
+    await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
+        env: commandEnv,
+        shell: USE_SHELL_FOR_PNPM,
+    });
 
     console.log(`E2E suite finished successfully${browserLabel}.`);
 }

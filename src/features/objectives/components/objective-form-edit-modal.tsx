@@ -91,9 +91,11 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     const initialValues = useMemo(
         () => ({
             ...defaultValues,
-            category: defaultValues.category
-                ? (categoryNameToId.get(defaultValues.category) ?? defaultValues.category)
-                : null,
+            category: defaultValues.categoryId
+                ? String(defaultValues.categoryId)
+                : defaultValues.category
+                  ? (categoryNameToId.get(defaultValues.category) ?? defaultValues.category)
+                  : null,
         }),
         [defaultValues, categoryNameToId]
     );
@@ -116,22 +118,39 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                 },
             }}
             onSubmit={async (value: Objective) => {
-                const categoryName = value.category
-                    ? (categoryIdToName.get(value.category) ?? value.category)
-                    : undefined;
-                await updateObjectiveMutation.mutateAsync({
+                const raw = value.category;
+
+                const base = {
                     id: value._id as Id<'objectives'>,
                     title: value.title,
                     description: value.description ?? undefined,
-                    category: categoryName,
                     targetValue: value.targetValue,
                     deadline: value.deadline ?? undefined,
                     unit: value.unit ?? undefined,
                     scope: value.scope,
-                });
+                };
+
+                if (!raw || raw === 'loading' || raw === 'empty') {
+                    await updateObjectiveMutation.mutateAsync({
+                        ...base,
+                        category: '',
+                    });
+                } else if (raw.startsWith('missing-')) {
+                    await updateObjectiveMutation.mutateAsync({
+                        ...base,
+                        category: categoryIdToName.get(raw) ?? '',
+                    });
+                } else {
+                    await updateObjectiveMutation.mutateAsync({
+                        ...base,
+                        categoryId: raw as Id<'categories'>,
+                    });
+                }
             }}
             submitLabel={t('saveObjective')}
             cancelLabel={t('cancel')}
+            isPending={updateObjectiveMutation.isPending}
+            pendingLabel={tCommon('loading')}
             submitTestId="objective-edit-save-button"
         >
             {() => (

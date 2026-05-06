@@ -29,8 +29,7 @@ type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
 
 import { env } from './lib/env';
-
-const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+import { STRONG_PASSWORD_MESSAGE_EN, STRONG_PASSWORD_REGEX } from '../shared/password-policy';
 const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
@@ -136,12 +135,15 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
     },
     hooks: {
         before: createAuthMiddleware(async ctx => {
-            if (ctx.path !== '/sign-up/email') {
+            const pathsWithStrongPassword = ['/sign-up/email', '/reset-password'];
+            if (!pathsWithStrongPassword.includes(ctx.path)) {
                 return;
             }
 
             const password =
-                (ctx.body as { password?: unknown } | undefined)?.password ?? undefined;
+                (ctx.body as { password?: unknown; newPassword?: unknown } | undefined)?.password ??
+                (ctx.body as { newPassword?: unknown } | undefined)?.newPassword ??
+                undefined;
 
             if (typeof password !== 'string' || password.length < 8) {
                 return;
@@ -150,8 +152,7 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
             if (!STRONG_PASSWORD_REGEX.test(password)) {
                 throw new APIError('BAD_REQUEST', {
                     code: ERROR_CODES.WEAK_PASSWORD,
-                    message:
-                        'Password must include at least one uppercase letter, one lowercase letter, and one number',
+                    message: STRONG_PASSWORD_MESSAGE_EN,
                 });
             }
         }),

@@ -54,6 +54,7 @@ export function DeleteConfirmationDialog({
         try {
             await onConfirmRef.current();
         } catch {
+            return;
         } finally {
             setInternalIsLoading(false);
         }

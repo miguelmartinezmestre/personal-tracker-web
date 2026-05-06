@@ -23,6 +23,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
+import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import { OrganizationRole } from '../types/roles';
 import FormModal from '@/components/form-modal';
@@ -35,6 +36,7 @@ export default function CreateOrganizationMemberFormModal({
     organizationId,
 }: CreateOrganizationMemberFormModalProps) {
     const t = useTranslations('OrganizationMembers');
+    const tCommon = useTranslationsCommon('Common');
     const createOrganizationMember = useCreateOrganizationMember();
 
     const roleOptions = [
@@ -71,7 +73,9 @@ export default function CreateOrganizationMemberFormModal({
                 });
             }}
             submitLabel={t('saveOrganizationMember')}
+            pendingLabel={tCommon('loading')}
             cancelLabel={t('cancel')}
+            isPending={createOrganizationMember.isPending}
             cancelTestId="organization-member-cancel-button"
             submitTestId="organization-member-save-button"
         >

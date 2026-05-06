@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -199,12 +198,8 @@ describe('convex categories', async () => {
                 color: '#3b82f6',
             });
             await userIdentity.mutation(api.categories.createCategory, {
-                name: 'Work',
+                name: 'Personal',
                 color: '#f59e0b',
-            });
-            await userIdentity.mutation(api.categories.createCategory, {
-                name: '   ',
-                color: '#111827',
             });
 
             await adminIdentity.mutation(api.categories.createCategory, {
@@ -214,7 +209,7 @@ describe('convex categories', async () => {
 
             const result = await userIdentity.query(api.categories.getCategoryNamesForFilters, {});
 
-            expect(result).toEqual(['Health', 'Work']);
+            expect(result).toEqual(['Health', 'Personal', 'Work']);
         });
 
         test('rejects unauthenticated users', async () => {

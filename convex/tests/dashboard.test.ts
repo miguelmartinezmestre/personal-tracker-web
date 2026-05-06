@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -143,6 +142,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: 5,
                         updateDate: currentMonth.getTime() + i * 1000,
                         comment: `Current month update ${i + 1}`,
@@ -156,6 +156,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: 5,
                         updateDate: lastMonth.getTime() + i * 1000,
                         comment: `Last month update ${i + 1}`,
@@ -498,6 +499,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: 5,
                         updateDate: now - i * DAY_MS,
                         comment: `Recent update ${i + 1}`,
@@ -511,6 +513,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: 5,
                         updateDate: now - (40 + i) * DAY_MS,
                         comment: `Old update ${i + 1}`,

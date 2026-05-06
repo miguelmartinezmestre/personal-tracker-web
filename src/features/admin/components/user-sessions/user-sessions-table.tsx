@@ -13,14 +13,17 @@ import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
 import type { Id } from '@/convex/_generated/dataModel';
+import { FunctionReturnType } from 'convex/server';
 
 const DEFAULT_PAGE_SIZE = 10;
+
+type UserSessionsQueryResult = FunctionReturnType<typeof api.admin.listUserSessions>;
 
 export function UserSessions() {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
-    const columns = useUserSessionsTableColumns();
     const [userId, setUserId] = useState('');
+    const columns = useUserSessionsTableColumns(userId ? (userId as Id<'user'>) : undefined);
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
 
     const {
@@ -36,12 +39,14 @@ export function UserSessions() {
 
     const paginationOpts = getPaginationOpts(currentPage);
 
-    const { data: sessions, isLoading } = useQuery(
+    const { data: sessionsQueryResult, isLoading } = useQuery(
         convexQuery(
             api.admin.listUserSessions,
             userId ? { userId: userId as Id<'user'>, paginationOpts } : 'skip'
         )
     );
+
+    const sessions = sessionsQueryResult as UserSessionsQueryResult | undefined;
 
     const hasData = sessions !== undefined;
     const continueCursor = sessions?.continueCursor ?? null;

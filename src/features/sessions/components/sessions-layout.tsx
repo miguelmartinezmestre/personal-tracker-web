@@ -25,12 +25,7 @@ export default function SessionsLayout({
                 </h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <SessionsTable
-                initialSessions={(sessions as SessionsResult) ?? undefined}
-                currentSessionToken={
-                    (sessions as SessionsResult | undefined)?.currentSession?.token
-                }
-            />
+            <SessionsTable initialSessions={(sessions as SessionsResult) ?? undefined} />
         </div>
     );
 }

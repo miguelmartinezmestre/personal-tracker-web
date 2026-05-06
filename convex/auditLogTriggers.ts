@@ -21,102 +21,129 @@ type AuditResourceType =
 
 const triggers = new Triggers<DataModel, AuditTriggerCtx>();
 
-function sanitizeObjective(doc: unknown): Record<string, unknown> | undefined {
+function toAuditPrimitive(value: unknown): string | number | boolean | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'boolean') return value;
+
+    if (typeof value === 'object') {
+        if (typeof (value as { _id?: unknown })._id === 'string') {
+            return (value as { _id: string })._id;
+        }
+        return String(value);
+    }
+    return String(value);
+}
+
+function sanitizeObjective(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        organizationId: o.organizationId,
-        userId: o.userId,
-        scope: o.scope,
-        status: o.status,
-        title: o.title,
-        category: o.category,
-        targetValue: o.targetValue,
-        currentValue: o.currentValue,
-        startValue: o.startValue,
-        deadline: o.deadline,
-        unit: o.unit,
-        createdAt: o.createdAt,
-        updatedAt: o.updatedAt,
+        _id: toAuditPrimitive(o._id),
+        organizationId: toAuditPrimitive(o.organizationId),
+        userId: toAuditPrimitive(o.userId),
+        scope: toAuditPrimitive(o.scope),
+        status: toAuditPrimitive(o.status),
+        title: toAuditPrimitive(o.title),
+        category: toAuditPrimitive(o.category),
+        targetValue: toAuditPrimitive(o.targetValue),
+        currentValue: toAuditPrimitive(o.currentValue),
+        startValue: toAuditPrimitive(o.startValue),
+        deadline: toAuditPrimitive(o.deadline),
+        unit: toAuditPrimitive(o.unit),
+        createdAt: toAuditPrimitive(o.createdAt),
+        updatedAt: toAuditPrimitive(o.updatedAt),
     };
 }
 
-function sanitizeProgressUpdate(doc: unknown): Record<string, unknown> | undefined {
+function sanitizeProgressUpdate(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        objective: o.objective,
-        updatedValue: o.updatedValue,
-        updateDate: o.updateDate,
-        createdAt: o.createdAt,
-        updatedAt: o.updatedAt,
+        _id: toAuditPrimitive(o._id),
+        objective: toAuditPrimitive(o.objective),
+        updatedValue: toAuditPrimitive(o.updatedValue),
+        updateDate: toAuditPrimitive(o.updateDate),
+        createdAt: toAuditPrimitive(o.createdAt),
+        updatedAt: toAuditPrimitive(o.updatedAt),
     };
 }
 
-function sanitizeCategory(doc: unknown): Record<string, unknown> | undefined {
+function sanitizeCategory(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        userId: o.userId,
-        organizationId: o.organizationId,
-        name: o.name,
-        color: o.color,
-        icon: o.icon,
-        createdAt: o.createdAt,
-        updatedAt: o.updatedAt,
+        _id: toAuditPrimitive(o._id),
+        userId: toAuditPrimitive(o.userId),
+        organizationId: toAuditPrimitive(o.organizationId),
+        name: toAuditPrimitive(o.name),
+        color: toAuditPrimitive(o.color),
+        icon: toAuditPrimitive(o.icon),
+        createdAt: toAuditPrimitive(o.createdAt),
+        updatedAt: toAuditPrimitive(o.updatedAt),
     };
 }
 
-function sanitizeOrganization(doc: unknown): Record<string, unknown> | undefined {
+function sanitizeOrganization(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        name: o.name,
-        slug: o.slug,
-        logo: o.logo,
-        createdAt: o.createdAt,
+        _id: toAuditPrimitive(o._id),
+        name: toAuditPrimitive(o.name),
+        slug: toAuditPrimitive(o.slug),
+        logo: toAuditPrimitive(o.logo),
+        createdAt: toAuditPrimitive(o.createdAt),
     };
 }
 
-function sanitizeMember(doc: unknown): Record<string, unknown> | undefined {
+function sanitizeMember(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        organizationId: o.organizationId,
-        userId: o.userId,
-        role: o.role,
-        createdAt: o.createdAt,
+        _id: toAuditPrimitive(o._id),
+        organizationId: toAuditPrimitive(o.organizationId),
+        userId: toAuditPrimitive(o.userId),
+        role: toAuditPrimitive(o.role),
+        createdAt: toAuditPrimitive(o.createdAt),
     };
 }
 
-function sanitizeUser(doc: unknown): Record<string, unknown> | undefined {
+function sanitizeUser(doc: unknown): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        name: o.name,
-        role: o.role,
-        banned: o.banned,
-        createdAt: o.createdAt,
-        updatedAt: o.updatedAt,
+        _id: toAuditPrimitive(o._id),
+        name: toAuditPrimitive(o.name),
+        role: toAuditPrimitive(o.role),
+        banned: toAuditPrimitive(o.banned),
+        createdAt: toAuditPrimitive(o.createdAt),
+        updatedAt: toAuditPrimitive(o.updatedAt),
     };
 }
 
-function sanitizePlatformSettings(doc: unknown): Record<string, unknown> | undefined {
+function sanitizePlatformSettings(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
     const o = doc as Record<string, unknown>;
     return {
-        _id: o._id,
-        platformName: o.platformName,
-        defaultLanguage: o.defaultLanguage,
-        registrationPolicy: o.registrationPolicy,
-        setupCompletedAt: o.setupCompletedAt,
-        setupCompletedBy: o.setupCompletedBy,
+        _id: toAuditPrimitive(o._id),
+        platformName: toAuditPrimitive(o.platformName),
+        defaultLanguage: toAuditPrimitive(o.defaultLanguage),
+        registrationPolicy: toAuditPrimitive(o.registrationPolicy),
+        setupCompletedAt: toAuditPrimitive(o.setupCompletedAt),
+        setupCompletedBy: toAuditPrimitive(o.setupCompletedBy),
     };
 }
 
@@ -129,7 +156,10 @@ type SanitizedTable =
     | 'user'
     | 'platformSettings';
 
-function sanitizeDoc(table: SanitizedTable, doc: unknown): Record<string, unknown> | undefined {
+function sanitizeDoc(
+    table: SanitizedTable,
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
     switch (table) {
         case 'objectives':
             return sanitizeObjective(doc);
@@ -152,10 +182,16 @@ function sanitizeDoc(table: SanitizedTable, doc: unknown): Record<string, unknow
     }
 }
 
+type AuditMetadata = {
+    before?: Record<string, string | number | boolean | null>;
+    after?: Record<string, string | number | boolean | null>;
+    context?: string;
+};
+
 const toMetadata = <TableName extends TableNamesInDataModel<DataModel>>(
     table: SanitizedTable,
     change: Change<DataModel, TableName>
-) => {
+): AuditMetadata => {
     switch (change.operation) {
         case 'insert':
             return {

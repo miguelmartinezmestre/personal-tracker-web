@@ -10,6 +10,20 @@ import {
     achievementTierValidator,
 } from './utils/validators';
 
+const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
+
+const auditValueLevel1 = v.union(
+    auditPrimitive,
+    v.array(auditPrimitive),
+    v.record(v.string(), auditPrimitive)
+);
+
+const auditMetadataSnapshot = v.union(
+    auditValueLevel1,
+    v.array(auditValueLevel1),
+    v.record(v.string(), auditValueLevel1)
+);
+
 export default defineSchema({
     ...authSchema.tables,
 
@@ -19,7 +33,9 @@ export default defineSchema({
         scope: objectiveScopeValidator,
         title: v.string(),
         description: v.optional(v.string()),
+
         category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         targetValue: v.number(),
         currentValue: v.number(),
         startValue: v.optional(v.number()),
@@ -38,6 +54,7 @@ export default defineSchema({
         .index('by_user_status_updatedAt', ['userId', 'status', 'updatedAt'])
         .index('by_user_scope_status_category', ['userId', 'scope', 'status', 'category'])
         .index('by_user_scope_category', ['userId', 'scope', 'category'])
+        .index('by_user_organization', ['userId', 'organizationId'])
         .index('by_organization', ['organizationId'])
         .index('by_organization_scope', ['organizationId', 'scope'])
         .index('by_organization_scope_status', ['organizationId', 'scope', 'status'])
@@ -48,10 +65,12 @@ export default defineSchema({
             'category',
         ])
         .index('by_organization_scope_category', ['organizationId', 'scope', 'category'])
-        .index('by_status', ['status']),
+        .index('by_status', ['status'])
+        .index('by_categoryId', ['categoryId']),
 
     progressUpdates: defineTable({
         objective: v.id('objectives'),
+        userId: v.id('user'),
         updatedValue: v.number(),
         updateDate: v.number(),
         comment: v.optional(v.string()),
@@ -59,7 +78,9 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_objective', ['objective'])
-        .index('by_objective_date', ['objective', 'updateDate']),
+        .index('by_objective_date', ['objective', 'updateDate'])
+        .index('by_user_date', ['userId', 'updateDate'])
+        .index('by_user_objective', ['userId', 'objective']),
 
     notifications: defineTable({
         userId: v.id('user'),
@@ -88,8 +109,8 @@ export default defineSchema({
         resourceId: v.optional(v.string()),
         metadata: v.optional(
             v.object({
-                before: v.optional(v.any()),
-                after: v.optional(v.any()),
+                before: v.optional(auditMetadataSnapshot),
+                after: v.optional(auditMetadataSnapshot),
                 context: v.optional(v.string()),
             })
         ),
@@ -112,7 +133,8 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_user', ['userId'])
-        .index('by_organization', ['organizationId']),
+        .index('by_organization', ['organizationId'])
+        .index('by_organization_name', ['organizationId', 'name']),
 
     achievementDefinitions: defineTable({
         code: v.string(),
@@ -181,7 +203,6 @@ export default defineSchema({
         .index('by_user', ['userId'])
         .index('by_user_achievement', ['userId', 'achievementNotifications']),
 
-    // Override member table from authSchema to add compound index
     member: defineTable({
         organizationId: v.string(),
         userId: v.string(),
@@ -193,7 +214,6 @@ export default defineSchema({
         .index('role', ['role'])
         .index('by_organizationId_and_userId', ['organizationId', 'userId']),
 
-    // Override invitation table from authSchema to add compound index
     invitation: defineTable({
         organizationId: v.string(),
         email: v.string(),
@@ -208,5 +228,6 @@ export default defineSchema({
         .index('role', ['role'])
         .index('status', ['status'])
         .index('inviterId', ['inviterId'])
+        .index('by_email_status_expiresAt', ['email', 'status', 'expiresAt'])
         .index('by_status_expiresAt', ['status', 'expiresAt']),
 });

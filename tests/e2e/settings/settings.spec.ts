@@ -26,9 +26,6 @@ test.describe('Settings', () => {
             await settings.switchToAccount();
             await expect(settings.usernameInput).toBeVisible({ timeout: 10000 });
 
-            // The form is built from useSession() data. Wait for the session to hydrate
-            // so the email default is populated; otherwise submit fails Zod validation
-            // silently and no success message is shown.
             await expect(settings.usernameInput).toHaveValue(isolatedTestUser.username, {
                 timeout: 10000,
             });
@@ -42,7 +39,6 @@ test.describe('Settings', () => {
 
             await expect(settings.accountSuccessMessage).toBeVisible({ timeout: 15000 });
 
-            // Verify the change persisted by reloading
             await settings.goto();
             await settings.switchToAccount();
             await expect(settings.usernameInput).toHaveValue(newName, { timeout: 10000 });

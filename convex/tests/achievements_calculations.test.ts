@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
@@ -63,7 +62,7 @@ describe('achievements calculations', async () => {
     describe('calculateUserStreak', () => {
         test('returns 0 when user has no objectives', async () => {
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(0);
@@ -85,7 +84,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(0);
@@ -113,6 +112,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Today update',
@@ -122,7 +122,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(1);
@@ -151,6 +151,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: yesterday.getTime(),
                     comment: 'Yesterday update',
@@ -160,7 +161,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(1);
@@ -189,6 +190,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: twoDaysAgo.getTime(),
                     comment: 'Two days ago update',
@@ -198,7 +200,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(0);
@@ -226,6 +228,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Update 1',
@@ -235,6 +238,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 20,
                     updateDate: today.getTime() + 3600000,
                     comment: 'Update 2',
@@ -244,6 +248,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 30,
                     updateDate: today.getTime() + 7200000,
                     comment: 'Update 3',
@@ -253,7 +258,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(1);
@@ -282,6 +287,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 3; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -292,7 +298,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(3);
@@ -321,6 +327,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 7; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -331,7 +338,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(7);
@@ -359,6 +366,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Today',
@@ -368,6 +376,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'Yesterday',
@@ -377,6 +386,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
+                    userId: userId,
                     updatedValue: 30,
                     updateDate: today.getTime() - 3 * DAY_MS,
                     comment: '3 days ago (gap)',
@@ -386,7 +396,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(2);
@@ -427,6 +437,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId1,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Obj1 today',
@@ -436,6 +447,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId2,
+                    userId: userId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'Obj2 yesterday',
@@ -445,7 +457,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(2);
@@ -455,7 +467,7 @@ describe('achievements calculations', async () => {
     describe('calculateUserStreak', () => {
         test('returns 0 when user has no objectives', async () => {
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(0);
@@ -484,6 +496,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 5; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -494,7 +507,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId);
+                return calculateUserStreak(ctx, userId, organizationId);
             });
 
             expect(streak).toBe(5);
@@ -502,17 +515,9 @@ describe('achievements calculations', async () => {
     });
 
     describe('calculateOrganizationStreak', () => {
-        test('returns 0 when no member IDs provided', async () => {
+        test('returns 0 when org has no org-scoped objectives', async () => {
             const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, []);
-            });
-
-            expect(streak).toBe(0);
-        });
-
-        test('returns 0 when members have no objectives', async () => {
-            const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, [userId]);
+                return calculateOrganizationStreak(ctx, organizationId);
             });
 
             expect(streak).toBe(0);
@@ -541,7 +546,7 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
+                    scope: 'organization',
                     title: 'User1 Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -555,7 +560,7 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: user2Data.docId,
                     organizationId: organizationId,
-                    scope: 'personal',
+                    scope: 'organization',
                     title: 'User2 Objective',
                     targetValue: 50,
                     currentValue: 0,
@@ -571,6 +576,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId1,
+                    userId: userId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'User1 today',
@@ -580,6 +586,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId2,
+                    userId: userId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'User2 yesterday',
@@ -589,7 +596,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, [userId, user2Data.docId]);
+                return calculateOrganizationStreak(ctx, organizationId);
             });
 
             expect(streak).toBe(2);
@@ -600,7 +607,7 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
+                    scope: 'organization',
                     title: 'Org Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -617,6 +624,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 7; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -627,7 +635,7 @@ describe('achievements calculations', async () => {
             });
 
             const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, [userId]);
+                return calculateOrganizationStreak(ctx, organizationId);
             });
 
             expect(streak).toBe(7);

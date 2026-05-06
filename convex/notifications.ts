@@ -7,6 +7,7 @@ import { paginationOptsValidator } from 'convex/server';
 import { notificationTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import type { NotificationType } from './utils/constants';
+import { shouldSendDeadlineNotification } from './notificationPreferences';
 
 const NOTIFICATION_LIMIT = 100;
 const BATCH_SIZE = 100;
@@ -97,7 +98,7 @@ export const createNotification = mutationWithRLS({
         if (!objective) throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
 
         const role = ctx.role;
-        const isAdmin = role === 'admin' || role === 'ADMIN';
+        const isAdmin = role === 'admin';
         const isOwner = objective.userId === userId;
         const isOrganizationMember =
             objective.scope === 'organization' &&
@@ -132,6 +133,20 @@ export const setNotificationRead = mutationWithRLS({
         read: v.boolean(),
     },
     handler: async (ctx, args) => {
+        const notification = await ctx.db.get('notifications', args.id);
+
+        if (!notification) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
+        }
+
+        const role = ctx.role;
+        const isAdmin = role === 'admin';
+        const isOwner = notification.userId === ctx.userId;
+
+        if (!isAdmin && !isOwner) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
+        }
+
         await ctx.db.patch('notifications', args.id, { read: args.read, updatedAt: Date.now() });
         return await ctx.db.get('notifications', args.id);
     },
@@ -140,30 +155,48 @@ export const setNotificationRead = mutationWithRLS({
 export const markAllReadBatch = internalMutation({
     args: {
         userId: v.id('user'),
+        cursor: v.optional(v.union(v.string(), v.null())),
+        totalProcessed: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const now = Date.now();
+        const totalProcessed = args.totalProcessed ?? 0;
 
-        const unreadNotifications = await ctx.db
+        const page = await ctx.db
             .query('notifications')
             .withIndex('by_user_read', q => q.eq('userId', args.userId).eq('read', false))
-            .take(BATCH_SIZE);
+            .paginate({
+                numItems: BATCH_SIZE,
+                cursor: args.cursor ?? null,
+            });
 
-        for (const notification of unreadNotifications) {
+        for (const notification of page.page) {
             await ctx.db.patch('notifications', notification._id, {
                 read: true,
                 updatedAt: now,
             });
         }
 
-        // If there are more unread notifications, schedule another batch
-        if (unreadNotifications.length === BATCH_SIZE) {
+        const newTotal = totalProcessed + page.page.length;
+
+        if (!page.isDone) {
             await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
                 userId: args.userId,
+                cursor: page.continueCursor,
+                totalProcessed: newTotal,
             });
+            return {
+                status: 'in_progress',
+                processedInBatch: page.page.length,
+                totalProcessed: newTotal,
+            };
         }
 
-        return { processedInBatch: unreadNotifications.length };
+        return {
+            status: 'completed',
+            processedInBatch: page.page.length,
+            totalProcessed: newTotal,
+        };
     },
 });
 
@@ -172,8 +205,11 @@ export const markAllNotificationsRead = mutationWithRLS({
     handler: async ctx => {
         const userId = ctx.userId;
 
-        // Start batch processing
-        await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, { userId });
+        await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
+            userId,
+            cursor: null,
+            totalProcessed: 0,
+        });
 
         return { status: 'marking_started' };
     },
@@ -184,6 +220,20 @@ export const deleteNotification = mutationWithRLS({
         id: v.id('notifications'),
     },
     handler: async (ctx, args) => {
+        const notification = await ctx.db.get('notifications', args.id);
+
+        if (!notification) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
+        }
+
+        const role = ctx.role;
+        const isAdmin = role === 'admin';
+        const isOwner = notification.userId === ctx.userId;
+
+        if (!isAdmin && !isOwner) {
+            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
+        }
+
         await ctx.db.delete('notifications', args.id);
         return { success: true } as const;
     },
@@ -191,29 +241,37 @@ export const deleteNotification = mutationWithRLS({
 
 export const runDeadlineNotificationsCron = internalMutation({
     args: {
-        skip: v.optional(v.number()),
+        cursor: v.optional(v.union(v.string(), v.null())),
         created: v.optional(v.number()),
         skipped: v.optional(v.number()),
+        scannedSoFar: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const now = Date.now();
         const dayStart = startOfDayUtc(now);
         const dayEnd = dayStart + DAY_MS;
-        const skip = args.skip || 0;
         let created = args.created || 0;
         let skipped = args.skipped || 0;
+        const scannedSoFar = args.scannedSoFar ?? 0;
 
-        // Process objectives in batches
-        const objectives = await ctx.db
+        const page = await ctx.db
             .query('objectives')
             .withIndex('by_status', q => q.eq('status', 'active'))
-            .take(BATCH_SIZE);
+            .paginate({
+                numItems: BATCH_SIZE,
+                cursor: args.cursor ?? null,
+            });
+
+        const objectives = page.page;
 
         for (const objective of objectives) {
             if (!objective.deadline) continue;
 
             const message = buildDeadlineMessage(objective, now, dayStart, dayEnd);
             if (!message) continue;
+
+            const allowNotify = await shouldSendDeadlineNotification(ctx, objective.userId);
+            if (!allowNotify) continue;
 
             const existing = await ctx.db
                 .query('notifications')
@@ -246,17 +304,20 @@ export const runDeadlineNotificationsCron = internalMutation({
             created += 1;
         }
 
-        // If there are more objectives, schedule the next batch
-        if (objectives.length === BATCH_SIZE) {
+        const batchScanned = objectives.length;
+        const totalScanned = scannedSoFar + batchScanned;
+
+        if (!page.isDone) {
             await ctx.scheduler.runAfter(0, internal.notifications.runDeadlineNotificationsCron, {
-                skip: skip + BATCH_SIZE,
+                cursor: page.continueCursor,
                 created,
                 skipped,
+                scannedSoFar: totalScanned,
             });
             return {
                 status: 'in_progress',
-                processedInBatch: objectives.length,
-                totalProcessed: skip + objectives.length,
+                processedInBatch: batchScanned,
+                scannedSoFar: totalScanned,
                 createdSoFar: created,
                 skippedSoFar: skipped,
             };
@@ -264,7 +325,7 @@ export const runDeadlineNotificationsCron = internalMutation({
 
         return {
             status: 'completed',
-            scanned: skip + objectives.length,
+            scanned: totalScanned,
             created,
             skipped,
         };

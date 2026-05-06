@@ -18,6 +18,7 @@ import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { forgetPasswordSchema } from '@/features/auth/schemas/forget-password';
 import { authClient } from '@/features/auth/auth-client';
+import { useFormSubmit } from '@/hooks/use-form-submit';
 
 export default function ForgetPasswordForm() {
     const tCommon = useTranslations('Common');
@@ -39,7 +40,7 @@ export default function ForgetPasswordForm() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof forgetPasswordSchema>) {
+    async function handleRequestReset(values: z.infer<typeof forgetPasswordSchema>) {
         setLoginError('');
         setSuccessMessage('');
 
@@ -56,6 +57,8 @@ export default function ForgetPasswordForm() {
 
         setSuccessMessage(t('successMessage'));
     }
+
+    const { submit: onSubmit, isSubmitting } = useFormSubmit(handleRequestReset);
 
     return (
         <Form {...form}>
@@ -105,9 +108,10 @@ export default function ForgetPasswordForm() {
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
+                    disabled={isSubmitting}
                     data-testid="forgot-password-submit"
                 >
-                    {t('submit')}
+                    {isSubmitting ? tCommon('loading') : t('submit')}
                 </Button>
             </form>
         </Form>

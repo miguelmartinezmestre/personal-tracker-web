@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
-import { internalMutation } from './_generated/server';
+import { internalMutation, type MutationCtx } from './_generated/server';
+import type { Id } from './_generated/dataModel';
 
 const DEFAULT_PREFERENCES = {
     achievementNotifications: true,
@@ -15,7 +16,7 @@ export const getUserPreferences = queryWithRLS({
     handler: async ctx => {
         const userId = ctx.userId;
 
-        let preferences = await ctx.db
+        const preferences = await ctx.db
             .query('notificationPreferences')
             .withIndex('by_user', q => q.eq('userId', userId))
             .first();
@@ -114,6 +115,38 @@ export const updateUserPreferences = mutationWithRLS({
         };
     },
 });
+
+export async function shouldSendDeadlineNotification(
+    ctx: MutationCtx,
+    userId: Id<'user'>
+): Promise<boolean> {
+    const preferences = await ctx.db
+        .query('notificationPreferences')
+        .withIndex('by_user', q => q.eq('userId', userId))
+        .first();
+
+    if (!preferences) {
+        return true;
+    }
+
+    return preferences.deadlineNotifications ?? true;
+}
+
+export async function shouldSendProgressNotification(
+    ctx: MutationCtx,
+    userId: Id<'user'>
+): Promise<boolean> {
+    const preferences = await ctx.db
+        .query('notificationPreferences')
+        .withIndex('by_user', q => q.eq('userId', userId))
+        .first();
+
+    if (!preferences) {
+        return true;
+    }
+
+    return preferences.progressNotifications ?? true;
+}
 
 export const shouldSendAchievementNotificationInternal = internalMutation({
     args: {

@@ -6,25 +6,21 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserAgentIcon } from '@/features/sessions/components/user-agent';
-import { BetterAuthDataModel } from '@/convex/rls';
+import { api } from '@/convex/_generated/api';
+import { FunctionReturnType } from 'convex/server';
 import { useInvalidateSession } from './sessions-table-actions';
 
-type SessionDocument = BetterAuthDataModel['session']['document'];
+type SessionListItem = FunctionReturnType<typeof api.sessions.getSessionsByUser>['page'][number];
 
-interface UseSessionsTableColumnsProps {
-    currentSessionToken: string | undefined;
-}
-
-export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTableColumnsProps) {
+export function useSessionsTableColumns() {
     const t = useTranslations('Sessions');
     const { invalidateSessionAsync, isInvalidatingSession } = useInvalidateSession();
     const [now] = useState(Date.now);
 
-    const getSessionStatus = (session: SessionDocument) => {
+    const getSessionStatus = (session: SessionListItem) => {
         const isExpired = session.expiresAt < now;
-        const isCurrentSession = currentSessionToken === session.token;
 
-        if (isCurrentSession) {
+        if (session.isCurrent) {
             return { status: 'current', label: t('currentSession'), variant: 'default' as const };
         }
         if (isExpired) {
@@ -33,7 +29,7 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
         return { status: 'active', label: t('active'), variant: 'outline' as const };
     };
 
-    const columns: ColumnDef<SessionDocument>[] = [
+    const columns: ColumnDef<SessionListItem>[] = [
         {
             accessorKey: 'userAgent',
             header: t('device'),
@@ -84,7 +80,7 @@ export function useSessionsTableColumns({ currentSessionToken }: UseSessionsTabl
                         size="sm"
                         disabled={isInvalidatingSession}
                         onClick={async () => {
-                            await invalidateSessionAsync({ token: session.token });
+                            await invalidateSessionAsync({ sessionId: session._id });
                         }}
                         data-testid="session-revoke-button"
                     >
