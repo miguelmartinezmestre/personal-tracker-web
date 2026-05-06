@@ -2,6 +2,21 @@ import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
+import { internal } from './_generated/api';
+
+const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
+
+const auditValueLevel1 = v.union(
+    auditPrimitive,
+    v.array(auditPrimitive),
+    v.record(v.string(), auditPrimitive)
+);
+
+const auditMetadataSnapshot = v.union(
+    auditValueLevel1,
+    v.array(auditValueLevel1),
+    v.record(v.string(), auditValueLevel1)
+);
 
 export const getAuditLogs = queryWithRLS({
     args: {
@@ -44,6 +59,33 @@ export const getAuditLogsByResource = queryWithRLS({
     },
 });
 
+const AUDIT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+const PRUNE_BATCH = 256;
+
+export const pruneAuditLogsOlderThanRetention = internalMutation({
+    args: {},
+    handler: async ctx => {
+        const cutoff = Date.now() - AUDIT_RETENTION_MS;
+
+        const batch = await ctx.db
+            .query('auditLogs')
+            .withIndex('by_createdAt', q => q.lt('createdAt', cutoff))
+            .take(PRUNE_BATCH);
+
+        for (const row of batch) {
+            await ctx.db.delete(row._id);
+        }
+
+        if (batch.length === PRUNE_BATCH) {
+            await ctx.scheduler.runAfter(
+                0,
+                internal.auditLogs.pruneAuditLogsOlderThanRetention,
+                {}
+            );
+        }
+    },
+});
+
 export const recordAuditLog = internalMutation({
     args: {
         userId: v.id('user'),
@@ -54,8 +96,8 @@ export const recordAuditLog = internalMutation({
         severity: v.string(),
         metadata: v.optional(
             v.object({
-                before: v.optional(v.any()),
-                after: v.optional(v.any()),
+                before: v.optional(auditMetadataSnapshot),
+                after: v.optional(auditMetadataSnapshot),
                 context: v.optional(v.string()),
             })
         ),

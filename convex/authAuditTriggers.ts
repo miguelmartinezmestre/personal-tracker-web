@@ -5,6 +5,88 @@ import type { DataModel, Id } from './_generated/dataModel';
 
 type BetterAuthSchema = typeof schema;
 
+const ALLOWED_SESSION_FIELDS = new Set([
+    '_id',
+    'userId',
+    'activeOrganizationId',
+    'expiresAt',
+    'createdAt',
+    'updatedAt',
+]);
+
+const ALLOWED_USER_FIELDS = new Set([
+    '_id',
+    'name',
+    'emailVerified',
+    'createdAt',
+    'updatedAt',
+    'role',
+    'banned',
+    'banReason',
+    'banExpires',
+]);
+
+const ALLOWED_INVITATION_FIELDS = new Set([
+    '_id',
+    'organizationId',
+    'role',
+    'status',
+    'expiresAt',
+    'createdAt',
+    'inviterId',
+]);
+
+const toAuditPrimitive = (value: unknown): string | number | boolean | null => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'boolean') return value;
+
+    if (typeof value === 'object') {
+        if (typeof (value as { _id?: unknown })._id === 'string') {
+            return (value as { _id: string })._id;
+        }
+        return String(value);
+    }
+    return String(value);
+};
+
+const sanitizeSession = (
+    session: Record<string, unknown>
+): Record<string, string | number | boolean | null> => {
+    const result: Record<string, string | number | boolean | null> = {};
+    for (const key of Object.keys(session)) {
+        if (ALLOWED_SESSION_FIELDS.has(key)) {
+            result[key] = toAuditPrimitive(session[key]);
+        }
+    }
+    return result;
+};
+
+const sanitizeUser = (
+    user: Record<string, unknown>
+): Record<string, string | number | boolean | null> => {
+    const result: Record<string, string | number | boolean | null> = {};
+    for (const key of Object.keys(user)) {
+        if (ALLOWED_USER_FIELDS.has(key)) {
+            result[key] = toAuditPrimitive(user[key]);
+        }
+    }
+    return result;
+};
+
+const sanitizeInvitation = (
+    invitation: Record<string, unknown>
+): Record<string, string | number | boolean | null> => {
+    const result: Record<string, string | number | boolean | null> = {};
+    for (const key of Object.keys(invitation)) {
+        if (ALLOWED_INVITATION_FIELDS.has(key)) {
+            result[key] = toAuditPrimitive(invitation[key]);
+        }
+    }
+    return result;
+};
+
 const resolveOrganizationId = async (
     ctx: MutationCtx,
     explicitOrganizationId?: string | null,
@@ -34,6 +116,12 @@ const resolveOrganizationId = async (
     return null;
 };
 
+type AuthAuditMetadata = {
+    before?: Record<string, string | number | boolean | null>;
+    after?: Record<string, string | number | boolean | null>;
+    context?: string;
+};
+
 const insertAuthAuditLog = async (
     ctx: MutationCtx,
     args: {
@@ -43,8 +131,8 @@ const insertAuthAuditLog = async (
         userId: string;
         organizationId?: string | null;
         metadata?: {
-            before?: unknown;
-            after?: unknown;
+            before?: Record<string, string | number | boolean | null>;
+            after?: Record<string, string | number | boolean | null>;
             context?: string;
         };
     }
@@ -56,13 +144,30 @@ const insertAuthAuditLog = async (
         return;
     }
 
+    let metadata: AuthAuditMetadata | undefined;
+
+    if (args.metadata !== undefined) {
+        const src = args.metadata;
+        const m: AuthAuditMetadata = {};
+        if (src.before !== undefined) {
+            m.before = src.before;
+        }
+        if (src.after !== undefined) {
+            m.after = src.after;
+        }
+        if (src.context !== undefined) {
+            m.context = src.context;
+        }
+        metadata = Object.keys(m).length > 0 ? m : undefined;
+    }
+
     await ctx.db.insert('auditLogs', {
         userId: normalizedUserId,
         organizationId,
         action: args.action,
         resourceType: args.resourceType,
         resourceId: args.resourceId ?? undefined,
-        metadata: args.metadata,
+        metadata,
         severity: 'info',
         createdAt: Date.now(),
     });
@@ -77,7 +182,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceId: doc._id,
                 userId: doc.userId,
                 organizationId: doc.activeOrganizationId ?? null,
-                metadata: { after: doc },
+                metadata: { after: sanitizeSession(doc) },
             });
         },
         onDelete: async (ctx, doc) => {
@@ -87,7 +192,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceId: doc._id,
                 userId: doc.userId,
                 organizationId: doc.activeOrganizationId ?? null,
-                metadata: { before: doc },
+                metadata: { before: sanitizeSession(doc) },
             });
         },
     },
@@ -99,7 +204,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceId: doc._id,
                 userId: doc.inviterId,
                 organizationId: doc.organizationId,
-                metadata: { after: doc },
+                metadata: { after: sanitizeInvitation(doc) },
             });
         },
         onUpdate: async (ctx, newDoc, oldDoc) => {
@@ -109,7 +214,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceId: newDoc._id,
                 userId: newDoc.inviterId,
                 organizationId: newDoc.organizationId,
-                metadata: { before: oldDoc, after: newDoc },
+                metadata: { before: sanitizeInvitation(oldDoc), after: sanitizeInvitation(newDoc) },
             });
         },
         onDelete: async (ctx, doc) => {
@@ -119,7 +224,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceId: doc._id,
                 userId: doc.inviterId,
                 organizationId: doc.organizationId,
-                metadata: { before: doc },
+                metadata: { before: sanitizeInvitation(doc) },
             });
         },
     },
@@ -130,7 +235,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceType: 'user',
                 resourceId: newDoc._id,
                 userId: newDoc._id,
-                metadata: { before: oldDoc, after: newDoc },
+                metadata: { before: sanitizeUser(oldDoc), after: sanitizeUser(newDoc) },
             });
         },
         onDelete: async (ctx, doc) => {
@@ -139,7 +244,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> 
                 resourceType: 'user',
                 resourceId: doc._id,
                 userId: doc._id,
-                metadata: { before: doc },
+                metadata: { before: sanitizeUser(doc) },
             });
         },
     },
