@@ -2,7 +2,6 @@ import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import { findCategoryIdByName } from '../utils/categoryResolution';
 
-
 export const backfillCategoryIds = internalMutation({
     args: {
         cursor: v.optional(v.string()),
@@ -10,7 +9,6 @@ export const backfillCategoryIds = internalMutation({
     },
     handler: async (ctx, args) => {
         const BATCH = args.batchSize ?? 100;
-
 
         const page = await ctx.db.query('objectives').paginate({
             numItems: BATCH,
@@ -22,7 +20,6 @@ export const backfillCategoryIds = internalMutation({
         let failed = 0;
 
         for (const objective of page.page) {
-
             if (objective.categoryId || !objective.category?.trim()) {
                 skipped++;
                 continue;
@@ -39,8 +36,6 @@ export const backfillCategoryIds = internalMutation({
                     await ctx.db.patch(objective._id, { categoryId });
                     updated++;
                 } else {
-
-
                     skipped++;
                 }
             } catch (error) {
@@ -51,7 +46,6 @@ export const backfillCategoryIds = internalMutation({
                 );
             }
         }
-
 
         if (!page.isDone) {
             await ctx.scheduler.runAfter(
@@ -75,12 +69,9 @@ export const backfillCategoryIds = internalMutation({
     },
 });
 
-
 export const getBackfillStats = internalMutation({
     args: {},
     handler: async ctx => {
-
-
         const allObjectives = await ctx.db.query('objectives').collect();
 
         const withCategoryId = allObjectives.filter(o => o.categoryId).length;
@@ -99,6 +90,5 @@ export const getBackfillStats = internalMutation({
         };
     },
 });
-
 
 declare const internal: typeof import('../_generated/api').internal;

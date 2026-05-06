@@ -3,7 +3,6 @@ import type { Doc, Id } from '../_generated/dataModel';
 import { ConvexError } from 'convex/values';
 import { ERROR_CODES } from './constants';
 
-
 export async function getCategoryForObjective(
     ctx: QueryCtx | MutationCtx,
     organizationId: Id<'organization'>,
@@ -22,7 +21,6 @@ export async function getCategoryForObjective(
     }
     return cat;
 }
-
 
 export async function findCategoryIdByName(
     ctx: QueryCtx | MutationCtx,

@@ -1,7 +1,6 @@
 import { ConvexError } from 'convex/values';
 import { ERROR_CODES, TIME } from './constants';
 
-
 const MAX_METRIC = 1_000_000_000;
 const MIN_TARGET = 0.001;
 
@@ -17,7 +16,6 @@ function assertFiniteMetric(value: number | undefined): void {
         throw new ConvexError(ERROR_CODES.VALUE_TOO_LARGE);
     }
 }
-
 
 export function validateObjectiveMetrics(args: {
     targetValue?: number;
@@ -55,7 +53,6 @@ export function validateObjectiveMetrics(args: {
     }
 }
 
-
 export function validateProgressDelta(updatedValue: number): void {
     if (!Number.isFinite(updatedValue)) {
         throw new ConvexError(ERROR_CODES.VALUE_NOT_FINITE);
@@ -68,21 +65,17 @@ export function validateProgressDelta(updatedValue: number): void {
     }
 }
 
-
 export function validateUpdateDate(updateDate: number): void {
     const now = Date.now();
-
 
     if (updateDate > now + TIME.MINUTE_MS) {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
     }
 
-
     if (updateDate < now - TIME.FIVE_YEARS_MS) {
         throw new ConvexError(ERROR_CODES.DATE_TOO_OLD);
     }
 }
-
 
 export function validateObjectiveNotCompleted(status: string): void {
     if (status === 'completed') {

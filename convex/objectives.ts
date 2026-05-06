@@ -328,7 +328,6 @@ export const updateObjective = mutationWithRLS({
     },
 });
 
-
 export const backfillObjectiveCategoryIds = internalMutation({
     args: {
         cursor: v.optional(v.string()),
@@ -369,7 +368,6 @@ export const deleteObjectiveContinue = internalMutation({
         totalNotificationsDeleted: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-
         const phase = args.phase ?? 'progress';
         const totalProgressDeleted = args.totalProgressDeleted ?? 0;
         const totalNotificationsDeleted = args.totalNotificationsDeleted ?? 0;
@@ -379,12 +377,14 @@ export const deleteObjectiveContinue = internalMutation({
             return {
                 status: 'completed',
                 noOp: true,
-                deleted: { progress: totalProgressDeleted, notifications: totalNotificationsDeleted },
+                deleted: {
+                    progress: totalProgressDeleted,
+                    notifications: totalNotificationsDeleted,
+                },
             };
         }
 
         if (phase === 'progress') {
-
             const page = await ctx.db
                 .query('progressUpdates')
                 .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
@@ -399,7 +399,6 @@ export const deleteObjectiveContinue = internalMutation({
 
             const newTotalProgress = totalProgressDeleted + page.page.length;
 
-
             if (!page.isDone) {
                 await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
                     objectiveId: args.objectiveId,
@@ -411,10 +410,12 @@ export const deleteObjectiveContinue = internalMutation({
                 return {
                     status: 'in_progress',
                     phase: 'progress',
-                    deleted: { progress: newTotalProgress, notifications: totalNotificationsDeleted },
+                    deleted: {
+                        progress: newTotalProgress,
+                        notifications: totalNotificationsDeleted,
+                    },
                 };
             }
-
 
             await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
                 objectiveId: args.objectiveId,
@@ -430,7 +431,6 @@ export const deleteObjectiveContinue = internalMutation({
             };
         }
 
-
         const page = await ctx.db
             .query('notifications')
             .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
@@ -444,7 +444,6 @@ export const deleteObjectiveContinue = internalMutation({
         }
 
         const newTotalNotifications = totalNotificationsDeleted + page.page.length;
-
 
         if (!page.isDone) {
             await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
@@ -483,7 +482,6 @@ export const deleteObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
-
         if (objective.scope === 'personal' && objective.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
@@ -491,7 +489,6 @@ export const deleteObjective = mutationWithRLS({
         if (objective.scope === 'organization' && objective.organizationId !== ctx.organizationId) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
-
 
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.id,

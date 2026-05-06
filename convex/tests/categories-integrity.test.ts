@@ -55,12 +55,10 @@ describe('categories integrity', async () => {
 
     describe('deleteCategory integrity', () => {
         test('cannot delete category with associated objectives', async () => {
-
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Test Category',
                 color: '#10b981',
             });
-
 
             await userIdentity.mutation(api.objectives.createObjective, {
                 title: 'Test Objective',
@@ -69,11 +67,9 @@ describe('categories integrity', async () => {
                 scope: 'personal',
             });
 
-
             await expect(
                 userIdentity.mutation(api.categories.deleteCategory, { id: categoryId })
             ).rejects.toThrow(/CATEGORY_HAS_OBJECTIVES/);
-
 
             const category = await userIdentity.run(async ctx => ctx.db.get(categoryId));
             expect(category).not.toBeNull();
@@ -92,7 +88,6 @@ describe('categories integrity', async () => {
         });
 
         test('cannot delete category from different organization', async () => {
-
             const otherRandom = Math.random().toString(36).substring(2, 15);
             const otherUser = await createTestUser(t, {
                 userId: 'other-user-' + otherRandom,
@@ -114,7 +109,6 @@ describe('categories integrity', async () => {
                 role: 'owner',
             });
 
-
             const otherIdentity = t.withIdentity({
                 subject: otherUser.docId,
                 role: 'user',
@@ -135,22 +129,18 @@ describe('categories integrity', async () => {
                 color: '#10b981',
             });
 
-
             await expect(
                 userIdentity.mutation(api.categories.deleteCategory, { id: categoryId })
             ).rejects.toThrow(/CATEGORY_NOT_FOUND|FORBIDDEN/);
         });
 
         test('cannot delete non-existent category', async () => {
-
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Temp Category',
                 color: '#10b981',
             });
 
-
             await userIdentity.mutation(api.categories.deleteCategory, { id: categoryId });
-
 
             await expect(
                 userIdentity.mutation(api.categories.deleteCategory, { id: categoryId })
@@ -165,7 +155,6 @@ describe('categories integrity', async () => {
                 color: '#10b981',
             });
 
-
             await expect(
                 userIdentity.mutation(api.categories.createCategory, {
                     name: 'Unique Category',
@@ -179,7 +168,6 @@ describe('categories integrity', async () => {
                 name: '  Test Category  ',
                 color: '#10b981',
             });
-
 
             await expect(
                 userIdentity.mutation(api.categories.createCategory, {
@@ -199,7 +187,6 @@ describe('categories integrity', async () => {
         });
 
         test('can create same category name in different organization', async () => {
-
             const otherOrg = await createTestOrganization(t, {
                 name: 'Second Org',
                 slug: 'second-org-' + Math.random().toString(36).substring(2, 8),
@@ -210,7 +197,6 @@ describe('categories integrity', async () => {
                 userId,
                 role: 'owner',
             });
-
 
             const category1Id = await userIdentity.run(async ctx =>
                 ctx.db.insert('categories', {
@@ -223,7 +209,6 @@ describe('categories integrity', async () => {
                 })
             );
 
-
             const category2Id = await userIdentity.run(async ctx =>
                 ctx.db.insert('categories', {
                     userId,
@@ -234,7 +219,6 @@ describe('categories integrity', async () => {
                     updatedAt: Date.now(),
                 })
             );
-
 
             const org1Categories = await userIdentity.run(async ctx =>
                 ctx.db
@@ -274,7 +258,6 @@ describe('categories integrity', async () => {
                 color: '#3b82f6',
             });
 
-
             await expect(
                 userIdentity.mutation(api.categories.updateCategory, {
                     id: category1,
@@ -289,12 +272,10 @@ describe('categories integrity', async () => {
                 color: '#10b981',
             });
 
-
             await userIdentity.mutation(api.categories.updateCategory, {
                 id: categoryId,
                 name: '  my category  ',
             });
-
 
             const updated = await userIdentity.run(async ctx => ctx.db.get(categoryId));
             expect(updated?.name).toBe('my category');
@@ -303,22 +284,18 @@ describe('categories integrity', async () => {
 
     describe('createDefaultCategories idempotency', () => {
         test('running createDefaultCategories twice does not create duplicates', async () => {
-
             const firstRun = await userIdentity.mutation(
                 api.categories.createDefaultCategories,
                 {}
             );
             expect(firstRun).toHaveLength(9);
 
-
             const secondRun = await userIdentity.mutation(
                 api.categories.createDefaultCategories,
                 {}
             );
 
-
             expect(secondRun).toHaveLength(0);
-
 
             const allCategories = await userIdentity.run(async ctx =>
                 ctx.db
@@ -331,7 +308,6 @@ describe('categories integrity', async () => {
         });
 
         test('partial default categories are filled in', async () => {
-
             await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Health & Fitness',
                 color: '#10b981',
@@ -344,12 +320,9 @@ describe('categories integrity', async () => {
                 icon: 'briefcase',
             });
 
-
             const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
 
-
             expect(result).toHaveLength(7);
-
 
             const allCategories = await userIdentity.run(async ctx =>
                 ctx.db
@@ -395,7 +368,6 @@ describe('categories integrity', async () => {
                 scope: 'personal',
             });
 
-
             const objectives = await userIdentity.run(async ctx =>
                 ctx.db
                     .query('objectives')
@@ -420,16 +392,13 @@ describe('categories integrity', async () => {
                 scope: 'personal',
             });
 
-
             await userIdentity.mutation(api.categories.updateCategory, {
                 id: categoryId,
                 name: 'New Name',
             });
 
-
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
             expect(objective?.categoryId).toBe(categoryId);
-
 
             expect(objective?.category).toBe('Original Name');
         });
@@ -437,12 +406,10 @@ describe('categories integrity', async () => {
 
     describe('categoryId backfill migration', () => {
         test('backfillCategoryIds populates categoryId from category name', async () => {
-
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Backfill Test',
                 color: '#10b981',
             });
-
 
             const objectiveWithId = await userIdentity.mutation(api.objectives.createObjective, {
                 title: 'With CategoryId',
@@ -450,7 +417,6 @@ describe('categories integrity', async () => {
                 targetValue: 100,
                 scope: 'personal',
             });
-
 
             const now = Date.now();
             const objectiveWithoutId = await userIdentity.run(async ctx =>
@@ -479,17 +445,14 @@ describe('categories integrity', async () => {
             expect(result.status).toBe('completed');
             expect(result.updated).toBe(1);
 
-
             const updated = await userIdentity.run(async ctx => ctx.db.get(objectiveWithoutId));
             expect(updated?.categoryId).toBe(categoryId);
-
 
             const unchanged = await userIdentity.run(async ctx => ctx.db.get(objectiveWithId));
             expect(unchanged?.categoryId).toBe(categoryId);
         });
 
         test('backfill skips objectives with no matching category', async () => {
-
             const now = Date.now();
             const objectiveId = await userIdentity.run(async ctx =>
                 ctx.db.insert('objectives', {
@@ -515,7 +478,6 @@ describe('categories integrity', async () => {
             );
 
             expect(result.skipped).toBeGreaterThanOrEqual(1);
-
 
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
             expect(objective?.categoryId).toBeUndefined();

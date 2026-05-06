@@ -27,7 +27,6 @@ export const savedObjectiveSchema = objectiveSchema.extend({
     _id: z.string(),
 });
 
-
 export const createObjectiveFormSchema = objectiveSchema.omit({ categoryId: true });
 
 export type Objective = z.infer<typeof savedObjectiveSchema>;

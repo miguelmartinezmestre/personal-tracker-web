@@ -189,7 +189,6 @@ describe('convex categories', async () => {
 
     describe('getCategoryNamesForFilters', () => {
         test('returns unique sorted category names for current user', async () => {
-
             await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Work',
                 color: '#10b981',
@@ -203,14 +202,12 @@ describe('convex categories', async () => {
                 color: '#f59e0b',
             });
 
-
             await adminIdentity.mutation(api.categories.createCategory, {
                 name: 'Admin Category',
                 color: '#ef4444',
             });
 
             const result = await userIdentity.query(api.categories.getCategoryNamesForFilters, {});
-
 
             expect(result).toEqual(['Health', 'Personal', 'Work']);
         });

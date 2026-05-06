@@ -51,7 +51,6 @@ export const createCategory = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
 
-
         const trimmedName = args.name.trim();
         if (!trimmedName) {
             throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
@@ -96,7 +95,6 @@ export const updateCategory = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
         }
 
-
         if (rest.name !== undefined) {
             const trimmedName = rest.name.trim();
             if (!trimmedName) {
@@ -129,17 +127,14 @@ export const deleteCategory = mutationWithRLS({
         id: v.id('categories'),
     },
     handler: async (ctx, args) => {
-
         const category = await ctx.db.get('categories', args.id);
         if (!category) {
             throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
         }
 
-
         if (category.organizationId !== ctx.organizationId) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
-
 
         const hasObjectives = await ctx.db
             .query('objectives')
@@ -179,7 +174,6 @@ export const createDefaultCategories = mutationWithRLS({
 
         const results = [];
         for (const category of defaultCategories) {
-
             const exists = await ctx.db
                 .query('categories')
                 .withIndex('by_organization_name', q =>

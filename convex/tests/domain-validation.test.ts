@@ -155,14 +155,12 @@ describe('Domain Validation Tests', () => {
             }
         });
 
-        test.each([
-            { value: 0 },
-            { value: 1 },
-            { value: 100 },
-            { value: 1_000_000_000 },
-        ])('accepts valid progress value: $value', ({ value }) => {
-            expect(() => validateProgressDelta(value)).not.toThrow();
-        });
+        test.each([{ value: 0 }, { value: 1 }, { value: 100 }, { value: 1_000_000_000 }])(
+            'accepts valid progress value: $value',
+            ({ value }) => {
+                expect(() => validateProgressDelta(value)).not.toThrow();
+            }
+        );
     });
 
     describe('validateUpdateDate', () => {
@@ -204,15 +202,11 @@ describe('Domain Validation Tests', () => {
         });
 
         test('accepts date within clock skew buffer', () => {
-
             expect(() => validateUpdateDate(Date.now() + 30 * 1000)).not.toThrow();
         });
 
         test('rejects date beyond clock skew buffer', () => {
-
-            expect(() => validateUpdateDate(Date.now() + 2 * TIME.MINUTE_MS)).toThrow(
-                ConvexError
-            );
+            expect(() => validateUpdateDate(Date.now() + 2 * TIME.MINUTE_MS)).toThrow(ConvexError);
         });
     });
 
@@ -322,14 +316,11 @@ describe('Domain Validation Tests', () => {
                 });
             });
 
-            const result = await userIdentity.mutation(
-                api.update_progress.createUpdateProgress,
-                {
-                    objective: activeObjectiveId,
-                    updatedValue: 10,
-                    updateDate: Date.now(),
-                }
-            );
+            const result = await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+                objective: activeObjectiveId,
+                updatedValue: 10,
+                updateDate: Date.now(),
+            });
 
             expect(result).toBeDefined();
             expect(result?.updatedValue).toBe(10);

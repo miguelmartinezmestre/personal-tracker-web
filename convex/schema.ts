@@ -10,14 +10,7 @@ import {
     achievementTierValidator,
 } from './utils/validators';
 
-
-const auditPrimitive = v.union(
-    v.string(),
-    v.number(),
-    v.boolean(),
-    v.null()
-);
-
+const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
 
 const auditValueLevel1 = v.union(
     auditPrimitive,
@@ -210,7 +203,6 @@ export default defineSchema({
         .index('by_user', ['userId'])
         .index('by_user_achievement', ['userId', 'achievementNotifications']),
 
-
     member: defineTable({
         organizationId: v.string(),
         userId: v.string(),
@@ -221,7 +213,6 @@ export default defineSchema({
         .index('userId', ['userId'])
         .index('role', ['role'])
         .index('by_organizationId_and_userId', ['organizationId', 'userId']),
-
 
     invitation: defineTable({
         organizationId: v.string(),

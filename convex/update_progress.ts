@@ -53,12 +53,9 @@ export const createUpdateProgress = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
-
         validateUpdateDate(args.updateDate);
 
-
         validateProgressDelta(args.updatedValue);
-
 
         validateObjectiveNotCompleted(objective.status);
 
@@ -140,12 +137,9 @@ export const updateUpdateProgress = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
-
         validateUpdateDate(args.updateDate);
 
-
         validateProgressDelta(args.updatedValue);
-
 
         validateObjectiveNotCompleted(objective.status);
 

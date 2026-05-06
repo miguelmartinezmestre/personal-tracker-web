@@ -14,7 +14,6 @@ export const syncObjectiveFromProgress = internalMutation({
             return { found: false as const, completedNow: false, reopened: false };
         }
 
-
         let cursor: string | null = null;
         let isDone = false;
         let progressTotal = 0;
