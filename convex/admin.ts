@@ -1,9 +1,13 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { getAuth } from './auth';
 import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { getHeaders } from 'better-convex/auth';
+import { mutation } from './_generated/server';
+import { toSessionListItem } from './sessions';
+import { ERROR_CODES } from './utils/constants';
+import { normalizeGlobalUserRole } from './utils/userRole';
 
 type AdminApi = {
     banUser: (args: {
@@ -88,8 +92,10 @@ export const updateUserRole = mutationWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
+        const role = normalizeGlobalUserRole(args.role);
+
         await ctx.db.patch('user', args.userId, {
-            role: args.role,
+            role,
         });
 
         return { success: true };
@@ -118,6 +124,25 @@ export const deleteUser = mutationWithRLS({
     },
 });
 
+export const revokeUserSession = mutation({
+    args: {
+        userId: v.id('user'),
+        sessionId: v.id('session'),
+    },
+    handler: async (ctx, args) => {
+        await requireAdmin(ctx);
+
+        const session = await ctx.db.get(args.sessionId);
+        if (!session || session.userId !== args.userId) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
+        await ctx.db.delete(args.sessionId);
+
+        return { success: true } as const;
+    },
+});
+
 export const listUserSessions = queryWithRLS({
     args: {
         userId: v.id('user'),
@@ -126,10 +151,16 @@ export const listUserSessions = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
-        return await ctx.db
+        const result = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', args.userId))
             .order('desc')
             .paginate(args.paginationOpts);
+
+        return {
+            page: result.page.map(s => toSessionListItem(s, null)),
+            continueCursor: result.continueCursor,
+            isDone: result.isDone,
+        };
     },
 });

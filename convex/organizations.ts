@@ -74,8 +74,13 @@ export const getOrganizationsByUser = query({
             .withIndex('userId', q => q.eq('userId', identity.userId))
             .take(LIST_LIMIT);
 
-        const allOrgs = await ctx.db.query('organization').take(LIST_LIMIT);
-        const orgMap = new Map(allOrgs.map(o => [o._id, o]));
+        if (memberships.length === 0) return [];
+
+        const orgIds = [...new Set(memberships.map(m => m.organizationId as Id<'organization'>))];
+        const orgs = await Promise.all(orgIds.map(id => ctx.db.get('organization', id)));
+        const orgMap = new Map(
+            orgs.filter((o): o is NonNullable<typeof o> => o !== null).map(o => [o._id, o])
+        );
 
         const organizations = memberships
             .map(member => {
@@ -176,8 +181,11 @@ export const getOrganizationMembers = query({
             .order('desc')
             .paginate(args.paginationOpts);
 
-        const allUsers = await ctx.db.query('user').take(LIST_LIMIT);
-        const userMap = new Map(allUsers.map(u => [u._id, u]));
+        const userIds = [...new Set(paginatedMembers.page.map(m => m.userId as Id<'user'>))];
+        const users = await Promise.all(userIds.map(id => ctx.db.get('user', id)));
+        const userMap = new Map(
+            users.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
+        );
 
         const enrichedPage = paginatedMembers.page.map(member => {
             const user = userMap.get(member.userId as Id<'user'>);
@@ -218,14 +226,27 @@ export const getUserInvitations = query({
         const now = Date.now();
         const invitations = await ctx.db
             .query('invitation')
-            .withIndex('by_status_expiresAt', q => q.eq('status', 'pending').gt('expiresAt', now))
-            .filter(q => q.eq(q.field('email'), user.email))
+            .withIndex('by_email_status_expiresAt', q =>
+                q.eq('email', user.email).eq('status', 'pending').gt('expiresAt', now)
+            )
             .take(LIST_LIMIT);
 
-        const allOrgs = await ctx.db.query('organization').take(LIST_LIMIT);
-        const allUsers = await ctx.db.query('user').take(LIST_LIMIT);
-        const orgMap = new Map(allOrgs.map(o => [o._id, o]));
-        const userMap = new Map(allUsers.map(u => [u._id, u]));
+        if (invitations.length === 0) return [];
+
+        const orgIds = [...new Set(invitations.map(i => i.organizationId as Id<'organization'>))];
+        const inviterIds = [...new Set(invitations.map(i => i.inviterId as Id<'user'>))];
+
+        const [orgs, inviters] = await Promise.all([
+            Promise.all(orgIds.map(id => ctx.db.get('organization', id))),
+            Promise.all(inviterIds.map(id => ctx.db.get('user', id))),
+        ]);
+
+        const orgMap = new Map(
+            orgs.filter((o): o is NonNullable<typeof o> => o !== null).map(o => [o._id, o])
+        );
+        const userMap = new Map(
+            inviters.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
+        );
 
         const invitationsWithDetails = invitations.map(invitation => {
             const org = orgMap.get(invitation.organizationId as Id<'organization'>);
@@ -282,8 +303,13 @@ export const getOrganizationInvitations = query({
             .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
             .take(LIST_LIMIT);
 
-        const allUsers = await ctx.db.query('user').take(LIST_LIMIT);
-        const userMap = new Map(allUsers.map(u => [u._id, u]));
+        if (invitations.length === 0) return [];
+
+        const inviterIds = [...new Set(invitations.map(i => i.inviterId as Id<'user'>))];
+        const inviters = await Promise.all(inviterIds.map(id => ctx.db.get('user', id)));
+        const userMap = new Map(
+            inviters.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
+        );
 
         const invitationsWithDetails = invitations.map(invitation => {
             const inviter = userMap.get(invitation.inviterId as Id<'user'>);

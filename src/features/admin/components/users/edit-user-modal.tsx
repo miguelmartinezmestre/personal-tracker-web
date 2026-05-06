@@ -40,7 +40,7 @@ export function EditUserModal({
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState(user.email);
     const [name, setName] = useState(user.name);
-    const [role, setRole] = useState(user.role || 'user');
+    const [role, setRole] = useState(user.role === 'ADMIN' ? 'admin' : user.role || 'user');
     const queryClient = useQueryClient();
 
     const updateUser = useMutation({
@@ -107,9 +107,6 @@ export function EditUserModal({
                                     {t('editUserModal.roles.user')}
                                 </SelectItem>
                                 <SelectItem value="admin">
-                                    {t('editUserModal.roles.admin')}
-                                </SelectItem>
-                                <SelectItem value="ADMIN">
                                     {t('editUserModal.roles.admin')}
                                 </SelectItem>
                             </SelectContent>

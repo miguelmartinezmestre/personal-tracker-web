@@ -1,72 +1,107 @@
 import { v, ConvexError } from 'convex/values';
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
 import { mutation } from './_generated/server';
-import { getAuth } from './auth';
-import { getHeaders, getSession, getAuthUserIdentity } from 'better-convex/auth';
+import { getAuthUserIdentity } from 'better-convex/auth';
 import { ERROR_CODES } from './utils/constants';
+import type { Doc, Id } from './_generated/dataModel';
+
+export type SessionListItem = {
+    _id: Id<'session'>;
+    createdAt: number;
+    expiresAt: number;
+    ipAddress: string | null;
+    userAgent: string | null;
+    isCurrent: boolean;
+};
+
+const MAX_OTHER_SESSIONS_TO_REVOKE = 1000;
+
+export function toSessionListItem(
+    session: Doc<'session'>,
+    currentSessionId: Id<'session'> | null
+): SessionListItem {
+    return {
+        _id: session._id,
+        createdAt: session.createdAt,
+        expiresAt: session.expiresAt,
+        ipAddress: session.ipAddress ?? null,
+        userAgent: session.userAgent ?? null,
+        isCurrent: currentSessionId !== null && session._id === currentSessionId,
+    };
+}
 
 export const getSessionsByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        const currentSession = await getSession(ctx);
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity?.sessionId) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
+
+        const currentSessionId = identity.sessionId as Id<'session'>;
 
         const paginatedSessions = await ctx.db
             .query('session')
-            .withIndex('userId', q => q.eq('userId', currentSession?.userId as string))
+            .withIndex('userId', q => q.eq('userId', identity.userId))
             .order('desc')
             .paginate(args.paginationOpts);
 
         return {
-            currentSession,
             ...paginatedSessions,
+            page: paginatedSessions.page.map(s => toSessionListItem(s, currentSessionId)),
         };
     },
 });
 
-export const invalidateSession = mutationWithRLS({
-    args: { token: v.string() },
+export const invalidateSession = mutation({
+    args: { sessionId: v.id('session') },
     handler: async (ctx, args) => {
-        const headers = await getHeaders(ctx);
-        const auth = getAuth(ctx);
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity?.userId) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
 
-        await auth.api.revokeSession({
-            headers,
-            body: {
-                token: args.token,
-            },
-        });
+        const session = await ctx.db.get(args.sessionId);
+        if (!session || session.userId !== identity.userId) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
+        await ctx.db.delete(args.sessionId);
 
         return { success: true } as const;
     },
 });
 
-// Use a plain `mutation` (not `mutationWithRLS`) so we can delete session
-// rows directly even though RLS forbids regular users from writing to the
-// `session` table. We enforce ownership manually: only the currently
-// authenticated user's session rows can be deleted. Using the RLS-wrapped
-// mutation made deletes silently fail, leaving ghost sessions in the table.
 export const invalidateAllOtherSessions = mutation({
-    args: { currentToken: v.string() },
+    args: { currentSessionId: v.id('session') },
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) {
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         }
 
+        const current = await ctx.db.get(args.currentSessionId);
+        if (!current || current.userId !== identity.userId) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
         const sessions = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', identity.userId as string))
-            .collect();
+            .take(MAX_OTHER_SESSIONS_TO_REVOKE + 2);
+
+        const otherSessions = sessions.filter(session => session._id !== args.currentSessionId);
+        if (otherSessions.length > MAX_OTHER_SESSIONS_TO_REVOKE) {
+            throw new ConvexError('TOO_MANY_SESSIONS_TO_REVOKE');
+        }
 
         let revokedCount = 0;
-        for (const session of sessions) {
-            if (session.token !== args.currentToken) {
-                await ctx.db.delete(session._id);
-                revokedCount++;
-            }
+        for (const session of otherSessions) {
+            await ctx.db.delete(session._id);
+            revokedCount++;
         }
 
         return { success: true, revokedCount } as const;

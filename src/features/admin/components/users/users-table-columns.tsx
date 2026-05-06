@@ -1,7 +1,8 @@
 import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
-import { Badge, UserCheck, Ban, Trash2 } from 'lucide-react';
+import { UserCheck, Ban, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { EditUserModal } from './edit-user-modal';
 import { Doc } from '@/convex/_generated/dataModel';

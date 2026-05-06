@@ -1,10 +1,10 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchAuthMutation } from '@/features/auth/auth-server';
 import { api as convexApi } from '@/convex/_generated/api';
 
 export async function POST(request: NextRequest) {
     if (process.env.ALLOW_SETUP_TEST !== 'true') {
-        return new Response('Setup test endpoint disabled', { status: 403 });
+        return NextResponse.json({ error: 'Test endpoints disabled' }, { status: 403 });
     }
 
     try {
@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
             ],
         });
 
-        return Response.json({ success: true, organizationId: result.organizationId });
+        return NextResponse.json({ success: true, organizationId: result.organizationId });
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Setup failed';
-        return Response.json({ success: false, error: message }, { status: 500 });
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }
