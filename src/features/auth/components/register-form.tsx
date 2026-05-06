@@ -2,15 +2,7 @@
 
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import {
-    FormField,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-    Form,
-} from '@/components/ui/form-tanstack';
-import { Input } from '@/components/ui/input';
+import { Form } from '@/components/ui/form-tanstack';
 import { registerSchema } from '@/features/auth/schemas/register';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
@@ -24,37 +16,7 @@ import { useSignOutMutationOptions } from '@/features/auth/auth-client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getErrorMessage } from '@/lib/error-utils';
-
-interface FormInputFieldProps {
-    name: 'username' | 'email' | 'password' | 'confirmPassword';
-    label: string;
-    placeholder: string;
-    type?: string;
-    testId: string;
-}
-
-function FormInputField({ name, label, placeholder, type = 'text', testId }: FormInputFieldProps) {
-    return (
-        <FormField
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-gray-700">{label}</FormLabel>
-                    <FormControl>
-                        <Input
-                            {...field}
-                            type={type}
-                            placeholder={placeholder}
-                            className="focus:ring-2 focus:ring-primary/20"
-                            data-testid={testId}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    );
-}
+import { RegisterFormInputField } from './register-form-input-field';
 
 interface OrganizationListResponse {
     data?: Array<{ id: string }>;
@@ -179,14 +141,14 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                     </Alert>
                 )}
 
-                <FormInputField
+                <RegisterFormInputField
                     name="username"
                     label={tCommon('fields.username')}
                     placeholder={tCommon('placeholders.username')}
                     testId="register-username-input"
                 />
 
-                <FormInputField
+                <RegisterFormInputField
                     name="email"
                     type="email"
                     label={tCommon('fields.email')}
@@ -194,7 +156,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                     testId="register-email-input"
                 />
 
-                <FormInputField
+                <RegisterFormInputField
                     name="password"
                     type="password"
                     label={tCommon('fields.password')}
@@ -202,7 +164,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                     testId="register-password-input"
                 />
 
-                <FormInputField
+                <RegisterFormInputField
                     name="confirmPassword"
                     type="password"
                     label={tCommon('fields.confirmPassword')}

@@ -135,7 +135,12 @@ async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> {
         return false;
     }
 
-    const label = ((await switcher.first().textContent()) ?? '')
+    const label = (
+        (await switcher
+            .first()
+            .textContent({ timeout: 2000 })
+            .catch(() => null)) ?? ''
+    )
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
@@ -322,10 +327,24 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
 
 export async function ensureAuthenticatedState(page: Page): Promise<void> {
     await waitForAuthenticatedSession(page);
-    const ensureOrganizationResponse = await page.request.post('/api/test/ensure-organization', {
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ createPersonalCategory: true }),
-    });
+    let ensureOrganizationResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        ensureOrganizationResponse = await page.request.post('/api/test/ensure-organization', {
+            headers: { 'Content-Type': 'application/json' },
+            data: JSON.stringify({ createPersonalCategory: true }),
+        });
+
+        if (ensureOrganizationResponse.ok() || ensureOrganizationResponse.status() < 500) {
+            break;
+        }
+
+        await page.waitForTimeout(1000);
+    }
+
+    if (!ensureOrganizationResponse) {
+        throw new Error('Ensure organization API failed (0): No response');
+    }
+
     if (!ensureOrganizationResponse.ok()) {
         const body = await ensureOrganizationResponse.text();
         throw new Error(
@@ -508,7 +527,13 @@ export async function createTestUserViaAPI(
                     name: userData.username,
                 },
             });
-            break;
+
+            if (signUpResponse.ok() || signUpResponse.status() < 500 || attempt === 2) {
+                break;
+            }
+
+            await page.waitForTimeout(1000);
+            continue;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
             if (
@@ -528,18 +553,32 @@ export async function createTestUserViaAPI(
         throw new Error(`Sign-up API failed (${status}): ${body}`);
     }
 
-    const createOrgResponse = await page.request.post('/api/auth/organization/create', {
-        headers,
-        timeout: requestTimeout,
-        data: {
-            name: `${userData.username} Org`,
-            slug: userData.organizationSlug,
-        },
-    });
+    let createOrgResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        createOrgResponse = await page.request.post('/api/auth/organization/create', {
+            headers,
+            timeout: requestTimeout,
+            data: {
+                name: `${userData.username} Org`,
+                slug: userData.organizationSlug,
+            },
+        });
 
-    if (!createOrgResponse.ok()) {
-        const body = await createOrgResponse.text();
-        throw new Error(`Create org API failed (${createOrgResponse.status()}): ${body}`);
+        if (createOrgResponse.ok()) {
+            break;
+        }
+
+        if (createOrgResponse.status() < 500 || attempt === 2) {
+            break;
+        }
+
+        await page.waitForTimeout(1000);
+    }
+
+    if (!createOrgResponse || !createOrgResponse.ok()) {
+        const body = createOrgResponse ? await createOrgResponse.text() : 'No response';
+        const status = createOrgResponse ? createOrgResponse.status() : 0;
+        throw new Error(`Create org API failed (${status}): ${body}`);
     }
 
     const orgPayload = (await createOrgResponse.json()) as { id?: string; data?: { id?: string } };
@@ -644,9 +683,6 @@ export async function createObjective(
 
     await page.getByTestId('objective-category-select').click();
 
-    // Only consider options that are not placeholders ("loading"/"empty") which render
-    // with data-disabled / aria-disabled. Radix re-renders briefly during open; wait
-    // for at least one enabled option to appear.
     const enabledOptions = page.locator(
         '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
     );
@@ -803,12 +839,9 @@ export async function ensureDefaultCategories(page: Page): Promise<void> {
         return;
     }
 
-    // Parallel workers can race: only one "Personal" is needed; the other may hit duplicate/constraint errors.
     try {
         await createCategory(page, { name: 'Personal' });
-    } catch {
-        // Another worker may have created Personal; verify below.
-    }
+    } catch {}
 
     const maxVerify = Date.now() + 15_000;
     while (Date.now() < maxVerify) {

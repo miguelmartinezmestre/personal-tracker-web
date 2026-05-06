@@ -18,6 +18,7 @@ import {
     organizationSchema,
 } from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
+import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/form-modal';
 
@@ -28,6 +29,7 @@ const defaultValues: CreateOrganization = {
 
 export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
+    const tCommon = useTranslationsCommon('Common');
     const createOrganization = useCreateOrganization();
 
     return (
@@ -51,7 +53,9 @@ export default function CreateOrganizationFormModal() {
                 await createOrganization.mutateAsync(values);
             }}
             submitLabel={t('saveOrganization')}
+            pendingLabel={tCommon('loading')}
             cancelLabel={t('cancel')}
+            isPending={createOrganization.isPending}
             cancelTestId="organization-cancel-button"
             submitTestId="organization-save-button"
         >

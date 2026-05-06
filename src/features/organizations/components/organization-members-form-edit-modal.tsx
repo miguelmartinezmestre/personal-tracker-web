@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { OrganizationRole } from '../types/roles';
 import { useTranslations } from 'next-intl';
+import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import FormModal from '@/components/form-modal';
 
@@ -33,6 +34,7 @@ export default function OrganizationMemberEditFormModal({
     defaultValues: OrganizationMember;
 }) {
     const t = useTranslations('OrganizationMembers');
+    const tCommon = useTranslationsCommon('Common');
 
     const roleOptions = [
         { value: OrganizationRole.OWNER, label: t('roles.owner') },
@@ -65,7 +67,9 @@ export default function OrganizationMemberEditFormModal({
                 });
             }}
             submitLabel={t('saveOrganizationMember')}
+            pendingLabel={tCommon('loading')}
             cancelLabel={t('cancel')}
+            isPending={updateOrganizationMember.isPending}
             cancelTestId="organization-member-edit-cancel-button"
             submitTestId="organization-member-edit-save-button"
         >

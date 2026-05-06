@@ -1,9 +1,5 @@
 import { z } from 'zod';
-
-const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-const STRONG_PASSWORD_MESSAGE =
-    'La contraseña debe incluir al menos una mayúscula, una minúscula y un número';
-
+import { STRONG_PASSWORD_MESSAGE_ES, STRONG_PASSWORD_REGEX } from '@shared/password-policy';
 export const registerSchema = z
     .object({
         email: z.string().email(),
@@ -16,7 +12,7 @@ export const registerSchema = z
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['password'],
-                message: STRONG_PASSWORD_MESSAGE,
+                message: STRONG_PASSWORD_MESSAGE_ES,
             });
         }
 

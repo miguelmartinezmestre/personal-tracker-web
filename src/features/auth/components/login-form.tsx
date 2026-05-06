@@ -23,6 +23,7 @@ import { authClient } from '@/features/auth/auth-client';
 import { useSignOutMutationOptions } from '@/features/auth/auth-client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
+import { useFormSubmit } from '@/hooks/use-form-submit';
 
 export default function LoginForm() {
     const router = useRouter();
@@ -52,7 +53,7 @@ export default function LoginForm() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof loginSchema>) {
+    async function handleSignIn(values: z.infer<typeof loginSchema>) {
         if (session.data?.user) {
             await signOutMutation.mutateAsync();
         }
@@ -72,6 +73,8 @@ export default function LoginForm() {
             }
         );
     }
+
+    const { submit: onSubmit, isSubmitting } = useFormSubmit(handleSignIn);
 
     return (
         <Form {...form}>
@@ -143,10 +146,10 @@ export default function LoginForm() {
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
-                    disabled={false}
+                    disabled={isSubmitting}
                     data-testid="login-button"
                 >
-                    {t('login')}
+                    {isSubmitting ? tCommon('loading') : t('login')}
                 </Button>
 
                 <div className="text-center mt-4">

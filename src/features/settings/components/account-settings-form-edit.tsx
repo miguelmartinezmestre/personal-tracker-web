@@ -21,6 +21,7 @@ import { authClient } from '@/features/auth/auth-client';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
+import { useFormSubmit } from '@/hooks/use-form-submit';
 
 export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
@@ -46,7 +47,7 @@ export default function AccountSettingsFormEdit() {
         },
     });
 
-    const onSubmit = async (values: z.infer<typeof accountDetailsSchema>) => {
+    const handleUpdateAccount = async (values: z.infer<typeof accountDetailsSchema>) => {
         setError('');
         setMessage('');
 
@@ -66,7 +67,7 @@ export default function AccountSettingsFormEdit() {
                 setError(updateError.message || tCommon('genericErrorDescription'));
                 return;
             }
-            // Refetch session to get updated user data
+
             await queryClient.refetchQueries({
                 queryKey: ['convex', { api: api.organizations.getCurrentSession }],
             });
@@ -89,6 +90,8 @@ export default function AccountSettingsFormEdit() {
 
         setOpen(false);
     };
+
+    const { submit: onSubmit, isSubmitting } = useFormSubmit(handleUpdateAccount);
 
     if (sessionQuery?.isPending) {
         return (
@@ -146,12 +149,13 @@ export default function AccountSettingsFormEdit() {
                         variant="outline"
                         type="button"
                         onClick={() => setOpen(false)}
+                        disabled={isSubmitting}
                         data-testid="account-cancel-button"
                     >
                         {t('cancel')}
                     </Button>
-                    <Button type="submit" data-testid="account-save-button">
-                        {t('saveAccount')}
+                    <Button type="submit" disabled={isSubmitting} data-testid="account-save-button">
+                        {isSubmitting ? tCommon('loading') : t('saveAccount')}
                     </Button>
                 </DialogFooter>
                 {error && (

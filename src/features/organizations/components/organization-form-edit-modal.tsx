@@ -18,6 +18,7 @@ import {
     savedOrganizationSchema,
 } from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
+import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/form-modal';
 
@@ -27,6 +28,7 @@ export default function EditOrganizationFormModal({
     defaultValues: Organization;
 }) {
     const t = useTranslations('Organizations');
+    const tCommon = useTranslationsCommon('Common');
     const updateOrganization = useUpdateOrganization();
 
     return (
@@ -58,7 +60,9 @@ export default function EditOrganizationFormModal({
                 });
             }}
             submitLabel={t('saveOrganization')}
+            pendingLabel={tCommon('loading')}
             cancelLabel={t('cancel')}
+            isPending={updateOrganization.isPending}
             cancelTestId="organization-edit-cancel-button"
             submitTestId="organization-edit-save-button"
         >
