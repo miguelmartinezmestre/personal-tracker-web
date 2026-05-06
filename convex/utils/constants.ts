@@ -3,6 +3,7 @@ export const TIME = {
     HOUR_MS: 60 * 60 * 1000,
     DAY_MS: 24 * 60 * 60 * 1000,
     WEEK_MS: 7 * 24 * 60 * 60 * 1000,
+    FIVE_YEARS_MS: 5 * 365 * 24 * 60 * 60 * 1000,
 } as const;
 
 export const PAGINATION = {
@@ -81,30 +82,7 @@ export const ORGANIZATION_ROLE = {
 
 export type OrganizationRole = (typeof ORGANIZATION_ROLE)[keyof typeof ORGANIZATION_ROLE];
 
-/**
- * Error codes for internationalization
- * Frontend should map these codes to localized messages
- *
- * Spanish translations (for reference):
- * - AUTH_REQUIRED: 'Debes iniciar sesión para realizar esta acción'
- * - FORBIDDEN: 'No tienes permiso para realizar esta acción'
- * - WEAK_PASSWORD: 'La contraseña debe incluir al menos una mayúscula, una minúscula y un número'
- * - NO_ACTIVE_ORG: 'No hay una organización activa seleccionada'
- * - ORG_NOT_FOUND: 'Organización no encontrada'
- * - OBJECTIVE_NOT_FOUND: 'Objetivo no encontrado'
- * - PROGRESS_NOT_FOUND: 'Actualización de progreso no encontrada'
- * - CATEGORY_NOT_FOUND: 'Categoría no encontrada'
- * - USER_NOT_FOUND: 'Usuario no encontrado'
- * - NOT_OBJECTIVE_OWNER: 'No eres el propietario de este objetivo'
- * - NOT_AUTHORIZED_OBJECTIVE: 'No tienes permiso para editar este objetivo'
- * - NOT_AUTHORIZED_NOTIFICATION: 'No tienes permiso para crear notificaciones para este objetivo'
- * - PLATFORM_ALREADY_CONFIGURED: 'La plataforma ya está configurada'
- * - SETUP_USER_COUNT: 'La configuración solo puede completarse cuando existe exactamente un usuario'
- * - SETUP_USER_MISMATCH: 'La configuración debe ser completada por el único usuario registrado'
- * - SETUP_AUTH_REQUIRED: 'Se requiere autenticación para completar la configuración'
- * - INTERNAL_ERROR: 'Error interno del servidor'
- * - VALIDATION_ERROR: 'Error de validación'
- */
+
 export const ERROR_CODES = {
     AUTH_REQUIRED: 'AUTH_REQUIRED',
     FORBIDDEN: 'FORBIDDEN',
@@ -129,6 +107,24 @@ export const ERROR_CODES = {
 
     INTERNAL_ERROR: 'INTERNAL_ERROR',
     VALIDATION_ERROR: 'VALIDATION_ERROR',
+
+
+    FUTURE_DATE_NOT_ALLOWED: 'FUTURE_DATE_NOT_ALLOWED',
+    DATE_TOO_OLD: 'DATE_TOO_OLD',
+    OBJECTIVE_ALREADY_COMPLETED: 'OBJECTIVE_ALREADY_COMPLETED',
+    TARGET_NOT_FINITE: 'TARGET_NOT_FINITE',
+    TARGET_TOO_SMALL: 'TARGET_TOO_SMALL',
+    TARGET_TOO_LARGE: 'TARGET_TOO_LARGE',
+    VALUE_NOT_FINITE: 'VALUE_NOT_FINITE',
+    VALUE_NEGATIVE: 'VALUE_NEGATIVE',
+    VALUE_TOO_LARGE: 'VALUE_TOO_LARGE',
+    DEADLINE_TOO_OLD: 'DEADLINE_TOO_OLD',
+    DEADLINE_TOO_FAR: 'DEADLINE_TOO_FAR',
+
+
+    CATEGORY_HAS_OBJECTIVES: 'CATEGORY_HAS_OBJECTIVES',
+    DUPLICATE_CATEGORY_NAME: 'DUPLICATE_CATEGORY_NAME',
+    DEFAULT_CATEGORIES_ALREADY_EXIST: 'DEFAULT_CATEGORIES_ALREADY_EXIST',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

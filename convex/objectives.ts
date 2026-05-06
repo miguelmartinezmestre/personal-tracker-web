@@ -7,6 +7,8 @@ import { mutationWithRLS, queryWithRLS } from './rls';
 import { objectiveScopeValidator, objectiveStatusValidator } from './utils/validators';
 import { workflow } from './workflow';
 import { ERROR_CODES } from './utils/constants';
+import { validateObjectiveMetrics } from './utils/objectiveDomain';
+import { findCategoryIdByName, getCategoryForObjective } from './utils/categoryResolution';
 
 const BATCH_SIZE = 50;
 
@@ -175,6 +177,7 @@ export const createObjective = mutationWithRLS({
         title: v.string(),
         description: v.optional(v.string()),
         category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         targetValue: v.number(),
         currentValue: v.optional(v.number()),
         startValue: v.optional(v.number()),
@@ -197,13 +200,34 @@ export const createObjective = mutationWithRLS({
         }
 
         const startValue = args.startValue ?? args.currentValue ?? 0;
+        validateObjectiveMetrics({
+            targetValue: args.targetValue,
+            currentValue: startValue,
+            startValue,
+            deadline: args.deadline,
+        });
+
+        let resolvedCategory: string | undefined;
+        let resolvedCategoryId: Id<'categories'> | undefined;
+
+        if (args.categoryId) {
+            const cat = await getCategoryForObjective(ctx, organizationId, userId, args.categoryId);
+            resolvedCategoryId = cat._id;
+            resolvedCategory = cat.name;
+        } else if (args.category !== undefined && args.category.trim() !== '') {
+            const trimmed = args.category.trim();
+            resolvedCategory = trimmed;
+            resolvedCategoryId = await findCategoryIdByName(ctx, organizationId, trimmed);
+        }
+
         const objectiveId = await ctx.db.insert('objectives', {
             userId,
             organizationId,
             scope,
             title: args.title,
             description: args.description,
-            category: args.category,
+            category: resolvedCategory,
+            categoryId: resolvedCategoryId,
             targetValue: args.targetValue,
             currentValue: startValue,
             startValue,
@@ -231,6 +255,7 @@ export const updateObjective = mutationWithRLS({
         title: v.optional(v.string()),
         description: v.optional(v.string()),
         category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         targetValue: v.optional(v.number()),
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
@@ -247,14 +272,49 @@ export const updateObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
 
+        validateObjectiveMetrics({
+            targetValue: args.targetValue,
+            startValue: args.startValue,
+            deadline: args.deadline,
+        });
+
         if (args.scope === 'organization' && !ctx.organizationId) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
+        }
+
+        let categoryPatch:
+            | { category: string | undefined; categoryId: Id<'categories'> | undefined }
+            | undefined;
+
+        if (args.categoryId !== undefined) {
+            const cat = await getCategoryForObjective(
+                ctx,
+                objective.organizationId,
+                ctx.userId,
+                args.categoryId
+            );
+            categoryPatch = { category: cat.name, categoryId: cat._id };
+        } else if (args.category !== undefined) {
+            const trimmed = args.category.trim();
+            if (trimmed === '') {
+                categoryPatch = { category: undefined, categoryId: undefined };
+            } else {
+                categoryPatch = {
+                    category: trimmed,
+                    categoryId: await findCategoryIdByName(ctx, objective.organizationId, trimmed),
+                };
+            }
         }
 
         await ctx.db.patch('objectives', args.id, {
             title: args.title,
             description: args.description,
-            category: args.category,
+            ...(categoryPatch !== undefined
+                ? {
+                      category: categoryPatch.category,
+                      categoryId: categoryPatch.categoryId,
+                  }
+                : {}),
             targetValue: args.targetValue,
             startValue: args.startValue,
             deadline: args.deadline,
@@ -268,75 +328,147 @@ export const updateObjective = mutationWithRLS({
     },
 });
 
+
+export const backfillObjectiveCategoryIds = internalMutation({
+    args: {
+        cursor: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const BATCH = 100;
+        const page = await ctx.db.query('objectives').paginate({
+            numItems: BATCH,
+            cursor: args.cursor ?? null,
+        });
+
+        for (const objective of page.page) {
+            if (objective.categoryId || !objective.category?.trim()) continue;
+            const cid = await findCategoryIdByName(
+                ctx,
+                objective.organizationId,
+                objective.category
+            );
+            if (cid) {
+                await ctx.db.patch(objective._id, { categoryId: cid });
+            }
+        }
+
+        if (!page.isDone) {
+            await ctx.scheduler.runAfter(0, internal.objectives.backfillObjectiveCategoryIds, {
+                cursor: page.continueCursor,
+            });
+        }
+    },
+});
+
 export const deleteObjectiveContinue = internalMutation({
     args: {
         objectiveId: v.id('objectives'),
-        skipProgress: v.number(),
-        skipNotifications: v.number(),
+        phase: v.optional(v.union(v.literal('progress'), v.literal('notifications'))),
+        cursor: v.optional(v.union(v.string(), v.null())),
+        totalProgressDeleted: v.optional(v.number()),
+        totalNotificationsDeleted: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        let totalProgressDeleted = args.skipProgress;
-        let totalNotificationsDeleted = args.skipNotifications;
 
-        // Delete next batch of progressUpdates
-        const progressUpdates = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-            .take(BATCH_SIZE);
+        const phase = args.phase ?? 'progress';
+        const totalProgressDeleted = args.totalProgressDeleted ?? 0;
+        const totalNotificationsDeleted = args.totalNotificationsDeleted ?? 0;
+        const objective = await ctx.db.get(args.objectiveId);
 
-        for (const update of progressUpdates) {
-            await ctx.db.delete('progressUpdates', update._id);
-        }
-
-        totalProgressDeleted += progressUpdates.length;
-
-        // If there are more progressUpdates, continue
-        if (progressUpdates.length === BATCH_SIZE) {
-            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-                objectiveId: args.objectiveId,
-                skipProgress: totalProgressDeleted,
-                skipNotifications: args.skipNotifications,
-            });
+        if (!objective) {
             return {
-                status: 'in_progress',
-                deleted: { progress: totalProgressDeleted, notifications: args.skipNotifications },
+                status: 'completed',
+                noOp: true,
+                deleted: { progress: totalProgressDeleted, notifications: totalNotificationsDeleted },
             };
         }
 
-        // ProgressUpdates done, now delete notifications in batches
-        const notifications = await ctx.db
-            .query('notifications')
-            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-            .take(BATCH_SIZE);
+        if (phase === 'progress') {
 
-        for (const notification of notifications) {
-            await ctx.db.delete('notifications', notification._id);
-        }
+            const page = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+                .paginate({
+                    numItems: BATCH_SIZE,
+                    cursor: null,
+                });
 
-        totalNotificationsDeleted += notifications.length;
+            for (const update of page.page) {
+                await ctx.db.delete(update._id);
+            }
 
-        // If there are more notifications, continue
-        if (notifications.length === BATCH_SIZE) {
+            const newTotalProgress = totalProgressDeleted + page.page.length;
+
+
+            if (!page.isDone) {
+                await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+                    objectiveId: args.objectiveId,
+                    phase: 'progress',
+                    cursor: null,
+                    totalProgressDeleted: newTotalProgress,
+                    totalNotificationsDeleted,
+                });
+                return {
+                    status: 'in_progress',
+                    phase: 'progress',
+                    deleted: { progress: newTotalProgress, notifications: totalNotificationsDeleted },
+                };
+            }
+
+
             await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
                 objectiveId: args.objectiveId,
-                skipProgress: totalProgressDeleted,
-                skipNotifications: totalNotificationsDeleted,
+                phase: 'notifications',
+                cursor: null,
+                totalProgressDeleted: newTotalProgress,
+                totalNotificationsDeleted,
             });
             return {
                 status: 'in_progress',
+                phase: 'notifications',
+                deleted: { progress: newTotalProgress, notifications: totalNotificationsDeleted },
+            };
+        }
+
+
+        const page = await ctx.db
+            .query('notifications')
+            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+            .paginate({
+                numItems: BATCH_SIZE,
+                cursor: null,
+            });
+
+        for (const notification of page.page) {
+            await ctx.db.delete(notification._id);
+        }
+
+        const newTotalNotifications = totalNotificationsDeleted + page.page.length;
+
+
+        if (!page.isDone) {
+            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+                objectiveId: args.objectiveId,
+                phase: 'notifications',
+                cursor: null,
+                totalProgressDeleted,
+                totalNotificationsDeleted: newTotalNotifications,
+            });
+            return {
+                status: 'in_progress',
+                phase: 'notifications',
                 deleted: {
                     progress: totalProgressDeleted,
-                    notifications: totalNotificationsDeleted,
+                    notifications: newTotalNotifications,
                 },
             };
         }
 
-        // All related data deleted, now delete the objective itself
-        await ctx.db.delete('objectives', args.objectiveId);
+        await ctx.db.delete(args.objectiveId);
 
         return {
             status: 'completed',
-            deleted: { progress: totalProgressDeleted, notifications: totalNotificationsDeleted },
+            deleted: { progress: totalProgressDeleted, notifications: newTotalNotifications },
         };
     },
 });
@@ -351,7 +483,7 @@ export const deleteObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
 
-        // Check permissions
+
         if (objective.scope === 'personal' && objective.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
@@ -360,11 +492,13 @@ export const deleteObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
         }
 
-        // Start batch deletion process
+
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.id,
-            skipProgress: 0,
-            skipNotifications: 0,
+            phase: 'progress',
+            cursor: null,
+            totalProgressDeleted: 0,
+            totalNotificationsDeleted: 0,
         });
 
         return { status: 'deletion_started', objectiveId: args.id };

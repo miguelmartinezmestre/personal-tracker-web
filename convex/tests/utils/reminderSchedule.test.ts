@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { describe, expect, test } from 'vitest';
 import { computeNextReminderAt } from '../../utils/reminderSchedule';
 

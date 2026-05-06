@@ -66,7 +66,9 @@ export default function UpdateProgressFormModal({
                 });
             }}
             submitLabel={t('saveProgress')}
+            pendingLabel={tCommon('loading')}
             cancelLabel={tCommon('actions.cancel')}
+            isPending={updateUpdateProgress.isPending}
             cancelTestId="progress-edit-cancel-button"
             submitTestId="progress-edit-save-button"
         >

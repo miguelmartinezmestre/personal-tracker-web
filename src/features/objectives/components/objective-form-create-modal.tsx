@@ -23,12 +23,15 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/ui-utils/utils';
-import { CreateObjective, objectiveSchema } from '@/features/objectives/schemas/objective';
+import {
+    CreateObjective,
+    createObjectiveFormSchema,
+} from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
-import { Doc } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import FormModal from '@/components/form-modal';
 
 const defaultValues: CreateObjective = {
@@ -76,11 +79,6 @@ export default function CreateObjectiveFormModal() {
         [categoriesQuery.data]
     );
 
-    const categoryIdToName = useMemo(
-        () => new Map<string, string>(categoryOptions.map(c => [c.id, c.label])),
-        [categoryOptions]
-    );
-
     return (
         <FormModal<CreateObjective>
             trigger={
@@ -94,18 +92,24 @@ export default function CreateObjectiveFormModal() {
             formOptions={{
                 defaultValues,
                 validators: {
-                    onChange: objectiveSchema,
-                    onSubmit: objectiveSchema,
+                    onChange: createObjectiveFormSchema,
+                    onSubmit: createObjectiveFormSchema,
                 },
             }}
             onSubmit={async (value: CreateObjective) => {
-                const categoryName = value.category
-                    ? (categoryIdToName.get(value.category) ?? value.category)
-                    : undefined;
+                const raw = value.category;
+                const categoryId =
+                    raw &&
+                    raw !== 'loading' &&
+                    raw !== 'empty' &&
+                    !raw.startsWith('missing-')
+                        ? (raw as Id<'categories'>)
+                        : undefined;
+
                 await createObjectiveMutation.mutateAsync({
                     title: value.title,
                     description: value.description ?? undefined,
-                    category: categoryName,
+                    categoryId,
                     targetValue: Number(value.targetValue),
                     startValue: 0,
                     currentValue: 0,
@@ -116,6 +120,8 @@ export default function CreateObjectiveFormModal() {
             }}
             submitLabel={t('saveObjective')}
             cancelLabel={t('cancel')}
+            isPending={createObjectiveMutation.isPending}
+            pendingLabel={tCommon('loading')}
             cancelTestId="objective-cancel-button"
             submitTestId="objective-save-button"
         >

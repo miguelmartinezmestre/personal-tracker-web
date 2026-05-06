@@ -11,6 +11,8 @@ export const objectiveScopeSchema = z.enum([
 export const objectiveSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional().nullable(),
+
+    categoryId: z.string().optional().nullable(),
     category: z.string().optional().nullable(),
     targetValue: z.number(),
     currentValue: z.number(),
@@ -25,5 +27,8 @@ export const savedObjectiveSchema = objectiveSchema.extend({
     _id: z.string(),
 });
 
+
+export const createObjectiveFormSchema = objectiveSchema.omit({ categoryId: true });
+
 export type Objective = z.infer<typeof savedObjectiveSchema>;
-export type CreateObjective = z.infer<typeof objectiveSchema>;
+export type CreateObjective = z.infer<typeof createObjectiveFormSchema>;

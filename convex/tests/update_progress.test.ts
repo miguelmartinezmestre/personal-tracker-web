@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -142,6 +141,7 @@ describe('convex update_progress', () => {
         const progressUpdateId = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
+                userId: userId,
                 updatedValue: 60,
                 updateDate,
                 comment: 'Initial comment',
@@ -168,6 +168,7 @@ describe('convex update_progress', () => {
         const progressUpdateId = await userIdentity.run(async ctx => {
             return await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
+                userId: userId,
                 updatedValue: 60,
                 updateDate: Date.now(),
                 createdAt: Date.now(),
@@ -199,6 +200,7 @@ describe('convex update_progress', () => {
         const progressUpdateId = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
+                userId: userId,
                 updatedValue: 60,
                 updateDate: Date.now(),
                 createdAt: Date.now(),
