@@ -15,6 +15,7 @@ const eslintConfig = [
     globalIgnores([
         '.next/**',
         '.next-e2e/**',
+        '.next-e2e-authenticated/**',
         'out/**',
         'build/**',
         'next-env.d.ts',

@@ -150,10 +150,6 @@ test.describe('Objectives Progress Updates', () => {
                 targetValue: 100,
             });
 
-            // Navigate directly to the objective we just created instead of
-            // `openObjectiveDetailFromList`, which opens the first row with a
-            // progress link — that may not be the objective under test when
-            // other tests have already populated the list.
             await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
             const createdRow = page
                 .getByTestId('table-row')

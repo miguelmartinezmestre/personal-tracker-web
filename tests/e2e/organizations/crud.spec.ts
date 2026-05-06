@@ -1,7 +1,15 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
-import { createOrganization, createObjective } from '../../helpers/test-helpers';
+import {
+    createOrganization,
+    createObjective,
+    ensureAuthenticatedState,
+} from '../../helpers/test-helpers';
 import { OrganizationFactory } from '../../helpers/factories';
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 async function setActiveOrganization(page: Page, orgName: string): Promise<void> {
     const switcher = page.getByTestId('organization-switcher');
@@ -9,44 +17,37 @@ async function setActiveOrganization(page: Page, orgName: string): Promise<void>
         return;
     }
 
-    if (!(await switcher.isVisible())) {
+    const trigger = switcher.first();
+    if (!(await trigger.isVisible({ timeout: 15000 }).catch(() => false))) {
         return;
     }
+    await expect(trigger).toBeEnabled({ timeout: 15000 });
 
-    const currentOrganizationText = (await switcher.textContent())?.trim() ?? '';
+    const currentOrganizationText = (await trigger.textContent({ timeout: 2000 }))?.trim() ?? '';
     if (currentOrganizationText.includes(orgName)) {
         return;
     }
 
-    await switcher.click();
+    await trigger.click();
 
-    const orgOption = page.getByRole('menuitem', { name: orgName });
-    if ((await orgOption.count()) > 0) {
-        if ((await orgOption.first().getAttribute('aria-disabled')) === 'true') {
-            await page.keyboard.press('Escape');
-            return;
-        }
-
-        await orgOption.first().click();
-        await page.waitForLoadState('domcontentloaded');
+    const orgOption = page
+        .locator('[data-testid^="organization-option-"]')
+        .filter({ hasText: new RegExp(escapeRegExp(orgName), 'i') })
+        .first();
+    try {
+        await expect(orgOption).toBeVisible({ timeout: 10000 });
+    } catch {
+        await page.keyboard.press('Escape');
         return;
     }
 
-    const firstOption = page.getByRole('menuitem').first();
-    if ((await firstOption.count()) > 0) {
-        const optionText = (await firstOption.textContent())?.toLowerCase() ?? '';
-        if (
-            !optionText.includes('loading') &&
-            !optionText.includes('no organizations') &&
-            !optionText.includes('sin organizaciones')
-        ) {
-            await firstOption.click();
-            await page.waitForLoadState('domcontentloaded');
-            return;
-        }
+    if ((await orgOption.getAttribute('aria-disabled')) === 'true') {
+        await page.keyboard.press('Escape');
+        return;
     }
 
-    await page.keyboard.press('Escape');
+    await orgOption.click();
+    await expect(trigger).toContainText(orgName, { timeout: 10000 });
 }
 
 test.describe('Organizations CRUD', () => {
@@ -184,27 +185,11 @@ test.describe('Organizations CRUD', () => {
         const newOrg = await createOrganization(page, { name: `Switch Org ${Date.now()}` });
 
         await page.goto('/dashboard/home');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgSwitcher = page.getByTestId('organization-switcher');
-
-        if ((await orgSwitcher.count()) > 0) {
-            await orgSwitcher.first().click();
-
-            const orgOption = page.getByRole('option', { name: newOrg.name });
-            if ((await orgOption.count()) > 0) {
-                await orgOption.click();
-
-                await page.waitForLoadState('domcontentloaded');
-            }
-        } else {
-            const sidebarSwitcher = page.locator(
-                'aside [data-testid*="org"], header [data-testid*="org"]'
-            );
-            if ((await sidebarSwitcher.count()) > 0) {
-                await sidebarSwitcher.first().click();
-            }
-        }
+        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
+        await setActiveOrganization(page, newOrg.name);
+        await expect(page.getByTestId('organization-switcher')).toContainText(newOrg.name, {
+            timeout: 10000,
+        });
     });
 
     test('data isolation between organizations', async ({ page }) => {
@@ -214,25 +199,15 @@ test.describe('Organizations CRUD', () => {
 
         const newOrg = await createOrganization(page, { name: `Isolated Org ${Date.now()}` });
 
+        await ensureAuthenticatedState(page);
         await page.goto('/dashboard/home');
-        await page.waitForLoadState('domcontentloaded');
+        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 
-        const orgSwitcher = page.getByTestId('organization-switcher');
+        await setActiveOrganization(page, newOrg.name);
 
-        if ((await orgSwitcher.count()) > 0) {
-            await orgSwitcher.first().click();
-
-            const orgOption = page.getByRole('option', { name: newOrg.name });
-            if ((await orgOption.count()) > 0) {
-                await orgOption.click();
-                await page.waitForLoadState('domcontentloaded');
-
-                await page.goto('/dashboard/objectives');
-                await page.waitForLoadState('domcontentloaded');
-
-                await expect(page.getByText(obj1.title)).toBeHidden();
-            }
-        }
+        await page.goto('/dashboard/objectives');
+        await expect(page).toHaveURL(/\/dashboard\/objectives(\?|$)/);
+        await expect(page.getByText(obj1.title)).toBeHidden();
     });
 
     test('organization detail page', async ({ page }) => {

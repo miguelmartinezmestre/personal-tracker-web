@@ -14,7 +14,7 @@ const getValidLocale = cache(async () => {
         const cookieStore = await cookies();
         locale = cookieStore.get('locale')?.value;
     } catch {
-        // Cookies not available in static generation, fallback to default
+        locale = routing.defaultLocale;
     }
 
     const validLocale: AppLocale = locale && isAppLocale(locale) ? locale : routing.defaultLocale;

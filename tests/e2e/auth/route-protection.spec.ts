@@ -275,7 +275,7 @@ test.describe('Route Protection', () => {
                 await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
                 await enabledCategoryOptions.first().click();
                 await pageA.getByTestId('objective-save-button').click();
-                // Scope to table rows to avoid matching multiple elements
+
                 await expect(
                     pageA.getByTestId('table-row').filter({ hasText: objectiveTitle }).first()
                 ).toBeVisible({ timeout: 10000 });
@@ -383,7 +383,7 @@ test.describe('Route Protection', () => {
                 await adminPage.getByTestId('organization-name-input').fill(orgName);
                 await adminPage.getByTestId('organization-description-input').fill('Test org');
                 await adminPage.getByTestId('organization-save-button').click();
-                // Scope to table rows to avoid matching organization switcher
+
                 await expect(
                     adminPage.getByTestId('table-row').filter({ hasText: orgName }).first()
                 ).toBeVisible({ timeout: 10000 });
@@ -401,9 +401,6 @@ test.describe('Route Protection', () => {
                 await adminPage.getByTestId('organization-member-email-input').fill(inviteEmail);
                 await adminPage.getByTestId('organization-member-save-button').click();
 
-                // Invitation creation is async; wait until the modal closes (indicates the
-                // inviteMember mutation resolved) before proceeding. The email itself is not
-                // rendered on the detail page (members table only shows accepted members).
                 await expect(adminPage.getByTestId('organization-member-email-input')).toBeHidden({
                     timeout: 10000,
                 });

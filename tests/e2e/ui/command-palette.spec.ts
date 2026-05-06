@@ -1,7 +1,5 @@
 import { test, expect } from '../../fixtures/test-base';
 
-// Use `isolatedAuthenticatedPage` so these tests stay independent from the
-// worker-scoped authenticated session used by the broader Chromium suite.
 test.describe('Command Palette', () => {
     test(
         'Cmd+K opens the command palette',

@@ -6,8 +6,7 @@ import {
     DEFAULT_PASSWORD,
     loginUser,
     promoteToAdmin,
-    createTFGTestUser,
-} from '../tests/test-helpers';
+} from '../../tests/helpers/test-helpers';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -129,7 +128,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-reset-password', 'Reset password form');
 
-        const user = await createTFGTestUser(page, 'Miguel Garcia');
+        const user = await createTestUser(page, { usePresentableName: true });
         console.log(`✅ Created test user: ${user.username} (${user.email})`);
         await takeTFGScreenshot(
             page,

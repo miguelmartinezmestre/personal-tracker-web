@@ -42,8 +42,8 @@ test.describe('Password Reset', () => {
         async ({ page }) => {
             await page.goto('/reset-password?token=invalid-token-12345');
 
-            await fillAndAssert(page.getByTestId('reset-password-input'), 'newpassword123');
-            await fillAndAssert(page.getByTestId('reset-password-confirm-input'), 'newpassword123');
+            await fillAndAssert(page.getByTestId('reset-password-input'), 'Newpassword123');
+            await fillAndAssert(page.getByTestId('reset-password-confirm-input'), 'Newpassword123');
             await page.getByTestId('reset-password-submit').click();
 
             const errorAlert = page.locator('[data-slot="alert"]').filter({

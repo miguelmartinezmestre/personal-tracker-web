@@ -4,8 +4,8 @@ async function openThemeMenu(
     page: import('@playwright/test').Page,
     option: 'light' | 'dark'
 ): Promise<void> {
-    const toggle = page.getByTestId('theme-toggle');
-    const desiredOption = page.getByTestId(`theme-option-${option}`);
+    const toggle = page.getByTestId('dashboard-theme-toggle').first();
+    const desiredOption = page.getByTestId(`theme-option-${option}`).first();
 
     for (let attempt = 0; attempt < 3; attempt++) {
         await expect(toggle).toBeVisible({ timeout: 15000 });
@@ -25,7 +25,7 @@ async function clickThemeOption(
 ): Promise<void> {
     for (let attempt = 0; attempt < 3; attempt++) {
         await openThemeMenu(page, option);
-        const desiredOption = page.getByTestId(`theme-option-${option}`);
+        const desiredOption = page.getByTestId(`theme-option-${option}`).first();
         try {
             await desiredOption.click({ timeout: 5000 });
             return;
@@ -34,7 +34,7 @@ async function clickThemeOption(
         }
     }
 
-    await page.getByTestId(`theme-option-${option}`).click({ timeout: 5000 });
+    await page.getByTestId(`theme-option-${option}`).first().click({ timeout: 5000 });
 }
 
 test.describe('Theme Switching', () => {
