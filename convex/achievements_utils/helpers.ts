@@ -1,17 +1,12 @@
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import type { Id, Doc } from '../_generated/dataModel';
 
-/**
- * Add a contributor to an organization achievement
- * Prevents duplicates and maintains the contributor count
- */
 export async function addContributor(
     ctx: MutationCtx,
     orgAchievementId: Id<'organizationAchievements'>,
     userId: Id<'user'>,
     contributionValue?: number
 ): Promise<void> {
-    // Check if contributor already exists
     const existing = await ctx.db
         .query('organizationAchievementContributors')
         .withIndex('by_organizationAchievement_user', q =>
@@ -19,9 +14,8 @@ export async function addContributor(
         )
         .first();
 
-    if (existing) return; // Already contributed, don't add again
+    if (existing) return;
 
-    // Create contributor record
     await ctx.db.insert('organizationAchievementContributors', {
         organizationAchievementId: orgAchievementId,
         userId,
@@ -29,7 +23,6 @@ export async function addContributor(
         contributionValue: contributionValue ?? 1,
     });
 
-    // Increment counter in organizationAchievements
     const orgAch = await ctx.db.get('organizationAchievements', orgAchievementId);
     if (orgAch) {
         await ctx.db.patch('organizationAchievements', orgAchievementId, {
@@ -38,10 +31,6 @@ export async function addContributor(
     }
 }
 
-/**
- * Get contributors for an organization achievement
- * Returns users with optional limit
- */
 export async function getContributors(
     ctx: QueryCtx,
     orgAchievementId: Id<'organizationAchievements'>,
@@ -59,9 +48,6 @@ export async function getContributors(
     return users.filter((u): u is Doc<'user'> => u !== null);
 }
 
-/**
- * Check if a user is a contributor to an organization achievement
- */
 export async function isContributor(
     ctx: QueryCtx,
     orgAchievementId: Id<'organizationAchievements'>,
@@ -77,10 +63,6 @@ export async function isContributor(
     return existing !== null;
 }
 
-/**
- * Remove a contributor from an organization achievement
- * Also updates the counter
- */
 export async function removeContributor(
     ctx: MutationCtx,
     orgAchievementId: Id<'organizationAchievements'>,
@@ -93,12 +75,10 @@ export async function removeContributor(
         )
         .first();
 
-    if (!existing) return; // Not a contributor, nothing to do
+    if (!existing) return;
 
-    // Delete contributor record
     await ctx.db.delete(existing._id);
 
-    // Decrement counter in organizationAchievements
     const orgAch = await ctx.db.get('organizationAchievements', orgAchievementId);
     if (orgAch && orgAch.contributorCount > 0) {
         await ctx.db.patch('organizationAchievements', orgAchievementId, {
@@ -107,10 +87,6 @@ export async function removeContributor(
     }
 }
 
-/**
- * Get contributor count for an organization achievement
- * Uses the denormalized counter (faster) or counts from table (slower but accurate)
- */
 export async function getContributorCount(
     ctx: QueryCtx,
     orgAchievementId: Id<'organizationAchievements'>,
@@ -121,13 +97,27 @@ export async function getContributorCount(
         return orgAch?.contributorCount ?? 0;
     }
 
-    // Accurate count from table (capped at 1000 for performance)
-    const contributions = await ctx.db
-        .query('organizationAchievementContributors')
-        .withIndex('by_organizationAchievement', q =>
-            q.eq('organizationAchievementId', orgAchievementId)
-        )
-        .take(1000);
+    let total = 0;
+    let cursor: string | null = null;
+    const MAX_PAGES = 2000;
+    const PAGE = 500;
 
-    return contributions.length;
+    for (let pageNum = 0; pageNum < MAX_PAGES; pageNum++) {
+        const page = await ctx.db
+            .query('organizationAchievementContributors')
+            .withIndex('by_organizationAchievement', q =>
+                q.eq('organizationAchievementId', orgAchievementId)
+            )
+            .paginate({ numItems: PAGE, cursor });
+
+        total += page.page.length;
+
+        if (page.isDone) {
+            return total;
+        }
+
+        cursor = page.continueCursor;
+    }
+
+    return total;
 }

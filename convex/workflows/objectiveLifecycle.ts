@@ -24,9 +24,10 @@ export const objectiveLifecycle = workflow.define({
             }
         );
 
-        if (syncResult.completedNow) {
+        if (syncResult.found && syncResult.completedNow) {
             await step.runMutation(internal.achievements.checkUserAchievements, {
                 userId: args.userId,
+                organizationId: syncResult.organizationId,
                 trigger: 'objective_completed',
             });
         }

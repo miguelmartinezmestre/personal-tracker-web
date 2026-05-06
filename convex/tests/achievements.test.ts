@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -62,7 +61,7 @@ describe('convex achievements', async () => {
     });
 
     describe('seedAchievementDefinitions', () => {
-        test('seeds achievement definitions successfully', async () => {
+        test('seeds achievement definitions successfully as admin', async () => {
             const result = await userIdentity.mutation(
                 api.achievements.seedAchievementDefinitions,
                 {}
@@ -82,6 +81,33 @@ describe('convex achievements', async () => {
 
             expect(result.count).toBe(0);
             expect(result.message).toBe('Achievements already seeded');
+        });
+
+        test('rejects non-admin users with FORBIDDEN', async () => {
+            const regularUser = await createTestUser(t, {
+                userId: 'regular-user-seed',
+                email: 'regular-seed@example.com',
+                name: 'Regular User',
+                role: 'user',
+            });
+
+            const regularUserIdentity = t.withIdentity({
+                subject: regularUser.docId,
+                role: regularUser.role ?? null,
+                email: regularUser.email,
+                name: regularUser.name,
+                emailVerified: false,
+                createdAt: Date.now(),
+                userId: regularUser.docId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
+            await expect(
+                regularUserIdentity.mutation(api.achievements.seedAchievementDefinitions, {})
+            ).rejects.toThrow(/FORBIDDEN/);
         });
     });
 
@@ -502,6 +528,7 @@ describe('convex achievements', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: 5,
                         updateDate: Date.now() + i * 1000,
                         comment: `Update ${i}`,
@@ -550,6 +577,7 @@ describe('convex achievements', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
+                        userId: userId,
                         updatedValue: 5,
                         updateDate: todayMs - i * DAY_MS,
                         comment: `Day ${i + 1}`,
