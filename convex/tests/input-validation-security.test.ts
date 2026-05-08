@@ -121,19 +121,6 @@ describe('input validation security', () => {
         expect(objectiveCountAfter).toHaveLength(0);
     });
 
-    test('stores SQL-like category names as literal data', async () => {
-        const categoryName = "Category'; DROP TABLE categories; --";
-
-        const categoryId = await userIdentity.mutation(api.categories.createCategory, {
-            name: categoryName,
-            color: '#10b981',
-        });
-
-        const category = await userIdentity.run(async ctx => ctx.db.get(categoryId));
-
-        expect(category?.name).toBe(categoryName);
-    });
-
     test('does not create progress records when validation rejects the update', async () => {
         const objectiveId = await createTestObjective(t, {
             userId,

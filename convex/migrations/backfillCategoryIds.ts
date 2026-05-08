@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import { internal } from '../_generated/api';
 import { internalMutation } from '../_generated/server';
 import { findCategoryIdByName } from '../utils/categoryResolution';
 
@@ -90,5 +91,3 @@ export const getBackfillStats = internalMutation({
         };
     },
 });
-
-declare const internal: typeof import('../_generated/api').internal;

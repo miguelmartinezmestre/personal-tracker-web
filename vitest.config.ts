@@ -9,6 +9,7 @@ export default defineConfig({
         },
     },
     test: {
+        maxWorkers: 1,
         environment: 'edge-runtime',
         reporters: ['tree'],
         include: ['convex/tests/**/*.test.ts'],

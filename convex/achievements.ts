@@ -6,6 +6,7 @@ import type { Doc, Id } from './_generated/dataModel';
 import {
     calculateUserStreak,
     calculateOrganizationStreak,
+    countStreakFromUpdates,
 } from './achievements_utils/calculations';
 import { addContributor, getContributors } from './achievements_utils/helpers';
 import { queryWithRLS } from './rls';
@@ -274,60 +275,37 @@ export const getUserAchievementProgress = queryWithRLS({
 
         const earnedIds = new Set(obtainedAchievements.map(oa => oa.achievement));
 
-        const objectivesCount: Doc<'objectives'>[] = [];
-        let objectiveCursor: string | null = null;
-        let objectivesDone = false;
-
-        if (ctx.organizationId) {
-            while (!objectivesDone) {
-                const page = await ctx.db
-                    .query('objectives')
-                    .withIndex('by_user_organization', q =>
-                        q.eq('userId', userId).eq('organizationId', ctx.organizationId!)
-                    )
-                    .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor: objectiveCursor });
-
-                objectivesCount.push(...page.page);
-                objectivesDone = page.isDone;
-                objectiveCursor = page.continueCursor;
-            }
-        } else {
-            while (!objectivesDone) {
-                const page = await ctx.db
-                    .query('objectives')
-                    .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
-                    .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor: objectiveCursor });
-
-                objectivesCount.push(...page.page);
-                objectivesDone = page.isDone;
-                objectiveCursor = page.continueCursor;
-            }
-        }
+        const objectivesCount = ctx.organizationId
+            ? await ctx.db
+                  .query('objectives')
+                  .withIndex('by_user_organization', q =>
+                      q.eq('userId', userId).eq('organizationId', ctx.organizationId!)
+                  )
+                  .take(LIST_LIMIT)
+            : await ctx.db
+                  .query('objectives')
+                  .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
+                  .take(LIST_LIMIT);
 
         const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
         let progressUpdatesCount = 0;
+        let progressUpdatesForObjectives: Doc<'progressUpdates'>[] = [];
 
         if (objectivesCount.length > 0) {
             const objectiveIdsSet = new Set(objectivesCount.map(objective => objective._id));
-            let progressCursor: string | null = null;
-            let progressDone = false;
+            const userProgressUpdates = await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_user_date', q => q.eq('userId', userId))
+                .take(LIST_LIMIT);
 
-            while (!progressDone) {
-                const page = await ctx.db
-                    .query('progressUpdates')
-                    .withIndex('by_user_date', q => q.eq('userId', userId))
-                    .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor: progressCursor });
-
-                progressUpdatesCount += page.page.filter(update =>
-                    objectiveIdsSet.has(update.objective)
-                ).length;
-                progressDone = page.isDone;
-                progressCursor = page.continueCursor;
-            }
+            progressUpdatesForObjectives = userProgressUpdates.filter(update =>
+                objectiveIdsSet.has(update.objective)
+            );
+            progressUpdatesCount = progressUpdatesForObjectives.length;
         }
 
         const streak = ctx.organizationId
-            ? await calculateUserStreak(ctx, userId, ctx.organizationId)
+            ? countStreakFromUpdates(progressUpdatesForObjectives)
             : 0;
 
         const progressList = activeDefinitions.map(def => {
