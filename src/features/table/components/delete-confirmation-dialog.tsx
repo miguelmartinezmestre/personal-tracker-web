@@ -12,7 +12,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ReactNode, useState, useRef } from 'react';
+import { ReactNode, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface DeleteConfirmationDialogProps {
@@ -41,27 +41,28 @@ export function DeleteConfirmationDialog({
     isLoading: externalIsLoading = false,
 }: DeleteConfirmationDialogProps) {
     const t = useTranslations('DeleteConfirmation');
+    const [open, setOpen] = useState(false);
     const [internalIsLoading, setInternalIsLoading] = useState(false);
-    const onConfirmRef = useRef(onConfirm);
-    onConfirmRef.current = onConfirm;
 
     const isLoading = externalIsLoading || internalIsLoading;
     const resolvedConfirmLabel = confirmLabel ?? t('confirm');
     const resolvedCancelLabel = cancelLabel ?? t('cancel');
 
-    const handleConfirm = async () => {
+    const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
         setInternalIsLoading(true);
         try {
-            await onConfirmRef.current();
+            await onConfirm();
+            setOpen(false);
         } catch {
-            return;
+            setOpen(true);
         } finally {
             setInternalIsLoading(false);
         }
     };
 
     return (
-        <AlertDialog>
+        <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger asChild>
                 {trigger || (
                     <Button variant={variant} size={size} disabled={isLoading}>

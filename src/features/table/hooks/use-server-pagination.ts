@@ -1,71 +1,70 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useMemo, useReducer } from 'react';
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
-    const [currentPage, setCurrentPage] = useState(0);
-    const [cursors, setCursors] = useState<(string | null)[]>([null]);
-    const [isDone, setIsDone] = useState(false);
+type State = {
+    currentPage: number;
+    cursors: (string | null)[];
+};
 
-    const getPaginationOpts = useCallback(
-        (page: number) => ({
+type Action = { type: 'next'; cursor: string } | { type: 'prev' } | { type: 'reset' };
+
+function reducer(state: State, action: Action): State {
+    switch (action.type) {
+        case 'next': {
+            const nextIndex = state.currentPage + 1;
+            if (
+                state.cursors[nextIndex] === action.cursor &&
+                state.cursors.length === nextIndex + 1
+            ) {
+                return { ...state, currentPage: nextIndex };
+            }
+            const next = state.cursors.slice(0, nextIndex);
+            next[nextIndex] = action.cursor;
+            return { currentPage: nextIndex, cursors: next };
+        }
+        case 'prev':
+            return { ...state, currentPage: Math.max(0, state.currentPage - 1) };
+        case 'reset':
+            return { currentPage: 0, cursors: [null] };
+    }
+}
+
+export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
+    const [state, dispatch] = useReducer(reducer, { currentPage: 0, cursors: [null] });
+
+    const paginationOpts = useMemo(
+        () => ({
             numItems: initialPageSize,
-            cursor: cursors[page] ?? null,
+            cursor: state.cursors[state.currentPage] ?? null,
         }),
-        [cursors, initialPageSize]
+        [state.currentPage, state.cursors, initialPageSize]
     );
 
-    const updateCursor = useCallback((page: number, cursor: string | null, done: boolean) => {
-        setCursors(prev => {
-            const nextIndex = page + 1;
-            const currentCursor = prev[nextIndex] ?? null;
-            const hasCapacity = prev.length > nextIndex;
-
-            if (hasCapacity && currentCursor === cursor) {
-                return prev;
-            }
-
-            const newCursors = [...prev];
-            while (newCursors.length <= page) {
-                newCursors.push(null);
-            }
-            newCursors[nextIndex] = cursor;
-            return newCursors;
-        });
-        setIsDone(prev => (prev === done ? prev : done));
-    }, []);
-
-    const nextPage = useCallback(() => {
-        if (isDone) return;
-        setCurrentPage(p => p + 1);
-    }, [isDone]);
+    const nextPage = useCallback(
+        (continueCursor: string | null | undefined, isDone: boolean = false) => {
+            if (isDone || !continueCursor) return;
+            dispatch({ type: 'next', cursor: continueCursor });
+        },
+        []
+    );
 
     const previousPage = useCallback(() => {
-        setCurrentPage(p => Math.max(0, p - 1));
-    }, []);
-
-    const goToPage = useCallback((page: number) => {
-        setCurrentPage(Math.max(0, page));
+        dispatch({ type: 'prev' });
     }, []);
 
     const reset = useCallback(() => {
-        setCurrentPage(0);
-        setCursors([null]);
-        setIsDone(false);
+        dispatch({ type: 'reset' });
     }, []);
 
     return {
-        currentPage,
+        currentPage: state.currentPage,
         pageSize: initialPageSize,
-        cursors,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
+        cursors: state.cursors,
+        paginationOpts,
         nextPage,
         previousPage,
-        goToPage,
         reset,
-        hasNextPage: !isDone,
-        hasPreviousPage: currentPage > 0,
+        hasPreviousPage: state.currentPage > 0,
     };
 }

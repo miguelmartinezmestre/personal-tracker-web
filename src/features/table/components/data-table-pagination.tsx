@@ -1,147 +1,55 @@
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DataTablePaginationProps {
-    currentPage: number;
-    totalPages: number;
-    onPageChange: (page: number) => void;
+    onNextPage: () => void;
+    onPreviousPage: () => void;
     hasNextPage: boolean;
     hasPreviousPage: boolean;
-    pageSize?: number;
-    totalItems?: number;
+    rowCount: number;
+    isLoading?: boolean;
 }
 
 export function DataTablePagination({
-    currentPage,
-    totalPages,
-    onPageChange,
+    onNextPage,
+    onPreviousPage,
     hasNextPage,
     hasPreviousPage,
-    pageSize = 10,
-    totalItems,
+    rowCount,
+    isLoading = false,
 }: DataTablePaginationProps) {
     const t = useTranslations('Table');
 
-    if (totalPages <= 1 && !hasNextPage) {
+    if (rowCount === 0 && !hasPreviousPage && !hasNextPage) {
         return null;
     }
 
-    const getPageNumbers = () => {
-        const pages: (number | string)[] = [];
-        const maxVisible = 5;
-
-        if (totalPages <= maxVisible) {
-            for (let i = 0; i < totalPages; i++) {
-                pages.push(i);
-            }
-        } else {
-            pages.push(0);
-
-            if (currentPage <= 2) {
-                for (let i = 1; i <= 3; i++) {
-                    pages.push(i);
-                }
-                pages.push('ellipsis-end');
-                pages.push(totalPages - 1);
-            } else if (currentPage >= totalPages - 3) {
-                pages.push('ellipsis-start');
-                for (let i = totalPages - 4; i < totalPages; i++) {
-                    pages.push(i);
-                }
-            } else {
-                pages.push('ellipsis-start');
-                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-                    pages.push(i);
-                }
-                pages.push('ellipsis-end');
-                pages.push(totalPages - 1);
-            }
-        }
-
-        return pages;
-    };
-
-    const pageNumbers = getPageNumbers();
-
-    const startItem = currentPage * pageSize + 1;
-    const endItem = totalItems
-        ? Math.min((currentPage + 1) * pageSize, totalItems)
-        : (currentPage + 1) * pageSize;
-
     return (
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between gap-2 px-2">
             <div className="text-sm text-muted-foreground">
-                {totalItems ? (
-                    <>
-                        {t('showing')} {startItem}-{endItem} {t('ofTotal')} {totalItems} {t('rows')}
-                    </>
-                ) : (
-                    <>
-                        {t('page')} {currentPage + 1} {t('of')} {totalPages}
-                    </>
-                )}
+                {t('showing')} {rowCount} {t('rows')}
             </div>
             <div className="flex items-center gap-1">
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onPageChange(0)}
-                    disabled={!hasPreviousPage}
-                    className="h-8 w-8 p-0"
-                >
-                    <ChevronsLeft className="h-4 w-4" />
-                    <span className="sr-only">{t('first')}</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={!hasPreviousPage}
-                    className="h-8 w-8 p-0"
+                    onClick={onPreviousPage}
+                    disabled={!hasPreviousPage || isLoading}
+                    className="h-8 gap-2"
                 >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="sr-only">{t('previous')}</span>
+                    <span>{t('previous')}</span>
                 </Button>
-                {pageNumbers.map(page =>
-                    typeof page === 'string' ? (
-                        <div
-                            key={page}
-                            className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground"
-                        >
-                            ...
-                        </div>
-                    ) : (
-                        <Button
-                            key={page}
-                            variant={currentPage === page ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => onPageChange(page)}
-                            className="h-8 w-8 p-0"
-                        >
-                            {page + 1}
-                        </Button>
-                    )
-                )}
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={!hasNextPage}
-                    className="h-8 w-8 p-0"
+                    onClick={onNextPage}
+                    disabled={!hasNextPage || isLoading}
+                    className="h-8 gap-2"
                 >
+                    <span>{t('next')}</span>
                     <ChevronRight className="h-4 w-4" />
-                    <span className="sr-only">{t('next')}</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPageChange(totalPages - 1)}
-                    disabled={!hasNextPage}
-                    className="h-8 w-8 p-0"
-                >
-                    <ChevronsRight className="h-4 w-4" />
-                    <span className="sr-only">{t('last')}</span>
                 </Button>
             </div>
         </div>
