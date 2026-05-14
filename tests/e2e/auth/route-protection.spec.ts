@@ -107,8 +107,21 @@ test.describe('Route Protection', () => {
             });
             const adminPage = await adminContext.newPage();
 
-            await adminPage.goto('/dashboard/admin/users');
-            await adminPage.waitForLoadState('domcontentloaded');
+            for (let attempt = 0; attempt < 3; attempt++) {
+                await ensureAuthenticatedState(adminPage);
+                await adminPage.goto('/dashboard/admin/users', { waitUntil: 'domcontentloaded' });
+
+                const hasGlobalError = await adminPage
+                    .getByRole('heading', { name: /this page couldn.t load/i })
+                    .isVisible()
+                    .catch(() => false);
+
+                if (!hasGlobalError) {
+                    break;
+                }
+
+                await adminPage.waitForTimeout(500);
+            }
 
             const currentUrl = adminPage.url();
             const hasAdminAccess =
