@@ -29,15 +29,15 @@ export default function AccountSettingsFormEdit() {
     const queryClient = useQueryClient();
     const sessionQuery = useSession();
     const sessionUser = sessionQuery?.data?.user;
-    const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const accountDefaultValues = {
+        email: sessionUser?.email ?? '',
+        username: sessionUser?.name ?? '',
+    } as z.infer<typeof accountDetailsSchema>;
 
-    const form = useForm<z.infer<typeof accountDetailsSchema>>({
-        defaultValues: {
-            email: sessionUser?.email ?? '',
-            username: sessionUser?.name ?? '',
-        },
+    const form = useForm({
+        defaultValues: accountDefaultValues,
         validators: {
             onChange: accountDetailsSchema,
             onSubmit: accountDetailsSchema,
@@ -87,8 +87,14 @@ export default function AccountSettingsFormEdit() {
         } else {
             setMessage(t('accountUpdated'));
         }
+    };
 
-        setOpen(false);
+    const handleCancel = () => {
+        form.reset();
+        form.setFieldValue('email', accountDefaultValues.email);
+        form.setFieldValue('username', accountDefaultValues.username);
+        setError('');
+        setMessage('');
     };
 
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleUpdateAccount);
@@ -148,7 +154,7 @@ export default function AccountSettingsFormEdit() {
                     <Button
                         variant="outline"
                         type="button"
-                        onClick={() => setOpen(false)}
+                        onClick={handleCancel}
                         disabled={isSubmitting}
                         data-testid="account-cancel-button"
                     >

@@ -23,15 +23,14 @@ import { getMessageOrFallback, getErrorMessage } from '@/lib/error-utils';
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
     const [isLoading, setIsLoading] = useState(false);
-    const [, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const form = useForm<z.infer<typeof updatePasswordSchema>>({
+    const form = useForm({
         defaultValues: {
             password: '',
             confirmPassword: '',
             newPassword: '',
-        },
+        } as z.infer<typeof updatePasswordSchema>,
         validators: {
             onChange: updatePasswordSchema,
             onSubmit: updatePasswordSchema,
@@ -72,7 +71,6 @@ export default function PasswordFormEdit() {
             } else {
                 setMessage(t('passwordUpdated'));
                 toast.success(t('passwordUpdated'));
-                setOpen(false);
                 form.reset();
             }
         } catch (err) {
@@ -146,7 +144,7 @@ export default function PasswordFormEdit() {
                     <Button
                         variant="outline"
                         type="button"
-                        onClick={() => setOpen(false)}
+                        onClick={() => form.reset()}
                         disabled={isLoading}
                         data-testid="password-cancel-button"
                     >
