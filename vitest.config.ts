@@ -15,6 +15,9 @@ export default defineConfig({
         include: ['convex/tests/**/*.test.ts'],
         exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', 'tests/**'],
         globals: true,
+        fileParallelism: false,
+        testTimeout: 20000,
+        hookTimeout: 20000,
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
