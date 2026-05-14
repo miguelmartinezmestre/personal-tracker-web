@@ -1,6 +1,23 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+
+async function retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    options: { maxRetries: number; baseDelayMs: number }
+): Promise<T> {
+    let lastError: unknown;
+    for (let i = 0; i < options.maxRetries; i++) {
+        try {
+            return await fn();
+        } catch (err) {
+            lastError = err;
+            const delay = options.baseDelayMs * Math.pow(2, i);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+    throw lastError;
+}
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -66,20 +83,22 @@ export default function SetupWizard() {
                 return;
             }
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            const result = await completeSetup({
-                platformName: data.platform.platformName,
-                defaultLanguage: data.platform.defaultLanguage,
-                registrationPolicy: data.registration.policy,
-                organizationName: data.organization.name,
-                organizationLogo: emptyToUndefined(data.organization.logo),
-                categories: data.categories.map(c => ({
-                    name: c.name,
-                    color: c.color,
-                    icon: c.icon,
-                })),
-            });
+            const result = await retryWithBackoff(
+                () =>
+                    completeSetup({
+                        platformName: data.platform.platformName,
+                        defaultLanguage: data.platform.defaultLanguage,
+                        registrationPolicy: data.registration.policy,
+                        organizationName: data.organization.name,
+                        organizationLogo: emptyToUndefined(data.organization.logo),
+                        categories: data.categories.map(c => ({
+                            name: c.name,
+                            color: c.color,
+                            icon: c.icon,
+                        })),
+                    }),
+                { maxRetries: 6, baseDelayMs: 500 }
+            );
 
             if (result.organizationId) {
                 await authClient.organization.setActive({
