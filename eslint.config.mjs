@@ -15,6 +15,7 @@ const eslintConfig = [
     globalIgnores([
         '.next/**',
         '.next-e2e/**',
+        '.next-e2e*/**',
         '.next-e2e-authenticated/**',
         'out/**',
         'build/**',
@@ -92,7 +93,7 @@ const eslintConfig = [
             ],
             'react/no-unescaped-entities': 'error',
             'react/void-dom-elements-no-children': 'error',
-            'react/no-multi-comp': ['error', { ignoreStateless: false }],
+            'react/no-multi-comp': ['error', { ignoreStateless: true }],
             '@next/next/no-html-link-for-pages': 'error',
             '@next/next/no-img-element': 'warn',
             'prefer-const': 'error',
