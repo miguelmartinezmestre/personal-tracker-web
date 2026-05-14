@@ -16,12 +16,4 @@ export const notificationSchema = z.object({
     message: z.string().min(1),
 });
 
-export const savedNotificationSchema = notificationSchema.extend({
-    _id: z.string(),
-    user: z.string(),
-    read: z.boolean(),
-    createdAt: z.number(),
-    updatedAt: z.number(),
-});
-
 export type CreateNotification = z.infer<typeof notificationSchema>;
