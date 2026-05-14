@@ -3,14 +3,14 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
-    workers: 2,
+    workers: 1,
 
     timeout: 90000,
     expect: {
         timeout: 5000,
     },
 
-    retries: 1,
+    retries: 3,
 
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
@@ -36,7 +36,7 @@ export default defineConfig({
         {
             name: 'authenticated',
             dependencies: ['setup'],
-            workers: 2,
+            workers: 1,
             use: {
                 ...devices['Desktop Chrome'],
                 launchOptions: {
@@ -59,7 +59,7 @@ export default defineConfig({
         {
             name: 'auth-and-smoke',
             dependencies: ['setup'],
-            workers: 2,
+            workers: 1,
             use: {
                 ...devices['Desktop Chrome'],
                 launchOptions: {
