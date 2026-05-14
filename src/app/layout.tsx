@@ -5,10 +5,8 @@ import { ThemeProvider } from '@/features/theme/theme';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { getToken } from '@/features/auth/auth-server';
-import { NotificationSonnerListener } from '@/features/notifications/components/notification-sonner-listener';
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('App');
@@ -32,16 +30,13 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     disableTransitionOnChange
                 >
                     <main>
-                        <Suspense fallback={null}>
-                            <NextIntlClientProvider locale={locale} messages={messages}>
-                                <BetterConvexProvider token={token ?? ''}>
-                                    <NotificationSonnerListener />
-                                    {children}
-                                </BetterConvexProvider>
-                            </NextIntlClientProvider>
-                        </Suspense>
+                        <NextIntlClientProvider locale={locale} messages={messages}>
+                            <BetterConvexProvider token={token ?? ''}>
+                                {children}
+                            </BetterConvexProvider>
+                        </NextIntlClientProvider>
                     </main>
-                    <Toaster />
+                    <Toaster position="bottom-right" richColors closeButton />
                 </ThemeProvider>
             </body>
         </html>

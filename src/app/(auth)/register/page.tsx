@@ -1,5 +1,3 @@
-import Header from '@/features/landing/components/header';
-import Footer from '@/features/landing/components/footer';
 import RegisterForm from '@/features/auth/components/register-form';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -26,35 +24,23 @@ export default async function Register({ searchParams }: RegisterProps) {
 
     if (settings?.registrationPolicy === 'invitation-only' && !params.invitation) {
         return (
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <div className="flex-grow flex items-center justify-center p-6">
-                    <div className="w-full max-w-md rounded-xl shadow-lg p-8 border text-center">
-                        <h1 className="text-2xl font-bold mb-4 text-primary">
-                            {tSetup('registrationPolicy.invitationOnly')}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {tSetup('registrationPolicy.invitationOnlyMessage')}
-                        </p>
-                    </div>
-                </div>
-                <Footer />
+            <div className="w-full max-w-md rounded-xl shadow-lg p-8 border text-center">
+                <h1 className="text-2xl font-bold mb-4 text-primary">
+                    {tSetup('registrationPolicy.invitationOnly')}
+                </h1>
+                <p className="text-muted-foreground">
+                    {tSetup('registrationPolicy.invitationOnlyMessage')}
+                </p>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col min-h-screen">
-            <Header />
-            <div className="flex-grow flex items-center justify-center p-6">
-                <div className="w-full max-w-md rounded-xl shadow-lg p-8 border">
-                    <h1 className="text-2xl font-bold text-center mb-6 text-primary">
-                        {t('createAccount')}
-                    </h1>
-                    <RegisterForm invitationToken={params.invitation} />
-                </div>
-            </div>
-            <Footer />
+        <div className="w-full max-w-md rounded-xl shadow-lg p-8 border">
+            <h1 className="text-2xl font-bold text-center mb-6 text-primary">
+                {t('createAccount')}
+            </h1>
+            <RegisterForm invitationToken={params.invitation} />
         </div>
     );
 }
