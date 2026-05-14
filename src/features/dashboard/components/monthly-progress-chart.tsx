@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { usePreloadedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Loader2 } from 'lucide-react';
@@ -16,7 +16,7 @@ export default function MonthlyProgressChart({
     preloadedMonthlyProgressQuery,
 }: MonthlyProgressChartProps) {
     const t = useTranslations('DashboardHome');
-    const monthlyProgress = usePreloadedAuthQuery(preloadedMonthlyProgressQuery);
+    const monthlyProgress = usePreloadedQuery(preloadedMonthlyProgressQuery);
 
     const chartData = (monthlyProgress ?? []).map(item => ({
         month: formatMonthLabel(item.monthKey),

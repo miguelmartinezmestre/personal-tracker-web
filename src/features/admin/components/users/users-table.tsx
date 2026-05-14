@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/features/table/components/table';
@@ -12,6 +11,7 @@ import { Doc } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
 
 const DEFAULT_PAGE_SIZE = 10;
+const INITIAL_USERS_STALE_TIME_MS = 30_000;
 
 type UsersResult = FunctionReturnType<typeof api.admin.listUsers>;
 
@@ -23,35 +23,21 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
     const t = useTranslations('Admin');
     const columns = useUsersTableColumns();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
 
     const users = useQuery({
         ...convexQuery(api.admin.listUsers, { paginationOpts }),
         initialData: isFirstPage ? initialUsers : undefined,
+        staleTime: isFirstPage && initialUsers ? INITIAL_USERS_STALE_TIME_MS : 0,
     });
 
-    const hasData = users.data !== undefined;
     const continueCursor = users.data?.continueCursor ?? null;
     const pageIsDone = users.data?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData || users.isFetching) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, users.isFetching, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const data: Doc<'user'>[] = users.data?.page ?? [];
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="space-y-4" data-testid="admin-users-table">
@@ -61,11 +47,11 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                 isLoading={users.isLoading}
                 pagination={{
                     currentPage,
-                    totalPages,
-                    onPageChange: goToPage,
+                    onNextPage: () => nextPage(continueCursor, pageIsDone),
+                    onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    pageSize: DEFAULT_PAGE_SIZE,
+                    isLoading: users.isFetching,
                 }}
             />
             {data.length === 0 && !users.isLoading && (

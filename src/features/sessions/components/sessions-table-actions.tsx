@@ -6,10 +6,11 @@ import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { Id } from '@/convex/_generated/dataModel';
+import { invalidateConvexQuery } from '@/features/convex/query-keys';
 
-const sessionsQueryKey = convexQuery(api.sessions.getSessionsByUser, {
+const SESSIONS_QUERY = convexQuery(api.sessions.getSessionsByUser, {
     paginationOpts: { numItems: 20, cursor: null },
-}).queryKey;
+});
 
 export function useInvalidateSession() {
     const t = useTranslations('Sessions');
@@ -19,7 +20,7 @@ export function useInvalidateSession() {
         mutationFn: useConvexMutation(api.sessions.invalidateSession),
         onSuccess: () => {
             toast.success(t('sessionRevoked'));
-            queryClient.invalidateQueries({ queryKey: sessionsQueryKey });
+            invalidateConvexQuery(queryClient, SESSIONS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(error.message || t('sessionRevokeFailed'));
@@ -49,7 +50,7 @@ export function useInvalidateAllOtherSessions() {
                     count: result.revokedCount,
                 })
             );
-            queryClient.invalidateQueries({ queryKey: sessionsQueryKey });
+            invalidateConvexQuery(queryClient, SESSIONS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(error.message || t('allOtherSessionsRevokeFailed'));

@@ -67,8 +67,6 @@ describe('convex auth', () => {
 
     test('auth triggersApi writes audit logs for session create and delete', async () => {
         const sessionDoc = {
-            _id: 'session-trigger-test',
-            _creationTime: Date.now(),
             expiresAt: Date.now() + 60_000,
             token: 'session-trigger-token',
             createdAt: Date.now(),
@@ -80,14 +78,20 @@ describe('convex auth', () => {
             activeOrganizationId: String(_organizationId),
         };
 
-        await t.mutation(internal.auth.onCreate, {
-            model: 'session',
-            doc: sessionDoc,
-        });
+        const createdSession = (await t.mutation(internal.generated.auth.create, {
+            input: {
+                model: 'session',
+                data: sessionDoc,
+            },
+        })) as { _id?: string; id?: string };
 
-        await t.mutation(internal.auth.onDelete, {
-            model: 'session',
-            doc: sessionDoc,
+        const sessionId = createdSession._id ?? createdSession.id;
+
+        await t.mutation(internal.generated.auth.deleteOne, {
+            input: {
+                model: 'session',
+                where: [{ field: 'token', operator: 'eq', value: sessionDoc.token }],
+            },
         });
 
         const adminLogs = await userIdentity.query(api.auditLogs.getAuditLogs, {
@@ -99,7 +103,7 @@ describe('convex auth', () => {
                 log =>
                     log.action === 'session.created' &&
                     log.resourceType === 'session' &&
-                    log.resourceId === sessionDoc._id
+                    log.resourceId === sessionId
             )
         ).toBe(true);
 
@@ -108,7 +112,7 @@ describe('convex auth', () => {
                 log =>
                     log.action === 'session.deleted' &&
                     log.resourceType === 'session' &&
-                    log.resourceId === sessionDoc._id
+                    log.resourceId === sessionId
             )
         ).toBe(true);
     });

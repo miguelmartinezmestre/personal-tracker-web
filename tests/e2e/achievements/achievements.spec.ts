@@ -1,6 +1,8 @@
 import { test, expect } from '../../fixtures/test-base';
 import { AchievementsPage } from '../../pages/achievements.page';
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Achievements', () => {
     test(
         'achievements page loads correctly',

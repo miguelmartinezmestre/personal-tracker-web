@@ -39,11 +39,11 @@ export default function LoginForm() {
         })
     );
 
-    const form = useForm<z.infer<typeof loginSchema>>({
+    const form = useForm({
         defaultValues: {
             email: '',
             password: '',
-        },
+        } as z.infer<typeof loginSchema>,
         validators: {
             onChange: loginSchema,
             onSubmit: loginSchema,

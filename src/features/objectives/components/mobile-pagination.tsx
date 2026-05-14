@@ -1,33 +1,42 @@
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { useServerPagination } from '@/features/table/hooks/use-server-pagination';
 
 export function MobilePagination({
     pagination,
-    totalPages,
+    rowCount,
+    hasNextPage,
+    isLoading,
+    onNextPage,
 }: {
     pagination: ReturnType<typeof useServerPagination>;
-    totalPages: number;
+    rowCount: number;
+    hasNextPage: boolean;
+    isLoading: boolean;
+    onNextPage: () => void;
 }) {
-    if (!pagination.hasPreviousPage && !pagination.hasNextPage) return null;
+    const t = useTranslations('Table');
+
+    if (!pagination.hasPreviousPage && !hasNextPage) return null;
     return (
         <div className="flex items-center justify-center gap-2 pt-2">
             <Button
                 variant="outline"
                 size="sm"
-                onClick={() => pagination.goToPage(pagination.currentPage - 1)}
-                disabled={!pagination.hasPreviousPage}
+                onClick={pagination.previousPage}
+                disabled={!pagination.hasPreviousPage || isLoading}
             >
                 <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm text-muted-foreground">
-                {pagination.currentPage + 1} / {totalPages}
+                {t('showing')} {rowCount} {t('rows')}
             </span>
             <Button
                 variant="outline"
                 size="sm"
-                onClick={() => pagination.goToPage(pagination.currentPage + 1)}
-                disabled={!pagination.hasNextPage}
+                onClick={onNextPage}
+                disabled={!hasNextPage || isLoading}
             >
                 <ChevronRight className="h-4 w-4" />
             </Button>

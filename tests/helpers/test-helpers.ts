@@ -621,7 +621,31 @@ export async function loginUser(
 }
 
 export async function logoutUser(page: Page): Promise<void> {
+    const origin = process.env.BASE_URL || 'http://localhost:3000';
+
+    await page.request
+        .post('/api/auth/sign-out', {
+            headers: { Origin: origin },
+            timeout: 15000,
+            data: {},
+        })
+        .catch(() => undefined);
     await page.context().clearCookies();
+    await page
+        .evaluate(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        })
+        .catch(() => undefined);
+
+    await expect
+        .poll(async () => !(await hasAuthenticatedSession(page)), {
+            timeout: 10000,
+            intervals: [250, 500, 1000],
+        })
+        .toBe(true);
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/login(\?|$)/);
 }
 
 export interface CreateObjectiveOptions {
@@ -821,6 +845,16 @@ async function hasVisiblePersonalCategory(page: Page): Promise<boolean> {
 }
 
 export async function ensureDefaultCategories(page: Page): Promise<void> {
+    await ensureAuthenticatedState(page);
+
+    const client = await createConvexClient(page);
+    await client
+        .mutation(api.categories.createCategory, {
+            name: 'Personal',
+            color: 'Blue',
+        })
+        .catch(() => undefined);
+
     await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15_000 });
 
@@ -838,10 +872,6 @@ export async function ensureDefaultCategories(page: Page): Promise<void> {
     if (hasPersonalCategory) {
         return;
     }
-
-    try {
-        await createCategory(page, { name: 'Personal' });
-    } catch {}
 
     const maxVerify = Date.now() + 15_000;
     while (Date.now() < maxVerify) {

@@ -63,6 +63,35 @@ type FormFieldContextValue = {
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({ name: '', error: undefined });
 
+function formatFieldError(error: unknown): string | undefined {
+    if (error === null || error === undefined) {
+        return undefined;
+    }
+
+    if (typeof error === 'string') {
+        return error;
+    }
+
+    if (Array.isArray(error)) {
+        for (const item of error) {
+            const message = formatFieldError(item);
+            if (message) {
+                return message;
+            }
+        }
+        return undefined;
+    }
+
+    if (typeof error === 'object') {
+        const maybeMessage = (error as { message?: unknown }).message;
+        if (typeof maybeMessage === 'string') {
+            return maybeMessage;
+        }
+    }
+
+    return String(error);
+}
+
 export type FormFieldBridgeValue = string | number | readonly string[] | undefined;
 
 export type RHFCompatibleField<TValue = FormFieldBridgeValue> = {
@@ -88,8 +117,10 @@ function FormField({ name, render }: FormFieldProps) {
                 const hasSubmitted = Boolean(
                     (form.state?.submitCount ?? 0) > 0 || form.state?.isSubmitted
                 );
-                const firstError: string | undefined =
-                    isTouched || hasSubmitted ? field.state?.meta?.errors?.[0] : undefined;
+                const firstError =
+                    isTouched || hasSubmitted
+                        ? formatFieldError(field.state?.meta?.errors?.[0])
+                        : undefined;
                 const adaptedField: RHFCompatibleField<FormFieldBridgeValue> = {
                     name: field.name,
                     value: field.state.value as FormFieldBridgeValue,
@@ -194,7 +225,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
     const { error, formMessageId } = useFormField();
-    const body = error ? String(error ?? '') : props.children;
+    const body = error ? formatFieldError(error) : props.children;
 
     if (!body) {
         return null;

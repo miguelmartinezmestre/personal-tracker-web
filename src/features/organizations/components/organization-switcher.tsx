@@ -49,7 +49,7 @@ export function OrganizationSwitcher() {
             });
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries();
+            await queryClient.invalidateQueries({ queryKey: ['convex'] });
             router.refresh();
         },
     });

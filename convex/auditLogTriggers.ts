@@ -264,7 +264,7 @@ registerSimpleTrigger('organization', 'organization', (_ctx, change) => {
 
 registerSimpleTrigger('member', 'organization_member', (_ctx, change) => {
     const organizationId = change.newDoc?.organizationId ?? change.oldDoc?.organizationId ?? null;
-    return organizationId as Id<'organization'> | null;
+    return organizationId;
 });
 
 registerSimpleTrigger('user', 'user', ctx => ctx.organizationId);

@@ -33,6 +33,7 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
 import FormModal from '@/components/form-modal';
+import { invalidateConvexQuery } from '@/features/convex/query-keys';
 
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_PAGINATION_OPTS = {
@@ -60,12 +61,10 @@ export default function CreateNotificationFormModal() {
     const createNotification = useMutation({
         mutationFn: useConvexMutation(api.notifications.createNotification),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(
-                    api.notifications.getNotificationsByUser,
-                    DEFAULT_PAGINATION_OPTS
-                ).queryKey,
-            });
+            invalidateConvexQuery(
+                queryClient,
+                convexQuery(api.notifications.getNotificationsByUser, DEFAULT_PAGINATION_OPTS)
+            );
             toast.success(t('toast.created'));
         },
         onError: () => {

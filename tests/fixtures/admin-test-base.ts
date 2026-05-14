@@ -1,5 +1,6 @@
 import { test as base, expect, type Page } from '@playwright/test';
 import { ensureAuthenticatedState } from '../helpers/test-helpers';
+import { attachPageDiagnostics } from '../helpers/page-diagnostics';
 
 interface AdminFixtures {
     adminPage: Page;
@@ -11,6 +12,7 @@ export const test = base.extend<AdminFixtures>({
             storageState: 'tests/.auth/admin-user.json',
         });
         const setupPage = await context.newPage();
+        attachPageDiagnostics(setupPage, 'admin-setup');
         await ensureAuthenticatedState(setupPage);
         await setupPage.close();
         await use(context);
@@ -19,6 +21,8 @@ export const test = base.extend<AdminFixtures>({
 
     page: async ({ context }, use) => {
         const page = await context.newPage();
+        attachPageDiagnostics(page, 'admin-page');
+        await ensureAuthenticatedState(page);
         await use(page);
     },
 

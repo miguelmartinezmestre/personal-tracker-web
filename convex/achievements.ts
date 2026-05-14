@@ -13,7 +13,7 @@ import { queryWithRLS } from './rls';
 import { ACHIEVEMENT_DEFINITIONS } from './utils/achievements';
 import { achievementTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
-import { getAuthUserIdentity } from 'better-convex/auth';
+import { getAuthUserIdentity } from 'kitcn/auth';
 const LIST_LIMIT = 1000;
 const BATCH_SIZE = 100;
 const ACHIEVEMENT_BATCH_SIZE = 50;
@@ -67,7 +67,7 @@ async function notifyOrganizationAchievementUnlocked(
             .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor });
 
         for (const member of page.page) {
-            const uid = member.userId as Id<'user'>;
+            const uid = member.userId;
             const shouldNotify = await shouldSendOrganizationNotification(ctx, uid);
             if (shouldNotify) {
                 await ctx.db.insert('notifications', {
@@ -405,7 +405,7 @@ export const seedAchievementDefinitions = mutation({
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         }
 
-        const userId = identity.userId as Id<'user'>;
+        const userId = identity.userId;
 
         await ctx.runQuery(internal.setup.requireAdminInternal, { userId });
 
@@ -487,8 +487,9 @@ export const checkUserAchievements = internalMutation({
 
         const objectivesPage = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .filter(q => q.eq(q.field('organizationId'), organizationId))
+            .withIndex('by_user_organization', q =>
+                q.eq('userId', userId).eq('organizationId', organizationId)
+            )
             .paginate({
                 numItems: ACHIEVEMENT_BATCH_SIZE,
                 cursor: args.objectivesContinueCursor ?? null,

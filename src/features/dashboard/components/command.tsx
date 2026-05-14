@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
     CommandDialog,
     CommandEmpty,
@@ -13,14 +13,14 @@ import {
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Home, User, Bell, Goal } from 'lucide-react';
+import { useMountEffect } from '@/hooks/use-mount-effect';
 
 export default function CommandMenu() {
     const t = useTranslations('CommandMenu');
     const tSidebar = useTranslations('Sidebar');
     const [open, setOpen] = useState(false);
-    const [ready, setReady] = useState(false);
 
-    useEffect(() => {
+    useMountEffect(() => {
         const down = (e: KeyboardEvent) => {
             if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
@@ -29,9 +29,10 @@ export default function CommandMenu() {
         };
 
         document.addEventListener('keydown', down);
-        setReady(true);
-        return () => document.removeEventListener('keydown', down);
-    }, []);
+        return () => {
+            document.removeEventListener('keydown', down);
+        };
+    });
 
     const runCommand = (command: () => void) => {
         setOpen(false);
@@ -42,7 +43,7 @@ export default function CommandMenu() {
 
     return (
         <>
-            {ready && <span data-testid="command-menu-ready" className="hidden" />}
+            <span data-testid="command-menu-ready" className="hidden" />
             <CommandDialog open={open} onOpenChange={setOpen} data-testid="command-dialog">
                 <CommandInput placeholder={t('placeholder')} data-testid="command-input" />
                 <CommandList>

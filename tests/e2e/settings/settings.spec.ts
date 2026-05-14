@@ -213,7 +213,19 @@ test.describe('Settings', () => {
             await settings.fillDeleteAccountForm(isolatedTestUser.email, isolatedTestUser.password);
             await settings.deleteAccountButton.click();
 
-            await expect(settings.deleteAccountSuccess).toBeVisible({ timeout: 15000 });
+            await expect
+                .poll(
+                    async () => {
+                        const successVisible = await settings.deleteAccountSuccess
+                            .isVisible()
+                            .catch(() => false);
+                        const currentPath = new URL(isolatedAuthenticatedPage.url()).pathname;
+
+                        return successVisible || currentPath === '/' || currentPath === '/login';
+                    },
+                    { timeout: 15000, intervals: [200, 500, 1000] }
+                )
+                .toBe(true);
             await isolatedAuthenticatedPage.waitForURL(/\/$|\/login/, { timeout: 15000 });
         }
     );

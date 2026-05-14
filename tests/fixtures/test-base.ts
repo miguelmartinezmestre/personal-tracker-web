@@ -16,6 +16,7 @@ import {
     OrganizationData,
     NotificationData,
 } from '../helpers/test-helpers';
+import { attachPageDiagnostics } from '../helpers/page-diagnostics';
 
 interface IsolatedSessionFixture {
     context: BrowserContext;
@@ -52,6 +53,7 @@ export const test = base.extend<TestFixtures>({
     isolatedSession: async ({ browser }, use) => {
         const context = await browser.newContext();
         const page = await context.newPage();
+        attachPageDiagnostics(page, 'isolated-session');
         const user = await createTestUserViaAPI(page);
         await use({ context, page, user });
         await context.close();
@@ -78,6 +80,7 @@ export const test = base.extend<TestFixtures>({
             storageState: 'tests/.auth/admin-user.json',
         });
         const page = await adminContext.newPage();
+        attachPageDiagnostics(page, 'admin-page');
         await use(page);
         await adminContext.close();
     },

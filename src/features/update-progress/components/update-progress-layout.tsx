@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { usePreloadedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import CreateUpdateProgressFormModal from './update-progress-form-create-modal';
 import UpdateProgressTable from './update-progress-table';
@@ -18,8 +18,8 @@ export default function UpdateProgressLayout({
 }: UpdateProgressLayoutProps) {
     const tObjectives = useTranslations('Objectives');
     const tUpdateProgress = useTranslations('UpdateProgress');
-    const progress = usePreloadedAuthQuery(preloadedProgressQuery);
-    const objective = usePreloadedAuthQuery(preloadedObjectiveQuery);
+    const progress = usePreloadedQuery(preloadedProgressQuery);
+    const objective = usePreloadedQuery(preloadedObjectiveQuery);
     const objectiveTitle = objective?.title ?? '';
     const objectiveDescription = objective?.description?.trim() ?? '';
     const unitLabel = objective?.unit ?? '';

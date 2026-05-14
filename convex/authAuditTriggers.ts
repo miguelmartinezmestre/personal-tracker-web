@@ -1,5 +1,5 @@
 import type { MutationCtx } from './_generated/server';
-import type { Triggers as BetterAuthTriggers } from '@convex-dev/better-auth';
+import type { Triggers as BetterAuthTriggers } from 'kitcn/auth';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
 
@@ -100,9 +100,14 @@ const resolveOrganizationId = async (
     }
 
     if (fallbackUserId) {
+        const normalizedUserId = ctx.db.normalizeId('user', fallbackUserId);
+        if (!normalizedUserId) {
+            return null;
+        }
+
         const membership = await ctx.db
             .query('member')
-            .withIndex('userId', q => q.eq('userId', fallbackUserId))
+            .withIndex('userId', q => q.eq('userId', normalizedUserId))
             .first();
 
         if (membership?.organizationId) {
@@ -173,79 +178,95 @@ const insertAuthAuditLog = async (
     });
 };
 
-export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema> = {
+export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx> = {
     session: {
-        onCreate: async (ctx, doc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'session.created',
-                resourceType: 'session',
-                resourceId: doc._id,
-                userId: doc.userId,
-                organizationId: doc.activeOrganizationId ?? null,
-                metadata: { after: sanitizeSession(doc) },
-            });
-        },
-        onDelete: async (ctx, doc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'session.deleted',
-                resourceType: 'session',
-                resourceId: doc._id,
-                userId: doc.userId,
-                organizationId: doc.activeOrganizationId ?? null,
-                metadata: { before: sanitizeSession(doc) },
-            });
+        change: async (change, ctx) => {
+            if (change.operation === 'insert') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'session.created',
+                    resourceType: 'session',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc.userId,
+                    organizationId: change.newDoc.activeOrganizationId ?? null,
+                    metadata: { after: sanitizeSession(change.newDoc) },
+                });
+            }
+
+            if (change.operation === 'delete') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'session.deleted',
+                    resourceType: 'session',
+                    resourceId: change.oldDoc._id,
+                    userId: change.oldDoc.userId,
+                    organizationId: change.oldDoc.activeOrganizationId ?? null,
+                    metadata: { before: sanitizeSession(change.oldDoc) },
+                });
+            }
         },
     },
     invitation: {
-        onCreate: async (ctx, doc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'invitation.created',
-                resourceType: 'invitation',
-                resourceId: doc._id,
-                userId: doc.inviterId,
-                organizationId: doc.organizationId,
-                metadata: { after: sanitizeInvitation(doc) },
-            });
-        },
-        onUpdate: async (ctx, newDoc, oldDoc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'invitation.updated',
-                resourceType: 'invitation',
-                resourceId: newDoc._id,
-                userId: newDoc.inviterId,
-                organizationId: newDoc.organizationId,
-                metadata: { before: sanitizeInvitation(oldDoc), after: sanitizeInvitation(newDoc) },
-            });
-        },
-        onDelete: async (ctx, doc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'invitation.deleted',
-                resourceType: 'invitation',
-                resourceId: doc._id,
-                userId: doc.inviterId,
-                organizationId: doc.organizationId,
-                metadata: { before: sanitizeInvitation(doc) },
-            });
+        change: async (change, ctx) => {
+            if (change.operation === 'insert') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'invitation.created',
+                    resourceType: 'invitation',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc.inviterId,
+                    organizationId: change.newDoc.organizationId,
+                    metadata: { after: sanitizeInvitation(change.newDoc) },
+                });
+            }
+
+            if (change.operation === 'update') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'invitation.updated',
+                    resourceType: 'invitation',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc.inviterId,
+                    organizationId: change.newDoc.organizationId,
+                    metadata: {
+                        before: sanitizeInvitation(change.oldDoc),
+                        after: sanitizeInvitation(change.newDoc),
+                    },
+                });
+            }
+
+            if (change.operation === 'delete') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'invitation.deleted',
+                    resourceType: 'invitation',
+                    resourceId: change.oldDoc._id,
+                    userId: change.oldDoc.inviterId,
+                    organizationId: change.oldDoc.organizationId,
+                    metadata: { before: sanitizeInvitation(change.oldDoc) },
+                });
+            }
         },
     },
     user: {
-        onUpdate: async (ctx, newDoc, oldDoc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'user.updated',
-                resourceType: 'user',
-                resourceId: newDoc._id,
-                userId: newDoc._id,
-                metadata: { before: sanitizeUser(oldDoc), after: sanitizeUser(newDoc) },
-            });
-        },
-        onDelete: async (ctx, doc) => {
-            await insertAuthAuditLog(ctx, {
-                action: 'user.deleted',
-                resourceType: 'user',
-                resourceId: doc._id,
-                userId: doc._id,
-                metadata: { before: sanitizeUser(doc) },
-            });
+        change: async (change, ctx) => {
+            if (change.operation === 'update') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'user.updated',
+                    resourceType: 'user',
+                    resourceId: change.newDoc._id,
+                    userId: change.newDoc._id,
+                    metadata: {
+                        before: sanitizeUser(change.oldDoc),
+                        after: sanitizeUser(change.newDoc),
+                    },
+                });
+            }
+
+            if (change.operation === 'delete') {
+                await insertAuthAuditLog(ctx, {
+                    action: 'user.deleted',
+                    resourceType: 'user',
+                    resourceId: change.oldDoc._id,
+                    userId: change.oldDoc._id,
+                    metadata: { before: sanitizeUser(change.oldDoc) },
+                });
+            }
         },
     },
 };

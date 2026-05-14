@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
@@ -26,17 +26,8 @@ export default function SessionsTable({ initialSessions }: SessionsTableProps) {
     const { invalidateAllOtherSessionsAsync, isInvalidatingAllOtherSessions } =
         useInvalidateAllOtherSessions();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
 
     const sessions = useQuery({
@@ -45,17 +36,11 @@ export default function SessionsTable({ initialSessions }: SessionsTableProps) {
     });
 
     const sessionsData = sessions.data as SessionsResult | undefined;
-    const hasData = sessionsData !== undefined;
     const continueCursor = sessionsData?.continueCursor ?? null;
     const pageIsDone = sessionsData?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData || sessions.isFetching) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, sessions.isFetching, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const data: SessionsResult['page'] = sessionsData?.page ?? [];
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
     const [now] = useState(Date.now);
     const revocableSessions = data.filter(
         (session: SessionsResult['page'][number]) => !session.isCurrent && session.expiresAt >= now
@@ -91,11 +76,11 @@ export default function SessionsTable({ initialSessions }: SessionsTableProps) {
                 isLoading={sessions.isLoading}
                 pagination={{
                     currentPage,
-                    totalPages,
-                    onPageChange: goToPage,
+                    onNextPage: () => nextPage(continueCursor, pageIsDone),
+                    onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    pageSize: DEFAULT_PAGE_SIZE,
+                    isLoading: sessions.isFetching,
                 }}
             />
         </div>

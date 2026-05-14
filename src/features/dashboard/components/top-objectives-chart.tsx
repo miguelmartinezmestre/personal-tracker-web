@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { usePreloadedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Loader2 } from 'lucide-react';
@@ -25,7 +25,7 @@ export default function TopObjectivesChart({
     preloadedTopObjectivesQuery,
 }: TopObjectivesChartProps) {
     const t = useTranslations('DashboardHome');
-    const topObjectives = usePreloadedAuthQuery(preloadedTopObjectivesQuery);
+    const topObjectives = usePreloadedQuery(preloadedTopObjectivesQuery);
 
     const chartData = (topObjectives ?? []).map(item => ({
         name: truncateText(item.objective, 20),
@@ -87,8 +87,8 @@ export default function TopObjectivesChart({
                                     color: 'hsl(var(--popover-foreground))',
                                 }}
                                 labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
-                                formatter={(value: number | undefined) => [
-                                    `${value ?? 0}%`,
+                                formatter={value => [
+                                    `${typeof value === 'number' ? value : 0}%`,
                                     t('charts.progress'),
                                 ]}
                             />

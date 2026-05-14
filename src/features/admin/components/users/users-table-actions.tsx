@@ -1,7 +1,14 @@
 import { authClient } from '@/features/auth/auth-client';
+import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
+import { invalidateConvexQuery } from '@/features/convex/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+
+const ADMIN_USERS_QUERY = convexQuery(api.admin.listUsers, {
+    paginationOpts: { numItems: 10, cursor: null },
+});
 
 export function useBanUser() {
     const t = useTranslations('Admin');
@@ -16,7 +23,7 @@ export function useBanUser() {
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.bannedSuccess'));
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.banFailed', { message: error.message }));
@@ -35,7 +42,7 @@ export function useUnBanUser() {
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.unbannedSuccess'));
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.unbanFailed', { message: error.message }));
@@ -54,7 +61,7 @@ export function useDeleteUser() {
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.deletedSuccess'));
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.deleteFailed', { message: error.message }));

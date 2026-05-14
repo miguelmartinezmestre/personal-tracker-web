@@ -33,7 +33,7 @@ describe('convex invitations (better-auth)', () => {
     test('inviteMember creates pending invitation', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        await createTestUser(t, {
+        const inviter = await createTestUser(t, {
             userId: 'inviter-1-' + randomSuffix,
             email: 'inviter@example.com-' + randomSuffix,
             name: 'Inviter User ' + randomSuffix,
@@ -56,7 +56,7 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
-                inviterId: 'inviter-1-' + randomSuffix,
+                inviterId: inviter.docId,
             });
         });
 
@@ -73,7 +73,7 @@ describe('convex invitations (better-auth)', () => {
     test('accepting invitation creates member and updates status', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        await createTestUser(t, {
+        const inviter = await createTestUser(t, {
             userId: 'inviter-2-' + randomSuffix,
             email: 'inviter2@example.com-' + randomSuffix,
             name: 'Inviter 2 ' + randomSuffix,
@@ -82,7 +82,7 @@ describe('convex invitations (better-auth)', () => {
             emailVerified: true,
         });
 
-        await createTestUser(t, {
+        const invitee = await createTestUser(t, {
             userId: 'invitee-2-' + randomSuffix,
             email: 'invitee2@example.com-' + randomSuffix,
             name: 'Invitee 2 ' + randomSuffix,
@@ -105,7 +105,7 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
-                inviterId: 'inviter-2-' + randomSuffix,
+                inviterId: inviter.docId,
             });
         });
 
@@ -113,7 +113,7 @@ describe('convex invitations (better-auth)', () => {
             await ctx.db.patch(invitationId, { status: 'accepted' });
             await ctx.db.insert('member', {
                 organizationId,
-                userId: 'invitee-2-' + randomSuffix,
+                userId: invitee.docId,
                 role: 'member',
                 createdAt: Date.now(),
             });
@@ -128,7 +128,7 @@ describe('convex invitations (better-auth)', () => {
                 .filter(q =>
                     q.and(
                         q.eq(q.field('organizationId'), organizationId),
-                        q.eq(q.field('userId'), 'invitee-2-' + randomSuffix)
+                        q.eq(q.field('userId'), invitee.docId)
                     )
                 )
                 .collect()
@@ -143,7 +143,7 @@ describe('convex invitations (better-auth)', () => {
     test('rejecting invitation marks status rejected', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        await createTestUser(t, {
+        const inviter = await createTestUser(t, {
             userId: 'inviter-3-' + randomSuffix,
             email: 'inviter3@example.com-' + randomSuffix,
             name: 'Inviter 3 ' + randomSuffix,
@@ -166,7 +166,7 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() + TIME.DAY_MS,
                 createdAt: Date.now(),
-                inviterId: 'inviter-3-' + randomSuffix,
+                inviterId: inviter.docId,
             });
         });
 
@@ -184,7 +184,7 @@ describe('convex invitations (better-auth)', () => {
     test('expired invitations can be detected', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
 
-        await createTestUser(t, {
+        const inviter = await createTestUser(t, {
             userId: 'inviter-4-' + randomSuffix,
             email: 'inviter4@example.com-' + randomSuffix,
             name: 'Inviter 4 ' + randomSuffix,
@@ -207,7 +207,7 @@ describe('convex invitations (better-auth)', () => {
                 status: 'pending',
                 expiresAt: Date.now() - TIME.DAY_MS,
                 createdAt: Date.now() - TIME.DAY_MS * 2,
-                inviterId: 'inviter-4-' + randomSuffix,
+                inviterId: inviter.docId,
             });
         });
 

@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import type { Doc } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/features/table/components/table';
 import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
@@ -16,29 +16,15 @@ import { useMarkAllNotificationsRead } from './notifications-table-actions';
 const DEFAULT_PAGE_SIZE = 20;
 
 type NotificationsResult = FunctionReturnType<typeof api.notifications.getNotificationsByUser>;
-type ObjectivesResult = FunctionReturnType<typeof api.objectives.getObjectivesByUser>;
 
 interface NotificationsTableProps {
     initialNotifications: NotificationsResult | undefined;
-    initialObjectives: ObjectivesResult | undefined;
 }
 
-export default function NotificationsTable({
-    initialNotifications,
-    initialObjectives,
-}: NotificationsTableProps) {
+export default function NotificationsTable({ initialNotifications }: NotificationsTableProps) {
     const t = useTranslations('Notifications');
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-        reset,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
     const notifications = useQuery({
         ...convexQuery(api.notifications.getNotificationsByUser, {
@@ -46,41 +32,40 @@ export default function NotificationsTable({
         }),
         initialData: isFirstPage ? initialNotifications : undefined,
     });
-    const objectives = useQuery({
-        ...convexQuery(api.objectives.getObjectivesByUser, {
-            paginationOpts: { numItems: 100, cursor: null },
-        }),
-        initialData: initialObjectives,
-    });
-    const hasNotificationsData = notifications.data !== undefined;
     const notificationsContinueCursor = notifications.data?.continueCursor ?? null;
     const notificationsIsDone = notifications.data?.isDone ?? false;
-    useEffect(() => {
-        if (!hasNotificationsData || notifications.isFetching) {
-            return;
-        }
-
-        updateCursor(currentPage, notificationsContinueCursor, notificationsIsDone);
-    }, [
-        currentPage,
-        hasNotificationsData,
-        notificationsContinueCursor,
-        notificationsIsDone,
-        notifications.isFetching,
-        updateCursor,
-    ]);
+    const hasNextPage = Boolean(notificationsContinueCursor) && !notificationsIsDone;
     const { markAllRead, isMarkingAllRead } = useMarkAllNotificationsRead(reset);
-    const objectivesPage: Doc<'objectives'>[] = objectives.data?.page ?? [];
-    const objectiveMap = new Map(objectivesPage.map(objective => [objective._id, objective]));
+    const data = useMemo<Doc<'notifications'>[]>(
+        () => notifications.data?.page ?? [],
+        [notifications.data?.page]
+    );
+    const objectiveIds = useMemo(
+        () =>
+            Array.from(
+                new Set(
+                    data
+                        .map(notification => notification.objective)
+                        .filter((id): id is Id<'objectives'> => id !== undefined)
+                )
+            ),
+        [data]
+    );
+    const objectives = useQuery(
+        convexQuery(
+            api.notifications.getObjectivesForNotifications,
+            objectiveIds.length > 0 ? { objectiveIds } : 'skip'
+        )
+    );
+    const objectiveMap = new Map(
+        (objectives.data ?? []).map(objective => [objective._id, objective])
+    );
     const columns = useNotificationsTableColumns({
         objectiveMap,
         onMutationSuccess: reset,
     });
 
-    const data: Doc<'notifications'>[] = notifications.data?.page ?? [];
     const unreadCount = data.filter(notification => !notification.read).length;
-
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="space-y-4">
@@ -103,11 +88,11 @@ export default function NotificationsTable({
                 isLoading={notifications.isLoading}
                 pagination={{
                     currentPage,
-                    totalPages,
-                    onPageChange: goToPage,
+                    onNextPage: () => nextPage(notificationsContinueCursor, notificationsIsDone),
+                    onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    pageSize: DEFAULT_PAGE_SIZE,
+                    isLoading: notifications.isFetching,
                 }}
             />
             {data.length === 0 && !notifications.isLoading && (

@@ -1,4 +1,4 @@
-import { getAuthConfigProvider } from '@convex-dev/better-auth/auth-config';
+import { getAuthConfigProvider } from 'kitcn/auth/config';
 import type { AuthConfig } from 'convex/server';
 
 export default {

@@ -93,6 +93,7 @@ export function useCreateOrganization() {
             return await authClient.organization.create({
                 name: values.name,
                 description: values.description,
+                logo: '',
                 slug: values.name
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')

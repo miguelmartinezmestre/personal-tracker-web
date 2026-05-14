@@ -1,7 +1,7 @@
 'use client';
 
 import { ConvexReactClient } from 'convex/react';
-import { ConvexAuthProvider } from 'better-convex/auth-client';
+import { ConvexAuthProvider } from 'kitcn/auth/client';
 import { authClient } from '@/features/auth/auth-client';
 import { useRouter } from 'next/navigation';
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -36,7 +36,7 @@ export function BetterConvexProvider({
     children: React.ReactNode;
     token: string;
 }) {
-    const router = useRouter();
+    const { push } = useRouter();
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -45,10 +45,10 @@ export function BetterConvexProvider({
                 client={convex}
                 initialToken={token}
                 onMutationUnauthorized={() => {
-                    router.push('/login');
+                    push('/login');
                 }}
                 onQueryUnauthorized={() => {
-                    router.push('/login');
+                    push('/login');
                 }}
             >
                 {children}

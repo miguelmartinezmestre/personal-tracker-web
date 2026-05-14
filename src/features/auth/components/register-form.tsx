@@ -55,13 +55,13 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
         })
     );
 
-    const form = useForm<z.infer<typeof registerSchema>>({
+    const form = useForm({
         defaultValues: {
             email: '',
             password: '',
             confirmPassword: '',
             username: '',
-        },
+        } as z.infer<typeof registerSchema>,
         validators: {
             onChange: registerSchema,
             onSubmit: registerSchema,

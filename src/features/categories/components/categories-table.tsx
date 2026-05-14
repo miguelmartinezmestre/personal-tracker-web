@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { DataTable } from '@/features/table/components/table';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -53,17 +52,8 @@ interface CategoriesTableProps {
 export default function CategoriesTable({ initialCategories }: CategoriesTableProps) {
     const columns = useCategoriesTableColumns();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } = pagination;
     const isFirstPage = paginationOpts.cursor === null;
 
     const categories = useQuery({
@@ -71,17 +61,11 @@ export default function CategoriesTable({ initialCategories }: CategoriesTablePr
         initialData: isFirstPage ? initialCategories : undefined,
     });
 
-    const hasData = categories.data !== undefined;
     const continueCursor = categories.data?.continueCursor ?? null;
     const pageIsDone = categories.data?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData || categories.isFetching) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, categories.isFetching, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const mappedData = (categories.data?.page ?? []).map(mapConvexCategoryToCategory);
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div>
@@ -91,11 +75,11 @@ export default function CategoriesTable({ initialCategories }: CategoriesTablePr
                 isLoading={categories.isLoading}
                 pagination={{
                     currentPage,
-                    totalPages,
-                    onPageChange: goToPage,
+                    onNextPage: () => nextPage(continueCursor, pageIsDone),
+                    onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    pageSize: DEFAULT_PAGE_SIZE,
+                    isLoading: categories.isFetching,
                 }}
             />
         </div>

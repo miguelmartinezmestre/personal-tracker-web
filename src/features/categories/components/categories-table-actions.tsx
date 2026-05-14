@@ -1,10 +1,15 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConvexMutation } from '@convex-dev/react-query';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { invalidateConvexQuery } from '@/features/convex/query-keys';
+
+const CATEGORIES_QUERY = convexQuery(api.categories.getCategoriesByUser, {
+    paginationOpts: { numItems: 20, cursor: null },
+});
 
 export function useDeleteCategory() {
     const t = useTranslations('Objectives.categories');
@@ -13,9 +18,7 @@ export function useDeleteCategory() {
     const { mutate, mutateAsync, isPending } = useMutation({
         mutationFn: useConvexMutation(api.categories.deleteCategory),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: [api.categories.getCategoriesByUser],
-            });
+            invalidateConvexQuery(queryClient, CATEGORIES_QUERY);
             toast.success(t('toast.deleteSuccess'));
         },
         onError: () => {

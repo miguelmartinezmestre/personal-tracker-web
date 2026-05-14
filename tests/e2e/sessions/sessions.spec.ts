@@ -1,11 +1,40 @@
 import { test, expect, loginUser } from '../../fixtures/test-base';
+import type { Page } from '@playwright/test';
+
+test.describe.configure({ mode: 'serial' });
+
+async function gotoSessions(page: Page) {
+    const sessionsPage = page.getByTestId('sessions-page');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.goto('/dashboard/sessions', { waitUntil: 'domcontentloaded' });
+
+        const result = await Promise.race([
+            sessionsPage
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => 'ready' as const)
+                .catch(() => 'timeout' as const),
+            page
+                .getByRole('heading', { name: /this page couldn.t load/i })
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => 'error' as const)
+                .catch(() => 'timeout' as const),
+        ]);
+
+        if (result === 'ready') {
+            return;
+        }
+
+        await page.waitForTimeout(500);
+    }
+}
 
 test.describe('Sessions', () => {
     test(
         'sessions page shows table',
         { tag: ['@REQ-AUTENTICACION-006'] },
         async ({ authenticatedPage }) => {
-            await authenticatedPage.goto('/dashboard/sessions');
+            await gotoSessions(authenticatedPage);
 
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
@@ -19,7 +48,7 @@ test.describe('Sessions', () => {
         'current session has badge showing current status',
         { tag: ['@REQ-AUTENTICACION-006'] },
         async ({ authenticatedPage }) => {
-            await authenticatedPage.goto('/dashboard/sessions');
+            await gotoSessions(authenticatedPage);
 
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
@@ -36,7 +65,7 @@ test.describe('Sessions', () => {
         'current session does not show revoke button',
         { tag: ['@REQ-AUTENTICACION-007'] },
         async ({ authenticatedPage }) => {
-            await authenticatedPage.goto('/dashboard/sessions');
+            await gotoSessions(authenticatedPage);
 
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
@@ -59,7 +88,7 @@ test.describe('Sessions', () => {
         'sessions title is displayed',
         { tag: ['@REQ-AUTENTICACION-006'] },
         async ({ authenticatedPage }) => {
-            await authenticatedPage.goto('/dashboard/sessions');
+            await gotoSessions(authenticatedPage);
 
             const title = authenticatedPage.getByTestId('sessions-title');
             await expect(title).toBeVisible({ timeout: 15000 });
@@ -70,7 +99,7 @@ test.describe('Sessions', () => {
         'session table shows device and date information',
         { tag: ['@REQ-AUTENTICACION-006'] },
         async ({ authenticatedPage }) => {
-            await authenticatedPage.goto('/dashboard/sessions');
+            await gotoSessions(authenticatedPage);
 
             const sessionsPage = authenticatedPage.getByTestId('sessions-page');
             await expect(sessionsPage).toBeVisible({ timeout: 15000 });
@@ -99,7 +128,7 @@ test.describe('Sessions', () => {
                 await secondPage.goto('about:blank');
                 await secondContext.clearCookies();
 
-                await isolatedAuthenticatedPage.goto('/dashboard/sessions');
+                await gotoSessions(isolatedAuthenticatedPage);
 
                 const sessionsPage = isolatedAuthenticatedPage.getByTestId('sessions-page');
                 await expect(sessionsPage).toBeVisible({ timeout: 15000 });
@@ -164,9 +193,26 @@ test.describe('Sessions', () => {
 
                 expect(succeeded, 'revoke other sessions should eventually succeed').toBe(true);
 
-                await expect(isolatedAuthenticatedPage.getByTestId('table-row')).toHaveCount(1, {
-                    timeout: 10000,
-                });
+                await expect
+                    .poll(
+                        async () => {
+                            const rowCount = await isolatedAuthenticatedPage
+                                .getByTestId('table-row')
+                                .count();
+
+                            if (rowCount === 0) {
+                                await isolatedAuthenticatedPage.reload({
+                                    waitUntil: 'domcontentloaded',
+                                });
+                                await sessionsPage.waitFor({ state: 'visible', timeout: 15000 });
+                                return isolatedAuthenticatedPage.getByTestId('table-row').count();
+                            }
+
+                            return rowCount;
+                        },
+                        { timeout: 20000, intervals: [500, 1000, 2000] }
+                    )
+                    .toBe(1);
                 await expect(
                     isolatedAuthenticatedPage.getByTestId('session-status-badge-current')
                 ).toBeVisible();

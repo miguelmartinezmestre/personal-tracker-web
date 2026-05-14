@@ -2,7 +2,7 @@ import { v, ConvexError } from 'convex/values';
 import { queryWithRLS } from './rls';
 import { paginationOptsValidator } from 'convex/server';
 import { mutation } from './_generated/server';
-import { getAuthUserIdentity } from 'better-convex/auth';
+import { getAuthUserIdentity } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import type { Doc, Id } from './_generated/dataModel';
 
@@ -41,7 +41,7 @@ export const getSessionsByUser = queryWithRLS({
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         }
 
-        const currentSessionId = identity.sessionId as Id<'session'>;
+        const currentSessionId = identity.sessionId;
 
         const paginatedSessions = await ctx.db
             .query('session')

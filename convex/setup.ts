@@ -1,7 +1,7 @@
 import { query, mutation, internalMutation, internalQuery } from './_generated/server';
 import { internal } from './_generated/api';
 import { ConvexError, v } from 'convex/values';
-import { getAuthUserIdentity } from 'better-convex/auth';
+import { getAuthUserIdentity } from 'kitcn/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
 
@@ -47,19 +47,19 @@ export const completeSetup = mutation({
             throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
         }
 
-        const userId = identity.userId as Id<'user'>;
+        const userId = identity.userId;
 
         const existingSettings = await ctx.db.query('platformSettings').first();
         if (existingSettings) {
             throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
 
-        const allUsers = await ctx.db.query('user').collect();
-        if (allUsers.length !== 1) {
+        const users = await ctx.db.query('user').take(2);
+        if (users.length !== 1) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_COUNT);
         }
 
-        const currentUser = allUsers[0]!;
+        const currentUser = users[0]!;
         if (currentUser._id !== userId) {
             throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
         }
@@ -74,7 +74,7 @@ export const completeSetup = mutation({
         let organizationId: Id<'organization'>;
 
         if (membership) {
-            organizationId = membership.organizationId as Id<'organization'>;
+            organizationId = membership.organizationId;
             await ctx.db.patch(organizationId, {
                 name: args.organizationName,
                 ...(args.organizationLogo ? { logo: args.organizationLogo } : {}),
@@ -153,14 +153,11 @@ export const ensureTestOrganizationInternal = internalMutation({
         const userId = args.userId;
         const now = Date.now();
 
-        const sessions = await ctx.db
+        const currentSession = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', userId))
-            .collect();
-        const currentSession =
-            sessions.length === 0
-                ? null
-                : sessions.reduce((best, s) => (s.updatedAt >= best.updatedAt ? s : best));
+            .order('desc')
+            .first();
 
         let membership = await ctx.db
             .query('member')
@@ -170,7 +167,7 @@ export const ensureTestOrganizationInternal = internalMutation({
         let organizationId: Id<'organization'>;
 
         if (membership) {
-            organizationId = membership.organizationId as Id<'organization'>;
+            organizationId = membership.organizationId;
         } else {
             const suffix = Math.random().toString(36).slice(2, 10);
             const organizationName = args.organizationName ?? `Test Org ${suffix}`;
@@ -249,7 +246,7 @@ export const ensureTestOrganization = mutation({
             throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
         }
 
-        const userId = identity.userId as Id<'user'>;
+        const userId = identity.userId;
 
         if (process.env.ALLOW_SETUP_TEST !== 'true') {
             await ctx.runQuery(internal.setup.requireAdminInternal, { userId });

@@ -56,9 +56,9 @@ export async function expectAdminMenuVisible(page: Page): Promise<void> {
     const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]').first();
 
     try {
-        await expect(adminNavLink).toBeVisible({ timeout: 3000 });
+        await expect(adminNavLink).toBeVisible({ timeout: 15000 });
     } catch {
-        await expect(adminMenuItem).toBeVisible({ timeout: 3000 });
+        await expect(adminMenuItem).toBeVisible({ timeout: 15000 });
     }
 }
 

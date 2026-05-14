@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useState } from 'react';
-import { useForm, type FormOptions } from '@tanstack/react-form';
+import { useForm, type AnyFormApi, type AnyFormOptions } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -18,9 +18,11 @@ type FormModalProps<TFormValues extends Record<string, unknown>> = {
     trigger: ReactNode;
     title: string;
     description?: string;
-    formOptions: Omit<FormOptions<TFormValues, undefined>, 'onSubmit'>;
+    formOptions: Omit<AnyFormOptions, 'onSubmit'> & {
+        defaultValues: TFormValues;
+    };
     onSubmit: (values: TFormValues) => Promise<void>;
-    children: (form: ReturnType<typeof useForm<TFormValues, undefined>>) => ReactNode;
+    children: (form: AnyFormApi) => ReactNode;
     submitLabel: string;
     cancelLabel: string;
     pendingLabel?: string;
@@ -49,14 +51,14 @@ export default function FormModal<TFormValues extends Record<string, unknown>>({
 }: FormModalProps<TFormValues>) {
     const [open, setOpen] = useState(false);
 
-    const form = useForm<TFormValues, undefined>({
+    const form = useForm({
         ...formOptions,
         onSubmit: async ({ value }: { value: TFormValues }) => {
             await onSubmit(value);
             setOpen(false);
             form.reset();
         },
-    } as FormOptions<TFormValues, undefined>);
+    });
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

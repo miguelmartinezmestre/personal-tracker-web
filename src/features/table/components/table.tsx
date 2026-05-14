@@ -28,12 +28,11 @@ interface DataTableProps<TData extends RowData, TValue> {
     enableSorting?: boolean;
     pagination?: {
         currentPage: number;
-        totalPages: number;
-        onPageChange: (page: number) => void;
+        onNextPage: () => void;
+        onPreviousPage: () => void;
         hasNextPage?: boolean;
         hasPreviousPage?: boolean;
-        pageSize?: number;
-        totalItems?: number;
+        isLoading?: boolean;
     };
 }
 
@@ -50,6 +49,7 @@ export function DataTable<TData extends RowData, TValue>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        manualPagination: true,
         ...(enableSorting
             ? {
                   onSortingChange: setSorting,
@@ -168,13 +168,12 @@ export function DataTable<TData extends RowData, TValue>({
             </div>
             {pagination && (
                 <DataTablePagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={pagination.onPageChange}
-                    hasNextPage={pagination.hasNextPage ?? !pagination.totalPages}
+                    onNextPage={pagination.onNextPage}
+                    onPreviousPage={pagination.onPreviousPage}
+                    hasNextPage={pagination.hasNextPage ?? false}
                     hasPreviousPage={pagination.hasPreviousPage ?? pagination.currentPage > 0}
-                    pageSize={pagination.pageSize}
-                    totalItems={pagination.totalItems}
+                    rowCount={data.length}
+                    isLoading={isLoading || pagination.isLoading}
                 />
             )}
         </div>

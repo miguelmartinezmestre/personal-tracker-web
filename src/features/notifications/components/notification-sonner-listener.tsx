@@ -7,36 +7,42 @@ import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
 
 export function NotificationSonnerListener() {
+    const { data: unreadCount } = useQuery(
+        convexQuery(api.notifications.getUnreadNotificationCount, {})
+    );
+
     const { data } = useQuery(
         convexQuery(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: 1, cursor: null },
+            paginationOpts: { numItems: 20, cursor: null },
         })
     );
 
     const initializedRef = useRef(false);
-    const lastIdRef = useRef<string | null>(null);
-    const latest = data?.page?.[0];
-    const latestId = latest?._id ?? null;
-    const hasLatest = latestId !== null;
-    const latestIsRead = latest?.read ?? true;
-    const latestMessage = latest?.message ?? '';
+    const lastUnreadRef = useRef<number>(0);
+    const lastIdsRef = useRef<Set<string>>(new Set());
+
+    const unreadCountValue = unreadCount?.count ?? 0;
+    const notifications = data?.page ?? [];
 
     useEffect(() => {
-        if (!hasLatest || !latestId) return;
-
         if (!initializedRef.current) {
             initializedRef.current = true;
-            lastIdRef.current = latestId;
+            lastUnreadRef.current = unreadCountValue;
+            notifications.forEach(n => lastIdsRef.current.add(n._id));
             return;
         }
 
-        if (latestId !== lastIdRef.current) {
-            lastIdRef.current = latestId;
-            if (!latestIsRead) {
-                toast(latestMessage);
+        if (unreadCountValue > lastUnreadRef.current) {
+            const newUnread = notifications.filter(n => !n.read && !lastIdsRef.current.has(n._id));
+            for (const notification of newUnread.slice(0, 3)) {
+                toast.info(notification.message);
+                lastIdsRef.current.add(notification._id);
             }
         }
-    }, [hasLatest, latestId, latestIsRead, latestMessage]);
+
+        lastUnreadRef.current = unreadCountValue;
+        notifications.forEach(n => lastIdsRef.current.add(n._id));
+    }, [unreadCountValue, notifications]);
 
     return null;
 }

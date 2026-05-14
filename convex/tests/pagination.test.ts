@@ -230,4 +230,229 @@ describe('convex pagination', () => {
         expect(activeResult.page.length).toBe(5);
         expect(completedResult.page.length).toBe(3);
     });
+
+    test('getObjectivesByUser filters deadline ranges before pagination', async () => {
+        const now = Date.now();
+        const today = now + 60 * 60 * 1000;
+        const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
+
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Due today',
+            targetValue: 100,
+            currentValue: 10,
+            deadline: today,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Due next week',
+            targetValue: 100,
+            currentValue: 10,
+            deadline: nextWeek,
+        });
+
+        const todayResult = await userIdentity.query(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 10, cursor: null },
+            deadlineRange: 'today',
+        });
+
+        expect(todayResult.page.map(o => o.title)).toEqual(['Due today']);
+    });
+
+    test('getOrganizationObjectives combines deadline range, status, and category before pagination', async () => {
+        const now = Date.now();
+        const dueToday = now + 60 * 60 * 1000;
+        const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
+
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            scope: 'organization',
+            title: 'Org launch due today',
+            targetValue: 100,
+            currentValue: 10,
+            status: 'active',
+            category: 'Launch',
+            deadline: dueToday,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            scope: 'organization',
+            title: 'Org launch next week',
+            targetValue: 100,
+            currentValue: 10,
+            status: 'active',
+            category: 'Launch',
+            deadline: nextWeek,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            scope: 'organization',
+            title: 'Org finance due today',
+            targetValue: 100,
+            currentValue: 10,
+            status: 'active',
+            category: 'Finance',
+            deadline: dueToday,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            scope: 'organization',
+            title: 'Org completed launch due today',
+            targetValue: 100,
+            currentValue: 100,
+            status: 'completed',
+            category: 'Launch',
+            deadline: dueToday,
+        });
+
+        const result = await userIdentity.query(api.objectives.getOrganizationObjectives, {
+            paginationOpts: { numItems: 10, cursor: null },
+            status: 'active',
+            category: 'Launch',
+            deadlineRange: 'today',
+        });
+
+        expect(result.page.map(o => o.title)).toEqual(['Org launch due today']);
+    });
+
+    test('deadlineRange overdue excludes objectives without deadlines', async () => {
+        const now = Date.now();
+
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Overdue objective',
+            targetValue: 100,
+            currentValue: 10,
+            deadline: now - 24 * 60 * 60 * 1000,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'No deadline objective',
+            targetValue: 100,
+            currentValue: 10,
+        });
+
+        const result = await userIdentity.query(api.objectives.getObjectivesByUser, {
+            paginationOpts: { numItems: 10, cursor: null },
+            deadlineRange: 'overdue',
+        });
+
+        expect(result.page.map(o => o.title)).toEqual(['Overdue objective']);
+    });
+
+    test('searchObjectivesByUser returns matching authorized objectives without cursor pages', async () => {
+        const otherUser = await createTestUser(t, {
+            userId: 'other-user-pagination',
+            email: 'other-pagination@example.com',
+            name: 'Other Pagination User',
+            role: 'user',
+            emailVerified: true,
+        });
+
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Quarterly Revenue Goal',
+            targetValue: 100,
+            currentValue: 10,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Weekly Fitness Goal',
+            targetValue: 100,
+            currentValue: 10,
+        });
+        await createTestObjective(t, {
+            userId: otherUser.docId,
+            organizationId: _organizationId,
+            title: 'Private Revenue Goal',
+            targetValue: 100,
+            currentValue: 10,
+        });
+
+        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'Revenue',
+            limit: 50,
+        });
+
+        expect(result.map(o => o.title)).toEqual(['Quarterly Revenue Goal']);
+    });
+
+    test('searchObjectivesByUser matches objective descriptions', async () => {
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Plain title',
+            description: 'Contains the rare-description-token',
+            targetValue: 100,
+            currentValue: 10,
+        });
+
+        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'rare-description-token',
+            limit: 50,
+        });
+
+        expect(result.map(o => o.title)).toEqual(['Plain title']);
+    });
+
+    test('searchObjectivesByUser matches objective categories', async () => {
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Category-only match title',
+            category: 'RareCategoryToken',
+            targetValue: 100,
+            currentValue: 10,
+        });
+
+        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'RareCategoryToken',
+            limit: 50,
+        });
+
+        expect(result.map(o => o.title)).toEqual(['Category-only match title']);
+    });
+
+    test('searchObjectivesByUser applies deadlineRange before the bounded search result limit', async () => {
+        const now = Date.now();
+        const tomorrow = now + 24 * 60 * 60 * 1000;
+        const today = now + 60 * 60 * 1000;
+
+        for (let i = 0; i < 60; i++) {
+            await createTestObjective(t, {
+                userId,
+                organizationId: _organizationId,
+                title: `Bounded Search Contract ${i.toString().padStart(2, '0')}`,
+                targetValue: 100,
+                currentValue: 10,
+                deadline: tomorrow,
+            });
+        }
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Bounded Search Contract Today Target',
+            targetValue: 100,
+            currentValue: 10,
+            deadline: today,
+        });
+
+        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'Bounded Search Contract',
+            deadlineRange: 'today',
+            limit: 50,
+        });
+
+        expect(result.map(o => o.title)).toContain('Bounded Search Contract Today Target');
+    });
 });

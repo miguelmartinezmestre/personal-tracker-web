@@ -1,4 +1,4 @@
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { fetchAuthQuery } from '@/features/auth/auth-server';
 import { api } from '@/convex/_generated/api';
 import { AppSidebar } from '@/features/dashboard/components/app-sidebar';
 import { ThemeToggle } from '@/features/theme/theme-switcher';
@@ -9,8 +9,8 @@ import { OrganizationSwitcher } from '@/features/organizations/components/organi
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
 import { SignOutButton } from '@/features/auth/components/sign-out-button';
 import { redirect } from 'next/navigation';
-import { Preloaded } from 'convex/react';
 import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
+import { NotificationSonnerListener } from '@/features/notifications/components/notification-sonner-listener';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const isPlatformSetUp = await checkPlatformSetUp();
@@ -18,17 +18,14 @@ export default async function Layout({ children }: { children: React.ReactNode }
         redirect('/setup');
     }
 
-    let preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
-
-    try {
-        preloadedUserQuery = await preloadAuthQuery(api.auth.getCurrentUser);
-    } catch {
+    const initialUser = await fetchAuthQuery(api.auth.getCurrentUser).catch(() => null);
+    if (!initialUser) {
         redirect('/login');
     }
 
     return (
         <SidebarProvider>
-            <AppSidebar preloadedUserQuery={preloadedUserQuery} />
+            <AppSidebar initialUser={initialUser} />
             <SidebarInset>
                 <header className="grid h-16 min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
                     <div className="flex min-w-0 items-center gap-2">
@@ -43,7 +40,8 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     </div>
                 </header>
                 <CommandMenu />
-                <div className="grid w-full min-w-0 [grid-template-columns:minmax(0,1fr)] gap-4 p-4 pt-0 [&>*]:min-w-0">
+                <NotificationSonnerListener />
+                <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4 pt-0 [&>*]:min-w-0">
                     {children}
                 </div>
             </SidebarInset>

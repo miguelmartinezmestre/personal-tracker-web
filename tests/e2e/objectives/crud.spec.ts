@@ -200,6 +200,7 @@ test.describe('Objectives CRUD', () => {
                 await expect(deleteDialog).toBeVisible({ timeout: 5000 });
                 const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
                 await confirmButton.click();
+                await expect(deleteDialog).toBeHidden({ timeout: 10000 });
                 deleteConfirmed = true;
                 break;
             } catch {
