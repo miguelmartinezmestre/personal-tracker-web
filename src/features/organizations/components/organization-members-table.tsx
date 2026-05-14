@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/features/table/components/table';
@@ -38,17 +37,8 @@ export default function OrganizationMembersTable({
     const t = useTranslations('OrganizationMembers');
     const deleteOrganizationMember = useDeleteOrganizationMember();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
 
     const membersQuery = useQuery(
         convexQuery(
@@ -59,14 +49,9 @@ export default function OrganizationMembersTable({
         )
     );
 
-    const hasData = membersQuery.data !== undefined;
     const continueCursor = membersQuery.data?.continueCursor ?? null;
     const pageIsDone = membersQuery.data?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData || membersQuery.isFetching) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, membersQuery.isFetching, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const members: OrganizationMember[] = (membersQuery.data?.page ?? []).map(
         (member: OrganizationMemberRaw) => ({
@@ -78,8 +63,6 @@ export default function OrganizationMembersTable({
             createdAt: new Date(member.createdAt),
         })
     );
-
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     const columns: ColumnDef<OrganizationMember>[] = [
         {
@@ -140,11 +123,11 @@ export default function OrganizationMembersTable({
                 isLoading={membersQuery.isLoading}
                 pagination={{
                     currentPage,
-                    totalPages,
-                    onPageChange: goToPage,
+                    onNextPage: () => nextPage(continueCursor, pageIsDone),
+                    onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    pageSize: DEFAULT_PAGE_SIZE,
+                    isLoading: membersQuery.isFetching,
                 }}
             />
         </div>

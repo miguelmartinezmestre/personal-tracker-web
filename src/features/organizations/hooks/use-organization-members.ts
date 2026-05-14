@@ -1,8 +1,12 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/auth-client';
 import { OrganizationRole } from '../types/roles';
+import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
+import type { Id } from '@/convex/_generated/dataModel';
+import { invalidateConvexQueryWhere } from '@/features/convex/query-keys';
 
 export interface CreateOrganizationMemberParams {
     organizationId: string;
@@ -21,10 +25,21 @@ export interface DeleteOrganizationMemberParams {
     organizationId?: string;
 }
 
-const ORGANIZATION_MEMBERS_QUERY_KEY = (organizationId: string | null) => [
-    'organization-members',
-    organizationId,
-];
+const organizationMembersQuery = (organizationId: Id<'organization'>) =>
+    convexQuery(api.organizations.getOrganizationMembers, {
+        organizationId,
+        paginationOpts: { numItems: 20, cursor: null },
+    });
+
+function invalidateOrganizationMembers(queryClient: QueryClient, organizationId: string | null) {
+    if (!organizationId) return;
+
+    invalidateConvexQueryWhere(
+        queryClient,
+        organizationMembersQuery(organizationId as Id<'organization'>),
+        args => args.organizationId === organizationId
+    );
+}
 
 export function useCreateOrganizationMember() {
     const queryClient = useQueryClient();
@@ -38,9 +53,7 @@ export function useCreateOrganizationMember() {
             });
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ORGANIZATION_MEMBERS_QUERY_KEY(variables.organizationId),
-            });
+            invalidateOrganizationMembers(queryClient, variables.organizationId);
         },
     });
 }
@@ -57,9 +70,7 @@ export function useUpdateOrganizationMember() {
             });
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ORGANIZATION_MEMBERS_QUERY_KEY(variables.organizationId ?? null),
-            });
+            invalidateOrganizationMembers(queryClient, variables.organizationId ?? null);
         },
     });
 }
@@ -75,9 +86,7 @@ export function useDeleteOrganizationMember() {
             });
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ORGANIZATION_MEMBERS_QUERY_KEY(variables.organizationId ?? null),
-            });
+            invalidateOrganizationMembers(queryClient, variables.organizationId ?? null);
         },
     });
 }
