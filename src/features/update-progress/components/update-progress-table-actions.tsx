@@ -6,6 +6,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { invalidateConvexQueryWhere } from '@/features/convex/query-keys';
 
 export function useDeleteUpdateProgress(objectiveId: Id<'objectives'>) {
     const t = useTranslations('UpdateProgress');
@@ -14,12 +15,14 @@ export function useDeleteUpdateProgress(objectiveId: Id<'objectives'>) {
     const { mutate, mutateAsync, isPending } = useMutation({
         mutationFn: useConvexMutation(api.update_progress.deleteUpdateProgress),
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
+            invalidateConvexQueryWhere(
+                queryClient,
+                convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
                     objectiveId,
                     paginationOpts: { numItems: 20, cursor: null },
-                }).queryKey,
-            });
+                }),
+                args => args.objectiveId === objectiveId
+            );
             toast.success(t('toast.deletedSuccess'));
         },
         onError: () => {

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { DataTable } from '@/features/table/components/table';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
+import { useConvexAuth } from 'convex/react';
 import { ObjectiveProgressGraph } from '@/features/objectives/components/objective-graph';
 import dynamic from 'next/dynamic';
 
@@ -51,18 +51,10 @@ export default function UpdateProgressTable({
     }
 
     const objectiveId: Id<'objectives'> = rawObjectiveId as Id<'objectives'>;
+    const { isAuthenticated } = useConvexAuth();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
 
     const updateProgress = useQuery({
@@ -71,34 +63,36 @@ export default function UpdateProgressTable({
             paginationOpts,
         }),
         initialData: isFirstPage ? initialProgress : undefined,
+        enabled: isAuthenticated,
     });
 
     const objective = useQuery({
         ...convexQuery(api.objectives.getObjectiveById, { id: objectiveId }),
         initialData: initialObjective,
+        enabled: isAuthenticated,
+    });
+    const progressSeries = useQuery({
+        ...convexQuery(api.update_progress.getProgressSeriesByObjectiveId, { objectiveId }),
+        enabled: isAuthenticated,
     });
 
-    const hasData = updateProgress.data !== undefined;
     const continueCursor = updateProgress.data?.continueCursor ?? null;
     const pageIsDone = updateProgress.data?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData || updateProgress.isFetching) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, updateProgress.isFetching, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress(objectiveId);
 
     const columns = useUpdateProgressTableColumns({ objectiveId });
 
     const updates = updateProgress.data?.page ?? [];
+    const chartUpdates = progressSeries.data?.points ?? updates;
     const objectiveDoc = objective.data as
         | (Doc<'objectives'> & {
               startValue?: number;
           })
         | undefined;
 
-    const sortedUpdates = [...updates].sort((a, b) => a.updateDate - b.updateDate);
+    const sortedUpdates = [...chartUpdates].sort((a, b) => a.updateDate - b.updateDate);
     const baseValue = objectiveDoc?.startValue ?? 0;
 
     type ProgressPoint = { date: number; currentValue: number; objective: number };
@@ -121,8 +115,6 @@ export default function UpdateProgressTable({
     const lastUpdated = sortedUpdates.at(-1)?.updateDate ?? null;
 
     const unitSuffix = objectiveDoc?.unit ? ` ${objectiveDoc.unit}` : '';
-
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="w-full min-w-0 space-y-4">
@@ -239,19 +231,19 @@ export default function UpdateProgressTable({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => goToPage(currentPage - 1)}
-                            disabled={!hasPreviousPage}
+                            onClick={previousPage}
+                            disabled={!hasPreviousPage || updateProgress.isFetching}
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="text-sm text-muted-foreground">
-                            {currentPage + 1} / {totalPages}
+                            {tTable('showing')} {updates.length} {tTable('rows')}
                         </span>
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => goToPage(currentPage + 1)}
-                            disabled={!hasNextPage}
+                            onClick={() => nextPage(continueCursor, pageIsDone)}
+                            disabled={!hasNextPage || updateProgress.isFetching}
                         >
                             <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -266,11 +258,11 @@ export default function UpdateProgressTable({
                     isLoading={updateProgress.isLoading}
                     pagination={{
                         currentPage,
-                        totalPages,
-                        onPageChange: goToPage,
+                        onNextPage: () => nextPage(continueCursor, pageIsDone),
+                        onPreviousPage: previousPage,
                         hasNextPage,
                         hasPreviousPage,
-                        pageSize: DEFAULT_PAGE_SIZE,
+                        isLoading: updateProgress.isFetching,
                     }}
                 />
             </div>

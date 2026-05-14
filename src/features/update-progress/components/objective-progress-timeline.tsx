@@ -118,8 +118,8 @@ export default function ObjectiveProgressTimeline({
                                     | undefined;
                                 return item?.fullLabel ?? String(_label);
                             }}
-                            formatter={(value: number | undefined) => [
-                                `${value ?? 0}${unitSuffix}`,
+                            formatter={value => [
+                                `${typeof value === 'number' ? value : 0}${unitSuffix}`,
                                 t('charts.value'),
                             ]}
                         />
