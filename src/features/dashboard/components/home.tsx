@@ -5,7 +5,7 @@ import { AchievementsWidget } from '@/features/achievements/components/achieveme
 import { api } from '@/convex/_generated/api';
 import { Loader2, Target, CheckCircle, Calendar, Activity } from 'lucide-react';
 import { Preloaded } from 'convex/react';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { usePreloadedQuery } from 'convex/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/features/dashboard/components/stat-card';
 import dynamic from 'next/dynamic';
@@ -38,10 +38,10 @@ export default function Home({
     preloadedMonthlyProgressQuery: Preloaded<typeof api.dashboard.getMonthlyProgress>;
     preloadedTopObjectivesQuery: Preloaded<typeof api.dashboard.getObjectivesWithMostProgress>;
 }) {
-    const user = usePreloadedAuthQuery(preloadedUserQuery);
-    const stats = usePreloadedAuthQuery(preloadedDashboardStatsQuery);
-    const upcomingDeadlines = usePreloadedAuthQuery(preloadedUpcomingDeadlinesQuery);
-    const recentActivity = usePreloadedAuthQuery(preloadedRecentActivityQuery);
+    const user = usePreloadedQuery(preloadedUserQuery);
+    const stats = usePreloadedQuery(preloadedDashboardStatsQuery);
+    const upcomingDeadlines = usePreloadedQuery(preloadedUpcomingDeadlinesQuery);
+    const recentActivity = usePreloadedQuery(preloadedRecentActivityQuery);
 
     const t = useTranslations('DashboardHome');
 

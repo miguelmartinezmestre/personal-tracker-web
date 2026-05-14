@@ -30,16 +30,15 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/ui-utils/utils';
 import { api } from '@/convex/_generated/api';
-import { Preloaded } from 'convex/react';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
+import type { FunctionReturnType } from 'convex/server';
 
 type ProjectNavItem = {
     name: string;
     url: Route;
     icon: LucideIcon;
 };
+
+type CurrentUser = NonNullable<FunctionReturnType<typeof api.auth.getCurrentUser>>;
 
 const baseProjects: ProjectNavItem[] = [
     {
@@ -102,19 +101,12 @@ const adminProjects: ProjectNavItem[] = [
     },
 ];
 
-export function AppSidebar({
-    preloadedUserQuery,
-}: {
-    preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
-}) {
+export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
     const { isMobile, setOpenMobile } = useSidebar();
 
-    const user = usePreloadedAuthQuery(preloadedUserQuery);
-    const { data: platformSettings } = useQuery(
-        convexQuery(api.setup.getPublicPlatformSettings, {})
-    );
+    const user = initialUser;
 
     const isAdmin = user?.role === 'admin';
 
@@ -136,8 +128,7 @@ export function AppSidebar({
                         <Goal className="h-4 w-4 text-primary" />
                     </div>
                     <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">
-                        {(platformSettings as { platformName?: string } | null)?.platformName ??
-                            t('appName', { defaultValue: 'Metrics App' })}
+                        {t('appName', { defaultValue: 'Metrics App' })}
                     </span>
                 </div>
             </SidebarHeader>
