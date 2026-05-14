@@ -76,8 +76,8 @@ export const tables = {
         .index('name', ['name'])
         .index('slug', ['slug']),
     member: defineTable({
-        organizationId: v.string(),
-        userId: v.string(),
+        organizationId: v.id('organization'),
+        userId: v.id('user'),
         role: v.string(),
         createdAt: v.number(),
     })
@@ -85,13 +85,13 @@ export const tables = {
         .index('userId', ['userId'])
         .index('role', ['role']),
     invitation: defineTable({
-        organizationId: v.string(),
+        organizationId: v.id('organization'),
         email: v.string(),
         role: v.optional(v.union(v.null(), v.string())),
         status: v.string(),
         expiresAt: v.number(),
         createdAt: v.number(),
-        inviterId: v.string(),
+        inviterId: v.id('user'),
     })
         .index('organizationId', ['organizationId'])
         .index('email', ['email'])

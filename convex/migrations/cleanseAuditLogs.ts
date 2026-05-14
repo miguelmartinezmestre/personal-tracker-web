@@ -266,5 +266,3 @@ export const cleanseAuditLogs = internalMutation({
         };
     },
 });
-
-export default cleanseAuditLogs;

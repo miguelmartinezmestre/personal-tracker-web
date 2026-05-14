@@ -2,7 +2,7 @@ import { v, ConvexError } from 'convex/values';
 import { queryWithRLS, mutationWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
 import { internal } from './_generated/api';
-import type { Doc } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { paginationOptsValidator } from 'convex/server';
 import { notificationTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
@@ -10,6 +10,7 @@ import type { NotificationType } from './utils/constants';
 import { shouldSendDeadlineNotification } from './notificationPreferences';
 
 const NOTIFICATION_LIMIT = 100;
+const OBJECTIVE_ID_LIMIT = 50;
 const BATCH_SIZE = 100;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -71,6 +72,45 @@ export const getNotificationsByUser = queryWithRLS({
     },
 });
 
+export const getObjectivesForNotifications = queryWithRLS({
+    args: {
+        objectiveIds: v.array(v.id('objectives')),
+    },
+    handler: async (ctx, args) => {
+        if (args.objectiveIds.length > OBJECTIVE_ID_LIMIT) {
+            throw new ConvexError('OBJECTIVE_ID_LIMIT_EXCEEDED');
+        }
+
+        const uniqueIds = [...new Set(args.objectiveIds)];
+        const objectives = [];
+
+        for (const objectiveId of uniqueIds) {
+            const objective = await ctx.db.get(objectiveId);
+            if (!objective) {
+                continue;
+            }
+
+            const isVisiblePersonal =
+                objective.scope === 'personal' && objective.userId === ctx.userId;
+            const isVisibleOrganization =
+                objective.scope === 'organization' &&
+                ctx.organizationId !== null &&
+                objective.organizationId === ctx.organizationId;
+            const isGlobalAdmin = ctx.role === 'admin';
+            const isOrgAdmin =
+                (ctx.memberRole === 'admin' || ctx.memberRole === 'owner') &&
+                ctx.organizationId !== null &&
+                objective.organizationId === ctx.organizationId;
+
+            if (isGlobalAdmin || isOrgAdmin || isVisiblePersonal || isVisibleOrganization) {
+                objectives.push(objective);
+            }
+        }
+
+        return objectives;
+    },
+});
+
 export const getUnreadNotificationCount = queryWithRLS({
     args: {},
     handler: async ctx => {
@@ -97,14 +137,22 @@ export const createNotification = mutationWithRLS({
         const objective = await ctx.db.get('objectives', args.objective);
         if (!objective) throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
 
-        const role = ctx.role;
-        const isAdmin = role === 'admin';
+        const isGlobalAdmin = ctx.role === 'admin';
+        const isOrgAdmin = ctx.memberRole === 'admin' || ctx.memberRole === 'owner';
         const isOwner = objective.userId === userId;
-        const isOrganizationMember =
-            objective.scope === 'organization' &&
-            Boolean(ctx.organizationId) &&
-            objective.organizationId === ctx.organizationId;
-        if (!isAdmin && !isOwner && !isOrganizationMember) {
+
+        let isOrganizationMember = false;
+        if (objective.scope === 'organization') {
+            const membership = await ctx.db
+                .query('member')
+                .withIndex('by_organizationId_and_userId', q =>
+                    q.eq('organizationId', objective.organizationId).eq('userId', userId)
+                )
+                .first();
+            isOrganizationMember = membership !== null;
+        }
+
+        if (!isGlobalAdmin && !isOrgAdmin && !isOwner && !isOrganizationMember) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
 
@@ -139,11 +187,11 @@ export const setNotificationRead = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
 
-        const role = ctx.role;
-        const isAdmin = role === 'admin';
+        const isGlobalAdmin = ctx.role === 'admin';
+        const isOrgAdmin = ctx.memberRole === 'admin' || ctx.memberRole === 'owner';
         const isOwner = notification.userId === ctx.userId;
 
-        if (!isAdmin && !isOwner) {
+        if (!isGlobalAdmin && !isOrgAdmin && !isOwner) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
 
@@ -226,11 +274,11 @@ export const deleteNotification = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
 
-        const role = ctx.role;
-        const isAdmin = role === 'admin';
+        const isGlobalAdmin = ctx.role === 'admin';
+        const isOrgAdmin = ctx.memberRole === 'admin' || ctx.memberRole === 'owner';
         const isOwner = notification.userId === ctx.userId;
 
-        if (!isAdmin && !isOwner) {
+        if (!isGlobalAdmin && !isOrgAdmin && !isOwner) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
 
@@ -256,7 +304,7 @@ export const runDeadlineNotificationsCron = internalMutation({
 
         const page = await ctx.db
             .query('objectives')
-            .withIndex('by_status', q => q.eq('status', 'active'))
+            .withIndex('by_status_deadline', q => q.eq('status', 'active').lt('deadline', dayEnd))
             .paginate({
                 numItems: BATCH_SIZE,
                 cursor: args.cursor ?? null,
@@ -264,16 +312,32 @@ export const runDeadlineNotificationsCron = internalMutation({
 
         const objectives = page.page;
 
+        const userIds = [...new Set(objectives.map(o => o.userId))];
+        const preferenceMap = new Map<string, boolean>();
+        await Promise.all(
+            userIds.map(async uid => {
+                preferenceMap.set(uid, await shouldSendDeadlineNotification(ctx, uid));
+            })
+        );
+        const existingSet = new Set<Id<'objectives'>>();
+
         for (const objective of objectives) {
             if (!objective.deadline) continue;
 
             const message = buildDeadlineMessage(objective, now, dayStart, dayEnd);
             if (!message) continue;
 
-            const allowNotify = await shouldSendDeadlineNotification(ctx, objective.userId);
-            if (!allowNotify) continue;
+            if (!preferenceMap.get(objective.userId)) {
+                skipped += 1;
+                continue;
+            }
 
-            const existing = await ctx.db
+            if (existingSet.has(objective._id)) {
+                skipped += 1;
+                continue;
+            }
+
+            const existingNotification = await ctx.db
                 .query('notifications')
                 .withIndex('by_objective_type_date', q =>
                     q
@@ -284,7 +348,8 @@ export const runDeadlineNotificationsCron = internalMutation({
                 )
                 .first();
 
-            if (existing) {
+            if (existingNotification) {
+                existingSet.add(objective._id);
                 skipped += 1;
                 continue;
             }
@@ -301,6 +366,7 @@ export const runDeadlineNotificationsCron = internalMutation({
                 updatedAt: now,
             });
 
+            existingSet.add(objective._id);
             created += 1;
         }
 

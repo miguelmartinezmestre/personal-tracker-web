@@ -264,6 +264,52 @@ describe('convex notifications', async () => {
                 })
             ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
+
+        test('getObjectivesForNotifications returns only visible referenced objectives', async () => {
+            const otherObjectiveId = await createTestObjective(t, {
+                userId: adminUserId,
+                organizationId: _adminOrganizationId,
+                title: 'Hidden Admin Objective',
+                targetValue: 100,
+                currentValue: 0,
+            });
+
+            const objectives = await userIdentity.query(
+                api.notifications.getObjectivesForNotifications,
+                {
+                    objectiveIds: [objectiveId, otherObjectiveId],
+                }
+            );
+
+            expect(objectives.map(objective => objective._id)).toEqual([objectiveId]);
+        });
+
+        test('getObjectivesForNotifications deduplicates IDs and skips unauthorized objectives', async () => {
+            const hiddenObjectiveId = await createTestObjective(t, {
+                userId: adminUserId,
+                organizationId: _adminOrganizationId,
+                title: 'Hidden Duplicate Test Objective',
+                targetValue: 100,
+                currentValue: 0,
+            });
+
+            const objectives = await userIdentity.query(
+                api.notifications.getObjectivesForNotifications,
+                {
+                    objectiveIds: [objectiveId, objectiveId, hiddenObjectiveId, objectiveId],
+                }
+            );
+
+            expect(objectives.map(objective => objective._id)).toEqual([objectiveId]);
+        });
+
+        test('getObjectivesForNotifications rejects oversized objective ID lists', async () => {
+            await expect(
+                userIdentity.query(api.notifications.getObjectivesForNotifications, {
+                    objectiveIds: Array.from({ length: 51 }, () => objectiveId),
+                })
+            ).rejects.toThrow(/too many|limit|maximum|OBJECTIVE_ID_LIMIT/i);
+        });
     });
 
     describe('setNotificationRead', () => {

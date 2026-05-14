@@ -1,15 +1,11 @@
-import { convex } from '@convex-dev/better-auth/plugins';
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import {
-    createApi,
-    createClient,
+    convex,
     getAuthUserIdentity,
-    getHeaders,
-    type AuthFunctions,
-} from 'better-convex/auth';
+    getSession,
+    type BetterAuthOptionsWithoutDatabase,
+} from 'kitcn/auth';
 import { internal } from './_generated/api';
-import type { DataModel } from './_generated/dataModel';
 import {
     internalMutation,
     query,
@@ -18,15 +14,18 @@ import {
     type QueryCtx,
 } from './_generated/server';
 import authConfig from './auth.config';
-import schema from './schema';
 import { admin, organization } from 'better-auth/plugins';
 import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
+import { defineAuth } from './generated/auth';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
+type AuthOptions = BetterAuthOptionsWithoutDatabase & {
+    triggers: never;
+};
 
 import { env } from './lib/env';
 import { STRONG_PASSWORD_MESSAGE_EN, STRONG_PASSWORD_REGEX } from '../shared/password-policy';
@@ -41,12 +40,6 @@ const buildDefaultOrganizationSlug = (userId: string) => {
     return `${DEFAULT_ORGANIZATION_SLUG_BASE}-${normalizedSuffix || Date.now().toString(36)}`;
 };
 
-interface AuthSession {
-    session?: {
-        activeOrganizationId?: string | null;
-    };
-}
-
 export const ensureDefaultOrganizationForUser = internalMutation({
     args: {
         userId: v.id('user'),
@@ -58,7 +51,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             .first();
 
         if (existingMembership) {
-            return existingMembership.organizationId as Id<'organization'>;
+            return existingMembership.organizationId;
         }
 
         const now = Date.now();
@@ -81,16 +74,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
     },
 });
 
-const authFunctions: AuthFunctions = internal.auth;
-
-export const authClient = createClient<DataModel, typeof schema>({
-    authFunctions,
-    schema,
-    internalMutation,
-    triggers: authAuditTriggers,
-});
-
-const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
+const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
     baseURL: env.SITE_URL,
     user: {
         deleteUser: {
@@ -117,10 +101,11 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
                         return;
                     }
 
+                    const userId = session.userId as Id<'user'>;
                     const activeOrganizationId: Id<'organization'> = await (
                         ctx as RunnableCtx
                     ).runMutation(internal.auth.ensureDefaultOrganizationForUser, {
-                        userId: session.userId as Id<'user'>,
+                        userId,
                     });
 
                     return {
@@ -169,32 +154,10 @@ const createAuthOptions = (ctx: GenericCtx): BetterAuthOptions => ({
             sendInvitationEmail: async () => {},
         }),
     ],
-    database: authClient.httpAdapter(ctx),
-});
-export const getAuth = <Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) =>
-    betterAuth({
-        ...createAuthOptions(ctx),
-        database: authClient.adapter(ctx, createAuthOptions),
-    });
-export const createAuth = (ctx: ActionCtx) => betterAuth(createAuthOptions(ctx));
-export const {
-    create,
-    deleteMany,
-    deleteOne,
-    findMany,
-    findOne,
-    updateMany,
-    updateOne,
-    getLatestJwks,
-    rotateKeys,
-} = createApi(schema, createAuth, {
-    internalMutation,
+    triggers: authAuditTriggers as never,
 });
 
-export const { beforeCreate, beforeDelete, beforeUpdate, onCreate, onDelete, onUpdate } =
-    authClient.triggersApi();
-
-export const auth = betterAuth(createAuthOptions({} as GenericCtx));
+export default defineAuth(ctx => createAuthOptions(ctx as GenericCtx));
 
 export const getCurrentUser = query({
     args: v.object({}),
@@ -210,15 +173,8 @@ export const getCurrentOrganization = query({
     handler: async ctx => {
         let organizationId: string | null = null;
 
-        const headers = await getHeaders(ctx);
-        const auth = getAuth(ctx);
-
-        const session = await auth.api.getSession({
-            headers,
-        });
-
-        const authSession = session as AuthSession | null;
-        organizationId = authSession?.session?.activeOrganizationId ?? null;
+        const session = await getSession(ctx);
+        organizationId = session?.activeOrganizationId ?? null;
 
         return organizationId;
     },

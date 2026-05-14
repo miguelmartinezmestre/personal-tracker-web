@@ -73,14 +73,33 @@ export const backfillCategoryIds = internalMutation({
 export const getBackfillStats = internalMutation({
     args: {},
     handler: async ctx => {
-        const allObjectives = await ctx.db.query('objectives').collect();
+        let total = 0;
+        let withCategoryId = 0;
+        let withCategoryStringOnly = 0;
+        let withNeither = 0;
+        let cursor: string | null = null;
+        let isDone = false;
 
-        const withCategoryId = allObjectives.filter(o => o.categoryId).length;
-        const withCategoryStringOnly = allObjectives.filter(
-            o => o.category && !o.categoryId
-        ).length;
-        const withNeither = allObjectives.filter(o => !o.category && !o.categoryId).length;
-        const total = allObjectives.length;
+        while (!isDone) {
+            const page = await ctx.db.query('objectives').paginate({
+                numItems: 500,
+                cursor,
+            });
+
+            for (const o of page.page) {
+                total++;
+                if (o.categoryId) {
+                    withCategoryId++;
+                } else if (o.category) {
+                    withCategoryStringOnly++;
+                } else {
+                    withNeither++;
+                }
+            }
+
+            isDone = page.isDone;
+            cursor = page.continueCursor;
+        }
 
         return {
             total,

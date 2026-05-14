@@ -3,7 +3,7 @@ import { paginationOptsValidator } from 'convex/server';
 
 const LIST_LIMIT = 1000;
 import { query, type QueryCtx } from './_generated/server';
-import { getAuthUserIdentity, getSession } from 'better-convex/auth';
+import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
 
@@ -34,13 +34,22 @@ async function resolveCurrentSession(ctx: QueryCtx) {
     return currentSession;
 }
 
+function normalizeUserId(ctx: QueryCtx, userId: string): Id<'user'> | null {
+    return ctx.db.normalizeId('user', userId);
+}
+
+function normalizeOrganizationId(ctx: QueryCtx, organizationId: string): Id<'organization'> | null {
+    return ctx.db.normalizeId('organization', organizationId);
+}
+
 export const getCurrentSession = query({
     args: v.object({}),
     handler: async ctx => {
         const currentSession = await resolveCurrentSession(ctx);
         if (!currentSession) return null;
 
-        const user = await ctx.db.get('user', currentSession.userId as Id<'user'>);
+        const userId = normalizeUserId(ctx, currentSession.userId);
+        const user = userId ? await ctx.db.get('user', userId) : null;
 
         return {
             session: {
@@ -68,15 +77,17 @@ export const getOrganizationsByUser = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];
+        const userId = normalizeUserId(ctx, identity.userId);
+        if (!userId) return [];
 
         const memberships = await ctx.db
             .query('member')
-            .withIndex('userId', q => q.eq('userId', identity.userId))
+            .withIndex('userId', q => q.eq('userId', userId))
             .take(LIST_LIMIT);
 
         if (memberships.length === 0) return [];
 
-        const orgIds = [...new Set(memberships.map(m => m.organizationId as Id<'organization'>))];
+        const orgIds = [...new Set(memberships.map(m => m.organizationId))];
         const orgs = await Promise.all(orgIds.map(id => ctx.db.get('organization', id)));
         const orgMap = new Map(
             orgs.filter((o): o is NonNullable<typeof o> => o !== null).map(o => [o._id, o])
@@ -84,7 +95,7 @@ export const getOrganizationsByUser = query({
 
         const organizations = memberships
             .map(member => {
-                const org = orgMap.get(member.organizationId as Id<'organization'>);
+                const org = orgMap.get(member.organizationId);
                 if (!org) return null;
 
                 return {
@@ -108,11 +119,10 @@ export const getActiveOrganization = query({
     handler: async ctx => {
         const currentSession = await resolveCurrentSession(ctx);
         if (!currentSession?.activeOrganizationId) return null;
+        const organizationId = normalizeOrganizationId(ctx, currentSession.activeOrganizationId);
+        if (!organizationId) return null;
 
-        const org = await ctx.db.get(
-            'organization',
-            currentSession.activeOrganizationId as Id<'organization'>
-        );
+        const org = await ctx.db.get('organization', organizationId);
 
         if (!org) return null;
 
@@ -133,11 +143,14 @@ export const getActiveMember = query({
         const currentSession = await resolveCurrentSession(ctx);
         const activeOrganizationId = currentSession?.activeOrganizationId;
         if (!activeOrganizationId) return null;
+        const organizationId = normalizeOrganizationId(ctx, activeOrganizationId);
+        const userId = normalizeUserId(ctx, currentSession.userId);
+        if (!organizationId || !userId) return null;
 
         const member = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', activeOrganizationId).eq('userId', currentSession.userId)
+                q.eq('organizationId', organizationId).eq('userId', userId)
             )
             .first();
 
@@ -163,11 +176,15 @@ export const getOrganizationMembers = query({
         if (!identity) {
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         }
+        const userId = normalizeUserId(ctx, identity.userId);
+        if (!userId) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
 
         const userMembership = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', identity.userId)
+                q.eq('organizationId', args.organizationId).eq('userId', userId)
             )
             .first();
 
@@ -181,14 +198,14 @@ export const getOrganizationMembers = query({
             .order('desc')
             .paginate(args.paginationOpts);
 
-        const userIds = [...new Set(paginatedMembers.page.map(m => m.userId as Id<'user'>))];
+        const userIds = [...new Set(paginatedMembers.page.map(m => m.userId))];
         const users = await Promise.all(userIds.map(id => ctx.db.get('user', id)));
         const userMap = new Map(
             users.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
         );
 
         const enrichedPage = paginatedMembers.page.map(member => {
-            const user = userMap.get(member.userId as Id<'user'>);
+            const user = userMap.get(member.userId);
 
             return {
                 id: member._id,
@@ -219,8 +236,10 @@ export const getUserInvitations = query({
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];
+        const userId = normalizeUserId(ctx, identity.userId);
+        if (!userId) return [];
 
-        const user = await ctx.db.get('user', identity.userId as Id<'user'>);
+        const user = await ctx.db.get('user', userId);
         if (!user) throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
 
         const now = Date.now();
@@ -233,8 +252,8 @@ export const getUserInvitations = query({
 
         if (invitations.length === 0) return [];
 
-        const orgIds = [...new Set(invitations.map(i => i.organizationId as Id<'organization'>))];
-        const inviterIds = [...new Set(invitations.map(i => i.inviterId as Id<'user'>))];
+        const orgIds = [...new Set(invitations.map(i => i.organizationId))];
+        const inviterIds = [...new Set(invitations.map(i => i.inviterId))];
 
         const [orgs, inviters] = await Promise.all([
             Promise.all(orgIds.map(id => ctx.db.get('organization', id))),
@@ -249,8 +268,8 @@ export const getUserInvitations = query({
         );
 
         const invitationsWithDetails = invitations.map(invitation => {
-            const org = orgMap.get(invitation.organizationId as Id<'organization'>);
-            const inviter = userMap.get(invitation.inviterId as Id<'user'>);
+            const org = orgMap.get(invitation.organizationId);
+            const inviter = userMap.get(invitation.inviterId);
 
             return {
                 id: invitation._id,
@@ -286,11 +305,13 @@ export const getOrganizationInvitations = query({
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];
+        const userId = normalizeUserId(ctx, identity.userId);
+        if (!userId) return [];
 
         const userMembership = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', identity.userId)
+                q.eq('organizationId', args.organizationId).eq('userId', userId)
             )
             .first();
 
@@ -305,14 +326,14 @@ export const getOrganizationInvitations = query({
 
         if (invitations.length === 0) return [];
 
-        const inviterIds = [...new Set(invitations.map(i => i.inviterId as Id<'user'>))];
+        const inviterIds = [...new Set(invitations.map(i => i.inviterId))];
         const inviters = await Promise.all(inviterIds.map(id => ctx.db.get('user', id)));
         const userMap = new Map(
             inviters.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
         );
 
         const invitationsWithDetails = invitations.map(invitation => {
-            const inviter = userMap.get(invitation.inviterId as Id<'user'>);
+            const inviter = userMap.get(invitation.inviterId);
 
             return {
                 id: invitation._id,

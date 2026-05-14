@@ -111,14 +111,14 @@ describe('convex update_progress', () => {
 
         await userIdentity.mutation(api.update_progress.createUpdateProgress, {
             objective: objectiveId,
-            updatedValue: 60,
+            updatedValue: 10,
             updateDate: updateDate1,
             comment: 'First update',
         });
 
         await userIdentity.mutation(api.update_progress.createUpdateProgress, {
             objective: objectiveId,
-            updatedValue: 70,
+            updatedValue: 20,
             updateDate: updateDate2,
             comment: 'Second update',
         });
@@ -132,8 +132,68 @@ describe('convex update_progress', () => {
         );
 
         expect(updates.page).toHaveLength(2);
-        expect(updates.page.map(u => u.updatedValue)).toContain(60);
-        expect(updates.page.map(u => u.updatedValue)).toContain(70);
+        expect(updates.page.map(u => u.updatedValue)).toContain(10);
+        expect(updates.page.map(u => u.updatedValue)).toContain(20);
+    });
+
+    test('getProgressSeriesByObjectiveId returns an ordered bounded series for charts', async () => {
+        const base = Date.now();
+        for (let i = 0; i < 3; i++) {
+            await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+                objective: objectiveId,
+                updatedValue: i + 1,
+                updateDate: base + i * 1000,
+            });
+        }
+
+        const series = await userIdentity.query(
+            api.update_progress.getProgressSeriesByObjectiveId,
+            {
+                objectiveId,
+            }
+        );
+
+        expect(series.points.map(update => update.updatedValue)).toEqual([1, 2, 3]);
+        expect(series.points).toHaveLength(3);
+        expect(series.isTruncated).toBe(false);
+    });
+
+    test('getProgressSeriesByObjectiveId returns the most recent bounded chart window and truncation state', async () => {
+        const base = Date.now() - 600_000;
+        for (let i = 0; i < 600; i++) {
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('progressUpdates', {
+                    objective: objectiveId,
+                    userId,
+                    updatedValue: i + 1,
+                    updateDate: base + i * 1000,
+                    createdAt: base + i * 1000,
+                    updatedAt: base + i * 1000,
+                });
+            });
+        }
+
+        const series = (await userIdentity.query(
+            api.update_progress.getProgressSeriesByObjectiveId,
+            {
+                objectiveId,
+            }
+        )) as unknown as {
+            points?: { updatedValue: number; updateDate: number }[];
+            isTruncated?: boolean;
+        };
+
+        expect(series.isTruncated).toBe(true);
+        expect(series.points).toHaveLength(500);
+        expect(series.points?.map(update => update.updatedValue).slice(0, 3)).toEqual([
+            101, 102, 103,
+        ]);
+        expect(series.points?.[series.points.length - 1]?.updatedValue).toBe(600);
+        expect(
+            series.points?.every((update, index, points) =>
+                index === 0 ? true : update.updateDate >= points[index - 1]!.updateDate
+            )
+        ).toBe(true);
     });
 
     test('updateUpdateProgress modifies an existing update', async () => {

@@ -1,5 +1,7 @@
 import { ConvexError } from 'convex/values';
 import { ERROR_CODES, TIME } from './constants';
+import type { MutationCtx } from '../_generated/server';
+import type { Doc } from '../_generated/dataModel';
 
 const MAX_METRIC = 1_000_000_000;
 const MIN_TARGET = 0.001;
@@ -81,4 +83,45 @@ export function validateObjectiveNotCompleted(status: string): void {
     if (status === 'completed') {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
     }
+}
+
+export async function recomputeObjectiveFromProgress(
+    ctx: MutationCtx,
+    objective: Doc<'objectives'>
+): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
+    const baseValue = objective.startValue ?? 0;
+
+    let progressTotal = 0;
+    let cursor: string | null = null;
+    let isDone = false;
+    let updateCount = 0;
+    const PAGINATION_BATCH_SIZE = 500;
+    const MAX_UPDATES = 10000;
+
+    while (!isDone && updateCount < MAX_UPDATES) {
+        const page = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_objective', q => q.eq('objective', objective._id))
+            .paginate({ numItems: PAGINATION_BATCH_SIZE, cursor: cursor ?? null });
+
+        for (const update of page.page) {
+            progressTotal += update.updatedValue;
+        }
+
+        updateCount += page.page.length;
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
+
+    const currentValue = baseValue + progressTotal;
+    const status = currentValue >= objective.targetValue ? 'completed' : 'active';
+    const completedNow = objective.status !== 'completed' && status === 'completed';
+
+    await ctx.db.patch('objectives', objective._id, {
+        currentValue,
+        status,
+        updatedAt: Date.now(),
+    });
+
+    return { currentValue, status, completedNow };
 }

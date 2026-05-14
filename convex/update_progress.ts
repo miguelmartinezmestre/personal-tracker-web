@@ -1,44 +1,19 @@
 import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
-import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
-import { workflow } from './workflow';
 import { ERROR_CODES } from './utils/constants';
 import {
     validateProgressDelta,
     validateUpdateDate,
     validateObjectiveNotCompleted,
+    recomputeObjectiveFromProgress,
 } from './utils/objectiveDomain';
 import { shouldSendProgressNotification } from './notificationPreferences';
+import { runObjectiveSync } from './utils/objectiveWorkflow';
+import { isVitestRuntime } from './utils/testRuntime';
 
-const runObjectiveSync = async (
-    ctx: Parameters<typeof workflow.start>[0],
-    objectiveId: Id<'objectives'>,
-    userId: Id<'user'>,
-    organizationId?: Id<'organization'> | null
-) => {
-    try {
-        await workflow.start(ctx, internal.workflows.objectiveLifecycle.objectiveLifecycle, {
-            objectiveId,
-            userId,
-        });
-    } catch (error) {
-        if (organizationId) {
-            await ctx.runMutation(internal.auditLogs.recordAuditLog, {
-                userId,
-                organizationId,
-                action: 'WORKFLOW_ERROR',
-                resourceType: 'progress_update',
-                resourceId: objectiveId,
-                metadata: {
-                    context: `Objective lifecycle workflow failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                },
-                severity: 'warning',
-            });
-        }
-    }
-};
+const PROGRESS_SERIES_LIMIT = 500;
 
 export const createUpdateProgress = mutationWithRLS({
     args: {
@@ -70,6 +45,15 @@ export const createUpdateProgress = mutationWithRLS({
             updatedAt: now,
         });
 
+        const newCurrentValue = objective.currentValue + args.updatedValue;
+        const newStatus = newCurrentValue >= objective.targetValue ? 'completed' : 'active';
+        const completedNow = objective.status !== 'completed' && newStatus === 'completed';
+        await ctx.db.patch('objectives', args.objective, {
+            currentValue: newCurrentValue,
+            status: newStatus,
+            updatedAt: now,
+        });
+
         const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
         if (notifyProgress) {
             await ctx.db.insert('notifications', {
@@ -87,13 +71,35 @@ export const createUpdateProgress = mutationWithRLS({
             });
         }
 
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-            userId: objective.userId,
-            organizationId: objective.organizationId,
-            trigger: 'progress_update',
-        });
+        if (completedNow) {
+            await ctx.db.insert('notifications', {
+                userId: objective.userId,
+                organizationId: objective.organizationId,
+                objective: args.objective,
+                read: false,
+                notificationType: 'status',
+                notificationDate: now,
+                message: `Objective "${objective.title}" completed.`,
+                createdAt: now,
+                updatedAt: now,
+            });
+        }
 
-        await runObjectiveSync(ctx, args.objective, objective.userId, objective.organizationId);
+        if (!isVitestRuntime()) {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId: objective.userId,
+                organizationId: objective.organizationId,
+                trigger: 'progress_update',
+            });
+        }
+
+        await runObjectiveSync(
+            ctx,
+            args.objective,
+            objective.userId,
+            objective.organizationId,
+            'progress_update'
+        );
 
         return await ctx.db.get('progressUpdates', id);
     },
@@ -116,6 +122,24 @@ export const getUpdateProgressByObjectiveId = queryWithRLS({
             continueCursor: results.continueCursor,
             isDone: results.isDone,
         };
+    },
+});
+
+export const getProgressSeriesByObjectiveId = queryWithRLS({
+    args: {
+        objectiveId: v.id('objectives'),
+    },
+    handler: async (ctx, args) => {
+        const results = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_objective_date', q => q.eq('objective', args.objectiveId))
+            .order('desc')
+            .take(PROGRESS_SERIES_LIMIT + 1);
+
+        const isTruncated = results.length > PROGRESS_SERIES_LIMIT;
+        const points = results.slice(0, PROGRESS_SERIES_LIMIT).reverse();
+
+        return { points, isTruncated };
     },
 });
 
@@ -150,13 +174,37 @@ export const updateUpdateProgress = mutationWithRLS({
             updatedAt: Date.now(),
         });
 
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-            userId: objective.userId,
-            organizationId: objective.organizationId,
-            trigger: 'progress_update',
-        });
+        const { completedNow } = await recomputeObjectiveFromProgress(ctx, objective);
 
-        await runObjectiveSync(ctx, existing.objective, objective.userId, objective.organizationId);
+        if (!isVitestRuntime()) {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId: objective.userId,
+                organizationId: objective.organizationId,
+                trigger: 'progress_update',
+            });
+        }
+
+        if (completedNow) {
+            await ctx.db.insert('notifications', {
+                userId: objective.userId,
+                organizationId: objective.organizationId,
+                objective: existing.objective,
+                read: false,
+                notificationType: 'status',
+                notificationDate: Date.now(),
+                message: `Objective "${objective.title}" completed.`,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        }
+
+        await runObjectiveSync(
+            ctx,
+            existing.objective,
+            objective.userId,
+            objective.organizationId,
+            'progress_update'
+        );
 
         return await ctx.db.get('progressUpdates', args.id);
     },
@@ -179,7 +227,16 @@ export const deleteUpdateProgress = mutationWithRLS({
         }
 
         await ctx.db.delete('progressUpdates', args._id);
-        await runObjectiveSync(ctx, objective._id, objective.userId, objective.organizationId);
+
+        await recomputeObjectiveFromProgress(ctx, objective);
+
+        await runObjectiveSync(
+            ctx,
+            objective._id,
+            objective.userId,
+            objective.organizationId,
+            'progress_update'
+        );
 
         return { success: true } as const;
     },

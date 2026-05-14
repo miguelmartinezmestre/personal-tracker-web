@@ -32,8 +32,9 @@ export async function findCategoryIdByName(
 
     const match = await ctx.db
         .query('categories')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-        .filter(q => q.eq(q.field('name'), trimmed))
+        .withIndex('by_organization_name', q =>
+            q.eq('organizationId', organizationId).eq('name', trimmed)
+        )
         .first();
 
     return match?._id;

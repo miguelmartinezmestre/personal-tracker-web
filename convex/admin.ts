@@ -1,10 +1,9 @@
 import { ConvexError, v } from 'convex/values';
-import { getAuth } from './auth';
+import { getAuth } from './generated/auth';
 import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
 import { mutationWithRLS, queryWithRLS } from './rls';
-import { getHeaders } from 'better-convex/auth';
-import { mutation } from './_generated/server';
+import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
 import { normalizeGlobalUserRole } from './utils/userRole';
@@ -30,7 +29,10 @@ export const listUsers = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
-        const result = await ctx.db.query('user').paginate(args.paginationOpts);
+        const result = await ctx.db
+            .query('user')
+            .withIndex('email_name')
+            .paginate(args.paginationOpts);
 
         return result;
     },
@@ -124,7 +126,7 @@ export const deleteUser = mutationWithRLS({
     },
 });
 
-export const revokeUserSession = mutation({
+export const revokeUserSession = mutationWithRLS({
     args: {
         userId: v.id('user'),
         sessionId: v.id('session'),
