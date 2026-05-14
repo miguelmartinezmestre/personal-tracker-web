@@ -10,7 +10,7 @@ import { api } from '@/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
 import { Preloaded } from 'convex/react';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { usePreloadedQuery } from 'convex/react';
 
 const SKELETON_COUNTS = [1, 2, 3, 4];
 
@@ -21,8 +21,8 @@ export function AchievementsWidget({
     preloadedUserAchievementStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
     preloadedUserRecentAchievementsQuery: Preloaded<typeof api.achievements.getRecentAchievements>;
 }) {
-    const stats = usePreloadedAuthQuery(preloadedUserAchievementStatsQuery);
-    const recentAchievements = usePreloadedAuthQuery(preloadedUserRecentAchievementsQuery);
+    const stats = usePreloadedQuery(preloadedUserAchievementStatsQuery);
+    const recentAchievements = usePreloadedQuery(preloadedUserRecentAchievementsQuery);
 
     const t = useTranslations('Achievements');
 
