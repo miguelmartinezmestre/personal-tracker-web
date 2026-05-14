@@ -27,10 +27,10 @@ export default function ForgetPasswordForm() {
     const [loginError, setLoginError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const form = useForm<z.infer<typeof forgetPasswordSchema>>({
+    const form = useForm({
         defaultValues: {
             email: '',
-        },
+        } as z.infer<typeof forgetPasswordSchema>,
         validators: {
             onChange: forgetPasswordSchema,
             onSubmit: forgetPasswordSchema,

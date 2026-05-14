@@ -32,12 +32,12 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
     const [registerError, setRegisterError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const form = useForm<z.infer<typeof resetPasswordSchema>>({
+    const form = useForm({
         defaultValues: {
             password: '',
             confirmPassword: '',
             resetPasswordKey: resetPasswordKey || '',
-        },
+        } as z.infer<typeof resetPasswordSchema>,
         validators: {
             onChange: resetPasswordSchema,
             onSubmit: resetPasswordSchema,
