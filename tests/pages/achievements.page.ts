@@ -42,28 +42,57 @@ export class AchievementsPage {
     }
 
     async goto() {
-        await this.page.goto('/dashboard/achievements');
+        for (let attempt = 0; attempt < 3; attempt++) {
+            await this.page.goto('/dashboard/achievements', { waitUntil: 'domcontentloaded' });
+
+            const result = await Promise.race([
+                this.achievementsPage
+                    .waitFor({ state: 'visible', timeout: 5000 })
+                    .then(() => 'ready' as const)
+                    .catch(() => 'timeout' as const),
+                this.page
+                    .getByRole('heading', { name: /this page couldn.t load/i })
+                    .waitFor({ state: 'visible', timeout: 5000 })
+                    .then(() => 'error' as const)
+                    .catch(() => 'timeout' as const),
+            ]);
+
+            if (result === 'ready') {
+                return;
+            }
+
+            await this.page.waitForTimeout(500);
+        }
     }
 
     async filterBy(filter: 'all' | 'earned' | 'locked') {
+        const click = async (locator: Locator) => {
+            await locator.waitFor({ state: 'visible', timeout: 10000 });
+            await locator.evaluate(element => {
+                (element as HTMLElement).click();
+            });
+        };
+
         switch (filter) {
             case 'all':
-                await this.filterAll.click();
+                await click(this.filterAll);
                 break;
             case 'earned':
-                await this.filterEarned.click();
+                await click(this.filterEarned);
                 break;
             case 'locked':
-                await this.filterLocked.click();
+                await click(this.filterLocked);
                 break;
         }
     }
 
     async switchToIndividual() {
-        await this.tabIndividual.click();
+        await this.tabIndividual.waitFor({ state: 'visible', timeout: 10000 });
+        await this.tabIndividual.click({ force: true });
     }
 
     async switchToOrganization() {
-        await this.tabOrganization.click();
+        await this.tabOrganization.waitFor({ state: 'visible', timeout: 10000 });
+        await this.tabOrganization.click({ force: true });
     }
 }
