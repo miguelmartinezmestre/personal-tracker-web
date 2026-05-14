@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/features/table/components/table';
@@ -26,18 +26,8 @@ export function UserSessions() {
     const columns = useUserSessionsTableColumns(userId ? (userId as Id<'user'>) : undefined);
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-        reset,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
 
     const { data: sessionsQueryResult, isLoading } = useQuery(
         convexQuery(
@@ -48,17 +38,11 @@ export function UserSessions() {
 
     const sessions = sessionsQueryResult as UserSessionsQueryResult | undefined;
 
-    const hasData = sessions !== undefined;
     const continueCursor = sessions?.continueCursor ?? null;
     const pageIsDone = sessions?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const data = sessions?.page ?? [];
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="space-y-4">
@@ -94,11 +78,11 @@ export function UserSessions() {
                         isLoading={isLoading}
                         pagination={{
                             currentPage,
-                            totalPages,
-                            onPageChange: goToPage,
+                            onNextPage: () => nextPage(continueCursor, pageIsDone),
+                            onPreviousPage: previousPage,
                             hasNextPage,
                             hasPreviousPage,
-                            pageSize: DEFAULT_PAGE_SIZE,
+                            isLoading,
                         }}
                     />
                     {data.length === 0 && !isLoading && (

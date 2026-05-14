@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/features/table/components/table';
@@ -23,17 +22,8 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
     const t = useTranslations('Admin');
     const columns = useAuditLogsTableColumns();
 
-    const {
-        currentPage,
-        isDone,
-        getPaginationOpts,
-        updateCursor,
-        goToPage,
-        hasNextPage,
-        hasPreviousPage,
-    } = useServerPagination(DEFAULT_PAGE_SIZE);
-
-    const paginationOpts = getPaginationOpts(currentPage);
+    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+        useServerPagination(DEFAULT_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
 
     const logs = useQuery({
@@ -41,17 +31,11 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
         initialData: isFirstPage ? initialLogs : undefined,
     });
 
-    const hasData = logs.data !== undefined;
     const continueCursor = logs.data?.continueCursor ?? null;
     const pageIsDone = logs.data?.isDone ?? false;
-
-    useEffect(() => {
-        if (!hasData || logs.isFetching) return;
-        updateCursor(currentPage, continueCursor, pageIsDone);
-    }, [currentPage, hasData, continueCursor, pageIsDone, logs.isFetching, updateCursor]);
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const data: Doc<'auditLogs'>[] = logs.data?.page ?? [];
-    const totalPages = isDone ? currentPage + 1 : currentPage + 2;
 
     return (
         <div className="space-y-4">
@@ -67,11 +51,11 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
                 isLoading={logs.isLoading}
                 pagination={{
                     currentPage,
-                    totalPages,
-                    onPageChange: goToPage,
+                    onNextPage: () => nextPage(continueCursor, pageIsDone),
+                    onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    pageSize: DEFAULT_PAGE_SIZE,
+                    isLoading: logs.isFetching,
                 }}
             />
             {data.length === 0 && !logs.isLoading && (

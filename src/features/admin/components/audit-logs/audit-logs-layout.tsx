@@ -5,7 +5,7 @@ import { AuditLogsTable } from '@/features/admin/components/audit-logs/audit-log
 import { useTranslations } from 'next-intl';
 import { Preloaded } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { usePreloadedAuthQuery } from '@convex-dev/better-auth/nextjs/client';
+import { useConvexAuth, usePreloadedQuery } from 'convex/react';
 import { FunctionReturnType } from 'convex/server';
 
 type AuditLogsResult = FunctionReturnType<typeof api.auditLogs.getAuditLogs>;
@@ -15,8 +15,22 @@ export default function AuditLogsLayout({
 }: {
     preloadedAuditLogsQuery: Preloaded<typeof api.auditLogs.getAuditLogs>;
 }) {
+    const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+
+    if (authLoading || !isAuthenticated) {
+        return null;
+    }
+
+    return <AuditLogsContent preloadedAuditLogsQuery={preloadedAuditLogsQuery} />;
+}
+
+function AuditLogsContent({
+    preloadedAuditLogsQuery,
+}: {
+    preloadedAuditLogsQuery: Preloaded<typeof api.auditLogs.getAuditLogs>;
+}) {
     const t = useTranslations('Admin');
-    const logs = usePreloadedAuthQuery(preloadedAuditLogsQuery);
+    const logs = usePreloadedQuery(preloadedAuditLogsQuery);
 
     return (
         <div className="space-y-6">
