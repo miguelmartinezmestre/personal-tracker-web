@@ -29,30 +29,66 @@ async function setActiveOrganizationViaBrowser(
 
 async function waitForAdminDashboardReady(page: Page): Promise<void> {
     const deadline = Date.now() + 15_000;
+    const diagnostics: string[] = [];
+    const pushDiagnostic = (message: string) => {
+        diagnostics.push(message);
+        if (diagnostics.length > 12) {
+            diagnostics.shift();
+        }
+    };
+    const onPageError = (error: Error) => {
+        pushDiagnostic(`pageerror: ${error.message}`);
+    };
+    const onConsole = (message: { type(): string; text(): string }) => {
+        if (message.type() === 'error') {
+            pushDiagnostic(`console: ${message.text()}`);
+        }
+    };
+    const onResponse = (response: { status(): number; url(): string }) => {
+        if (response.status() >= 500) {
+            pushDiagnostic(`response ${response.status()}: ${response.url()}`);
+        }
+    };
 
-    while (Date.now() < deadline) {
-        try {
-            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+    page.on('pageerror', onPageError);
+    page.on('console', onConsole);
+    page.on('response', onResponse);
 
-            const currentUrl = page.url();
-            if (!/\/dashboard\/home(\?|$)/.test(currentUrl)) {
-                await page.waitForTimeout(500);
-                continue;
-            }
+    try {
+        while (Date.now() < deadline) {
+            try {
+                await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 
-            const switcher = page.getByTestId('organization-switcher');
-            if ((await switcher.count()) > 0) {
-                const text = ((await switcher.first().textContent()) ?? '').toLowerCase();
-                if (!text.includes('no organization') && !text.includes('sin organizacion')) {
-                    return;
+                const currentUrl = page.url();
+                if (!/\/dashboard\/home(\?|$)/.test(currentUrl)) {
+                    await page.waitForTimeout(500);
+                    continue;
+                }
+
+                const switcher = page.getByTestId('organization-switcher');
+                if ((await switcher.count()) > 0) {
+                    const text = ((await switcher.first().textContent()) ?? '').toLowerCase();
+                    if (!text.includes('no organization') && !text.includes('sin organizacion')) {
+                        return;
+                    }
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    pushDiagnostic(`wait error: ${error.message}`);
                 }
             }
-        } catch {}
 
-        await page.waitForTimeout(500);
+            await page.waitForTimeout(500);
+        }
+
+        throw new Error(
+            `Admin session did not reach a ready dashboard state. ${diagnostics.join(' | ')}`
+        );
+    } finally {
+        page.off('pageerror', onPageError);
+        page.off('console', onConsole);
+        page.off('response', onResponse);
     }
-
-    throw new Error('Admin session did not reach a ready dashboard state');
 }
 
 export async function createAdminSession(page: Page): Promise<void> {
