@@ -8,13 +8,12 @@ import { objectiveScopeValidator, objectiveStatusValidator } from './utils/valid
 import { ERROR_CODES } from './utils/constants';
 import { validateObjectiveMetrics } from './utils/objectiveDomain';
 import { findCategoryIdByName, getCategoryForObjective } from './utils/categoryResolution';
-import { deadlineRangeValidator, getDeadlineRangeBounds } from './utils/objectiveFilters';
+import { deadlineRangeValidator } from './utils/objectiveFilters';
 import { runObjectiveSync } from './utils/objectiveWorkflow';
 import { isVitestRuntime } from './utils/testRuntime';
+import { listObjectives, searchObjectives } from './utils/objectiveList';
 
 const BATCH_SIZE = 50;
-
-const EMPTY_PAGE = { page: [], continueCursor: '', isDone: true };
 
 function assertCanModifyObjective(
     ctx: { userId: Id<'user'>; organizationId: Id<'organization'> | null; role: string },
@@ -40,8 +39,6 @@ function assertCanModifyObjective(
     throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
 }
 
-export { searchObjectivesByUser, searchOrganizationObjectives } from './utils/objectiveSearch';
-
 export const getObjectivesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
@@ -50,42 +47,13 @@ export const getObjectivesByUser = queryWithRLS({
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, { paginationOpts, status, category, deadlineRange }) => {
-        const userId = ctx.userId;
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return EMPTY_PAGE;
-        }
-
-        const categoryFilter = category && category !== 'all' ? category : undefined;
-        let query = ctx.db
-            .query('objectives')
-            .withIndex('by_user_organization', q =>
-                q.eq('userId', userId).eq('organizationId', organizationId)
-            )
-            .filter(q => q.eq(q.field('scope'), 'personal'));
-
-        if (status) {
-            query = query.filter(q => q.eq(q.field('status'), status));
-        }
-
-        if (categoryFilter) {
-            query = query.filter(q => q.eq(q.field('category'), categoryFilter));
-        }
-
-        if (deadlineRange) {
-            const bounds = getDeadlineRangeBounds(deadlineRange);
-            query = query.filter(q => {
-                const deadline = q.field('deadline');
-
-                if (bounds.gte !== undefined) {
-                    return q.and(q.gte(deadline, bounds.gte), q.lt(deadline, bounds.lt));
-                }
-
-                return q.and(q.gte(deadline, 0), q.lt(deadline, bounds.lt));
-            });
-        }
-
-        return await query.order('desc').paginate(paginationOpts);
+        return await listObjectives(ctx, {
+            section: 'personal',
+            paginationOpts,
+            status,
+            category,
+            deadlineRange,
+        });
     },
 });
 
@@ -97,127 +65,45 @@ export const getOrganizationObjectives = queryWithRLS({
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, { paginationOpts, status, category, deadlineRange }) => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return EMPTY_PAGE;
-        }
-        const categoryFilter = category && category !== 'all' ? category : undefined;
+        return await listObjectives(ctx, {
+            section: 'organization',
+            paginationOpts,
+            status,
+            category,
+            deadlineRange,
+        });
+    },
+});
 
-        if (deadlineRange) {
-            const bounds = getDeadlineRangeBounds(deadlineRange);
+export const searchObjectivesByUser = queryWithRLS({
+    args: {
+        search: v.string(),
+        limit: v.optional(v.number()),
+        status: v.optional(objectiveStatusValidator),
+        category: v.optional(v.string()),
+        deadlineRange: v.optional(deadlineRangeValidator),
+    },
+    handler: async (ctx, args) => {
+        return await searchObjectives(ctx, {
+            section: 'personal',
+            ...args,
+        });
+    },
+});
 
-            if (status && categoryFilter) {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization_scope_status_category_deadline', q => {
-                        const indexed = q
-                            .eq('organizationId', organizationId)
-                            .eq('scope', 'organization')
-                            .eq('status', status)
-                            .eq('category', categoryFilter);
-                        return bounds.gte !== undefined
-                            ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                            : indexed.lt('deadline', bounds.lt);
-                    })
-                    .order('desc')
-                    .paginate(paginationOpts);
-            }
-
-            if (status) {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization_scope_status_deadline', q => {
-                        const indexed = q
-                            .eq('organizationId', organizationId)
-                            .eq('scope', 'organization')
-                            .eq('status', status);
-                        return bounds.gte !== undefined
-                            ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                            : indexed.lt('deadline', bounds.lt);
-                    })
-                    .order('desc')
-                    .paginate(paginationOpts);
-            }
-
-            if (categoryFilter) {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization_scope_category_deadline', q => {
-                        const indexed = q
-                            .eq('organizationId', organizationId)
-                            .eq('scope', 'organization')
-                            .eq('category', categoryFilter);
-                        return bounds.gte !== undefined
-                            ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                            : indexed.lt('deadline', bounds.lt);
-                    })
-                    .order('desc')
-                    .paginate(paginationOpts);
-            }
-
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_scope_deadline', q => {
-                    const indexed = q
-                        .eq('organizationId', organizationId)
-                        .eq('scope', 'organization');
-                    return bounds.gte !== undefined
-                        ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                        : indexed.lt('deadline', bounds.lt);
-                })
-                .order('desc')
-                .paginate(paginationOpts);
-        }
-
-        if (status) {
-            const query = ctx.db
-                .query('objectives')
-                .withIndex('by_organization_scope_status', q =>
-                    q
-                        .eq('organizationId', organizationId)
-                        .eq('scope', 'organization')
-                        .eq('status', status)
-                )
-                .order('desc');
-
-            if (categoryFilter) {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization_scope_status_category', q =>
-                        q
-                            .eq('organizationId', organizationId)
-                            .eq('scope', 'organization')
-                            .eq('status', status)
-                            .eq('category', categoryFilter)
-                    )
-                    .order('desc')
-                    .paginate(paginationOpts);
-            }
-
-            return await query.paginate(paginationOpts);
-        }
-
-        const query = ctx.db
-            .query('objectives')
-            .withIndex('by_organization_scope', q =>
-                q.eq('organizationId', organizationId).eq('scope', 'organization')
-            )
-            .order('desc');
-
-        if (categoryFilter) {
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_scope_category', q =>
-                    q
-                        .eq('organizationId', organizationId)
-                        .eq('scope', 'organization')
-                        .eq('category', categoryFilter)
-                )
-                .order('desc')
-                .paginate(paginationOpts);
-        }
-
-        return await query.paginate(paginationOpts);
+export const searchOrganizationObjectives = queryWithRLS({
+    args: {
+        search: v.string(),
+        limit: v.optional(v.number()),
+        status: v.optional(objectiveStatusValidator),
+        category: v.optional(v.string()),
+        deadlineRange: v.optional(deadlineRangeValidator),
+    },
+    handler: async (ctx, args) => {
+        return await searchObjectives(ctx, {
+            section: 'organization',
+            ...args,
+        });
     },
 });
 
