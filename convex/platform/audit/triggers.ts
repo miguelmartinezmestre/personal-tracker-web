@@ -1,7 +1,7 @@
 import { Triggers, type Change } from 'convex-helpers/server/triggers';
 import type { TableNamesInDataModel } from 'convex/server';
-import type { DatabaseWriter } from './_generated/server';
-import type { DataModel, Id } from './_generated/dataModel';
+import type { DatabaseWriter } from '../../_generated/server';
+import type { DataModel, Id } from '../../_generated/dataModel';
 
 type AuditTriggerCtx = {
     db: DatabaseWriter;

@@ -1,7 +1,7 @@
-import type { MutationCtx, QueryCtx } from '../_generated/server';
-import type { Doc, Id } from '../_generated/dataModel';
+import type { MutationCtx, QueryCtx } from '../../_generated/server';
+import type { Doc, Id } from '../../_generated/dataModel';
 import { ConvexError } from 'convex/values';
-import { ERROR_CODES } from './constants';
+import { ERROR_CODES } from '../../utils/constants';
 
 export async function getCategoryForObjective(
     ctx: QueryCtx | MutationCtx,

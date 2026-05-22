@@ -10,7 +10,7 @@ import {
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
-import { calculateUserStreak } from '../achievements_utils/calculations';
+import { calculateUserStreak } from '../domain/achievements/calculations';
 import { TIME } from '../utils/constants';
 
 describe('achievements multi-tenancy security', async () => {

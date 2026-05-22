@@ -6,7 +6,7 @@ import { DataModel } from '../_generated/dataModel';
 import {
     calculateUserStreak,
     calculateOrganizationStreak,
-} from '../achievements_utils/calculations';
+} from '../domain/achievements/calculations';
 import { TIME } from '../utils/constants';
 import { Id } from '../_generated/dataModel';
 

@@ -1,6 +1,6 @@
-import type { DatabaseReader } from '../_generated/server';
-import { Doc, Id } from '../_generated/dataModel';
-import { TIME, ERROR_CODES } from '../utils/constants';
+import type { DatabaseReader } from '../../_generated/server';
+import { Doc, Id } from '../../_generated/dataModel';
+import { TIME, ERROR_CODES } from '../../utils/constants';
 import { ConvexError } from 'convex/values';
 
 const PAGE_SIZE = 500;

@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { getEmailProvider, getResendEmailConfig, getSmtpEmailConfig } from '../utils/emailConfig';
+import {
+    getEmailProvider,
+    getResendEmailConfig,
+    getSmtpEmailConfig,
+} from '../platform/email/config';
 
 describe('email provider configuration', () => {
     test('defaults to Resend when EMAIL_PROVIDER is omitted', () => {

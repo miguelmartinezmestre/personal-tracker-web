@@ -1,7 +1,7 @@
 import { queryWithRLS } from './rls';
 import { v } from 'convex/values';
 import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
-import { computeProgressPercent } from './utils/objectiveProgress';
+import { computeProgressPercent } from './domain/objectives/metrics';
 
 const LIST_LIMIT = 1000;
 

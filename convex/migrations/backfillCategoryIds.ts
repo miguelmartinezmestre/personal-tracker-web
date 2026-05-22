@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 import { internal } from '../_generated/api';
 import { internalMutation } from '../_generated/server';
-import { findCategoryIdByName } from '../utils/categoryResolution';
+import { findCategoryIdByName } from '../domain/objectives/categoryResolution';
 
 export const backfillCategoryIds = internalMutation({
     args: {

@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
-import { internal } from './_generated/api';
+import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
 
@@ -59,30 +59,10 @@ export const getAuditLogsByResource = queryWithRLS({
     },
 });
 
-const AUDIT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
-const PRUNE_BATCH = 256;
-
 export const pruneAuditLogsOlderThanRetention = internalMutation({
     args: {},
     handler: async ctx => {
-        const cutoff = Date.now() - AUDIT_RETENTION_MS;
-
-        const batch = await ctx.db
-            .query('auditLogs')
-            .withIndex('by_createdAt', q => q.lt('createdAt', cutoff))
-            .take(PRUNE_BATCH);
-
-        for (const row of batch) {
-            await ctx.db.delete(row._id);
-        }
-
-        if (batch.length === PRUNE_BATCH) {
-            await ctx.scheduler.runAfter(
-                0,
-                internal.auditLogs.pruneAuditLogsOlderThanRetention,
-                {}
-            );
-        }
+        return await pruneAuditLogsOlderThanRetentionJob(ctx);
     },
 });
 

@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
-import { internal } from '../_generated/api';
-import { workflow } from '../workflow';
+import { internal } from '../../_generated/api';
+import { workflow } from '../../workflow';
 
 const objectiveLifecycleResultValidator = v.object({
     objectiveId: v.id('objectives'),
@@ -27,7 +27,7 @@ export const objectiveLifecycle = workflow.define({
         reopened: boolean;
     }> => {
         const syncResult = await step.runMutation(
-            internal.steps.objectives.syncObjectiveFromProgress,
+            internal.jobs.objectives.syncObjectiveFromProgress.syncObjectiveFromProgress,
             {
                 objectiveId: args.objectiveId,
             }
