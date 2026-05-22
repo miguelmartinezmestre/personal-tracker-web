@@ -4,6 +4,7 @@ import { ConvexError, v } from 'convex/values';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
+import { env } from './lib/env';
 
 export const isPlatformSetUp = query({
     args: {},
@@ -248,7 +249,7 @@ export const ensureTestOrganization = mutation({
 
         const userId = identity.userId;
 
-        if (process.env.ALLOW_SETUP_TEST !== 'true') {
+        if (!env.ALLOW_SETUP_TEST) {
             await ctx.runQuery(internal.setup.requireAdminInternal, { userId });
         }
 

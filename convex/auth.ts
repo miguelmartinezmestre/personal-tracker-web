@@ -20,6 +20,7 @@ import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
+import { buildInvitationEmail } from './utils/invitationEmail';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
@@ -75,7 +76,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
 });
 
 const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
-    baseURL: env.SITE_URL,
+    baseURL: env.BETTER_AUTH_URL,
     user: {
         deleteUser: {
             enabled: true,
@@ -84,7 +85,7 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
     emailAndPassword: {
         enabled: true,
         sendResetPassword: async ({ user, url }, _request) => {
-            await (ctx as MutationCtx).runMutation(internal.email.sendTestEmail, {
+            await (ctx as MutationCtx).runMutation(internal.email.sendTransactionalEmail, {
                 to: user.email,
                 subject: 'Reset your password',
                 text: `Click the link to reset your password: ${url}`,
@@ -145,13 +146,27 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
     plugins: [
         convex({
             authConfig,
-            jwks: process.env.JWKS,
+            jwks: env.JWKS,
         }),
         admin(),
         organization({
             invitationExpiresIn: 60 * 60 * 24 * 2,
             defaultRole: 'member',
-            sendInvitationEmail: async () => {},
+            sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
+                const invitationEmail = buildInvitationEmail({
+                    siteUrl: env.SITE_URL,
+                    invitationId: id,
+                    inviteeEmail: email,
+                    organizationName: organization.name,
+                    inviterName: inviter.user.name ?? inviter.user.email,
+                    role,
+                });
+
+                await (ctx as MutationCtx).runMutation(
+                    internal.email.sendTransactionalEmail,
+                    invitationEmail
+                );
+            },
         }),
     ],
     triggers: authAuditTriggers as never,
