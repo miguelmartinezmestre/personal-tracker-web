@@ -1,1 +1,6 @@
 **/components/ui/**/*.tsx
+convex/_generated/
+infrastructure/data/
+infrastructure/data-dev/
+infrastructure/mysql-data/
+infrastructure/mysql-data-dev/
