@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
-import { internal } from '../_generated/api';
-import { internalMutation } from '../_generated/server';
-import { workflow } from '../workflow';
+import { internal } from '../../_generated/api';
+import { internalMutation } from '../../_generated/server';
+import { workflow } from '../../workflow';
 import { vWorkflowId } from '@convex-dev/workflow';
 import { vResultValidator } from '@convex-dev/workpool';
 

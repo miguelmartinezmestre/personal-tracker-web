@@ -1,9 +1,9 @@
 import type { PaginationOptions } from 'convex/server';
-import type { Doc, Id } from '../_generated/dataModel';
-import type { DatabaseReader } from '../_generated/server';
-import type { ObjectiveStatus } from './constants';
-import type { DeadlineRange } from './objectiveFilters';
-import { getDeadlineRangeBounds, matchesDeadlineRange } from './objectiveFilters';
+import type { Doc, Id } from '../../_generated/dataModel';
+import type { DatabaseReader } from '../../_generated/server';
+import type { ObjectiveStatus } from '../../utils/constants';
+import type { DeadlineRange } from './filters';
+import { getDeadlineRangeBounds, matchesDeadlineRange } from './filters';
 
 const SEARCH_LIMIT = 50;
 const SEARCH_SCAN_LIMIT = 500;

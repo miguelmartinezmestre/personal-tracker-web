@@ -6,6 +6,7 @@ const e2eDistDir = process.env.NEXT_DIST_DIR;
 
 const nextConfig: NextConfig = {
     reactCompiler: true,
+    output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
     experimental: {
         turbopackFileSystemCacheForDev: e2eDistDir ? false : true,
     },

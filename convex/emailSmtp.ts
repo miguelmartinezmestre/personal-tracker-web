@@ -1,9 +1,8 @@
 'use node';
 
-import nodemailer from 'nodemailer';
-import { internalAction } from './_generated/server';
 import { v } from 'convex/values';
-import { getSmtpEmailConfig } from './utils/emailConfig';
+import { internalAction } from './_generated/server';
+import { sendSmtpEmailJob } from './jobs/email/smtpDelivery';
 
 export const sendEmail = internalAction({
     args: {
@@ -13,25 +12,6 @@ export const sendEmail = internalAction({
         html: v.optional(v.string()),
     },
     handler: async (_, args) => {
-        const config = getSmtpEmailConfig();
-        const transporter = nodemailer.createTransport({
-            host: config.host,
-            port: config.port,
-            secure: config.secure,
-            auth: {
-                user: config.user,
-                pass: config.password,
-            },
-        });
-
-        await transporter.sendMail({
-            from: config.from,
-            to: args.to,
-            subject: args.subject,
-            text: args.text,
-            html: args.html,
-        });
-
-        return { message: 'Email sent successfully' };
+        return await sendSmtpEmailJob(args);
     },
 });

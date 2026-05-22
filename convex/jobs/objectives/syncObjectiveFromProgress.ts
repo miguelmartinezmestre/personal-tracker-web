@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
-import { internalMutation } from '../_generated/server';
-import { shouldSendProgressNotification } from '../notificationPreferences';
-import { recomputeObjectiveFromProgress } from '../utils/objectiveDomain';
+import { internalMutation } from '../../_generated/server';
+import { shouldSendProgressNotification } from '../../domain/notifications/preferences';
+import { recomputeObjectiveFromProgress } from '../../domain/objectives/metrics';
 
 export const syncObjectiveFromProgress = internalMutation({
     args: {

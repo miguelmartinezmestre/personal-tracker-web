@@ -1,0 +1,58 @@
+# Dependencies
+node_modules
+.pnpm-debug.log*
+
+# Git
+.git
+.gitignore
+
+# Build outputs
+.next
+.next-e2e
+.next-e2e-*
+
+# Coverage & test results
+coverage
+test-results
+playwright-report
+
+# Local env files (secrets)
+.env
+.env.local
+.env.*.local
+convex/.env
+convex/.env.local
+convex/.env.*.local
+
+# Data volumes
+mysql-data
+mysql-data-dev
+mysql-data-e2e
+data
+data-dev
+data-e2e
+
+# Playwright auth states
+tests/.auth
+
+# IDE & tooling
+.vscode
+.claude
+.codex
+
+# Documentation
+*.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Infrastructure scripts
+infrastructure/
+scripts/
+
+# Misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts

@@ -3,7 +3,7 @@ import {
     buildInvitationEmail,
     buildInvitationUrl,
     formatInvitationRole,
-} from '../utils/invitationEmail';
+} from '../platform/email/invitationEmail';
 
 describe('invitation email helpers', () => {
     test('builds the public invitation URL from the app site URL', () => {

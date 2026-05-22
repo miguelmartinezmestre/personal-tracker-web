@@ -20,7 +20,7 @@ import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
-import { buildInvitationEmail } from './utils/invitationEmail';
+import { buildInvitationEmail } from './platform/email/invitationEmail';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;

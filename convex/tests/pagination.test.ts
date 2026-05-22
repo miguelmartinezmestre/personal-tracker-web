@@ -9,7 +9,7 @@ import {
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
-import { normalizeObjectiveListFilters } from '../utils/objectiveList';
+import { normalizeObjectiveListFilters } from '../domain/objectives/list';
 
 describe('convex pagination', () => {
     const t = initConvexTest();

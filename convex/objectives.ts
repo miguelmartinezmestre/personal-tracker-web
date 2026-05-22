@@ -6,14 +6,20 @@ import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { objectiveScopeValidator, objectiveStatusValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
-import { validateObjectiveMetrics } from './utils/objectiveDomain';
-import { findCategoryIdByName, getCategoryForObjective } from './utils/categoryResolution';
-import { deadlineRangeValidator } from './utils/objectiveFilters';
-import { runObjectiveSync } from './utils/objectiveWorkflow';
+import { validateObjectiveMetrics } from './domain/objectives/metrics';
+import {
+    findCategoryIdByName,
+    getCategoryForObjective,
+} from './domain/objectives/categoryResolution';
+import { deadlineRangeValidator } from './domain/objectives/filters';
+import { runObjectiveSync } from './domain/objectives/workflowSync';
 import { isVitestRuntime } from './utils/testRuntime';
-import { listObjectives, searchObjectives } from './utils/objectiveList';
-
-const BATCH_SIZE = 50;
+import { listObjectives, searchObjectives } from './domain/objectives/list';
+import { backfillObjectiveCategoryIdsJob } from './jobs/objectives/backfillCategoryIds';
+import {
+    continueObjectiveDeletion,
+    deleteObjectiveWithDependents,
+} from './jobs/objectives/deleteObjective';
 
 function assertCanModifyObjective(
     ctx: { userId: Id<'user'>; organizationId: Id<'organization'> | null; role: string },
@@ -297,29 +303,7 @@ export const backfillObjectiveCategoryIds = internalMutation({
         cursor: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const BATCH = 100;
-        const page = await ctx.db.query('objectives').paginate({
-            numItems: BATCH,
-            cursor: args.cursor ?? null,
-        });
-
-        for (const objective of page.page) {
-            if (objective.categoryId || !objective.category?.trim()) continue;
-            const cid = await findCategoryIdByName(
-                ctx,
-                objective.organizationId,
-                objective.category
-            );
-            if (cid) {
-                await ctx.db.patch(objective._id, { categoryId: cid });
-            }
-        }
-
-        if (!page.isDone) {
-            await ctx.scheduler.runAfter(0, internal.objectives.backfillObjectiveCategoryIds, {
-                cursor: page.continueCursor,
-            });
-        }
+        return await backfillObjectiveCategoryIdsJob(ctx, args);
     },
 });
 
@@ -332,107 +316,7 @@ export const deleteObjectiveContinue = internalMutation({
         totalNotificationsDeleted: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const phase = args.phase ?? 'progress';
-        const totalProgressDeleted = args.totalProgressDeleted ?? 0;
-        const totalNotificationsDeleted = args.totalNotificationsDeleted ?? 0;
-        const objective = await ctx.db.get(args.objectiveId);
-
-        if (!objective) {
-            return {
-                status: 'completed',
-                noOp: true,
-                deleted: {
-                    progress: totalProgressDeleted,
-                    notifications: totalNotificationsDeleted,
-                },
-            };
-        }
-
-        if (phase === 'progress') {
-            const page = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-                .paginate({
-                    numItems: BATCH_SIZE,
-                    cursor: null,
-                });
-
-            for (const update of page.page) {
-                await ctx.db.delete(update._id);
-            }
-
-            const newTotalProgress = totalProgressDeleted + page.page.length;
-
-            if (!page.isDone) {
-                await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-                    objectiveId: args.objectiveId,
-                    phase: 'progress',
-                    cursor: null,
-                    totalProgressDeleted: newTotalProgress,
-                    totalNotificationsDeleted,
-                });
-                return {
-                    status: 'in_progress',
-                    phase: 'progress',
-                    deleted: {
-                        progress: newTotalProgress,
-                        notifications: totalNotificationsDeleted,
-                    },
-                };
-            }
-
-            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-                objectiveId: args.objectiveId,
-                phase: 'notifications',
-                cursor: null,
-                totalProgressDeleted: newTotalProgress,
-                totalNotificationsDeleted,
-            });
-            return {
-                status: 'in_progress',
-                phase: 'notifications',
-                deleted: { progress: newTotalProgress, notifications: totalNotificationsDeleted },
-            };
-        }
-
-        const page = await ctx.db
-            .query('notifications')
-            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
-            .paginate({
-                numItems: BATCH_SIZE,
-                cursor: null,
-            });
-
-        for (const notification of page.page) {
-            await ctx.db.delete(notification._id);
-        }
-
-        const newTotalNotifications = totalNotificationsDeleted + page.page.length;
-
-        if (!page.isDone) {
-            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-                objectiveId: args.objectiveId,
-                phase: 'notifications',
-                cursor: null,
-                totalProgressDeleted,
-                totalNotificationsDeleted: newTotalNotifications,
-            });
-            return {
-                status: 'in_progress',
-                phase: 'notifications',
-                deleted: {
-                    progress: totalProgressDeleted,
-                    notifications: newTotalNotifications,
-                },
-            };
-        }
-
-        await ctx.db.delete(args.objectiveId);
-
-        return {
-            status: 'completed',
-            deleted: { progress: totalProgressDeleted, notifications: newTotalNotifications },
-        };
+        return await continueObjectiveDeletion(ctx, args);
     },
 });
 
@@ -448,57 +332,6 @@ export const deleteObjective = mutationWithRLS({
 
         assertCanModifyObjective(ctx, objective);
 
-        const progressBatch = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', args.id))
-            .take(BATCH_SIZE + 1);
-
-        if (progressBatch.length > BATCH_SIZE) {
-            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-                objectiveId: args.id,
-                phase: 'progress',
-                cursor: null,
-                totalProgressDeleted: 0,
-                totalNotificationsDeleted: 0,
-            });
-
-            return { status: 'deletion_started', objectiveId: args.id };
-        }
-
-        for (const update of progressBatch) {
-            await ctx.db.delete(update._id);
-        }
-
-        const notificationsBatch = await ctx.db
-            .query('notifications')
-            .withIndex('by_objective', q => q.eq('objective', args.id))
-            .take(BATCH_SIZE + 1);
-
-        if (notificationsBatch.length > BATCH_SIZE) {
-            await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-                objectiveId: args.id,
-                phase: 'notifications',
-                cursor: null,
-                totalProgressDeleted: progressBatch.length,
-                totalNotificationsDeleted: 0,
-            });
-
-            return { status: 'deletion_started', objectiveId: args.id };
-        }
-
-        for (const notification of notificationsBatch) {
-            await ctx.db.delete(notification._id);
-        }
-
-        await ctx.db.delete('objectives', args.id);
-
-        return {
-            status: 'deleted',
-            objectiveId: args.id,
-            deleted: {
-                progress: progressBatch.length,
-                notifications: notificationsBatch.length,
-            },
-        };
+        return await deleteObjectiveWithDependents(ctx, { objectiveId: args.id });
     },
 });

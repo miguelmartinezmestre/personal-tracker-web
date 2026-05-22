@@ -3,10 +3,11 @@ import { internal } from './_generated/api';
 
 const crons = cronJobs();
 
-crons.daily(
+crons.cron(
     'purge audit logs past retention',
-    { hourUTC: 4, minuteUTC: 15 },
-    internal.auditLogs.pruneAuditLogsOlderThanRetention
+    '15 4 * * *',
+    internal.auditLogs.pruneAuditLogsOlderThanRetention,
+    {}
 );
 
 export default crons;

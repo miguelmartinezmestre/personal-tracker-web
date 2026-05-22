@@ -12,7 +12,7 @@ import { DataModel, Id } from '../_generated/dataModel';
 import {
     calculateUserStreak,
     calculateOrganizationStreak,
-} from '../achievements_utils/calculations';
+} from '../domain/achievements/calculations';
 
 describe('CRITICAL: Batching jobs with large datasets', async () => {
     const t = initConvexTest();

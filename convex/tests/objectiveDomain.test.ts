@@ -5,7 +5,7 @@ import {
     validateProgressDelta,
     validateUpdateDate,
     validateObjectiveNotCompleted,
-} from '../utils/objectiveDomain';
+} from '../domain/objectives/metrics';
 import { ERROR_CODES } from '../utils/constants';
 
 describe('objectiveDomain', () => {

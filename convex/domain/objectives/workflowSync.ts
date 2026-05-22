@@ -1,7 +1,7 @@
-import { internal } from '../_generated/api';
-import type { Id } from '../_generated/dataModel';
-import { workflow } from '../workflow';
-import { isVitestRuntime } from './testRuntime';
+import { internal } from '../../_generated/api';
+import type { Id } from '../../_generated/dataModel';
+import { workflow } from '../../workflow';
+import { isVitestRuntime } from '../../utils/testRuntime';
 
 type ObjectiveWorkflowResource = 'objective' | 'progress_update';
 
@@ -19,13 +19,14 @@ export const runObjectiveSync = async (
     try {
         await workflow.start(
             ctx,
-            internal.workflows.objectiveLifecycle.objectiveLifecycle,
+            internal.jobs.objectives.lifecycleWorkflow.objectiveLifecycle,
             {
                 objectiveId,
                 userId,
             },
             {
-                onComplete: internal.workflows.kickoff.handleObjectiveLifecycleComplete,
+                onComplete:
+                    internal.jobs.objectives.lifecycleCompletion.handleObjectiveLifecycleComplete,
                 context: {
                     objectiveId,
                     userId,

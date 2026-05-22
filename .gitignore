@@ -1,12 +1,15 @@
 # dependencies
 /node_modules
 
-# Local env files
+# env files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+convex/.env
+convex/.env.local
+convex/.env.*.local
 
 # misc
 .DS_Store
@@ -21,7 +24,9 @@ next-env.d.ts
 
 # mysql
 mysql-data
+mysql-data-dev
 data
+data-dev
 
 # Playwright
 node_modules/
@@ -31,12 +36,13 @@ node_modules/
 /playwright/.cache/
 /tests/.auth/
 
-# Convex generated files
-**/_generated/**
-**/convex/_generated/**
+# Convex codegen output
+convex/_generated/
 
 coverage/
 .vscode/
+.codex/
+error-handling-audit-report.md
 
 .next-e2e/
 .next-e2e-*/

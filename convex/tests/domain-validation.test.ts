@@ -11,7 +11,7 @@ import {
     validateProgressDelta,
     validateUpdateDate,
     validateObjectiveNotCompleted,
-} from '../utils/objectiveDomain';
+} from '../domain/objectives/metrics';
 
 describe('Domain Validation Tests', () => {
     const t = initConvexTest();

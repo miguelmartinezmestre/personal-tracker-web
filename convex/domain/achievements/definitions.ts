@@ -1,4 +1,4 @@
-import type { AchievementType, AchievementCategory, AchievementTier } from './constants';
+import type { AchievementType, AchievementCategory, AchievementTier } from '../../utils/constants';
 
 type AchievementDefinition = {
     code: string;
