@@ -528,6 +528,7 @@ function buildCommandEnv(
         ALLOW_SETUP_TEST: 'true',
         E2E_SETUP_SECRET: baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
         BASE_URL: baseUrl,
+        BETTER_AUTH_URL: siteUrl,
         BETTER_AUTH_SECRET: betterAuthSecret,
         CONVEX_SELF_HOSTED_ADMIN_KEY: adminKey,
         CONVEX_SELF_HOSTED_URL: CONVEX_URL,
@@ -828,6 +829,10 @@ async function main(): Promise<void> {
 
     console.log('Configuring Convex env vars for e2e...');
     await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'SITE_URL', siteUrl], {
+        env: commandEnv,
+        shell: USE_SHELL_FOR_PNPM,
+    });
+    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_URL', siteUrl], {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });

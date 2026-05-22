@@ -10,7 +10,6 @@ import {
     recomputeObjectiveFromProgress,
 } from './utils/objectiveDomain';
 import { shouldSendProgressNotification } from './notificationPreferences';
-import { runObjectiveSync } from './utils/objectiveWorkflow';
 import { isVitestRuntime } from './utils/testRuntime';
 
 const PROGRESS_SERIES_LIMIT = 500;
@@ -92,14 +91,6 @@ export const createUpdateProgress = mutationWithRLS({
                 trigger: 'progress_update',
             });
         }
-
-        await runObjectiveSync(
-            ctx,
-            args.objective,
-            objective.userId,
-            objective.organizationId,
-            'progress_update'
-        );
 
         return await ctx.db.get('progressUpdates', id);
     },
@@ -198,14 +189,6 @@ export const updateUpdateProgress = mutationWithRLS({
             });
         }
 
-        await runObjectiveSync(
-            ctx,
-            existing.objective,
-            objective.userId,
-            objective.organizationId,
-            'progress_update'
-        );
-
         return await ctx.db.get('progressUpdates', args.id);
     },
 });
@@ -217,7 +200,7 @@ export const deleteUpdateProgress = mutationWithRLS({
     handler: async (ctx, args) => {
         const existing = await ctx.db.get('progressUpdates', args._id);
         if (!existing) {
-            return { success: true } as const;
+            throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
         }
 
         const objective = await ctx.db.get('objectives', existing.objective);
@@ -229,14 +212,6 @@ export const deleteUpdateProgress = mutationWithRLS({
         await ctx.db.delete('progressUpdates', args._id);
 
         await recomputeObjectiveFromProgress(ctx, objective);
-
-        await runObjectiveSync(
-            ctx,
-            objective._id,
-            objective.userId,
-            objective.organizationId,
-            'progress_update'
-        );
 
         return { success: true } as const;
     },

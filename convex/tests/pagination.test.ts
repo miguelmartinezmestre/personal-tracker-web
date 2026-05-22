@@ -9,6 +9,7 @@ import {
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
+import { normalizeObjectiveListFilters } from '../utils/objectiveList';
 
 describe('convex pagination', () => {
     const t = initConvexTest();
@@ -57,6 +58,30 @@ describe('convex pagination', () => {
             banExpires: null,
             banReason: null,
             banned: false,
+        });
+    });
+
+    test('normalizeObjectiveListFilters removes UI sentinel values', () => {
+        expect(
+            normalizeObjectiveListFilters({
+                category: 'all',
+            })
+        ).toEqual({
+            status: undefined,
+            category: undefined,
+            deadlineRange: undefined,
+        });
+
+        expect(
+            normalizeObjectiveListFilters({
+                status: 'active',
+                category: 'Launch',
+                deadlineRange: 'today',
+            })
+        ).toEqual({
+            status: 'active',
+            category: 'Launch',
+            deadlineRange: 'today',
         });
     });
 
@@ -454,5 +479,44 @@ describe('convex pagination', () => {
         });
 
         expect(result.map(o => o.title)).toContain('Bounded Search Contract Today Target');
+    });
+
+    test('searchOrganizationObjectives matches title, description, and category for organization objectives', async () => {
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            scope: 'organization',
+            title: 'Org searchable title',
+            description: 'Includes organization-description-token',
+            category: 'OrganizationCategoryToken',
+            targetValue: 100,
+            currentValue: 10,
+        });
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            scope: 'personal',
+            title: 'Personal organization-description-token',
+            targetValue: 100,
+            currentValue: 10,
+        });
+
+        const descriptionResult = await userIdentity.query(
+            api.objectives.searchOrganizationObjectives,
+            {
+                search: 'organization-description-token',
+                limit: 50,
+            }
+        );
+        const categoryResult = await userIdentity.query(
+            api.objectives.searchOrganizationObjectives,
+            {
+                search: 'OrganizationCategoryToken',
+                limit: 50,
+            }
+        );
+
+        expect(descriptionResult.map(o => o.title)).toEqual(['Org searchable title']);
+        expect(categoryResult.map(o => o.title)).toEqual(['Org searchable title']);
     });
 });

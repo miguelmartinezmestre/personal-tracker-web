@@ -138,11 +138,14 @@ export const createNotification = mutationWithRLS({
         if (!objective) throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
 
         const isGlobalAdmin = ctx.role === 'admin';
-        const isOrgAdmin = ctx.memberRole === 'admin' || ctx.memberRole === 'owner';
+        const isOrgAdmin =
+            (ctx.memberRole === 'admin' || ctx.memberRole === 'owner') &&
+            ctx.organizationId !== null &&
+            objective.organizationId === ctx.organizationId;
         const isOwner = objective.userId === userId;
 
         let isOrganizationMember = false;
-        if (objective.scope === 'organization') {
+        if (objective.scope === 'organization' && objective.organizationId === ctx.organizationId) {
             const membership = await ctx.db
                 .query('member')
                 .withIndex('by_organizationId_and_userId', q =>
@@ -188,7 +191,10 @@ export const setNotificationRead = mutationWithRLS({
         }
 
         const isGlobalAdmin = ctx.role === 'admin';
-        const isOrgAdmin = ctx.memberRole === 'admin' || ctx.memberRole === 'owner';
+        const isOrgAdmin =
+            (ctx.memberRole === 'admin' || ctx.memberRole === 'owner') &&
+            ctx.organizationId !== null &&
+            notification.organizationId === ctx.organizationId;
         const isOwner = notification.userId === ctx.userId;
 
         if (!isGlobalAdmin && !isOrgAdmin && !isOwner) {
@@ -275,7 +281,10 @@ export const deleteNotification = mutationWithRLS({
         }
 
         const isGlobalAdmin = ctx.role === 'admin';
-        const isOrgAdmin = ctx.memberRole === 'admin' || ctx.memberRole === 'owner';
+        const isOrgAdmin =
+            (ctx.memberRole === 'admin' || ctx.memberRole === 'owner') &&
+            ctx.organizationId !== null &&
+            notification.organizationId === ctx.organizationId;
         const isOwner = notification.userId === ctx.userId;
 
         if (!isGlobalAdmin && !isOrgAdmin && !isOwner) {

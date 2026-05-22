@@ -34,22 +34,6 @@ async function shouldSendAchievementNotification(
     return preferences.achievementNotifications ?? true;
 }
 
-async function shouldSendOrganizationNotification(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<boolean> {
-    const preferences = await ctx.db
-        .query('notificationPreferences')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .first();
-
-    if (!preferences) {
-        return true;
-    }
-
-    return preferences.organizationNotifications ?? true;
-}
-
 async function notifyOrganizationAchievementUnlocked(
     ctx: MutationCtx,
     organizationId: Id<'organization'>,
@@ -66,9 +50,28 @@ async function notifyOrganizationAchievementUnlocked(
             .withIndex('organizationId', q => q.eq('organizationId', organizationId))
             .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor });
 
+        const memberUserIds = page.page.map(member => member.userId);
+
+        const preferencesList = await Promise.all(
+            memberUserIds.map(uid =>
+                ctx.db
+                    .query('notificationPreferences')
+                    .withIndex('by_user', q => q.eq('userId', uid))
+                    .first()
+            )
+        );
+
+        const preferencesMap = new Map<Id<'user'>, boolean>();
+        for (let i = 0; i < memberUserIds.length; i++) {
+            const uid = memberUserIds[i]!;
+            const pref = preferencesList[i];
+            const shouldNotify = pref ? (pref.organizationNotifications ?? true) : true;
+            preferencesMap.set(uid, shouldNotify);
+        }
+
         for (const member of page.page) {
             const uid = member.userId;
-            const shouldNotify = await shouldSendOrganizationNotification(ctx, uid);
+            const shouldNotify = preferencesMap.get(uid) ?? true;
             if (shouldNotify) {
                 await ctx.db.insert('notifications', {
                     userId: uid,

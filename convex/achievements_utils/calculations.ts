@@ -76,6 +76,53 @@ export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): 
     return streak;
 }
 
+async function fetchUpdatesForObjective(
+    ctx: ReadCtx,
+    objectiveId: Id<'objectives'>
+): Promise<Doc<'progressUpdates'>[]> {
+    const updates: Doc<'progressUpdates'>[] = [];
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_objective', q => q.eq('objective', objectiveId))
+            .paginate({ numItems: PAGE_SIZE, cursor });
+
+        updates.push(...page.page);
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
+
+    return updates;
+}
+
+async function fetchUpdatesForUserObjective(
+    ctx: ReadCtx,
+    userId: Id<'user'>,
+    objectiveId: Id<'objectives'>
+): Promise<Doc<'progressUpdates'>[]> {
+    const updates: Doc<'progressUpdates'>[] = [];
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_user_objective', q =>
+                q.eq('userId', userId).eq('objective', objectiveId)
+            )
+            .paginate({ numItems: PAGE_SIZE, cursor });
+
+        updates.push(...page.page);
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
+
+    return updates;
+}
+
 async function fetchProgressUpdates(
     ctx: ReadCtx,
     objectiveIds: Id<'objectives'>[],
@@ -86,44 +133,17 @@ async function fetchProgressUpdates(
 
     if (objectiveIds.length === 0) return [];
 
-    const updates: Doc<'progressUpdates'>[] = [];
-    const objectiveIdsSet = new Set(objectiveIds);
-
     if (userId) {
-        let cursor: string | null = null;
-        let isDone = false;
-
-        while (!isDone) {
-            const page = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_user_date', q => q.eq('userId', userId))
-                .paginate({ numItems: PAGE_SIZE, cursor });
-
-            updates.push(...page.page.filter(update => objectiveIdsSet.has(update.objective)));
-            isDone = page.isDone;
-            cursor = page.continueCursor;
-        }
-
-        return updates;
+        const results = await Promise.all(
+            objectiveIds.map(objectiveId => fetchUpdatesForUserObjective(ctx, userId, objectiveId))
+        );
+        return results.flat();
     }
 
-    for (const objectiveId of objectiveIds) {
-        let cursor: string | null = null;
-        let isDone = false;
-
-        while (!isDone) {
-            const page = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
-                .paginate({ numItems: PAGE_SIZE, cursor });
-
-            updates.push(...page.page);
-            isDone = page.isDone;
-            cursor = page.continueCursor;
-        }
-    }
-
-    return updates;
+    const results = await Promise.all(
+        objectiveIds.map(objectiveId => fetchUpdatesForObjective(ctx, objectiveId))
+    );
+    return results.flat();
 }
 
 export async function calculateUserStreak(
