@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+    createTestUser,
     createTestUserViaAPI,
     ensureAuthenticatedState,
     ensureDefaultCategories,
@@ -8,65 +9,6 @@ import {
     DEFAULT_PASSWORD,
 } from '../helpers/test-helpers';
 import { randomUUID } from 'crypto';
-
-async function fillAndAssert(
-    locator: import('@playwright/test').Locator,
-    value: string
-): Promise<void> {
-    await locator.click();
-    await locator.fill(value);
-    await expect(locator).toHaveValue(value);
-}
-
-async function completeRegistrationAndWaitForDashboard(
-    page: import('@playwright/test').Page,
-    params: { username: string; email: string; password: string; organizationSlug: string }
-): Promise<void> {
-    await page.goto('/register');
-    await page.waitForSelector('[data-testid="register-username-input"]');
-
-    await fillAndAssert(page.getByTestId('register-username-input'), params.username);
-    await fillAndAssert(page.getByTestId('register-email-input'), params.email);
-    await fillAndAssert(page.getByTestId('register-password-input'), params.password);
-    await fillAndAssert(page.getByTestId('register-confirm-password-input'), params.password);
-
-    const organizationSlugInput = page.getByTestId('register-organization-slug-input');
-    if ((await organizationSlugInput.count()) > 0) {
-        await fillAndAssert(organizationSlugInput, params.organizationSlug);
-    }
-
-    await page.getByTestId('register-button').click();
-
-    const deadline = Date.now() + 20_000;
-    while (Date.now() < deadline) {
-        const currentUrl = page.url();
-        if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
-            return;
-        }
-
-        try {
-            const response = await page.request.get('/api/auth/get-session');
-            if (response.ok()) {
-                const payload = (await response.json()) as
-                    | { data?: { session?: unknown; user?: unknown } | null }
-                    | { session?: unknown; user?: unknown }
-                    | null;
-                const data: { session?: unknown; user?: unknown } | null =
-                    payload && typeof payload === 'object' && 'data' in payload
-                        ? (payload.data ?? null)
-                        : (payload as { session?: unknown; user?: unknown } | null);
-                if (data?.session && data?.user) {
-                    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-                    return;
-                }
-            }
-        } catch {}
-
-        await page.waitForTimeout(500);
-    }
-
-    throw new Error('Registration did not reach dashboard in time');
-}
 
 async function selectAvailableObjectiveCategory(
     page: import('@playwright/test').Page
@@ -120,11 +62,11 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const password = DEFAULT_PASSWORD;
             const organizationSlug = `org-${uuid}`;
 
-            await completeRegistrationAndWaitForDashboard(page, {
-                username,
-                email,
+            await createTestUser(page, {
+                customUsername: username,
+                customEmail: email,
+                customOrganizationSlug: organizationSlug,
                 password,
-                organizationSlug,
             });
             await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
 

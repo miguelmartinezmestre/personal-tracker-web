@@ -59,7 +59,7 @@ describe('performance tests', async () => {
             const objectiveIds: Id<'objectives'>[] = [];
             await userIdentity.run(async ctx => {
                 for (let i = 0; i < 50; i++) {
-                    const id = await ctx.db.insert('objectives', {
+                    const objectiveId = await ctx.db.insert('objectives', {
                         userId: userId,
                         organizationId: organizationId,
                         scope: 'personal',
@@ -70,7 +70,7 @@ describe('performance tests', async () => {
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
-                    objectiveIds.push(id);
+                    objectiveIds.push(objectiveId);
                 }
             });
 

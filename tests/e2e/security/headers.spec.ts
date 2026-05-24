@@ -143,7 +143,7 @@ test.describe('Security Headers', () => {
         const frameOptions = headers['x-frame-options'] || headers['X-Frame-Options'];
 
         if (process.env.NODE_ENV === 'production' && frameOptions) {
-            expect(['DENY', 'SAMEORIGIN'].map(s => s.toLowerCase())).toContain(
+            expect(['DENY', 'SAMEORIGIN'].map(frameOption => frameOption.toLowerCase())).toContain(
                 frameOptions.toLowerCase()
             );
         }

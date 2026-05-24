@@ -416,7 +416,7 @@ describe('convex notifications', async () => {
                     paginationOpts: { numItems: 10, cursor: null },
                 }
             );
-            expect(notifications.page.every(n => n.read)).toBe(true);
+            expect(notifications.page.every(notification => notification.read)).toBe(true);
         });
 
         test('returns zero when all notifications already read', async () => {

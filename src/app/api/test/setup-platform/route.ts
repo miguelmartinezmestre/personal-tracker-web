@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAuthMutation } from '@/features/auth/auth-server';
+import { fetchAuthMutation } from '@/features/auth/server';
 import { api as convexApi } from '@/convex/_generated/api';
 
 function isLoopbackUrl(value: string | undefined): boolean {

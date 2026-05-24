@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ThemeToggle } from '@/features/theme/theme-switcher';
+import { ThemeToggle } from '@/platform/theme/theme-switcher';
 import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';

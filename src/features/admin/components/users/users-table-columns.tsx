@@ -1,4 +1,4 @@
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
@@ -40,8 +40,8 @@ export function useUsersTableColumns() {
                 if (Array.isArray(role)) {
                     return (
                         <div className="flex gap-1">
-                            {role.map(r => (
-                                <Badge key={r}>{r}</Badge>
+                            {role.map(roleName => (
+                                <Badge key={roleName}>{roleName}</Badge>
                             ))}
                         </div>
                     );

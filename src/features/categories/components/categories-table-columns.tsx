@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import EditCategoryFormModal from '@/features/categories/components/category-form-edit-modal';
 import type { Category } from '@/features/categories/schemas/category';
 import { getLucideIcon } from '@/lib/icons';

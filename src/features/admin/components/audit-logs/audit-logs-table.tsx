@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import { useTranslations } from 'next-intl';
 import { useAuditLogsTableColumns } from './audit-logs-table-columns';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
@@ -35,7 +35,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
     const pageIsDone = logs.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const data: Doc<'auditLogs'>[] = logs.data?.page ?? [];
+    const auditLogRows: Doc<'auditLogs'>[] = logs.data?.page ?? [];
 
     return (
         <div className="space-y-4">
@@ -47,7 +47,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
             </div>
             <DataTable
                 columns={columns}
-                data={data}
+                data={auditLogRows}
                 isLoading={logs.isLoading}
                 pagination={{
                     currentPage,
@@ -58,7 +58,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
                     isLoading: logs.isFetching,
                 }}
             />
-            {data.length === 0 && !logs.isLoading && (
+            {auditLogRows.length === 0 && !logs.isLoading && (
                 <p className="text-center text-muted-foreground py-8">
                     {t('auditLogsTable.empty')}
                 </p>

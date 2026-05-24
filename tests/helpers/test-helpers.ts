@@ -191,12 +191,12 @@ async function setActiveOrganizationViaBrowser(
     organizationId: string
 ): Promise<boolean> {
     try {
-        return await page.evaluate(async id => {
+        return await page.evaluate(async organizationIdArg => {
             const response = await fetch('/api/auth/organization/set-active', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ organizationId: id }),
+                body: JSON.stringify({ organizationId: organizationIdArg }),
             });
 
             return response.ok;

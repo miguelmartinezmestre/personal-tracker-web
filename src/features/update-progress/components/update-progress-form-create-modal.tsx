@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import {
     CreateUpdateProgress,
@@ -24,7 +24,7 @@ import { useTranslations } from 'next-intl';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');

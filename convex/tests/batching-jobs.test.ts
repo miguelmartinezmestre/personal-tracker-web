@@ -454,7 +454,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 return notifs;
             });
             expect(allNotifications.length).toBe(notificationCount);
-            expect(allNotifications.every(n => n.read)).toBe(true);
+            expect(allNotifications.every(notification => notification.read)).toBe(true);
         });
 
         test('should handle already-read notifications without infinite loop', async () => {

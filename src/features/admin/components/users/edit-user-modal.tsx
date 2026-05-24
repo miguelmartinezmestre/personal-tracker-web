@@ -21,14 +21,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { Doc } from '@/convex/_generated/dataModel';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
-import { invalidateConvexQuery } from '@/features/convex/query-keys';
+import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 
 const ADMIN_USERS_QUERY = convexQuery(api.admin.listUsers, {
     paginationOpts: { numItems: 10, cursor: null },

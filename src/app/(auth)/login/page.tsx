@@ -1,7 +1,7 @@
-import LoginForm from '@/features/auth/components/login-form';
+import { LoginForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
+import { checkPlatformSetUp } from '@/features/setup/server';
 
 export default async function Login() {
     if (!(await checkPlatformSetUp())) redirect('/setup');

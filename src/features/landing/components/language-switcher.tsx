@@ -30,7 +30,8 @@ export function LanguageSwitcher() {
         router.refresh();
     };
 
-    const currentLocaleData = locales.find(l => l.value === currentLocale) || locales[0];
+    const currentLocaleData =
+        locales.find(localeOption => localeOption.value === currentLocale) || locales[0];
 
     return (
         <DropdownMenu>

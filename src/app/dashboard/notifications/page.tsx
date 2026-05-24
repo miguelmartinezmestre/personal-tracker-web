@@ -1,6 +1,6 @@
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
-import NotificationsLayout from '@/features/notifications/components/notifications-layout';
+import { NotificationsLayout } from '@/features/notifications';
 import { Preloaded } from 'convex/react';
 import { redirect } from 'next/navigation';
 

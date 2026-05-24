@@ -7,8 +7,8 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/features/table/components/table';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { DataTable } from '@/components/data-table/components/table';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { FunctionReturnType } from 'convex/server';
 import { useNotificationsTableColumns } from './notifications-table-columns';
 import { useMarkAllNotificationsRead } from './notifications-table-actions';
@@ -36,7 +36,7 @@ export default function NotificationsTable({ initialNotifications }: Notificatio
     const notificationsIsDone = notifications.data?.isDone ?? false;
     const hasNextPage = Boolean(notificationsContinueCursor) && !notificationsIsDone;
     const { markAllRead, isMarkingAllRead } = useMarkAllNotificationsRead(reset);
-    const data = useMemo<Doc<'notifications'>[]>(
+    const tableNotifications = useMemo<Doc<'notifications'>[]>(
         () => notifications.data?.page ?? [],
         [notifications.data?.page]
     );
@@ -44,12 +44,15 @@ export default function NotificationsTable({ initialNotifications }: Notificatio
         () =>
             Array.from(
                 new Set(
-                    data
+                    tableNotifications
                         .map(notification => notification.objective)
-                        .filter((id): id is Id<'objectives'> => id !== undefined)
+                        .filter(
+                            (objectiveId): objectiveId is Id<'objectives'> =>
+                                objectiveId !== undefined
+                        )
                 )
             ),
-        [data]
+        [tableNotifications]
     );
     const objectives = useQuery(
         convexQuery(
@@ -65,7 +68,7 @@ export default function NotificationsTable({ initialNotifications }: Notificatio
         onMutationSuccess: reset,
     });
 
-    const unreadCount = data.filter(notification => !notification.read).length;
+    const unreadCount = tableNotifications.filter(notification => !notification.read).length;
 
     return (
         <div className="space-y-4">
@@ -84,7 +87,7 @@ export default function NotificationsTable({ initialNotifications }: Notificatio
             </div>
             <DataTable
                 columns={columns}
-                data={data}
+                data={tableNotifications}
                 isLoading={notifications.isLoading}
                 pagination={{
                     currentPage,
@@ -95,7 +98,7 @@ export default function NotificationsTable({ initialNotifications }: Notificatio
                     isLoading: notifications.isFetching,
                 }}
             />
-            {data.length === 0 && !notifications.isLoading && (
+            {tableNotifications.length === 0 && !notifications.isLoading && (
                 <p className="text-center text-muted-foreground py-6">{t('empty')}</p>
             )}
         </div>

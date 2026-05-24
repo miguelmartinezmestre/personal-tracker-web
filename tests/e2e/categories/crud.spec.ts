@@ -152,8 +152,12 @@ test.describe('Categories CRUD', () => {
         await page.goto('/dashboard/categories');
         await page.waitForLoadState('domcontentloaded');
 
-        const row = page.getByTestId('table-row').filter({ hasText: category.name }).first();
-        const editButton = row.getByTestId('category-edit-open');
+        const categoryRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: category.name })
+            .first();
+        await expect(categoryRow).toBeVisible();
+        const editButton = categoryRow.getByTestId('category-edit-open');
 
         await expect(editButton).toBeVisible();
         await editButton.click();
@@ -183,8 +187,11 @@ test.describe('Categories CRUD', () => {
         await page.goto('/dashboard/categories');
         await page.waitForLoadState('domcontentloaded');
 
-        const row = page.getByTestId('table-row').filter({ hasText: category.name }).first();
-        const editButton = row.getByTestId('category-edit-open');
+        const categoryRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: category.name })
+            .first();
+        const editButton = categoryRow.getByTestId('category-edit-open');
 
         await expect(editButton).toBeVisible();
         await editButton.click();
@@ -208,8 +215,11 @@ test.describe('Categories CRUD', () => {
 
         await expect(page.getByText(category.name)).toBeVisible();
 
-        const row = page.getByTestId('table-row').filter({ hasText: category.name }).first();
-        const deleteButton = row.getByTestId('category-delete-button');
+        const categoryRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: category.name })
+            .first();
+        const deleteButton = categoryRow.getByTestId('category-delete-button');
 
         await expect(deleteButton).toBeVisible();
         await deleteButton.click();
@@ -349,14 +359,17 @@ test.describe('Categories CRUD', () => {
         await page.goto('/dashboard/categories');
         await page.waitForLoadState('domcontentloaded');
 
-        const row = page.getByTestId('table-row').filter({ hasText: category.name }).first();
-        await expect(row).toBeVisible();
+        const categoryRow = page
+            .getByTestId('table-row')
+            .filter({ hasText: category.name })
+            .first();
+        await expect(categoryRow).toBeVisible();
 
-        const colorIndicator = row.locator(
+        const colorIndicator = categoryRow.locator(
             '[class*="blue"], [style*="blue"], .badge, [class*="color"]'
         );
         const hasColorIndicator = (await colorIndicator.count()) > 0;
 
-        expect(hasColorIndicator || (await row.isVisible())).toBeTruthy();
+        expect(hasColorIndicator || (await categoryRow.isVisible())).toBeTruthy();
     });
 });

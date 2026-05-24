@@ -3,17 +3,17 @@
 import { useState, useMemo } from 'react';
 
 async function retryWithBackoff<T>(
-    fn: () => Promise<T>,
+    operation: () => Promise<T>,
     options: { maxRetries: number; baseDelayMs: number }
 ): Promise<T> {
     let lastError: unknown;
     for (let i = 0; i < options.maxRetries; i++) {
         try {
-            return await fn();
-        } catch (err) {
-            lastError = err;
+            return await operation();
+        } catch (error) {
+            lastError = error;
             const delay = options.baseDelayMs * Math.pow(2, i);
-            await new Promise(r => setTimeout(r, delay));
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
     throw lastError;
@@ -27,7 +27,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { useSetupWizard } from '../hooks/use-setup-wizard';
 import { getMessageOrFallback, getErrorMessage, emptyToUndefined } from '@/lib/error-utils';
 import SetupProgress from './setup-progress';
@@ -91,10 +91,10 @@ export default function SetupWizard() {
                         registrationPolicy: data.registration.policy,
                         organizationName: data.organization.name,
                         organizationLogo: emptyToUndefined(data.organization.logo),
-                        categories: data.categories.map(c => ({
-                            name: c.name,
-                            color: c.color,
-                            icon: c.icon,
+                        categories: data.categories.map(category => ({
+                            name: category.name,
+                            color: category.color,
+                            icon: category.icon,
                         })),
                     }),
                 { maxRetries: 6, baseDelayMs: 500 }
@@ -107,8 +107,8 @@ export default function SetupWizard() {
             }
 
             router.push('/dashboard/home');
-        } catch (err: unknown) {
-            setError(getErrorMessage(err, setupFailedMsg));
+        } catch (error: unknown) {
+            setError(getErrorMessage(error, setupFailedMsg));
             setIsSubmitting(false);
         }
     }
@@ -119,35 +119,35 @@ export default function SetupWizard() {
                 return (
                     <StepPlatformConfig
                         data={data.platform}
-                        onChange={d => updateStepData('platform', d)}
+                        onChange={stepData => updateStepData('platform', stepData)}
                     />
                 );
             case 'admin':
                 return (
                     <StepAdminAccount
                         data={data.admin}
-                        onChange={d => updateStepData('admin', d)}
+                        onChange={stepData => updateStepData('admin', stepData)}
                     />
                 );
             case 'organization':
                 return (
                     <StepOrganization
                         data={data.organization}
-                        onChange={d => updateStepData('organization', d)}
+                        onChange={stepData => updateStepData('organization', stepData)}
                     />
                 );
             case 'categories':
                 return (
                     <StepCategories
                         data={data.categories}
-                        onChange={d => updateStepData('categories', d)}
+                        onChange={stepData => updateStepData('categories', stepData)}
                     />
                 );
             case 'registration':
                 return (
                     <StepRegistrationPolicy
                         data={data.registration}
-                        onChange={d => updateStepData('registration', d)}
+                        onChange={stepData => updateStepData('registration', stepData)}
                     />
                 );
             case 'summary':

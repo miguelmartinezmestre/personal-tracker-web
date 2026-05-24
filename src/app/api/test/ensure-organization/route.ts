@@ -1,4 +1,4 @@
-import { fetchAuthMutation } from '@/features/auth/auth-server';
+import { fetchAuthMutation } from '@/features/auth/server';
 import { api as convexApi } from '@/convex/_generated/api';
 import { NextResponse } from 'next/server';
 

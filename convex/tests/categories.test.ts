@@ -177,7 +177,7 @@ describe('convex categories', async () => {
                 paginationOpts,
             });
             expect(result.page).toHaveLength(2);
-            expect(result.page.every(c => c.userId === userId)).toBe(true);
+            expect(result.page.every(category => category.userId === userId)).toBe(true);
         });
 
         test('rejects unauthenticated users', async () => {
@@ -363,7 +363,7 @@ describe('convex categories', async () => {
                 'Travel & Adventure',
             ];
 
-            const names = result.map(c => c?.name);
+            const names = result.map(category => category?.name);
             expectedNames.forEach(name => {
                 expect(names).toContain(name);
             });

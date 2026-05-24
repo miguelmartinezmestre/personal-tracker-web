@@ -144,8 +144,10 @@ describe('convex achievements', async () => {
                 }
             );
 
-            expect(individualDefs.every(d => d.type === 'individual')).toBe(true);
-            expect(organizationDefs.every(d => d.type === 'organization')).toBe(true);
+            expect(individualDefs.every(definition => definition.type === 'individual')).toBe(true);
+            expect(organizationDefs.every(definition => definition.type === 'organization')).toBe(
+                true
+            );
         });
     });
 
@@ -196,20 +198,20 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             const awardedPoints = await userIdentity.run(async ctx => {
-                const def = await ctx.db
+                const achievementDefinition = await ctx.db
                     .query('achievementDefinitions')
                     .withIndex('by_code', q => q.eq('code', 'first_objective'))
                     .first();
 
-                if (def) {
+                if (achievementDefinition) {
                     await ctx.db.insert('obtainedAchievements', {
                         userId: userId,
-                        achievement: def._id,
+                        achievement: achievementDefinition._id,
                         earnedAt: Date.now(),
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
-                    return def.points;
+                    return achievementDefinition.points;
                 }
                 return 0;
             });
@@ -287,7 +289,7 @@ describe('convex achievements', async () => {
             );
 
             const objectivesCreatedProgress = progress.find(
-                p => p.definition.code === 'objectives_created_5'
+                progressEntry => progressEntry.definition.code === 'objectives_created_5'
             );
 
             expect(objectivesCreatedProgress?.currentProgress).toBeGreaterThanOrEqual(2);
@@ -310,7 +312,7 @@ describe('convex achievements', async () => {
             );
 
             const completedProgress = progress.find(
-                p => p.definition.code === 'objectives_completed_3'
+                progressEntry => progressEntry.definition.code === 'objectives_completed_3'
             );
 
             expect(completedProgress?.currentProgress).toBeGreaterThanOrEqual(1);
@@ -342,7 +344,9 @@ describe('convex achievements', async () => {
                 {}
             );
 
-            const earlyBirdProgress = progress.find(p => p.definition.code === 'early_bird');
+            const earlyBirdProgress = progress.find(
+                progressEntry => progressEntry.definition.code === 'early_bird'
+            );
 
             expect(earlyBirdProgress).toBeDefined();
             expect(earlyBirdProgress?.currentProgress).toBeGreaterThanOrEqual(1);
@@ -370,7 +374,9 @@ describe('convex achievements', async () => {
                 {}
             );
 
-            const earlyBirdProgress = progress.find(p => p.definition.code === 'early_bird');
+            const earlyBirdProgress = progress.find(
+                progressEntry => progressEntry.definition.code === 'early_bird'
+            );
 
             expect(earlyBirdProgress?.currentProgress).toBe(0);
         });
@@ -401,7 +407,9 @@ describe('convex achievements', async () => {
                 {}
             );
 
-            const earlyBirdProgress = progress.find(p => p.definition.code === 'early_bird');
+            const earlyBirdProgress = progress.find(
+                progressEntry => progressEntry.definition.code === 'early_bird'
+            );
 
             expect(earlyBirdProgress?.currentProgress).toBe(0);
         });
@@ -544,7 +552,7 @@ describe('convex achievements', async () => {
             );
 
             const progressUpdateProgress = progress.find(
-                p => p.definition.code === 'progress_updates_10'
+                progressEntry => progressEntry.definition.code === 'progress_updates_10'
             );
 
             expect(progressUpdateProgress).toBeDefined();
@@ -592,7 +600,7 @@ describe('convex achievements', async () => {
                 {}
             );
 
-            const streak3Progress = progress.find(p => p.definition.code === 'streak_3');
+            const streak3Progress = progress.find(progressEntry => progressEntry.definition.code === 'streak_3');
 
             expect(streak3Progress).toBeDefined();
             if (streak3Progress) {

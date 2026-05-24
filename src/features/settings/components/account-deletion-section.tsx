@@ -39,9 +39,9 @@ export default function AccountDeletionSection() {
             setTimeout(() => {
                 router.push('/');
             }, 2000);
-        } catch (err) {
+        } catch (error) {
             const errorMessage =
-                err instanceof Error ? err.message : tCommon('genericErrorDescription');
+                error instanceof Error ? error.message : tCommon('genericErrorDescription');
             setError(errorMessage);
         }
     };

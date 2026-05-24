@@ -23,10 +23,13 @@ export async function addContributor(
         contributionValue: contributionValue ?? 1,
     });
 
-    const orgAch = await ctx.db.get('organizationAchievements', orgAchievementId);
-    if (orgAch) {
+    const organizationAchievement = await ctx.db.get(
+        'organizationAchievements',
+        orgAchievementId
+    );
+    if (organizationAchievement) {
         await ctx.db.patch('organizationAchievements', orgAchievementId, {
-            contributorCount: (orgAch.contributorCount ?? 0) + 1,
+            contributorCount: (organizationAchievement.contributorCount ?? 0) + 1,
         });
     }
 }
@@ -43,9 +46,11 @@ export async function getContributors(
         )
         .take(maxResults);
 
-    const users = await Promise.all(contributions.map(c => ctx.db.get('user', c.userId)));
+    const users = await Promise.all(
+        contributions.map(contribution => ctx.db.get('user', contribution.userId))
+    );
 
-    return users.filter((u): u is Doc<'user'> => u !== null);
+    return users.filter((user): user is Doc<'user'> => user !== null);
 }
 
 export async function isContributor(
@@ -79,10 +84,13 @@ export async function removeContributor(
 
     await ctx.db.delete(existing._id);
 
-    const orgAch = await ctx.db.get('organizationAchievements', orgAchievementId);
-    if (orgAch && orgAch.contributorCount > 0) {
+    const organizationAchievement = await ctx.db.get(
+        'organizationAchievements',
+        orgAchievementId
+    );
+    if (organizationAchievement && organizationAchievement.contributorCount > 0) {
         await ctx.db.patch('organizationAchievements', orgAchievementId, {
-            contributorCount: orgAch.contributorCount - 1,
+            contributorCount: organizationAchievement.contributorCount - 1,
         });
     }
 }
@@ -93,8 +101,11 @@ export async function getContributorCount(
     useAccurateCount: boolean = false
 ): Promise<number> {
     if (!useAccurateCount) {
-        const orgAch = await ctx.db.get('organizationAchievements', orgAchievementId);
-        return orgAch?.contributorCount ?? 0;
+        const organizationAchievement = await ctx.db.get(
+            'organizationAchievements',
+            orgAchievementId
+        );
+        return organizationAchievement?.contributorCount ?? 0;
     }
 
     let total = 0;

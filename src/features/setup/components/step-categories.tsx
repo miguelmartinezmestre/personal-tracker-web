@@ -28,7 +28,9 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
     const [newName, setNewName] = useState('');
 
     const updateCategory = (index: number, updates: Partial<SetupCategory>) => {
-        const updated = data.map((cat, i) => (i === index ? { ...cat, ...updates } : cat));
+        const updated = data.map((category, categoryIndex) =>
+            categoryIndex === index ? { ...category, ...updates } : category
+        );
         onChange(updated);
     };
 

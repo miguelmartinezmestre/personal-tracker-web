@@ -6,8 +6,8 @@ import {
     DEFAULT_PASSWORD,
     loginUser,
     promoteToAdmin,
-} from '../../tests/helpers/test-helpers';
-import { createAdminSession } from '../../tests/setup/create-admin-session';
+} from '../helpers/test-helpers';
+import { createAdminSession } from '../setup/create-admin-session';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -16,35 +16,35 @@ let screenshotCounter = 0;
 const SCREENSHOT_DIR = 'test-results/screenshots/tfg';
 
 async function takeTFGScreenshot(page: Page, name: string, description?: string) {
-    const dir = path.join(process.cwd(), SCREENSHOT_DIR);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+    const screenshotDirectory = path.join(process.cwd(), SCREENSHOT_DIR);
+    if (!fs.existsSync(screenshotDirectory)) {
+        fs.mkdirSync(screenshotDirectory, { recursive: true });
     }
 
     await page.evaluate(() => {
-        document.querySelectorAll('[data-sonner-toaster]').forEach(el => {
-            (el as HTMLElement).style.display = 'none';
+        document.querySelectorAll('[data-sonner-toaster]').forEach(element => {
+            (element as HTMLElement).style.display = 'none';
         });
-        document.querySelectorAll('[data-loading]').forEach(el => {
-            (el as HTMLElement).style.display = 'none';
+        document.querySelectorAll('[data-loading]').forEach(element => {
+            (element as HTMLElement).style.display = 'none';
         });
-        document.querySelectorAll('[class*="Issues"], [class*="issues"]').forEach(el => {
-            (el as HTMLElement).style.display = 'none';
+        document.querySelectorAll('[class*="Issues"], [class*="issues"]').forEach(element => {
+            (element as HTMLElement).style.display = 'none';
         });
-        document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-toast]').forEach(el => {
-            (el as HTMLElement).style.display = 'none';
+        document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-toast]').forEach(element => {
+            (element as HTMLElement).style.display = 'none';
         });
         document
             .querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]')
-            .forEach(el => {
-                (el as HTMLElement).style.display = 'none';
+            .forEach(element => {
+                (element as HTMLElement).style.display = 'none';
             });
         document
             .querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]')
-            .forEach(el => {
-                const text = el.textContent || '';
+            .forEach(element => {
+                const text = element.textContent || '';
                 if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
-                    (el as HTMLElement).style.display = 'none';
+                    (element as HTMLElement).style.display = 'none';
                 }
             });
     });
@@ -60,7 +60,7 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
     const filename = `${paddedCounter}-${sanitizedName}.png`;
 
     await page.screenshot({
-        path: path.join(dir, filename),
+        path: path.join(screenshotDirectory, filename),
         fullPage: false,
         animations: 'disabled',
     });
@@ -281,13 +281,13 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             { title: 'Save €5000 Emergency Fund', target: '5000', unit: '€', current: '1250' },
         ];
 
-        for (const obj of objectivesToCreate) {
+        for (const objective of objectivesToCreate) {
             await page.getByTestId('objective-create-open').click();
             await page.waitForTimeout(300);
-            await page.getByTestId('objective-title-input').fill(obj.title);
-            await page.getByTestId('objective-target-input').fill(obj.target);
-            await page.getByTestId('objective-unit-input').fill(obj.unit);
-            await safeFill(page, '[data-testid="objective-current-input"]', obj.current);
+            await page.getByTestId('objective-title-input').fill(objective.title);
+            await page.getByTestId('objective-target-input').fill(objective.target);
+            await page.getByTestId('objective-unit-input').fill(objective.unit);
+            await safeFill(page, '[data-testid="objective-current-input"]', objective.current);
             await page.getByTestId('objective-save-button').click();
             await page.waitForTimeout(500);
         }

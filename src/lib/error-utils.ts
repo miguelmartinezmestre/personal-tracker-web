@@ -3,8 +3,8 @@ export function getMessageOrFallback(message: string | undefined | null, fallbac
     return fallback;
 }
 
-export function getErrorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
+export function getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error) return error.message;
     return fallback;
 }
 

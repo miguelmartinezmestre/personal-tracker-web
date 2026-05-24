@@ -26,7 +26,7 @@ import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import { OrganizationRole } from '../types/roles';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 interface CreateOrganizationMemberFormModalProps {
     organizationId: string;

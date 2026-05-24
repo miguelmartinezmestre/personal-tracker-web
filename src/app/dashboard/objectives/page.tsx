@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
-import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { CreateObjectiveFormModal } from '@/features/objectives';
+import { ResponsiveObjectivesView } from '@/features/objectives';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';

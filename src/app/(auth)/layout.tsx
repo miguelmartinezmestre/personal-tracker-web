@@ -1,5 +1,5 @@
-import Footer from '@/features/landing/components/footer';
-import Header from '@/features/landing/components/header';
+import { Footer } from '@/features/landing';
+import { Header } from '@/features/landing';
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
     return (

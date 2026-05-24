@@ -39,7 +39,8 @@ export default function MonthlyProgressChart({
                     <div className="flex h-[200px] items-center justify-center">
                         <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
-                ) : chartData.length === 0 || chartData.every(d => d.count === 0) ? (
+                ) : chartData.length === 0 ||
+                  chartData.every(monthEntry => monthEntry.count === 0) ? (
                     <div className="flex h-[200px] items-center justify-center">
                         <p className="text-sm text-muted-foreground">
                             {t('charts.noDataAvailable')}

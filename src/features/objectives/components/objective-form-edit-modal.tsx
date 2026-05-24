@@ -22,14 +22,14 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { Objective, savedObjectiveSchema } from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
@@ -79,12 +79,12 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
     }, [categoriesQuery.data, defaultValues.category]);
 
     const categoryIdToName = useMemo(
-        () => new Map(categoryOptions.map(c => [c.id, c.label])),
+        () => new Map(categoryOptions.map(categoryOption => [categoryOption.id, categoryOption.label])),
         [categoryOptions]
     );
 
     const categoryNameToId = useMemo(
-        () => new Map(categoryOptions.map(c => [c.label, c.id])),
+        () => new Map(categoryOptions.map(categoryOption => [categoryOption.label, categoryOption.id])),
         [categoryOptions]
     );
 
@@ -118,9 +118,9 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                 },
             }}
             onSubmit={async (value: Objective) => {
-                const raw = value.category;
+                const categoryFieldValue = value.category;
 
-                const base = {
+                const updatePayload = {
                     id: value._id as Id<'objectives'>,
                     title: value.title,
                     description: value.description ?? undefined,
@@ -130,20 +130,24 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                     scope: value.scope,
                 };
 
-                if (!raw || raw === 'loading' || raw === 'empty') {
+                if (
+                    !categoryFieldValue ||
+                    categoryFieldValue === 'loading' ||
+                    categoryFieldValue === 'empty'
+                ) {
                     await updateObjectiveMutation.mutateAsync({
-                        ...base,
+                        ...updatePayload,
                         category: '',
                     });
-                } else if (raw.startsWith('missing-')) {
+                } else if (categoryFieldValue.startsWith('missing-')) {
                     await updateObjectiveMutation.mutateAsync({
-                        ...base,
-                        category: categoryIdToName.get(raw) ?? '',
+                        ...updatePayload,
+                        category: categoryIdToName.get(categoryFieldValue) ?? '',
                     });
                 } else {
                     await updateObjectiveMutation.mutateAsync({
-                        ...base,
-                        categoryId: raw as Id<'categories'>,
+                        ...updatePayload,
+                        categoryId: categoryFieldValue as Id<'categories'>,
                     });
                 }
             }}

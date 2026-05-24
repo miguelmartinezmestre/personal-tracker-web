@@ -7,7 +7,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import type { Doc } from '@/convex/_generated/dataModel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { useSetNotificationRead, useDeleteNotification } from './notifications-table-actions';
 
 const typeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {

@@ -1,6 +1,6 @@
 import { api } from '@/convex/_generated/api';
-import Home from '@/features/dashboard/components/home';
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { Home } from '@/features/dashboard';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 

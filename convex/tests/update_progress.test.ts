@@ -132,8 +132,8 @@ describe('convex update_progress', () => {
         );
 
         expect(updates.page).toHaveLength(2);
-        expect(updates.page.map(u => u.updatedValue)).toContain(10);
-        expect(updates.page.map(u => u.updatedValue)).toContain(20);
+        expect(updates.page.map(update => update.updatedValue)).toContain(10);
+        expect(updates.page.map(update => update.updatedValue)).toContain(20);
     });
 
     test('getProgressSeriesByObjectiveId returns an ordered bounded series for charts', async () => {

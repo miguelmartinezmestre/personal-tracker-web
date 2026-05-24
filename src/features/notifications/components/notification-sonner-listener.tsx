@@ -18,8 +18,8 @@ export function NotificationSonnerListener() {
     );
 
     const initializedRef = useRef(false);
-    const lastUnreadRef = useRef<number>(0);
-    const lastIdsRef = useRef<Set<string>>(new Set());
+    const previousUnreadCountRef = useRef<number>(0);
+    const seenNotificationIdsRef = useRef<Set<string>>(new Set());
 
     const unreadCountValue = unreadCount?.count ?? 0;
     const notifications = data?.page ?? [];
@@ -27,21 +27,26 @@ export function NotificationSonnerListener() {
     useEffect(() => {
         if (!initializedRef.current) {
             initializedRef.current = true;
-            lastUnreadRef.current = unreadCountValue;
-            notifications.forEach(n => lastIdsRef.current.add(n._id));
+            previousUnreadCountRef.current = unreadCountValue;
+            notifications.forEach(notification =>
+                seenNotificationIdsRef.current.add(notification._id)
+            );
             return;
         }
 
-        if (unreadCountValue > lastUnreadRef.current) {
-            const newUnread = notifications.filter(n => !n.read && !lastIdsRef.current.has(n._id));
-            for (const notification of newUnread.slice(0, 3)) {
+        if (unreadCountValue > previousUnreadCountRef.current) {
+            const newUnreadNotifications = notifications.filter(
+                notification =>
+                    !notification.read && !seenNotificationIdsRef.current.has(notification._id)
+            );
+            for (const notification of newUnreadNotifications.slice(0, 3)) {
                 toast.info(notification.message);
-                lastIdsRef.current.add(notification._id);
+                seenNotificationIdsRef.current.add(notification._id);
             }
         }
 
-        lastUnreadRef.current = unreadCountValue;
-        notifications.forEach(n => lastIdsRef.current.add(n._id));
+        previousUnreadCountRef.current = unreadCountValue;
+        notifications.forEach(notification => seenNotificationIdsRef.current.add(notification._id));
     }, [unreadCountValue, notifications]);
 
     return null;

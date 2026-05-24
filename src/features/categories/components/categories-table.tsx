@@ -1,13 +1,13 @@
 'use client';
 
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Category } from '@/features/categories/schemas/category';
 import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { useCategoriesTableColumns } from './categories-table-columns';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -56,30 +56,30 @@ export default function CategoriesTable({ initialCategories }: CategoriesTablePr
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } = pagination;
     const isFirstPage = paginationOpts.cursor === null;
 
-    const categories = useQuery({
+    const categoriesQuery = useQuery({
         ...convexQuery(api.categories.getCategoriesByUser, { paginationOpts }),
         initialData: isFirstPage ? initialCategories : undefined,
     });
 
-    const continueCursor = categories.data?.continueCursor ?? null;
-    const pageIsDone = categories.data?.isDone ?? false;
+    const continueCursor = categoriesQuery.data?.continueCursor ?? null;
+    const pageIsDone = categoriesQuery.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const mappedData = (categories.data?.page ?? []).map(mapConvexCategoryToCategory);
+    const tableCategories = (categoriesQuery.data?.page ?? []).map(mapConvexCategoryToCategory);
 
     return (
         <div>
             <DataTable
                 columns={columns}
-                data={mappedData}
-                isLoading={categories.isLoading}
+                data={tableCategories}
+                isLoading={categoriesQuery.isLoading}
                 pagination={{
                     currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    isLoading: categories.isFetching,
+                    isLoading: categoriesQuery.isFetching,
                 }}
             />
         </div>

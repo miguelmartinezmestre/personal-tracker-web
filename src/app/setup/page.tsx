@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
-import SetupWizard from '@/features/setup/components/setup-wizard';
+import { checkPlatformSetUp } from '@/features/setup/server';
+import { SetupWizard } from '@/features/setup';
 
 export default async function SetupPage() {
     const isPlatformSetUp = await checkPlatformSetUp();

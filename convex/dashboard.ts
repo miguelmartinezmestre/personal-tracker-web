@@ -17,8 +17,9 @@ export const getDashboardStats = queryWithRLS({
 
         return {
             totalObjectives: objectives.length,
-            completedObjectives: objectives.filter(o => o.status === 'completed').length,
-            pendingObjectives: objectives.filter(o => o.status === 'active').length,
+            completedObjectives: objectives.filter(objective => objective.status === 'completed')
+                .length,
+            pendingObjectives: objectives.filter(objective => objective.status === 'active').length,
         };
     },
 });
@@ -48,7 +49,7 @@ export const getMonthlyProgress = queryWithRLS({
             const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 1).getTime();
 
             const count = userUpdates.filter(
-                u => u.updateDate >= monthStart && u.updateDate < monthEnd
+                update => update.updateDate >= monthStart && update.updateDate < monthEnd
             ).length;
 
             const monthKey = `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}`;
@@ -79,17 +80,17 @@ export const getObjectivesWithMostProgress = queryWithRLS({
             .take(fetchLimit);
 
         const objectivesWithProgress = objectives
-            .map(o => {
+            .map(objective => {
                 const progress = computeProgressPercent({
-                    currentValue: o.currentValue,
-                    targetValue: o.targetValue,
-                    startValue: o.startValue,
+                    currentValue: objective.currentValue,
+                    targetValue: objective.targetValue,
+                    startValue: objective.startValue,
                 });
                 return {
-                    id: o._id,
-                    objective: o.title,
+                    id: objective._id,
+                    objective: objective.title,
                     progress,
-                    status: o.status,
+                    status: objective.status,
                 };
             })
             .sort((a, b) => b.progress - a.progress)
@@ -121,18 +122,21 @@ export const getUpcomingDeadlines = queryWithRLS({
             .take(50);
 
         const upcomingDeadlines = objectives
-            .filter((o): o is typeof o & { deadline: number } => Boolean(o.deadline))
-            .map(o => {
-                const daysRemaining = Math.ceil((o.deadline - now) / TIME.DAY_MS);
+            .filter(
+                (objective): objective is typeof objective & { deadline: number } =>
+                    Boolean(objective.deadline)
+            )
+            .map(objective => {
+                const daysRemaining = Math.ceil((objective.deadline - now) / TIME.DAY_MS);
                 return {
-                    id: o._id,
-                    title: o.title,
-                    deadline: o.deadline,
+                    id: objective._id,
+                    title: objective.title,
+                    deadline: objective.deadline,
                     daysRemaining,
                     progress: computeProgressPercent({
-                        currentValue: o.currentValue,
-                        targetValue: o.targetValue,
-                        startValue: o.startValue,
+                        currentValue: objective.currentValue,
+                        targetValue: objective.targetValue,
+                        startValue: objective.startValue,
                     }),
                 };
             })

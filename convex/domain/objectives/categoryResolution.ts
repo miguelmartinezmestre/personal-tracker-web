@@ -9,17 +9,17 @@ export async function getCategoryForObjective(
     userId: Id<'user'>,
     categoryId: Id<'categories'>
 ): Promise<Doc<'categories'>> {
-    const cat = await ctx.db.get('categories', categoryId);
-    if (!cat) {
+    const category = await ctx.db.get('categories', categoryId);
+    if (!category) {
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
-    if (cat.organizationId !== organizationId) {
+    if (category.organizationId !== organizationId) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
-    if (cat.userId !== userId) {
+    if (category.userId !== userId) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
-    return cat;
+    return category;
 }
 
 export async function findCategoryIdByName(

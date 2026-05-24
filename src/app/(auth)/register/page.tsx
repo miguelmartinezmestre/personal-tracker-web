@@ -1,7 +1,7 @@
-import RegisterForm from '@/features/auth/components/register-form';
+import { RegisterForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
+import { checkPlatformSetUp } from '@/features/setup/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { env } from '@/lib/env';

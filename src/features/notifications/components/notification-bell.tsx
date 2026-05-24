@@ -9,9 +9,11 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 
 export function NotificationBell() {
-    const { data } = useQuery(convexQuery(api.notifications.getUnreadNotificationCount, {}));
+    const { data: unreadCountData } = useQuery(
+        convexQuery(api.notifications.getUnreadNotificationCount, {})
+    );
 
-    const count = data?.count ?? 0;
+    const count = unreadCountData?.count ?? 0;
 
     return (
         <Button variant="ghost" size="icon" className="relative" asChild>

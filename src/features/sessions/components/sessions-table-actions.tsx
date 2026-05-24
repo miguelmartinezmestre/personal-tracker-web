@@ -6,7 +6,7 @@ import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { Id } from '@/convex/_generated/dataModel';
-import { invalidateConvexQuery } from '@/features/convex/query-keys';
+import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 
 const SESSIONS_QUERY = convexQuery(api.sessions.getSessionsByUser, {
     paginationOpts: { numItems: 20, cursor: null },

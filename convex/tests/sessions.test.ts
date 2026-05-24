@@ -70,7 +70,9 @@ describe('convex sessions', () => {
         });
 
         expect(sessions.length).toBeGreaterThanOrEqual(2);
-        expect(sessions.every((s: { userId: string }) => s.userId === userId)).toBe(true);
+        expect(
+            sessions.every((session: { userId: string }) => session.userId === userId)
+        ).toBe(true);
     });
 
     test('getSessionsByUser rejects when unauthenticated', async () => {

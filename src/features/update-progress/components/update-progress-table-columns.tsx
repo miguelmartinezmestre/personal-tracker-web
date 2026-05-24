@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import UpdateProgressFormModal from '@/features/update-progress/components/update-progress-form-edit-modal';
 import { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
 import { Doc, Id } from '@/convex/_generated/dataModel';
@@ -13,12 +13,12 @@ interface UseUpdateProgressTableColumnsProps {
     objectiveId: Id<'objectives'>;
 }
 
-function mapDocToUpdateProgress(doc: Doc<'progressUpdates'>): UpdateProgress {
+function mapDocToUpdateProgress(progressUpdateDoc: Doc<'progressUpdates'>): UpdateProgress {
     return {
-        _id: doc._id.toString(),
-        updatedValue: doc.updatedValue,
-        updateDate: new Date(doc.updateDate),
-        comment: doc.comment ?? null,
+        _id: progressUpdateDoc._id.toString(),
+        updatedValue: progressUpdateDoc.updatedValue,
+        updateDate: new Date(progressUpdateDoc.updateDate),
+        comment: progressUpdateDoc.comment ?? null,
     };
 }
 

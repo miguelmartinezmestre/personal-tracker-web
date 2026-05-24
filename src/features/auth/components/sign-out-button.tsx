@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useSignOutMutationOptions } from '@/features/auth/auth-client';
+import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { Loader2, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';

@@ -105,17 +105,17 @@ function AchievementsContent({
 
     const isLoading = statsLoading || progressLoading;
 
-    const filteredProgress = progress?.filter(p => {
-        if (filter === 'earned') return p.isEarned;
-        if (filter === 'locked') return !p.isEarned;
+    const filteredProgress = progress?.filter(progressEntry => {
+        if (filter === 'earned') return progressEntry.isEarned;
+        if (filter === 'locked') return !progressEntry.isEarned;
         return true;
     });
 
     const individualAchievements = filteredProgress?.filter(
-        p => p.definition.type === 'individual'
+        progressEntry => progressEntry.definition.type === 'individual'
     );
     const organizationAchievements = filteredProgress?.filter(
-        p => p.definition.type === 'organization'
+        progressEntry => progressEntry.definition.type === 'organization'
     );
 
     const handleSeedAchievements = async () => {

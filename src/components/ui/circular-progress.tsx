@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import * as ProgressPrimitive from '@radix-ui/react-progress';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 
 interface CircularProgressProps extends React.ComponentPropsWithoutRef<
     typeof ProgressPrimitive.Root

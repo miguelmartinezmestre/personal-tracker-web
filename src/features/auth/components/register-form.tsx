@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { authClient } from '@/features/auth/auth-client';
-import { useSignOutMutationOptions } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
+import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getErrorMessage } from '@/lib/error-utils';
@@ -31,8 +31,11 @@ function extractOrgList(result: unknown): Array<{ id: string }> {
         return [];
     }
     return data.filter(
-        (org): org is { id: string } =>
-            typeof org === 'object' && org !== null && 'id' in org && typeof org.id === 'string'
+        (organization): organization is { id: string } =>
+            typeof organization === 'object' &&
+            organization !== null &&
+            'id' in organization &&
+            typeof organization.id === 'string'
     );
 }
 
@@ -96,13 +99,14 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                                     invitationId: invitationToken,
                                 });
 
-                                const orgsResult = await authClient.organization.list();
-                                const organizations = extractOrgList(orgsResult);
+                                const organizationListResult =
+                                    await authClient.organization.list();
+                                const organizations = extractOrgList(organizationListResult);
 
-                                const firstOrg = organizations[0];
-                                if (firstOrg) {
+                                const firstOrganization = organizations[0];
+                                if (firstOrganization) {
                                     await authClient.organization.setActive({
-                                        organizationId: firstOrg.id,
+                                        organizationId: firstOrganization.id,
                                     });
                                 }
                             }
@@ -113,8 +117,10 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                             setIsSubmitting(false);
                         }
                     },
-                    onError: ctx => {
-                        setRegisterError(ctx.error.message || t('errors.registerFallback'));
+                    onError: errorContext => {
+                        setRegisterError(
+                            errorContext.error.message || t('errors.registerFallback')
+                        );
                         setIsSubmitting(false);
                     },
                 }

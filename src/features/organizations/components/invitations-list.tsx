@@ -23,7 +23,8 @@ export function InvitationsList() {
         );
     }
 
-    const pendingInvitations = invitations?.filter(inv => inv.status === 'pending') ?? [];
+    const pendingInvitations =
+        invitations?.filter(invitation => invitation.status === 'pending') ?? [];
 
     if (pendingInvitations.length === 0) {
         return (

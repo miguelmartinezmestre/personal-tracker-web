@@ -20,7 +20,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 const defaultValues: CreateOrganization = {
     name: '',

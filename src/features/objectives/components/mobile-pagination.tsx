@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import type { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 
 export function MobilePagination({
     pagination,

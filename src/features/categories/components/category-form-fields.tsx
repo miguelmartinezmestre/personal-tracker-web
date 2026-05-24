@@ -104,7 +104,7 @@ export function CategoryFormFields({
                                 {tCommon(
                                     'colors.' +
                                         colorOptions
-                                            .find(c => c.value === field.value)
+                                            .find(colorOption => colorOption.value === field.value)
                                             ?.label.toLowerCase()
                                 )}
                             </FormDescription>

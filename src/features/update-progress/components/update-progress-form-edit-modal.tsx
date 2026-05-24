@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
@@ -24,7 +24,7 @@ import {
 } from '@/features/update-progress/schemas/update-progress';
 import { Id } from '@/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 export default function UpdateProgressFormModal({
     defaultValues,

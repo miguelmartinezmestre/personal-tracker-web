@@ -40,22 +40,22 @@ function sanitizeObjective(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const objectiveRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        organizationId: toAuditPrimitive(o.organizationId),
-        userId: toAuditPrimitive(o.userId),
-        scope: toAuditPrimitive(o.scope),
-        status: toAuditPrimitive(o.status),
-        title: toAuditPrimitive(o.title),
-        category: toAuditPrimitive(o.category),
-        targetValue: toAuditPrimitive(o.targetValue),
-        currentValue: toAuditPrimitive(o.currentValue),
-        startValue: toAuditPrimitive(o.startValue),
-        deadline: toAuditPrimitive(o.deadline),
-        unit: toAuditPrimitive(o.unit),
-        createdAt: toAuditPrimitive(o.createdAt),
-        updatedAt: toAuditPrimitive(o.updatedAt),
+        _id: toAuditPrimitive(objectiveRecord._id),
+        organizationId: toAuditPrimitive(objectiveRecord.organizationId),
+        userId: toAuditPrimitive(objectiveRecord.userId),
+        scope: toAuditPrimitive(objectiveRecord.scope),
+        status: toAuditPrimitive(objectiveRecord.status),
+        title: toAuditPrimitive(objectiveRecord.title),
+        category: toAuditPrimitive(objectiveRecord.category),
+        targetValue: toAuditPrimitive(objectiveRecord.targetValue),
+        currentValue: toAuditPrimitive(objectiveRecord.currentValue),
+        startValue: toAuditPrimitive(objectiveRecord.startValue),
+        deadline: toAuditPrimitive(objectiveRecord.deadline),
+        unit: toAuditPrimitive(objectiveRecord.unit),
+        createdAt: toAuditPrimitive(objectiveRecord.createdAt),
+        updatedAt: toAuditPrimitive(objectiveRecord.updatedAt),
     };
 }
 
@@ -63,14 +63,14 @@ function sanitizeProgressUpdate(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const progressUpdateRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        objective: toAuditPrimitive(o.objective),
-        updatedValue: toAuditPrimitive(o.updatedValue),
-        updateDate: toAuditPrimitive(o.updateDate),
-        createdAt: toAuditPrimitive(o.createdAt),
-        updatedAt: toAuditPrimitive(o.updatedAt),
+        _id: toAuditPrimitive(progressUpdateRecord._id),
+        objective: toAuditPrimitive(progressUpdateRecord.objective),
+        updatedValue: toAuditPrimitive(progressUpdateRecord.updatedValue),
+        updateDate: toAuditPrimitive(progressUpdateRecord.updateDate),
+        createdAt: toAuditPrimitive(progressUpdateRecord.createdAt),
+        updatedAt: toAuditPrimitive(progressUpdateRecord.updatedAt),
     };
 }
 
@@ -78,16 +78,16 @@ function sanitizeCategory(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const categoryRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        userId: toAuditPrimitive(o.userId),
-        organizationId: toAuditPrimitive(o.organizationId),
-        name: toAuditPrimitive(o.name),
-        color: toAuditPrimitive(o.color),
-        icon: toAuditPrimitive(o.icon),
-        createdAt: toAuditPrimitive(o.createdAt),
-        updatedAt: toAuditPrimitive(o.updatedAt),
+        _id: toAuditPrimitive(categoryRecord._id),
+        userId: toAuditPrimitive(categoryRecord.userId),
+        organizationId: toAuditPrimitive(categoryRecord.organizationId),
+        name: toAuditPrimitive(categoryRecord.name),
+        color: toAuditPrimitive(categoryRecord.color),
+        icon: toAuditPrimitive(categoryRecord.icon),
+        createdAt: toAuditPrimitive(categoryRecord.createdAt),
+        updatedAt: toAuditPrimitive(categoryRecord.updatedAt),
     };
 }
 
@@ -95,13 +95,13 @@ function sanitizeOrganization(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const organizationRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        name: toAuditPrimitive(o.name),
-        slug: toAuditPrimitive(o.slug),
-        logo: toAuditPrimitive(o.logo),
-        createdAt: toAuditPrimitive(o.createdAt),
+        _id: toAuditPrimitive(organizationRecord._id),
+        name: toAuditPrimitive(organizationRecord.name),
+        slug: toAuditPrimitive(organizationRecord.slug),
+        logo: toAuditPrimitive(organizationRecord.logo),
+        createdAt: toAuditPrimitive(organizationRecord.createdAt),
     };
 }
 
@@ -109,26 +109,26 @@ function sanitizeMember(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const memberRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        organizationId: toAuditPrimitive(o.organizationId),
-        userId: toAuditPrimitive(o.userId),
-        role: toAuditPrimitive(o.role),
-        createdAt: toAuditPrimitive(o.createdAt),
+        _id: toAuditPrimitive(memberRecord._id),
+        organizationId: toAuditPrimitive(memberRecord.organizationId),
+        userId: toAuditPrimitive(memberRecord.userId),
+        role: toAuditPrimitive(memberRecord.role),
+        createdAt: toAuditPrimitive(memberRecord.createdAt),
     };
 }
 
 function sanitizeUser(doc: unknown): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const userRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        name: toAuditPrimitive(o.name),
-        role: toAuditPrimitive(o.role),
-        banned: toAuditPrimitive(o.banned),
-        createdAt: toAuditPrimitive(o.createdAt),
-        updatedAt: toAuditPrimitive(o.updatedAt),
+        _id: toAuditPrimitive(userRecord._id),
+        name: toAuditPrimitive(userRecord.name),
+        role: toAuditPrimitive(userRecord.role),
+        banned: toAuditPrimitive(userRecord.banned),
+        createdAt: toAuditPrimitive(userRecord.createdAt),
+        updatedAt: toAuditPrimitive(userRecord.updatedAt),
     };
 }
 
@@ -136,14 +136,14 @@ function sanitizePlatformSettings(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
     if (!doc || typeof doc !== 'object') return undefined;
-    const o = doc as Record<string, unknown>;
+    const platformSettingsRecord = doc as Record<string, unknown>;
     return {
-        _id: toAuditPrimitive(o._id),
-        platformName: toAuditPrimitive(o.platformName),
-        defaultLanguage: toAuditPrimitive(o.defaultLanguage),
-        registrationPolicy: toAuditPrimitive(o.registrationPolicy),
-        setupCompletedAt: toAuditPrimitive(o.setupCompletedAt),
-        setupCompletedBy: toAuditPrimitive(o.setupCompletedBy),
+        _id: toAuditPrimitive(platformSettingsRecord._id),
+        platformName: toAuditPrimitive(platformSettingsRecord.platformName),
+        defaultLanguage: toAuditPrimitive(platformSettingsRecord.defaultLanguage),
+        registrationPolicy: toAuditPrimitive(platformSettingsRecord.registrationPolicy),
+        setupCompletedAt: toAuditPrimitive(platformSettingsRecord.setupCompletedAt),
+        setupCompletedBy: toAuditPrimitive(platformSettingsRecord.setupCompletedBy),
     };
 }
 

@@ -281,7 +281,7 @@ describe('auditLogs security', () => {
                 paginationOpts: { numItems: 10, cursor: null },
             });
 
-            const log = result.page.find(l => l.action === 'internal.valid');
+            const log = result.page.find(auditLog => auditLog.action === 'internal.valid');
             expect(log).toBeDefined();
             expect(log?.metadata?.before).toEqual({ status: 'old', count: 5 });
             expect(log?.metadata?.after).toEqual({ status: 'new', count: 10 });
@@ -322,7 +322,7 @@ describe('auditLogs security', () => {
                 paginationOpts: { numItems: 10, cursor: null },
             });
 
-            const log = result.page.find(l => l.action === 'security.test');
+            const log = result.page.find(auditLog => auditLog.action === 'security.test');
             expect(log).toBeDefined();
 
             expect(log?.metadata?.before).toEqual({
