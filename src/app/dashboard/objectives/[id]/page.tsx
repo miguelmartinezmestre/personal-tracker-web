@@ -1,6 +1,6 @@
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
-import UpdateProgressLayout from '@/features/update-progress/components/update-progress-layout';
+import { UpdateProgressLayout } from '@/features/update-progress';
 import { Id } from '@/convex/_generated/dataModel';
 import { Preloaded } from 'convex/react';
 import { redirect } from 'next/navigation';

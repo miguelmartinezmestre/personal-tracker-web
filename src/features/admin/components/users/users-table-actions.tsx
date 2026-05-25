@@ -1,7 +1,7 @@
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
-import { invalidateConvexQuery } from '@/features/convex/query-keys';
+import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';

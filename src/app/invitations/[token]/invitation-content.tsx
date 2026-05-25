@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/features/auth/auth-client';
-import { useSession } from '@/features/auth/hooks/use-session';
+import { authClient } from '@/features/auth/client';
+import { useSession } from '@/features/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';

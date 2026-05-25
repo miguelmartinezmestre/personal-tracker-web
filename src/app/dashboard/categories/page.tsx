@@ -1,6 +1,6 @@
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
-import CategoriesLayout from '@/features/categories/components/categories-layout';
+import { CategoriesLayout } from '@/features/categories';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 

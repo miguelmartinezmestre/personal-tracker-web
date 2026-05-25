@@ -22,14 +22,14 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { Objective, savedObjectiveSchema } from '@/features/objectives/schemas/objective';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');

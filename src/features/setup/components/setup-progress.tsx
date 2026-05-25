@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SETUP_STEPS } from '../hooks/use-setup-wizard';

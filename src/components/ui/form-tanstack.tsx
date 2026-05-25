@@ -4,7 +4,7 @@ import * as React from 'react';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
 type FieldState<TValue = unknown> = {

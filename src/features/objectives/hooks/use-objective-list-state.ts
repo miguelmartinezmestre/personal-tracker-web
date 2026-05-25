@@ -8,7 +8,7 @@ import { FunctionReturnType } from 'convex/server';
 import { api } from '@/convex/_generated/api';
 import type { Doc } from '@/convex/_generated/dataModel';
 import type { ObjectiveStatus } from '@/convex/utils/constants';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
 
 const DEFAULT_PAGE_SIZE = 20;

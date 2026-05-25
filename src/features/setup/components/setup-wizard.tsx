@@ -27,7 +27,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { useSetupWizard } from '../hooks/use-setup-wizard';
 import { getMessageOrFallback, getErrorMessage, emptyToUndefined } from '@/lib/error-utils';
 import SetupProgress from './setup-progress';

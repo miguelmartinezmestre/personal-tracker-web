@@ -1,6 +1,6 @@
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
-import AchievementsLayout from '@/features/achievements/components/achievements-layout';
+import { AchievementsLayout } from '@/features/achievements';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 

@@ -1,12 +1,12 @@
 'use client';
 
 import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { OrganizationRole } from '../types/roles';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import type { Id } from '@/convex/_generated/dataModel';
-import { invalidateConvexQueryWhere } from '@/features/convex/query-keys';
+import { invalidateConvexQueryWhere } from '@/platform/convex/query-keys';
 
 export interface CreateOrganizationMemberParams {
     organizationId: string;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useUserSessionsTableColumns } from './user-sessions-table-columns';
@@ -11,7 +11,7 @@ import { useConfirmRevokeAllSessions } from './user-sessions-table-actions';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
 

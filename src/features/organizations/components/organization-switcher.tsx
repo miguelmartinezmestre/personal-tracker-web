@@ -10,7 +10,7 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {

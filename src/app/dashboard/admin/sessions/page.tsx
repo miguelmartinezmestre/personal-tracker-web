@@ -1,5 +1,5 @@
-import UserSessionsLayout from '@/features/admin/components/user-sessions/user-sessions-layout';
-import { isAdmin } from '@/features/auth/current-user';
+import { UserSessionsLayout } from '@/features/admin';
+import { isAdmin } from '@/features/auth/server';
 import { redirect } from 'next/navigation';
 
 export default async function AdminSessionsPage() {

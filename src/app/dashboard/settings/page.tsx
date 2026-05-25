@@ -1,4 +1,4 @@
-import SettingsLayout from '@/features/settings/components/settings-layout';
+import { SettingsLayout } from '@/features/settings';
 
 export default async function SettingsPage() {
     return <SettingsLayout />;

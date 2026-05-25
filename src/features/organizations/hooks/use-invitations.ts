@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
 
 const INVITATIONS_QUERY_KEY = ['user-invitations'];

@@ -28,7 +28,7 @@ import type { Route } from 'next';
 import { useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { api } from '@/convex/_generated/api';
 import type { FunctionReturnType } from 'convex/server';
 

@@ -5,9 +5,9 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import type { Id } from '@/convex/_generated/dataModel';
-import { invalidateConvexQueryWhere } from '@/features/convex/query-keys';
+import { invalidateConvexQueryWhere } from '@/platform/convex/query-keys';
 
 const userSessionsQuery = (userId: Id<'user'>) =>
     convexQuery(api.admin.listUserSessions, {

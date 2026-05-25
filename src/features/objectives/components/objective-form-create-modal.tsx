@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import {
     CreateObjective,
     createObjectiveFormSchema,
@@ -32,7 +32,7 @@ import { api } from '@/convex/_generated/api';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
 import { Doc, Id } from '@/convex/_generated/dataModel';
-import FormModal from '@/components/form-modal';
+import FormModal from '@/components/forms/form-modal';
 
 const defaultValues: CreateObjective = {
     title: '',

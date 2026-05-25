@@ -1,6 +1,6 @@
 'use client';
 
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import {
     useOrganizations,
     useDeleteOrganization,
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditOrganizationFormModal from '@/features/organizations/components/organization-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import type { Organization } from '@/features/organizations/schemas/organization';
 

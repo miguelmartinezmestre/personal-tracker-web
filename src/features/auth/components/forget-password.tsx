@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { forgetPasswordSchema } from '@/features/auth/schemas/forget-password';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 
 export default function ForgetPasswordForm() {

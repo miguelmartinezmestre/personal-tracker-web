@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/features/auth/schemas/reset-password';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 
 interface ResetPasswordProps {

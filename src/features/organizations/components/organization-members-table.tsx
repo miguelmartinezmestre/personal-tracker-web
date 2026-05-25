@@ -2,16 +2,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import { useDeleteOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { OrganizationRole } from '../types/roles';

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import {
     CreateNotification,
     notificationSchema,
@@ -32,8 +32,8 @@ import {
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
-import FormModal from '@/components/form-modal';
-import { invalidateConvexQuery } from '@/features/convex/query-keys';
+import FormModal from '@/components/forms/form-modal';
+import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_PAGINATION_OPTS = {

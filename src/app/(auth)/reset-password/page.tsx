@@ -1,4 +1,4 @@
-import ResetPassword from '@/features/auth/components/reset-password';
+import { ResetPassword } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

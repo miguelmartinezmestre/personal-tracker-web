@@ -5,7 +5,7 @@ import { useConvexMutation, convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { invalidateConvexQuery } from '@/features/convex/query-keys';
+import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 
 const NOTIFICATIONS_QUERY = convexQuery(api.notifications.getNotificationsByUser, {
     paginationOpts: { numItems: 20, cursor: null },

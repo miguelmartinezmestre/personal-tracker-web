@@ -5,7 +5,7 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { invalidateConvexQuery } from '@/features/convex/query-keys';
+import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 
 const CATEGORIES_QUERY = convexQuery(api.categories.getCategoriesByUser, {
     paginationOpts: { numItems: 20, cursor: null },

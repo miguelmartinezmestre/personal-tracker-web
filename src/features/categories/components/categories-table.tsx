@@ -1,13 +1,13 @@
 'use client';
 
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Category } from '@/features/categories/schemas/category';
 import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { useCategoriesTableColumns } from './categories-table-columns';
 
 const DEFAULT_PAGE_SIZE = 20;

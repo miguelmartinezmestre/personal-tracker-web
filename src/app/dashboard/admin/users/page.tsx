@@ -1,7 +1,7 @@
-import { preloadAuthQuery } from '@/features/auth/auth-server';
+import { preloadAuthQuery } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
-import UsersLayout from '@/features/admin/components/users/users-layout';
-import { isAdmin } from '@/features/auth/current-user';
+import { UsersLayout } from '@/features/admin';
+import { isAdmin } from '@/features/auth/server';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 

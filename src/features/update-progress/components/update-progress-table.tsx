@@ -1,9 +1,9 @@
 'use client';
 
-import { DataTable } from '@/features/table/components/table';
+import { DataTable } from '@/components/data-table/components/table';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { convexQuery } from '@convex-dev/react-query';
@@ -22,7 +22,7 @@ import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
 import { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
 import { useTranslations } from 'next-intl';
-import { useServerPagination } from '@/features/table/hooks/use-server-pagination';
+import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const DEFAULT_PAGE_SIZE = 20;

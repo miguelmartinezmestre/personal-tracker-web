@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import UpdateProgressFormModal from '@/features/update-progress/components/update-progress-form-edit-modal';
 import { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
 import { Doc, Id } from '@/convex/_generated/dataModel';

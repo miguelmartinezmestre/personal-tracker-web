@@ -2,7 +2,7 @@
 
 import { ConvexReactClient } from 'convex/react';
 import { ConvexAuthProvider } from 'kitcn/auth/client';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';

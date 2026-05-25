@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { updatePasswordSchema } from '@/features/settings/schemas/update-password';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/features/auth/auth-client';
+import { authClient } from '@/features/auth/client';
 import { toast } from 'sonner';
 import { getMessageOrFallback, getErrorMessage } from '@/lib/error-utils';
 

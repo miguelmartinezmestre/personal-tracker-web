@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import Footer from '@/features/landing/components/footer';
-import Header from '@/features/landing/components/header';
+import { Footer } from '@/features/landing';
+import { Header } from '@/features/landing';
 import { Compass, Home, LogIn } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

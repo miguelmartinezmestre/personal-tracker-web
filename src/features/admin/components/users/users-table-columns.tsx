@@ -1,4 +1,4 @@
-import { DeleteConfirmationDialog } from '@/features/table/components/delete-confirmation-dialog';
+import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';

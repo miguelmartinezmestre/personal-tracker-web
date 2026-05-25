@@ -14,7 +14,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Search, Filter, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 
 interface FilterOptions {
     search: string;

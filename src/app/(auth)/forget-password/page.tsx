@@ -1,4 +1,4 @@
-import ForgetPasswordForm from '@/features/auth/components/forget-password';
+import { ForgetPasswordForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 
 export default async function ManageInvitationPage() {

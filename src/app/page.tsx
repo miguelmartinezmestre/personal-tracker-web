@@ -1,11 +1,11 @@
-import Header from '@/features/landing/components/header';
-import Footer from '@/features/landing/components/footer';
+import { Header } from '@/features/landing';
+import { Footer } from '@/features/landing';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Target, LineChart, CheckCircle, Users, Calendar, Lightbulb } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { checkPlatformSetUp } from '@/features/setup/lib/setup-check';
+import { checkPlatformSetUp } from '@/features/setup/server';
 
 export default async function RouteComponent() {
     if (!(await checkPlatformSetUp())) redirect('/setup');

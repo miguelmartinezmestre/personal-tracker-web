@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/ui-utils/utils';
+import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { AchievementBadge } from './achievement-badge';
 import type {
