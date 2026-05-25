@@ -122,15 +122,15 @@ export async function createAdminSession(page: Page): Promise<void> {
     }
 
     const orgPayload = (await createOrgResponse.json()) as { id?: string; data?: { id?: string } };
-    const orgId = orgPayload.id ?? orgPayload.data?.id;
+    const organizationId = orgPayload.id ?? orgPayload.data?.id;
 
-    if (!orgId) {
+    if (!organizationId) {
         throw new Error('Create org did not return an organization ID');
     }
 
     const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
         headers,
-        data: { organizationId: orgId },
+        data: { organizationId },
     });
 
     if (!setActiveResponse.ok()) {
@@ -149,7 +149,7 @@ export async function createAdminSession(page: Page): Promise<void> {
     }
 
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    await setActiveOrganizationViaBrowser(page, orgId);
+    await setActiveOrganizationViaBrowser(page, organizationId);
     await waitForAdminDashboardReady(page);
 
     await mkdir(dirname(ADMIN_USER_FILE), { recursive: true });

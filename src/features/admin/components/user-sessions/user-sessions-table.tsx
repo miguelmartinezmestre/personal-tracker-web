@@ -42,7 +42,7 @@ export function UserSessions() {
     const pageIsDone = sessions?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const data = sessions?.page ?? [];
+    const sessionRows = sessions?.page ?? [];
 
     return (
         <div className="space-y-4">
@@ -74,7 +74,7 @@ export function UserSessions() {
                 <>
                     <DataTable
                         columns={columns}
-                        data={data}
+                        data={sessionRows}
                         isLoading={isLoading}
                         pagination={{
                             currentPage,
@@ -85,7 +85,7 @@ export function UserSessions() {
                             isLoading,
                         }}
                     />
-                    {data.length === 0 && !isLoading && (
+                    {sessionRows.length === 0 && !isLoading && (
                         <p className="text-center text-muted-foreground py-8">
                             {t('userSessions.emptyWithUser')}
                         </p>

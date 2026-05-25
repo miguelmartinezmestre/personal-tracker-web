@@ -56,30 +56,30 @@ export default function CategoriesTable({ initialCategories }: CategoriesTablePr
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } = pagination;
     const isFirstPage = paginationOpts.cursor === null;
 
-    const categories = useQuery({
+    const categoriesQuery = useQuery({
         ...convexQuery(api.categories.getCategoriesByUser, { paginationOpts }),
         initialData: isFirstPage ? initialCategories : undefined,
     });
 
-    const continueCursor = categories.data?.continueCursor ?? null;
-    const pageIsDone = categories.data?.isDone ?? false;
+    const continueCursor = categoriesQuery.data?.continueCursor ?? null;
+    const pageIsDone = categoriesQuery.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const mappedData = (categories.data?.page ?? []).map(mapConvexCategoryToCategory);
+    const tableCategories = (categoriesQuery.data?.page ?? []).map(mapConvexCategoryToCategory);
 
     return (
         <div>
             <DataTable
                 columns={columns}
-                data={mappedData}
-                isLoading={categories.isLoading}
+                data={tableCategories}
+                isLoading={categoriesQuery.isLoading}
                 pagination={{
                     currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    isLoading: categories.isFetching,
+                    isLoading: categoriesQuery.isFetching,
                 }}
             />
         </div>

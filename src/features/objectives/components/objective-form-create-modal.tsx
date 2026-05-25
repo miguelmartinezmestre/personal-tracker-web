@@ -97,10 +97,13 @@ export default function CreateObjectiveFormModal() {
                 },
             }}
             onSubmit={async (value: CreateObjective) => {
-                const raw = value.category;
+                const categoryFieldValue = value.category;
                 const categoryId =
-                    raw && raw !== 'loading' && raw !== 'empty' && !raw.startsWith('missing-')
-                        ? (raw as Id<'categories'>)
+                    categoryFieldValue &&
+                    categoryFieldValue !== 'loading' &&
+                    categoryFieldValue !== 'empty' &&
+                    !categoryFieldValue.startsWith('missing-')
+                        ? (categoryFieldValue as Id<'categories'>)
                         : undefined;
 
                 await createObjectiveMutation.mutateAsync({

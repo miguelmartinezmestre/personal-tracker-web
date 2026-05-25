@@ -37,13 +37,13 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
     const pageIsDone = users.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const data: Doc<'user'>[] = users.data?.page ?? [];
+    const userRows: Doc<'user'>[] = users.data?.page ?? [];
 
     return (
         <div className="space-y-4" data-testid="admin-users-table">
             <DataTable
                 columns={columns}
-                data={data}
+                data={userRows}
                 isLoading={users.isLoading}
                 pagination={{
                     currentPage,
@@ -54,7 +54,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
                     isLoading: users.isFetching,
                 }}
             />
-            {data.length === 0 && !users.isLoading && (
+            {userRows.length === 0 && !users.isLoading && (
                 <p
                     className="text-center text-muted-foreground py-8"
                     data-testid="admin-users-empty"

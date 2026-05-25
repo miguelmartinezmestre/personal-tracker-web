@@ -221,7 +221,9 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     {t('filters.status')}:{' '}
                                                     {
                                                         statusOptions.find(
-                                                            s => s.value === filters.status
+                                                            statusOption =>
+                                                                statusOption.value ===
+                                                                filters.status
                                                         )?.label
                                                     }
                                                 </span>
@@ -254,7 +256,9 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     {t('filters.deadline')}:{' '}
                                                     {
                                                         deadlineRangeOptions.find(
-                                                            d => d.value === filters.deadlineRange
+                                                            deadlineOption =>
+                                                                deadlineOption.value ===
+                                                                filters.deadlineRange
                                                         )?.label
                                                     }
                                                 </span>

@@ -83,13 +83,13 @@ export default function StepSummary({ data }: StepSummaryProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap gap-2">
-                        {data.categories.map(cat => (
+                        {data.categories.map(category => (
                             <Badge
-                                key={cat.name}
+                                key={category.name}
                                 variant="outline"
-                                style={{ borderColor: cat.color, color: cat.color }}
+                                style={{ borderColor: category.color, color: category.color }}
                             >
-                                {cat.name}
+                                {category.name}
                             </Badge>
                         ))}
                     </div>

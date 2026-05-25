@@ -96,9 +96,9 @@ const stepValidators: Record<SetupStep, (data: SetupData) => boolean> = {
     admin: data => adminAccountSchema.safeParse(data.admin).success,
     organization: data => organizationSchema.safeParse(data.organization).success,
     categories: data => {
-        const cats = data.categories;
-        if (!Array.isArray(cats) || cats.length === 0) return false;
-        return cats.every(c => setupCategorySchema.safeParse(c).success);
+        const categories = data.categories;
+        if (!Array.isArray(categories) || categories.length === 0) return false;
+        return categories.every(category => setupCategorySchema.safeParse(category).success);
     },
     registration: data => registrationPolicySchema.safeParse(data.registration).success,
     summary: () => true,

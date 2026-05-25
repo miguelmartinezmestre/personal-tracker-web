@@ -98,17 +98,20 @@ export default function UpdateProgressTable({
     type ProgressPoint = { date: number; currentValue: number; objective: number };
     const targetValue = objectiveDoc?.targetValue ?? 0;
     const progressData: ProgressPoint[] = sortedUpdates.reduce<ProgressPoint[]>(
-        (acc, item: Doc<'progressUpdates'>) => {
-            const prev = acc.length > 0 ? acc[acc.length - 1]?.currentValue : baseValue;
-            if (prev === undefined) {
+        (progressPoints, progressUpdate: Doc<'progressUpdates'>) => {
+            const previousCumulativeValue =
+                progressPoints.length > 0
+                    ? progressPoints[progressPoints.length - 1]?.currentValue
+                    : baseValue;
+            if (previousCumulativeValue === undefined) {
                 throw new Error('Unexpected undefined value in progress calculation');
             }
-            acc.push({
-                date: item.updateDate,
-                currentValue: prev + item.updatedValue,
+            progressPoints.push({
+                date: progressUpdate.updateDate,
+                currentValue: previousCumulativeValue + progressUpdate.updatedValue,
                 objective: targetValue,
             });
-            return acc;
+            return progressPoints;
         },
         []
     );

@@ -36,7 +36,7 @@ export default function CategoriesLayout({ preloadedCategoriesQuery }: Categorie
 
 function CategoriesContent({ preloadedCategoriesQuery }: CategoriesLayoutProps) {
     const t = useTranslations('Objectives.categories');
-    const categories = usePreloadedQuery(preloadedCategoriesQuery);
+    const preloadedCategories = usePreloadedQuery(preloadedCategoriesQuery);
 
     return (
         <div className="w-full min-w-0 space-y-6">
@@ -46,7 +46,9 @@ function CategoriesContent({ preloadedCategoriesQuery }: CategoriesLayoutProps) 
                     <CreateCategoryFormModal />
                 </div>
             </div>
-            <CategoriesTable initialCategories={(categories as CategoriesResult) ?? undefined} />
+            <CategoriesTable
+                initialCategories={(preloadedCategories as CategoriesResult) ?? undefined}
+            />
         </div>
     );
 }

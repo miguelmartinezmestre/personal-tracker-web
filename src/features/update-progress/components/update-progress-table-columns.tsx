@@ -13,12 +13,12 @@ interface UseUpdateProgressTableColumnsProps {
     objectiveId: Id<'objectives'>;
 }
 
-function mapDocToUpdateProgress(doc: Doc<'progressUpdates'>): UpdateProgress {
+function mapDocToUpdateProgress(progressUpdateDoc: Doc<'progressUpdates'>): UpdateProgress {
     return {
-        _id: doc._id.toString(),
-        updatedValue: doc.updatedValue,
-        updateDate: new Date(doc.updateDate),
-        comment: doc.comment ?? null,
+        _id: progressUpdateDoc._id.toString(),
+        updatedValue: progressUpdateDoc.updatedValue,
+        updateDate: new Date(progressUpdateDoc.updateDate),
+        comment: progressUpdateDoc.comment ?? null,
     };
 }
 

@@ -34,12 +34,14 @@ interface OrganizationRaw {
 export function useOrganizations() {
     const { data, isPending, isLoading } = useQuery(ORGANIZATIONS_QUERY);
 
-    const organizations: Organization[] | undefined = data?.map((org: OrganizationRaw) => ({
-        id: org.id,
-        name: org.name,
-        slug: org.slug,
-        description: org.description ?? '',
-    }));
+    const organizations: Organization[] | undefined = data?.map(
+        (rawOrganization: OrganizationRaw) => ({
+            id: rawOrganization.id,
+            name: rawOrganization.name,
+            slug: rawOrganization.slug,
+            description: rawOrganization.description ?? '',
+        })
+    );
 
     return {
         data: organizations,
@@ -59,22 +61,24 @@ export function useOrganizationByIdentifier(identifier: string | null) {
 
     const trimmedIdentifier = identifier.trim();
 
-    let org = data?.find((o: OrganizationRaw) => {
-        const slug = o.slug;
+    let matchedOrganization = data?.find((organization: OrganizationRaw) => {
+        const slug = organization.slug;
         if (!slug) return false;
         return slug.trim() === trimmedIdentifier;
     });
 
-    if (!org) {
-        org = data?.find((o: OrganizationRaw) => o.id.trim() === trimmedIdentifier);
+    if (!matchedOrganization) {
+        matchedOrganization = data?.find(
+            (organization: OrganizationRaw) => organization.id.trim() === trimmedIdentifier
+        );
     }
 
-    const organization: Organization | null = org
+    const organization: Organization | null = matchedOrganization
         ? {
-              id: org.id,
-              name: org.name,
-              slug: org.slug,
-              description: org.description ?? '',
+              id: matchedOrganization.id,
+              name: matchedOrganization.name,
+              slug: matchedOrganization.slug,
+              description: matchedOrganization.description ?? '',
           }
         : null;
 
@@ -126,16 +130,18 @@ export function useUpdateOrganization() {
             const previous = queryClient.getQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY);
 
             if (previous) {
-                queryClient.setQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY, old =>
-                    old?.map(org =>
-                        org.id === values.id
-                            ? {
-                                  ...org,
-                                  name: values.name,
-                                  description: values.description ?? '',
-                              }
-                            : org
-                    )
+                queryClient.setQueryData<Organization[]>(
+                    ORGANIZATIONS_QUERY_KEY,
+                    previousOrganizations =>
+                        previousOrganizations?.map(organization =>
+                            organization.id === values.id
+                                ? {
+                                      ...organization,
+                                      name: values.name,
+                                      description: values.description ?? '',
+                                  }
+                                : organization
+                        )
                 );
             }
 

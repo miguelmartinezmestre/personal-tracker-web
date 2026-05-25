@@ -21,7 +21,9 @@ const DEFAULT_FILTERS: FilterOptions = {
 };
 
 type PersonalResult = FunctionReturnType<typeof api.objectives.getObjectivesByUser>;
-type OrgResult = FunctionReturnType<typeof api.objectives.getOrganizationObjectives>;
+type OrganizationObjectivesResult = FunctionReturnType<
+    typeof api.objectives.getOrganizationObjectives
+>;
 type DeadlineRange = 'today' | 'week' | 'month' | 'overdue';
 
 type UseObjectiveListStateArgs = {
@@ -46,9 +48,9 @@ export function useObjectiveListState({
     const preloadedPersonal = usePreloadedQuery(preloadedPersonalObjectivesQuery) as
         | PersonalResult
         | undefined;
-    const preloadedOrg = usePreloadedQuery(preloadedOrganizationObjectivesQuery) as
-        | OrgResult
-        | undefined;
+    const preloadedOrganizationObjectives = usePreloadedQuery(
+        preloadedOrganizationObjectivesQuery
+    ) as OrganizationObjectivesResult | undefined;
 
     const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts: personalPaginationOpts, reset: resetPersonalPagination } =
@@ -92,17 +94,20 @@ export function useObjectiveListState({
         )
     );
 
-    const orgPagination = useServerPagination(DEFAULT_PAGE_SIZE);
-    const { paginationOpts: orgPaginationOpts, reset: resetOrgPagination } = orgPagination;
-    const orgIsFirstPage = orgPaginationOpts.cursor === null;
+    const organizationPagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const {
+        paginationOpts: organizationPaginationOpts,
+        reset: resetOrganizationPagination,
+    } = organizationPagination;
+    const organizationIsFirstPage = organizationPaginationOpts.cursor === null;
 
-    const orgQuery = useQuery({
+    const organizationQuery = useQuery({
         ...convexQuery(
             api.objectives.getOrganizationObjectives,
             hasSearch
                 ? 'skip'
                 : {
-                      paginationOpts: orgPaginationOpts,
+                      paginationOpts: organizationPaginationOpts,
                       status: statusFilter,
                       category: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
@@ -110,15 +115,15 @@ export function useObjectiveListState({
         ),
         initialData:
             !hasSearch &&
-            orgIsFirstPage &&
+            organizationIsFirstPage &&
             filters.status === 'all' &&
             filters.category === 'all' &&
             filters.deadlineRange === 'all'
-                ? preloadedOrg
+                ? preloadedOrganizationObjectives
                 : undefined,
     });
 
-    const orgSearchQuery = useQuery(
+    const organizationSearchQuery = useQuery(
         convexQuery(
             api.objectives.searchOrganizationObjectives,
             hasSearch
@@ -140,17 +145,21 @@ export function useObjectiveListState({
     const personalContinueCursor = personalQuery.data?.continueCursor ?? null;
     const personalPageIsDone = personalQuery.data?.isDone ?? false;
     const personalHasNextPage = Boolean(personalContinueCursor) && !personalPageIsDone;
-    const orgContinueCursor = orgQuery.data?.continueCursor ?? null;
-    const orgPageIsDone = orgQuery.data?.isDone ?? false;
-    const orgHasNextPage = Boolean(orgContinueCursor) && !orgPageIsDone;
+    const organizationContinueCursor = organizationQuery.data?.continueCursor ?? null;
+    const organizationPageIsDone = organizationQuery.data?.isDone ?? false;
+    const organizationHasNextPage =
+        Boolean(organizationContinueCursor) && !organizationPageIsDone;
 
     const personalObjectives = React.useMemo<Doc<'objectives'>[]>(
         () => (hasSearch ? (personalSearchQuery.data ?? []) : (personalQuery.data?.page ?? [])),
         [hasSearch, personalQuery.data?.page, personalSearchQuery.data]
     );
     const organizationObjectives = React.useMemo<Doc<'objectives'>[]>(
-        () => (hasSearch ? (orgSearchQuery.data ?? []) : (orgQuery.data?.page ?? [])),
-        [hasSearch, orgQuery.data?.page, orgSearchQuery.data]
+        () =>
+            hasSearch
+                ? (organizationSearchQuery.data ?? [])
+                : (organizationQuery.data?.page ?? []),
+        [hasSearch, organizationQuery.data?.page, organizationSearchQuery.data]
     );
 
     const handleFiltersChange = React.useCallback(
@@ -163,7 +172,7 @@ export function useObjectiveListState({
 
             if (shouldResetPagination) {
                 resetPersonalPagination();
-                resetOrgPagination();
+                resetOrganizationPagination();
             }
 
             setFilters(nextFilters);
@@ -173,7 +182,7 @@ export function useObjectiveListState({
             filters.category,
             filters.deadlineRange,
             filters.search,
-            resetOrgPagination,
+            resetOrganizationPagination,
             resetPersonalPagination,
         ]
     );
@@ -194,11 +203,17 @@ export function useObjectiveListState({
         },
         organization: {
             objectives: organizationObjectives,
-            pagination: orgPagination,
-            hasNextPage: orgHasNextPage,
-            isLoading: hasSearch ? orgSearchQuery.isLoading : orgQuery.isLoading,
-            isFetching: orgQuery.isFetching,
-            onNextPage: () => orgPagination.nextPage(orgContinueCursor, orgPageIsDone),
+            pagination: organizationPagination,
+            hasNextPage: organizationHasNextPage,
+            isLoading: hasSearch
+                ? organizationSearchQuery.isLoading
+                : organizationQuery.isLoading,
+            isFetching: organizationQuery.isFetching,
+            onNextPage: () =>
+                organizationPagination.nextPage(
+                    organizationContinueCursor,
+                    organizationPageIsDone
+                ),
         },
     };
 }

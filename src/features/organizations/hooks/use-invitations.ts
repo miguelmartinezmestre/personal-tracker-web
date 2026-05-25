@@ -46,27 +46,29 @@ export function usePendingInvitations() {
         convexQuery(api.organizations.getUserInvitations, {})
     );
 
-    const invitations: Invitation[] | undefined = data?.map((inv: InvitationRaw) => {
+    const invitations: Invitation[] | undefined = data?.map((rawInvitation: InvitationRaw) => {
         const validRoles: InvitationRole[] = ['owner', 'admin', 'member'];
-        const role = validRoles.includes(inv.role as InvitationRole)
-            ? (inv.role as InvitationRole)
+        const role = validRoles.includes(rawInvitation.role as InvitationRole)
+            ? (rawInvitation.role as InvitationRole)
             : 'member';
 
         const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'] as const;
-        const status = validStatuses.includes(inv.status as (typeof validStatuses)[number])
-            ? (inv.status as (typeof validStatuses)[number])
+        const status = validStatuses.includes(
+            rawInvitation.status as (typeof validStatuses)[number]
+        )
+            ? (rawInvitation.status as (typeof validStatuses)[number])
             : 'pending';
 
         return {
-            id: inv.id,
-            email: inv.email,
+            id: rawInvitation.id,
+            email: rawInvitation.email,
             role,
-            organizationId: inv.organizationId,
+            organizationId: rawInvitation.organizationId,
             status,
-            createdAt: new Date(inv.createdAt),
-            expiresAt: inv.expiresAt ? new Date(inv.expiresAt) : undefined,
-            organization: inv.organization,
-            inviter: inv.inviter,
+            createdAt: new Date(rawInvitation.createdAt),
+            expiresAt: rawInvitation.expiresAt ? new Date(rawInvitation.expiresAt) : undefined,
+            organization: rawInvitation.organization,
+            inviter: rawInvitation.inviter,
         };
     });
 

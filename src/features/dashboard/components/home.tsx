@@ -102,11 +102,11 @@ export default function Home({
                             </p>
                         ) : (
                             <ul className="space-y-2">
-                                {upcomingDeadlines.slice(0, 5).map(d => (
-                                    <li key={d.id} className="flex justify-between text-sm">
-                                        <span className="truncate mr-2">{d.title}</span>
+                                {upcomingDeadlines.slice(0, 5).map(deadline => (
+                                    <li key={deadline.id} className="flex justify-between text-sm">
+                                        <span className="truncate mr-2">{deadline.title}</span>
                                         <span className="text-muted-foreground shrink-0">
-                                            {d.daysRemaining}d
+                                            {deadline.daysRemaining}d
                                         </span>
                                     </li>
                                 ))}

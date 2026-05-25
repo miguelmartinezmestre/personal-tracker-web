@@ -30,24 +30,26 @@ export default function SessionsTable({ initialSessions }: SessionsTableProps) {
         useServerPagination(DEFAULT_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
 
-    const sessions = useQuery({
+    const sessionsQuery = useQuery({
         ...convexQuery(api.sessions.getSessionsByUser, { paginationOpts }),
         initialData: isFirstPage ? initialSessions : undefined,
     });
 
-    const sessionsData = sessions.data as SessionsResult | undefined;
+    const sessionsData = sessionsQuery.data as SessionsResult | undefined;
     const continueCursor = sessionsData?.continueCursor ?? null;
     const pageIsDone = sessionsData?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const data: SessionsResult['page'] = sessionsData?.page ?? [];
+    const sessionRows: SessionsResult['page'] = sessionsData?.page ?? [];
     const [now] = useState(Date.now);
-    const revocableSessions = data.filter(
+    const revocableSessions = sessionRows.filter(
         (session: SessionsResult['page'][number]) => !session.isCurrent && session.expiresAt >= now
     );
-    const currentSessionId = data.find((s: SessionsResult['page'][number]) => s.isCurrent)?._id;
+    const currentSessionId = sessionRows.find(
+        (session: SessionsResult['page'][number]) => session.isCurrent
+    )?._id;
     const canRevokeAllOtherSessions =
-        Boolean(currentSessionId) && revocableSessions.length > 0 && !sessions.isLoading;
+        Boolean(currentSessionId) && revocableSessions.length > 0 && !sessionsQuery.isLoading;
 
     return (
         <div className="space-y-4">
@@ -72,15 +74,15 @@ export default function SessionsTable({ initialSessions }: SessionsTableProps) {
             </div>
             <DataTable
                 columns={columns}
-                data={data}
-                isLoading={sessions.isLoading}
+                data={sessionRows}
+                isLoading={sessionsQuery.isLoading}
                 pagination={{
                     currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,
                     hasPreviousPage,
-                    isLoading: sessions.isFetching,
+                    isLoading: sessionsQuery.isFetching,
                 }}
             />
         </div>

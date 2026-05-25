@@ -35,7 +35,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
     const pageIsDone = logs.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const data: Doc<'auditLogs'>[] = logs.data?.page ?? [];
+    const auditLogRows: Doc<'auditLogs'>[] = logs.data?.page ?? [];
 
     return (
         <div className="space-y-4">
@@ -47,7 +47,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
             </div>
             <DataTable
                 columns={columns}
-                data={data}
+                data={auditLogRows}
                 isLoading={logs.isLoading}
                 pagination={{
                     currentPage,
@@ -58,7 +58,7 @@ export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
                     isLoading: logs.isFetching,
                 }}
             />
-            {data.length === 0 && !logs.isLoading && (
+            {auditLogRows.length === 0 && !logs.isLoading && (
                 <p className="text-center text-muted-foreground py-8">
                     {t('auditLogsTable.empty')}
                 </p>

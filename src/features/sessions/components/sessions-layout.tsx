@@ -38,7 +38,7 @@ function SessionsContent({
     preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
 }) {
     const t = useTranslations('Sessions');
-    const sessions = usePreloadedQuery(preloadedSessionsQuery);
+    const preloadedSessions = usePreloadedQuery(preloadedSessionsQuery);
 
     return (
         <div className="space-y-6" data-testid="sessions-page">
@@ -48,7 +48,7 @@ function SessionsContent({
                 </h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <SessionsTable initialSessions={(sessions as SessionsResult) ?? undefined} />
+            <SessionsTable initialSessions={(preloadedSessions as SessionsResult) ?? undefined} />
         </div>
     );
 }

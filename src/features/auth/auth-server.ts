@@ -25,14 +25,17 @@ const AUTH_REQUIRED_ERROR = 'AUTH_REQUIRED';
 async function withAuthOptions<Func extends FunctionReference<'query' | 'mutation'>>(
     args: ArgsAndOptions<Func, NextjsOptions>
 ): Promise<ArgsAndOptions<Func, NextjsOptions>> {
-    const [fnArgs, options] = args as [Func['_args'] | undefined, NextjsOptions | undefined];
+    const [functionArgs, options] = args as [
+        Func['_args'] | undefined,
+        NextjsOptions | undefined,
+    ];
     const token = await getToken();
     if (!token) {
         throw new Error(AUTH_REQUIRED_ERROR);
     }
 
     return [
-        fnArgs ?? {},
+        functionArgs ?? {},
         {
             ...options,
             token,

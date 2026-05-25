@@ -21,7 +21,7 @@ export function useDeleteUpdateProgress(objectiveId: Id<'objectives'>) {
                     objectiveId,
                     paginationOpts: { numItems: 20, cursor: null },
                 }),
-                args => args.objectiveId === objectiveId
+                queryArgs => queryArgs.objectiveId === objectiveId
             );
             toast.success(t('toast.deletedSuccess'));
         },

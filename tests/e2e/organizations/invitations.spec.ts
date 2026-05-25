@@ -4,12 +4,12 @@ import { UserFactory } from '../../helpers/factories';
 
 test.describe('Organization Invitations', () => {
     test('invite member by email', { tag: ['@REQ-EQUIPOS-003'] }, async ({ page }) => {
-        const org = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
+        const organization = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
 
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
         const viewLink = orgRow.getByTestId('organization-detail-link');
 
         await expect(viewLink).toBeVisible();
@@ -52,12 +52,12 @@ test.describe('Organization Invitations', () => {
     });
 
     test('view pending invitations sent', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
-        const org = await createOrganization(page);
+        const organization = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
         const viewLink = orgRow.getByTestId('organization-detail-link');
 
         await expect(viewLink).toBeVisible();
@@ -75,12 +75,12 @@ test.describe('Organization Invitations', () => {
     });
 
     test('cancel pending invitation', async ({ page }) => {
-        const org = await createOrganization(page);
+        const organization = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
         const viewLink = orgRow.getByTestId('organization-detail-link');
 
         await expect(viewLink).toBeVisible();
@@ -137,12 +137,12 @@ test.describe('Organization Invitations', () => {
         { tag: ['@REQ-EQUIPOS-008'] },
         async ({ page, context }) => {
             const user1 = await createTestUserViaAPI(page);
-            const org = await createOrganization(page, { name: `Accept Org ${Date.now()}` });
+            const organization = await createOrganization(page, { name: `Accept Org ${Date.now()}` });
 
             await page.goto('/dashboard/organizations');
             await page.waitForLoadState('domcontentloaded');
 
-            const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+            const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
             const viewLink = orgRow.getByTestId('organization-detail-link');
 
             await expect(viewLink).toBeVisible();
@@ -190,12 +190,12 @@ test.describe('Organization Invitations', () => {
     });
 
     test('resend invitation', async ({ page }) => {
-        const org = await createOrganization(page);
+        const organization = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
         const viewLink = orgRow.getByTestId('organization-detail-link');
 
         await expect(viewLink).toBeVisible();
@@ -211,12 +211,12 @@ test.describe('Organization Invitations', () => {
     });
 
     test('invitation link shows in UI', async ({ page }) => {
-        const org = await createOrganization(page);
+        const organization = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('domcontentloaded');
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
+        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
         const viewLink = orgRow.getByTestId('organization-detail-link');
 
         await expect(viewLink).toBeVisible();

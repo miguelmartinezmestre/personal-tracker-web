@@ -68,8 +68,8 @@ test.describe('Rate Limiting', () => {
                 }
             }
 
-            const rateLimitedCount = responses.filter(s => s === 429).length;
-            const successCount = responses.filter(s => s === 200).length;
+            const rateLimitedCount = responses.filter(statusCode => statusCode === 429).length;
+            const successCount = responses.filter(statusCode => statusCode === 200).length;
 
             expect(rateLimitedCount + successCount).toBeGreaterThanOrEqual(requests * 0.8);
         });
@@ -115,8 +115,10 @@ test.describe('Rate Limiting', () => {
                 await page.waitForTimeout(100);
             }
 
-            const hasRateLimit = responses.some(s => s === 429);
-            const hasSuccess = responses.some(s => s === 200 || s === 201);
+            const hasRateLimit = responses.some(statusCode => statusCode === 429);
+            const hasSuccess = responses.some(
+                statusCode => statusCode === 200 || statusCode === 201
+            );
 
             expect(hasRateLimit || hasSuccess).toBe(true);
         });
@@ -140,8 +142,8 @@ test.describe('Rate Limiting', () => {
                 }
             }
 
-            const hasRateLimit = responses.some(s => s === 429);
-            const hasSuccess = responses.some(s => s === 200);
+            const hasRateLimit = responses.some(statusCode => statusCode === 429);
+            const hasSuccess = responses.some(statusCode => statusCode === 200);
 
             expect(hasRateLimit || hasSuccess).toBe(true);
         });
@@ -156,8 +158,10 @@ test.describe('Rate Limiting', () => {
 
             const results = await Promise.all(promises);
 
-            const successful = results.filter(r => r && r.ok()).length;
-            const rateLimited = results.filter(r => r && r.status() === 429).length;
+            const successful = results.filter(response => response && response.ok()).length;
+            const rateLimited = results.filter(
+                response => response && response.status() === 429
+            ).length;
 
             expect(successful + rateLimited).toBeGreaterThanOrEqual(burstSize * 0.5);
         });

@@ -27,7 +27,7 @@ export default function PasswordFormEdit() {
     const [error, setError] = useState('');
     const form = useForm({
         defaultValues: {
-            password: '',
+            currentPassword: '',
             confirmPassword: '',
             newPassword: '',
         } as z.infer<typeof updatePasswordSchema>,
@@ -41,12 +41,12 @@ export default function PasswordFormEdit() {
     });
 
     const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
-        if (values.password !== values.confirmPassword) {
+        if (values.currentPassword !== values.confirmPassword) {
             setError(t('passwordMismatch'));
             return;
         }
 
-        if (values.password === values.newPassword) {
+        if (values.currentPassword === values.newPassword) {
             setError(t('passwordSameAsOld'));
             return;
         }
@@ -55,28 +55,31 @@ export default function PasswordFormEdit() {
         setError('');
         setMessage('');
 
-        const fallbackMsg = t('passwordUpdateFailed');
+        const fallbackErrorMessage = t('passwordUpdateFailed');
 
         try {
             const result = await authClient.changePassword({
-                currentPassword: values.password,
+                currentPassword: values.currentPassword,
                 newPassword: values.newPassword,
                 revokeOtherSessions: false,
             });
 
             if (result.error) {
-                const msg = getMessageOrFallback(result.error.message, fallbackMsg);
-                setError(msg);
-                toast.error(msg);
+                const errorMessage = getMessageOrFallback(
+                    result.error.message,
+                    fallbackErrorMessage
+                );
+                setError(errorMessage);
+                toast.error(errorMessage);
             } else {
                 setMessage(t('passwordUpdated'));
                 toast.success(t('passwordUpdated'));
                 form.reset();
             }
-        } catch (err) {
-            const msg = getErrorMessage(err, fallbackMsg);
-            setError(msg);
-            toast.error(msg);
+        } catch (error) {
+            const errorMessage = getErrorMessage(error, fallbackErrorMessage);
+            setError(errorMessage);
+            toast.error(errorMessage);
         }
         setIsLoading(false);
     };
@@ -90,7 +93,7 @@ export default function PasswordFormEdit() {
                 className="space-y-5 py-4"
             >
                 <FormField
-                    name="password"
+                    name="currentPassword"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>{t('password')}</FormLabel>
