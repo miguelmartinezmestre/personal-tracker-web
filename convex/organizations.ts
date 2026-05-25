@@ -87,10 +87,15 @@ export const getOrganizationsByUser = query({
 
         if (memberships.length === 0) return [];
 
-        const orgIds = [...new Set(memberships.map(m => m.organizationId))];
+        const orgIds = [...new Set(memberships.map(membership => membership.organizationId))];
         const orgs = await Promise.all(orgIds.map(id => ctx.db.get('organization', id)));
         const orgMap = new Map(
-            orgs.filter((o): o is NonNullable<typeof o> => o !== null).map(o => [o._id, o])
+            orgs
+                .filter(
+                    (organization): organization is NonNullable<typeof organization> =>
+                        organization !== null
+                )
+                .map(organization => [organization._id, organization])
         );
 
         const organizations = memberships
@@ -198,10 +203,12 @@ export const getOrganizationMembers = query({
             .order('desc')
             .paginate(args.paginationOpts);
 
-        const userIds = [...new Set(paginatedMembers.page.map(m => m.userId))];
+        const userIds = [...new Set(paginatedMembers.page.map(member => member.userId))];
         const users = await Promise.all(userIds.map(id => ctx.db.get('user', id)));
         const userMap = new Map(
-            users.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
+            users
+                .filter((user): user is NonNullable<typeof user> => user !== null)
+                .map(user => [user._id, user])
         );
 
         const enrichedPage = paginatedMembers.page.map(member => {
@@ -252,8 +259,8 @@ export const getUserInvitations = query({
 
         if (invitations.length === 0) return [];
 
-        const orgIds = [...new Set(invitations.map(i => i.organizationId))];
-        const inviterIds = [...new Set(invitations.map(i => i.inviterId))];
+        const orgIds = [...new Set(invitations.map(invitation => invitation.organizationId))];
+        const inviterIds = [...new Set(invitations.map(invitation => invitation.inviterId))];
 
         const [orgs, inviters] = await Promise.all([
             Promise.all(orgIds.map(id => ctx.db.get('organization', id))),
@@ -261,10 +268,17 @@ export const getUserInvitations = query({
         ]);
 
         const orgMap = new Map(
-            orgs.filter((o): o is NonNullable<typeof o> => o !== null).map(o => [o._id, o])
+            orgs
+                .filter(
+                    (organization): organization is NonNullable<typeof organization> =>
+                        organization !== null
+                )
+                .map(organization => [organization._id, organization])
         );
         const userMap = new Map(
-            inviters.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
+            inviters
+                .filter((user): user is NonNullable<typeof user> => user !== null)
+                .map(user => [user._id, user])
         );
 
         const invitationsWithDetails = invitations.map(invitation => {
@@ -326,10 +340,12 @@ export const getOrganizationInvitations = query({
 
         if (invitations.length === 0) return [];
 
-        const inviterIds = [...new Set(invitations.map(i => i.inviterId))];
+        const inviterIds = [...new Set(invitations.map(invitation => invitation.inviterId))];
         const inviters = await Promise.all(inviterIds.map(id => ctx.db.get('user', id)));
         const userMap = new Map(
-            inviters.filter((u): u is NonNullable<typeof u> => u !== null).map(u => [u._id, u])
+            inviters
+                .filter((user): user is NonNullable<typeof user> => user !== null)
+                .map(user => [user._id, user])
         );
 
         const invitationsWithDetails = invitations.map(invitation => {

@@ -237,17 +237,17 @@ describe('convex setup', () => {
             });
             expect(updatedUser?.role).toBe('admin');
 
-            const org = await t.run(async ctx => {
+            const organization = await t.run(async ctx => {
                 return await ctx.db.get(result.organizationId as Id<'organization'>);
             });
-            expect(org?.name).toBe('My Company');
+            expect(organization?.name).toBe('My Company');
 
             const categories = await t.run(async ctx => {
                 return await ctx.db.query('categories').collect();
             });
             expect(categories).toHaveLength(2);
-            expect(categories.map(c => c.name)).toContain('Health');
-            expect(categories.map(c => c.name)).toContain('Career');
+            expect(categories.map(category => category.name)).toContain('Health');
+            expect(categories.map(category => category.name)).toContain('Career');
 
             const settings = await t.run(async ctx => {
                 return await ctx.db.query('platformSettings').first();

@@ -86,11 +86,11 @@ export const getBackfillStats = internalMutation({
                 cursor,
             });
 
-            for (const o of page.page) {
+            for (const objective of page.page) {
                 total++;
-                if (o.categoryId) {
+                if (objective.categoryId) {
                     withCategoryId++;
-                } else if (o.category) {
+                } else if (objective.category) {
                     withCategoryStringOnly++;
                 } else {
                     withNeither++;

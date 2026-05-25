@@ -132,8 +132,8 @@ export async function updateCategoryForCurrentOrganization(
     ctx: CategoryMutationCtx,
     args: CategoryPatch
 ) {
-    const { id, ...patch } = args;
-    const existing = await ctx.db.get('categories', id);
+    const { id: categoryId, ...patch } = args;
+    const existing = await ctx.db.get('categories', categoryId);
     if (!existing) {
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
@@ -148,14 +148,14 @@ export async function updateCategoryForCurrentOrganization(
             )
             .take(2);
 
-        if (matchingCategories.some(category => category._id !== id)) {
+        if (matchingCategories.some(category => category._id !== categoryId)) {
             throw new ConvexError(ERROR_CODES.DUPLICATE_CATEGORY_NAME);
         }
 
         patch.name = trimmedName;
     }
 
-    return await ctx.db.patch('categories', id, { ...patch, updatedAt: Date.now() });
+    return await ctx.db.patch('categories', categoryId, { ...patch, updatedAt: Date.now() });
 }
 
 export async function deleteCategoryForCurrentOrganization(
@@ -192,7 +192,7 @@ export async function createDefaultCategoriesForCurrentOrganization(ctx: Categor
         const exists = await findCategoryByOrganizationAndName(ctx, organizationId, category.name);
 
         if (!exists) {
-            const id = await ctx.db.insert('categories', {
+            const categoryId = await ctx.db.insert('categories', {
                 userId: ctx.userId,
                 organizationId,
                 name: category.name,
@@ -201,7 +201,7 @@ export async function createDefaultCategoriesForCurrentOrganization(ctx: Categor
                 createdAt: now,
                 updatedAt: now,
             });
-            results.push(await ctx.db.get('categories', id));
+            results.push(await ctx.db.get('categories', categoryId));
         }
     }
 

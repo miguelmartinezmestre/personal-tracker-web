@@ -152,18 +152,18 @@ const insertAuthAuditLog = async (
     let metadata: AuthAuditMetadata | undefined;
 
     if (args.metadata !== undefined) {
-        const src = args.metadata;
-        const m: AuthAuditMetadata = {};
-        if (src.before !== undefined) {
-            m.before = src.before;
+        const metadataSource = args.metadata;
+        const normalizedMetadata: AuthAuditMetadata = {};
+        if (metadataSource.before !== undefined) {
+            normalizedMetadata.before = metadataSource.before;
         }
-        if (src.after !== undefined) {
-            m.after = src.after;
+        if (metadataSource.after !== undefined) {
+            normalizedMetadata.after = metadataSource.after;
         }
-        if (src.context !== undefined) {
-            m.context = src.context;
+        if (metadataSource.context !== undefined) {
+            normalizedMetadata.context = metadataSource.context;
         }
-        metadata = Object.keys(m).length > 0 ? m : undefined;
+        metadata = Object.keys(normalizedMetadata).length > 0 ? normalizedMetadata : undefined;
     }
 
     await ctx.db.insert('auditLogs', {

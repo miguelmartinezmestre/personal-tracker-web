@@ -250,8 +250,8 @@ describe('convex pagination', () => {
             status: 'completed',
         });
 
-        expect(activeResult.page.every(o => o.status === 'active')).toBe(true);
-        expect(completedResult.page.every(o => o.status === 'completed')).toBe(true);
+        expect(activeResult.page.every(objective => objective.status === 'active')).toBe(true);
+        expect(completedResult.page.every(objective => objective.status === 'completed')).toBe(true);
         expect(activeResult.page.length).toBe(5);
         expect(completedResult.page.length).toBe(3);
     });
@@ -283,7 +283,7 @@ describe('convex pagination', () => {
             deadlineRange: 'today',
         });
 
-        expect(todayResult.page.map(o => o.title)).toEqual(['Due today']);
+        expect(todayResult.page.map(objective => objective.title)).toEqual(['Due today']);
     });
 
     test('getOrganizationObjectives combines deadline range, status, and category before pagination', async () => {
@@ -343,7 +343,7 @@ describe('convex pagination', () => {
             deadlineRange: 'today',
         });
 
-        expect(result.page.map(o => o.title)).toEqual(['Org launch due today']);
+        expect(result.page.map(objective => objective.title)).toEqual(['Org launch due today']);
     });
 
     test('deadlineRange overdue excludes objectives without deadlines', async () => {
@@ -370,7 +370,7 @@ describe('convex pagination', () => {
             deadlineRange: 'overdue',
         });
 
-        expect(result.page.map(o => o.title)).toEqual(['Overdue objective']);
+        expect(result.page.map(objective => objective.title)).toEqual(['Overdue objective']);
     });
 
     test('searchObjectivesByUser returns matching authorized objectives without cursor pages', async () => {
@@ -409,7 +409,7 @@ describe('convex pagination', () => {
             limit: 50,
         });
 
-        expect(result.map(o => o.title)).toEqual(['Quarterly Revenue Goal']);
+        expect(result.map(objective => objective.title)).toEqual(['Quarterly Revenue Goal']);
     });
 
     test('searchObjectivesByUser matches objective descriptions', async () => {
@@ -427,7 +427,7 @@ describe('convex pagination', () => {
             limit: 50,
         });
 
-        expect(result.map(o => o.title)).toEqual(['Plain title']);
+        expect(result.map(objective => objective.title)).toEqual(['Plain title']);
     });
 
     test('searchObjectivesByUser matches objective categories', async () => {
@@ -445,7 +445,7 @@ describe('convex pagination', () => {
             limit: 50,
         });
 
-        expect(result.map(o => o.title)).toEqual(['Category-only match title']);
+        expect(result.map(objective => objective.title)).toEqual(['Category-only match title']);
     });
 
     test('searchObjectivesByUser applies deadlineRange before the bounded search result limit', async () => {
@@ -478,7 +478,7 @@ describe('convex pagination', () => {
             limit: 50,
         });
 
-        expect(result.map(o => o.title)).toContain('Bounded Search Contract Today Target');
+        expect(result.map(objective => objective.title)).toContain('Bounded Search Contract Today Target');
     });
 
     test('searchOrganizationObjectives matches title, description, and category for organization objectives', async () => {
@@ -516,7 +516,7 @@ describe('convex pagination', () => {
             }
         );
 
-        expect(descriptionResult.map(o => o.title)).toEqual(['Org searchable title']);
-        expect(categoryResult.map(o => o.title)).toEqual(['Org searchable title']);
+        expect(descriptionResult.map(objective => objective.title)).toEqual(['Org searchable title']);
+        expect(categoryResult.map(objective => objective.title)).toEqual(['Org searchable title']);
     });
 });

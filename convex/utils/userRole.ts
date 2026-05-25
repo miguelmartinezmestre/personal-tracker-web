@@ -2,9 +2,9 @@ import { ConvexError } from 'convex/values';
 import { ERROR_CODES, USER_ROLE } from './constants';
 
 export function normalizeGlobalUserRole(role: string): 'admin' | 'user' {
-    const r = role.trim();
-    const lower = r.toLowerCase();
-    if (lower === 'admin' || r === 'ADMIN') {
+    const normalizedRole = role.trim();
+    const lower = normalizedRole.toLowerCase();
+    if (lower === 'admin' || normalizedRole === 'ADMIN') {
         return USER_ROLE.ADMIN;
     }
     if (lower === 'user') {

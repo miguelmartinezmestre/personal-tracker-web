@@ -160,7 +160,7 @@ export const listUserSessions = queryWithRLS({
             .paginate(args.paginationOpts);
 
         return {
-            page: result.page.map(s => toSessionListItem(s, null)),
+            page: result.page.map(session => toSessionListItem(session, null)),
             continueCursor: result.continueCursor,
             isDone: result.isDone,
         };

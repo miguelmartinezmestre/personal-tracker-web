@@ -121,8 +121,10 @@ describe('convex dashboard', async () => {
             const monthlyProgress = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
 
             expect(monthlyProgress).toHaveLength(6);
-            expect(monthlyProgress.every(m => m.count === 0)).toBe(true);
-            expect(monthlyProgress.every(m => m.month && m.monthKey)).toBe(true);
+            expect(monthlyProgress.every(monthEntry => monthEntry.count === 0)).toBe(true);
+            expect(monthlyProgress.every(monthEntry => monthEntry.month && monthEntry.monthKey)).toBe(
+                true
+            );
         });
 
         test('counts progress updates correctly by month', async () => {
@@ -171,8 +173,12 @@ describe('convex dashboard', async () => {
             const currentMonthKey = `${currentMonth.getFullYear()}-${`${currentMonth.getMonth() + 1}`.padStart(2, '0')}`;
             const lastMonthKey = `${lastMonth.getFullYear()}-${`${lastMonth.getMonth() + 1}`.padStart(2, '0')}`;
 
-            const currentMonthData = monthlyProgress.find(m => m.monthKey === currentMonthKey);
-            const lastMonthData = monthlyProgress.find(m => m.monthKey === lastMonthKey);
+            const currentMonthData = monthlyProgress.find(
+                monthEntry => monthEntry.monthKey === currentMonthKey
+            );
+            const lastMonthData = monthlyProgress.find(
+                monthEntry => monthEntry.monthKey === lastMonthKey
+            );
 
             expect(currentMonthData?.count).toBe(3);
             expect(lastMonthData?.count).toBe(2);

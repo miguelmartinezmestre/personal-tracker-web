@@ -33,7 +33,7 @@ export async function runDeadlineNotificationsJob(
 
     const objectives = page.page;
 
-    const userIds = [...new Set(objectives.map(o => o.userId))];
+    const userIds = [...new Set(objectives.map(objective => objective.userId))];
     const preferenceMap = new Map<string, boolean>();
     await Promise.all(
         userIds.map(async uid => {

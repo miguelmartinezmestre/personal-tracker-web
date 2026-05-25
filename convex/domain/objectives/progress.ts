@@ -34,7 +34,7 @@ export async function createProgressUpdate(
     validateObjectiveNotCompleted(objective.status);
 
     const now = Date.now();
-    const id = await ctx.db.insert('progressUpdates', {
+    const progressUpdateId = await ctx.db.insert('progressUpdates', {
         objective: args.objective,
         userId: objective.userId,
         updatedValue: args.updatedValue,
@@ -92,7 +92,7 @@ export async function createProgressUpdate(
         });
     }
 
-    return await ctx.db.get('progressUpdates', id);
+    return await ctx.db.get('progressUpdates', progressUpdateId);
 }
 
 export async function listProgressUpdatesByObjective(

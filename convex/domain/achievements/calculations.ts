@@ -170,7 +170,7 @@ export async function calculateUserStreak(
         cursor = page.continueCursor;
     }
 
-    const objectiveIds = objectives.map((o: Doc<'objectives'>) => o._id);
+    const objectiveIds = objectives.map((objective: Doc<'objectives'>) => objective._id);
 
     if (objectiveIds.length === 0) return 0;
 
@@ -200,7 +200,7 @@ export async function calculateOrganizationStreak(
         cursor = page.continueCursor;
     }
 
-    const objectiveIds = organizationObjectives.map((o: Doc<'objectives'>) => o._id);
+    const objectiveIds = organizationObjectives.map((objective: Doc<'objectives'>) => objective._id);
 
     if (objectiveIds.length === 0) return 0;
 

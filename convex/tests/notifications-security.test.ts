@@ -225,7 +225,7 @@ describe('notifications security - cross-user access prevention', async () => {
             expect(userBNotifications.page[0]?.userId).toBe(userBId);
 
             const containsUserANotifications = userBNotifications.page.some(
-                n => n.userId === userAId
+                notification => notification.userId === userAId
             );
             expect(containsUserANotifications).toBe(false);
         });
@@ -261,12 +261,16 @@ describe('notifications security - cross-user access prevention', async () => {
             const userAQuery = await userAIdentity.query(api.notifications.getNotificationsByUser, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
-            expect(userAQuery.page.some(n => n._id === notificationA!._id)).toBe(true);
+            expect(
+                userAQuery.page.some(notification => notification._id === notificationA!._id)
+            ).toBe(true);
 
             const userBQuery = await userBIdentity.query(api.notifications.getNotificationsByUser, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
-            expect(userBQuery.page.some(n => n._id === notificationA!._id)).toBe(false);
+            expect(
+                userBQuery.page.some(notification => notification._id === notificationA!._id)
+            ).toBe(false);
         });
     });
 

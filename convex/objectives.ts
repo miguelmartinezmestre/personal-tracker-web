@@ -165,9 +165,14 @@ export const createObjective = mutationWithRLS({
         let resolvedCategoryId: Id<'categories'> | undefined;
 
         if (args.categoryId) {
-            const cat = await getCategoryForObjective(ctx, organizationId, userId, args.categoryId);
-            resolvedCategoryId = cat._id;
-            resolvedCategory = cat.name;
+            const category = await getCategoryForObjective(
+                ctx,
+                organizationId,
+                userId,
+                args.categoryId
+            );
+            resolvedCategoryId = category._id;
+            resolvedCategory = category.name;
         } else if (args.category !== undefined && args.category.trim() !== '') {
             const trimmed = args.category.trim();
             resolvedCategory = trimmed;
@@ -245,13 +250,13 @@ export const updateObjective = mutationWithRLS({
             | undefined;
 
         if (args.categoryId !== undefined) {
-            const cat = await getCategoryForObjective(
+            const category = await getCategoryForObjective(
                 ctx,
                 objective.organizationId,
                 ctx.userId,
                 args.categoryId
             );
-            categoryPatch = { category: cat.name, categoryId: cat._id };
+            categoryPatch = { category: category.name, categoryId: category._id };
         } else if (args.category !== undefined) {
             const trimmed = args.category.trim();
             if (trimmed === '') {

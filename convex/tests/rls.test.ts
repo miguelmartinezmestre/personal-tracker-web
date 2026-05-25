@@ -167,14 +167,14 @@ describe('convex RLS (Row-Level Security)', async () => {
             const user1Objectives = await user1Identity.query(api.objectives.getObjectivesByUser, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
-            expect(user1Objectives.page.some(o => o._id === obj1Id)).toBe(true);
-            expect(user1Objectives.page.some(o => o._id === obj2Id)).toBe(false);
+            expect(user1Objectives.page.some(objective => objective._id === obj1Id)).toBe(true);
+            expect(user1Objectives.page.some(objective => objective._id === obj2Id)).toBe(false);
 
             const user2Objectives = await user2Identity.query(api.objectives.getObjectivesByUser, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
-            expect(user2Objectives.page.some(o => o._id === obj2Id)).toBe(true);
-            expect(user2Objectives.page.some(o => o._id === obj1Id)).toBe(false);
+            expect(user2Objectives.page.some(objective => objective._id === obj2Id)).toBe(true);
+            expect(user2Objectives.page.some(objective => objective._id === obj1Id)).toBe(false);
         });
 
         test('admin can read all objectives', async () => {
@@ -219,10 +219,10 @@ describe('convex RLS (Row-Level Security)', async () => {
                     id: obj1Id,
                     title: 'Hacked Title',
                 });
-                const obj = await user1Identity.query(api.objectives.getObjectiveById, {
+                const objective = await user1Identity.query(api.objectives.getObjectiveById, {
                     id: obj1Id,
                 });
-                expect(obj?.title).toBe('User 1 Objective');
+                expect(objective?.title).toBe('User 1 Objective');
             } catch (error) {
                 expect(error).toBeDefined();
             }

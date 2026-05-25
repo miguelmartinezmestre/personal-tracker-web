@@ -116,15 +116,15 @@ async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
         .withIndex('by_type', q => q.eq('type', scopeType))
         .take(BATCH_SIZE);
 
-    const activeDefinitions = definitions.filter(d => d.isActive);
+    const activeDefinitions = definitions.filter(definition => definition.isActive);
 
     const newAchievements: string[] = [];
 
-    for (const def of activeDefinitions) {
-        const shouldAward = await evaluate(def.code);
+    for (const definition of activeDefinitions) {
+        const shouldAward = await evaluate(definition.code);
         if (shouldAward) {
-            await award(def._id, def.code, def.points);
-            newAchievements.push(def.code);
+            await award(definition._id, definition.code, definition.points);
+            newAchievements.push(definition.code);
         }
     }
 
@@ -140,9 +140,9 @@ export async function seedAchievementDefinitionsJob(ctx: MutationCtx) {
     }
 
     let count = 0;
-    for (const def of ACHIEVEMENT_DEFINITIONS) {
+    for (const definition of ACHIEVEMENT_DEFINITIONS) {
         await ctx.db.insert('achievementDefinitions', {
-            ...def,
+            ...definition,
             isActive: true,
             createdAt: now,
             updatedAt: now,
@@ -190,10 +190,12 @@ export async function checkUserAchievementsJob(
         .take(LIST_LIMIT);
 
     const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-    const defMap = new Map(definitions.map(d => [d._id, d]));
+    const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
 
     const earnedCodes = new Set(
-        earnedAchievements.map(ea => defMap.get(ea.achievement)?.code).filter(Boolean)
+        earnedAchievements
+            .map(earnedAchievement => definitionById.get(earnedAchievement.achievement)?.code)
+            .filter(Boolean)
     );
 
     const objectivesPage = await ctx.db
@@ -208,12 +210,17 @@ export async function checkUserAchievementsJob(
 
     const objectivesBatch = objectivesPage.page;
     cumulativeObjectiveCount += objectivesBatch.length;
-    cumulativeCompletedCount += objectivesBatch.filter(o => o.status === 'completed').length;
+    cumulativeCompletedCount += objectivesBatch.filter(
+        objective => objective.status === 'completed'
+    ).length;
     cumulativeEarlyBirdCount += objectivesBatch.filter(
-        o => o.status === 'completed' && o.deadline != null && o.updatedAt <= o.deadline
+        objective =>
+            objective.status === 'completed' &&
+            objective.deadline != null &&
+            objective.updatedAt <= objective.deadline
     ).length;
 
-    const objectiveIds = objectivesBatch.map(o => o._id);
+    const objectiveIds = objectivesBatch.map(objective => objective._id);
 
     if (objectiveIds.length > 0) {
         progressUpdatesCount += await countProgressUpdatesForObjectives(ctx, userId, objectiveIds);
@@ -343,10 +350,12 @@ export async function checkOrganizationAchievementsJob(
         .take(LIST_LIMIT);
 
     const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-    const defMap = new Map(definitions.map(d => [d._id, d]));
+    const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
 
     const earnedCodes = new Set(
-        earnedAchievements.map(ea => defMap.get(ea.achievement)?.code).filter(Boolean)
+        earnedAchievements
+            .map(earnedAchievement => definitionById.get(earnedAchievement.achievement)?.code)
+            .filter(Boolean)
     );
 
     const objectivesPage = await ctx.db
@@ -361,7 +370,9 @@ export async function checkOrganizationAchievementsJob(
 
     const batchObjectives = objectivesPage.page;
     orgScopedObjectivesCount += batchObjectives.length;
-    orgScopedCompletedCount += batchObjectives.filter(o => o.status === 'completed').length;
+    orgScopedCompletedCount += batchObjectives.filter(
+        objective => objective.status === 'completed'
+    ).length;
 
     const organizationStreak = await calculateOrganizationStreak(ctx, organizationId);
 

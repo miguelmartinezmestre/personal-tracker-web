@@ -27,11 +27,11 @@ export const getAchievementDefinitions = queryWithRLS({
                 .query('achievementDefinitions')
                 .withIndex('by_type', q => q.eq('type', typeFilter))
                 .take(LIST_LIMIT);
-            return definitions.filter(d => d.isActive);
+            return definitions.filter(definition => definition.isActive);
         }
 
         const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        return definitions.filter(d => d.isActive);
+        return definitions.filter(definition => definition.isActive);
     },
 });
 
@@ -46,12 +46,12 @@ export const getUserAchievements = queryWithRLS({
             .take(LIST_LIMIT);
 
         const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const defMap = new Map(definitions.map(d => [d._id, d]));
+        const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
 
-        const achievementsWithDetails = obtainedAchievements.map(oa => ({
-            ...oa,
-            definition: defMap.get(oa.achievement),
-            user: oa.userId,
+        const achievementsWithDetails = obtainedAchievements.map(obtainedAchievement => ({
+            ...obtainedAchievement,
+            definition: definitionById.get(obtainedAchievement.achievement),
+            user: obtainedAchievement.userId,
         }));
 
         return achievementsWithDetails;
@@ -69,11 +69,11 @@ export const getOrganizationAchievements = queryWithRLS({
             .take(LIST_LIMIT);
 
         const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const defMap = new Map(definitions.map(d => [d._id, d]));
+        const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
 
-        const achievementsWithDetails = organizationAchievements.map(oa => ({
-            ...oa,
-            definition: defMap.get(oa.achievement),
+        const achievementsWithDetails = organizationAchievements.map(organizationAchievement => ({
+            ...organizationAchievement,
+            definition: definitionById.get(organizationAchievement.achievement),
         }));
 
         return achievementsWithDetails;
@@ -109,17 +109,21 @@ export const getUserAchievementStats = queryWithRLS({
             .take(LIST_LIMIT);
 
         const allDefinitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const defMap = new Map(allDefinitions.map(d => [d._id, d]));
+        const definitionById = new Map(
+            allDefinitions.map(definition => [definition._id, definition])
+        );
 
         let totalPoints = 0;
-        for (const oa of obtainedAchievements) {
-            const definition = defMap.get(oa.achievement);
+        for (const obtainedAchievement of obtainedAchievements) {
+            const definition = definitionById.get(obtainedAchievement.achievement);
             if (definition) {
                 totalPoints += definition.points;
             }
         }
 
-        const individualDefinitions = allDefinitions.filter(d => d.type === 'individual');
+        const individualDefinitions = allDefinitions.filter(
+            definition => definition.type === 'individual'
+        );
 
         return {
             totalPoints,
@@ -144,11 +148,13 @@ export const getRecentAchievements = queryWithRLS({
             .take(limit);
 
         const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const defMap = new Map(definitions.map(d => [d._id, d]));
+        const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
 
         const achievementsWithDetails = obtainedAchievements
-            .map(oa => defMap.get(oa.achievement))
-            .filter((def): def is NonNullable<typeof def> => def !== null);
+            .map(obtainedAchievement => definitionById.get(obtainedAchievement.achievement))
+            .filter(
+                (definition): definition is NonNullable<typeof definition> => definition !== null
+            );
 
         return achievementsWithDetails;
     },
@@ -164,14 +170,16 @@ export const getUserAchievementProgress = queryWithRLS({
             .withIndex('by_type', q => q.eq('type', 'individual'))
             .take(LIST_LIMIT);
 
-        const activeDefinitions = definitions.filter(d => d.isActive);
+        const activeDefinitions = definitions.filter(definition => definition.isActive);
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
             .withIndex('by_user', q => q.eq('userId', userId))
             .take(LIST_LIMIT);
 
-        const earnedIds = new Set(obtainedAchievements.map(oa => oa.achievement));
+        const earnedIds = new Set(
+            obtainedAchievements.map(obtainedAchievement => obtainedAchievement.achievement)
+        );
 
         const objectivesCount = ctx.organizationId
             ? await ctx.db
@@ -185,7 +193,9 @@ export const getUserAchievementProgress = queryWithRLS({
                   .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
                   .take(LIST_LIMIT);
 
-        const completedObjectives = objectivesCount.filter(o => o.status === 'completed');
+        const completedObjectives = objectivesCount.filter(
+            objective => objective.status === 'completed'
+        );
         let progressUpdatesCount = 0;
         let progressUpdatesForObjectives: Doc<'progressUpdates'>[] = [];
 
@@ -206,11 +216,11 @@ export const getUserAchievementProgress = queryWithRLS({
             ? countStreakFromUpdates(progressUpdatesForObjectives)
             : 0;
 
-        const progressList = activeDefinitions.map(def => {
-            const isEarned = earnedIds.has(def._id);
+        const progressList = activeDefinitions.map(definition => {
+            const isEarned = earnedIds.has(definition._id);
             let currentProgress = 0;
 
-            switch (def.code) {
+            switch (definition.code) {
                 case 'first_objective':
                 case 'objectives_created_5':
                 case 'objectives_created_15':
@@ -233,19 +243,21 @@ export const getUserAchievementProgress = queryWithRLS({
                     currentProgress = progressUpdatesCount;
                     break;
                 case 'early_bird':
-                    currentProgress = completedObjectives.filter(o => {
-                        if (!o.deadline) return false;
-                        return o.updatedAt <= o.deadline;
+                    currentProgress = completedObjectives.filter(objective => {
+                        if (!objective.deadline) return false;
+                        return objective.updatedAt <= objective.deadline;
                     }).length;
                     break;
             }
 
             return {
-                definition: def,
+                definition,
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned
-                    ? obtainedAchievements.find(oa => oa.achievement === def._id)?.earnedAt
+                    ? obtainedAchievements.find(
+                          obtainedAchievement => obtainedAchievement.achievement === definition._id
+                      )?.earnedAt
                     : undefined,
             };
         });
