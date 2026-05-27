@@ -170,7 +170,12 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
 
                     <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm" className="relative">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="relative"
+                                data-testid="objectives-active-filters-button"
+                            >
                                 <Filter className="h-4 w-4 mr-2" />
                                 {t('filtersUi.button')}
                                 {activeFiltersCount > 0 && (

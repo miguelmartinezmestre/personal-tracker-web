@@ -117,9 +117,7 @@
         "welcome": "Welcome {name}",
         "stats": {
             "active": "Active",
-            "completed": "Completed",
-            "paused": "Paused",
-            "archived": "Archived"
+            "completed": "Completed"
         },
         "upcomingDeadlines": "Upcoming Deadlines",
         "noUpcomingDeadlines": "No deadlines in the next 7 days",
@@ -531,19 +529,11 @@
         "statusOptions": {
             "all": "All Status",
             "active": "Active",
-            "completed": "Completed",
-            "paused": "Paused",
-            "archived": "Archived"
+            "completed": "Completed"
         },
         "statusLabels": {
             "completed": "Completed",
-            "overdue": "Overdue",
-            "onTrack": "On Track",
-            "inProgress": "In Progress",
-            "atRisk": "At Risk",
-            "paused": "Paused",
-            "archived": "Archived",
-            "deleted": "Deleted"
+            "overdue": "Overdue"
         },
         "categoryOptions": {
             "all": "All Categories",
@@ -602,13 +592,7 @@
             "updateSuccess": "Objective updated successfully",
             "updateFailed": "Failed to update objective",
             "completedSuccess": "Objective completed",
-            "completeFailed": "Failed to complete objective",
-            "pausedSuccess": "Objective paused",
-            "pauseFailed": "Failed to pause objective",
-            "archivedSuccess": "Objective archived",
-            "archiveFailed": "Failed to archive objective",
-            "resumedSuccess": "Objective resumed",
-            "resumeFailed": "Failed to resume objective"
+            "completeFailed": "Failed to complete objective"
         },
         "tooltips": {
             "complete": "Complete objective",

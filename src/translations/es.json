@@ -117,9 +117,7 @@
         "welcome": "Bienvenido {name}",
         "stats": {
             "active": "Activos",
-            "completed": "Completados",
-            "paused": "Pausados",
-            "archived": "Archivados"
+            "completed": "Completados"
         },
         "upcomingDeadlines": "Próximos vencimientos",
         "noUpcomingDeadlines": "Sin vencimientos en los próximos 7 días",
@@ -531,19 +529,11 @@
         "statusOptions": {
             "all": "Todos los estados",
             "active": "Activo",
-            "completed": "Completado",
-            "paused": "Pausado",
-            "archived": "Archivado"
+            "completed": "Completado"
         },
         "statusLabels": {
             "completed": "Completado",
-            "overdue": "Atrasado",
-            "onTrack": "En camino",
-            "inProgress": "En progreso",
-            "atRisk": "En riesgo",
-            "paused": "Pausado",
-            "archived": "Archivado",
-            "deleted": "Eliminado"
+            "overdue": "Atrasado"
         },
         "categoryOptions": {
             "all": "Todas las categorías",
@@ -602,13 +592,7 @@
             "updateSuccess": "Objetivo actualizado exitosamente",
             "updateFailed": "Error al actualizar objetivo",
             "completedSuccess": "Objetivo completado",
-            "completeFailed": "Error al completar objetivo",
-            "pausedSuccess": "Objetivo pausado",
-            "pauseFailed": "Error al pausar objetivo",
-            "archivedSuccess": "Objetivo archivado",
-            "archiveFailed": "Error al archivar objetivo",
-            "resumedSuccess": "Objetivo reanudado",
-            "resumeFailed": "Error al reanudar objetivo"
+            "completeFailed": "Error al completar objetivo"
         },
         "tooltips": {
             "complete": "Completar objetivo",
