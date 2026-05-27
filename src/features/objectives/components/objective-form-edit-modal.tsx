@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { CalendarIcon, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,48 +56,37 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
         }),
     });
 
-    const categoryOptions = useMemo(() => {
-        const options: Array<{ id: string; label: string }> = (
-            categoriesQuery.data?.page ?? []
-        ).map((category: Doc<'categories'>) => ({
-            id: category._id,
-            label: category.name,
-        }));
+    const categoryOptions: Array<{ id: string; label: string }> = (
+        categoriesQuery.data?.page ?? []
+    ).map((category: Doc<'categories'>) => ({
+        id: category._id,
+        label: category.name,
+    }));
 
-        if (
-            defaultValues.category &&
-            !options.some(option => option.label === defaultValues.category)
-        ) {
-            options.unshift({
-                id: `missing-${defaultValues.category}`,
-                label: defaultValues.category,
-            });
-        }
+    if (
+        defaultValues.category &&
+        !categoryOptions.some(option => option.label === defaultValues.category)
+    ) {
+        categoryOptions.unshift({
+            id: `missing-${defaultValues.category}`,
+            label: defaultValues.category,
+        });
+    }
 
-        return options;
-    }, [categoriesQuery.data, defaultValues.category]);
-
-    const categoryIdToName = useMemo(
-        () => new Map(categoryOptions.map(categoryOption => [categoryOption.id, categoryOption.label])),
-        [categoryOptions]
+    const categoryIdToName = new Map(
+        categoryOptions.map(categoryOption => [categoryOption.id, categoryOption.label])
     );
-
-    const categoryNameToId = useMemo(
-        () => new Map(categoryOptions.map(categoryOption => [categoryOption.label, categoryOption.id])),
-        [categoryOptions]
+    const categoryNameToId = new Map(
+        categoryOptions.map(categoryOption => [categoryOption.label, categoryOption.id])
     );
-
-    const initialValues = useMemo(
-        () => ({
-            ...defaultValues,
-            category: defaultValues.categoryId
-                ? String(defaultValues.categoryId)
-                : defaultValues.category
-                  ? (categoryNameToId.get(defaultValues.category) ?? defaultValues.category)
-                  : null,
-        }),
-        [defaultValues, categoryNameToId]
-    );
+    const initialValues = {
+        ...defaultValues,
+        category: defaultValues.categoryId
+            ? String(defaultValues.categoryId)
+            : defaultValues.category
+              ? (categoryNameToId.get(defaultValues.category) ?? defaultValues.category)
+              : null,
+    };
 
     return (
         <FormModal<Objective>
@@ -348,7 +336,6 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
                                             onSelect={value =>
                                                 field.onChange(value ? value.getTime() : null)
                                             }
-                                            initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

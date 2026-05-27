@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,13 +69,11 @@ export default function CreateObjectiveFormModal() {
         }),
     });
 
-    const categoryOptions = useMemo(
-        () =>
-            (categoriesQuery.data?.page ?? []).map((category: Doc<'categories'>) => ({
-                id: category._id,
-                label: category.name,
-            })),
-        [categoriesQuery.data]
+    const categoryOptions = (categoriesQuery.data?.page ?? []).map(
+        (category: Doc<'categories'>) => ({
+            id: category._id,
+            label: category.name,
+        })
     );
 
     return (
@@ -322,7 +319,6 @@ export default function CreateObjectiveFormModal() {
                                             onSelect={value =>
                                                 field.onChange(value ? value.getTime() : null)
                                             }
-                                            initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

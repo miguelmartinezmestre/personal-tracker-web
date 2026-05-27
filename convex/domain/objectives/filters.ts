@@ -1,4 +1,4 @@
-import { v } from 'convex/values';
+import { v, type Infer } from 'convex/values';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -9,7 +9,7 @@ export const deadlineRangeValidator = v.union(
     v.literal('overdue')
 );
 
-export type DeadlineRange = 'today' | 'week' | 'month' | 'overdue';
+export type DeadlineRange = Infer<typeof deadlineRangeValidator>;
 
 export function getDeadlineRangeBounds(range: DeadlineRange, now = Date.now()) {
     const startOfToday = new Date(now);

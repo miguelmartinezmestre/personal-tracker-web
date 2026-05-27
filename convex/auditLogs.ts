@@ -3,6 +3,8 @@ import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
 import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
+import { sanitizeAuditMetadata } from './domain/audit/privacy';
+import { auditSeverityValidator } from './utils/validators';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
 
@@ -73,7 +75,7 @@ export const recordAuditLog = internalMutation({
         action: v.string(),
         resourceType: v.string(),
         resourceId: v.optional(v.string()),
-        severity: v.string(),
+        severity: auditSeverityValidator,
         metadata: v.optional(
             v.object({
                 before: v.optional(auditMetadataSnapshot),
@@ -83,13 +85,15 @@ export const recordAuditLog = internalMutation({
         ),
     },
     handler: async (ctx, args) => {
+        const metadata = sanitizeAuditMetadata(args.resourceType, args.metadata);
+
         await ctx.db.insert('auditLogs', {
             userId: args.userId,
             organizationId: args.organizationId,
             action: args.action,
             resourceType: args.resourceType,
             resourceId: args.resourceId,
-            metadata: args.metadata,
+            metadata,
             severity: args.severity,
             createdAt: Date.now(),
         });

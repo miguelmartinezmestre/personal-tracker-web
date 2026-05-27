@@ -1,8 +1,9 @@
-import { ConvexError } from 'convex/values';
+import { ConvexError, ObjectType } from 'convex/values';
 import type { PaginationOptions } from 'convex/server';
 import type { Id } from '../_generated/dataModel';
 import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { ERROR_CODES } from '../utils/constants';
+import { categoryInputValidator, categoryPatchValidator } from './categories/validators';
 
 const LIST_LIMIT = 1000;
 
@@ -18,18 +19,9 @@ type CategoryMutationCtx = {
     organizationId: Id<'organization'> | null;
 };
 
-type CategoryInput = {
-    name: string;
-    color: string;
-    icon?: string;
-};
+type CategoryInput = ObjectType<typeof categoryInputValidator>;
 
-type CategoryPatch = {
-    id: Id<'categories'>;
-    name?: string;
-    color?: string;
-    icon?: string;
-};
+type CategoryPatch = ObjectType<typeof categoryPatchValidator>;
 
 const DEFAULT_CATEGORIES: CategoryInput[] = [
     { name: 'Health & Fitness', color: '#10b981', icon: 'heart' },
@@ -77,17 +69,21 @@ export async function listCategoriesForCurrentUser(
     ctx: CategoryQueryCtx,
     args: { paginationOpts: PaginationOptions }
 ) {
+    const organizationId = requireActiveOrganization(ctx);
+
     return await ctx.db
         .query('categories')
-        .withIndex('by_user', q => q.eq('userId', ctx.userId))
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .order('desc')
         .paginate(args.paginationOpts);
 }
 
 export async function listCategoryNamesForFilters(ctx: CategoryQueryCtx) {
+    const organizationId = requireActiveOrganization(ctx);
+
     const categories = await ctx.db
         .query('categories')
-        .withIndex('by_user', q => q.eq('userId', ctx.userId))
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .take(LIST_LIMIT);
 
     return Array.from(

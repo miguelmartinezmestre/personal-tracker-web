@@ -11,6 +11,7 @@ export const sendEmail = internalAction({
         text: v.optional(v.string()),
         html: v.optional(v.string()),
     },
+    returns: v.object({ message: v.string() }),
     handler: async (_, args) => {
         return await sendSmtpEmailJob(args);
     },

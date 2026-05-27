@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -36,23 +35,13 @@ export default function NotificationsTable({ initialNotifications }: Notificatio
     const notificationsIsDone = notifications.data?.isDone ?? false;
     const hasNextPage = Boolean(notificationsContinueCursor) && !notificationsIsDone;
     const { markAllRead, isMarkingAllRead } = useMarkAllNotificationsRead(reset);
-    const tableNotifications = useMemo<Doc<'notifications'>[]>(
-        () => notifications.data?.page ?? [],
-        [notifications.data?.page]
-    );
-    const objectiveIds = useMemo(
-        () =>
-            Array.from(
-                new Set(
-                    tableNotifications
-                        .map(notification => notification.objective)
-                        .filter(
-                            (objectiveId): objectiveId is Id<'objectives'> =>
-                                objectiveId !== undefined
-                        )
-                )
-            ),
-        [tableNotifications]
+    const tableNotifications: Doc<'notifications'>[] = notifications.data?.page ?? [];
+    const objectiveIds = Array.from(
+        new Set(
+            tableNotifications
+                .map(notification => notification.objective)
+                .filter((objectiveId): objectiveId is Id<'objectives'> => objectiveId !== undefined)
+        )
     );
     const objectives = useQuery(
         convexQuery(

@@ -1,12 +1,8 @@
 /* eslint-disable max-lines */
 import { test, expect, Page } from '@playwright/test';
-import {
-    createTestUser,
-    createObjective,
-    DEFAULT_PASSWORD,
-    loginUser,
-    promoteToAdmin,
-} from '../helpers/test-helpers';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+import { createTestUser, loginUser } from '../helpers/test-helpers';
 import { createAdminSession } from '../setup/create-admin-session';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -95,11 +91,84 @@ async function safeFill(
     }
 }
 
+async function clearBrowserSession(page: Page) {
+    await page
+        .evaluate(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        })
+        .catch(() => undefined);
+    await page.context().clearCookies();
+}
+
+async function seedAchievementsAsAdmin(page: Page) {
+    await page.goto('/dashboard/achievements');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    const seedButton = page.getByTestId('achievements-seed-button');
+    if (
+        await seedButton
+            .isVisible({ timeout: 3000 })
+            .catch(() => false)
+    ) {
+        console.log('Initializing achievement definitions with admin user...');
+        await seedButton.click();
+        await expect(seedButton).toBeHidden({ timeout: 15000 });
+    }
+}
+
+async function createNotificationViaApi(
+    page: Page,
+    objectiveTitle: string,
+    message: string
+): Promise<void> {
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_SELF_HOSTED_URL;
+    if (!convexUrl) {
+        throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured for Playwright tests');
+    }
+
+    const tokenResponse = await page.request.get('/api/auth/convex/token');
+    if (!tokenResponse.ok()) {
+        throw new Error(`Convex token request failed: ${tokenResponse.status()}`);
+    }
+
+    const tokenPayload = (await tokenResponse.json()) as { token?: string };
+    if (!tokenPayload.token) {
+        throw new Error('Convex token response did not include a token');
+    }
+
+    const client = new ConvexHttpClient(convexUrl);
+    client.setAuth(tokenPayload.token);
+
+    const objectives = await client.query(api.objectives.getObjectivesByUser, {
+        paginationOpts: { numItems: 20, cursor: null },
+    });
+    const objective =
+        objectives.page.find(objectiveItem => objectiveItem.title === objectiveTitle) ??
+        objectives.page[0];
+
+    if (!objective) {
+        throw new Error('No objective available to create a notification');
+    }
+
+    await client.mutation(api.notifications.createNotification, {
+        objective: objective._id,
+        notificationType: 'reminder',
+        notificationDate: Date.now(),
+        message,
+    });
+}
+
 test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
-    test.setTimeout(120000);
+    test.setTimeout(180000);
 
     test('Complete application walkthrough with screenshots', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 });
+
+        const adminUser = await createAdminSession(page);
+        await seedAchievementsAsAdmin(page);
+        await clearBrowserSession(page);
 
         console.log('\n🏠 SECTION 1: Landing Page & Public Pages\n');
 
@@ -123,8 +192,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
         await takeTFGScreenshot(page, 'landing-page-cta', 'Call-to-action section');
 
-        await createAdminSession(page);
-        await page.context().clearCookies();
+        await clearBrowserSession(page);
 
         console.log('\n🔐 SECTION 2: Authentication Flow\n');
 
@@ -413,12 +481,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         }
 
         const filterButton = page
-            .locator('button:has-text("Filter")')
-            .or(
-                page
-                    .locator('button:has-text("Filtrar")')
-                    .or(page.locator('[data-testid*="filter"]'))
-            );
+            .getByTestId('objectives-active-filters-button')
+            .or(page.locator('button:has(svg.lucide-filter)'));
         if (await filterButton.first().isVisible()) {
             await filterButton.first().click();
             await page.waitForTimeout(300);
@@ -462,11 +526,15 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
+        const notificationMessage = 'Reminder: update Learn TypeScript progress before Friday';
+        await createNotificationViaApi(page, 'Learn TypeScript', notificationMessage);
+
         console.log('\n🔔 SECTION 8: Notifications\n');
 
         await page.goto('/dashboard/notifications');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
+        await expect(page.getByText(notificationMessage)).toBeVisible({ timeout: 10000 });
         await takeTFGScreenshot(page, 'notifications-list', 'Notifications list');
 
         const markAllReadBtn = page
@@ -529,11 +597,13 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         if (await achievementFilterEarned.isVisible()) {
             await achievementFilterEarned.click();
             await page.waitForTimeout(300);
-            await takeTFGScreenshot(
-                page,
-                'achievements-filter-earned',
-                'Achievements filtered by earned'
-            );
+            if (await page.locator('[data-testid^="achievement-card-"]').first().isVisible()) {
+                await takeTFGScreenshot(
+                    page,
+                    'achievements-filter-earned',
+                    'Achievements filtered by earned'
+                );
+            }
         }
 
         if (await achievementFilterLocked.isVisible()) {
@@ -566,11 +636,13 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         if (await organizationAchievementsTab.isVisible()) {
             await organizationAchievementsTab.click();
             await page.waitForTimeout(300);
-            await takeTFGScreenshot(
-                page,
-                'achievements-organization-tab',
-                'Organization achievements'
-            );
+            if (await page.locator('[data-testid^="achievement-card-"]').first().isVisible()) {
+                await takeTFGScreenshot(
+                    page,
+                    'achievements-organization-tab',
+                    'Organization achievements'
+                );
+            }
         }
 
         console.log('\n👥 SECTION 10: Organizations Management\n');
@@ -580,8 +652,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
         await takeTFGScreenshot(
             page,
-            'organizations-empty-state',
-            'Organizations list - empty state'
+            'organizations-personal-state',
+            'Organizations list with the default personal organization'
         );
 
         const createOrganizationButton = page.getByTestId('organization-create-open');
@@ -624,6 +696,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
 
                 const organizationLink = page
                     .getByTestId('organizations-table')
+                    .getByTestId('table-row')
+                    .filter({ hasText: 'Development Organization' })
                     .getByTestId('organization-detail-link')
                     .first();
                 if (await organizationLink.isVisible()) {
@@ -699,8 +773,8 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         if (await sessionCard.isVisible({ timeout: 1000 }).catch(() => false)) {
             await takeTFGScreenshot(
                 page,
-                'session-detail',
-                'Session detail (device, browser, location)'
+                'sessions-current-row',
+                'Current session row with device, browser and location'
             );
         }
 
@@ -721,17 +795,18 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         console.log('\n🔧 SECTION 14: Admin Panel\n');
         let adminPromoted = false;
         try {
-            console.log('Setting up platform as admin...');
-            await promoteToAdmin(page);
-            console.log('Platform setup complete, user is admin');
+            console.log('Signing in as the preconfigured admin user...');
+            await clearBrowserSession(page);
+            await loginUser(page, adminUser.email, adminUser.password);
+            console.log('Admin user session is active');
             adminPromoted = true;
         } catch (error) {
-            console.log('⚠️ Could not set up platform as admin (ALLOW_SETUP_TEST may not be set)');
+            console.log('⚠️ Could not sign in as the preconfigured admin user');
             console.log('⚠️ Skipping admin panel screenshots');
         }
 
         if (adminPromoted) {
-            await page.goto('/dashboard/admin-panel');
+            await page.goto('/dashboard/admin/users');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(500);
 

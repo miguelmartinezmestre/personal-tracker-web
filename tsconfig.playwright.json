@@ -8,8 +8,8 @@
     },
     "include": [
         "playwright.config.ts",
-        "src/tests-manual/playwright.manual.config.ts",
-        "src/tests-manual/**/*.ts",
+        "tests/manual/playwright.manual.config.ts",
+        "tests/manual/**/*.ts",
         "tests/**/*.ts"
     ],
     "exclude": ["node_modules", "tests/.auth/**"]

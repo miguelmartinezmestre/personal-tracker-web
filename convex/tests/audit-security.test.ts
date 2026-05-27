@@ -125,19 +125,17 @@ describe('auditLogs security', () => {
 
         test('audit logs do not contain passwords or secrets', async () => {
             await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
+                await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                     userId,
                     organizationId,
                     action: 'user.updated',
                     resourceType: 'user',
                     resourceId: String(userId),
                     metadata: {
-                        before: { name: 'Old Name' },
-                        after: { name: 'New Name' },
+                        before: { password: 'old-password', hashedPassword: 'old-hash' },
+                        after: { password: 'new-password', clientSecret: 'secret-value' },
                     },
                     severity: 'warning',
-                    createdAt: now,
                 });
             });
 
@@ -149,12 +147,12 @@ describe('auditLogs security', () => {
 
             const log = result.page[0];
             expect(log).toBeDefined();
-            expect(log?.metadata).not.toHaveProperty('password');
-            expect(log?.metadata?.before).not.toHaveProperty('password');
-            expect(log?.metadata?.after).not.toHaveProperty('password');
-            expect(log?.metadata).not.toHaveProperty('hashedPassword');
-            expect(log?.metadata).not.toHaveProperty('secret');
-            expect(log?.metadata).not.toHaveProperty('clientSecret');
+            expect(log?.metadata ?? {}).not.toHaveProperty('password');
+            expect(log?.metadata?.before ?? {}).not.toHaveProperty('password');
+            expect(log?.metadata?.after ?? {}).not.toHaveProperty('password');
+            expect(log?.metadata ?? {}).not.toHaveProperty('hashedPassword');
+            expect(log?.metadata ?? {}).not.toHaveProperty('secret');
+            expect(log?.metadata ?? {}).not.toHaveProperty('clientSecret');
         });
 
         test('metadata accepts only valid primitive types', async () => {
@@ -191,8 +189,7 @@ describe('auditLogs security', () => {
 
         test('nested metadata is sanitized properly', async () => {
             await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
+                await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                     userId,
                     organizationId,
                     action: 'user.updated',
@@ -200,18 +197,17 @@ describe('auditLogs security', () => {
                     resourceId: String(userId),
                     metadata: {
                         before: {
-                            profile: {
-                                name: 'Old Name',
-                            },
+                            _id: String(userId),
+                            profile: 'profile-ref',
+                            name: 'Old Name',
                         },
                         after: {
-                            profile: {
-                                name: 'New Name',
-                            },
+                            _id: String(userId),
+                            profile: 'profile-ref',
+                            name: 'New Name',
                         },
                     },
                     severity: 'warning',
-                    createdAt: now,
                 });
             });
 
@@ -229,8 +225,10 @@ describe('auditLogs security', () => {
                   }
                 | undefined;
             expect(log).toBeDefined();
-            expect(metadata?.before?.profile).toEqual({ name: 'Old Name' });
-            expect(metadata?.after?.profile).toEqual({ name: 'New Name' });
+            expect(metadata?.before?.profile).toBeUndefined();
+            expect(metadata?.after?.profile).toBeUndefined();
+            expect(log?.metadata?.before).not.toHaveProperty('name');
+            expect(log?.metadata?.after).not.toHaveProperty('name');
         });
     });
 
@@ -245,7 +243,7 @@ describe('auditLogs security', () => {
                     resourceId: 'test-123',
                     severity: 'info',
                     metadata: {
-                        context: 'Internal test action',
+                        context: 'internal.test_action',
                     },
                 });
             });
@@ -258,7 +256,7 @@ describe('auditLogs security', () => {
 
             expect(result.page.length).toBe(1);
             expect(result.page[0]?.action).toBe('internal.test');
-            expect(result.page[0]?.metadata?.context).toBe('Internal test action');
+            expect(result.page[0]?.metadata?.context).toBe('internal.test_action');
         });
 
         test('internal mutation metadata follows schema validation', async () => {
@@ -272,7 +270,7 @@ describe('auditLogs security', () => {
                     metadata: {
                         before: { status: 'old', count: 5 },
                         after: { status: 'new', count: 10 },
-                        context: 'Status change',
+                        context: 'status_change',
                     },
                 });
             });
@@ -291,9 +289,7 @@ describe('auditLogs security', () => {
     describe('redaction keys', () => {
         test('schema validator enforces safe data structure in metadata', async () => {
             await adminIdentity.run(async ctx => {
-                const now = Date.now();
-
-                await ctx.db.insert('auditLogs', {
+                await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                     userId,
                     organizationId,
                     action: 'security.test',
@@ -302,19 +298,20 @@ describe('auditLogs security', () => {
                         before: {
                             _id: 'test-id',
                             name: 'Test Name',
+                            title: 'Private title',
                             status: 'active',
                             count: 42,
                         },
                         after: {
                             _id: 'test-id',
                             name: 'Updated Name',
+                            email: 'private@example.com',
                             status: 'completed',
                             count: 43,
                         },
-                        context: 'Security test with safe data only',
+                        context: 'security.test',
                     },
                     severity: 'info',
-                    createdAt: now,
                 });
             });
 
@@ -327,16 +324,15 @@ describe('auditLogs security', () => {
 
             expect(log?.metadata?.before).toEqual({
                 _id: 'test-id',
-                name: 'Test Name',
                 status: 'active',
                 count: 42,
             });
             expect(log?.metadata?.after).toEqual({
                 _id: 'test-id',
-                name: 'Updated Name',
                 status: 'completed',
                 count: 43,
             });
+            expect(log?.metadata?.context).toBe('security.test');
         });
 
         test('AUDIT_REDACT_KEYS list includes all required sensitive fields', () => {
@@ -357,6 +353,8 @@ describe('auditLogs security', () => {
                 'accountId',
                 'impersonatedBy',
                 'value',
+                'name',
+                'title',
             ]);
 
             expect(expectedKeys.has('token')).toBe(true);
@@ -367,6 +365,8 @@ describe('auditLogs security', () => {
             expect(expectedKeys.has('image')).toBe(true);
             expect(expectedKeys.has('accountId')).toBe(true);
             expect(expectedKeys.has('impersonatedBy')).toBe(true);
+            expect(expectedKeys.has('name')).toBe(true);
+            expect(expectedKeys.has('title')).toBe(true);
         });
     });
 
@@ -414,8 +414,7 @@ describe('auditLogs security', () => {
     describe('user sanitization', () => {
         test('user audit logs do not contain PII in metadata', async () => {
             await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
+                await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                     userId,
                     organizationId,
                     action: 'user.updated',
@@ -436,7 +435,6 @@ describe('auditLogs security', () => {
                         },
                     },
                     severity: 'warning',
-                    createdAt: now,
                 });
             });
 
@@ -450,7 +448,7 @@ describe('auditLogs security', () => {
             expect(log).toBeDefined();
             expect(log?.metadata?.before).not.toHaveProperty('email');
             expect(log?.metadata?.before).not.toHaveProperty('image');
-            expect(log?.metadata?.before).toHaveProperty('name');
+            expect(log?.metadata?.before).not.toHaveProperty('name');
             expect(log?.metadata?.before).toHaveProperty('role');
         });
     });

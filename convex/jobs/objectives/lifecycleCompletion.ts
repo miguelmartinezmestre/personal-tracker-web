@@ -26,6 +26,13 @@ export const handleObjectiveLifecycleComplete = internalMutation({
         const { result, context } = args;
 
         try {
+            const objective = await ctx.db.get('objectives', context.objectiveId);
+            if (objective?.workflowId === args.workflowId) {
+                await ctx.db.patch('objectives', context.objectiveId, {
+                    workflowId: undefined,
+                });
+            }
+
             if (result.kind === 'failed') {
                 console.error('Objective lifecycle workflow error:', result.error);
 
@@ -37,7 +44,7 @@ export const handleObjectiveLifecycleComplete = internalMutation({
                         resourceType: context.resourceType,
                         resourceId: context.objectiveId,
                         metadata: {
-                            context: `Objective lifecycle workflow failed: ${result.error}`,
+                            context: 'objective_lifecycle_workflow_failed',
                         },
                         severity: 'warning',
                     });

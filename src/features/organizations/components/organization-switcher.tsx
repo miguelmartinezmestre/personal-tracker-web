@@ -73,19 +73,21 @@ export function OrganizationSwitcher() {
                 <Button
                     variant="outline"
                     data-testid="organization-switcher"
-                    className="h-9 w-auto min-w-[140px] justify-start gap-2 border-2 border-primary/20 bg-primary/5 px-3 hover:bg-primary/10 hover:border-primary/30"
+                    className="h-9 w-9 min-w-0 justify-center gap-2 border-2 border-primary/20 bg-primary/5 px-0 hover:bg-primary/10 hover:border-primary/30 sm:w-auto sm:min-w-[140px] sm:max-w-[18rem] sm:justify-start sm:px-3"
                     disabled={setActiveMutation.isPending || isLoadingData}
                 >
                     {setActiveMutation.isPending || isLoadingData ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                         <>
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
                                 <Building className="h-3 w-3 text-primary" />
                             </div>
-                            <span className="truncate font-medium">{displayName}</span>
+                            <span className="hidden min-w-0 truncate font-medium sm:inline">
+                                {displayName}
+                            </span>
                             <div
-                                className="ml-1 h-2 w-2 rounded-full bg-green-500"
+                                className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
                                 title={t('activeOrganization') || 'Active organization'}
                             />
                         </>

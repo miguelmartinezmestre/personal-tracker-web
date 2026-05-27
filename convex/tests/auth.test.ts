@@ -115,5 +115,16 @@ describe('convex auth', () => {
                     log.resourceId === sessionId
             )
         ).toBe(true);
+
+        const sessionLogs = adminLogs.page.filter(log => log.resourceId === sessionId);
+        for (const log of sessionLogs) {
+            expect(log.metadata?.before ?? {}).not.toHaveProperty('token');
+            expect(log.metadata?.after ?? {}).not.toHaveProperty('token');
+            expect(log.metadata?.before ?? {}).not.toHaveProperty('ipAddress');
+            expect(log.metadata?.after ?? {}).not.toHaveProperty('ipAddress');
+            expect(log.metadata?.before ?? {}).not.toHaveProperty('userAgent');
+            expect(log.metadata?.after ?? {}).not.toHaveProperty('userAgent');
+            expect(log.metadata?.before ?? log.metadata?.after).toHaveProperty('userId');
+        }
     });
 });

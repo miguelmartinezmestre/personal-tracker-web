@@ -152,7 +152,6 @@ export default function UpdateProgressFormModal({
                                                     : undefined
                                             }
                                             onSelect={field.onChange}
-                                            initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

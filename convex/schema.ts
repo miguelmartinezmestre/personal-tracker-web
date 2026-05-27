@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import authSchema from './authSchema';
+import { vWorkflowId } from '@convex-dev/workflow';
 import {
     objectiveStatusValidator,
     objectiveScopeValidator,
@@ -42,6 +43,7 @@ export default defineSchema({
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
         unit: v.optional(v.string()),
+        workflowId: v.optional(vWorkflowId),
         createdAt: v.number(),
         updatedAt: v.number(),
     })

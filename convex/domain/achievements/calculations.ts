@@ -7,39 +7,6 @@ const PAGE_SIZE = 500;
 
 type ReadCtx = { db: DatabaseReader };
 
-async function validateUserOrganizationMembership(
-    ctx: ReadCtx,
-    userId: Id<'user'>,
-    organizationId: Id<'organization'>
-): Promise<void> {
-    const membership = await ctx.db
-        .query('member')
-        .withIndex('by_organizationId_and_userId', q =>
-            q.eq('organizationId', organizationId).eq('userId', userId)
-        )
-        .first();
-
-    if (!membership) {
-        throw new ConvexError(ERROR_CODES.FORBIDDEN);
-    }
-}
-
-async function validateObjectivesOrganization(
-    ctx: ReadCtx,
-    objectiveIds: Id<'objectives'>[],
-    organizationId: Id<'organization'>
-): Promise<void> {
-    for (const objectiveId of objectiveIds) {
-        const objective = await ctx.db.get('objectives', objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        if (objective.organizationId !== organizationId) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
-    }
-}
-
 export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
     if (updates.length === 0) return 0;
 
@@ -129,7 +96,15 @@ async function fetchProgressUpdates(
     organizationId: Id<'organization'>,
     userId?: Id<'user'>
 ): Promise<Doc<'progressUpdates'>[]> {
-    await validateObjectivesOrganization(ctx, objectiveIds, organizationId);
+    for (const objectiveId of objectiveIds) {
+        const objective = await ctx.db.get('objectives', objectiveId);
+        if (!objective) {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+        }
+        if (objective.organizationId !== organizationId) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+    }
 
     if (objectiveIds.length === 0) return [];
 
@@ -151,7 +126,16 @@ export async function calculateUserStreak(
     userId: Id<'user'>,
     organizationId: Id<'organization'>
 ): Promise<number> {
-    await validateUserOrganizationMembership(ctx, userId, organizationId);
+    const membership = await ctx.db
+        .query('member')
+        .withIndex('by_organizationId_and_userId', q =>
+            q.eq('organizationId', organizationId).eq('userId', userId)
+        )
+        .first();
+
+    if (!membership) {
+        throw new ConvexError(ERROR_CODES.FORBIDDEN);
+    }
 
     const objectives: Doc<'objectives'>[] = [];
     let cursor: string | null = null;
@@ -200,7 +184,9 @@ export async function calculateOrganizationStreak(
         cursor = page.continueCursor;
     }
 
-    const objectiveIds = organizationObjectives.map((objective: Doc<'objectives'>) => objective._id);
+    const objectiveIds = organizationObjectives.map(
+        (objective: Doc<'objectives'>) => objective._id
+    );
 
     if (objectiveIds.length === 0) return 0;
 

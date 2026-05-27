@@ -58,10 +58,6 @@ export function normalizeObjectiveListFilters(
     };
 }
 
-function normalizeSearchLimit(limit: number | undefined): number {
-    return Math.min(Math.max(limit ?? SEARCH_LIMIT, 1), SEARCH_LIMIT);
-}
-
 function matchesObjectiveSearch(objective: SearchableObjective, search: string) {
     const needle = search.toLowerCase();
     return [objective.title, objective.description, objective.category].some(value =>
@@ -375,7 +371,7 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
     }
 
     const filters = normalizeObjectiveListFilters(args);
-    const limit = normalizeSearchLimit(args.limit);
+    const limit = Math.min(Math.max(args.limit ?? SEARCH_LIMIT, 1), SEARCH_LIMIT);
     const candidates = await getSearchCandidates(ctx, args.section);
 
     return candidates

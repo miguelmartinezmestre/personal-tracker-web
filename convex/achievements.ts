@@ -5,7 +5,7 @@ import type { Doc } from './_generated/dataModel';
 import { countStreakFromUpdates } from './domain/achievements/calculations';
 import { getContributors } from './domain/achievements/contributors';
 import { queryWithRLS } from './rls';
-import { achievementTypeValidator } from './utils/validators';
+import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import {
@@ -309,7 +309,7 @@ export const checkUserAchievements = internalMutation({
     args: {
         userId: v.id('user'),
         organizationId: v.id('organization'),
-        trigger: v.string(),
+        trigger: achievementTriggerValidator,
         objectivesContinueCursor: v.optional(v.union(v.string(), v.null())),
         progressUpdatesCount: v.optional(v.number()),
         cumulativeObjectiveCount: v.optional(v.number()),
@@ -325,7 +325,7 @@ export const checkOrganizationAchievements = internalMutation({
     args: {
         organizationId: v.id('organization'),
         userId: v.id('user'),
-        trigger: v.string(),
+        trigger: achievementTriggerValidator,
         orgObjectivesContinueCursor: v.optional(v.union(v.string(), v.null())),
         orgScopedObjectivesCount: v.optional(v.number()),
         orgScopedCompletedCount: v.optional(v.number()),

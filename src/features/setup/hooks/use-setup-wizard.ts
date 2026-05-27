@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useCallback } from 'react';
+import { useReducer } from 'react';
 import {
     platformConfigSchema,
     adminAccountSchema,
@@ -107,29 +107,21 @@ const stepValidators: Record<SetupStep, (data: SetupData) => boolean> = {
 export function useSetupWizard() {
     const [state, dispatch] = useReducer(setupReducer, initialState);
 
-    const goToStep = useCallback((step: number) => dispatch({ type: 'GO_TO_STEP', step }), []);
-    const nextStep = useCallback(() => dispatch({ type: 'NEXT_STEP' }), []);
-    const prevStep = useCallback(() => dispatch({ type: 'PREV_STEP' }), []);
+    const goToStep = (step: number) => dispatch({ type: 'GO_TO_STEP', step });
+    const nextStep = () => dispatch({ type: 'NEXT_STEP' });
+    const prevStep = () => dispatch({ type: 'PREV_STEP' });
 
-    const updateStepData = useCallback(
-        <S extends DataStep>(
-            step: S,
-            data: S extends 'categories' ? SetupCategory[] : Partial<SetupData[S]>
-        ) =>
-            dispatch({
-                type: 'UPDATE_STEP_DATA',
-                step,
-                data: data as Partial<SetupData[DataStep]>,
-            }),
-        []
-    );
+    const updateStepData = <S extends DataStep>(
+        step: S,
+        data: S extends 'categories' ? SetupCategory[] : Partial<SetupData[S]>
+    ) =>
+        dispatch({
+            type: 'UPDATE_STEP_DATA',
+            step,
+            data: data as Partial<SetupData[DataStep]>,
+        });
 
-    const isStepValid = useCallback(
-        (step: SetupStep) => {
-            return stepValidators[step](state.data);
-        },
-        [state.data]
-    );
+    const isStepValid = (step: SetupStep) => stepValidators[step](state.data);
 
     const currentStepName = SETUP_STEPS[state.currentStep]!;
 

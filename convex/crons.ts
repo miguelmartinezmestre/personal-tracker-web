@@ -10,4 +10,11 @@ crons.cron(
     {}
 );
 
+crons.cron(
+    'create deadline notifications',
+    '0 8 * * *',
+    internal.notifications.runDeadlineNotificationsCron,
+    {}
+);
+
 export default crons;

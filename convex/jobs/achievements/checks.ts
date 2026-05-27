@@ -1,4 +1,4 @@
-import { ConvexError } from 'convex/values';
+import { ConvexError, Infer } from 'convex/values';
 import { internal } from '../../_generated/api';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
@@ -9,7 +9,10 @@ import {
 import { addContributor } from '../../domain/achievements/contributors';
 import { ACHIEVEMENT_DEFINITIONS } from '../../domain/achievements/definitions';
 import { shouldSendAchievementNotification } from '../../domain/notifications/preferences';
+import { achievementTriggerValidator } from '../../utils/validators';
 import { ERROR_CODES } from '../../utils/constants';
+
+type AchievementTrigger = Infer<typeof achievementTriggerValidator>;
 
 const LIST_LIMIT = 1000;
 const BATCH_SIZE = 100;
@@ -158,7 +161,7 @@ export async function checkUserAchievementsJob(
     args: {
         userId: Id<'user'>;
         organizationId: Id<'organization'>;
-        trigger: string;
+        trigger: AchievementTrigger;
         objectivesContinueCursor?: string | null;
         progressUpdatesCount?: number;
         cumulativeObjectiveCount?: number;
@@ -333,7 +336,7 @@ export async function checkOrganizationAchievementsJob(
     args: {
         organizationId: Id<'organization'>;
         userId: Id<'user'>;
-        trigger: string;
+        trigger: AchievementTrigger;
         orgObjectivesContinueCursor?: string | null;
         orgScopedObjectivesCount?: number;
         orgScopedCompletedCount?: number;

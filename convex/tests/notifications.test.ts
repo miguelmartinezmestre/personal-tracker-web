@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
@@ -382,6 +382,16 @@ describe('convex notifications', async () => {
     });
 
     describe('markAllNotificationsRead', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(async () => {
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
         test('marks all unread notifications as read', async () => {
             await userIdentity.mutation(api.notifications.createNotification, {
                 objective: objectiveId,
@@ -505,6 +515,16 @@ describe('convex notifications', async () => {
     });
 
     describe('runDeadlineNotificationsCron', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(async () => {
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
         test('creates notifications for objectives due today', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
@@ -553,6 +573,43 @@ describe('convex notifications', async () => {
             );
 
             expect(result.scanned).toBeGreaterThan(0);
+        });
+
+        test('skips deadline notifications when user preference is disabled', async () => {
+            const now = Date.now();
+            await userIdentity.mutation(api.notificationPreferences.updateUserPreferences, {
+                deadlineNotifications: false,
+            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: userOrganizationId,
+                    scope: 'personal',
+                    title: 'Disabled Deadline Preference',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now - DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            });
+
+            const result = await t.mutation(
+                internal.notifications.runDeadlineNotificationsCron,
+                {}
+            );
+            const notifications = await userIdentity.query(
+                api.notifications.getNotificationsByUser,
+                {
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+
+            expect(result.scanned).toBeGreaterThan(0);
+            expect(result.created).toBe(0);
+            expect(result.skipped).toBeGreaterThan(0);
+            expect(notifications.page).toEqual([]);
         });
 
         test('creates notifications for objectives due within 3 days', async () => {

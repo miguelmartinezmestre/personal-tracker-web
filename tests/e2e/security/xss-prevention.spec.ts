@@ -1,18 +1,64 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { createTestUserViaAPI, ensureDefaultCategories } from '../../helpers/test-helpers';
 
-const xssPayloads = [
-    '<script>alert("XSS")</script>',
-    '<img src=x onerror=alert("XSS")>',
-    'javascript:alert("XSS")',
-    '<svg onload=alert("XSS")>',
-    '"><script>alert(String.fromCharCode(88,83,83))</script>',
-    "'–><script>alert(0)</script>",
-    '<iframe src="javascript:alert(\'XSS\')"></iframe>',
-    '<body onload=alert("XSS")>',
-    '<input onfocus=alert("XSS") autofocus>',
-    '<details open ontoggle=alert("XSS")>',
-];
+async function assertNoXssExecution(page: Page): Promise<void> {
+    let dialogShown = false;
+    page.once('dialog', async dialog => {
+        dialogShown = true;
+        await dialog.dismiss();
+    });
+
+    await page.waitForTimeout(500);
+    expect(dialogShown).toBe(false);
+}
+
+async function assertNoDangerousDomNodes(page: Page): Promise<void> {
+    expect(await page.locator('[onerror]').count()).toBe(0);
+    expect(await page.locator('img[src="x"]').count()).toBe(0);
+    expect(
+        await page
+            .locator('script:not([src])')
+            .filter({ hasText: /alert\s*\(\s*["']XSS["']\s*\)/i })
+            .count()
+    ).toBe(0);
+}
+
+async function selectFirstEnabledCategory(page: Page): Promise<void> {
+    await page.getByTestId('objective-category-select').click();
+    const enabledCategoryOptions = page.locator(
+        '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
+    );
+    await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
+    await enabledCategoryOptions.first().click();
+}
+
+async function openObjectiveDetailFromList(
+    page: Page,
+    objectiveTitle: string
+): Promise<void> {
+    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+
+    const rowWithProgressLink = page
+        .getByTestId('table-row')
+        .filter({ hasText: objectiveTitle })
+        .filter({ has: page.getByTestId('objective-progress-link') })
+        .first();
+    await expect(rowWithProgressLink).toBeVisible({ timeout: 10000 });
+
+    const progressLink = rowWithProgressLink.getByTestId('objective-progress-link').first();
+    const href = await progressLink.getAttribute('href');
+    if (href) {
+        await page.goto(href, { waitUntil: 'domcontentloaded' });
+    } else {
+        await Promise.all([
+            page.waitForURL(/\/dashboard\/objectives\/.+/, { timeout: 10000 }),
+            progressLink.click(),
+        ]);
+    }
+
+    await expect(page).toHaveURL(/\/dashboard\/objectives\/.+/);
+    await page.waitForSelector('[data-testid="progress-create-open"]', { timeout: 10000 });
+}
 
 test.describe('XSS Prevention - Objective Titles', () => {
     test('should sanitize script tags in objective titles', async ({ page }) => {
@@ -30,35 +76,21 @@ test.describe('XSS Prevention - Objective Titles', () => {
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
 
-        await page.getByTestId('objective-category-select').click();
-        const enabledCategoryOptions = page.locator(
-            '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-        );
-        await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
-        await enabledCategoryOptions.first().click();
-
+        await selectFirstEnabledCategory(page);
         await page.getByTestId('objective-save-button').click();
 
-        await expect(
-            page
-                .getByTestId('table-row')
-                .filter({ hasText: /Test.*Objective/ })
-                .first()
-        ).toBeVisible({ timeout: 10000 });
-
-        const pageContent = await page.content();
-        expect(pageContent).not.toContain('<script>alert("XSS")</script>');
-
-        const titleCell = page
+        const titleRow = page
             .getByTestId('table-row')
             .filter({ hasText: /Test.*Objective/ })
-            .first()
-            .locator('td')
             .first();
-        const displayedTitle = await titleCell.textContent();
+        await expect(titleRow).toBeVisible({ timeout: 10000 });
 
-        expect(displayedTitle).not.toContain('<script>');
-        expect(displayedTitle).not.toContain('</script>');
+        const titleCell = titleRow.locator('td').first();
+        const titleCellHtml = await titleCell.innerHTML();
+        expect(titleCellHtml).not.toMatch(/<script[\s>]/i);
+
+        await assertNoDangerousDomNodes(page);
+        await assertNoXssExecution(page);
     });
 
     test('should sanitize event handlers in objective titles', async ({ page }) => {
@@ -76,13 +108,7 @@ test.describe('XSS Prevention - Objective Titles', () => {
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
 
-        await page.getByTestId('objective-category-select').click();
-        const enabledCategoryOptions = page.locator(
-            '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-        );
-        await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
-        await enabledCategoryOptions.first().click();
-
+        await selectFirstEnabledCategory(page);
         await page.getByTestId('objective-save-button').click();
 
         await expect(
@@ -92,9 +118,8 @@ test.describe('XSS Prevention - Objective Titles', () => {
                 .first()
         ).toBeVisible({ timeout: 10000 });
 
-        const pageContent = await page.content();
-        expect(pageContent).not.toContain('onerror=alert');
-        expect(pageContent).not.toContain('onerror="alert');
+        await assertNoDangerousDomNodes(page);
+        await assertNoXssExecution(page);
     });
 });
 
@@ -114,47 +139,28 @@ test.describe('XSS Prevention - Progress Comments', () => {
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
 
-        await page.getByTestId('objective-category-select').click();
-        const enabledCategoryOptions = page.locator(
-            '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-        );
-        await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
-        await enabledCategoryOptions.first().click();
-
+        await selectFirstEnabledCategory(page);
         await page.getByTestId('objective-save-button').click();
 
         await expect(
             page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first()
         ).toBeVisible({ timeout: 10000 });
 
-        await page
-            .getByTestId('table-row')
-            .filter({ hasText: objectiveTitle })
-            .first()
-            .getByTestId('objective-detail-link')
-            .click();
+        await openObjectiveDetailFromList(page, objectiveTitle);
 
-        await page.waitForLoadState('domcontentloaded');
-
-        await page.getByTestId('progress-update-open').click();
+        await page.getByTestId('progress-create-open').click();
         await page.waitForSelector('[data-testid="progress-value-input"]', { timeout: 10000 });
 
         await page.getByTestId('progress-value-input').fill('50');
 
         const maliciousComment = 'Progress <script>alert("XSS")</script> update';
-        const commentInput = page
-            .locator('textarea, [data-testid="progress-comment-input"]')
-            .first();
-        if (await commentInput.isVisible().catch(() => false)) {
-            await commentInput.fill(maliciousComment);
-        }
-
+        await page.getByTestId('progress-comment-input').fill(maliciousComment);
         await page.getByTestId('progress-save-button').click();
 
-        await page.waitForTimeout(1000);
+        await expect(page.getByTestId('progress-value-input')).toHaveCount(0, { timeout: 10000 });
 
-        const pageContent = await page.content();
-        expect(pageContent).not.toContain('<script>alert("XSS")</script>');
+        await assertNoDangerousDomNodes(page);
+        await assertNoXssExecution(page);
     });
 });
 
@@ -166,8 +172,8 @@ test.describe('XSS Prevention - URL Parameters', () => {
         await page.goto(maliciousUrl);
         await page.waitForLoadState('domcontentloaded');
 
-        const pageContent = await page.content();
-        expect(pageContent).not.toContain('<script>alert("XSS")</script>');
+        await assertNoDangerousDomNodes(page);
+        await assertNoXssExecution(page);
     });
 
     test('should handle javascript protocol in links', async ({ page }) => {
@@ -195,17 +201,14 @@ test.describe('XSS Prevention - Stored XSS', () => {
         const maliciousCategory = 'Test <script>alert("XSS")</script> Category';
         await page.getByTestId('category-name-input').fill(maliciousCategory);
 
-        const colorOptions = page.locator('[data-testid^="category-color-"]').first();
-        if (await colorOptions.isVisible().catch(() => false)) {
-            await colorOptions.click();
-        }
-
         await page.getByTestId('category-save-button').click();
 
-        await page.waitForTimeout(1000);
+        await expect(
+            page.getByTestId('table-row').filter({ hasText: 'Test' }).filter({ hasText: 'Category' }).first()
+        ).toBeVisible({ timeout: 10000 });
 
-        const pageContent = await page.content();
-        expect(pageContent).not.toContain('<script>alert("XSS")</script>');
+        await assertNoDangerousDomNodes(page);
+        await assertNoXssExecution(page);
     });
 
     test('should prevent XSS in organization names', async ({ page, browser }) => {
@@ -228,8 +231,8 @@ test.describe('XSS Prevention - Stored XSS', () => {
 
         await page2.waitForTimeout(1000);
 
-        const pageContent = await page2.content();
-        expect(pageContent).not.toContain('<script>alert("XSS")</script>');
+        await assertNoDangerousDomNodes(page2);
+        await assertNoXssExecution(page2);
 
         await context.close();
     });
@@ -242,8 +245,8 @@ test.describe('XSS Prevention - DOM-based XSS', () => {
         await page.goto('/dashboard/home#<script>alert("XSS")</script>');
         await page.waitForLoadState('domcontentloaded');
 
-        const pageContent = await page.content();
-        expect(pageContent).not.toContain('<script>alert("XSS")</script>');
+        await assertNoDangerousDomNodes(page);
+        await assertNoXssExecution(page);
     });
 
     test('should safely handle user input in search fields', async ({ page }) => {
@@ -262,10 +265,8 @@ test.describe('XSS Prevention - DOM-based XSS', () => {
             await searchInput.fill('<script>alert("XSS")</script>');
             await searchInput.press('Enter');
 
-            await page.waitForTimeout(500);
-
-            const pageContent = await page.content();
-            expect(pageContent).not.toContain('<script>alert("XSS")</script>');
+            await assertNoDangerousDomNodes(page);
+            await assertNoXssExecution(page);
         }
     });
 });

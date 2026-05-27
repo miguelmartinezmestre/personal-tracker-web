@@ -56,9 +56,8 @@ export function DeleteConfirmationDialog({
             setOpen(false);
         } catch {
             setOpen(true);
-        } finally {
-            setInternalIsLoading(false);
         }
+        setInternalIsLoading(false);
     };
 
     return (

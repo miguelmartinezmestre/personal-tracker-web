@@ -7,10 +7,14 @@ import {
     completePlatformSetup,
     ensureTestOrganizationForUser,
     getPublicSettings,
-    getUserById,
     isPlatformConfigured,
     requireAdminUser,
 } from './platform/setup/bootstrap';
+import {
+    completeSetupArgsValidator,
+    ensureTestOrganizationArgsValidator,
+    ensureTestOrganizationInternalArgsValidator,
+} from './platform/setup/validators';
 import { ERROR_CODES } from './utils/constants';
 import { env } from './lib/env';
 
@@ -29,20 +33,11 @@ export const getPublicPlatformSettings = query({
 });
 
 export const completeSetup = mutation({
-    args: {
-        platformName: v.string(),
-        defaultLanguage: v.string(),
-        registrationPolicy: v.string(),
-        organizationName: v.string(),
-        organizationLogo: v.optional(v.string()),
-        categories: v.array(
-            v.object({
-                name: v.string(),
-                color: v.string(),
-                icon: v.optional(v.string()),
-            })
-        ),
-    },
+    args: completeSetupArgsValidator,
+    returns: v.object({
+        success: v.literal(true),
+        organizationId: v.id('organization'),
+    }),
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) {
@@ -50,13 +45,6 @@ export const completeSetup = mutation({
         }
 
         return await completePlatformSetup(ctx, identity.userId, args);
-    },
-});
-
-export const getUserByIdInternal = internalQuery({
-    args: { userId: v.id('user') },
-    handler: async (ctx, args) => {
-        return await getUserById(ctx, args.userId);
     },
 });
 
@@ -68,21 +56,18 @@ export const requireAdminInternal = internalQuery({
 });
 
 export const ensureTestOrganizationInternal = internalMutation({
-    args: {
-        userId: v.id('user'),
-        organizationName: v.optional(v.string()),
-        createPersonalCategory: v.optional(v.boolean()),
-    },
+    args: ensureTestOrganizationInternalArgsValidator,
     handler: async (ctx, args) => {
         return await ensureTestOrganizationForUser(ctx, args);
     },
 });
 
 export const ensureTestOrganization = mutation({
-    args: {
-        organizationName: v.optional(v.string()),
-        createPersonalCategory: v.optional(v.boolean()),
-    },
+    args: ensureTestOrganizationArgsValidator,
+    returns: v.object({
+        organizationId: v.id('organization'),
+        memberId: v.union(v.id('member'), v.null()),
+    }),
     handler: async (
         ctx,
         args

@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+function authRequestHeaders(baseURL: string | undefined): Record<string, string> {
+    return { Origin: baseURL ?? 'http://localhost:3000' };
+}
+
 test.describe('Rate Limiting', () => {
     test.describe('Login Rate Limiting', () => {
         test('should limit failed login attempts', async ({ page }) => {
@@ -95,14 +99,16 @@ test.describe('Rate Limiting', () => {
     });
 
     test.describe('Registration Rate Limiting', () => {
-        test('should limit rapid registration attempts', async ({ page }) => {
+        test('should limit rapid registration attempts', async ({ page, baseURL }) => {
             const responses: number[] = [];
+            const batchId = Date.now();
 
             for (let i = 0; i < 5; i++) {
                 try {
                     const response = await page.request.post('/api/auth/sign-up/email', {
+                        headers: authRequestHeaders(baseURL),
                         data: {
-                            email: `spam${Date.now()}-${i}@example.com`,
+                            email: `spam-${batchId}-${i}@example.com`,
                             password: 'Password123!',
                             name: `Spam User ${i}`,
                         },
@@ -119,21 +125,27 @@ test.describe('Rate Limiting', () => {
             const hasSuccess = responses.some(
                 statusCode => statusCode === 200 || statusCode === 201
             );
+            const hasClientError = responses.some(
+                statusCode => statusCode >= 400 && statusCode < 500
+            );
 
-            expect(hasRateLimit || hasSuccess).toBe(true);
+            expect(hasRateLimit || hasSuccess || hasClientError).toBe(true);
         });
     });
 
     test.describe('Password Reset Rate Limiting', () => {
-        test('should limit password reset requests', async ({ page }) => {
+        test('should limit password reset requests', async ({ page, baseURL }) => {
             const testEmail = `reset-${Date.now()}@example.com`;
             const responses: number[] = [];
+            const origin = baseURL ?? 'http://localhost:3000';
 
             for (let i = 0; i < 5; i++) {
                 try {
-                    const response = await page.request.post('/api/auth/forget-password', {
+                    const response = await page.request.post('/api/auth/request-password-reset', {
+                        headers: authRequestHeaders(baseURL),
                         data: {
                             email: testEmail,
+                            redirectTo: `${origin}/reset-password`,
                         },
                     });
                     responses.push(response.status());

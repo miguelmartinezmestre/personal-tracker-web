@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 
 async function retryWithBackoff<T>(
     operation: () => Promise<T>,
@@ -113,47 +113,52 @@ export default function SetupWizard() {
         }
     }
 
-    const stepContent = useMemo(() => {
-        switch (currentStepName) {
-            case 'platform':
-                return (
-                    <StepPlatformConfig
-                        data={data.platform}
-                        onChange={stepData => updateStepData('platform', stepData)}
-                    />
-                );
-            case 'admin':
-                return (
-                    <StepAdminAccount
-                        data={data.admin}
-                        onChange={stepData => updateStepData('admin', stepData)}
-                    />
-                );
-            case 'organization':
-                return (
-                    <StepOrganization
-                        data={data.organization}
-                        onChange={stepData => updateStepData('organization', stepData)}
-                    />
-                );
-            case 'categories':
-                return (
-                    <StepCategories
-                        data={data.categories}
-                        onChange={stepData => updateStepData('categories', stepData)}
-                    />
-                );
-            case 'registration':
-                return (
-                    <StepRegistrationPolicy
-                        data={data.registration}
-                        onChange={stepData => updateStepData('registration', stepData)}
-                    />
-                );
-            case 'summary':
-                return <StepSummary data={data} />;
-        }
-    }, [currentStepName, data, updateStepData]);
+    let stepContent;
+    switch (currentStepName) {
+        case 'platform':
+            stepContent = (
+                <StepPlatformConfig
+                    data={data.platform}
+                    onChange={stepData => updateStepData('platform', stepData)}
+                />
+            );
+            break;
+        case 'admin':
+            stepContent = (
+                <StepAdminAccount
+                    data={data.admin}
+                    onChange={stepData => updateStepData('admin', stepData)}
+                />
+            );
+            break;
+        case 'organization':
+            stepContent = (
+                <StepOrganization
+                    data={data.organization}
+                    onChange={stepData => updateStepData('organization', stepData)}
+                />
+            );
+            break;
+        case 'categories':
+            stepContent = (
+                <StepCategories
+                    data={data.categories}
+                    onChange={stepData => updateStepData('categories', stepData)}
+                />
+            );
+            break;
+        case 'registration':
+            stepContent = (
+                <StepRegistrationPolicy
+                    data={data.registration}
+                    onChange={stepData => updateStepData('registration', stepData)}
+                />
+            );
+            break;
+        case 'summary':
+            stepContent = <StepSummary data={data} />;
+            break;
+    }
 
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-8">

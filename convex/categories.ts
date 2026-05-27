@@ -9,6 +9,7 @@ import {
     listCategoryNamesForFilters,
     updateCategoryForCurrentOrganization,
 } from './domain/categories';
+import { categoryInputValidator, categoryPatchValidator } from './domain/categories/validators';
 
 export const getCategoriesByUser = queryWithRLS({
     args: {
@@ -27,23 +28,16 @@ export const getCategoryNamesForFilters = queryWithRLS({
 });
 
 export const createCategory = mutationWithRLS({
-    args: {
-        name: v.string(),
-        color: v.string(),
-        icon: v.optional(v.string()),
-    },
+    args: categoryInputValidator,
+    returns: v.id('categories'),
     handler: async (ctx, args) => {
         return await createCategoryForCurrentOrganization(ctx, args);
     },
 });
 
 export const updateCategory = mutationWithRLS({
-    args: {
-        id: v.id('categories'),
-        name: v.optional(v.string()),
-        color: v.optional(v.string()),
-        icon: v.optional(v.string()),
-    },
+    args: categoryPatchValidator,
+    returns: v.nullable(v.id('categories')),
     handler: async (ctx, args) => {
         return await updateCategoryForCurrentOrganization(ctx, args);
     },
@@ -53,6 +47,7 @@ export const deleteCategory = mutationWithRLS({
     args: {
         id: v.id('categories'),
     },
+    returns: v.nullable(v.id('categories')),
     handler: async (ctx, args) => {
         return await deleteCategoryForCurrentOrganization(ctx, args);
     },

@@ -220,7 +220,6 @@ export default function CreateNotificationFormModal() {
                                                 (field.value as Date | undefined) || undefined
                                             }
                                             onSelect={field.onChange}
-                                            initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>

@@ -21,15 +21,22 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
-            include: ['convex/**/*.ts', 'src/**/*.{ts,tsx}'],
+            include: ['convex/**/*.ts'],
             exclude: [
                 '**/*.test.ts',
                 '**/*.test.tsx',
                 '**/tests/**',
                 '**/_generated/**',
+                'convex/generated/**',
                 '**/node_modules/**',
                 '**/*.d.ts',
             ],
+            thresholds: {
+                statements: 25,
+                branches: 18,
+                functions: 20,
+                lines: 25,
+            },
         },
     },
 });

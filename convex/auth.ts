@@ -29,7 +29,7 @@ type AuthOptions = BetterAuthOptionsWithoutDatabase & {
 };
 
 import { env } from './lib/env';
-import { STRONG_PASSWORD_MESSAGE_EN, STRONG_PASSWORD_REGEX } from '../shared/password-policy';
+import { validatePasswordPolicy } from '../shared/password-policy';
 const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
@@ -131,14 +131,11 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
                 (ctx.body as { newPassword?: unknown } | undefined)?.newPassword ??
                 undefined;
 
-            if (typeof password !== 'string' || password.length < 8) {
-                return;
-            }
-
-            if (!STRONG_PASSWORD_REGEX.test(password)) {
+            const passwordPolicy = validatePasswordPolicy(password);
+            if (!passwordPolicy.ok) {
                 throw new APIError('BAD_REQUEST', {
-                    code: ERROR_CODES.WEAK_PASSWORD,
-                    message: STRONG_PASSWORD_MESSAGE_EN,
+                    code: passwordPolicy.code,
+                    message: passwordPolicy.message,
                 });
             }
         }),
@@ -175,7 +172,7 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
 export default defineAuth(ctx => createAuthOptions(ctx as GenericCtx));
 
 export const getCurrentUser = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
@@ -184,7 +181,7 @@ export const getCurrentUser = query({
 });
 
 export const getCurrentOrganization = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         let organizationId: string | null = null;
 

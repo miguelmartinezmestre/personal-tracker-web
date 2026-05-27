@@ -181,9 +181,16 @@ describe('objectiveDomain', () => {
             expect(() => validateObjectiveNotCompleted('active')).not.toThrow();
         });
 
-        test('does not throw for other statuses', () => {
-            expect(() => validateObjectiveNotCompleted('pending')).not.toThrow();
-            expect(() => validateObjectiveNotCompleted('archived')).not.toThrow();
+        test.each(['pending', 'archived'])('throws for unsupported status: %s', status => {
+            expect(() => validateObjectiveNotCompleted(status as never)).toThrow(ConvexError);
+            try {
+                validateObjectiveNotCompleted(status as never);
+            } catch (e) {
+                expect(e).toBeInstanceOf(ConvexError);
+                if (e instanceof ConvexError) {
+                    expect(e.data).toBe(ERROR_CODES.VALIDATION_ERROR);
+                }
+            }
         });
     });
 });

@@ -47,180 +47,160 @@ export const ResponsiveObjectivesView = React.forwardRef<
         },
     });
 
-    const statusLabels = React.useMemo(
-        () => ({
-            active: t('statusOptions.active'),
-            completed: t('statusOptions.completed'),
-            overdue: t('statusLabels.overdue'),
-        }),
-        [t]
-    );
+    const statusLabels = {
+        active: t('statusOptions.active'),
+        completed: t('statusOptions.completed'),
+        overdue: t('statusLabels.overdue'),
+    };
 
-    const renderObjectiveActions = React.useCallback(
-        (objective: Doc<'objectives'>) => (
-            <div className="flex flex-wrap gap-2">
-                <EditObjectiveFormModal defaultValues={normalizeObjective(objective)} />
-                <DeleteConfirmationDialog
-                    onConfirm={async () => {
-                        await deleteObjectiveMutation.mutateAsync({ id: objective._id });
-                    }}
-                    title={t('confirm.deleteObjective')}
-                    description={t('confirm.deleteObjectiveDescription')}
-                    triggerLabel={t('deleteObjective')}
-                    confirmLabel={t('confirm.deleteConfirm')}
-                    cancelLabel={t('confirm.cancel')}
-                    isLoading={deleteObjectiveMutation.isPending}
-                    trigger={
-                        <Button
-                            data-testid="objective-delete-button"
-                            variant="destructive"
-                            size="sm"
-                        >
-                            {t('deleteObjective')}
-                        </Button>
-                    }
-                />
-                <Link
-                    href={`/dashboard/objectives/${objective._id}`}
-                    prefetch={false}
-                    data-testid="objective-progress-link"
-                    className="inline-flex"
-                >
-                    <Button variant="outline" size="sm">
-                        {t('goToProgress')}
+    const renderObjectiveActions = (objective: Doc<'objectives'>) => (
+        <div className="flex flex-wrap gap-2">
+            <EditObjectiveFormModal defaultValues={normalizeObjective(objective)} />
+            <DeleteConfirmationDialog
+                onConfirm={async () => {
+                    await deleteObjectiveMutation.mutateAsync({ id: objective._id });
+                }}
+                title={t('confirm.deleteObjective')}
+                description={t('confirm.deleteObjectiveDescription')}
+                triggerLabel={t('deleteObjective')}
+                confirmLabel={t('confirm.deleteConfirm')}
+                cancelLabel={t('confirm.cancel')}
+                isLoading={deleteObjectiveMutation.isPending}
+                trigger={
+                    <Button data-testid="objective-delete-button" variant="destructive" size="sm">
+                        {t('deleteObjective')}
                     </Button>
-                </Link>
-            </div>
-        ),
-        [deleteObjectiveMutation, t]
+                }
+            />
+            <Link
+                href={`/dashboard/objectives/${objective._id}`}
+                prefetch={false}
+                data-testid="objective-progress-link"
+                className="inline-flex"
+            >
+                <Button variant="outline" size="sm">
+                    {t('goToProgress')}
+                </Button>
+            </Link>
+        </div>
     );
 
-    const objectiveColumns = React.useMemo<ColumnDef<Doc<'objectives'>>[]>(
-        () => [
-            {
-                accessorKey: 'title',
-                header: t('title'),
-            },
-            {
-                accessorKey: 'description',
-                header: t('tableDescription'),
-                cell: ({ row }) => (
-                    <div className="max-w-sm truncate text-muted-foreground">
-                        {row.original.description?.trim() || '-'}
-                    </div>
-                ),
-            },
-            {
-                accessorKey: 'category',
-                header: t('category'),
-                cell: ({ row }) => row.original.category?.trim() || '-',
-            },
-            {
-                accessorKey: 'deadline',
-                header: t('deadline'),
-                cell: ({ row }) =>
-                    row.original.deadline
-                        ? new Date(row.original.deadline).toLocaleDateString()
-                        : '-',
-            },
-            {
-                id: 'status',
-                header: t('status'),
-                cell: ({ row }) => (
-                    <StatusIndicator
-                        status={row.original.status}
-                        deadline={row.original.deadline ?? undefined}
-                        labels={statusLabels}
-                    />
-                ),
-            },
-            {
-                id: 'progress',
-                header: t('progress'),
-                cell: ({ row }) => {
-                    const objective = row.original;
-                    const normalized = normalizeObjective(objective);
-                    const progress = computeObjectiveProgressPercent({
-                        currentValue: normalized.currentValue,
-                        targetValue: normalized.targetValue,
-                        startValue: normalized.startValue,
-                    });
-
-                    return (
-                        <div className="flex items-center gap-3">
-                            <CircularProgress value={progress} max={100} size="sm" />
-                            <span className="text-sm text-muted-foreground">
-                                {objective.currentValue}/{objective.targetValue}{' '}
-                                {objective.unit ?? ''}
-                            </span>
-                        </div>
-                    );
-                },
-            },
-            {
-                id: 'actions',
-                header: t('quickActions'),
-                cell: ({ row }) => renderObjectiveActions(row.original),
-            },
-        ],
-        [renderObjectiveActions, statusLabels, t]
-    );
-
-    const renderObjectiveCard = React.useCallback(
-        (objective: Doc<'objectives'>) => {
-            const normalized = normalizeObjective(objective);
-            const progress = computeObjectiveProgressPercent({
-                currentValue: normalized.currentValue,
-                targetValue: normalized.targetValue,
-                startValue: normalized.startValue,
-            });
-
-            return (
-                <Card key={objective._id} className="w-full">
-                    <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                                <p className="font-semibold truncate">{objective.title}</p>
-                                {objective.description ? (
-                                    <p className="text-sm text-muted-foreground line-clamp-2">
-                                        {objective.description}
-                                    </p>
-                                ) : null}
-                            </div>
-                            <StatusIndicator
-                                status={objective.status}
-                                deadline={objective.deadline ?? undefined}
-                                labels={statusLabels}
-                            />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        <div className="flex items-center gap-3">
-                            <CircularProgress value={progress} max={100} size="sm" />
-                            <div className="text-sm text-muted-foreground">
-                                {objective.currentValue}/{objective.targetValue}{' '}
-                                {objective.unit ?? ''}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            {objective.category ? (
-                                <Badge variant="secondary">{objective.category}</Badge>
-                            ) : null}
-                            {objective.deadline ? (
-                                <Badge variant="outline">
-                                    {new Date(objective.deadline).toLocaleDateString()}
-                                </Badge>
-                            ) : null}
-                        </div>
-
-                        {renderObjectiveActions(objective)}
-                    </CardContent>
-                </Card>
-            );
+    const objectiveColumns: ColumnDef<Doc<'objectives'>>[] = [
+        {
+            accessorKey: 'title',
+            header: t('title'),
         },
-        [statusLabels, renderObjectiveActions]
-    );
+        {
+            accessorKey: 'description',
+            header: t('tableDescription'),
+            cell: ({ row }) => (
+                <div className="max-w-sm truncate text-muted-foreground">
+                    {row.original.description?.trim() || '-'}
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'category',
+            header: t('category'),
+            cell: ({ row }) => row.original.category?.trim() || '-',
+        },
+        {
+            accessorKey: 'deadline',
+            header: t('deadline'),
+            cell: ({ row }) =>
+                row.original.deadline ? new Date(row.original.deadline).toLocaleDateString() : '-',
+        },
+        {
+            id: 'status',
+            header: t('status'),
+            cell: ({ row }) => (
+                <StatusIndicator
+                    status={row.original.status}
+                    deadline={row.original.deadline ?? undefined}
+                    labels={statusLabels}
+                />
+            ),
+        },
+        {
+            id: 'progress',
+            header: t('progress'),
+            cell: ({ row }) => {
+                const objective = row.original;
+                const normalized = normalizeObjective(objective);
+                const progress = computeObjectiveProgressPercent({
+                    currentValue: normalized.currentValue,
+                    targetValue: normalized.targetValue,
+                    startValue: normalized.startValue,
+                });
+
+                return (
+                    <div className="flex items-center gap-3">
+                        <CircularProgress value={progress} max={100} size="sm" />
+                        <span className="text-sm text-muted-foreground">
+                            {objective.currentValue}/{objective.targetValue} {objective.unit ?? ''}
+                        </span>
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'actions',
+            header: t('quickActions'),
+            cell: ({ row }) => renderObjectiveActions(row.original),
+        },
+    ];
+
+    const renderObjectiveCard = (objective: Doc<'objectives'>) => {
+        const normalized = normalizeObjective(objective);
+        const progress = computeObjectiveProgressPercent({
+            currentValue: normalized.currentValue,
+            targetValue: normalized.targetValue,
+            startValue: normalized.startValue,
+        });
+
+        return (
+            <Card key={objective._id} className="w-full">
+                <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="font-semibold truncate">{objective.title}</p>
+                            {objective.description ? (
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {objective.description}
+                                </p>
+                            ) : null}
+                        </div>
+                        <StatusIndicator
+                            status={objective.status}
+                            deadline={objective.deadline ?? undefined}
+                            labels={statusLabels}
+                        />
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        <CircularProgress value={progress} max={100} size="sm" />
+                        <div className="text-sm text-muted-foreground">
+                            {objective.currentValue}/{objective.targetValue} {objective.unit ?? ''}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        {objective.category ? (
+                            <Badge variant="secondary">{objective.category}</Badge>
+                        ) : null}
+                        {objective.deadline ? (
+                            <Badge variant="outline">
+                                {new Date(objective.deadline).toLocaleDateString()}
+                            </Badge>
+                        ) : null}
+                    </div>
+
+                    {renderObjectiveActions(objective)}
+                </CardContent>
+            </Card>
+        );
+    };
 
     return (
         <div ref={ref} className="w-full min-w-0 space-y-4">

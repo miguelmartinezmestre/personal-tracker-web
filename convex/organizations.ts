@@ -43,7 +43,7 @@ function normalizeOrganizationId(ctx: QueryCtx, organizationId: string): Id<'org
 }
 
 export const getCurrentSession = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const currentSession = await resolveCurrentSession(ctx);
         if (!currentSession) return null;
@@ -73,7 +73,7 @@ export const getCurrentSession = query({
 });
 
 export const getOrganizationsByUser = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];
@@ -120,7 +120,7 @@ export const getOrganizationsByUser = query({
 });
 
 export const getActiveOrganization = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const currentSession = await resolveCurrentSession(ctx);
         if (!currentSession?.activeOrganizationId) return null;
@@ -143,7 +143,7 @@ export const getActiveOrganization = query({
 });
 
 export const getActiveMember = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const currentSession = await resolveCurrentSession(ctx);
         const activeOrganizationId = currentSession?.activeOrganizationId;
@@ -239,7 +239,7 @@ export const getOrganizationMembers = query({
 });
 
 export const getUserInvitations = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) return [];

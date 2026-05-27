@@ -13,6 +13,7 @@ import {
 } from './domain/objectives/categoryResolution';
 import { deadlineRangeValidator } from './domain/objectives/filters';
 import { runObjectiveSync } from './domain/objectives/workflowSync';
+import { workflow } from './workflow';
 import { isVitestRuntime } from './utils/testRuntime';
 import { listObjectives, searchObjectives } from './domain/objectives/list';
 import { backfillObjectiveCategoryIdsJob } from './jobs/objectives/backfillCategoryIds';
@@ -135,6 +136,7 @@ export const createObjective = mutationWithRLS({
         unit: v.optional(v.string()),
         scope: v.optional(objectiveScopeValidator),
     },
+    returns: v.id('objectives'),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const now = Date.now();
@@ -165,12 +167,7 @@ export const createObjective = mutationWithRLS({
         let resolvedCategoryId: Id<'categories'> | undefined;
 
         if (args.categoryId) {
-            const category = await getCategoryForObjective(
-                ctx,
-                organizationId,
-                userId,
-                args.categoryId
-            );
+            const category = await getCategoryForObjective(ctx, organizationId, args.categoryId);
             resolvedCategoryId = category._id;
             resolvedCategory = category.name;
         } else if (args.category !== undefined && args.category.trim() !== '') {
@@ -253,7 +250,6 @@ export const updateObjective = mutationWithRLS({
             const category = await getCategoryForObjective(
                 ctx,
                 objective.organizationId,
-                ctx.userId,
                 args.categoryId
             );
             categoryPatch = { category: category.name, categoryId: category._id };
@@ -329,6 +325,16 @@ export const deleteObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
     },
+    returns: v.object({
+        status: v.string(),
+        objectiveId: v.id('objectives'),
+        deleted: v.optional(
+            v.object({
+                progress: v.number(),
+                notifications: v.number(),
+            })
+        ),
+    }),
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {
@@ -336,6 +342,10 @@ export const deleteObjective = mutationWithRLS({
         }
 
         assertCanModifyObjective(ctx, objective);
+
+        if (objective.workflowId) {
+            await workflow.cancel(ctx, objective.workflowId);
+        }
 
         return await deleteObjectiveWithDependents(ctx, { objectiveId: args.id });
     },

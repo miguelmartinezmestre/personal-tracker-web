@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
@@ -34,24 +33,16 @@ export default function ObjectiveProgressTimeline({
 }: ObjectiveProgressTimelineProps) {
     const t = useTranslations('UpdateProgress');
 
-    const dateFormatter = React.useMemo(
-        () =>
-            new Intl.DateTimeFormat(undefined, {
-                month: 'short',
-                day: 'numeric',
-            }),
-        []
-    );
+    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+    });
 
-    const fullDateFormatter = React.useMemo(
-        () =>
-            new Intl.DateTimeFormat(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            }),
-        []
-    );
+    const fullDateFormatter = new Intl.DateTimeFormat(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
 
     if (data.length < 2) return null;
 

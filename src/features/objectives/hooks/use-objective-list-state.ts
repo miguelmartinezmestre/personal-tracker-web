@@ -95,10 +95,8 @@ export function useObjectiveListState({
     );
 
     const organizationPagination = useServerPagination(DEFAULT_PAGE_SIZE);
-    const {
-        paginationOpts: organizationPaginationOpts,
-        reset: resetOrganizationPagination,
-    } = organizationPagination;
+    const { paginationOpts: organizationPaginationOpts, reset: resetOrganizationPagination } =
+        organizationPagination;
     const organizationIsFirstPage = organizationPaginationOpts.cursor === null;
 
     const organizationQuery = useQuery({
@@ -147,45 +145,29 @@ export function useObjectiveListState({
     const personalHasNextPage = Boolean(personalContinueCursor) && !personalPageIsDone;
     const organizationContinueCursor = organizationQuery.data?.continueCursor ?? null;
     const organizationPageIsDone = organizationQuery.data?.isDone ?? false;
-    const organizationHasNextPage =
-        Boolean(organizationContinueCursor) && !organizationPageIsDone;
+    const organizationHasNextPage = Boolean(organizationContinueCursor) && !organizationPageIsDone;
 
-    const personalObjectives = React.useMemo<Doc<'objectives'>[]>(
-        () => (hasSearch ? (personalSearchQuery.data ?? []) : (personalQuery.data?.page ?? [])),
-        [hasSearch, personalQuery.data?.page, personalSearchQuery.data]
-    );
-    const organizationObjectives = React.useMemo<Doc<'objectives'>[]>(
-        () =>
-            hasSearch
-                ? (organizationSearchQuery.data ?? [])
-                : (organizationQuery.data?.page ?? []),
-        [hasSearch, organizationQuery.data?.page, organizationSearchQuery.data]
-    );
+    const personalObjectives: Doc<'objectives'>[] = hasSearch
+        ? (personalSearchQuery.data ?? [])
+        : (personalQuery.data?.page ?? []);
+    const organizationObjectives: Doc<'objectives'>[] = hasSearch
+        ? (organizationSearchQuery.data ?? [])
+        : (organizationQuery.data?.page ?? []);
 
-    const handleFiltersChange = React.useCallback(
-        (nextFilters: FilterOptions) => {
-            const shouldResetPagination =
-                nextFilters.status !== filters.status ||
-                nextFilters.category !== filters.category ||
-                nextFilters.deadlineRange !== filters.deadlineRange ||
-                nextFilters.search !== filters.search;
+    const handleFiltersChange = (nextFilters: FilterOptions) => {
+        const shouldResetPagination =
+            nextFilters.status !== filters.status ||
+            nextFilters.category !== filters.category ||
+            nextFilters.deadlineRange !== filters.deadlineRange ||
+            nextFilters.search !== filters.search;
 
-            if (shouldResetPagination) {
-                resetPersonalPagination();
-                resetOrganizationPagination();
-            }
+        if (shouldResetPagination) {
+            resetPersonalPagination();
+            resetOrganizationPagination();
+        }
 
-            setFilters(nextFilters);
-        },
-        [
-            filters.status,
-            filters.category,
-            filters.deadlineRange,
-            filters.search,
-            resetOrganizationPagination,
-            resetPersonalPagination,
-        ]
-    );
+        setFilters(nextFilters);
+    };
 
     return {
         filters,
@@ -205,15 +187,10 @@ export function useObjectiveListState({
             objectives: organizationObjectives,
             pagination: organizationPagination,
             hasNextPage: organizationHasNextPage,
-            isLoading: hasSearch
-                ? organizationSearchQuery.isLoading
-                : organizationQuery.isLoading,
+            isLoading: hasSearch ? organizationSearchQuery.isLoading : organizationQuery.isLoading,
             isFetching: organizationQuery.isFetching,
             onNextPage: () =>
-                organizationPagination.nextPage(
-                    organizationContinueCursor,
-                    organizationPageIsDone
-                ),
+                organizationPagination.nextPage(organizationContinueCursor, organizationPageIsDone),
         },
     };
 }

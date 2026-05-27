@@ -43,18 +43,8 @@ export default defineConfig({
                     args: ['--disable-animations'],
                 },
             },
-            testMatch: [
-                '**/e2e/objectives/**',
-                '**/e2e/categories/**',
-                '**/e2e/notifications/**',
-                '**/e2e/organizations/**',
-                '**/e2e/settings/**',
-                '**/e2e/dashboard/**',
-                '**/e2e/achievements/**',
-                '**/e2e/sessions/**',
-                '**/e2e/i18n/**',
-                '**/e2e/ui/**',
-            ],
+            testMatch: ['**/e2e/**'],
+            testIgnore: ['**/e2e/auth/**', '**/e2e/admin/**', '**/e2e/security/**'],
         },
         {
             name: 'auth-and-smoke',
@@ -66,7 +56,7 @@ export default defineConfig({
                     args: ['--disable-animations'],
                 },
             },
-            testMatch: ['**/e2e/auth/**', '**/smoke/**'],
+            testMatch: ['**/e2e/auth/**', '**/e2e/security/**', '**/smoke/**'],
         },
         {
             name: 'admin',
@@ -84,5 +74,5 @@ export default defineConfig({
 
     globalSetup: './tests/config/global-setup.ts',
 
-    testIgnore: ['**/tests-manual/**'],
+    testIgnore: ['**/manual/**'],
 });

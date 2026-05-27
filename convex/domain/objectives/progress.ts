@@ -44,14 +44,7 @@ export async function createProgressUpdate(
         updatedAt: now,
     });
 
-    const newCurrentValue = objective.currentValue + args.updatedValue;
-    const newStatus = newCurrentValue >= objective.targetValue ? 'completed' : 'active';
-    const completedNow = objective.status !== 'completed' && newStatus === 'completed';
-    await ctx.db.patch('objectives', args.objective, {
-        currentValue: newCurrentValue,
-        status: newStatus,
-        updatedAt: now,
-    });
+    const { completedNow } = await recomputeObjectiveFromProgress(ctx, objective);
 
     const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
     if (notifyProgress) {
