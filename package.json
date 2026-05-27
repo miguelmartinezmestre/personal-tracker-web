@@ -18,7 +18,7 @@
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
         "test:e2e": "tsx scripts/run-e2e-stack.ts",
-        "test:e2e:tfg": "tsx scripts/run-e2e-stack.ts --config=src/tests-manual/playwright.manual.config.ts src/tests-manual/tfg-walkthrough.spec.ts",
+        "test:e2e:tfg": "tsx scripts/run-e2e-stack.ts --config=tests/manual/playwright.manual.config.ts tests/manual/tfg-walkthrough.spec.ts",
         "check-translations": "node scripts/check-translations.js",
         "create-user": "tsx scripts/create-user.ts",
         "generate-admin-key": "cd infrastructure && docker compose -f docker-compose.dev.yml exec backend ./generate_admin_key.sh",
