@@ -2,6 +2,7 @@ import { Triggers, type Change } from 'convex-helpers/server/triggers';
 import type { TableNamesInDataModel } from 'convex/server';
 import type { DatabaseWriter } from '../../_generated/server';
 import type { DataModel, Id } from '../../_generated/dataModel';
+import { toAuditPrimitive } from '../../domain/audit/privacy';
 
 type AuditTriggerCtx = {
     db: DatabaseWriter;
@@ -21,21 +22,6 @@ type AuditResourceType =
 
 const triggers = new Triggers<DataModel, AuditTriggerCtx>();
 
-function toAuditPrimitive(value: unknown): string | number | boolean | null {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number') return value;
-    if (typeof value === 'boolean') return value;
-
-    if (typeof value === 'object') {
-        if (typeof (value as { _id?: unknown })._id === 'string') {
-            return (value as { _id: string })._id;
-        }
-        return String(value);
-    }
-    return String(value);
-}
-
 function sanitizeObjective(
     doc: unknown
 ): Record<string, string | number | boolean | null> | undefined {
@@ -47,13 +33,11 @@ function sanitizeObjective(
         userId: toAuditPrimitive(objectiveRecord.userId),
         scope: toAuditPrimitive(objectiveRecord.scope),
         status: toAuditPrimitive(objectiveRecord.status),
-        title: toAuditPrimitive(objectiveRecord.title),
-        category: toAuditPrimitive(objectiveRecord.category),
+        categoryId: toAuditPrimitive(objectiveRecord.categoryId),
         targetValue: toAuditPrimitive(objectiveRecord.targetValue),
         currentValue: toAuditPrimitive(objectiveRecord.currentValue),
         startValue: toAuditPrimitive(objectiveRecord.startValue),
         deadline: toAuditPrimitive(objectiveRecord.deadline),
-        unit: toAuditPrimitive(objectiveRecord.unit),
         createdAt: toAuditPrimitive(objectiveRecord.createdAt),
         updatedAt: toAuditPrimitive(objectiveRecord.updatedAt),
     };
@@ -67,6 +51,7 @@ function sanitizeProgressUpdate(
     return {
         _id: toAuditPrimitive(progressUpdateRecord._id),
         objective: toAuditPrimitive(progressUpdateRecord.objective),
+        userId: toAuditPrimitive(progressUpdateRecord.userId),
         updatedValue: toAuditPrimitive(progressUpdateRecord.updatedValue),
         updateDate: toAuditPrimitive(progressUpdateRecord.updateDate),
         createdAt: toAuditPrimitive(progressUpdateRecord.createdAt),
@@ -83,9 +68,6 @@ function sanitizeCategory(
         _id: toAuditPrimitive(categoryRecord._id),
         userId: toAuditPrimitive(categoryRecord.userId),
         organizationId: toAuditPrimitive(categoryRecord.organizationId),
-        name: toAuditPrimitive(categoryRecord.name),
-        color: toAuditPrimitive(categoryRecord.color),
-        icon: toAuditPrimitive(categoryRecord.icon),
         createdAt: toAuditPrimitive(categoryRecord.createdAt),
         updatedAt: toAuditPrimitive(categoryRecord.updatedAt),
     };
@@ -98,9 +80,6 @@ function sanitizeOrganization(
     const organizationRecord = doc as Record<string, unknown>;
     return {
         _id: toAuditPrimitive(organizationRecord._id),
-        name: toAuditPrimitive(organizationRecord.name),
-        slug: toAuditPrimitive(organizationRecord.slug),
-        logo: toAuditPrimitive(organizationRecord.logo),
         createdAt: toAuditPrimitive(organizationRecord.createdAt),
     };
 }
@@ -124,7 +103,6 @@ function sanitizeUser(doc: unknown): Record<string, string | number | boolean | 
     const userRecord = doc as Record<string, unknown>;
     return {
         _id: toAuditPrimitive(userRecord._id),
-        name: toAuditPrimitive(userRecord.name),
         role: toAuditPrimitive(userRecord.role),
         banned: toAuditPrimitive(userRecord.banned),
         createdAt: toAuditPrimitive(userRecord.createdAt),
@@ -139,7 +117,6 @@ function sanitizePlatformSettings(
     const platformSettingsRecord = doc as Record<string, unknown>;
     return {
         _id: toAuditPrimitive(platformSettingsRecord._id),
-        platformName: toAuditPrimitive(platformSettingsRecord.platformName),
         defaultLanguage: toAuditPrimitive(platformSettingsRecord.defaultLanguage),
         registrationPolicy: toAuditPrimitive(platformSettingsRecord.registrationPolicy),
         setupCompletedAt: toAuditPrimitive(platformSettingsRecord.setupCompletedAt),

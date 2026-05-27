@@ -10,7 +10,7 @@ describe('convex categories', async () => {
     let userIdentity: TestConvexForDataModel<DataModel>;
     let adminIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;
-    let _userOrganizationId: Id<'organization'>;
+    let userOrganizationId: Id<'organization'>;
     let _adminOrganizationId: Id<'organization'>;
 
     beforeEach(async () => {
@@ -39,7 +39,7 @@ describe('convex categories', async () => {
             role: 'owner',
         });
 
-        _userOrganizationId = userOrgId;
+        userOrganizationId = userOrgId;
 
         userIdentity = t.withIdentity({
             subject: userData.docId,
@@ -178,6 +178,52 @@ describe('convex categories', async () => {
             });
             expect(result.page).toHaveLength(2);
             expect(result.page.every(category => category.userId === userId)).toBe(true);
+        });
+
+        test('returns categories from other members in the active organization', async () => {
+            const otherRandom = Math.random().toString(36).substring(2, 15);
+            const otherUserData = await createTestUser(t, {
+                userId: 'same-org-category-user-' + otherRandom,
+                email: 'same-org-category@example.com-' + otherRandom,
+                name: 'Same Org Category User ' + otherRandom,
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            });
+
+            await createTestMember(t, {
+                organizationId: userOrganizationId,
+                userId: otherUserData.docId,
+                role: 'member',
+            });
+
+            const otherIdentity = t.withIdentity({
+                subject: otherUserData.docId,
+                role: 'user',
+                email: otherUserData.email,
+                name: otherUserData.name,
+                password: 'test-password',
+                emailVerified: false,
+                createdAt: Date.now(),
+                userId: otherUserData.docId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
+            await otherIdentity.mutation(api.categories.createCategory, {
+                name: 'Shared Org Category',
+                color: '#10b981',
+            });
+
+            const result = await userIdentity.query(api.categories.getCategoriesByUser, {
+                paginationOpts,
+            });
+
+            expect(result.page.some(category => category.name === 'Shared Org Category')).toBe(
+                true
+            );
         });
 
         test('rejects unauthenticated users', async () => {

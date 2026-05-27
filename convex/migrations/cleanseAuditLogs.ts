@@ -12,6 +12,7 @@ const REDACTION_KEYS = new Set([
     'otp',
     'secret',
     'clientSecret',
+    'apiKey',
 
     'email',
     'ipAddress',
@@ -21,6 +22,16 @@ const REDACTION_KEYS = new Set([
     'impersonatedBy',
 
     'value',
+    'name',
+    'title',
+    'description',
+    'comment',
+    'banReason',
+    'category',
+    'unit',
+    'slug',
+    'logo',
+    'platformName',
 ]);
 
 const ALLOWED_SESSION_FIELDS = new Set([
@@ -34,13 +45,11 @@ const ALLOWED_SESSION_FIELDS = new Set([
 
 const ALLOWED_USER_FIELDS = new Set([
     '_id',
-    'name',
     'emailVerified',
     'createdAt',
     'updatedAt',
     'role',
     'banned',
-    'banReason',
     'banExpires',
 ]);
 
@@ -227,8 +236,10 @@ export const cleanseAuditLogs = internalMutation({
                 }
             }
 
-            if (log.metadata.context) {
+            if (log.metadata.context && /^[A-Za-z0-9_.:-]+$/.test(log.metadata.context)) {
                 newMetadata.context = log.metadata.context;
+            } else if (log.metadata.context) {
+                needsUpdate = true;
             }
 
             if (needsUpdate) {

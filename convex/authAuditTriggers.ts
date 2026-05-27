@@ -2,6 +2,7 @@ import type { MutationCtx } from './_generated/server';
 import type { Triggers as BetterAuthTriggers } from 'kitcn/auth';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
+import { sanitizeAuditMetadata, toAuditPrimitive } from './domain/audit/privacy';
 
 type BetterAuthSchema = typeof schema;
 
@@ -16,13 +17,11 @@ const ALLOWED_SESSION_FIELDS = new Set([
 
 const ALLOWED_USER_FIELDS = new Set([
     '_id',
-    'name',
     'emailVerified',
     'createdAt',
     'updatedAt',
     'role',
     'banned',
-    'banReason',
     'banExpires',
 ]);
 
@@ -35,21 +34,6 @@ const ALLOWED_INVITATION_FIELDS = new Set([
     'createdAt',
     'inviterId',
 ]);
-
-const toAuditPrimitive = (value: unknown): string | number | boolean | null => {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number') return value;
-    if (typeof value === 'boolean') return value;
-
-    if (typeof value === 'object') {
-        if (typeof (value as { _id?: unknown })._id === 'string') {
-            return (value as { _id: string })._id;
-        }
-        return String(value);
-    }
-    return String(value);
-};
 
 const sanitizeSession = (
     session: Record<string, unknown>
@@ -127,6 +111,12 @@ type AuthAuditMetadata = {
     context?: string;
 };
 
+const isAuditRecord = (
+    value: unknown
+): value is Record<string, string | number | boolean | null> => {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+};
+
 const insertAuthAuditLog = async (
     ctx: MutationCtx,
     args: {
@@ -152,15 +142,15 @@ const insertAuthAuditLog = async (
     let metadata: AuthAuditMetadata | undefined;
 
     if (args.metadata !== undefined) {
-        const metadataSource = args.metadata;
+        const metadataSource = sanitizeAuditMetadata(args.resourceType, args.metadata);
         const normalizedMetadata: AuthAuditMetadata = {};
-        if (metadataSource.before !== undefined) {
+        if (isAuditRecord(metadataSource?.before)) {
             normalizedMetadata.before = metadataSource.before;
         }
-        if (metadataSource.after !== undefined) {
+        if (isAuditRecord(metadataSource?.after)) {
             normalizedMetadata.after = metadataSource.after;
         }
-        if (metadataSource.context !== undefined) {
+        if (metadataSource?.context !== undefined) {
             normalizedMetadata.context = metadataSource.context;
         }
         metadata = Object.keys(normalizedMetadata).length > 0 ? normalizedMetadata : undefined;

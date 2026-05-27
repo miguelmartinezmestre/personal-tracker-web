@@ -402,6 +402,56 @@ describe('categories integrity', async () => {
 
             expect(objective?.category).toBe('Original Name');
         });
+
+        test('objective can use a category created by another member in the same organization', async () => {
+            const otherRandom = Math.random().toString(36).substring(2, 15);
+            const otherUser = await createTestUser(t, {
+                userId: 'same-org-objective-category-' + otherRandom,
+                email: 'same-org-objective-category@example.com-' + otherRandom,
+                name: 'Same Org Objective Category User',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: false,
+            });
+
+            await createTestMember(t, {
+                organizationId,
+                userId: otherUser.docId,
+                role: 'member',
+            });
+
+            const otherIdentity = t.withIdentity({
+                subject: otherUser.docId,
+                role: 'user',
+                email: otherUser.email,
+                name: otherUser.name,
+                password: 'test-password',
+                emailVerified: false,
+                createdAt: Date.now(),
+                userId: otherUser.docId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
+            const categoryId = await otherIdentity.mutation(api.categories.createCategory, {
+                name: 'Team Category',
+                color: '#10b981',
+            });
+
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Objective With Team Category',
+                categoryId,
+                targetValue: 100,
+                scope: 'personal',
+            });
+
+            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+
+            expect(objective?.categoryId).toBe(categoryId);
+            expect(objective?.category).toBe('Team Category');
+        });
     });
 
     describe('categoryId backfill migration', () => {

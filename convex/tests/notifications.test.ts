@@ -555,6 +555,43 @@ describe('convex notifications', async () => {
             expect(result.scanned).toBeGreaterThan(0);
         });
 
+        test('skips deadline notifications when user preference is disabled', async () => {
+            const now = Date.now();
+            await userIdentity.mutation(api.notificationPreferences.updateUserPreferences, {
+                deadlineNotifications: false,
+            });
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: userOrganizationId,
+                    scope: 'personal',
+                    title: 'Disabled Deadline Preference',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now - DAY_MS,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            });
+
+            const result = await t.mutation(
+                internal.notifications.runDeadlineNotificationsCron,
+                {}
+            );
+            const notifications = await userIdentity.query(
+                api.notifications.getNotificationsByUser,
+                {
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+
+            expect(result.scanned).toBeGreaterThan(0);
+            expect(result.created).toBe(0);
+            expect(result.skipped).toBeGreaterThan(0);
+            expect(notifications.page).toEqual([]);
+        });
+
         test('creates notifications for objectives due within 3 days', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {

@@ -1,7 +1,7 @@
 import { ConvexError } from 'convex/values';
 import type { Doc } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
-import { ERROR_CODES, TIME } from '../../utils/constants';
+import { ERROR_CODES, OBJECTIVE_STATUS, TIME, type ObjectiveStatus } from '../../utils/constants';
 
 const MAX_METRIC = 1_000_000_000;
 const MIN_TARGET = 0.001;
@@ -79,9 +79,13 @@ export function validateUpdateDate(updateDate: number): void {
     }
 }
 
-export function validateObjectiveNotCompleted(status: string): void {
-    if (status === 'completed') {
+export function validateObjectiveNotCompleted(status: ObjectiveStatus): void {
+    if (status === OBJECTIVE_STATUS.COMPLETED) {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
+    }
+
+    if (status !== OBJECTIVE_STATUS.ACTIVE) {
+        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
 }
 

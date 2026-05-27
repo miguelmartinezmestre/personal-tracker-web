@@ -77,17 +77,21 @@ export async function listCategoriesForCurrentUser(
     ctx: CategoryQueryCtx,
     args: { paginationOpts: PaginationOptions }
 ) {
+    const organizationId = requireActiveOrganization(ctx);
+
     return await ctx.db
         .query('categories')
-        .withIndex('by_user', q => q.eq('userId', ctx.userId))
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .order('desc')
         .paginate(args.paginationOpts);
 }
 
 export async function listCategoryNamesForFilters(ctx: CategoryQueryCtx) {
+    const organizationId = requireActiveOrganization(ctx);
+
     const categories = await ctx.db
         .query('categories')
-        .withIndex('by_user', q => q.eq('userId', ctx.userId))
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .take(LIST_LIMIT);
 
     return Array.from(

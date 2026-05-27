@@ -6,7 +6,6 @@ import { ERROR_CODES } from '../../utils/constants';
 export async function getCategoryForObjective(
     ctx: QueryCtx | MutationCtx,
     organizationId: Id<'organization'>,
-    userId: Id<'user'>,
     categoryId: Id<'categories'>
 ): Promise<Doc<'categories'>> {
     const category = await ctx.db.get('categories', categoryId);
@@ -14,9 +13,6 @@ export async function getCategoryForObjective(
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
     if (category.organizationId !== organizationId) {
-        throw new ConvexError(ERROR_CODES.FORBIDDEN);
-    }
-    if (category.userId !== userId) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
     return category;

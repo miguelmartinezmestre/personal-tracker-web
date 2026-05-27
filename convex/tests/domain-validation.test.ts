@@ -224,12 +224,22 @@ describe('Domain Validation Tests', () => {
             }
         });
 
-        test.each([{ status: 'active' }, { status: 'pending' }, { status: 'archived' }])(
-            'does not throw for status: $status',
-            ({ status }) => {
-                expect(() => validateObjectiveNotCompleted(status)).not.toThrow();
+        test('does not throw for active status', () => {
+            expect(() => validateObjectiveNotCompleted('active')).not.toThrow();
+        });
+
+        test.each(['pending', 'archived'])('throws for unsupported status: %s', status => {
+            expect(() => validateObjectiveNotCompleted(status as never)).toThrow(ConvexError);
+
+            try {
+                validateObjectiveNotCompleted(status as never);
+            } catch (e) {
+                expect(e).toBeInstanceOf(ConvexError);
+                if (e instanceof ConvexError) {
+                    expect(e.data).toBe(ERROR_CODES.VALIDATION_ERROR);
+                }
             }
-        );
+        });
     });
 
     describe('Integration: createUpdateProgress', () => {

@@ -125,6 +125,11 @@ describe('convex auditLogs', () => {
 
             expect(matchingLogs).toHaveLength(1);
             expect(matchingLogs[0]?.organizationId).toBe(userOrganizationId);
+            expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('title');
+            expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('category');
+            expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('unit');
+            expect(matchingLogs[0]?.metadata?.after).toHaveProperty('_id', String(objectiveId));
+            expect(matchingLogs[0]?.metadata?.after).toHaveProperty('status');
         });
 
         test('returns audit logs sorted by date descending', async () => {
@@ -373,9 +378,9 @@ describe('convex auditLogs', () => {
                     resourceType: 'objective',
                     resourceId: 'obj-1',
                     metadata: {
-                        before: { title: 'Old Title', status: 'active' },
-                        after: { title: 'New Title', status: 'completed' },
-                        context: 'Updated objective details',
+                        before: { status: 'active', currentValue: 1 },
+                        after: { status: 'completed', currentValue: 10 },
+                        context: 'objective.updated',
                     },
                     severity: 'warning',
                     createdAt: Date.now(),
@@ -384,9 +389,9 @@ describe('convex auditLogs', () => {
 
             const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
 
-            expect(log?.metadata?.before).toEqual({ title: 'Old Title', status: 'active' });
-            expect(log?.metadata?.after).toEqual({ title: 'New Title', status: 'completed' });
-            expect(log?.metadata?.context).toBe('Updated objective details');
+            expect(log?.metadata?.before).toEqual({ status: 'active', currentValue: 1 });
+            expect(log?.metadata?.after).toEqual({ status: 'completed', currentValue: 10 });
+            expect(log?.metadata?.context).toBe('objective.updated');
         });
 
         test('stores severity levels correctly', async () => {
