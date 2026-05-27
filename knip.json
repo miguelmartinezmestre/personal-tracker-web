@@ -23,7 +23,7 @@
         "tests/**",
         "convex/tests/**",
         "src/components/ui/**",
-        "src/tests-manual/**",
+        "tests/manual/**",
         "mysql-data/**",
         "data/**"
     ],

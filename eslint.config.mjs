@@ -28,7 +28,7 @@ const eslintConfig = [
         'infrastructure/mysql-data/**',
         'infrastructure/mysql-data-dev/**',
         'tests/**',
-        'src/tests-manual/**',
+        'tests/manual/**',
         'src/components/ui/**',
     ]),
     {
@@ -113,6 +113,20 @@ const eslintConfig = [
                                 'Use @tanstack/react-query hooks instead of convex/react hooks',
                         },
                     ],
+                },
+            ],
+        },
+    },
+    {
+        files: ['convex/**/*.ts', 'src/**/*.{ts,tsx}'],
+        ignores: ['src/components/ui/**'],
+        rules: {
+            'id-length': [
+                'warn',
+                {
+                    min: 2,
+                    exceptions: ['t', 'e', 'q', 'i', 'j', 'k', 'a', 'b', '_', 'z'],
+                    properties: 'never',
                 },
             ],
         },

@@ -30,6 +30,12 @@ export default defineConfig({
                 '**/node_modules/**',
                 '**/*.d.ts',
             ],
+            thresholds: {
+                statements: 25,
+                branches: 18,
+                functions: 20,
+                lines: 25,
+            },
         },
     },
 });
