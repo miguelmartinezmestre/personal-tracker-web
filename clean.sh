@@ -1,1 +1,0 @@
-find . -type d \( -name "node_modules" -o -name ".next" \) -exec rm -rf {} +
