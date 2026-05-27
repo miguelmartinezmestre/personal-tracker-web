@@ -1,26 +1,16 @@
 import { ConvexError } from 'convex/values';
+import type { ObjectType } from 'convex/values';
 import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
+import {
+    completeSetupArgsValidator,
+    ensureTestOrganizationInternalArgsValidator,
+} from './validators';
 
-type CompleteSetupArgs = {
-    platformName: string;
-    defaultLanguage: string;
-    registrationPolicy: string;
-    organizationName: string;
-    organizationLogo?: string;
-    categories: Array<{
-        name: string;
-        color: string;
-        icon?: string;
-    }>;
-};
+type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
 
-type EnsureTestOrganizationArgs = {
-    userId: Id<'user'>;
-    organizationName?: string;
-    createPersonalCategory?: boolean;
-};
+type EnsureTestOrganizationArgs = ObjectType<typeof ensureTestOrganizationInternalArgsValidator>;
 
 const slugify = (value: string) =>
     value
@@ -47,7 +37,7 @@ export async function completePlatformSetup(
     ctx: MutationCtx,
     userId: Id<'user'>,
     args: CompleteSetupArgs
-) {
+): Promise<{ success: true; organizationId: Id<'organization'> }> {
     const existingSettings = await ctx.db.query('platformSettings').first();
     if (existingSettings) {
         throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);

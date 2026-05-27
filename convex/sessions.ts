@@ -58,6 +58,7 @@ export const getSessionsByUser = queryWithRLS({
 
 export const invalidateSession = mutation({
     args: { sessionId: v.id('session') },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity?.userId) {
@@ -71,12 +72,13 @@ export const invalidateSession = mutation({
 
         await ctx.db.delete(args.sessionId);
 
-        return { success: true } as const;
+        return { success: true };
     },
 });
 
 export const invalidateAllOtherSessions = mutation({
     args: { currentSessionId: v.id('session') },
+    returns: v.object({ success: v.boolean(), revokedCount: v.number() }),
     handler: async (ctx, args) => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) {
@@ -104,6 +106,6 @@ export const invalidateAllOtherSessions = mutation({
             revokedCount++;
         }
 
-        return { success: true, revokedCount } as const;
+        return { success: true, revokedCount };
     },
 });

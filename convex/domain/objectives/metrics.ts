@@ -89,20 +89,6 @@ export function validateObjectiveNotCompleted(status: ObjectiveStatus): void {
     }
 }
 
-export const computeCurrentValue = (
-    objective: Pick<Doc<'objectives'>, 'startValue'>,
-    updates: { updatedValue: number; updateDate: number }[]
-): number => {
-    const base = objective.startValue ?? 0;
-    const total = updates.reduce((sum, update) => sum + update.updatedValue, 0);
-    return base + total;
-};
-
-export const computeLastProgressAt = (updates: { updateDate: number }[]): number | undefined => {
-    if (updates.length === 0) return undefined;
-    return updates.reduce((max, update) => (update.updateDate > max ? update.updateDate : max), 0);
-};
-
 export const computeProgressPercent = (objective: {
     currentValue: number;
     targetValue: number;

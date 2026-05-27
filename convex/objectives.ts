@@ -136,6 +136,7 @@ export const createObjective = mutationWithRLS({
         unit: v.optional(v.string()),
         scope: v.optional(objectiveScopeValidator),
     },
+    returns: v.id('objectives'),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const now = Date.now();
@@ -324,6 +325,16 @@ export const deleteObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
     },
+    returns: v.object({
+        status: v.string(),
+        objectiveId: v.id('objectives'),
+        deleted: v.optional(
+            v.object({
+                progress: v.number(),
+                notifications: v.number(),
+            })
+        ),
+    }),
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {

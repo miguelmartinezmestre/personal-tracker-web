@@ -65,6 +65,7 @@ export const getObjectivesForNotifications = queryWithRLS({
 
 export const getUnreadNotificationCount = queryWithRLS({
     args: {},
+    returns: v.object({ count: v.number() }),
     handler: async ctx => {
         const unreadNotifications = await ctx.db
             .query('notifications')
@@ -139,6 +140,7 @@ export const markAllReadBatch = internalMutation({
 
 export const markAllNotificationsRead = mutationWithRLS({
     args: {},
+    returns: v.object({ status: v.string() }),
     handler: async ctx => {
         await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
             userId: ctx.userId,
@@ -154,6 +156,7 @@ export const deleteNotification = mutationWithRLS({
     args: {
         id: v.id('notifications'),
     },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         const notification = await ctx.db.get('notifications', args.id);
 
@@ -164,7 +167,7 @@ export const deleteNotification = mutationWithRLS({
         assertCanMutateNotification(ctx, notification);
 
         await ctx.db.delete('notifications', args.id);
-        return { success: true } as const;
+        return { success: true };
     },
 });
 

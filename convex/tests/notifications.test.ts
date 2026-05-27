@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
@@ -382,6 +382,16 @@ describe('convex notifications', async () => {
     });
 
     describe('markAllNotificationsRead', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(async () => {
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
         test('marks all unread notifications as read', async () => {
             await userIdentity.mutation(api.notifications.createNotification, {
                 objective: objectiveId,
@@ -505,6 +515,16 @@ describe('convex notifications', async () => {
     });
 
     describe('runDeadlineNotificationsCron', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(async () => {
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        });
+
         test('creates notifications for objectives due today', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {

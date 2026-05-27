@@ -44,3 +44,15 @@ export const achievementTierValidator = v.union(
     v.literal(ACHIEVEMENT_TIER.GOLD),
     v.literal(ACHIEVEMENT_TIER.PLATINUM)
 );
+
+export const achievementTriggerValidator = v.union(
+    v.literal('objective_created'),
+    v.literal('objective_completed'),
+    v.literal('progress_update')
+);
+
+export const auditSeverityValidator = v.union(
+    v.literal('info'),
+    v.literal('warning'),
+    v.literal('critical')
+);

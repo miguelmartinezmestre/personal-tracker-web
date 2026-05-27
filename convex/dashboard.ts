@@ -2,11 +2,17 @@ import { queryWithRLS } from './rls';
 import { v } from 'convex/values';
 import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
 import { computeProgressPercent } from './domain/objectives/metrics';
+import { objectiveStatusValidator } from './utils/validators';
 
 const LIST_LIMIT = 1000;
 
 export const getDashboardStats = queryWithRLS({
     args: {},
+    returns: v.object({
+        totalObjectives: v.number(),
+        completedObjectives: v.number(),
+        pendingObjectives: v.number(),
+    }),
     handler: async ctx => {
         const userId = ctx.userId;
 
@@ -28,6 +34,7 @@ export const getMonthlyProgress = queryWithRLS({
     args: {
         months: v.optional(v.number()),
     },
+    returns: v.array(v.object({ month: v.string(), monthKey: v.string(), count: v.number() })),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const monthsToFetch = args.months ?? DASHBOARD.MONTHS_TO_SHOW;
@@ -69,6 +76,14 @@ export const getObjectivesWithMostProgress = queryWithRLS({
     args: {
         limit: v.optional(v.number()),
     },
+    returns: v.array(
+        v.object({
+            id: v.id('objectives'),
+            objective: v.string(),
+            progress: v.number(),
+            status: objectiveStatusValidator,
+        })
+    ),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const maxItems = args.limit ?? PAGINATION.DASHBOARD_LIMIT;
@@ -104,6 +119,15 @@ export const getUpcomingDeadlines = queryWithRLS({
     args: {
         days: v.optional(v.number()),
     },
+    returns: v.array(
+        v.object({
+            id: v.id('objectives'),
+            title: v.string(),
+            deadline: v.number(),
+            daysRemaining: v.number(),
+            progress: v.number(),
+        })
+    ),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const daysAhead = args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD;
@@ -150,6 +174,12 @@ export const getRecentActivity = queryWithRLS({
     args: {
         days: v.optional(v.number()),
     },
+    returns: v.object({
+        progressUpdatesCount: v.number(),
+        objectivesCreatedCount: v.number(),
+        objectivesCompletedCount: v.number(),
+        periodDays: v.number(),
+    }),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const daysBack = args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK;

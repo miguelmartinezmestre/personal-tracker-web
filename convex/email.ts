@@ -1,3 +1,4 @@
+import { v } from 'convex/values';
 import { internalMutation } from './_generated/server';
 import {
     resend,
@@ -9,10 +10,6 @@ export { resend };
 
 export const sendTransactionalEmail = internalMutation({
     args: transactionalEmailArgs,
-    handler: sendWithConfiguredProvider,
-});
-
-export const sendTestEmail = internalMutation({
-    args: transactionalEmailArgs,
+    returns: v.object({ message: v.string(), provider: v.string() }),
     handler: sendWithConfiguredProvider,
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
@@ -61,6 +61,16 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             banReason: null,
             banned: false,
         });
+    });
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(async () => {
+        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+        vi.clearAllTimers();
+        vi.useRealTimers();
     });
 
     describe('deleteObjectiveContinue batching', () => {

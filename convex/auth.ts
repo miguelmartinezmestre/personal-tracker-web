@@ -172,7 +172,7 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
 export default defineAuth(ctx => createAuthOptions(ctx as GenericCtx));
 
 export const getCurrentUser = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         const identity = await getAuthUserIdentity(ctx);
         if (!identity) throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
@@ -181,7 +181,7 @@ export const getCurrentUser = query({
 });
 
 export const getCurrentOrganization = query({
-    args: v.object({}),
+    args: {},
     handler: async ctx => {
         let organizationId: string | null = null;
 

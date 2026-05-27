@@ -6,7 +6,6 @@ import { mutationWithRLS, queryWithRLS } from './rls';
 import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
-import { normalizeGlobalUserRole } from './utils/userRole';
 
 type AdminApi = {
     banUser: (args: {
@@ -44,6 +43,7 @@ export const banUser = mutationWithRLS({
         banReason: v.optional(v.string()),
         banExpires: v.optional(v.number()),
     },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
@@ -68,6 +68,7 @@ export const unbanUser = mutationWithRLS({
     args: {
         userId: v.id('user'),
     },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
@@ -89,15 +90,14 @@ export const unbanUser = mutationWithRLS({
 export const updateUserRole = mutationWithRLS({
     args: {
         userId: v.id('user'),
-        role: v.string(),
+        role: v.union(v.literal('admin'), v.literal('user')),
     },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
-        const role = normalizeGlobalUserRole(args.role);
-
         await ctx.db.patch('user', args.userId, {
-            role,
+            role: args.role,
         });
 
         return { success: true };
@@ -108,6 +108,7 @@ export const deleteUser = mutationWithRLS({
     args: {
         userId: v.id('user'),
     },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
@@ -131,6 +132,7 @@ export const revokeUserSession = mutationWithRLS({
         userId: v.id('user'),
         sessionId: v.id('session'),
     },
+    returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
@@ -141,7 +143,7 @@ export const revokeUserSession = mutationWithRLS({
 
         await ctx.db.delete(args.sessionId);
 
-        return { success: true } as const;
+        return { success: true };
     },
 });
 
