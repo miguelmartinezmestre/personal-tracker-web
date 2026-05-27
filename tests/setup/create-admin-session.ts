@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { type Page } from '@playwright/test';
-import { generateTestUserData } from '../helpers/test-helpers';
+import { generateTestUserData, type TestUserData } from '../helpers/test-helpers';
 
 const ADMIN_USER_FILE = 'tests/.auth/admin-user.json';
 const origin = process.env.BASE_URL || 'http://localhost:3000';
@@ -91,7 +91,7 @@ async function waitForAdminDashboardReady(page: Page): Promise<void> {
     }
 }
 
-export async function createAdminSession(page: Page): Promise<void> {
+export async function createAdminSession(page: Page): Promise<TestUserData> {
     const userData = generateTestUserData();
 
     const signUpResponse = await page.request.post('/api/auth/sign-up/email', {
@@ -154,4 +154,6 @@ export async function createAdminSession(page: Page): Promise<void> {
 
     await mkdir(dirname(ADMIN_USER_FILE), { recursive: true });
     await page.context().storageState({ path: ADMIN_USER_FILE });
+
+    return userData;
 }

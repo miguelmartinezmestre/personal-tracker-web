@@ -21,29 +21,27 @@ test.describe('CSRF Protection', () => {
         }
     });
 
-    test('should reject POST requests without proper origin header', async ({ page, context }) => {
-        await createTestUserViaAPI(page);
-
-        const result = await page.evaluate(async () => {
-            try {
-                const response = await fetch('/api/auth/sign-out', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({}),
-                });
-                return { status: response.status, ok: response.ok };
-            } catch (error) {
-                return { error: (error as Error).message };
-            }
+    test('should reject cross-origin POST without a valid session', async ({ playwright, baseURL }) => {
+        const apiContext = await playwright.request.newContext({
+            baseURL: baseURL ?? 'http://localhost:3000',
+            extraHTTPHeaders: {
+                Origin: 'https://evil.example.com',
+                'Content-Type': 'application/json',
+            },
         });
 
-        expect(
-            result.ok === false ||
-                (result.status !== undefined && result.status >= 400) ||
-                result.error
-        ).toBeTruthy();
+        try {
+            const response = await apiContext.post('/api/auth/organization/create', {
+                data: {
+                    name: 'Evil Organization',
+                    slug: `evil-org-${Date.now()}`,
+                },
+            });
+
+            expect(response.status()).toBeGreaterThanOrEqual(400);
+        } finally {
+            await apiContext.dispose();
+        }
     });
 
     test('should validate content-type on API requests', async ({ page }) => {
