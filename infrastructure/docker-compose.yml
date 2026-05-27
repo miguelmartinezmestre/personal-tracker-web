@@ -5,10 +5,11 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
       - MYSQL_DATABASE=convex_self_hosted
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -20,7 +21,8 @@ services:
     container_name: convex-backend-metricas
     image: ghcr.io/get-convex/convex-backend:latest
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     restart: on-failure
     stop_grace_period: 10s
     stop_signal: SIGINT
@@ -28,7 +30,7 @@ services:
       - "${PORT:-3210}:3210"
       - "${SITE_PROXY_PORT:-3211}:3211"
     volumes:
-      - ./data:/convex/data
+      - data:/convex/data
     environment:
       - INSTANCE_NAME=${INSTANCE_NAME:-}
       - INSTANCE_SECRET=${INSTANCE_SECRET:-}
@@ -65,20 +67,14 @@ services:
     container_name: convex-dashboard-metricas
     image: ghcr.io/get-convex/convex-dashboard:latest
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
       - "${DASHBOARD_PORT:-6791}:6791"
     environment:
       - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://127.0.0.1:${PORT:-3210}}
-
-  mailhog:
-    container_name: mailhog
-    image: mailhog/mailhog
-    ports:
-      - "1025:1025"
-      - "8025:8025"
 
 volumes:
   mysql-data:
