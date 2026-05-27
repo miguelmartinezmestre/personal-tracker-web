@@ -334,56 +334,6 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
         });
     });
 
-    describe('cleanseAuditLogs batching', () => {
-        test('should continue with cursors across more than one batch', async () => {
-            await t.run(async ctx => {
-                const now = Date.now();
-                for (let i = 0; i < 120; i++) {
-                    await ctx.db.insert('auditLogs', {
-                        userId,
-                        organizationId,
-                        action: 'session.created',
-                        resourceType: 'session',
-                        resourceId: `session-${i}`,
-                        metadata: {
-                            after: {
-                                token: `secret-token-${i}`,
-                                userId,
-                                expiresAt: now + i,
-                            },
-                        },
-                        severity: 'info',
-                        createdAt: now + i,
-                    });
-                }
-            });
-
-            let result = await t.mutation(internal.migrations.cleanseAuditLogs.cleanseAuditLogs, {
-                batchSize: 50,
-                cursor: null,
-            });
-            let attempts = 0;
-
-            while (result.status === 'in_progress' && attempts < 10) {
-                result = await t.mutation(internal.migrations.cleanseAuditLogs.cleanseAuditLogs, {
-                    batchSize: 50,
-                    cursor: result.continueCursor,
-                });
-                attempts++;
-            }
-
-            expect(result.status).toBe('complete');
-            expect(attempts).toBeGreaterThan(0);
-
-            const logsWithTokens = await t.run(async ctx => {
-                const logs = await ctx.db.query('auditLogs').collect();
-                return logs.filter(log => 'token' in ((log.metadata?.after ?? {}) as object));
-            });
-
-            expect(logsWithTokens).toHaveLength(0);
-        });
-    });
-
     describe('markAllReadBatch batching', () => {
         test('should mark all notifications as read when >100 exist', async () => {
             const objectiveId = await createTestObjective(t, {

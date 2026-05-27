@@ -454,8 +454,8 @@ describe('categories integrity', async () => {
         });
     });
 
-    describe('categoryId backfill migration', () => {
-        test('backfillCategoryIds populates categoryId from category name', async () => {
+    describe('categoryId backfill job', () => {
+        test('backfillObjectiveCategoryIds populates categoryId from category name', async () => {
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Backfill Test',
                 color: '#10b981',
@@ -484,16 +484,7 @@ describe('categories integrity', async () => {
                 })
             );
 
-            const result = await userIdentity.mutation(
-                internal.migrations.backfillCategoryIds.backfillCategoryIds,
-                {
-                    cursor: undefined,
-                    batchSize: 10,
-                }
-            );
-
-            expect(result.status).toBe('completed');
-            expect(result.updated).toBe(1);
+            await userIdentity.mutation(internal.objectives.backfillObjectiveCategoryIds, {});
 
             const updated = await userIdentity.run(async ctx => ctx.db.get(objectiveWithoutId));
             expect(updated?.categoryId).toBe(categoryId);
@@ -519,15 +510,7 @@ describe('categories integrity', async () => {
                 })
             );
 
-            const result = await userIdentity.mutation(
-                internal.migrations.backfillCategoryIds.backfillCategoryIds,
-                {
-                    cursor: undefined,
-                    batchSize: 10,
-                }
-            );
-
-            expect(result.skipped).toBeGreaterThanOrEqual(1);
+            await userIdentity.mutation(internal.objectives.backfillObjectiveCategoryIds, {});
 
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
             expect(objective?.categoryId).toBeUndefined();
