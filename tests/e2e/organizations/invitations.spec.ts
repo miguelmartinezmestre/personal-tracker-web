@@ -137,12 +137,17 @@ test.describe('Organization Invitations', () => {
         { tag: ['@REQ-EQUIPOS-008'] },
         async ({ page, context }) => {
             const user1 = await createTestUserViaAPI(page);
-            const organization = await createOrganization(page, { name: `Accept Org ${Date.now()}` });
+            const organization = await createOrganization(page, {
+                name: `Accept Org ${Date.now()}`,
+            });
 
             await page.goto('/dashboard/organizations');
             await page.waitForLoadState('domcontentloaded');
 
-            const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
+            const orgRow = page
+                .getByTestId('table-row')
+                .filter({ hasText: organization.name })
+                .first();
             const viewLink = orgRow.getByTestId('organization-detail-link');
 
             await expect(viewLink).toBeVisible();

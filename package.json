@@ -10,7 +10,7 @@
     "convex:codegen": "convex codegen",
     "build": "next build",
     "start": "next start",
-    "checks": "pnpm run check-types && pnpm run lint && pnpm run test && pnpm run knip && pnpm run check-translations && pnpm run test:e2e",
+    "checks": "pnpm run format && pnpm run check-types && pnpm run lint && pnpm run test && pnpm run knip && pnpm run check-translations && pnpm run test:e2e",
     "convex:local": "tsx scripts/run-convex-stack.ts",
     "better-auth:generate": "npx @better-auth/cli generate -y --output convex/authSchema.ts --config convex/auth.ts",
     "lint": "eslint .",

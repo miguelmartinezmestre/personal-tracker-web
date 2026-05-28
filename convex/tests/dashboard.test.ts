@@ -122,9 +122,9 @@ describe('convex dashboard', async () => {
 
             expect(monthlyProgress).toHaveLength(6);
             expect(monthlyProgress.every(monthEntry => monthEntry.count === 0)).toBe(true);
-            expect(monthlyProgress.every(monthEntry => monthEntry.month && monthEntry.monthKey)).toBe(
-                true
-            );
+            expect(
+                monthlyProgress.every(monthEntry => monthEntry.month && monthEntry.monthKey)
+            ).toBe(true);
         });
 
         test('counts progress updates correctly by month', async () => {
