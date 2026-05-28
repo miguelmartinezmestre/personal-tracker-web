@@ -22,6 +22,7 @@ const eslintConfig = [
         'next-env.d.ts',
         'node_modules/**',
         'convex/_generated/**',
+        'convex/generated/**',
         'dist/**',
         'infrastructure/data/**',
         'infrastructure/data-dev/**',

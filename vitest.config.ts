@@ -27,6 +27,7 @@ export default defineConfig({
                 '**/*.test.tsx',
                 '**/tests/**',
                 '**/_generated/**',
+                'convex/generated/**',
                 '**/node_modules/**',
                 '**/*.d.ts',
             ],
