@@ -485,6 +485,35 @@ describe('convex pagination', () => {
         );
     });
 
+    test('searchObjectivesByUser finds matches beyond the old candidate scan window', async () => {
+        await createTestObjective(t, {
+            userId,
+            organizationId: _organizationId,
+            title: 'Needle Objective Beyond Scan Window',
+            targetValue: 100,
+            currentValue: 10,
+        });
+
+        for (let i = 0; i < 510; i++) {
+            await createTestObjective(t, {
+                userId,
+                organizationId: _organizationId,
+                title: `Noise Objective ${i.toString().padStart(3, '0')}`,
+                targetValue: 100,
+                currentValue: 10,
+            });
+        }
+
+        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'Needle Objective',
+            limit: 50,
+        });
+
+        expect(result.map(objective => objective.title)).toEqual([
+            'Needle Objective Beyond Scan Window',
+        ]);
+    });
+
     test('searchOrganizationObjectives matches title, description, and category for organization objectives', async () => {
         await createTestObjective(t, {
             userId,

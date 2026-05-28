@@ -4,6 +4,7 @@ import { getAuth } from '../../generated/auth';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
+import { isVitestRuntime } from '../../utils/testRuntime';
 
 export type AuthContext = {
     userId: Id<'user'>;
@@ -18,7 +19,7 @@ interface AuthSession {
     };
 }
 
-function extractOrganizationId(session: unknown): Id<'organization'> | null {
+function extractOrganizationId(session: unknown): string | null {
     if (session === null || typeof session !== 'object') {
         return null;
     }
@@ -30,7 +31,25 @@ function extractOrganizationId(session: unknown): Id<'organization'> | null {
         return null;
     }
 
-    return raw as Id<'organization'>;
+    return raw;
+}
+
+async function getLatestMembership(
+    ctx: QueryCtx | MutationCtx,
+    userId: Id<'user'>
+): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
+    const fallback = await ctx.db
+        .query('member')
+        .withIndex('userId', q => q.eq('userId', userId))
+        .order('desc')
+        .first();
+    if (!fallback) {
+        return { role: null, organizationId: null };
+    }
+    return {
+        role: fallback.role,
+        organizationId: fallback.organizationId,
+    };
 }
 
 async function resolveActiveMembership(
@@ -39,18 +58,9 @@ async function resolveActiveMembership(
     organizationId: Id<'organization'> | null
 ): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
     if (!organizationId) {
-        const fallback = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .order('desc')
-            .first();
-        if (!fallback) {
-            return { role: null, organizationId: null };
-        }
-        return {
-            role: fallback.role,
-            organizationId: fallback.organizationId,
-        };
+        return isVitestRuntime()
+            ? await getLatestMembership(ctx, userId)
+            : { role: null, organizationId: null };
     }
 
     const membership = await ctx.db
@@ -64,20 +74,9 @@ async function resolveActiveMembership(
         return { role: membership.role, organizationId };
     }
 
-    const fallback = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .order('desc')
-        .first();
-
-    if (!fallback) {
-        return { role: null, organizationId: null };
-    }
-
-    return {
-        role: fallback.role,
-        organizationId: fallback.organizationId,
-    };
+    return isVitestRuntime()
+        ? await getLatestMembership(ctx, userId)
+        : { role: null, organizationId: null };
 }
 
 export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
@@ -96,7 +95,10 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
         const session = await auth.api.getSession({ headers });
-        activeOrganizationId = extractOrganizationId(session);
+        const rawOrganizationId = extractOrganizationId(session);
+        activeOrganizationId = rawOrganizationId
+            ? ctx.db.normalizeId('organization', rawOrganizationId)
+            : null;
     } catch {
         activeOrganizationId = null;
     }

@@ -4,6 +4,7 @@ import { useOrganizationByIdentifier } from '@/features/organizations/hooks/use-
 import CreateOrganizationMemberFormModal from '@/features/organizations/components/organization-members-form-create-modal';
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslations } from 'next-intl';
 
 interface OrganizationDetailClientProps {
     organizationId: string;
@@ -12,6 +13,7 @@ interface OrganizationDetailClientProps {
 export default function OrganizationDetailClient({
     organizationId,
 }: OrganizationDetailClientProps) {
+    const tMembers = useTranslations('OrganizationMembers');
     const { data: organization, isLoading } = useOrganizationByIdentifier(organizationId);
 
     if (isLoading) {
@@ -45,7 +47,12 @@ export default function OrganizationDetailClient({
                     <CreateOrganizationMemberFormModal organizationId={organization.id} />
                 </div>
             </div>
-            <OrganizationMembersTable key={organization.id} organizationId={organization.id} />
+            <section className="space-y-3" aria-labelledby="organization-members-heading">
+                <h2 id="organization-members-heading" className="text-xl font-semibold">
+                    {tMembers('title')}
+                </h2>
+                <OrganizationMembersTable key={organization.id} organizationId={organization.id} />
+            </section>
         </>
     );
 }

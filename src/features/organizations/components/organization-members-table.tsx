@@ -15,6 +15,7 @@ import { useServerPagination } from '@/components/data-table/hooks/use-server-pa
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { OrganizationRole } from '../types/roles';
+import { format } from 'date-fns';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -72,6 +73,11 @@ export default function OrganizationMembersTable({
         {
             accessorKey: 'role',
             header: t('role'),
+        },
+        {
+            accessorKey: 'createdAt',
+            header: t('joinedAt'),
+            cell: ({ row }) => format(row.original.createdAt, 'P'),
         },
         {
             header: t('edit'),

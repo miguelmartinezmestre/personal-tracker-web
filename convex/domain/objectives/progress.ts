@@ -7,7 +7,7 @@ import { shouldSendProgressNotification } from '../notifications/preferences';
 import { ERROR_CODES } from '../../utils/constants';
 import { isVitestRuntime } from '../../utils/testRuntime';
 import {
-    recomputeObjectiveFromProgress,
+    applyObjectiveProgressDelta,
     validateObjectiveNotCompleted,
     validateProgressDelta,
     validateUpdateDate,
@@ -44,7 +44,7 @@ export async function createProgressUpdate(
         updatedAt: now,
     });
 
-    const { completedNow } = await recomputeObjectiveFromProgress(ctx, objective);
+    const { completedNow } = await applyObjectiveProgressDelta(ctx, objective, args.updatedValue);
 
     const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
     if (notifyProgress) {
@@ -154,7 +154,11 @@ export async function updateProgressUpdate(
         updatedAt: Date.now(),
     });
 
-    const { completedNow } = await recomputeObjectiveFromProgress(ctx, objective);
+    const { completedNow } = await applyObjectiveProgressDelta(
+        ctx,
+        objective,
+        args.updatedValue - existing.updatedValue
+    );
 
     if (!isVitestRuntime()) {
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
@@ -196,7 +200,7 @@ export async function deleteProgressUpdate(ctx: MutationCtx, args: { id: Id<'pro
 
     await ctx.db.delete('progressUpdates', args.id);
 
-    await recomputeObjectiveFromProgress(ctx, objective);
+    await applyObjectiveProgressDelta(ctx, objective, -existing.updatedValue);
 
     return { success: true } as const;
 }

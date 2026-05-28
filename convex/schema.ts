@@ -34,6 +34,7 @@ export default defineSchema({
         scope: objectiveScopeValidator,
         title: v.string(),
         description: v.optional(v.string()),
+        searchText: v.optional(v.string()),
 
         category: v.optional(v.string()),
         categoryId: v.optional(v.id('categories')),
@@ -67,6 +68,49 @@ export default defineSchema({
             'deadline',
         ])
         .index('by_user_organization', ['userId', 'organizationId'])
+        .index('by_user_organization_scope', ['userId', 'organizationId', 'scope'])
+        .index('by_user_organization_scope_status', ['userId', 'organizationId', 'scope', 'status'])
+        .index('by_user_organization_scope_status_category', [
+            'userId',
+            'organizationId',
+            'scope',
+            'status',
+            'category',
+        ])
+        .index('by_user_organization_scope_category', [
+            'userId',
+            'organizationId',
+            'scope',
+            'category',
+        ])
+        .index('by_user_organization_scope_deadline', [
+            'userId',
+            'organizationId',
+            'scope',
+            'deadline',
+        ])
+        .index('by_user_organization_scope_status_deadline', [
+            'userId',
+            'organizationId',
+            'scope',
+            'status',
+            'deadline',
+        ])
+        .index('by_user_organization_scope_category_deadline', [
+            'userId',
+            'organizationId',
+            'scope',
+            'category',
+            'deadline',
+        ])
+        .index('by_user_organization_scope_status_category_deadline', [
+            'userId',
+            'organizationId',
+            'scope',
+            'status',
+            'category',
+            'deadline',
+        ])
         .index('by_organization', ['organizationId'])
         .index('by_organization_scope', ['organizationId', 'scope'])
         .index('by_organization_scope_status', ['organizationId', 'scope', 'status'])
@@ -102,6 +146,10 @@ export default defineSchema({
         .index('by_categoryId', ['categoryId'])
         .searchIndex('search_title_by_user_organization_scope_status_category', {
             searchField: 'title',
+            filterFields: ['userId', 'organizationId', 'scope', 'status', 'category'],
+        })
+        .searchIndex('search_text_by_user_organization_scope_status_category', {
+            searchField: 'searchText',
             filterFields: ['userId', 'organizationId', 'scope', 'status', 'category'],
         }),
 

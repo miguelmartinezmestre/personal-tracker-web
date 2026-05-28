@@ -7,12 +7,18 @@ import {
     calculateUserStreak,
 } from '../../domain/achievements/calculations';
 import { addContributor } from '../../domain/achievements/contributors';
-import { ACHIEVEMENT_DEFINITIONS } from '../../domain/achievements/definitions';
+import {
+    ACHIEVEMENT_DEFINITIONS,
+    getAchievementRule,
+    toStoredAchievementDefinition,
+    type AchievementMetricKey,
+} from '../../domain/achievements/definitions';
 import { shouldSendAchievementNotification } from '../../domain/notifications/preferences';
 import { achievementTriggerValidator } from '../../utils/validators';
 import { ERROR_CODES } from '../../utils/constants';
 
 type AchievementTrigger = Infer<typeof achievementTriggerValidator>;
+type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
 
 const LIST_LIMIT = 1000;
 const BATCH_SIZE = 100;
@@ -145,7 +151,7 @@ export async function seedAchievementDefinitionsJob(ctx: MutationCtx) {
     let count = 0;
     for (const definition of ACHIEVEMENT_DEFINITIONS) {
         await ctx.db.insert('achievementDefinitions', {
-            ...definition,
+            ...toStoredAchievementDefinition(definition),
             isActive: true,
             createdAt: now,
             updatedAt: now,
@@ -194,6 +200,7 @@ export async function checkUserAchievementsJob(
 
     const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
     const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
+    const definitionByCode = new Map(definitions.map(definition => [definition.code, definition]));
 
     const earnedCodes = new Set(
         earnedAchievements
@@ -231,47 +238,30 @@ export async function checkUserAchievementsJob(
 
     const streak = await calculateUserStreak(ctx, userId, organizationId);
 
+    const metrics: AchievementMetricSnapshot = {
+        objectivesCreated: cumulativeObjectiveCount,
+        objectivesCompleted: cumulativeCompletedCount,
+        progressStreak: streak,
+        progressUpdates: progressUpdatesCount,
+        earlyBirdCompletions: cumulativeEarlyBirdCount,
+        organizationObjectivesCreated: 0,
+        organizationObjectivesCompleted: 0,
+        organizationProgressStreak: 0,
+    };
+
     const result = await evaluateAndAwardAchievements({
         ctx,
         scopeType: 'individual',
         evaluate(code) {
             if (earnedCodes.has(code)) return false;
-
-            switch (code) {
-                case 'first_objective':
-                    return trigger === 'objective_created' && cumulativeObjectiveCount >= 1;
-                case 'objectives_created_5':
-                    return trigger === 'objective_created' && cumulativeObjectiveCount >= 5;
-                case 'objectives_created_15':
-                    return trigger === 'objective_created' && cumulativeObjectiveCount >= 15;
-                case 'objectives_created_30':
-                    return trigger === 'objective_created' && cumulativeObjectiveCount >= 30;
-                case 'objectives_completed_3':
-                    return trigger === 'objective_completed' && cumulativeCompletedCount >= 3;
-                case 'objectives_completed_10':
-                    return trigger === 'objective_completed' && cumulativeCompletedCount >= 10;
-                case 'objectives_completed_25':
-                    return trigger === 'objective_completed' && cumulativeCompletedCount >= 25;
-                case 'streak_3':
-                    return trigger === 'progress_update' && streak >= 3;
-                case 'streak_7':
-                    return trigger === 'progress_update' && streak >= 7;
-                case 'streak_14':
-                    return trigger === 'progress_update' && streak >= 14;
-                case 'progress_updates_10':
-                    return trigger === 'progress_update' && progressUpdatesCount >= 10;
-                case 'progress_updates_50':
-                    return trigger === 'progress_update' && progressUpdatesCount >= 50;
-                case 'progress_updates_100':
-                    return trigger === 'progress_update' && progressUpdatesCount >= 100;
-                case 'early_bird':
-                    if (trigger === 'objective_completed') {
-                        return cumulativeEarlyBirdCount >= 1;
-                    }
-                    return false;
-                default:
-                    return false;
-            }
+            const rule = getAchievementRule(code);
+            const definition = definitionByCode.get(code);
+            return Boolean(
+                rule &&
+                definition &&
+                rule.trigger === trigger &&
+                metrics[rule.metricKey] >= definition.threshold
+            );
         },
         async award(defId, code, points) {
             const alreadyAwarded = await ctx.db
@@ -354,6 +344,7 @@ export async function checkOrganizationAchievementsJob(
 
     const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
     const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
+    const definitionByCode = new Map(definitions.map(definition => [definition.code, definition]));
 
     const earnedCodes = new Set(
         earnedAchievements
@@ -379,27 +370,30 @@ export async function checkOrganizationAchievementsJob(
 
     const organizationStreak = await calculateOrganizationStreak(ctx, organizationId);
 
+    const metrics: AchievementMetricSnapshot = {
+        objectivesCreated: 0,
+        objectivesCompleted: 0,
+        progressStreak: 0,
+        progressUpdates: 0,
+        earlyBirdCompletions: 0,
+        organizationObjectivesCreated: orgScopedObjectivesCount,
+        organizationObjectivesCompleted: orgScopedCompletedCount,
+        organizationProgressStreak: organizationStreak,
+    };
+
     const result = await evaluateAndAwardAchievements({
         ctx,
         scopeType: 'organization',
         async evaluate(code) {
             if (earnedCodes.has(code)) return false;
-
-            switch (code) {
-                case 'organization_first_objective':
-                    return trigger === 'objective_created' && orgScopedObjectivesCount >= 1;
-                case 'organization_completed_5':
-                    return trigger === 'objective_completed' && orgScopedCompletedCount >= 5;
-                case 'organization_completed_15':
-                    return trigger === 'objective_completed' && orgScopedCompletedCount >= 15;
-                case 'organization_completed_30':
-                    return trigger === 'objective_completed' && orgScopedCompletedCount >= 30;
-                case 'organization_streak_7': {
-                    return trigger === 'progress_update' && organizationStreak >= 7;
-                }
-                default:
-                    return false;
-            }
+            const rule = getAchievementRule(code);
+            const definition = definitionByCode.get(code);
+            return Boolean(
+                rule &&
+                definition &&
+                rule.trigger === trigger &&
+                metrics[rule.metricKey] >= definition.threshold
+            );
         },
         async award(defId, code, points) {
             const alreadyAwarded = await ctx.db

@@ -2,6 +2,7 @@ import { GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
 import { MutationCtx } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
+import { buildObjectiveSearchText } from '../domain/objectives/searchText';
 
 export interface TestUserData {
     docId: Id<'user'>;
@@ -135,6 +136,11 @@ export async function createTestObjective(
             scope: options.scope ?? 'personal',
             title: options.title,
             description: options.description,
+            searchText: buildObjectiveSearchText({
+                title: options.title,
+                description: options.description,
+                category: options.category,
+            }),
             category: options.category,
             targetValue: options.targetValue,
             currentValue: startValue,
