@@ -107,35 +107,13 @@ export const computeProgressPercent = (objective: {
     return Math.min(Math.max(Math.round(percent), 0), 100);
 };
 
-export async function recomputeObjectiveFromProgress(
+export async function applyObjectiveProgressDelta(
     ctx: MutationCtx,
-    objective: Doc<'objectives'>
+    objective: Doc<'objectives'>,
+    delta: number
 ): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
     const baseValue = objective.startValue ?? 0;
-
-    let progressTotal = 0;
-    let cursor: string | null = null;
-    let isDone = false;
-    let updateCount = 0;
-    const PAGINATION_BATCH_SIZE = 500;
-    const MAX_UPDATES = 10000;
-
-    while (!isDone && updateCount < MAX_UPDATES) {
-        const page = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', objective._id))
-            .paginate({ numItems: PAGINATION_BATCH_SIZE, cursor: cursor ?? null });
-
-        for (const update of page.page) {
-            progressTotal += update.updatedValue;
-        }
-
-        updateCount += page.page.length;
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
-
-    const currentValue = baseValue + progressTotal;
+    const currentValue = Math.max(baseValue, objective.currentValue + delta);
     const status = currentValue >= objective.targetValue ? 'completed' : 'active';
     const completedNow = objective.status !== 'completed' && status === 'completed';
 
@@ -146,4 +124,34 @@ export async function recomputeObjectiveFromProgress(
     });
 
     return { currentValue, status, completedNow };
+}
+
+export async function recomputeObjectiveFromProgress(
+    ctx: MutationCtx,
+    objective: Doc<'objectives'>
+): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
+    const baseValue = objective.startValue ?? 0;
+    let progressTotal = 0;
+    let cursor: string | null = null;
+    let isDone = false;
+
+    while (!isDone) {
+        const page = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_objective', q => q.eq('objective', objective._id))
+            .paginate({ numItems: 500, cursor });
+
+        for (const update of page.page) {
+            progressTotal += update.updatedValue;
+        }
+
+        isDone = page.isDone;
+        cursor = page.continueCursor;
+    }
+
+    return await applyObjectiveProgressDelta(
+        ctx,
+        objective,
+        baseValue + progressTotal - objective.currentValue
+    );
 }
