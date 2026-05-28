@@ -107,11 +107,7 @@ async function seedAchievementsAsAdmin(page: Page) {
     await page.waitForTimeout(1000);
 
     const seedButton = page.getByTestId('achievements-seed-button');
-    if (
-        await seedButton
-            .isVisible({ timeout: 3000 })
-            .catch(() => false)
-    ) {
+    if (await seedButton.isVisible({ timeout: 3000 }).catch(() => false)) {
         console.log('Initializing achievement definitions with admin user...');
         await seedButton.click();
         await expect(seedButton).toBeHidden({ timeout: 15000 });

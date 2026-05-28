@@ -32,10 +32,7 @@ async function selectFirstEnabledCategory(page: Page): Promise<void> {
     await enabledCategoryOptions.first().click();
 }
 
-async function openObjectiveDetailFromList(
-    page: Page,
-    objectiveTitle: string
-): Promise<void> {
+async function openObjectiveDetailFromList(page: Page, objectiveTitle: string): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
 
     const rowWithProgressLink = page
@@ -204,7 +201,11 @@ test.describe('XSS Prevention - Stored XSS', () => {
         await page.getByTestId('category-save-button').click();
 
         await expect(
-            page.getByTestId('table-row').filter({ hasText: 'Test' }).filter({ hasText: 'Category' }).first()
+            page
+                .getByTestId('table-row')
+                .filter({ hasText: 'Test' })
+                .filter({ hasText: 'Category' })
+                .first()
         ).toBeVisible({ timeout: 10000 });
 
         await assertNoDangerousDomNodes(page);

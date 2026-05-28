@@ -21,7 +21,10 @@ test.describe('CSRF Protection', () => {
         }
     });
 
-    test('should reject cross-origin POST without a valid session', async ({ playwright, baseURL }) => {
+    test('should reject cross-origin POST without a valid session', async ({
+        playwright,
+        baseURL,
+    }) => {
         const apiContext = await playwright.request.newContext({
             baseURL: baseURL ?? 'http://localhost:3000',
             extraHTTPHeaders: {

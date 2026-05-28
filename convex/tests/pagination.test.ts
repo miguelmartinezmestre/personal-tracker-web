@@ -251,7 +251,9 @@ describe('convex pagination', () => {
         });
 
         expect(activeResult.page.every(objective => objective.status === 'active')).toBe(true);
-        expect(completedResult.page.every(objective => objective.status === 'completed')).toBe(true);
+        expect(completedResult.page.every(objective => objective.status === 'completed')).toBe(
+            true
+        );
         expect(activeResult.page.length).toBe(5);
         expect(completedResult.page.length).toBe(3);
     });
@@ -478,7 +480,9 @@ describe('convex pagination', () => {
             limit: 50,
         });
 
-        expect(result.map(objective => objective.title)).toContain('Bounded Search Contract Today Target');
+        expect(result.map(objective => objective.title)).toContain(
+            'Bounded Search Contract Today Target'
+        );
     });
 
     test('searchOrganizationObjectives matches title, description, and category for organization objectives', async () => {
@@ -516,7 +520,9 @@ describe('convex pagination', () => {
             }
         );
 
-        expect(descriptionResult.map(objective => objective.title)).toEqual(['Org searchable title']);
+        expect(descriptionResult.map(objective => objective.title)).toEqual([
+            'Org searchable title',
+        ]);
         expect(categoryResult.map(objective => objective.title)).toEqual(['Org searchable title']);
     });
 });

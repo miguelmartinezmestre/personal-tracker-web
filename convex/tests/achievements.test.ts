@@ -600,7 +600,9 @@ describe('convex achievements', async () => {
                 {}
             );
 
-            const streak3Progress = progress.find(progressEntry => progressEntry.definition.code === 'streak_3');
+            const streak3Progress = progress.find(
+                progressEntry => progressEntry.definition.code === 'streak_3'
+            );
 
             expect(streak3Progress).toBeDefined();
             if (streak3Progress) {
