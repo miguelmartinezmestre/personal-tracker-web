@@ -1160,6 +1160,7 @@
         "email": "Correo electrónico",
         "enterEmail": "Ingresa el correo electrónico",
         "role": "Rol",
+        "joinedAt": "Alta",
         "currentRoleOfYourOrganizationMember": "Rol actual de tu miembro de la organización.",
         "saveOrganizationMember": "Guardar miembro de la organización",
         "cancel": "Cancelar",

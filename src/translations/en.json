@@ -1160,6 +1160,7 @@
         "email": "Email",
         "enterEmail": "Enter email",
         "role": "Role",
+        "joinedAt": "Joined",
         "currentRoleOfYourOrganizationMember": "Current role of your organization member.",
         "saveOrganizationMember": "Save Organization Member",
         "cancel": "Cancel",

@@ -1,22 +1,33 @@
 import { test, expect } from '../../fixtures/test-base';
 import { createOrganization } from '../../helpers/test-helpers';
+import type { Page } from '@playwright/test';
+
+const ORGANIZATION_DETAIL_URL = /\/dashboard\/organizations\/[^/?]+(?:\?|$)/;
+
+async function openOrganizationDetail(page: Page, organizationName?: string) {
+    await page.goto('/dashboard/organizations');
+    await page.waitForURL(/\/dashboard\/organizations(?:\?|$)/, { timeout: 15000 });
+
+    const orgRow = organizationName
+        ? page.getByTestId('table-row').filter({ hasText: organizationName }).first()
+        : page.getByTestId('table-row').first();
+    const viewLink = orgRow.getByTestId('organization-detail-link');
+
+    await expect(viewLink).toBeVisible({ timeout: 10000 });
+    await viewLink.click();
+    await expect(page).toHaveURL(ORGANIZATION_DETAIL_URL, { timeout: 10000 });
+    await expect(page.getByTestId('organization-members-table')).toBeVisible({ timeout: 10000 });
+}
 
 test.describe('Organization Members', () => {
     test('view organization members', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page);
 
         const membersSection = page.locator('text=/members|miembros/i');
         const hasMembersSection = (await membersSection.count()) > 0;
 
         const membersTab = page.locator('button:has-text("Members"), [data-testid*="members"]');
+        expect(hasMembersSection || (await membersTab.count()) > 0).toBeTruthy();
         if ((await membersTab.count()) > 0) {
             await membersTab.first().click();
             await page.waitForLoadState('domcontentloaded');
@@ -29,15 +40,7 @@ test.describe('Organization Members', () => {
     test('owner can see all members', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
         const org = await createOrganization(page);
 
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page, org.name);
 
         const inviteButton = page.locator(
             'button:has-text("Invite"), button:has-text("Invitar"), [data-testid*="invite"]'
@@ -53,31 +56,16 @@ test.describe('Organization Members', () => {
     test('remove member from organization', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
         const org = await createOrganization(page);
 
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').filter({ hasText: org.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page, org.name);
 
         const removeButton = page.locator(
             '[data-testid*="remove-member"], button[aria-label*="remove"]'
         );
+        await removeButton.count();
     });
 
     test('member role is displayed', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page);
 
         const membersTable = page.getByTestId('organization-members-table');
         await expect(membersTable).toBeVisible({ timeout: 10000 });
@@ -93,15 +81,7 @@ test.describe('Organization Members', () => {
     });
 
     test('owner cannot be removed', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page);
 
         const ownerRow = page.getByTestId('table-row').filter({ hasText: /owner/i });
 
@@ -117,32 +97,18 @@ test.describe('Organization Members', () => {
     });
 
     test('member list shows email', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page);
 
         const emailDisplay = page.getByText(/@.*\.com|@.*\.test/);
         const hasEmail = (await emailDisplay.count()) > 0;
+        expect(hasEmail).toBeTruthy();
     });
 
     test('member joined date is displayed', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible({ timeout: 10000 });
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
+        await openOrganizationDetail(page);
 
         const dateDisplay = page.getByText(/\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|ago|hace/);
         const hasDate = (await dateDisplay.count()) > 0;
+        expect(hasDate).toBeTruthy();
     });
 });
