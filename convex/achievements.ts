@@ -13,7 +13,9 @@ import {
     checkUserAchievementsJob,
     seedAchievementDefinitionsJob,
 } from './jobs/achievements/checks';
+import { getAchievementRule, type AchievementMetricKey } from './domain/achievements/definitions';
 const LIST_LIMIT = 1000;
+type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
 
 export const getAchievementDefinitions = queryWithRLS({
     args: {
@@ -216,39 +218,24 @@ export const getUserAchievementProgress = queryWithRLS({
             ? countStreakFromUpdates(progressUpdatesForObjectives)
             : 0;
 
+        const metrics: AchievementMetricSnapshot = {
+            objectivesCreated: objectivesCount.length,
+            objectivesCompleted: completedObjectives.length,
+            progressStreak: streak,
+            progressUpdates: progressUpdatesCount,
+            earlyBirdCompletions: completedObjectives.filter(objective => {
+                if (!objective.deadline) return false;
+                return objective.updatedAt <= objective.deadline;
+            }).length,
+            organizationObjectivesCreated: 0,
+            organizationObjectivesCompleted: 0,
+            organizationProgressStreak: 0,
+        };
+
         const progressList = activeDefinitions.map(definition => {
             const isEarned = earnedIds.has(definition._id);
-            let currentProgress = 0;
-
-            switch (definition.code) {
-                case 'first_objective':
-                case 'objectives_created_5':
-                case 'objectives_created_15':
-                case 'objectives_created_30':
-                    currentProgress = objectivesCount.length;
-                    break;
-                case 'objectives_completed_3':
-                case 'objectives_completed_10':
-                case 'objectives_completed_25':
-                    currentProgress = completedObjectives.length;
-                    break;
-                case 'streak_3':
-                case 'streak_7':
-                case 'streak_14':
-                    currentProgress = streak;
-                    break;
-                case 'progress_updates_10':
-                case 'progress_updates_50':
-                case 'progress_updates_100':
-                    currentProgress = progressUpdatesCount;
-                    break;
-                case 'early_bird':
-                    currentProgress = completedObjectives.filter(objective => {
-                        if (!objective.deadline) return false;
-                        return objective.updatedAt <= objective.deadline;
-                    }).length;
-                    break;
-            }
+            const rule = getAchievementRule(definition.code);
+            const currentProgress = rule ? metrics[rule.metricKey] : 0;
 
             return {
                 definition,
