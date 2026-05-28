@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -110,9 +110,7 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
 
     const isAdmin = user?.role === 'admin';
 
-    const projects = useMemo(() => {
-        return isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
-    }, [isAdmin]);
+    const projects = isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
 
     useEffect(() => {
         if (isMobile) {

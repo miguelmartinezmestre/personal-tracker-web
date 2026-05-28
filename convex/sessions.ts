@@ -51,7 +51,9 @@ export const getSessionsByUser = queryWithRLS({
 
         return {
             ...paginatedSessions,
-            page: paginatedSessions.page.map(session => toSessionListItem(session, currentSessionId)),
+            page: paginatedSessions.page.map(session =>
+                toSessionListItem(session, currentSessionId)
+            ),
         };
     },
 });

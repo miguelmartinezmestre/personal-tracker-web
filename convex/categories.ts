@@ -9,10 +9,7 @@ import {
     listCategoryNamesForFilters,
     updateCategoryForCurrentOrganization,
 } from './domain/categories';
-import {
-    categoryInputValidator,
-    categoryPatchValidator,
-} from './domain/categories/validators';
+import { categoryInputValidator, categoryPatchValidator } from './domain/categories/validators';
 
 export const getCategoriesByUser = queryWithRLS({
     args: {

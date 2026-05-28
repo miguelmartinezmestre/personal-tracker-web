@@ -50,14 +50,11 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
             { value: 'overdue', label: t('deadlineRangeOptions.overdue') },
         ];
 
-        const activeFiltersCount = React.useMemo(() => {
-            let count = 0;
-            if (filters.search) count++;
-            if (filters.status && filters.status !== 'all') count++;
-            if (filters.category && filters.category !== 'all') count++;
-            if (filters.deadlineRange && filters.deadlineRange !== 'all') count++;
-            return count;
-        }, [filters]);
+        let activeFiltersCount = 0;
+        if (filters.search) activeFiltersCount++;
+        if (filters.status && filters.status !== 'all') activeFiltersCount++;
+        if (filters.category && filters.category !== 'all') activeFiltersCount++;
+        if (filters.deadlineRange && filters.deadlineRange !== 'all') activeFiltersCount++;
 
         const handleFilterChange = (key: keyof FilterOptions, value: string) => {
             onFiltersChange({

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useReducer } from 'react';
+import { useReducer } from 'react';
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -33,29 +33,23 @@ function reducer(state: State, action: Action): State {
 export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
     const [state, dispatch] = useReducer(reducer, { currentPage: 0, cursors: [null] });
 
-    const paginationOpts = useMemo(
-        () => ({
-            numItems: initialPageSize,
-            cursor: state.cursors[state.currentPage] ?? null,
-        }),
-        [state.currentPage, state.cursors, initialPageSize]
-    );
+    const paginationOpts = {
+        numItems: initialPageSize,
+        cursor: state.cursors[state.currentPage] ?? null,
+    };
 
-    const nextPage = useCallback(
-        (continueCursor: string | null | undefined, isDone: boolean = false) => {
-            if (isDone || !continueCursor) return;
-            dispatch({ type: 'next', cursor: continueCursor });
-        },
-        []
-    );
+    const nextPage = (continueCursor: string | null | undefined, isDone: boolean = false) => {
+        if (isDone || !continueCursor) return;
+        dispatch({ type: 'next', cursor: continueCursor });
+    };
 
-    const previousPage = useCallback(() => {
+    const previousPage = () => {
         dispatch({ type: 'prev' });
-    }, []);
+    };
 
-    const reset = useCallback(() => {
+    const reset = () => {
         dispatch({ type: 'reset' });
-    }, []);
+    };
 
     return {
         currentPage: state.currentPage,

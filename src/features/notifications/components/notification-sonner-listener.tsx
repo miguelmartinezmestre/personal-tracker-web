@@ -22,9 +22,11 @@ export function NotificationSonnerListener() {
     const seenNotificationIdsRef = useRef<Set<string>>(new Set());
 
     const unreadCountValue = unreadCount?.count ?? 0;
-    const notifications = data?.page ?? [];
+    const notificationPage = data?.page;
 
     useEffect(() => {
+        const notifications = notificationPage ?? [];
+
         if (!initializedRef.current) {
             initializedRef.current = true;
             previousUnreadCountRef.current = unreadCountValue;
@@ -47,7 +49,7 @@ export function NotificationSonnerListener() {
 
         previousUnreadCountRef.current = unreadCountValue;
         notifications.forEach(notification => seenNotificationIdsRef.current.add(notification._id));
-    }, [unreadCountValue, notifications]);
+    }, [unreadCountValue, notificationPage]);
 
     return null;
 }

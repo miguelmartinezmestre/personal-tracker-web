@@ -99,8 +99,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                                     invitationId: invitationToken,
                                 });
 
-                                const organizationListResult =
-                                    await authClient.organization.list();
+                                const organizationListResult = await authClient.organization.list();
                                 const organizations = extractOrgList(organizationListResult);
 
                                 const firstOrganization = organizations[0];

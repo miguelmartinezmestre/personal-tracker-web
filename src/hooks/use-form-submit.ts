@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 
 export function useFormSubmit<T>(mutationFn: (values: T) => Promise<void>): {
     submit: (values: T) => Promise<void>;
@@ -9,21 +9,22 @@ export function useFormSubmit<T>(mutationFn: (values: T) => Promise<void>): {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isSubmittingRef = useRef(false);
 
-    const submit = useCallback(
-        async (values: T) => {
-            if (isSubmittingRef.current) return;
+    const submit = async (values: T) => {
+        if (isSubmittingRef.current) return;
 
-            isSubmittingRef.current = true;
-            setIsSubmitting(true);
-            try {
-                await mutationFn(values);
-            } finally {
-                isSubmittingRef.current = false;
-                setIsSubmitting(false);
-            }
-        },
-        [mutationFn]
-    );
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
+        try {
+            await mutationFn(values);
+        } catch (error) {
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
+            throw error;
+        }
+
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+    };
 
     return { submit, isSubmitting };
 }

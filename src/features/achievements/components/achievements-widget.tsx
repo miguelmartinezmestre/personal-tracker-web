@@ -123,7 +123,9 @@ export function AchievementsWidget({
                             <div className="flex flex-wrap gap-2">
                                 {recentAchievements
                                     .filter(
-                                        (achievement): achievement is NonNullable<typeof achievement> =>
+                                        (
+                                            achievement
+                                        ): achievement is NonNullable<typeof achievement> =>
                                             achievement !== null
                                     )
                                     .map((achievement, index) => (

@@ -146,9 +146,8 @@ export const getUpcomingDeadlines = queryWithRLS({
             .take(50);
 
         const upcomingDeadlines = objectives
-            .filter(
-                (objective): objective is typeof objective & { deadline: number } =>
-                    Boolean(objective.deadline)
+            .filter((objective): objective is typeof objective & { deadline: number } =>
+                Boolean(objective.deadline)
             )
             .map(objective => {
                 const daysRemaining = Math.ceil((objective.deadline - now) / TIME.DAY_MS);

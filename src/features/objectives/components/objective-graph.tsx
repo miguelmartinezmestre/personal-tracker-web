@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -38,19 +37,12 @@ export function ObjectiveProgressGraph({
 }: ObjectiveProgressGraphProps) {
     const tObjectives = useTranslations('Objectives');
     const tUpdateProgress = useTranslations('UpdateProgress');
-    const numberFormatter = React.useMemo(
-        () => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }),
-        []
-    );
-    const longDateFormatter = React.useMemo(
-        () =>
-            new Intl.DateTimeFormat(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-            }),
-        []
-    );
+    const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+    const longDateFormatter = new Intl.DateTimeFormat(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
 
     const latestValue = data.length > 0 ? (data[data.length - 1]?.currentValue ?? 0) : 0;
     const objectiveValue = targetValue ?? data[data.length - 1]?.objective ?? 0;

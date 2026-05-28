@@ -184,7 +184,9 @@ export async function calculateOrganizationStreak(
         cursor = page.continueCursor;
     }
 
-    const objectiveIds = organizationObjectives.map((objective: Doc<'objectives'>) => objective._id);
+    const objectiveIds = organizationObjectives.map(
+        (objective: Doc<'objectives'>) => objective._id
+    );
 
     if (objectiveIds.length === 0) return 0;
 

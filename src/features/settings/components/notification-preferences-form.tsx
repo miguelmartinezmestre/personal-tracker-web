@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useConvex } from 'convex/react';
+import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -12,28 +12,13 @@ import { Label } from '@/components/ui/label';
 
 export default function NotificationPreferencesForm() {
     const t = useTranslations('Settings');
-    const convex = useConvex();
 
-    const { data: preferences, isPending: isLoading } = useQuery({
-        queryKey: ['notificationPreferences'],
-        queryFn: async () => {
-            return await convex.query(api.notificationPreferences.getUserPreferences);
-        },
-    });
+    const { data: preferences, isPending: isLoading } = useQuery(
+        convexQuery(api.notificationPreferences.getUserPreferences, {})
+    );
 
     const updateMutation = useMutation({
-        mutationFn: async (updates: {
-            achievementNotifications?: boolean;
-            deadlineNotifications?: boolean;
-            progressNotifications?: boolean;
-            organizationNotifications?: boolean;
-            emailDigestEnabled?: boolean;
-        }) => {
-            return await convex.mutation(
-                api.notificationPreferences.updateUserPreferences,
-                updates
-            );
-        },
+        mutationFn: useConvexMutation(api.notificationPreferences.updateUserPreferences),
         onSuccess: () => {
             toast.success(t('preferencesSaved') || 'Preferences saved', {
                 description:

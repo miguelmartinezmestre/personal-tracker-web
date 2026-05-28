@@ -3,10 +3,7 @@ import type { PaginationOptions } from 'convex/server';
 import type { Id } from '../_generated/dataModel';
 import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { ERROR_CODES } from '../utils/constants';
-import {
-    categoryInputValidator,
-    categoryPatchValidator,
-} from './categories/validators';
+import { categoryInputValidator, categoryPatchValidator } from './categories/validators';
 
 const LIST_LIMIT = 1000;
 
