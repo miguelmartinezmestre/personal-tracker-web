@@ -111,10 +111,8 @@ describe('input validation security', () => {
                 .collect();
         });
         const objectiveCountAfter = await userIdentity.run(async ctx => {
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                .collect();
+            const allObjectives = await ctx.db.query('objectives').collect();
+            return allObjectives.filter(objective => objective.organizationId === organizationId);
         });
 
         expect(categoryCountAfter).toHaveLength(categoryCountBefore.length);

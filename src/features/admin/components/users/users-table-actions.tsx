@@ -5,9 +5,10 @@ import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { ADMIN_PAGINATION_OPTS } from '@/lib/pagination';
 
 const ADMIN_USERS_QUERY = convexQuery(api.admin.listUsers, {
-    paginationOpts: { numItems: 10, cursor: null },
+    paginationOpts: ADMIN_PAGINATION_OPTS,
 });
 
 export function useBanUser() {

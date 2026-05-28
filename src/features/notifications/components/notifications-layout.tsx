@@ -1,31 +1,17 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Preloaded } from 'convex/react';
-import { useConvexAuth, usePreloadedQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { useConvexAuth } from 'convex/react';
 import NotificationsTable from './notifications-table';
 import CreateNotificationFormModal from './notification-form-create-modal';
 
-interface NotificationsLayoutProps {
-    preloadedNotificationsQuery: Preloaded<typeof api.notifications.getNotificationsByUser>;
-}
-
-export default function NotificationsLayout({
-    preloadedNotificationsQuery,
-}: NotificationsLayoutProps) {
+export default function NotificationsLayout() {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+    const t = useTranslations('Notifications');
 
     if (authLoading || !isAuthenticated) {
         return null;
     }
-
-    return <NotificationsContent preloadedNotificationsQuery={preloadedNotificationsQuery} />;
-}
-
-function NotificationsContent({ preloadedNotificationsQuery }: NotificationsLayoutProps) {
-    const t = useTranslations('Notifications');
-    const notifications = usePreloadedQuery(preloadedNotificationsQuery);
 
     return (
         <div className="w-full min-w-0 space-y-6">
@@ -36,7 +22,7 @@ function NotificationsContent({ preloadedNotificationsQuery }: NotificationsLayo
                 </div>
                 <CreateNotificationFormModal />
             </div>
-            <NotificationsTable initialNotifications={notifications ?? undefined} />
+            <NotificationsTable />
         </div>
     );
 }

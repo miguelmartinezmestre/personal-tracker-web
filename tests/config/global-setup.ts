@@ -6,10 +6,10 @@ async function globalSetup(config: FullConfig) {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    try {
-        let attempts = 0;
-        const maxAttempts = 5;
+    let attempts = 0;
+    const maxAttempts = 5;
 
+    try {
         while (attempts < maxAttempts) {
             try {
                 await page.goto(`${baseURL}`, {
@@ -32,8 +32,6 @@ async function globalSetup(config: FullConfig) {
         if (attempts >= maxAttempts) {
             throw new Error('Backend did not become ready in time during global setup');
         }
-    } catch (error) {
-        throw error;
     } finally {
         await browser.close();
     }

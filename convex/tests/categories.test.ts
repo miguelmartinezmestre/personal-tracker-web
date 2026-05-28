@@ -233,38 +233,6 @@ describe('convex categories', async () => {
         });
     });
 
-    describe('getCategoryNamesForFilters', () => {
-        test('returns unique sorted category names for current user', async () => {
-            await userIdentity.mutation(api.categories.createCategory, {
-                name: 'Work',
-                color: '#10b981',
-            });
-            await userIdentity.mutation(api.categories.createCategory, {
-                name: ' Health ',
-                color: '#3b82f6',
-            });
-            await userIdentity.mutation(api.categories.createCategory, {
-                name: 'Personal',
-                color: '#f59e0b',
-            });
-
-            await adminIdentity.mutation(api.categories.createCategory, {
-                name: 'Admin Category',
-                color: '#ef4444',
-            });
-
-            const result = await userIdentity.query(api.categories.getCategoryNamesForFilters, {});
-
-            expect(result).toEqual(['Health', 'Personal', 'Work']);
-        });
-
-        test('rejects unauthenticated users', async () => {
-            await expect(t.query(api.categories.getCategoryNamesForFilters, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
-            );
-        });
-    });
-
     describe('updateCategory', () => {
         test('updates category name', async () => {
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {

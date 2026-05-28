@@ -1,10 +1,5 @@
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import {
-    convex,
-    getAuthUserIdentity,
-    getSession,
-    type BetterAuthOptionsWithoutDatabase,
-} from 'kitcn/auth';
+import { convex, getAuthUserIdentity, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { internal } from './_generated/api';
 import {
     internalMutation,
@@ -21,6 +16,10 @@ import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
 import { buildInvitationEmail } from './platform/email/invitationEmail';
+import {
+    resolveActiveMembership,
+    resolveSessionActiveOrganizationId,
+} from './platform/rls/authContext';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
@@ -183,11 +182,15 @@ export const getCurrentUser = query({
 export const getCurrentOrganization = query({
     args: {},
     handler: async ctx => {
-        let organizationId: string | null = null;
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) return null;
 
-        const session = await getSession(ctx);
-        organizationId = session?.activeOrganizationId ?? null;
+        const userId = ctx.db.normalizeId('user', identity.userId);
+        if (!userId) return null;
 
-        return organizationId;
+        const activeOrganizationId = await resolveSessionActiveOrganizationId(ctx);
+        const membership = await resolveActiveMembership(ctx, userId, activeOrganizationId);
+
+        return membership.organizationId;
     },
 });

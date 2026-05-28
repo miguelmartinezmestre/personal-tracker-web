@@ -358,6 +358,7 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('progressUpdates', {
                     objective: completedObjectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 60,
                     updateDate: Date.now(),
                     createdAt: Date.now(),
@@ -405,6 +406,7 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('progressUpdates', {
                     objective: activeObjectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 60,
                     updateDate: Date.now(),
                     createdAt: Date.now(),

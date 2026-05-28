@@ -256,6 +256,12 @@ describe('convex setup', () => {
             expect(settings?.defaultLanguage).toBe('es');
             expect(settings?.registrationPolicy).toBe('invitation-only');
             expect(settings?.setupCompletedBy).toBe(user.docId);
+
+            const achievementProgress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+            expect(achievementProgress.length).toBeGreaterThan(0);
         });
     });
 });

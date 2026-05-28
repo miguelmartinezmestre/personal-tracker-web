@@ -1,22 +1,54 @@
 #!/usr/bin/env node
-/* eslint-disable max-lines -- Docker + Next + Playwright orchestration (single entry) */
 
-import { spawn, type ChildProcess, type SpawnOptionsWithoutStdio } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
 import process from 'node:process';
-import { symmetricEncrypt } from 'better-auth/crypto';
-import { generateExportedKeyPair } from 'better-auth/plugins';
+import { extractAdminKey, generateStaticJwks } from './lib/auth';
+import {
+    DOCKER_COMMAND,
+    PNPM_COMMAND,
+    type RunCommandOptions,
+    USE_SHELL_FOR_PNPM,
+    runCommand,
+    runCommandCapture,
+    runCommandWithInput,
+    sanitizeEnv,
+} from './lib/command';
+import { buildUrl, fetchWithTimeout, sleep, waitForHttp } from './lib/http';
+import { DEFAULT_MAILHOG_SMTP_ENV, buildMailhogConvexEnv } from './lib/mailhog-email';
 
-const PNPM_COMMAND = 'pnpm';
-const DOCKER_COMMAND = process.platform === 'win32' ? 'docker.exe' : 'docker';
-const USE_SHELL_FOR_PNPM = process.platform === 'win32';
 const E2E_BUILD_META_FILE = 'build-meta.json';
-const BUILD_FINGERPRINT_INPUTS = ['package.json', 'pnpm-lock.yaml', 'next.config.ts'];
-const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex'];
+const BUILD_FINGERPRINT_INPUTS = [
+    'package.json',
+    'pnpm-lock.yaml',
+    'next.config.ts',
+    'postcss.config.mjs',
+    'proxy.ts',
+    'tsconfig.json',
+    'tsconfig.playwright.json',
+];
+const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'public'];
 const BUILD_FINGERPRINT_FILE_PREFIXES = ['tsconfig'];
+const BUILD_FINGERPRINT_ENV_KEYS = [
+    'ALLOW_SETUP_TEST',
+    'BASE_URL',
+    'BETTER_AUTH_URL',
+    'CONVEX_SELF_HOSTED_URL',
+    'NEXT_PUBLIC_CONVEX_SITE_URL',
+    'NEXT_PUBLIC_CONVEX_URL',
+    'NEXT_PUBLIC_SITE_URL',
+    'SITE_URL',
+    'EMAIL_PROVIDER',
+    'EMAIL_FROM',
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_SECURE',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+];
 
 function parseScriptArgs(rawArgs: string[]): {
     forwardedPlaywrightArgs: string[];
@@ -77,6 +109,8 @@ const E2E_CONVEX_SITE_PORT =
     process.env.E2E_CONVEX_SITE_PORT ?? String(BASE_SITE_PORT + SITE_PORT_OFFSET);
 const E2E_FRONTEND_PORT =
     process.env.E2E_FRONTEND_PORT ?? String(BASE_FRONTEND_PORT + FRONTEND_PORT_OFFSET);
+const E2E_MAILHOG_SMTP_PORT = process.env.E2E_MAILHOG_SMTP_PORT ?? '1026';
+const E2E_MAILHOG_UI_PORT = process.env.E2E_MAILHOG_UI_PORT ?? '8026';
 const E2E_NEXT_DIST_DIR =
     process.env.E2E_NEXT_DIST_DIR ??
     (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
@@ -99,44 +133,8 @@ let cleanupInProgress = false;
 let receivedTerminationSignal = false;
 let frontendLogTail: Array<string> = [];
 
-interface RunCommandOptions extends SpawnOptionsWithoutStdio {
-    ignoreExitCode?: boolean;
-}
-
 interface E2EBuildMeta {
     fingerprint: string;
-}
-
-function formatCommand(command: string, args: Array<string>): string {
-    return [command, ...args].join(' ');
-}
-
-function stripAnsi(value: string): string {
-    let result = '';
-    let index = 0;
-
-    while (index < value.length) {
-        const currentCharCode = value.charCodeAt(index);
-        if (currentCharCode === 27 && value[index + 1] === '[') {
-            index += 2;
-
-            while (index < value.length) {
-                const ansiCode = value.charCodeAt(index);
-                index += 1;
-
-                if (ansiCode >= 64 && ansiCode <= 126) {
-                    break;
-                }
-            }
-
-            continue;
-        }
-
-        result += value[index];
-        index += 1;
-    }
-
-    return result;
 }
 
 function pushFrontendLogChunk(source: 'stdout' | 'stderr', chunk: string): void {
@@ -161,16 +159,6 @@ function getFrontendFailureSuffix(): string {
     }
 
     return `\nLast Next.js logs:\n${frontendLogTail.join('\n')}`;
-}
-
-function sleep(milliseconds: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(resolve, milliseconds);
-    });
-}
-
-function buildUrl(base: string, path: string): string {
-    return `${base.replace(/\/$/, '')}${path}`;
 }
 
 async function findAvailableFrontendPort(preferredPort: string): Promise<string> {
@@ -206,151 +194,6 @@ async function findAvailableFrontendPort(preferredPort: string): Promise<string>
     );
 }
 
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-    const abortController = new AbortController();
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
-            abortController.abort();
-            reject(new Error(`Request timeout after ${timeoutMs}ms`));
-        }, timeoutMs);
-    });
-
-    try {
-        return await Promise.race([
-            fetch(url, {
-                signal: abortController.signal,
-            }),
-            timeoutPromise,
-        ]);
-    } finally {
-        if (timeoutId !== null) {
-            clearTimeout(timeoutId);
-        }
-    }
-}
-
-function runCommand(
-    command: string,
-    args: Array<string>,
-    options: RunCommandOptions = {}
-): Promise<void> {
-    const { ignoreExitCode = false, ...spawnOptions } = options;
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            cwd: process.cwd(),
-            env: process.env,
-            stdio: 'inherit',
-            ...spawnOptions,
-        });
-
-        child.on('error', error => {
-            reject(error);
-        });
-
-        child.on('close', (code, signal) => {
-            if (code === 0 || ignoreExitCode) {
-                resolve();
-                return;
-            }
-
-            const signalSuffix = signal ? ` signal=${signal}` : '';
-            reject(
-                new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}`
-                )
-            );
-        });
-    });
-}
-
-function runCommandWithInput(
-    command: string,
-    args: Array<string>,
-    input: string,
-    options: RunCommandOptions = {}
-): Promise<void> {
-    const { ignoreExitCode = false, ...spawnOptions } = options;
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            cwd: process.cwd(),
-            env: process.env,
-            stdio: ['pipe', 'inherit', 'inherit'],
-            ...spawnOptions,
-        });
-
-        child.stdin?.write(input);
-        child.stdin?.end();
-
-        child.on('error', error => {
-            reject(error);
-        });
-
-        child.on('close', (code, signal) => {
-            if (code === 0 || ignoreExitCode) {
-                resolve();
-                return;
-            }
-
-            const signalSuffix = signal ? ` signal=${signal}` : '';
-            reject(
-                new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}`
-                )
-            );
-        });
-    });
-}
-
-function runCommandCapture(
-    command: string,
-    args: Array<string>,
-    options: RunCommandOptions = {}
-): Promise<string> {
-    const { ignoreExitCode = false, ...spawnOptions } = options;
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            cwd: process.cwd(),
-            env: process.env,
-            stdio: ['ignore', 'pipe', 'pipe'],
-            ...spawnOptions,
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        child.stdout?.on('data', chunk => {
-            stdout += String(chunk);
-        });
-
-        child.stderr?.on('data', chunk => {
-            stderr += String(chunk);
-        });
-
-        child.on('error', error => {
-            reject(error);
-        });
-
-        child.on('close', (code, signal) => {
-            if (code === 0 || ignoreExitCode) {
-                resolve(`${stdout}${stderr}`);
-                return;
-            }
-
-            const signalSuffix = signal ? ` signal=${signal}` : '';
-            reject(
-                new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}\n${stdout}${stderr}`
-                )
-            );
-        });
-    });
-}
-
 function composeArgs(args: Array<string>): Array<string> {
     return ['compose', '-f', COMPOSE_FILE, '-p', COMPOSE_PROJECT, ...args];
 }
@@ -360,6 +203,8 @@ function dockerCompose(args: Array<string>, options: RunCommandOptions = {}): Pr
         ...sanitizeEnv(process.env),
         PORT: E2E_CONVEX_PORT,
         SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
+        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
     };
 
     return runCommand(DOCKER_COMMAND, composeArgs(args), {
@@ -379,6 +224,8 @@ function dockerComposeCapture(
         ...sanitizeEnv(process.env),
         PORT: E2E_CONVEX_PORT,
         SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
+        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
     };
 
     return runCommandCapture(DOCKER_COMMAND, composeArgs(args), {
@@ -388,22 +235,6 @@ function dockerComposeCapture(
             ...(options.env ?? {}),
         },
     });
-}
-
-function sanitizeEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-    const sanitized: Record<string, string> = {};
-
-    for (const [key, value] of Object.entries(env)) {
-        if (!key || key.startsWith('=')) {
-            continue;
-        }
-
-        if (typeof value === 'string') {
-            sanitized[key] = value;
-        }
-    }
-
-    return sanitized as NodeJS.ProcessEnv;
 }
 
 function cleanupNextArtifacts(nextDistDir: string): void {
@@ -467,13 +298,20 @@ function getBuildFingerprintFiles(): string[] {
     return [...files].sort((left, right) => left.localeCompare(right));
 }
 
-function computeBuildFingerprint(): string {
+function computeBuildFingerprint(env: NodeJS.ProcessEnv): string {
     const fingerprint = createHash('sha256');
 
     for (const relativePath of getBuildFingerprintFiles()) {
         fingerprint.update(relativePath);
         fingerprint.update('\0');
         fingerprint.update(readFileSync(join(process.cwd(), relativePath)));
+        fingerprint.update('\0');
+    }
+
+    for (const key of BUILD_FINGERPRINT_ENV_KEYS) {
+        fingerprint.update(`env:${key}`);
+        fingerprint.update('\0');
+        fingerprint.update(env[key] ?? '');
         fingerprint.update('\0');
     }
 
@@ -523,7 +361,7 @@ function buildCommandEnv(
 ): NodeJS.ProcessEnv {
     const baseEnv = sanitizeEnv(process.env);
 
-    return {
+    return buildMailhogConvexEnv({
         ...baseEnv,
         ALLOW_SETUP_TEST: 'true',
         E2E_SETUP_SECRET: baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
@@ -537,93 +375,20 @@ function buildCommandEnv(
         NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
         NEXT_PUBLIC_SITE_URL: siteUrl,
         NEXT_DIST_DIR: nextDistDir,
+        PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
         SITE_URL: siteUrl,
-    };
-}
-
-async function generateStaticJwks(secret: string): Promise<string> {
-    const { publicWebKey, privateWebKey } = await generateExportedKeyPair({
-        jwks: {
-            keyPairConfig: {
-                alg: 'RS256',
-            },
-        },
     });
-
-    const encryptedPrivateKey = await symmetricEncrypt({
-        key: secret,
-        data: JSON.stringify(privateWebKey),
-    });
-
-    const jwksDocument = [
-        {
-            alg: 'RS256',
-            createdAt: Date.now(),
-            id: randomBytes(16).toString('hex'),
-            privateKey: JSON.stringify(encryptedPrivateKey),
-            publicKey: JSON.stringify(publicWebKey),
-        },
-    ];
-
-    return JSON.stringify(jwksDocument);
 }
 
-function extractAdminKey(rawOutput: string): string {
-    const normalizedOutput = stripAnsi(rawOutput);
-    const match = normalizedOutput.match(/convex-self-hosted\|[^\s'"`]+/);
-
-    if (!match) {
-        throw new Error(
-            `Could not extract CONVEX_SELF_HOSTED_ADMIN_KEY from output:\n${rawOutput}`
-        );
-    }
-
-    return match[0];
-}
-
-async function waitForHttp(
-    url: string,
-    timeoutMs: number,
-    isReady: (response: Response) => boolean
+async function setConvexEnvVar(
+    commandEnv: NodeJS.ProcessEnv,
+    key: string,
+    value: string
 ): Promise<void> {
-    const start = Date.now();
-    let lastStatus: number | null = null;
-    let lastError: string | null = null;
-    let attempts = 0;
-
-    while (Date.now() - start < timeoutMs) {
-        attempts += 1;
-
-        try {
-            const response = await fetchWithTimeout(url, HTTP_REQUEST_TIMEOUT_MS);
-            lastStatus = response.status;
-
-            if (isReady(response)) {
-                return;
-            }
-        } catch (error) {
-            if (error instanceof Error) {
-                lastError = error.message;
-            } else {
-                lastError = String(error);
-            }
-        }
-
-        if (attempts % 5 === 0) {
-            const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
-            const progressHint =
-                lastStatus !== null
-                    ? `last status=${lastStatus}`
-                    : `last error=${lastError ?? 'unknown'}`;
-            console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`);
-        }
-
-        await sleep(POLL_INTERVAL_MS);
-    }
-
-    const statusMessage =
-        lastStatus !== null ? `last status=${lastStatus}` : `last error=${lastError ?? 'unknown'}`;
-    throw new Error(`Timed out waiting for ${url} (${statusMessage})`);
+    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
+        env: commandEnv,
+        shell: USE_SHELL_FOR_PNPM,
+    });
 }
 
 async function waitForFrontendReady(
@@ -790,13 +555,18 @@ async function main(): Promise<void> {
     console.log(`  - Convex backend: port ${E2E_CONVEX_PORT}`);
     console.log(`  - Convex site: port ${E2E_CONVEX_SITE_PORT}`);
     console.log(`  - Frontend: port ${E2E_FRONTEND_PORT}`);
+    console.log(`  - MailHog UI: http://127.0.0.1:${E2E_MAILHOG_UI_PORT}`);
     console.log(`  - Docker project: ${COMPOSE_PROJECT}`);
     console.log(`  - Build directory: ${E2E_NEXT_DIST_DIR}`);
     await dockerCompose(['up', '-d']);
 
     console.log('Waiting for Convex backend readiness...');
-    await waitForHttp(buildUrl(CONVEX_URL, '/version'), CONVEX_START_TIMEOUT_MS, response => {
-        return response.ok;
+    await waitForHttp({
+        url: buildUrl(CONVEX_URL, '/version'),
+        timeoutMs: CONVEX_START_TIMEOUT_MS,
+        requestTimeoutMs: HTTP_REQUEST_TIMEOUT_MS,
+        pollIntervalMs: POLL_INTERVAL_MS,
+        isReady: response => response.ok,
     });
 
     console.log('Generating admin key from Convex backend...');
@@ -867,6 +637,9 @@ async function main(): Promise<void> {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });
+    for (const [key, value] of Object.entries(DEFAULT_MAILHOG_SMTP_ENV)) {
+        await setConvexEnvVar(commandEnv, key, value);
+    }
 
     console.log('Deploying Convex functions...');
     await runCommand(PNPM_COMMAND, ['exec', 'convex', 'dev', '--once', '--tail-logs', 'disable'], {
@@ -875,7 +648,7 @@ async function main(): Promise<void> {
     });
 
     if (E2E_FRONTEND_MODE === 'production') {
-        const buildFingerprint = computeBuildFingerprint();
+        const buildFingerprint = computeBuildFingerprint(commandEnv);
         const shouldReuseBuild =
             !SHOULD_FORCE_REBUILD && hasReusableBuild(nextDistDir, buildFingerprint);
 

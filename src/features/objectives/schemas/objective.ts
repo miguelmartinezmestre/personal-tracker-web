@@ -22,7 +22,6 @@ export const objectiveSchema = z.object({
     description: z.string().optional().nullable(),
 
     categoryId: categorySelectionSchema,
-    category: z.string().optional().nullable(),
     targetValue: z.number(),
     currentValue: z.number(),
     startValue: z.number().optional().nullable(),
@@ -36,9 +35,6 @@ export const savedObjectiveSchema = objectiveSchema.extend({
     _id: z.string(),
 });
 
-export const createObjectiveFormSchema = objectiveSchema.omit({ category: true });
-export const savedObjectiveFormSchema = savedObjectiveSchema.omit({ category: true });
-
 export type Objective = z.infer<typeof savedObjectiveSchema>;
-export type CreateObjective = z.infer<typeof createObjectiveFormSchema>;
-export type SavedObjectiveForm = z.infer<typeof savedObjectiveFormSchema>;
+export type CreateObjective = z.infer<typeof objectiveSchema>;
+export type SavedObjectiveForm = z.infer<typeof savedObjectiveSchema>;

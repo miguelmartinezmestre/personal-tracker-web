@@ -9,20 +9,16 @@ import Link from 'next/link';
 import { api } from '@/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
 import type { AchievementTier } from '@/features/achievements/schemas/achievement';
-import { Preloaded } from 'convex/react';
-import { usePreloadedQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 
 const SKELETON_COUNTS = [1, 2, 3, 4];
 
-export function AchievementsWidget({
-    preloadedUserAchievementStatsQuery,
-    preloadedUserRecentAchievementsQuery,
-}: {
-    preloadedUserAchievementStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
-    preloadedUserRecentAchievementsQuery: Preloaded<typeof api.achievements.getRecentAchievements>;
-}) {
-    const stats = usePreloadedQuery(preloadedUserAchievementStatsQuery);
-    const recentAchievements = usePreloadedQuery(preloadedUserRecentAchievementsQuery);
+export function AchievementsWidget() {
+    const { data: stats } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
+    const { data: recentAchievements } = useQuery(
+        convexQuery(api.achievements.getRecentAchievements, { limit: 5 })
+    );
 
     const t = useTranslations('Achievements');
 

@@ -1,22 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Preloaded } from 'convex/react';
-import { usePreloadedQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
-interface MonthlyProgressChartProps {
-    preloadedMonthlyProgressQuery: Preloaded<typeof api.dashboard.getMonthlyProgress>;
-}
-
-export default function MonthlyProgressChart({
-    preloadedMonthlyProgressQuery,
-}: MonthlyProgressChartProps) {
+export default function MonthlyProgressChart() {
     const t = useTranslations('DashboardHome');
-    const monthlyProgress = usePreloadedQuery(preloadedMonthlyProgressQuery);
+    const { data: monthlyProgress } = useQuery(convexQuery(api.dashboard.getMonthlyProgress, {}));
 
     const chartData = (monthlyProgress ?? []).map(item => ({
         month: formatMonthLabel(item.monthKey),

@@ -233,51 +233,6 @@ async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
     return true;
 }
 
-async function ensureOrganizationExists(page: Page): Promise<void> {
-    try {
-        await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
-        await page.waitForSelector('[data-testid="organization-create-open"]', { timeout: 15000 });
-
-        const existingOrganizations = await page.getByTestId('table-row').count();
-        if (existingOrganizations > 0) {
-            return;
-        }
-
-        const uniqueSuffix = randomUUID().substring(0, 8);
-        const organizationName = `Test Org ${uniqueSuffix}`;
-
-        let modalOpened = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            await page.getByTestId('organization-create-open').click();
-            try {
-                await page.waitForSelector('[data-testid="organization-name-input"]', {
-                    timeout: 5000,
-                });
-                modalOpened = true;
-                break;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-            }
-        }
-
-        if (!modalOpened) {
-            return;
-        }
-
-        await page.getByTestId('organization-name-input').fill(organizationName);
-        await page
-            .getByTestId('organization-description-input')
-            .fill('Automatically created for E2E setup');
-        await page.getByTestId('organization-save-button').click();
-
-        await expect(
-            page.getByTestId('table-row').filter({ hasText: organizationName }).first()
-        ).toBeVisible({
-            timeout: 15000,
-        });
-    } catch {}
-}
-
 async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
     await expect
         .poll(async () => await hasAuthenticatedSession(page), {
@@ -667,6 +622,49 @@ export interface ObjectiveData {
     unit: string;
 }
 
+const createObjectiveButtonName = /^(Create Objective|Crear objetivo)$/i;
+const createProgressButtonName = /^(Create New Update Progress|Crear nuevo progreso)$/i;
+
+export async function openCreateObjectiveModal(page: Page): Promise<void> {
+    const createButton = page.getByRole('button', { name: createObjectiveButtonName });
+    await expect(createButton).toHaveCount(1, { timeout: 15000 });
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await createButton.first().click();
+
+        try {
+            await expect(page.getByTestId('objective-title-input')).toBeVisible({
+                timeout: 5000,
+            });
+            return;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+        }
+    }
+
+    throw new Error('Could not open create objective modal');
+}
+
+export async function openCreateProgressModal(page: Page): Promise<void> {
+    const createButton = page.getByRole('button', { name: createProgressButtonName });
+    await expect(createButton).toHaveCount(1, { timeout: 15000 });
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await createButton.first().click();
+
+        try {
+            await expect(page.getByTestId('progress-value-input')).toBeVisible({
+                timeout: 5000,
+            });
+            return;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+        }
+    }
+
+    throw new Error('Could not open create progress modal');
+}
+
 export async function createObjective(
     page: Page,
     options?: CreateObjectiveOptions
@@ -684,23 +682,7 @@ export async function createObjective(
     }
 
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-testid="objective-create-open"]', { timeout: 15000 });
-
-    let modalOpened = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.getByTestId('objective-create-open').click();
-        try {
-            await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 5000 });
-            modalOpened = true;
-            break;
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-        }
-    }
-
-    if (!modalOpened) {
-        throw new Error('Could not open create objective modal');
-    }
+    await openCreateObjectiveModal(page);
 
     await page.getByTestId('objective-title-input').fill(title);
     await page.getByTestId('objective-description-input').fill(description);
@@ -732,22 +714,6 @@ export async function createObjective(
         .toBeGreaterThan(0);
 
     return { title, description, category, targetValue, currentValue, unit };
-}
-
-const COLOR_NAME_TO_HEX: Record<string, string> = {
-    Red: '#ef4444',
-    Orange: '#f97316',
-    Yellow: '#eab308',
-    Green: '#22c55e',
-    Teal: '#14b8a6',
-    Blue: '#3b82f6',
-    Purple: '#a855f7',
-    Pink: '#ec4899',
-    Gray: '#6b7280',
-};
-
-function colorNameToHex(color: string): string | undefined {
-    return COLOR_NAME_TO_HEX[color];
 }
 
 export interface CreateCategoryOptions {

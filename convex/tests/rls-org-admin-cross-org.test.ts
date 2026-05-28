@@ -128,6 +128,7 @@ describe('organization admins cannot access another organization by id', () => {
             return await ctx.db.insert('progressUpdates', {
                 objective: orgBObjectiveId,
                 userId: orgBUserId,
+                organizationId: orgBId,
                 updatedValue: 5,
                 updateDate: now,
                 comment: 'Private org B progress',
@@ -170,7 +171,6 @@ describe('organization admins cannot access another organization by id', () => {
                 organization: orgBId,
                 achievement: achievementDefinitionId,
                 earnedAt: now,
-                contributorCount: 1,
                 createdAt: now,
                 updatedAt: now,
             });

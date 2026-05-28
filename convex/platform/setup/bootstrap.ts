@@ -3,6 +3,7 @@ import type { ObjectType } from 'convex/values';
 import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
+import { seedAchievementDefinitionsJob } from '../../jobs/achievements/checks';
 import {
     completeSetupArgsValidator,
     ensureTestOrganizationInternalArgsValidator,
@@ -98,6 +99,8 @@ export async function completePlatformSetup(
             updatedAt: now,
         });
     }
+
+    await seedAchievementDefinitionsJob(ctx);
 
     await ctx.db.insert('platformSettings', {
         platformName: args.platformName,

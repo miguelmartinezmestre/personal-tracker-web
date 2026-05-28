@@ -2,7 +2,28 @@ import { GenericSchema, SchemaDefinition } from 'convex/server';
 import { TestConvex } from 'convex-test';
 import { MutationCtx } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
-import { buildObjectiveSearchText } from '../domain/objectives/searchText';
+
+const defaultTestSessionIds = new WeakMap<
+    TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    Map<Id<'user'>, Id<'session'>>
+>();
+
+function setDefaultTestSessionId(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    userId: Id<'user'>,
+    sessionId: Id<'session'>
+) {
+    const sessions = defaultTestSessionIds.get(t) ?? new Map<Id<'user'>, Id<'session'>>();
+    sessions.set(userId, sessionId);
+    defaultTestSessionIds.set(t, sessions);
+}
+
+export function getDefaultTestSessionId(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    userId: Id<'user'>
+): Id<'session'> | undefined {
+    return defaultTestSessionIds.get(t)?.get(userId);
+}
 
 export interface TestUserData {
     docId: Id<'user'>;
@@ -100,7 +121,7 @@ export async function createTestMember(
     }
 ): Promise<Id<'member'>> {
     const now = Date.now();
-    return t.run(async (ctx: MutationCtx) => {
+    const memberId = await t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('member', {
             organizationId: options.organizationId,
             userId: options.userId,
@@ -108,6 +129,18 @@ export async function createTestMember(
             createdAt: now,
         });
     });
+
+    const sessionId = await createTestSession(t, {
+        userId: options.userId,
+        activeOrganizationId: options.organizationId,
+        expiresAt: now + 60_000,
+        token: `test-member-session-${String(options.userId)}-${String(options.organizationId)}-${now}-${Math.random()
+            .toString(36)
+            .slice(2)}`,
+    });
+    setDefaultTestSessionId(t, options.userId, sessionId);
+
+    return memberId;
 }
 
 export async function createTestObjective(
@@ -122,7 +155,7 @@ export async function createTestObjective(
         scope?: 'personal' | 'organization';
         status?: 'active' | 'completed';
         description?: string;
-        category?: string;
+        categoryId?: Id<'categories'>;
         deadline?: number;
         unit?: string;
     }
@@ -136,12 +169,7 @@ export async function createTestObjective(
             scope: options.scope ?? 'personal',
             title: options.title,
             description: options.description,
-            searchText: buildObjectiveSearchText({
-                title: options.title,
-                description: options.description,
-                category: options.category,
-            }),
-            category: options.category,
+            categoryId: options.categoryId,
             targetValue: options.targetValue,
             currentValue: startValue,
             startValue,
@@ -162,6 +190,7 @@ export async function createTestSession(
         expiresAt: number;
         ipAddress?: string | null;
         userAgent?: string | null;
+        activeOrganizationId?: Id<'organization'> | null;
     }
 ): Promise<Id<'session'>> {
     const now = Date.now();
@@ -172,6 +201,7 @@ export async function createTestSession(
             token: options.token,
             ipAddress: options.ipAddress ?? null,
             userAgent: options.userAgent ?? null,
+            activeOrganizationId: options.activeOrganizationId ?? null,
             createdAt: now,
             updatedAt: now,
         });

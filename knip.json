@@ -6,9 +6,18 @@
         "src/app/**/*.{ts,tsx}",
         "convex/**/*.ts",
         "scripts/**/*.{ts,mjs,js}",
+        "tests/**/*.ts",
+        "playwright.config.ts",
+        "tests/manual/playwright.manual.config.ts",
         "vitest.config.ts"
     ],
-    "project": ["src/**/*.{ts,tsx}", "convex/**/*.ts", "scripts/**/*.{ts,mjs,js}"],
+    "project": [
+        "src/**/*.{ts,tsx}",
+        "convex/**/*.ts",
+        "scripts/**/*.{ts,mjs,js}",
+        "tests/**/*.ts",
+        "playwright.config.ts"
+    ],
     "ignore": [
         "**/node_modules/**",
         "**/.next/**",
@@ -20,7 +29,6 @@
         "**/_generated/**",
         "**/test-results/**",
         "**/playwright-report/**",
-        "tests/manual/**",
         "mysql-data/**",
         "data/**"
     ],

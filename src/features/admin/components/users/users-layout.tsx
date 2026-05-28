@@ -3,34 +3,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UsersTable } from '@/features/admin/components/users/users-table';
 import { useTranslations } from 'next-intl';
-import { api } from '@/convex/_generated/api';
-import { Preloaded } from 'convex/react';
-import { useConvexAuth, usePreloadedQuery } from 'convex/react';
-import { FunctionReturnType } from 'convex/server';
+import { useConvexAuth } from 'convex/react';
 
-type UsersResult = FunctionReturnType<typeof api.admin.listUsers>;
-
-export default function UsersLayout({
-    preloadedUsersQuery,
-}: {
-    preloadedUsersQuery: Preloaded<typeof api.admin.listUsers>;
-}) {
+export default function UsersLayout() {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+    const t = useTranslations('Admin');
 
     if (authLoading || !isAuthenticated) {
         return null;
     }
-
-    return <UsersContent preloadedUsersQuery={preloadedUsersQuery} />;
-}
-
-function UsersContent({
-    preloadedUsersQuery,
-}: {
-    preloadedUsersQuery: Preloaded<typeof api.admin.listUsers>;
-}) {
-    const t = useTranslations('Admin');
-    const users = usePreloadedQuery(preloadedUsersQuery);
 
     return (
         <div className="space-y-6">
@@ -51,7 +32,7 @@ function UsersContent({
                     <CardDescription>{t('userManagementDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UsersTable initialUsers={users as UsersResult | undefined} />
+                    <UsersTable />
                 </CardContent>
             </Card>
         </div>

@@ -7,10 +7,15 @@ export function getDeadlineDayWindow(now: number) {
     const date = new Date(now);
     date.setUTCHours(0, 0, 0, 0);
     const dayStart = date.getTime();
+    const dayEnd = dayStart + DAY_MS;
 
     return {
         dayStart,
-        dayEnd: dayStart + DAY_MS,
+        dayEnd,
+        // Upper bound for the cron scan: today plus the look-ahead horizon, so
+        // upcoming deadlines reach buildDeadlineMessage and trigger "due in N days"
+        // advance reminders (it filters past DEADLINE_SOON_DAYS itself).
+        scanUpperBound: dayEnd + DEADLINE_SOON_DAYS * DAY_MS,
     };
 }
 

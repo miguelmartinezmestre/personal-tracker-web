@@ -165,6 +165,7 @@ describe('convex update_progress', () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId,
+                    organizationId,
                     updatedValue: i + 1,
                     updateDate: base + i * 1000,
                     createdAt: base + i * 1000,
@@ -202,6 +203,7 @@ describe('convex update_progress', () => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId: userId,
+                organizationId: organizationId,
                 updatedValue: 60,
                 updateDate,
                 comment: 'Initial comment',
@@ -229,6 +231,7 @@ describe('convex update_progress', () => {
             return await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId: userId,
+                organizationId: organizationId,
                 updatedValue: 60,
                 updateDate: Date.now(),
                 createdAt: Date.now(),
@@ -246,6 +249,46 @@ describe('convex update_progress', () => {
         expect(deleted).toBeNull();
     });
 
+    test('deleteUpdateProgress reconciles currentValue from remaining updates instead of clamping', async () => {
+        // currentValue arranca desincronizado de los progress updates reales: insertamos dos
+        // updates (+60, +30) directamente sin aplicar delta, dejando currentValue en 50.
+        const { keep, remove } = await userIdentity.run(async ctx => {
+            const now = Date.now();
+            const keepId = await ctx.db.insert('progressUpdates', {
+                objective: objectiveId,
+                userId,
+                organizationId,
+                updatedValue: 60,
+                updateDate: now,
+                createdAt: now,
+                updatedAt: now,
+            });
+            const removeId = await ctx.db.insert('progressUpdates', {
+                objective: objectiveId,
+                userId,
+                organizationId,
+                updatedValue: 30,
+                updateDate: now,
+                createdAt: now,
+                updatedAt: now,
+            });
+            return { keep: keepId, remove: removeId };
+        });
+
+        await userIdentity.mutation(api.update_progress.deleteUpdateProgress, {
+            _id: remove,
+        });
+
+        // Con el clamp ingenuo (max(50, 50-30)) quedaría 50; recompute reconstruye desde los
+        // updates restantes: startValue(50) + 60 = 110, y status pasa a completed (>= target 100).
+        const reconciled = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+        expect(reconciled?.currentValue).toBe(110);
+        expect(reconciled?.status).toBe('completed');
+
+        const survivor = await userIdentity.run(async ctx => ctx.db.get(keep));
+        expect(survivor).not.toBeNull();
+    });
+
     test('createUpdateProgress rejects when unauthenticated', async () => {
         await expect(
             t.mutation(api.update_progress.createUpdateProgress, {
@@ -261,6 +304,7 @@ describe('convex update_progress', () => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId: userId,
+                organizationId: organizationId,
                 updatedValue: 60,
                 updateDate: Date.now(),
                 createdAt: Date.now(),

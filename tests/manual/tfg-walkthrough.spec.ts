@@ -1,8 +1,7 @@
-/* eslint-disable max-lines */
 import { test, expect, Page } from '@playwright/test';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import { createTestUser, loginUser } from '../helpers/test-helpers';
+import { createTestUser, loginUser, openCreateObjectiveModal } from '../helpers/test-helpers';
 import { createAdminSession } from '../setup/create-admin-session';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -62,17 +61,6 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
     });
 
     console.log(`📸 Screenshot ${paddedCounter}: ${name}${description ? ` - ${description}` : ''}`);
-}
-
-async function safeClick(page: Page, selector: string, timeout = 2000): Promise<boolean> {
-    try {
-        const element = page.locator(selector).first();
-        await element.waitFor({ state: 'visible', timeout });
-        await element.click();
-        return true;
-    } catch {
-        return false;
-    }
 }
 
 async function safeFill(
@@ -236,7 +224,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('networkidle');
 
-        await page.getByTestId('objective-create-open').click();
+        await openCreateObjectiveModal(page);
         await page.waitForTimeout(500);
 
         const categorySelect = page.getByTestId('objective-category-select');
@@ -261,7 +249,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'objectives-empty-state', 'Objectives list - empty state');
 
-        await page.getByTestId('objective-create-open').click();
+        await openCreateObjectiveModal(page);
         await page.waitForTimeout(500);
         await takeTFGScreenshot(
             page,
@@ -290,7 +278,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             'Objectives list with first objective'
         );
 
-        await page.getByTestId('objective-create-open').click();
+        await openCreateObjectiveModal(page);
         await page.waitForTimeout(300);
         await page.getByTestId('objective-title-input').fill('Weekly Exercise');
         await page
@@ -346,7 +334,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         ];
 
         for (const objective of objectivesToCreate) {
-            await page.getByTestId('objective-create-open').click();
+            await openCreateObjectiveModal(page);
             await page.waitForTimeout(300);
             await page.getByTestId('objective-title-input').fill(objective.title);
             await page.getByTestId('objective-target-input').fill(objective.target);
@@ -796,7 +784,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await loginUser(page, adminUser.email, adminUser.password);
             console.log('Admin user session is active');
             adminPromoted = true;
-        } catch (error) {
+        } catch {
             console.log('⚠️ Could not sign in as the preconfigured admin user');
             console.log('⚠️ Skipping admin panel screenshots');
         }

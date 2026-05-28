@@ -5,6 +5,7 @@ import {
     ensureDefaultCategories,
     loginUser,
     logoutUser,
+    openCreateObjectiveModal,
 } from '../../helpers/test-helpers';
 import {
     expectOnLogin,
@@ -271,12 +272,11 @@ test.describe('Route Protection', () => {
             async ({ browser }) => {
                 const contextA = await browser.newContext();
                 const pageA = await contextA.newPage();
-                const userA = await createTestUserViaAPI(pageA);
+                await createTestUserViaAPI(pageA);
 
                 await ensureDefaultCategories(pageA);
                 await pageA.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-                await pageA.getByTestId('objective-create-open').click();
-                await pageA.waitForSelector('[data-testid="objective-title-input"]');
+                await openCreateObjectiveModal(pageA);
                 const objectiveTitle = `User A Secret Objective ${Date.now()}`;
                 await pageA.getByTestId('objective-title-input').fill(objectiveTitle);
                 await pageA.getByTestId('objective-target-input').fill('100');

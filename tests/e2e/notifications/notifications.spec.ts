@@ -80,10 +80,6 @@ test.describe('Notifications', () => {
             await page.goto('/dashboard/home');
             await page.waitForLoadState('domcontentloaded');
 
-            const notificationBadge = page.locator(
-                '[data-testid*="notification-badge"], .badge, [class*="notification"]'
-            );
-
             const notificationLink = page.locator('a[href*="notification"]');
             await expect(notificationLink.first()).toBeVisible();
         }
@@ -177,10 +173,9 @@ test.describe('Notifications', () => {
         await page.goto('/dashboard/notifications');
         await page.waitForLoadState('domcontentloaded');
 
-        const typeBadge = page.locator('.badge, [class*="type"], [data-testid*="type"]');
-
         const notifications = page.getByTestId('table-row');
         if ((await notifications.count()) > 0) {
+            await expect(notifications.first()).toBeVisible();
         }
     });
 

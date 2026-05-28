@@ -418,6 +418,7 @@ describe('convex notifications', async () => {
 
             await t.mutation(internal.notifications.markAllReadBatch, {
                 userId,
+                organizationId: userOrganizationId,
             });
 
             const notifications = await userIdentity.query(

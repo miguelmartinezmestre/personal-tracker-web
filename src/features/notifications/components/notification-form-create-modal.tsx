@@ -34,13 +34,10 @@ import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
 import FormModal from '@/components/forms/form-modal';
 import { invalidateConvexQuery } from '@/platform/convex/query-keys';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
-const DEFAULT_PAGE_SIZE = 20;
-const DEFAULT_PAGINATION_OPTS = {
-    paginationOpts: {
-        numItems: DEFAULT_PAGE_SIZE,
-        cursor: null,
-    },
+const FIRST_PAGE_QUERY_ARGS = {
+    paginationOpts: DEFAULT_PAGINATION_OPTS,
 };
 
 const defaultValues: CreateNotification = {
@@ -55,7 +52,7 @@ export default function CreateNotificationFormModal() {
     const queryClient = useQueryClient();
 
     const objectives = useQuery(
-        convexQuery(api.objectives.getObjectivesByUser, DEFAULT_PAGINATION_OPTS)
+        convexQuery(api.objectives.getObjectivesByUser, FIRST_PAGE_QUERY_ARGS)
     );
 
     const createNotification = useMutation({
@@ -63,7 +60,7 @@ export default function CreateNotificationFormModal() {
         onSuccess: () => {
             invalidateConvexQuery(
                 queryClient,
-                convexQuery(api.notifications.getNotificationsByUser, DEFAULT_PAGINATION_OPTS)
+                convexQuery(api.notifications.getNotificationsByUser, FIRST_PAGE_QUERY_ARGS)
             );
             toast.success(t('toast.created'));
         },

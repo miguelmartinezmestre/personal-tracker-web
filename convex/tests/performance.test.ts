@@ -81,6 +81,7 @@ describe('performance tests', async () => {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
                             userId: userId,
+                            organizationId: organizationId,
                             updatedValue: 5,
                             updateDate: now - j * 24 * 60 * 60 * 1000,
                             createdAt: now,
@@ -124,6 +125,7 @@ describe('performance tests', async () => {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
                             userId: userId,
+                            organizationId: organizationId,
                             updatedValue: 2,
                             updateDate: now - j * 24 * 60 * 60 * 1000,
                             createdAt: now,
@@ -232,6 +234,7 @@ describe('performance tests', async () => {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
                             userId: userId,
+                            organizationId: organizationId,
                             updatedValue: 5,
                             updateDate: now - j * 24 * 60 * 60 * 1000,
                             createdAt: now,
@@ -279,6 +282,7 @@ describe('performance tests', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: 10,
                         updateDate: now,
                         createdAt: now,

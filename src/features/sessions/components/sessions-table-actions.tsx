@@ -7,9 +7,10 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { Id } from '@/convex/_generated/dataModel';
 import { invalidateConvexQuery } from '@/platform/convex/query-keys';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 const SESSIONS_QUERY = convexQuery(api.sessions.getSessionsByUser, {
-    paginationOpts: { numItems: 20, cursor: null },
+    paginationOpts: DEFAULT_PAGINATION_OPTS,
 });
 
 export function useInvalidateSession() {

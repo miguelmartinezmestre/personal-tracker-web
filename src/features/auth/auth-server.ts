@@ -1,8 +1,7 @@
 import { api } from '@/convex/_generated/api';
 import { convexBetterAuth } from 'kitcn/auth/nextjs';
-import { fetchMutation, fetchQuery, preloadQuery, type NextjsOptions } from 'convex/nextjs';
+import { fetchMutation, fetchQuery, type NextjsOptions } from 'convex/nextjs';
 import type { ArgsAndOptions, FunctionReference, FunctionReturnType } from 'convex/server';
-import type { Preloaded } from 'convex/react';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { env } from '@/lib/env';
@@ -42,13 +41,6 @@ async function withAuthOptions<Func extends FunctionReference<'query' | 'mutatio
 }
 
 export const getToken = () => caller.getToken();
-
-export async function preloadAuthQuery<Query extends FunctionReference<'query'>>(
-    query: Query,
-    ...args: ArgsAndOptions<Query, NextjsOptions>
-): Promise<Preloaded<Query>> {
-    return preloadQuery(query, ...(await withAuthOptions(args)));
-}
 
 export async function fetchAuthQuery<Query extends FunctionReference<'query'>>(
     query: Query,

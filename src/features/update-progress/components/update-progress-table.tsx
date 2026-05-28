@@ -9,7 +9,6 @@ import { useParams } from 'next/navigation';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Doc, Id } from '@/convex/_generated/dataModel';
-import { FunctionReturnType } from 'convex/server';
 import { useConvexAuth } from 'convex/react';
 import { ObjectiveProgressGraph } from '@/features/objectives/components/objective-graph';
 import dynamic from 'next/dynamic';
@@ -24,22 +23,11 @@ import { UpdateProgress } from '@/features/update-progress/schemas/update-progre
 import { useTranslations } from 'next-intl';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
-const DEFAULT_PAGE_SIZE = 20;
-
-type ProgressResult = FunctionReturnType<typeof api.update_progress.getUpdateProgressByObjectiveId>;
-type ObjectiveResult = FunctionReturnType<typeof api.objectives.getObjectiveById>;
 const MOBILE_SKELETON_ITEMS = [1, 2, 3];
 
-interface UpdateProgressTableProps {
-    initialProgress: ProgressResult | undefined;
-    initialObjective: ObjectiveResult | undefined;
-}
-
-export default function UpdateProgressTable({
-    initialProgress,
-    initialObjective,
-}: UpdateProgressTableProps) {
+export default function UpdateProgressTable() {
     const t = useTranslations('UpdateProgress');
     const tTable = useTranslations('Table');
     const params = useParams();
@@ -55,20 +43,17 @@ export default function UpdateProgressTable({
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
-    const isFirstPage = paginationOpts.cursor === null;
 
     const updateProgress = useQuery({
         ...convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
             objectiveId,
             paginationOpts,
         }),
-        initialData: isFirstPage ? initialProgress : undefined,
         enabled: isAuthenticated,
     });
 
     const objective = useQuery({
         ...convexQuery(api.objectives.getObjectiveById, { id: objectiveId }),
-        initialData: initialObjective,
         enabled: isAuthenticated,
     });
     const progressSeries = useQuery({

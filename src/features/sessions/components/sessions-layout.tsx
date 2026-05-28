@@ -1,21 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useConvexAuth, usePreloadedQuery } from 'convex/react';
+import { useConvexAuth } from 'convex/react';
 import SessionsTable from './sessions-table';
-import { Preloaded } from 'convex/react';
-import { api } from '@/convex/_generated/api';
-import { FunctionReturnType } from 'convex/server';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type SessionsResult = FunctionReturnType<typeof api.sessions.getSessionsByUser>;
-
-export default function SessionsLayout({
-    preloadedSessionsQuery,
-}: {
-    preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
-}) {
+export default function SessionsLayout() {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+    const t = useTranslations('Sessions');
 
     if (authLoading || !isAuthenticated) {
         return (
@@ -29,17 +21,6 @@ export default function SessionsLayout({
         );
     }
 
-    return <SessionsContent preloadedSessionsQuery={preloadedSessionsQuery} />;
-}
-
-function SessionsContent({
-    preloadedSessionsQuery,
-}: {
-    preloadedSessionsQuery: Preloaded<typeof api.sessions.getSessionsByUser>;
-}) {
-    const t = useTranslations('Sessions');
-    const preloadedSessions = usePreloadedQuery(preloadedSessionsQuery);
-
     return (
         <div className="space-y-6" data-testid="sessions-page">
             <div>
@@ -48,7 +29,7 @@ function SessionsContent({
                 </h1>
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
-            <SessionsTable initialSessions={(preloadedSessions as SessionsResult) ?? undefined} />
+            <SessionsTable />
         </div>
     );
 }

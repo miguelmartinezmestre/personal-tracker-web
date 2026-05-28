@@ -91,6 +91,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     const id = await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
                         comment: `Update ${i}`,
@@ -234,6 +235,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
                         comment: `Update ${i}`,
@@ -367,7 +369,12 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const initialUnread = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+                    .withIndex('by_user_organization_read', q =>
+                        q
+                            .eq('userId', userId)
+                            .eq('organizationId', organizationId)
+                            .eq('read', false)
+                    )
                     .collect();
                 return notifs.length;
             });
@@ -379,6 +386,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 totalProcessed: number;
             } = await t.mutation(internal.notifications.markAllReadBatch, {
                 userId,
+                organizationId,
                 cursor: null,
                 totalProcessed: 0,
             });
@@ -387,6 +395,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             while (currentResult.status === 'in_progress' && attempts < 10) {
                 currentResult = await t.mutation(internal.notifications.markAllReadBatch, {
                     userId,
+                    organizationId,
                     cursor: null,
                     totalProcessed: currentResult.totalProcessed,
                 });
@@ -400,7 +409,12 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const finalUnread = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+                    .withIndex('by_user_organization_read', q =>
+                        q
+                            .eq('userId', userId)
+                            .eq('organizationId', organizationId)
+                            .eq('read', false)
+                    )
                     .collect();
                 return notifs.length;
             });
@@ -409,7 +423,9 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const allNotifications = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_user_date', q => q.eq('userId', userId))
+                    .withIndex('by_user_organization_date', q =>
+                        q.eq('userId', userId).eq('organizationId', organizationId)
+                    )
                     .collect();
                 return notifs;
             });
@@ -444,6 +460,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
 
             const result = await t.mutation(internal.notifications.markAllReadBatch, {
                 userId,
+                organizationId,
                 cursor: null,
                 totalProcessed: 0,
             });
@@ -483,6 +500,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
                         userId,
+                        organizationId,
                         updatedValue: 50,
                         updateDate: today.getTime(),
                         comment: 'Progress',
@@ -506,6 +524,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
                         userId,
+                        organizationId,
                         updatedValue: 50,
                         updateDate: yesterday.getTime(),
                         comment: 'Progress yesterday',
@@ -536,6 +555,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() - i * 24 * 60 * 60 * 1000,
                         comment: `Day ${i}`,
@@ -583,6 +603,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
                         userId,
+                        organizationId,
                         updatedValue: 50,
                         updateDate: today.getTime(),
                         comment: 'Progress',
@@ -615,6 +636,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
                         comment: `Update ${i}`,

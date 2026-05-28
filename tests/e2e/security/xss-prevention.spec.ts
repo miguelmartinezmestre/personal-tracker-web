@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createTestUserViaAPI, ensureDefaultCategories } from '../../helpers/test-helpers';
+import {
+    createTestUserViaAPI,
+    ensureDefaultCategories,
+    openCreateObjectiveModal,
+    openCreateProgressModal,
+} from '../../helpers/test-helpers';
 
 async function assertNoXssExecution(page: Page): Promise<void> {
     let dialogShown = false;
@@ -65,8 +70,7 @@ test.describe('XSS Prevention - Objective Titles', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
 
-        await page.getByTestId('objective-create-open').click();
-        await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 10000 });
+        await openCreateObjectiveModal(page);
 
         const maliciousTitle = 'Test <script>alert("XSS")</script> Objective';
         await page.getByTestId('objective-title-input').fill(maliciousTitle);
@@ -97,8 +101,7 @@ test.describe('XSS Prevention - Objective Titles', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
 
-        await page.getByTestId('objective-create-open').click();
-        await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 10000 });
+        await openCreateObjectiveModal(page);
 
         const maliciousTitle = 'Test <img src=x onerror=alert("XSS")> Objective';
         await page.getByTestId('objective-title-input').fill(maliciousTitle);
@@ -128,8 +131,7 @@ test.describe('XSS Prevention - Progress Comments', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
 
-        await page.getByTestId('objective-create-open').click();
-        await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 10000 });
+        await openCreateObjectiveModal(page);
 
         const objectiveTitle = `XSS Test Objective ${Date.now()}`;
         await page.getByTestId('objective-title-input').fill(objectiveTitle);
@@ -145,8 +147,7 @@ test.describe('XSS Prevention - Progress Comments', () => {
 
         await openObjectiveDetailFromList(page, objectiveTitle);
 
-        await page.getByTestId('progress-create-open').click();
-        await page.waitForSelector('[data-testid="progress-value-input"]', { timeout: 10000 });
+        await openCreateProgressModal(page);
 
         await page.getByTestId('progress-value-input').fill('50');
 
@@ -212,7 +213,7 @@ test.describe('XSS Prevention - Stored XSS', () => {
         await assertNoXssExecution(page);
     });
 
-    test('should prevent XSS in organization names', async ({ page, browser }) => {
+    test('should prevent XSS in organization names', async ({ browser }) => {
         const context = await browser.newContext();
         const page2 = await context.newPage();
 

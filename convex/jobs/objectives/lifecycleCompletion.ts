@@ -39,6 +39,7 @@ export const handleObjectiveLifecycleComplete = internalMutation({
                 if (context.organizationId) {
                     await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                         userId: context.userId,
+                        actorUserId: context.userId,
                         organizationId: context.organizationId,
                         action: 'WORKFLOW_ERROR',
                         resourceType: context.resourceType,

@@ -1,10 +1,8 @@
 import { ConvexError } from 'convex/values';
-import { getAuthUserIdentity, getHeaders } from 'kitcn/auth';
-import { getAuth } from '../../generated/auth';
+import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
-import { isVitestRuntime } from '../../utils/testRuntime';
 
 export type AuthContext = {
     userId: Id<'user'>;
@@ -14,8 +12,11 @@ export type AuthContext = {
 };
 
 interface AuthSession {
+    activeOrganizationId?: string | null;
+    expiresAt?: number | null;
     session?: {
         activeOrganizationId?: string | null;
+        expiresAt?: number | null;
     };
 }
 
@@ -25,7 +26,8 @@ function extractOrganizationId(session: unknown): string | null {
     }
 
     const authSession = session as AuthSession;
-    const raw = authSession.session?.activeOrganizationId ?? null;
+    const raw =
+        authSession.session?.activeOrganizationId ?? authSession.activeOrganizationId ?? null;
 
     if (typeof raw !== 'string') {
         return null;
@@ -34,33 +36,36 @@ function extractOrganizationId(session: unknown): string | null {
     return raw;
 }
 
-async function getLatestMembership(
-    ctx: QueryCtx | MutationCtx,
-    userId: Id<'user'>
-): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
-    const fallback = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .order('desc')
-        .first();
-    if (!fallback) {
-        return { role: null, organizationId: null };
+function isExpiredSession(session: unknown): boolean {
+    if (session === null || typeof session !== 'object') {
+        return false;
     }
-    return {
-        role: fallback.role,
-        organizationId: fallback.organizationId,
-    };
+
+    const authSession = session as AuthSession;
+    const expiresAt = authSession.session?.expiresAt ?? authSession.expiresAt ?? null;
+
+    return typeof expiresAt === 'number' && expiresAt < Date.now();
 }
 
-async function resolveActiveMembership(
+export async function resolveSessionActiveOrganizationId(
+    ctx: QueryCtx | MutationCtx
+): Promise<Id<'organization'> | null> {
+    const session = await getSession(ctx);
+    if (!session || isExpiredSession(session)) {
+        return null;
+    }
+
+    const rawOrganizationId = extractOrganizationId(session);
+    return rawOrganizationId ? ctx.db.normalizeId('organization', rawOrganizationId) : null;
+}
+
+export async function resolveActiveMembership(
     ctx: QueryCtx | MutationCtx,
     userId: Id<'user'>,
     organizationId: Id<'organization'> | null
 ): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
     if (!organizationId) {
-        return isVitestRuntime()
-            ? await getLatestMembership(ctx, userId)
-            : { role: null, organizationId: null };
+        return { role: null, organizationId: null };
     }
 
     const membership = await ctx.db
@@ -74,9 +79,7 @@ async function resolveActiveMembership(
         return { role: membership.role, organizationId };
     }
 
-    return isVitestRuntime()
-        ? await getLatestMembership(ctx, userId)
-        : { role: null, organizationId: null };
+    return { role: null, organizationId: null };
 }
 
 export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<AuthContext> {
@@ -90,18 +93,7 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    let activeOrganizationId: Id<'organization'> | null = null;
-    try {
-        const headers = await getHeaders(ctx);
-        const auth = getAuth(ctx);
-        const session = await auth.api.getSession({ headers });
-        const rawOrganizationId = extractOrganizationId(session);
-        activeOrganizationId = rawOrganizationId
-            ? ctx.db.normalizeId('organization', rawOrganizationId)
-            : null;
-    } catch {
-        activeOrganizationId = null;
-    }
+    const activeOrganizationId = await resolveSessionActiveOrganizationId(ctx);
 
     const { role: memberRole, organizationId } = await resolveActiveMembership(
         ctx,

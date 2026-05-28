@@ -1,3 +1,15 @@
+import type { Id } from '../../_generated/dataModel';
+
+/**
+ * Returns the actor id only when it differs from the affected user (`userId`).
+ * When the actor and the subject are the same person (e.g. a user acting on their
+ * own resource), the actor is left empty (`undefined`) to avoid redundant data.
+ */
+export const resolveActorUserId = (
+    userId: Id<'user'>,
+    actorUserId: Id<'user'> | null | undefined
+): Id<'user'> | undefined => (actorUserId && actorUserId !== userId ? actorUserId : undefined);
+
 export type AuditPrimitive = string | number | boolean | null;
 
 type AuditRecord = Record<string, AuditPrimitive>;

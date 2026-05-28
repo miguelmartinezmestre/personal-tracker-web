@@ -14,22 +14,35 @@ Guia para levantar el proyecto en modo self-hosted en local.
 pnpm install
 ```
 
-## 2) Levantar Convex self-hosted
+## 2) Levantar Convex self-hosted + MailHog
 
-Desde la raiz del repo:
+Ruta recomendada desde la raiz del repo:
 
 ```bash
-docker compose -f infrastructure/docker-compose.yml up -d
+pnpm run convex:local
 ```
+
+Este script levanta MySQL, Convex backend, Convex dashboard y MailHog. Tambien genera la admin key,
+configura las variables de Convex, despliega las funciones y actualiza `/.env.local` con las URLs
+locales.
 
 Comprobacion rapida:
 
 ```bash
 docker compose -f infrastructure/docker-compose.yml ps
 curl http://127.0.0.1:3210/version
+curl http://127.0.0.1:8025/api/v2/messages
 ```
 
-## 3) Obtener la admin key de Convex
+MailHog queda disponible en:
+
+- SMTP interno para Convex: `mailhog:1025`
+- UI local: http://127.0.0.1:8025
+
+## 3) Ruta manual: obtener la admin key de Convex
+
+Solo necesitas estos pasos manuales si decides levantar el stack con `docker compose` en lugar de
+`pnpm run convex:local`:
 
 ```bash
 pnpm run generate-admin-key
@@ -37,7 +50,7 @@ pnpm run generate-admin-key
 
 Guarda el valor que empieza por `convex-self-hosted|...`.
 
-## 4) Configurar .env.local
+## 4) Ruta manual: configurar .env.local
 
 Crea o actualiza `/.env.local` con:
 
@@ -70,6 +83,9 @@ categorias y politica de registro.
 
 ## 6) Configurar variables del backend (Convex)
 
+`pnpm run convex:local` configura estas variables automaticamente. Si sigues la ruta manual,
+configuralas con los comandos siguientes.
+
 Genera un secreto nuevo (no lo subas a Git):
 
 ```bash
@@ -82,6 +98,13 @@ Configura variables en Convex (reemplaza el placeholder):
 pnpm exec convex env set SITE_URL http://localhost:3000
 pnpm exec convex env set BETTER_AUTH_SECRET "<TU_BETTER_AUTH_SECRET>"
 pnpm run generate-jwks
+pnpm exec convex env set EMAIL_PROVIDER smtp
+pnpm exec convex env set EMAIL_FROM "Metricas <noreply@metricas.local>"
+pnpm exec convex env set SMTP_HOST mailhog
+pnpm exec convex env set SMTP_PORT 1025
+pnpm exec convex env set SMTP_SECURE false
+pnpm exec convex env set SMTP_USER mailhog
+pnpm exec convex env set SMTP_PASSWORD mailhog
 ```
 
 Si `convex env set` falla por autenticacion, exporta en tu terminal:
@@ -93,24 +116,31 @@ export CONVEX_SELF_HOSTED_ADMIN_KEY=convex-self-hosted|<TU_ADMIN_KEY>
 
 ## 7) Arrancar entorno de desarrollo
 
-Terminal 1:
+Si ya ejecutaste `pnpm run convex:local`, arranca Next.js:
+
+```bash
+pnpm dev:front
+```
+
+Si quieres que Convex redespliegue funciones al editar backend, usa otro terminal:
 
 ```bash
 pnpm dev:convex
 ```
 
-Terminal 2:
+## 8) Probar envios con MailHog
 
-```bash
-pnpm dev
-```
+1. Abre http://127.0.0.1:8025.
+2. Desde la app, solicita un reset de contrasena o envia una invitacion de organizacion.
+3. Verifica el mensaje capturado en MailHog. No se envia ningun correo real.
 
-## 8) Verificacion
+## 9) Verificacion
 
 - App: http://localhost:3000
 - Convex backend: http://127.0.0.1:3210/version
 - Convex site proxy: http://127.0.0.1:3211
 - Dashboard Convex: http://127.0.0.1:6791
+- MailHog UI: http://127.0.0.1:8025
 
 ## Problemas comunes
 

@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Preloaded } from 'convex/react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
@@ -23,22 +22,18 @@ import { MobilePagination } from './mobile-pagination';
 import { useObjectiveListState } from '@/features/objectives/hooks/use-objective-list-state';
 import { invalidateObjectiveListQueries } from '@/features/objectives/lib/objective-query-invalidation';
 
-export const ResponsiveObjectivesView = React.forwardRef<
-    HTMLDivElement,
-    {
-        preloadedPersonalObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
-        preloadedOrganizationObjectivesQuery: Preloaded<
-            typeof api.objectives.getOrganizationObjectives
-        >;
-    }
->(({ preloadedPersonalObjectivesQuery, preloadedOrganizationObjectivesQuery }, ref) => {
+export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>((_props, ref) => {
     const t = useTranslations('Objectives');
     const queryClient = useQueryClient();
-    const { filters, hasSearch, categories, handleFiltersChange, personal, organization } =
-        useObjectiveListState({
-            preloadedPersonalObjectivesQuery,
-            preloadedOrganizationObjectivesQuery,
-        });
+    const {
+        filters,
+        hasSearch,
+        categories,
+        categoryNameById,
+        handleFiltersChange,
+        personal,
+        organization,
+    } = useObjectiveListState();
 
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
@@ -100,9 +95,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
             ),
         },
         {
-            accessorKey: 'category',
+            accessorKey: 'categoryId',
             header: t('category'),
-            cell: ({ row }) => row.original.category?.trim() || '-',
+            cell: ({ row }) =>
+                (row.original.categoryId && categoryNameById.get(row.original.categoryId)) || '-',
         },
         {
             accessorKey: 'deadline',
@@ -186,8 +182,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        {objective.category ? (
-                            <Badge variant="secondary">{objective.category}</Badge>
+                        {objective.categoryId && categoryNameById.get(objective.categoryId) ? (
+                            <Badge variant="secondary">
+                                {categoryNameById.get(objective.categoryId)}
+                            </Badge>
                         ) : null}
                         {objective.deadline ? (
                             <Badge variant="outline">

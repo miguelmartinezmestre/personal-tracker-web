@@ -1,23 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Preloaded } from 'convex/react';
-import { useConvexAuth, usePreloadedQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
-import { FunctionReturnType } from 'convex/server';
+import { useConvexAuth } from 'convex/react';
 import CreateCategoryFormModal from './category-form-create-modal';
 import CategoriesTable from './categories-table';
-
-type CategoriesResult = FunctionReturnType<typeof api.categories.getCategoriesByUser>;
-
-interface CategoriesLayoutProps {
-    preloadedCategoriesQuery: Preloaded<typeof api.categories.getCategoriesByUser>;
-}
-
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function CategoriesLayout({ preloadedCategoriesQuery }: CategoriesLayoutProps) {
+export default function CategoriesLayout() {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+    const t = useTranslations('Objectives.categories');
 
     if (authLoading || !isAuthenticated) {
         return (
@@ -31,13 +22,6 @@ export default function CategoriesLayout({ preloadedCategoriesQuery }: Categorie
         );
     }
 
-    return <CategoriesContent preloadedCategoriesQuery={preloadedCategoriesQuery} />;
-}
-
-function CategoriesContent({ preloadedCategoriesQuery }: CategoriesLayoutProps) {
-    const t = useTranslations('Objectives.categories');
-    const preloadedCategories = usePreloadedQuery(preloadedCategoriesQuery);
-
     return (
         <div className="w-full min-w-0 space-y-6">
             <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -46,9 +30,7 @@ function CategoriesContent({ preloadedCategoriesQuery }: CategoriesLayoutProps) 
                     <CreateCategoryFormModal />
                 </div>
             </div>
-            <CategoriesTable
-                initialCategories={(preloadedCategories as CategoriesResult) ?? undefined}
-            />
+            <CategoriesTable />
         </div>
     );
 }

@@ -8,11 +8,12 @@ import { toast } from 'sonner';
 import { authClient } from '@/features/auth/client';
 import type { Id } from '@/convex/_generated/dataModel';
 import { invalidateConvexQueryWhere } from '@/platform/convex/query-keys';
+import { ADMIN_PAGINATION_OPTS } from '@/lib/pagination';
 
 const userSessionsQuery = (userId: Id<'user'>) =>
     convexQuery(api.admin.listUserSessions, {
         userId,
-        paginationOpts: { numItems: 10, cursor: null },
+        paginationOpts: ADMIN_PAGINATION_OPTS,
     });
 
 type RevokeSessionVariables = {

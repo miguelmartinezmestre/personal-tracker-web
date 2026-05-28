@@ -7,6 +7,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { invalidateConvexQueryWhere } from '@/platform/convex/query-keys';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export function useDeleteUpdateProgress(objectiveId: Id<'objectives'>) {
     const t = useTranslations('UpdateProgress');
@@ -19,7 +20,7 @@ export function useDeleteUpdateProgress(objectiveId: Id<'objectives'>) {
                 queryClient,
                 convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
                     objectiveId,
-                    paginationOpts: { numItems: 20, cursor: null },
+                    paginationOpts: DEFAULT_PAGINATION_OPTS,
                 }),
                 queryArgs => queryArgs.objectiveId === objectiveId
             );

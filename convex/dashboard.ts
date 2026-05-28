@@ -43,10 +43,18 @@ export const getMonthlyProgress = queryWithRLS({
         const oldestDate = new Date(now.getFullYear(), now.getMonth() - (monthsToFetch - 1), 1);
         const startDate = oldestDate.getTime();
 
-        const userUpdates = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_user_date', q => q.eq('userId', userId).gte('updateDate', startDate))
-            .take(LIST_LIMIT);
+        const organizationId = ctx.organizationId;
+        const userUpdates = organizationId
+            ? await ctx.db
+                  .query('progressUpdates')
+                  .withIndex('by_user_organization_date', q =>
+                      q
+                          .eq('userId', userId)
+                          .eq('organizationId', organizationId)
+                          .gte('updateDate', startDate)
+                  )
+                  .take(LIST_LIMIT)
+            : [];
 
         const monthsData: { month: string; monthKey: string; count: number }[] = [];
 
@@ -196,10 +204,18 @@ export const getRecentActivity = queryWithRLS({
             )
             .take(100);
 
-        const recentUpdatesPromise = ctx.db
-            .query('progressUpdates')
-            .withIndex('by_user_date', q => q.eq('userId', userId).gte('updateDate', startDate))
-            .take(100);
+        const organizationId = ctx.organizationId;
+        const recentUpdatesPromise = organizationId
+            ? ctx.db
+                  .query('progressUpdates')
+                  .withIndex('by_user_organization_date', q =>
+                      q
+                          .eq('userId', userId)
+                          .eq('organizationId', organizationId)
+                          .gte('updateDate', startDate)
+                  )
+                  .take(100)
+            : Promise.resolve([]);
 
         const [recentObjectives, recentlyCompleted, recentUpdates] = await Promise.all([
             recentObjectivesPromise,

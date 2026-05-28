@@ -11,9 +11,10 @@ import { api } from '@/convex/_generated/api';
 import FormModal from '@/components/forms/form-modal';
 import { CategoryFormFields } from './category-form-fields';
 import { invalidateConvexQuery } from '@/platform/convex/query-keys';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 const CATEGORIES_QUERY = convexQuery(api.categories.getCategoriesByUser, {
-    paginationOpts: { numItems: 20, cursor: null },
+    paginationOpts: DEFAULT_PAGINATION_OPTS,
 });
 
 export default function EditCategoryFormModal({ defaultValues }: { defaultValues: Category }) {

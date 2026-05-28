@@ -1,25 +1,35 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Preloaded } from 'convex/react';
-import { usePreloadedQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { useConvexAuth } from 'convex/react';
+import { useParams } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 import CreateUpdateProgressFormModal from './update-progress-form-create-modal';
 import UpdateProgressTable from './update-progress-table';
 
-interface UpdateProgressLayoutProps {
-    preloadedProgressQuery: Preloaded<typeof api.update_progress.getUpdateProgressByObjectiveId>;
-    preloadedObjectiveQuery: Preloaded<typeof api.objectives.getObjectiveById>;
-}
-
-export default function UpdateProgressLayout({
-    preloadedProgressQuery,
-    preloadedObjectiveQuery,
-}: UpdateProgressLayoutProps) {
+export default function UpdateProgressLayout() {
     const tObjectives = useTranslations('Objectives');
     const tUpdateProgress = useTranslations('UpdateProgress');
-    const progress = usePreloadedQuery(preloadedProgressQuery);
-    const objective = usePreloadedQuery(preloadedObjectiveQuery);
+    const { isAuthenticated } = useConvexAuth();
+
+    const params = useParams();
+    const objectiveIdParam = params.id;
+    const rawObjectiveId = Array.isArray(objectiveIdParam) ? objectiveIdParam[0] : objectiveIdParam;
+
+    if (!rawObjectiveId || typeof rawObjectiveId !== 'string') {
+        throw new Error('Invalid objective ID');
+    }
+
+    const objectiveId = rawObjectiveId as Id<'objectives'>;
+
+    const { data: objective } = useQuery({
+        ...convexQuery(api.objectives.getObjectiveById, { id: objectiveId }),
+        enabled: isAuthenticated,
+    });
+
     const objectiveTitle = objective?.title ?? '';
     const objectiveDescription = objective?.description?.trim() ?? '';
     const unitLabel = objective?.unit ?? '';
@@ -79,10 +89,7 @@ export default function UpdateProgressLayout({
                 </div>
             </div>
 
-            <UpdateProgressTable
-                initialProgress={progress ?? undefined}
-                initialObjective={objective ?? undefined}
-            />
+            <UpdateProgressTable />
         </div>
     );
 }

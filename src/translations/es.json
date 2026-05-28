@@ -85,6 +85,10 @@
             "home": "Casa",
             "map": "Mapa",
             "target": "Objetivo",
+            "chart": "Gráfico",
+            "check": "Marca de verificación",
+            "calendar": "Calendario",
+            "lightbulb": "Bombilla",
             "trending-up": "Tendencia",
             "star": "Estrella",
             "award": "Premio",
@@ -972,6 +976,7 @@
             "empty": "No hay logs de auditoría registrados",
             "columns": {
                 "userId": "Usuario ID",
+                "actorUserId": "Realizado por",
                 "action": "Acción",
                 "date": "Fecha"
             }

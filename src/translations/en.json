@@ -85,6 +85,10 @@
             "home": "Home",
             "map": "Map",
             "target": "Target",
+            "chart": "Chart",
+            "check": "Check",
+            "calendar": "Calendar",
+            "lightbulb": "Lightbulb",
             "trending-up": "Trending up",
             "star": "Star",
             "award": "Award",
@@ -972,6 +976,7 @@
             "empty": "No audit logs recorded",
             "columns": {
                 "userId": "User ID",
+                "actorUserId": "Performed by",
                 "action": "Action",
                 "date": "Date"
             }

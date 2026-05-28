@@ -102,7 +102,10 @@ export async function createRlsRules(
                 if (isGlobalAdmin) return true;
                 if (hasActiveOrgAdminAccess(notification.organizationId)) return true;
 
-                return notification.userId === userId;
+                return (
+                    notification.userId === userId &&
+                    isActiveOrganization(notification.organizationId)
+                );
             },
             insert: async (_, notification) => {
                 if (isGlobalAdmin) return true;
@@ -123,7 +126,10 @@ export async function createRlsRules(
                 if (isGlobalAdmin) return true;
                 if (hasActiveOrgAdminAccess(notification.organizationId)) return true;
 
-                return notification.userId === userId;
+                return (
+                    notification.userId === userId &&
+                    isActiveOrganization(notification.organizationId)
+                );
             },
         },
         notificationPreferences: {

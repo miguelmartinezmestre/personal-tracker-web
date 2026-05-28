@@ -1,16 +1,23 @@
 #!/usr/bin/env node
 
-import { spawn, type SpawnOptionsWithoutStdio } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { symmetricEncrypt } from 'better-auth/crypto';
-import { generateExportedKeyPair } from 'better-auth/plugins';
+import { extractAdminKey, generateStaticJwks } from './lib/auth';
+import {
+    DOCKER_COMMAND,
+    PNPM_COMMAND,
+    type RunCommandOptions,
+    USE_SHELL_FOR_PNPM,
+    runCommand,
+    runCommandCapture,
+    runCommandWithInput,
+    sanitizeEnv,
+} from './lib/command';
+import { buildUrl, waitForHttp } from './lib/http';
+import { DEFAULT_MAILHOG_SMTP_ENV, buildMailhogConvexEnv } from './lib/mailhog-email';
 
-const PNPM_COMMAND = 'pnpm';
-const DOCKER_COMMAND = process.platform === 'win32' ? 'docker.exe' : 'docker';
-const USE_SHELL_FOR_PNPM = process.platform === 'win32';
 const COMPOSE_FILE = 'infrastructure/docker-compose.yml';
 const GENERATED_DIRECTORIES = ['mysql-data', 'mysql-data-dev', 'data', 'data-dev'];
 const CONVEX_START_TIMEOUT_MS = 120_000;
@@ -20,6 +27,8 @@ const HTTP_REQUEST_TIMEOUT_MS = 3_000;
 const CONVEX_PORT = process.env.CONVEX_PORT ?? process.env.PORT ?? '3210';
 const CONVEX_SITE_PORT = process.env.CONVEX_SITE_PORT ?? process.env.SITE_PROXY_PORT ?? '3211';
 const DASHBOARD_PORT = process.env.CONVEX_DASHBOARD_PORT ?? process.env.DASHBOARD_PORT ?? '6791';
+const MAILHOG_SMTP_PORT = process.env.MAILHOG_SMTP_PORT ?? '1025';
+const MAILHOG_UI_PORT = process.env.MAILHOG_UI_PORT ?? '8025';
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${CONVEX_PORT}`;
 const CONVEX_SITE_URL =
     process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? `http://127.0.0.1:${CONVEX_SITE_PORT}`;
@@ -29,184 +38,14 @@ const APP_URL =
     process.env.BETTER_AUTH_URL ??
     'http://localhost:3000';
 
-interface RunCommandOptions extends SpawnOptionsWithoutStdio {
-    ignoreExitCode?: boolean;
-}
-
-function formatCommand(command: string, args: Array<string>): string {
-    return [command, ...args].join(' ');
-}
-
-function stripAnsi(value: string): string {
-    let result = '';
-    let index = 0;
-
-    while (index < value.length) {
-        const currentCharCode = value.charCodeAt(index);
-        if (currentCharCode === 27 && value[index + 1] === '[') {
-            index += 2;
-
-            while (index < value.length) {
-                const ansiCode = value.charCodeAt(index);
-                index += 1;
-
-                if (ansiCode >= 64 && ansiCode <= 126) {
-                    break;
-                }
-            }
-
-            continue;
-        }
-
-        result += value[index];
-        index += 1;
-    }
-
-    return result;
-}
-
-function sanitizeEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-    const sanitized: Record<string, string> = {};
-
-    for (const [key, value] of Object.entries(env)) {
-        if (!key || key.startsWith('=')) {
-            continue;
-        }
-
-        if (typeof value === 'string') {
-            sanitized[key] = value;
-        }
-    }
-
-    return sanitized as NodeJS.ProcessEnv;
-}
-
-function runCommand(
-    command: string,
-    args: Array<string>,
-    options: RunCommandOptions = {}
-): Promise<void> {
-    const { ignoreExitCode = false, ...spawnOptions } = options;
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            cwd: process.cwd(),
-            env: process.env,
-            stdio: 'inherit',
-            ...spawnOptions,
-        });
-
-        child.on('error', error => {
-            reject(error);
-        });
-
-        child.on('close', (code, signal) => {
-            if (code === 0 || ignoreExitCode) {
-                resolve();
-                return;
-            }
-
-            const signalSuffix = signal ? ` signal=${signal}` : '';
-            reject(
-                new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}`
-                )
-            );
-        });
-    });
-}
-
-function runCommandWithInput(
-    command: string,
-    args: Array<string>,
-    input: string,
-    options: RunCommandOptions = {}
-): Promise<void> {
-    const { ignoreExitCode = false, ...spawnOptions } = options;
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            cwd: process.cwd(),
-            env: process.env,
-            stdio: ['pipe', 'inherit', 'inherit'],
-            ...spawnOptions,
-        });
-
-        child.stdin?.write(input);
-        child.stdin?.end();
-
-        child.on('error', error => {
-            reject(error);
-        });
-
-        child.on('close', (code, signal) => {
-            if (code === 0 || ignoreExitCode) {
-                resolve();
-                return;
-            }
-
-            const signalSuffix = signal ? ` signal=${signal}` : '';
-            reject(
-                new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}`
-                )
-            );
-        });
-    });
-}
-
-function runCommandCapture(
-    command: string,
-    args: Array<string>,
-    options: RunCommandOptions = {}
-): Promise<string> {
-    const { ignoreExitCode = false, ...spawnOptions } = options;
-
-    return new Promise((resolve, reject) => {
-        const child = spawn(command, args, {
-            cwd: process.cwd(),
-            env: process.env,
-            stdio: ['ignore', 'pipe', 'pipe'],
-            ...spawnOptions,
-        });
-
-        let stdout = '';
-        let stderr = '';
-
-        child.stdout?.on('data', chunk => {
-            stdout += String(chunk);
-        });
-
-        child.stderr?.on('data', chunk => {
-            stderr += String(chunk);
-        });
-
-        child.on('error', error => {
-            reject(error);
-        });
-
-        child.on('close', (code, signal) => {
-            if (code === 0 || ignoreExitCode) {
-                resolve(`${stdout}${stderr}`);
-                return;
-            }
-
-            const signalSuffix = signal ? ` signal=${signal}` : '';
-            reject(
-                new Error(
-                    `Command failed (${formatCommand(command, args)}) with exit code ${code}${signalSuffix}\n${stdout}${stderr}`
-                )
-            );
-        });
-    });
-}
-
 function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     return {
         ...sanitizeEnv(process.env),
         PORT: CONVEX_PORT,
         SITE_PROXY_PORT: CONVEX_SITE_PORT,
         DASHBOARD_PORT,
+        MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT,
         CONVEX_CLOUD_ORIGIN: CONVEX_URL,
         CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
         NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
@@ -229,126 +68,6 @@ function dockerComposeCapture(
         ...options,
         env: getComposeEnv(options.env),
     });
-}
-
-function buildUrl(base: string, path: string): string {
-    return `${base.replace(/\/$/, '')}${path}`;
-}
-
-function sleep(milliseconds: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(resolve, milliseconds);
-    });
-}
-
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-    const abortController = new AbortController();
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
-            abortController.abort();
-            reject(new Error(`Request timeout after ${timeoutMs}ms`));
-        }, timeoutMs);
-    });
-
-    try {
-        return await Promise.race([
-            fetch(url, {
-                signal: abortController.signal,
-            }),
-            timeoutPromise,
-        ]);
-    } finally {
-        if (timeoutId !== null) {
-            clearTimeout(timeoutId);
-        }
-    }
-}
-
-async function waitForHttp(
-    url: string,
-    timeoutMs: number,
-    isReady: (response: Response) => boolean
-): Promise<void> {
-    const start = Date.now();
-    let lastStatus: number | null = null;
-    let lastError: string | null = null;
-    let attempts = 0;
-
-    while (Date.now() - start < timeoutMs) {
-        attempts += 1;
-
-        try {
-            const response = await fetchWithTimeout(url, HTTP_REQUEST_TIMEOUT_MS);
-            lastStatus = response.status;
-
-            if (isReady(response)) {
-                return;
-            }
-        } catch (error) {
-            if (error instanceof Error) {
-                lastError = error.message;
-            } else {
-                lastError = String(error);
-            }
-        }
-
-        if (attempts % 5 === 0) {
-            const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
-            const progressHint =
-                lastStatus !== null
-                    ? `last status=${lastStatus}`
-                    : `last error=${lastError ?? 'unknown'}`;
-            console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`);
-        }
-
-        await sleep(POLL_INTERVAL_MS);
-    }
-
-    const statusMessage =
-        lastStatus !== null ? `last status=${lastStatus}` : `last error=${lastError ?? 'unknown'}`;
-    throw new Error(`Timed out waiting for ${url} (${statusMessage})`);
-}
-
-async function generateStaticJwks(secret: string): Promise<string> {
-    const { publicWebKey, privateWebKey } = await generateExportedKeyPair({
-        jwks: {
-            keyPairConfig: {
-                alg: 'RS256',
-            },
-        },
-    });
-
-    const encryptedPrivateKey = await symmetricEncrypt({
-        key: secret,
-        data: JSON.stringify(privateWebKey),
-    });
-
-    const jwksDocument = [
-        {
-            alg: 'RS256',
-            createdAt: Date.now(),
-            id: randomBytes(16).toString('hex'),
-            privateKey: JSON.stringify(encryptedPrivateKey),
-            publicKey: JSON.stringify(publicWebKey),
-        },
-    ];
-
-    return JSON.stringify(jwksDocument);
-}
-
-function extractAdminKey(rawOutput: string): string {
-    const normalizedOutput = stripAnsi(rawOutput);
-    const match = normalizedOutput.match(/convex-self-hosted\|[^\s'"`]+/);
-
-    if (!match) {
-        throw new Error(
-            `Could not extract CONVEX_SELF_HOSTED_ADMIN_KEY from command output:\n${rawOutput}`
-        );
-    }
-
-    return match[0];
 }
 
 function cleanupGeneratedDirectories(): void {
@@ -401,7 +120,7 @@ function buildConvexCommandEnv(
     betterAuthSecret: string,
     jwks: string
 ): NodeJS.ProcessEnv {
-    return {
+    return buildMailhogConvexEnv({
         ...sanitizeEnv(process.env),
         BETTER_AUTH_SECRET: betterAuthSecret,
         BETTER_AUTH_URL: APP_URL,
@@ -412,7 +131,18 @@ function buildConvexCommandEnv(
         NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
         NEXT_PUBLIC_SITE_URL: APP_URL,
         SITE_URL: APP_URL,
-    };
+    });
+}
+
+async function setConvexEnvVar(
+    commandEnv: NodeJS.ProcessEnv,
+    key: string,
+    value: string
+): Promise<void> {
+    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
+        env: commandEnv,
+        shell: USE_SHELL_FOR_PNPM,
+    });
 }
 
 async function configureConvexEnv(commandEnv: NodeJS.ProcessEnv): Promise<void> {
@@ -441,6 +171,10 @@ async function configureConvexEnv(commandEnv: NodeJS.ProcessEnv): Promise<void> 
             shell: USE_SHELL_FOR_PNPM,
         }
     );
+
+    for (const [key, value] of Object.entries(DEFAULT_MAILHOG_SMTP_ENV)) {
+        await setConvexEnvVar(commandEnv, key, value);
+    }
 }
 
 async function main(): Promise<void> {
@@ -452,12 +186,17 @@ async function main(): Promise<void> {
     console.log(`  - Convex backend: ${CONVEX_URL}`);
     console.log(`  - Convex site: ${CONVEX_SITE_URL}`);
     console.log(`  - Convex dashboard: http://127.0.0.1:${DASHBOARD_PORT}`);
+    console.log(`  - MailHog UI: http://127.0.0.1:${MAILHOG_UI_PORT}`);
     console.log(`  - App origin for auth: ${APP_URL}`);
     await dockerCompose(['up', '-d', 'mysql', 'backend']);
 
     console.log('Waiting for Convex backend readiness...');
-    await waitForHttp(buildUrl(CONVEX_URL, '/version'), CONVEX_START_TIMEOUT_MS, response => {
-        return response.ok;
+    await waitForHttp({
+        url: buildUrl(CONVEX_URL, '/version'),
+        timeoutMs: CONVEX_START_TIMEOUT_MS,
+        requestTimeoutMs: HTTP_REQUEST_TIMEOUT_MS,
+        pollIntervalMs: POLL_INTERVAL_MS,
+        isReady: response => response.ok,
     });
 
     console.log('Starting local Convex dashboard...');

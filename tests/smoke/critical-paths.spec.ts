@@ -6,6 +6,8 @@ import {
     ensureDefaultCategories,
     loginUser,
     logoutUser,
+    openCreateObjectiveModal,
+    openCreateProgressModal,
     DEFAULT_PASSWORD,
 } from '../helpers/test-helpers';
 import { randomUUID } from 'crypto';
@@ -26,8 +28,7 @@ async function selectAvailableObjectiveCategory(
             await page.keyboard.press('Escape').catch(() => undefined);
             await ensureDefaultCategories(page);
             await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-            await page.getByTestId('objective-create-open').click();
-            await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 10000 });
+            await openCreateObjectiveModal(page);
             await page.waitForTimeout(1000);
             continue;
         }
@@ -79,10 +80,8 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const objectiveTitle = `Smoke Test Goal ${uuid}`;
 
             await page.goto('/dashboard/objectives');
-            await page.waitForSelector('[data-testid="objective-create-open"]', { timeout: 10000 });
 
-            await page.getByTestId('objective-create-open').click();
-            await page.waitForSelector('[data-testid="objective-title-input"]');
+            await openCreateObjectiveModal(page);
 
             await page.getByTestId('objective-title-input').fill(objectiveTitle);
             await page.getByTestId('objective-description-input').fill('Testing critical path');
@@ -104,8 +103,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
             await expect(page.getByRole('main').first()).toContainText(objectiveTitle);
 
-            await page.getByTestId('progress-create-open').click();
-            await page.waitForSelector('[data-testid="progress-value-input"]');
+            await openCreateProgressModal(page);
             await page.getByTestId('progress-value-input').fill('100');
             await page
                 .getByTestId('progress-comment-input')
@@ -188,7 +186,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const title = `CRUD Test ${uuid}`;
 
             await page.goto('/dashboard/objectives');
-            await page.getByTestId('objective-create-open').click();
+            await openCreateObjectiveModal(page);
             await page.getByTestId('objective-title-input').fill(title);
             await selectAvailableObjectiveCategory(page);
             await page.getByTestId('objective-target-input').fill('50');
@@ -234,28 +232,43 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
             await expect(editTitleInput).toBeHidden({ timeout: 10000 });
 
-            const updatedRow = page.getByTestId('table-row').filter({ hasText: title }).first();
-            await updatedRow.getByTestId('objective-delete-button').click();
-            const deleteDialog = page.locator('[data-slot="alert-dialog-content"]');
-            await expect(deleteDialog).toBeVisible({ timeout: 10000 });
+            const objectiveRow = page.getByTestId('table-row').filter({ hasText: title });
+            let deletionCompleted = false;
+            let lastDeleteError: unknown = null;
 
-            let confirmedDelete = false;
             for (let attempt = 0; attempt < 3; attempt++) {
+                const row = objectiveRow.first();
+                await expect(row).toBeVisible({ timeout: 10000 });
+                await row.getByTestId('objective-delete-button').click();
+
+                const deleteDialog = page.getByRole('alertdialog');
+                await expect(deleteDialog).toBeVisible({ timeout: 10000 });
+
+                const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
+                await expect(confirmButton).toBeVisible({ timeout: 10000 });
+                await expect(confirmButton).toBeEnabled({ timeout: 10000 });
+
                 try {
-                    await deleteDialog.getByTestId('delete-confirm-button').click();
-                    confirmedDelete = true;
+                    await confirmButton.click({ timeout: 5000 });
+                } catch (error) {
+                    lastDeleteError = error;
+                }
+
+                try {
+                    await expect(objectiveRow).toHaveCount(0, { timeout: 10000 });
+                    deletionCompleted = true;
                     break;
-                } catch {}
+                } catch (error) {
+                    lastDeleteError = error;
+                    await page.keyboard.press('Escape').catch(() => undefined);
+                }
             }
 
-            if (!confirmedDelete) {
-                throw new Error('Could not confirm objective deletion in smoke test');
+            if (!deletionCompleted) {
+                throw new Error(
+                    `Could not confirm objective deletion in smoke test: ${String(lastDeleteError)}`
+                );
             }
-
-            await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
-            await expect(page.getByTestId('table-row').filter({ hasText: title })).toHaveCount(0, {
-                timeout: 10000,
-            });
 
             console.log('CRUD smoke test completed successfully');
         }
@@ -283,8 +296,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
-        await page.getByTestId('objective-create-open').click();
-        await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 5000 });
+        await openCreateObjectiveModal(page);
 
         await page.getByTestId('objective-save-button').click();
 
@@ -308,7 +320,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const title = `Persist Test ${uuid}`;
 
             await page.goto('/dashboard/objectives');
-            await page.getByTestId('objective-create-open').click();
+            await openCreateObjectiveModal(page);
             await page.getByTestId('objective-title-input').fill(title);
             await page.getByTestId('objective-category-select').click();
             await page.waitForSelector('[role="option"]', { timeout: 10000 });

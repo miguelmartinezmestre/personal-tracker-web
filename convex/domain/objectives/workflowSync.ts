@@ -2,7 +2,6 @@ import { internal } from '../../_generated/api';
 import type { Doc, Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { workflow } from '../../workflow';
-import { isVitestRuntime } from '../../utils/testRuntime';
 
 type ObjectiveWorkflowResource = 'objective' | 'progress_update';
 
@@ -13,10 +12,6 @@ export const runObjectiveSync = async (
     organizationId: Id<'organization'> | null | undefined,
     resourceType: ObjectiveWorkflowResource
 ) => {
-    if (isVitestRuntime()) {
-        return;
-    }
-
     let canceledWorkflowId: Doc<'objectives'>['workflowId'];
 
     try {
@@ -58,6 +53,7 @@ export const runObjectiveSync = async (
         if (organizationId) {
             await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                 userId,
+                actorUserId: userId,
                 organizationId,
                 action: 'WORKFLOW_ERROR',
                 resourceType,

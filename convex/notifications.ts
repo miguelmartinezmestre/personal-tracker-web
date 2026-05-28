@@ -16,15 +16,27 @@ import type { NotificationType } from './utils/constants';
 
 const NOTIFICATION_LIMIT = 100;
 const OBJECTIVE_ID_LIMIT = 50;
+const EMPTY_NOTIFICATION_PAGE = {
+    page: [],
+    continueCursor: '',
+    isDone: true,
+};
 
 export const getNotificationsByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, { paginationOpts }) => {
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            return EMPTY_NOTIFICATION_PAGE;
+        }
+
         const results = await ctx.db
             .query('notifications')
-            .withIndex('by_user_date', q => q.eq('userId', ctx.userId))
+            .withIndex('by_user_organization_date', q =>
+                q.eq('userId', ctx.userId).eq('organizationId', organizationId)
+            )
             .order('desc')
             .paginate(paginationOpts);
 
@@ -67,9 +79,16 @@ export const getUnreadNotificationCount = queryWithRLS({
     args: {},
     returns: v.object({ count: v.number() }),
     handler: async ctx => {
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            return { count: 0 };
+        }
+
         const unreadNotifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user_read', q => q.eq('userId', ctx.userId).eq('read', false))
+            .withIndex('by_user_organization_read', q =>
+                q.eq('userId', ctx.userId).eq('organizationId', organizationId).eq('read', false)
+            )
             .take(NOTIFICATION_LIMIT);
 
         return { count: unreadNotifications.length };
@@ -130,6 +149,7 @@ export const setNotificationRead = mutationWithRLS({
 export const markAllReadBatch = internalMutation({
     args: {
         userId: v.id('user'),
+        organizationId: v.id('organization'),
         cursor: v.optional(v.union(v.string(), v.null())),
         totalProcessed: v.optional(v.number()),
     },
@@ -142,8 +162,13 @@ export const markAllNotificationsRead = mutationWithRLS({
     args: {},
     returns: v.object({ status: v.string() }),
     handler: async ctx => {
+        if (!ctx.organizationId) {
+            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
+        }
+
         await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
             userId: ctx.userId,
+            organizationId: ctx.organizationId,
             cursor: null,
             totalProcessed: 0,
         });

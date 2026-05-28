@@ -6,11 +6,9 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Category } from '@/features/categories/schemas/category';
 import type { Id } from '@/convex/_generated/dataModel';
-import { FunctionReturnType } from 'convex/server';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { useCategoriesTableColumns } from './categories-table-columns';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type ConvexCategory = {
     _id: Id<'categories'>;
@@ -43,23 +41,15 @@ function mapConvexCategoryToCategory(convexCategory: ConvexCategory): Category {
     };
 }
 
-type CategoriesResult = FunctionReturnType<typeof api.categories.getCategoriesByUser>;
-
-interface CategoriesTableProps {
-    initialCategories: CategoriesResult | undefined;
-}
-
-export default function CategoriesTable({ initialCategories }: CategoriesTableProps) {
+export default function CategoriesTable() {
     const columns = useCategoriesTableColumns();
 
     const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } = pagination;
-    const isFirstPage = paginationOpts.cursor === null;
 
-    const categoriesQuery = useQuery({
-        ...convexQuery(api.categories.getCategoriesByUser, { paginationOpts }),
-        initialData: isFirstPage ? initialCategories : undefined,
-    });
+    const categoriesQuery = useQuery(
+        convexQuery(api.categories.getCategoriesByUser, { paginationOpts })
+    );
 
     const continueCursor = categoriesQuery.data?.continueCursor ?? null;
     const pageIsDone = categoriesQuery.data?.isDone ?? false;

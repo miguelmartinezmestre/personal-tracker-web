@@ -6,6 +6,7 @@ import { query, type QueryCtx } from './_generated/server';
 import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
+import { resolveActiveMembership } from './platform/rls/authContext';
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
     if (!metadata) {
@@ -50,13 +51,23 @@ export const getCurrentSession = query({
 
         const userId = normalizeUserId(ctx, currentSession.userId);
         const user = userId ? await ctx.db.get('user', userId) : null;
+        const activeOrganizationId =
+            userId && currentSession.activeOrganizationId
+                ? (
+                      await resolveActiveMembership(
+                          ctx,
+                          userId,
+                          normalizeOrganizationId(ctx, currentSession.activeOrganizationId)
+                      )
+                  ).organizationId
+                : null;
 
         return {
             session: {
                 id: currentSession._id,
                 userId: currentSession.userId,
                 expiresAt: currentSession.expiresAt,
-                activeOrganizationId: currentSession.activeOrganizationId,
+                activeOrganizationId,
                 createdAt: currentSession.createdAt,
             },
             user: user
@@ -124,7 +135,18 @@ export const getActiveOrganization = query({
     handler: async ctx => {
         const currentSession = await resolveCurrentSession(ctx);
         if (!currentSession?.activeOrganizationId) return null;
-        const organizationId = normalizeOrganizationId(ctx, currentSession.activeOrganizationId);
+        const userId = normalizeUserId(ctx, currentSession.userId);
+        const requestedOrganizationId = normalizeOrganizationId(
+            ctx,
+            currentSession.activeOrganizationId
+        );
+        if (!userId || !requestedOrganizationId) return null;
+
+        const { organizationId } = await resolveActiveMembership(
+            ctx,
+            userId,
+            requestedOrganizationId
+        );
         if (!organizationId) return null;
 
         const org = await ctx.db.get('organization', organizationId);

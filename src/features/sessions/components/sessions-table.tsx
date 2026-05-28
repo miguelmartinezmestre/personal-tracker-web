@@ -11,16 +11,11 @@ import { api } from '@/convex/_generated/api';
 import { FunctionReturnType } from 'convex/server';
 import { Button } from '@/components/ui/button';
 import { useInvalidateAllOtherSessions } from './sessions-table-actions';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type SessionsResult = FunctionReturnType<typeof api.sessions.getSessionsByUser>;
 
-interface SessionsTableProps {
-    initialSessions: SessionsResult | undefined;
-}
-
-export default function SessionsTable({ initialSessions }: SessionsTableProps) {
+export default function SessionsTable() {
     const t = useTranslations('Sessions');
     const columns = useSessionsTableColumns();
     const { invalidateAllOtherSessionsAsync, isInvalidatingAllOtherSessions } =
@@ -28,12 +23,8 @@ export default function SessionsTable({ initialSessions }: SessionsTableProps) {
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
-    const isFirstPage = paginationOpts.cursor === null;
 
-    const sessionsQuery = useQuery({
-        ...convexQuery(api.sessions.getSessionsByUser, { paginationOpts }),
-        initialData: isFirstPage ? initialSessions : undefined,
-    });
+    const sessionsQuery = useQuery(convexQuery(api.sessions.getSessionsByUser, { paginationOpts }));
 
     const sessionsData = sessionsQuery.data as SessionsResult | undefined;
     const continueCursor = sessionsData?.continueCursor ?? null;

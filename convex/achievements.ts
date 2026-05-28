@@ -257,11 +257,20 @@ export const getUnviewedAchievementsCount = queryWithRLS({
     args: {},
     handler: async ctx => {
         const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
+
+        if (!organizationId) {
+            return 0;
+        }
 
         const notifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user_type_read', q =>
-                q.eq('userId', userId).eq('notificationType', 'achievement').eq('read', false)
+            .withIndex('by_user_organization_type_read', q =>
+                q
+                    .eq('userId', userId)
+                    .eq('organizationId', organizationId)
+                    .eq('notificationType', 'achievement')
+                    .eq('read', false)
             )
             .take(100);
 

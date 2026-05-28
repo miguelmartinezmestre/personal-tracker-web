@@ -40,6 +40,7 @@ export const getProgressSeriesByObjectiveId = queryWithRLS({
             v.object({
                 objective: v.id('objectives'),
                 userId: v.id('user'),
+                organizationId: v.id('organization'),
                 updatedValue: v.number(),
                 updateDate: v.number(),
                 comment: v.optional(v.string()),

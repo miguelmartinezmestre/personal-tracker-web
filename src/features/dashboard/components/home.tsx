@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 import { AchievementsWidget } from '@/features/achievements/components/achievements-widget';
 import { api } from '@/convex/_generated/api';
 import { Loader2, Target, CheckCircle, Calendar, Activity } from 'lucide-react';
-import { Preloaded } from 'convex/react';
-import { usePreloadedQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/features/dashboard/components/stat-card';
 import dynamic from 'next/dynamic';
@@ -19,29 +19,13 @@ const TopObjectivesChart = dynamic(
     { ssr: false }
 );
 
-export default function Home({
-    preloadedUserQuery,
-    preloadedUserAchievementStatsQuery,
-    preloadedUserRecentAchievementsQuery,
-    preloadedDashboardStatsQuery,
-    preloadedUpcomingDeadlinesQuery,
-    preloadedRecentActivityQuery,
-    preloadedMonthlyProgressQuery,
-    preloadedTopObjectivesQuery,
-}: {
-    preloadedUserQuery: Preloaded<typeof api.auth.getCurrentUser>;
-    preloadedUserAchievementStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
-    preloadedUserRecentAchievementsQuery: Preloaded<typeof api.achievements.getRecentAchievements>;
-    preloadedDashboardStatsQuery: Preloaded<typeof api.dashboard.getDashboardStats>;
-    preloadedUpcomingDeadlinesQuery: Preloaded<typeof api.dashboard.getUpcomingDeadlines>;
-    preloadedRecentActivityQuery: Preloaded<typeof api.dashboard.getRecentActivity>;
-    preloadedMonthlyProgressQuery: Preloaded<typeof api.dashboard.getMonthlyProgress>;
-    preloadedTopObjectivesQuery: Preloaded<typeof api.dashboard.getObjectivesWithMostProgress>;
-}) {
-    const user = usePreloadedQuery(preloadedUserQuery);
-    const stats = usePreloadedQuery(preloadedDashboardStatsQuery);
-    const upcomingDeadlines = usePreloadedQuery(preloadedUpcomingDeadlinesQuery);
-    const recentActivity = usePreloadedQuery(preloadedRecentActivityQuery);
+export default function Home() {
+    const { data: user } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const { data: stats } = useQuery(convexQuery(api.dashboard.getDashboardStats, {}));
+    const { data: upcomingDeadlines } = useQuery(
+        convexQuery(api.dashboard.getUpcomingDeadlines, {})
+    );
+    const { data: recentActivity } = useQuery(convexQuery(api.dashboard.getRecentActivity, {}));
 
     const t = useTranslations('DashboardHome');
 
@@ -72,18 +56,13 @@ export default function Home({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MonthlyProgressChart
-                    preloadedMonthlyProgressQuery={preloadedMonthlyProgressQuery}
-                />
-                <TopObjectivesChart preloadedTopObjectivesQuery={preloadedTopObjectivesQuery} />
+                <MonthlyProgressChart />
+                <TopObjectivesChart />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="md:col-span-1">
-                    <AchievementsWidget
-                        preloadedUserAchievementStatsQuery={preloadedUserAchievementStatsQuery}
-                        preloadedUserRecentAchievementsQuery={preloadedUserRecentAchievementsQuery}
-                    />
+                    <AchievementsWidget />
                 </div>
 
                 <Card className="md:col-span-1" data-testid="upcoming-deadlines">
