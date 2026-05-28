@@ -271,7 +271,7 @@ test.describe('Route Protection', () => {
             async ({ browser }) => {
                 const contextA = await browser.newContext();
                 const pageA = await contextA.newPage();
-                const userA = await createTestUserViaAPI(pageA);
+                await createTestUserViaAPI(pageA);
 
                 await ensureDefaultCategories(pageA);
                 await pageA.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });

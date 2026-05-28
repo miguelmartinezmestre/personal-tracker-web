@@ -124,7 +124,7 @@ test.describe('Security Headers', () => {
     test('CSP should prevent inline script execution', async ({ page }) => {
         await page.goto('/');
 
-        const result = await page.evaluate(() => {
+        await page.evaluate(() => {
             try {
                 const script = document.createElement('script');
                 script.textContent = 'window.cspTest = "executed";';

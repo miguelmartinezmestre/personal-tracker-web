@@ -1,7 +1,6 @@
 import { test, expect } from '../../fixtures/test-base';
 import {
     createCategory,
-    createObjective,
     ensureAuthenticatedState,
     ensureDefaultCategories,
     openModal,

@@ -132,47 +132,40 @@ test.describe('Organization Invitations', () => {
         expect(hasContent).toBeTruthy();
     });
 
-    test(
-        'accept invitation as existing user',
-        { tag: ['@REQ-EQUIPOS-008'] },
-        async ({ page, context }) => {
-            const user1 = await createTestUserViaAPI(page);
-            const organization = await createOrganization(page, {
-                name: `Accept Org ${Date.now()}`,
-            });
+    test('accept invitation as existing user', { tag: ['@REQ-EQUIPOS-008'] }, async ({ page }) => {
+        await createTestUserViaAPI(page);
+        const organization = await createOrganization(page, {
+            name: `Accept Org ${Date.now()}`,
+        });
 
-            await page.goto('/dashboard/organizations');
-            await page.waitForLoadState('domcontentloaded');
+        await page.goto('/dashboard/organizations');
+        await page.waitForLoadState('domcontentloaded');
 
-            const orgRow = page
-                .getByTestId('table-row')
-                .filter({ hasText: organization.name })
+        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
+        const viewLink = orgRow.getByTestId('organization-detail-link');
+
+        await expect(viewLink).toBeVisible();
+        await viewLink.click();
+        await page.waitForLoadState('domcontentloaded');
+
+        const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
+
+        if ((await inviteButton.count()) > 0) {
+            await inviteButton.first().click();
+
+            const newUserData = UserFactory.create();
+
+            const emailInput = page.getByTestId('organization-member-email-input');
+            await expect(emailInput).toBeVisible();
+            await emailInput.fill(newUserData.email);
+
+            const sendButton = page
+                .locator('button:has-text("Send"), button:has-text("Invite")')
                 .first();
-            const viewLink = orgRow.getByTestId('organization-detail-link');
-
-            await expect(viewLink).toBeVisible();
-            await viewLink.click();
+            await sendButton.click();
             await page.waitForLoadState('domcontentloaded');
-
-            const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
-
-            if ((await inviteButton.count()) > 0) {
-                await inviteButton.first().click();
-
-                const newUserData = UserFactory.create();
-
-                const emailInput = page.getByTestId('organization-member-email-input');
-                await expect(emailInput).toBeVisible();
-                await emailInput.fill(newUserData.email);
-
-                const sendButton = page
-                    .locator('button:has-text("Send"), button:has-text("Invite")')
-                    .first();
-                await sendButton.click();
-                await page.waitForLoadState('domcontentloaded');
-            }
         }
-    );
+    });
 
     test('decline invitation', { tag: ['@REQ-EQUIPOS-008'] }, async ({ page }) => {
         await page.goto('/dashboard/invitations');

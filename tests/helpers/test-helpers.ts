@@ -233,51 +233,6 @@ async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
     return true;
 }
 
-async function ensureOrganizationExists(page: Page): Promise<void> {
-    try {
-        await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
-        await page.waitForSelector('[data-testid="organization-create-open"]', { timeout: 15000 });
-
-        const existingOrganizations = await page.getByTestId('table-row').count();
-        if (existingOrganizations > 0) {
-            return;
-        }
-
-        const uniqueSuffix = randomUUID().substring(0, 8);
-        const organizationName = `Test Org ${uniqueSuffix}`;
-
-        let modalOpened = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            await page.getByTestId('organization-create-open').click();
-            try {
-                await page.waitForSelector('[data-testid="organization-name-input"]', {
-                    timeout: 5000,
-                });
-                modalOpened = true;
-                break;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-            }
-        }
-
-        if (!modalOpened) {
-            return;
-        }
-
-        await page.getByTestId('organization-name-input').fill(organizationName);
-        await page
-            .getByTestId('organization-description-input')
-            .fill('Automatically created for E2E setup');
-        await page.getByTestId('organization-save-button').click();
-
-        await expect(
-            page.getByTestId('table-row').filter({ hasText: organizationName }).first()
-        ).toBeVisible({
-            timeout: 15000,
-        });
-    } catch {}
-}
-
 async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
     await expect
         .poll(async () => await hasAuthenticatedSession(page), {
@@ -732,22 +687,6 @@ export async function createObjective(
         .toBeGreaterThan(0);
 
     return { title, description, category, targetValue, currentValue, unit };
-}
-
-const COLOR_NAME_TO_HEX: Record<string, string> = {
-    Red: '#ef4444',
-    Orange: '#f97316',
-    Yellow: '#eab308',
-    Green: '#22c55e',
-    Teal: '#14b8a6',
-    Blue: '#3b82f6',
-    Purple: '#a855f7',
-    Pink: '#ec4899',
-    Gray: '#6b7280',
-};
-
-function colorNameToHex(color: string): string | undefined {
-    return COLOR_NAME_TO_HEX[color];
 }
 
 export interface CreateCategoryOptions {

@@ -6,7 +6,6 @@ import {
     createOrganization,
     createNotification,
     ensureDefaultCategories,
-    ensureAuthenticatedState,
     setupPlatformAsAdmin,
     loginUser,
     logoutUser,

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import { test, expect, Page } from '@playwright/test';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
@@ -62,17 +61,6 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
     });
 
     console.log(`📸 Screenshot ${paddedCounter}: ${name}${description ? ` - ${description}` : ''}`);
-}
-
-async function safeClick(page: Page, selector: string, timeout = 2000): Promise<boolean> {
-    try {
-        const element = page.locator(selector).first();
-        await element.waitFor({ state: 'visible', timeout });
-        await element.click();
-        return true;
-    } catch {
-        return false;
-    }
 }
 
 async function safeFill(
@@ -796,7 +784,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await loginUser(page, adminUser.email, adminUser.password);
             console.log('Admin user session is active');
             adminPromoted = true;
-        } catch (error) {
+        } catch {
             console.log('⚠️ Could not sign in as the preconfigured admin user');
             console.log('⚠️ Skipping admin panel screenshots');
         }

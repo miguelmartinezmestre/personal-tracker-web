@@ -70,7 +70,7 @@ test.describe('Objectives Progress Updates', () => {
         'create progress update from objective detail',
         { tag: ['@REQ-PROGRESO-001', '@REQ-OBJETIVOS-012'] },
         async ({ page }) => {
-            const objective = await createObjective(page, {
+            await createObjective(page, {
                 title: `Progress create ${Date.now()}`,
                 targetValue: 100,
             });

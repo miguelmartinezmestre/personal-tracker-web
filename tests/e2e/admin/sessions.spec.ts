@@ -1,10 +1,38 @@
 import { test, expect } from '../../fixtures/admin-test-base';
 import { createTestUserViaAPI } from '../../helpers/test-helpers';
+import type { Page } from '@playwright/test';
+
+interface SessionPayload {
+    user?: { id?: string };
+    data?: { user?: { id?: string } };
+}
+
+async function getCurrentUserId(page: Page): Promise<string> {
+    const response = await page.request.get('/api/auth/get-session');
+    expect(response.ok()).toBeTruthy();
+
+    const payload = (await response.json()) as SessionPayload;
+    const userId = payload.data?.user?.id ?? payload.user?.id;
+    if (!userId) {
+        throw new Error('Current admin session did not include a user ID');
+    }
+
+    return userId;
+}
+
+async function loadCurrentUserSessions(page: Page) {
+    await page.goto('/dashboard/admin/sessions');
+    await page.waitForURL(/\/dashboard\/admin\/sessions(?:\?|$)/, { timeout: 15000 });
+
+    const userIdInput = page.getByTestId('user-sessions-userid-input');
+    await expect(userIdInput).toBeVisible({ timeout: 15000 });
+    await userIdInput.fill(await getCurrentUserId(page));
+    await expect(page.getByTestId('table')).toBeVisible({ timeout: 15000 });
+}
 
 test.describe('Admin Sessions', () => {
     test('view all user sessions', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
-        await page.goto('/dashboard/admin/sessions');
-        await page.waitForLoadState('domcontentloaded');
+        await loadCurrentUserSessions(page);
 
         await expect(page).toHaveURL(/\/dashboard\/admin\/sessions/);
 
@@ -80,8 +108,7 @@ test.describe('Admin Sessions', () => {
     });
 
     test('sessions show device information', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
-        await page.goto('/dashboard/admin/sessions');
-        await page.waitForLoadState('domcontentloaded');
+        await loadCurrentUserSessions(page);
 
         const deviceInfo = page.locator('text=/chrome|firefox|safari|windows|mac/i');
         const hasDeviceInfo = (await deviceInfo.count()) > 0;
@@ -90,6 +117,7 @@ test.describe('Admin Sessions', () => {
             'th:has-text("Device"), th:has-text("Browser"), th:has-text("User Agent")'
         );
         const hasColumn = (await userAgentColumn.count()) > 0;
+        expect(hasDeviceInfo || hasColumn).toBeTruthy();
     });
 
     test('sessions show IP address', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
@@ -181,6 +209,7 @@ test.describe('Admin Sessions', () => {
                 'text=/just now|seconds ago|hace.*segundos|hace.*minutos/i'
             );
             const isRecent = (await activityTime.count()) > 0;
+            expect(isRecent).toBeTruthy();
         }
     });
 

@@ -212,7 +212,7 @@ test.describe('XSS Prevention - Stored XSS', () => {
         await assertNoXssExecution(page);
     });
 
-    test('should prevent XSS in organization names', async ({ page, browser }) => {
+    test('should prevent XSS in organization names', async ({ browser }) => {
         const context = await browser.newContext();
         const page2 = await context.newPage();
 
