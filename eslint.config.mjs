@@ -28,8 +28,9 @@ const eslintConfig = [
         'infrastructure/data-dev/**',
         'infrastructure/mysql-data/**',
         'infrastructure/mysql-data-dev/**',
-        'tests/**',
-        'tests/manual/**',
+        'tests/.auth/**',
+        'test-results/**',
+        'playwright-report/**',
         'src/components/ui/**',
     ]),
     {
@@ -61,16 +62,34 @@ const eslintConfig = [
         },
     },
     {
-        rules: {
-            'max-lines': ['error', { max: 650, skipBlankLines: true, skipComments: true }],
-        },
-    },
-    {
         files: ['scripts/**/*.js'],
         languageOptions: {
             globals: {
                 ...globals.node,
             },
+        },
+    },
+    {
+        files: ['scripts/**/*.{ts,tsx,mjs}'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
+    {
+        files: ['tests/**/*.ts', 'playwright.config.ts'],
+        languageOptions: {
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
+        },
+        rules: {
+            '@next/next/no-html-link-for-pages': 'off',
+            'react/no-multi-comp': 'off',
+            'react-hooks/rules-of-hooks': 'off',
+            'no-empty': ['error', { allowEmptyCatch: true }],
         },
     },
     {
@@ -130,6 +149,12 @@ const eslintConfig = [
                     properties: 'never',
                 },
             ],
+        },
+    },
+    {
+        files: ['convex/**/*.ts', 'src/**/*.{ts,tsx}', 'scripts/**/*.{ts,tsx,mjs,js}'],
+        rules: {
+            'max-lines': ['error', { max: 650, skipBlankLines: true, skipComments: true }],
         },
     },
 ];

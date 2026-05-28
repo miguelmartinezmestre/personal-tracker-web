@@ -1,4 +1,5 @@
 **/components/ui/**/*.tsx
+.agents/
 convex/_generated/
 infrastructure/data/
 infrastructure/data-dev/
