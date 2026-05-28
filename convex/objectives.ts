@@ -13,6 +13,7 @@ import {
 } from './domain/objectives/categoryResolution';
 import { deadlineRangeValidator } from './domain/objectives/filters';
 import { runObjectiveSync } from './domain/objectives/workflowSync';
+import { buildObjectiveSearchText } from './domain/objectives/searchText';
 import { workflow } from './workflow';
 import { isVitestRuntime } from './utils/testRuntime';
 import { listObjectives, searchObjectives } from './domain/objectives/list';
@@ -182,6 +183,11 @@ export const createObjective = mutationWithRLS({
             scope,
             title: args.title,
             description: args.description,
+            searchText: buildObjectiveSearchText({
+                title: args.title,
+                description: args.description,
+                category: resolvedCategory,
+            }),
             category: resolvedCategory,
             categoryId: resolvedCategoryId,
             targetValue: args.targetValue,
@@ -268,6 +274,7 @@ export const updateObjective = mutationWithRLS({
         const patch: Partial<{
             title: string;
             description: string | undefined;
+            searchText: string;
             category: string | undefined;
             categoryId: Id<'categories'> | undefined;
             targetValue: number;
@@ -292,6 +299,18 @@ export const updateObjective = mutationWithRLS({
         if (args.unit !== undefined) patch.unit = args.unit;
         if (args.scope !== undefined) patch.scope = args.scope;
 
+        if (
+            args.title !== undefined ||
+            args.description !== undefined ||
+            categoryPatch !== undefined
+        ) {
+            patch.searchText = buildObjectiveSearchText({
+                title: args.title ?? objective.title,
+                description: args.description ?? objective.description,
+                category: categoryPatch !== undefined ? categoryPatch.category : objective.category,
+            });
+        }
+
         await ctx.db.patch('objectives', args.id, patch);
 
         await runObjectiveSync(ctx, args.id, objective.userId, ctx.organizationId, 'objective');
@@ -305,6 +324,44 @@ export const backfillObjectiveCategoryIds = internalMutation({
     },
     handler: async (ctx, args) => {
         return await backfillObjectiveCategoryIdsJob(ctx, args);
+    },
+});
+
+export const backfillObjectiveSearchText = internalMutation({
+    args: {
+        cursor: v.optional(v.union(v.string(), v.null())),
+    },
+    returns: v.object({
+        patched: v.number(),
+        isDone: v.boolean(),
+        continueCursor: v.string(),
+    }),
+    handler: async (ctx, args) => {
+        const page = await ctx.db.query('objectives').paginate({
+            numItems: 100,
+            cursor: args.cursor ?? null,
+        });
+        let patched = 0;
+
+        for (const objective of page.page) {
+            const searchText = buildObjectiveSearchText(objective);
+            if (objective.searchText !== searchText) {
+                await ctx.db.patch('objectives', objective._id, { searchText });
+                patched += 1;
+            }
+        }
+
+        if (!page.isDone) {
+            await ctx.scheduler.runAfter(0, internal.objectives.backfillObjectiveSearchText, {
+                cursor: page.continueCursor,
+            });
+        }
+
+        return {
+            patched,
+            isDone: page.isDone,
+            continueCursor: page.continueCursor,
+        };
     },
 });
 
