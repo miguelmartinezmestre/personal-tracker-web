@@ -31,7 +31,8 @@
     "knip": "knip",
     "prepare": "husky",
     "generate-jwks": "npx convex run generated/auth:getLatestJwks | npx convex env set JWKS",
-    "install": "pnpm exec playwright install",
+    "install": "node scripts/install-playwright-browsers.mjs",
+    "playwright:install": "pnpm exec playwright install",
     "doctor": "npx react-doctor@latest --verbose --full"
   },
   "dependencies": {
