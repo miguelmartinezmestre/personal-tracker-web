@@ -10,8 +10,10 @@ import type { Doc } from '@/convex/_generated/dataModel';
 import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
-
-const DEFAULT_PAGE_SIZE = 20;
+import {
+    OBJECTIVE_SEARCH_LIMIT,
+    OBJECTIVES_PAGE_SIZE,
+} from '@/features/objectives/lib/objective-query-invalidation';
 
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',
@@ -52,7 +54,7 @@ export function useObjectiveListState({
         preloadedOrganizationObjectivesQuery
     ) as OrganizationObjectivesResult | undefined;
 
-    const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const personalPagination = useServerPagination(OBJECTIVES_PAGE_SIZE);
     const { paginationOpts: personalPaginationOpts, reset: resetPersonalPagination } =
         personalPagination;
     const personalIsFirstPage = personalPaginationOpts.cursor === null;
@@ -85,7 +87,7 @@ export function useObjectiveListState({
             hasSearch
                 ? {
                       search: searchText,
-                      limit: 50,
+                      limit: OBJECTIVE_SEARCH_LIMIT,
                       status: statusFilter,
                       category: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
@@ -94,7 +96,7 @@ export function useObjectiveListState({
         )
     );
 
-    const organizationPagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const organizationPagination = useServerPagination(OBJECTIVES_PAGE_SIZE);
     const { paginationOpts: organizationPaginationOpts, reset: resetOrganizationPagination } =
         organizationPagination;
     const organizationIsFirstPage = organizationPaginationOpts.cursor === null;
@@ -127,7 +129,7 @@ export function useObjectiveListState({
             hasSearch
                 ? {
                       search: searchText,
-                      limit: 50,
+                      limit: OBJECTIVE_SEARCH_LIMIT,
                       status: statusFilter,
                       category: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
