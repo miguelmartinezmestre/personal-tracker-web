@@ -18,14 +18,16 @@ export async function runDeadlineNotificationsJob(
     }
 ) {
     const now = Date.now();
-    const { dayStart, dayEnd } = getDeadlineDayWindow(now);
+    const { dayStart, dayEnd, scanUpperBound } = getDeadlineDayWindow(now);
     let created = args.created || 0;
     let skipped = args.skipped || 0;
     const scannedSoFar = args.scannedSoFar ?? 0;
 
     const page = await ctx.db
         .query('objectives')
-        .withIndex('by_status_deadline', q => q.eq('status', 'active').lt('deadline', dayEnd))
+        .withIndex('by_status_deadline', q =>
+            q.eq('status', 'active').lt('deadline', scanUpperBound)
+        )
         .paginate({
             numItems: BATCH_SIZE,
             cursor: args.cursor ?? null,

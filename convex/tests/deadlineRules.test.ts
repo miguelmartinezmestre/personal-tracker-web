@@ -22,11 +22,18 @@ function objective(deadline?: number): Doc<'objectives'> {
 describe('deadline notification rules', () => {
     const dayMs = 24 * 60 * 60 * 1000;
     const now = Date.UTC(2026, 4, 27, 12, 0, 0);
-    const { dayStart, dayEnd } = getDeadlineDayWindow(now);
+    const { dayStart, dayEnd, scanUpperBound } = getDeadlineDayWindow(now);
 
     test('returns the UTC day window for a timestamp', () => {
         expect(dayStart).toBe(Date.UTC(2026, 4, 27, 0, 0, 0));
         expect(dayEnd).toBe(Date.UTC(2026, 4, 28, 0, 0, 0));
+    });
+
+    test('scan upper bound extends three days past the end of today', () => {
+        expect(scanUpperBound).toBe(dayEnd + dayMs * 3);
+        // An objective due in 2 days must fall within the scan window so the
+        // cron actually fetches it and can emit an advance reminder.
+        expect(objective(now + dayMs * 2).deadline).toBeLessThan(scanUpperBound);
     });
 
     test('returns null when an objective has no deadline', () => {
