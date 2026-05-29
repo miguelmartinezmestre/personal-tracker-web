@@ -5,8 +5,6 @@ import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { ERROR_CODES } from '../utils/constants';
 import { categoryInputValidator, categoryPatchValidator } from './categories/validators';
 
-const LIST_LIMIT = 1000;
-
 type CategoryQueryCtx = {
     db: DatabaseReader;
     userId: Id<'user'>;
@@ -76,23 +74,6 @@ export async function listCategoriesForCurrentUser(
         .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .order('desc')
         .paginate(args.paginationOpts);
-}
-
-export async function listCategoryNamesForFilters(ctx: CategoryQueryCtx) {
-    const organizationId = requireActiveOrganization(ctx);
-
-    const categories = await ctx.db
-        .query('categories')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-        .take(LIST_LIMIT);
-
-    return Array.from(
-        new Set(
-            categories
-                .map(category => category.name.trim())
-                .filter((name): name is string => name.length > 0)
-        )
-    ).sort((a, b) => a.localeCompare(b));
 }
 
 export async function createCategoryForCurrentOrganization(

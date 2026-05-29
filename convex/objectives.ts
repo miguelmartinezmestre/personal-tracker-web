@@ -7,17 +7,12 @@ import { mutationWithRLS, queryWithRLS } from './rls';
 import { objectiveScopeValidator, objectiveStatusValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import { validateObjectiveMetrics } from './domain/objectives/metrics';
-import {
-    findCategoryIdByName,
-    getCategoryForObjective,
-} from './domain/objectives/categoryResolution';
+import { getCategoryForObjective } from './domain/objectives/categoryResolution';
 import { deadlineRangeValidator } from './domain/objectives/filters';
 import { runObjectiveSync } from './domain/objectives/workflowSync';
-import { buildObjectiveSearchText } from './domain/objectives/searchText';
 import { workflow } from './workflow';
 import { isVitestRuntime } from './utils/testRuntime';
 import { listObjectives, searchObjectives } from './domain/objectives/list';
-import { backfillObjectiveCategoryIdsJob } from './jobs/objectives/backfillCategoryIds';
 import {
     continueObjectiveDeletion,
     deleteObjectiveWithDependents,
@@ -51,15 +46,15 @@ export const getObjectivesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         status: v.optional(objectiveStatusValidator),
-        category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         deadlineRange: v.optional(deadlineRangeValidator),
     },
-    handler: async (ctx, { paginationOpts, status, category, deadlineRange }) => {
+    handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
         return await listObjectives(ctx, {
             section: 'personal',
             paginationOpts,
             status,
-            category,
+            categoryId,
             deadlineRange,
         });
     },
@@ -69,15 +64,15 @@ export const getOrganizationObjectives = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         status: v.optional(objectiveStatusValidator),
-        category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         deadlineRange: v.optional(deadlineRangeValidator),
     },
-    handler: async (ctx, { paginationOpts, status, category, deadlineRange }) => {
+    handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
         return await listObjectives(ctx, {
             section: 'organization',
             paginationOpts,
             status,
-            category,
+            categoryId,
             deadlineRange,
         });
     },
@@ -88,7 +83,7 @@ export const searchObjectivesByUser = queryWithRLS({
         search: v.string(),
         limit: v.optional(v.number()),
         status: v.optional(objectiveStatusValidator),
-        category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, args) => {
@@ -104,7 +99,7 @@ export const searchOrganizationObjectives = queryWithRLS({
         search: v.string(),
         limit: v.optional(v.number()),
         status: v.optional(objectiveStatusValidator),
-        category: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, args) => {
@@ -128,7 +123,6 @@ export const createObjective = mutationWithRLS({
     args: {
         title: v.string(),
         description: v.optional(v.string()),
-        category: v.optional(v.string()),
         categoryId: v.optional(v.id('categories')),
         targetValue: v.number(),
         currentValue: v.optional(v.number()),
@@ -164,17 +158,11 @@ export const createObjective = mutationWithRLS({
             deadline: args.deadline,
         });
 
-        let resolvedCategory: string | undefined;
         let resolvedCategoryId: Id<'categories'> | undefined;
 
         if (args.categoryId) {
             const category = await getCategoryForObjective(ctx, organizationId, args.categoryId);
             resolvedCategoryId = category._id;
-            resolvedCategory = category.name;
-        } else if (args.category !== undefined && args.category.trim() !== '') {
-            const trimmed = args.category.trim();
-            resolvedCategory = trimmed;
-            resolvedCategoryId = await findCategoryIdByName(ctx, organizationId, trimmed);
         }
 
         const objectiveId = await ctx.db.insert('objectives', {
@@ -183,12 +171,6 @@ export const createObjective = mutationWithRLS({
             scope,
             title: args.title,
             description: args.description,
-            searchText: buildObjectiveSearchText({
-                title: args.title,
-                description: args.description,
-                category: resolvedCategory,
-            }),
-            category: resolvedCategory,
             categoryId: resolvedCategoryId,
             targetValue: args.targetValue,
             currentValue: startValue,
@@ -218,8 +200,7 @@ export const updateObjective = mutationWithRLS({
         id: v.id('objectives'),
         title: v.optional(v.string()),
         description: v.optional(v.string()),
-        category: v.optional(v.string()),
-        categoryId: v.optional(v.id('categories')),
+        categoryId: v.optional(v.union(v.id('categories'), v.null())),
         targetValue: v.optional(v.number()),
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
@@ -248,34 +229,20 @@ export const updateObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
 
-        let categoryPatch:
-            | { category: string | undefined; categoryId: Id<'categories'> | undefined }
-            | undefined;
-
-        if (args.categoryId !== undefined) {
+        // categoryId: an id sets/changes the category, null clears it, undefined leaves it as-is.
+        let resolvedCategoryId: Id<'categories'> | undefined;
+        if (args.categoryId) {
             const category = await getCategoryForObjective(
                 ctx,
                 objective.organizationId,
                 args.categoryId
             );
-            categoryPatch = { category: category.name, categoryId: category._id };
-        } else if (args.category !== undefined) {
-            const trimmed = args.category.trim();
-            if (trimmed === '') {
-                categoryPatch = { category: undefined, categoryId: undefined };
-            } else {
-                categoryPatch = {
-                    category: trimmed,
-                    categoryId: await findCategoryIdByName(ctx, objective.organizationId, trimmed),
-                };
-            }
+            resolvedCategoryId = category._id;
         }
 
         const patch: Partial<{
             title: string;
             description: string | undefined;
-            searchText: string;
-            category: string | undefined;
             categoryId: Id<'categories'> | undefined;
             targetValue: number;
             startValue: number;
@@ -289,79 +256,17 @@ export const updateObjective = mutationWithRLS({
 
         if (args.title !== undefined) patch.title = args.title;
         if (args.description !== undefined) patch.description = args.description;
-        if (categoryPatch !== undefined) {
-            patch.category = categoryPatch.category;
-            patch.categoryId = categoryPatch.categoryId;
-        }
+        if (args.categoryId !== undefined) patch.categoryId = resolvedCategoryId;
         if (args.targetValue !== undefined) patch.targetValue = args.targetValue;
         if (args.startValue !== undefined) patch.startValue = args.startValue;
         if (args.deadline !== undefined) patch.deadline = args.deadline;
         if (args.unit !== undefined) patch.unit = args.unit;
         if (args.scope !== undefined) patch.scope = args.scope;
 
-        if (
-            args.title !== undefined ||
-            args.description !== undefined ||
-            categoryPatch !== undefined
-        ) {
-            patch.searchText = buildObjectiveSearchText({
-                title: args.title ?? objective.title,
-                description: args.description ?? objective.description,
-                category: categoryPatch !== undefined ? categoryPatch.category : objective.category,
-            });
-        }
-
         await ctx.db.patch('objectives', args.id, patch);
 
         await runObjectiveSync(ctx, args.id, objective.userId, ctx.organizationId, 'objective');
         return await ctx.db.get('objectives', args.id);
-    },
-});
-
-export const backfillObjectiveCategoryIds = internalMutation({
-    args: {
-        cursor: v.optional(v.string()),
-    },
-    handler: async (ctx, args) => {
-        return await backfillObjectiveCategoryIdsJob(ctx, args);
-    },
-});
-
-export const backfillObjectiveSearchText = internalMutation({
-    args: {
-        cursor: v.optional(v.union(v.string(), v.null())),
-    },
-    returns: v.object({
-        patched: v.number(),
-        isDone: v.boolean(),
-        continueCursor: v.string(),
-    }),
-    handler: async (ctx, args) => {
-        const page = await ctx.db.query('objectives').paginate({
-            numItems: 100,
-            cursor: args.cursor ?? null,
-        });
-        let patched = 0;
-
-        for (const objective of page.page) {
-            const searchText = buildObjectiveSearchText(objective);
-            if (objective.searchText !== searchText) {
-                await ctx.db.patch('objectives', objective._id, { searchText });
-                patched += 1;
-            }
-        }
-
-        if (!page.isDone) {
-            await ctx.scheduler.runAfter(0, internal.objectives.backfillObjectiveSearchText, {
-                cursor: page.continueCursor,
-            });
-        }
-
-        return {
-            patched,
-            isDone: page.isDone,
-            continueCursor: page.continueCursor,
-        };
     },
 });
 

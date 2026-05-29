@@ -6,7 +6,6 @@ import {
     createDefaultCategoriesForCurrentOrganization,
     deleteCategoryForCurrentOrganization,
     listCategoriesForCurrentUser,
-    listCategoryNamesForFilters,
     updateCategoryForCurrentOrganization,
 } from './domain/categories';
 import { categoryInputValidator, categoryPatchValidator } from './domain/categories/validators';
@@ -17,13 +16,6 @@ export const getCategoriesByUser = queryWithRLS({
     },
     handler: async (ctx, args) => {
         return await listCategoriesForCurrentUser(ctx, args);
-    },
-});
-
-export const getCategoryNamesForFilters = queryWithRLS({
-    args: {},
-    handler: async ctx => {
-        return await listCategoryNamesForFilters(ctx);
     },
 });
 

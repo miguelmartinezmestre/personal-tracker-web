@@ -6,10 +6,11 @@ import { convexQuery } from '@convex-dev/react-query';
 import { Preloaded, usePreloadedQuery } from 'convex/react';
 import { FunctionReturnType } from 'convex/server';
 import { api } from '@/convex/_generated/api';
-import type { Doc } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
+import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
 import {
     OBJECTIVE_SEARCH_LIMIT,
     OBJECTIVES_PAGE_SIZE,
@@ -43,7 +44,8 @@ export function useObjectiveListState({
     const searchText = filters.search.trim();
     const hasSearch = searchText.length > 0;
     const statusFilter = filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined;
-    const categoryFilter = filters.category !== 'all' ? filters.category : undefined;
+    const categoryFilter =
+        filters.category !== 'all' ? (filters.category as Id<'categories'>) : undefined;
     const deadlineRangeFilter =
         filters.deadlineRange !== 'all' ? (filters.deadlineRange as DeadlineRange) : undefined;
 
@@ -67,7 +69,7 @@ export function useObjectiveListState({
                 : {
                       paginationOpts: personalPaginationOpts,
                       status: statusFilter,
-                      category: categoryFilter,
+                      categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
                   }
         ),
@@ -89,7 +91,7 @@ export function useObjectiveListState({
                       search: searchText,
                       limit: OBJECTIVE_SEARCH_LIMIT,
                       status: statusFilter,
-                      category: categoryFilter,
+                      categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
                   }
                 : 'skip'
@@ -109,7 +111,7 @@ export function useObjectiveListState({
                 : {
                       paginationOpts: organizationPaginationOpts,
                       status: statusFilter,
-                      category: categoryFilter,
+                      categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
                   }
         ),
@@ -131,16 +133,14 @@ export function useObjectiveListState({
                       search: searchText,
                       limit: OBJECTIVE_SEARCH_LIMIT,
                       status: statusFilter,
-                      category: categoryFilter,
+                      categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
                   }
                 : 'skip'
         )
     );
 
-    const categoryOptionsQuery = useQuery(
-        convexQuery(api.categories.getCategoryNamesForFilters, {})
-    );
+    const { categoryOptions, categoryNameById } = useObjectiveCategoryOptions();
 
     const personalContinueCursor = personalQuery.data?.continueCursor ?? null;
     const personalPageIsDone = personalQuery.data?.isDone ?? false;
@@ -174,7 +174,8 @@ export function useObjectiveListState({
     return {
         filters,
         hasSearch,
-        categories: categoryOptionsQuery.data ?? [],
+        categories: categoryOptions,
+        categoryNameById,
         handleFiltersChange,
         personal: {
             objectives: personalObjectives,

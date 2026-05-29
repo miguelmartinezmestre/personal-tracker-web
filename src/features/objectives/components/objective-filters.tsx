@@ -23,10 +23,15 @@ interface FilterOptions {
     deadlineRange: string;
 }
 
+interface CategoryFilterOption {
+    id: string;
+    label: string;
+}
+
 interface ObjectivesFiltersProps {
     filters: FilterOptions;
     onFiltersChange: (filters: FilterOptions) => void;
-    categories: string[];
+    categories: CategoryFilterOption[];
     className?: string;
 }
 
@@ -130,13 +135,13 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                             <SelectItem value="all" data-testid="objectives-category-all">
                                 {t('categoryOptions.all')}
                             </SelectItem>
-                            {categories.map(category => (
+                            {categories.map(option => (
                                 <SelectItem
-                                    key={category}
-                                    value={category}
-                                    data-testid={`objectives-category-${category}`}
+                                    key={option.id}
+                                    value={option.id}
+                                    data-testid={`objectives-category-${option.id}`}
                                 >
-                                    {category}
+                                    {option.label}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -241,7 +246,10 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                         {filters.category !== 'all' && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm">
-                                                    {t('filters.category')}: {filters.category}
+                                                    {t('filters.category')}:{' '}
+                                                    {categories.find(
+                                                        option => option.id === filters.category
+                                                    )?.label ?? filters.category}
                                                 </span>
                                                 <Button
                                                     variant="ghost"

@@ -2,10 +2,7 @@
 
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    CreateObjective,
-    createObjectiveFormSchema,
-} from '@/features/objectives/schemas/objective';
+import { CreateObjective, objectiveSchema } from '@/features/objectives/schemas/objective';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -58,8 +55,8 @@ export default function CreateObjectiveFormModal() {
             formOptions={{
                 defaultValues,
                 validators: {
-                    onChange: createObjectiveFormSchema,
-                    onSubmit: createObjectiveFormSchema,
+                    onChange: objectiveSchema,
+                    onSubmit: objectiveSchema,
                 },
             }}
             onSubmit={async (value: CreateObjective) => {

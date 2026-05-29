@@ -34,9 +34,6 @@ export default defineSchema({
         scope: objectiveScopeValidator,
         title: v.string(),
         description: v.optional(v.string()),
-        searchText: v.optional(v.string()),
-
-        category: v.optional(v.string()),
         categoryId: v.optional(v.id('categories')),
         targetValue: v.number(),
         currentValue: v.number(),
@@ -55,33 +52,23 @@ export default defineSchema({
         .index('by_user_status_deadline', ['userId', 'status', 'deadline'])
         .index('by_user_createdAt', ['userId', 'createdAt'])
         .index('by_user_status_updatedAt', ['userId', 'status', 'updatedAt'])
-        .index('by_user_scope_status_category', ['userId', 'scope', 'status', 'category'])
-        .index('by_user_scope_category', ['userId', 'scope', 'category'])
         .index('by_user_scope_deadline', ['userId', 'scope', 'deadline'])
         .index('by_user_scope_status_deadline', ['userId', 'scope', 'status', 'deadline'])
-        .index('by_user_scope_category_deadline', ['userId', 'scope', 'category', 'deadline'])
-        .index('by_user_scope_status_category_deadline', [
-            'userId',
-            'scope',
-            'status',
-            'category',
-            'deadline',
-        ])
         .index('by_user_organization', ['userId', 'organizationId'])
         .index('by_user_organization_scope', ['userId', 'organizationId', 'scope'])
         .index('by_user_organization_scope_status', ['userId', 'organizationId', 'scope', 'status'])
-        .index('by_user_organization_scope_status_category', [
+        .index('by_user_organization_scope_status_categoryId', [
             'userId',
             'organizationId',
             'scope',
             'status',
-            'category',
+            'categoryId',
         ])
-        .index('by_user_organization_scope_category', [
+        .index('by_user_organization_scope_categoryId', [
             'userId',
             'organizationId',
             'scope',
-            'category',
+            'categoryId',
         ])
         .index('by_user_organization_scope_deadline', [
             'userId',
@@ -96,31 +83,31 @@ export default defineSchema({
             'status',
             'deadline',
         ])
-        .index('by_user_organization_scope_category_deadline', [
+        .index('by_user_organization_scope_categoryId_deadline', [
             'userId',
             'organizationId',
             'scope',
-            'category',
+            'categoryId',
             'deadline',
         ])
-        .index('by_user_organization_scope_status_category_deadline', [
+        .index('by_user_organization_scope_status_categoryId_deadline', [
             'userId',
             'organizationId',
             'scope',
             'status',
-            'category',
+            'categoryId',
             'deadline',
         ])
         .index('by_organization', ['organizationId'])
         .index('by_organization_scope', ['organizationId', 'scope'])
         .index('by_organization_scope_status', ['organizationId', 'scope', 'status'])
-        .index('by_organization_scope_status_category', [
+        .index('by_organization_scope_status_categoryId', [
             'organizationId',
             'scope',
             'status',
-            'category',
+            'categoryId',
         ])
-        .index('by_organization_scope_category', ['organizationId', 'scope', 'category'])
+        .index('by_organization_scope_categoryId', ['organizationId', 'scope', 'categoryId'])
         .index('by_organization_scope_deadline', ['organizationId', 'scope', 'deadline'])
         .index('by_organization_scope_status_deadline', [
             'organizationId',
@@ -128,33 +115,29 @@ export default defineSchema({
             'status',
             'deadline',
         ])
-        .index('by_organization_scope_category_deadline', [
+        .index('by_organization_scope_categoryId_deadline', [
             'organizationId',
             'scope',
-            'category',
+            'categoryId',
             'deadline',
         ])
-        .index('by_organization_scope_status_category_deadline', [
+        .index('by_organization_scope_status_categoryId_deadline', [
             'organizationId',
             'scope',
             'status',
-            'category',
+            'categoryId',
             'deadline',
         ])
         .index('by_status', ['status'])
         .index('by_status_deadline', ['status', 'deadline'])
         .index('by_categoryId', ['categoryId'])
-        .searchIndex('search_title_by_user_organization_scope_status_category', {
+        .searchIndex('search_title_by_user_organization_scope_status_categoryId', {
             searchField: 'title',
-            filterFields: ['userId', 'organizationId', 'scope', 'status', 'category'],
+            filterFields: ['userId', 'organizationId', 'scope', 'status', 'categoryId'],
         })
-        .searchIndex('search_text_by_user_organization_scope_status_category', {
-            searchField: 'searchText',
-            filterFields: ['userId', 'organizationId', 'scope', 'status', 'category'],
-        })
-        .searchIndex('search_text_by_organization_scope_status_category', {
-            searchField: 'searchText',
-            filterFields: ['organizationId', 'scope', 'status', 'category'],
+        .searchIndex('search_title_by_organization_scope_status_categoryId', {
+            searchField: 'title',
+            filterFields: ['organizationId', 'scope', 'status', 'categoryId'],
         }),
 
     progressUpdates: defineTable({

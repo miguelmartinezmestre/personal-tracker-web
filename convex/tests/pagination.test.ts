@@ -61,26 +61,22 @@ describe('convex pagination', () => {
         });
     });
 
-    test('normalizeObjectiveListFilters removes UI sentinel values', () => {
-        expect(
-            normalizeObjectiveListFilters({
-                category: 'all',
-            })
-        ).toEqual({
+    test('normalizeObjectiveListFilters passes filters through', () => {
+        expect(normalizeObjectiveListFilters({})).toEqual({
             status: undefined,
-            category: undefined,
+            categoryId: undefined,
             deadlineRange: undefined,
         });
 
         expect(
             normalizeObjectiveListFilters({
                 status: 'active',
-                category: 'Launch',
+                categoryId: 'category_123' as Id<'categories'>,
                 deadlineRange: 'today',
             })
         ).toEqual({
             status: 'active',
-            category: 'Launch',
+            categoryId: 'category_123',
             deadlineRange: 'today',
         });
     });
@@ -293,6 +289,15 @@ describe('convex pagination', () => {
         const dueToday = now + 60 * 60 * 1000;
         const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
 
+        const launchCategoryId = await userIdentity.mutation(api.categories.createCategory, {
+            name: 'Launch',
+            color: '#10b981',
+        });
+        const financeCategoryId = await userIdentity.mutation(api.categories.createCategory, {
+            name: 'Finance',
+            color: '#3b82f6',
+        });
+
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
@@ -301,7 +306,7 @@ describe('convex pagination', () => {
             targetValue: 100,
             currentValue: 10,
             status: 'active',
-            category: 'Launch',
+            categoryId: launchCategoryId,
             deadline: dueToday,
         });
         await createTestObjective(t, {
@@ -312,7 +317,7 @@ describe('convex pagination', () => {
             targetValue: 100,
             currentValue: 10,
             status: 'active',
-            category: 'Launch',
+            categoryId: launchCategoryId,
             deadline: nextWeek,
         });
         await createTestObjective(t, {
@@ -323,7 +328,7 @@ describe('convex pagination', () => {
             targetValue: 100,
             currentValue: 10,
             status: 'active',
-            category: 'Finance',
+            categoryId: financeCategoryId,
             deadline: dueToday,
         });
         await createTestObjective(t, {
@@ -334,14 +339,14 @@ describe('convex pagination', () => {
             targetValue: 100,
             currentValue: 100,
             status: 'completed',
-            category: 'Launch',
+            categoryId: launchCategoryId,
             deadline: dueToday,
         });
 
         const result = await userIdentity.query(api.objectives.getOrganizationObjectives, {
             paginationOpts: { numItems: 10, cursor: null },
             status: 'active',
-            category: 'Launch',
+            categoryId: launchCategoryId,
             deadlineRange: 'today',
         });
 
@@ -414,7 +419,7 @@ describe('convex pagination', () => {
         expect(result.map(objective => objective.title)).toEqual(['Quarterly Revenue Goal']);
     });
 
-    test('searchObjectivesByUser matches objective descriptions', async () => {
+    test('searchObjectivesByUser does not match objective descriptions', async () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
@@ -424,30 +429,47 @@ describe('convex pagination', () => {
             currentValue: 10,
         });
 
+        // Search is title-only, so a description-only token must not match.
         const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
             search: 'rare-description-token',
             limit: 50,
         });
 
-        expect(result.map(objective => objective.title)).toEqual(['Plain title']);
+        expect(result).toEqual([]);
     });
 
-    test('searchObjectivesByUser matches objective categories', async () => {
+    test('searchObjectivesByUser matches only by objective title', async () => {
+        const categoryId = await userIdentity.mutation(api.categories.createCategory, {
+            name: 'RareCategoryToken',
+            color: '#10b981',
+        });
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
-            title: 'Category-only match title',
-            category: 'RareCategoryToken',
+            title: 'Distinctive title token',
+            description: 'rare-description-token',
+            categoryId,
             targetValue: 100,
             currentValue: 10,
         });
 
-        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const titleResult = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'Distinctive',
+            limit: 50,
+        });
+        const categoryResult = await userIdentity.query(api.objectives.searchObjectivesByUser, {
             search: 'RareCategoryToken',
             limit: 50,
         });
+        const descriptionResult = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+            search: 'rare-description-token',
+            limit: 50,
+        });
 
-        expect(result.map(objective => objective.title)).toEqual(['Category-only match title']);
+        expect(titleResult.map(objective => objective.title)).toEqual(['Distinctive title token']);
+        // Search is title-only: category name and description no longer match.
+        expect(categoryResult).toEqual([]);
+        expect(descriptionResult).toEqual([]);
     });
 
     test('searchObjectivesByUser applies deadlineRange before the bounded search result limit', async () => {
@@ -514,26 +536,26 @@ describe('convex pagination', () => {
         ]);
     });
 
-    test('searchOrganizationObjectives matches title, description, and category for organization objectives', async () => {
+    test('searchOrganizationObjectives matches only by objective title', async () => {
+        const categoryId = await userIdentity.mutation(api.categories.createCategory, {
+            name: 'OrganizationCategoryToken',
+            color: '#10b981',
+        });
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
             scope: 'organization',
             title: 'Org searchable title',
             description: 'Includes organization-description-token',
-            category: 'OrganizationCategoryToken',
-            targetValue: 100,
-            currentValue: 10,
-        });
-        await createTestObjective(t, {
-            userId,
-            organizationId: _organizationId,
-            scope: 'personal',
-            title: 'Personal organization-description-token',
+            categoryId,
             targetValue: 100,
             currentValue: 10,
         });
 
+        const titleResult = await userIdentity.query(api.objectives.searchOrganizationObjectives, {
+            search: 'searchable',
+            limit: 50,
+        });
         const descriptionResult = await userIdentity.query(
             api.objectives.searchOrganizationObjectives,
             {
@@ -549,9 +571,9 @@ describe('convex pagination', () => {
             }
         );
 
-        expect(descriptionResult.map(objective => objective.title)).toEqual([
-            'Org searchable title',
-        ]);
-        expect(categoryResult.map(objective => objective.title)).toEqual(['Org searchable title']);
+        expect(titleResult.map(objective => objective.title)).toEqual(['Org searchable title']);
+        // Search is title-only: description and category name no longer match.
+        expect(descriptionResult).toEqual([]);
+        expect(categoryResult).toEqual([]);
     });
 });

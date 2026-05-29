@@ -34,11 +34,18 @@ export const ResponsiveObjectivesView = React.forwardRef<
 >(({ preloadedPersonalObjectivesQuery, preloadedOrganizationObjectivesQuery }, ref) => {
     const t = useTranslations('Objectives');
     const queryClient = useQueryClient();
-    const { filters, hasSearch, categories, handleFiltersChange, personal, organization } =
-        useObjectiveListState({
-            preloadedPersonalObjectivesQuery,
-            preloadedOrganizationObjectivesQuery,
-        });
+    const {
+        filters,
+        hasSearch,
+        categories,
+        categoryNameById,
+        handleFiltersChange,
+        personal,
+        organization,
+    } = useObjectiveListState({
+        preloadedPersonalObjectivesQuery,
+        preloadedOrganizationObjectivesQuery,
+    });
 
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
@@ -100,9 +107,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
             ),
         },
         {
-            accessorKey: 'category',
+            accessorKey: 'categoryId',
             header: t('category'),
-            cell: ({ row }) => row.original.category?.trim() || '-',
+            cell: ({ row }) =>
+                (row.original.categoryId && categoryNameById.get(row.original.categoryId)) || '-',
         },
         {
             accessorKey: 'deadline',
@@ -186,8 +194,10 @@ export const ResponsiveObjectivesView = React.forwardRef<
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        {objective.category ? (
-                            <Badge variant="secondary">{objective.category}</Badge>
+                        {objective.categoryId && categoryNameById.get(objective.categoryId) ? (
+                            <Badge variant="secondary">
+                                {categoryNameById.get(objective.categoryId)}
+                            </Badge>
                         ) : null}
                         {objective.deadline ? (
                             <Badge variant="outline">

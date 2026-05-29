@@ -8,7 +8,6 @@ export const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
         title: objective.title,
         description: objective.description ?? null,
         categoryId: objective.categoryId ?? null,
-        category: objective.category ?? null,
         targetValue: objective.targetValue,
         currentValue: objective.currentValue,
         startValue: objective.startValue ?? 0,

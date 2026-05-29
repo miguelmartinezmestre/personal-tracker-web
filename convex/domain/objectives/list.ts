@@ -13,13 +13,13 @@ export type ObjectiveListSection = 'personal' | 'organization';
 
 export type ObjectiveListFilters = {
     status?: ObjectiveStatus;
-    category?: string;
+    categoryId?: Id<'categories'>;
     deadlineRange?: DeadlineRange;
 };
 
 type NormalizedObjectiveListFilters = {
     status: ObjectiveStatus | undefined;
-    category: string | undefined;
+    categoryId: Id<'categories'> | undefined;
     deadlineRange: DeadlineRange | undefined;
 };
 
@@ -40,28 +40,20 @@ export type ObjectiveSearchArgs = ObjectiveListFilters & {
     limit?: number;
 };
 
-type SearchableObjective = Pick<
-    Doc<'objectives'>,
-    'title' | 'description' | 'category' | 'deadline'
->;
+type SearchableObjective = Pick<Doc<'objectives'>, 'title' | 'categoryId' | 'deadline'>;
 
 export function normalizeObjectiveListFilters(
     filters: ObjectiveListFilters
 ): NormalizedObjectiveListFilters {
-    const trimmedCategory = filters.category?.trim();
-
     return {
         status: filters.status,
-        category: trimmedCategory && trimmedCategory !== 'all' ? trimmedCategory : undefined,
+        categoryId: filters.categoryId,
         deadlineRange: filters.deadlineRange,
     };
 }
 
 function matchesObjectiveSearch(objective: SearchableObjective, search: string) {
-    const needle = search.toLowerCase();
-    return [objective.title, objective.description, objective.category].some(value =>
-        value?.toLowerCase().includes(needle)
-    );
+    return objective.title.toLowerCase().includes(search.toLowerCase());
 }
 
 function matchesObjectiveFilters(
@@ -71,7 +63,7 @@ function matchesObjectiveFilters(
     if (filters.status && objective.status !== filters.status) {
         return false;
     }
-    if (filters.category && objective.category !== filters.category) {
+    if (filters.categoryId && objective.categoryId !== filters.categoryId) {
         return false;
     }
     if (filters.deadlineRange && !matchesDeadlineRange(objective.deadline, filters.deadlineRange)) {
@@ -94,16 +86,16 @@ async function listPersonalObjectives(
     if (filters.deadlineRange) {
         const bounds = getDeadlineRangeBounds(filters.deadlineRange);
 
-        if (filters.status && filters.category) {
+        if (filters.status && filters.categoryId) {
             return await ctx.db
                 .query('objectives')
-                .withIndex('by_user_organization_scope_status_category_deadline', q => {
+                .withIndex('by_user_organization_scope_status_categoryId_deadline', q => {
                     const indexed = q
                         .eq('userId', ctx.userId)
                         .eq('organizationId', organizationId)
                         .eq('scope', 'personal')
                         .eq('status', filters.status!)
-                        .eq('category', filters.category!);
+                        .eq('categoryId', filters.categoryId!);
                     return bounds.gte !== undefined
                         ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
                         : indexed.lt('deadline', bounds.lt);
@@ -129,15 +121,15 @@ async function listPersonalObjectives(
                 .paginate(paginationOpts);
         }
 
-        if (filters.category) {
+        if (filters.categoryId) {
             return await ctx.db
                 .query('objectives')
-                .withIndex('by_user_organization_scope_category_deadline', q => {
+                .withIndex('by_user_organization_scope_categoryId_deadline', q => {
                     const indexed = q
                         .eq('userId', ctx.userId)
                         .eq('organizationId', organizationId)
                         .eq('scope', 'personal')
-                        .eq('category', filters.category!);
+                        .eq('categoryId', filters.categoryId!);
                     return bounds.gte !== undefined
                         ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
                         : indexed.lt('deadline', bounds.lt);
@@ -162,16 +154,16 @@ async function listPersonalObjectives(
     }
 
     if (filters.status) {
-        if (filters.category) {
+        if (filters.categoryId) {
             return await ctx.db
                 .query('objectives')
-                .withIndex('by_user_organization_scope_status_category', q =>
+                .withIndex('by_user_organization_scope_status_categoryId', q =>
                     q
                         .eq('userId', ctx.userId)
                         .eq('organizationId', organizationId)
                         .eq('scope', 'personal')
                         .eq('status', filters.status!)
-                        .eq('category', filters.category!)
+                        .eq('categoryId', filters.categoryId!)
                 )
                 .order('desc')
                 .paginate(paginationOpts);
@@ -190,15 +182,15 @@ async function listPersonalObjectives(
             .paginate(paginationOpts);
     }
 
-    if (filters.category) {
+    if (filters.categoryId) {
         return await ctx.db
             .query('objectives')
-            .withIndex('by_user_organization_scope_category', q =>
+            .withIndex('by_user_organization_scope_categoryId', q =>
                 q
                     .eq('userId', ctx.userId)
                     .eq('organizationId', organizationId)
                     .eq('scope', 'personal')
-                    .eq('category', filters.category!)
+                    .eq('categoryId', filters.categoryId!)
             )
             .order('desc')
             .paginate(paginationOpts);
@@ -226,15 +218,15 @@ async function listOrganizationObjectives(
     if (filters.deadlineRange) {
         const bounds = getDeadlineRangeBounds(filters.deadlineRange);
 
-        if (filters.status && filters.category) {
+        if (filters.status && filters.categoryId) {
             return await ctx.db
                 .query('objectives')
-                .withIndex('by_organization_scope_status_category_deadline', q => {
+                .withIndex('by_organization_scope_status_categoryId_deadline', q => {
                     const indexed = q
                         .eq('organizationId', organizationId)
                         .eq('scope', 'organization')
                         .eq('status', filters.status!)
-                        .eq('category', filters.category!);
+                        .eq('categoryId', filters.categoryId!);
                     return bounds.gte !== undefined
                         ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
                         : indexed.lt('deadline', bounds.lt);
@@ -259,14 +251,14 @@ async function listOrganizationObjectives(
                 .paginate(paginationOpts);
         }
 
-        if (filters.category) {
+        if (filters.categoryId) {
             return await ctx.db
                 .query('objectives')
-                .withIndex('by_organization_scope_category_deadline', q => {
+                .withIndex('by_organization_scope_categoryId_deadline', q => {
                     const indexed = q
                         .eq('organizationId', organizationId)
                         .eq('scope', 'organization')
-                        .eq('category', filters.category!);
+                        .eq('categoryId', filters.categoryId!);
                     return bounds.gte !== undefined
                         ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
                         : indexed.lt('deadline', bounds.lt);
@@ -288,15 +280,15 @@ async function listOrganizationObjectives(
     }
 
     if (filters.status) {
-        if (filters.category) {
+        if (filters.categoryId) {
             return await ctx.db
                 .query('objectives')
-                .withIndex('by_organization_scope_status_category', q =>
+                .withIndex('by_organization_scope_status_categoryId', q =>
                     q
                         .eq('organizationId', organizationId)
                         .eq('scope', 'organization')
                         .eq('status', filters.status!)
-                        .eq('category', filters.category!)
+                        .eq('categoryId', filters.categoryId!)
                 )
                 .order('desc')
                 .paginate(paginationOpts);
@@ -314,14 +306,14 @@ async function listOrganizationObjectives(
             .paginate(paginationOpts);
     }
 
-    if (filters.category) {
+    if (filters.categoryId) {
         return await ctx.db
             .query('objectives')
-            .withIndex('by_organization_scope_category', q =>
+            .withIndex('by_organization_scope_categoryId', q =>
                 q
                     .eq('organizationId', organizationId)
                     .eq('scope', 'organization')
-                    .eq('category', filters.category!)
+                    .eq('categoryId', filters.categoryId!)
             )
             .order('desc')
             .paginate(paginationOpts);
@@ -360,18 +352,18 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
         scope === 'personal'
             ? ctx.db
                   .query('objectives')
-                  .withSearchIndex('search_text_by_user_organization_scope_status_category', q =>
+                  .withSearchIndex('search_title_by_user_organization_scope_status_categoryId', q =>
                       q
-                          .search('searchText', search)
+                          .search('title', search)
                           .eq('userId', ctx.userId)
                           .eq('organizationId', organizationId)
                           .eq('scope', 'personal')
                   )
             : ctx.db
                   .query('objectives')
-                  .withSearchIndex('search_text_by_organization_scope_status_category', q =>
+                  .withSearchIndex('search_title_by_organization_scope_status_categoryId', q =>
                       q
-                          .search('searchText', search)
+                          .search('title', search)
                           .eq('organizationId', organizationId)
                           .eq('scope', 'organization')
                   );

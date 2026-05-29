@@ -31,7 +31,6 @@ import type * as domain_objectives_filters from "../domain/objectives/filters.js
 import type * as domain_objectives_list from "../domain/objectives/list.js";
 import type * as domain_objectives_metrics from "../domain/objectives/metrics.js";
 import type * as domain_objectives_progress from "../domain/objectives/progress.js";
-import type * as domain_objectives_searchText from "../domain/objectives/searchText.js";
 import type * as domain_objectives_workflowSync from "../domain/objectives/workflowSync.js";
 import type * as email from "../email.js";
 import type * as emailSmtp from "../emailSmtp.js";
@@ -45,7 +44,6 @@ import type * as jobs_email_smtpDelivery from "../jobs/email/smtpDelivery.js";
 import type * as jobs_email_transactional from "../jobs/email/transactional.js";
 import type * as jobs_notifications_deadlineNotifications from "../jobs/notifications/deadlineNotifications.js";
 import type * as jobs_notifications_markAllRead from "../jobs/notifications/markAllRead.js";
-import type * as jobs_objectives_backfillCategoryIds from "../jobs/objectives/backfillCategoryIds.js";
 import type * as jobs_objectives_deleteObjective from "../jobs/objectives/deleteObjective.js";
 import type * as jobs_objectives_lifecycleCompletion from "../jobs/objectives/lifecycleCompletion.js";
 import type * as jobs_objectives_lifecycleWorkflow from "../jobs/objectives/lifecycleWorkflow.js";
@@ -107,7 +105,6 @@ declare const fullApi: ApiFromModules<{
   "domain/objectives/list": typeof domain_objectives_list;
   "domain/objectives/metrics": typeof domain_objectives_metrics;
   "domain/objectives/progress": typeof domain_objectives_progress;
-  "domain/objectives/searchText": typeof domain_objectives_searchText;
   "domain/objectives/workflowSync": typeof domain_objectives_workflowSync;
   email: typeof email;
   emailSmtp: typeof emailSmtp;
@@ -121,7 +118,6 @@ declare const fullApi: ApiFromModules<{
   "jobs/email/transactional": typeof jobs_email_transactional;
   "jobs/notifications/deadlineNotifications": typeof jobs_notifications_deadlineNotifications;
   "jobs/notifications/markAllRead": typeof jobs_notifications_markAllRead;
-  "jobs/objectives/backfillCategoryIds": typeof jobs_objectives_backfillCategoryIds;
   "jobs/objectives/deleteObjective": typeof jobs_objectives_deleteObjective;
   "jobs/objectives/lifecycleCompletion": typeof jobs_objectives_lifecycleCompletion;
   "jobs/objectives/lifecycleWorkflow": typeof jobs_objectives_lifecycleWorkflow;

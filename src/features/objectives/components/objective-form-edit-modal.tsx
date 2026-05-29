@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
     Objective,
     SavedObjectiveForm,
-    savedObjectiveFormSchema,
+    savedObjectiveSchema,
 } from '@/features/objectives/schemas/objective';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
@@ -35,11 +35,7 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
         },
     });
 
-    const { categoriesQuery, categoryOptions, getCategoryNameForSelection } =
-        useObjectiveCategoryOptions({
-            selectedCategoryId: initialValues.categoryId,
-            fallbackCategoryName: defaultValues.category,
-        });
+    const { categoriesQuery, categoryOptions } = useObjectiveCategoryOptions();
 
     return (
         <FormModal<SavedObjectiveForm>
@@ -54,14 +50,12 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
             formOptions={{
                 defaultValues: initialValues,
                 validators: {
-                    onChange: savedObjectiveFormSchema,
-                    onSubmit: savedObjectiveFormSchema,
+                    onChange: savedObjectiveSchema,
+                    onSubmit: savedObjectiveSchema,
                 },
             }}
             onSubmit={async (value: SavedObjectiveForm) => {
-                await updateObjectiveMutation.mutateAsync(
-                    buildUpdateObjectivePayload(value, getCategoryNameForSelection)
-                );
+                await updateObjectiveMutation.mutateAsync(buildUpdateObjectivePayload(value));
             }}
             submitLabel={t('saveObjective')}
             cancelLabel={t('cancel')}

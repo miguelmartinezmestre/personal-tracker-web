@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
@@ -336,7 +336,7 @@ describe('categories integrity', async () => {
     });
 
     describe('categoryId referential integrity in objectives', () => {
-        test('objective stores both categoryId and category name', async () => {
+        test('objective stores the categoryId reference', async () => {
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Test Category',
                 color: '#10b981',
@@ -352,7 +352,6 @@ describe('categories integrity', async () => {
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
 
             expect(objective?.categoryId).toBe(categoryId);
-            expect(objective?.category).toBe('Test Category');
         });
 
         test('objective with categoryId can be queried by categoryId index', async () => {
@@ -379,7 +378,9 @@ describe('categories integrity', async () => {
             expect(objectives[0]._id).toBe(objectiveId);
         });
 
-        test('changing category name does not break objective categoryId reference', async () => {
+        test('renaming a category keeps the objective categoryId reference intact', async () => {
+            // categoryId is the single source of truth: renaming the category only
+            // updates the categories row, never the linked objectives.
             const categoryId = await userIdentity.mutation(api.categories.createCategory, {
                 name: 'Original Name',
                 color: '#10b981',
@@ -400,7 +401,8 @@ describe('categories integrity', async () => {
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
             expect(objective?.categoryId).toBe(categoryId);
 
-            expect(objective?.category).toBe('Original Name');
+            const category = await userIdentity.run(async ctx => ctx.db.get(categoryId));
+            expect(category?.name).toBe('New Name');
         });
 
         test('objective can use a category created by another member in the same organization', async () => {
@@ -450,71 +452,6 @@ describe('categories integrity', async () => {
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
 
             expect(objective?.categoryId).toBe(categoryId);
-            expect(objective?.category).toBe('Team Category');
-        });
-    });
-
-    describe('categoryId backfill job', () => {
-        test('backfillObjectiveCategoryIds populates categoryId from category name', async () => {
-            const categoryId = await userIdentity.mutation(api.categories.createCategory, {
-                name: 'Backfill Test',
-                color: '#10b981',
-            });
-
-            const objectiveWithId = await userIdentity.mutation(api.objectives.createObjective, {
-                title: 'With CategoryId',
-                categoryId,
-                targetValue: 100,
-                scope: 'personal',
-            });
-
-            const now = Date.now();
-            const objectiveWithoutId = await userIdentity.run(async ctx =>
-                ctx.db.insert('objectives', {
-                    userId,
-                    organizationId,
-                    scope: 'personal',
-                    title: 'Without CategoryId',
-                    category: 'Backfill Test',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: now,
-                    updatedAt: now,
-                })
-            );
-
-            await userIdentity.mutation(internal.objectives.backfillObjectiveCategoryIds, {});
-
-            const updated = await userIdentity.run(async ctx => ctx.db.get(objectiveWithoutId));
-            expect(updated?.categoryId).toBe(categoryId);
-
-            const unchanged = await userIdentity.run(async ctx => ctx.db.get(objectiveWithId));
-            expect(unchanged?.categoryId).toBe(categoryId);
-        });
-
-        test('backfill skips objectives with no matching category', async () => {
-            const now = Date.now();
-            const objectiveId = await userIdentity.run(async ctx =>
-                ctx.db.insert('objectives', {
-                    userId,
-                    organizationId,
-                    scope: 'personal',
-                    title: 'Orphaned Category',
-                    category: 'NonExistent Category',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: now,
-                    updatedAt: now,
-                })
-            );
-
-            await userIdentity.mutation(internal.objectives.backfillObjectiveCategoryIds, {});
-
-            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
-            expect(objective?.categoryId).toBeUndefined();
-            expect(objective?.category).toBe('NonExistent Category');
         });
     });
 });
