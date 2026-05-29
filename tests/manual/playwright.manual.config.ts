@@ -4,7 +4,7 @@ export default defineConfig({
     testDir: './',
     fullyParallel: false,
     workers: 1,
-    reporter: 'html',
+    reporter: [['html', { open: 'never' }]],
     timeout: 180000,
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',

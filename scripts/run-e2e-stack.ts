@@ -361,6 +361,7 @@ function buildCommandEnv(
         NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
         NEXT_PUBLIC_SITE_URL: siteUrl,
         NEXT_DIST_DIR: nextDistDir,
+        PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
         SITE_URL: siteUrl,
     };
 }
