@@ -162,6 +162,7 @@ export async function createTestSession(
         expiresAt: number;
         ipAddress?: string | null;
         userAgent?: string | null;
+        activeOrganizationId?: Id<'organization'> | null;
     }
 ): Promise<Id<'session'>> {
     const now = Date.now();
@@ -172,6 +173,7 @@ export async function createTestSession(
             token: options.token,
             ipAddress: options.ipAddress ?? null,
             userAgent: options.userAgent ?? null,
+            activeOrganizationId: options.activeOrganizationId ?? null,
             createdAt: now,
             updatedAt: now,
         });

@@ -379,6 +379,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 totalProcessed: number;
             } = await t.mutation(internal.notifications.markAllReadBatch, {
                 userId,
+                organizationId,
                 cursor: null,
                 totalProcessed: 0,
             });
@@ -387,6 +388,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             while (currentResult.status === 'in_progress' && attempts < 10) {
                 currentResult = await t.mutation(internal.notifications.markAllReadBatch, {
                     userId,
+                    organizationId,
                     cursor: null,
                     totalProcessed: currentResult.totalProcessed,
                 });
@@ -444,6 +446,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
 
             const result = await t.mutation(internal.notifications.markAllReadBatch, {
                 userId,
+                organizationId,
                 cursor: null,
                 totalProcessed: 0,
             });

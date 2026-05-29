@@ -3,6 +3,7 @@ import {
     createCategory,
     ensureAuthenticatedState,
     ensureDefaultCategories,
+    openCreateObjectiveModal,
     openModal,
 } from '../../helpers/test-helpers';
 import { CategoryFactory } from '../../helpers/factories';
@@ -265,8 +266,7 @@ test.describe('Categories CRUD', () => {
 
         await page.goto('/dashboard/objectives');
 
-        await page.getByTestId('objective-create-open').click();
-        await page.waitForSelector('[data-testid="objective-title-input"]');
+        await openCreateObjectiveModal(page);
 
         const title = `Categorized Obj ${Date.now()}`;
         await page.getByTestId('objective-title-input').fill(title);
@@ -300,7 +300,7 @@ test.describe('Categories CRUD', () => {
 
         await page.goto('/dashboard/objectives');
 
-        await page.getByTestId('objective-create-open').click();
+        await openCreateObjectiveModal(page);
 
         await page.getByTestId('objective-category-select').click();
         await page.waitForSelector('[role="option"]');

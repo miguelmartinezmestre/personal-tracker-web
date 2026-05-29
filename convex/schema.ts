@@ -151,6 +151,10 @@ export default defineSchema({
         .searchIndex('search_text_by_user_organization_scope_status_category', {
             searchField: 'searchText',
             filterFields: ['userId', 'organizationId', 'scope', 'status', 'category'],
+        })
+        .searchIndex('search_text_by_organization_scope_status_category', {
+            searchField: 'searchText',
+            filterFields: ['organizationId', 'scope', 'status', 'category'],
         }),
 
     progressUpdates: defineTable({
@@ -181,8 +185,16 @@ export default defineSchema({
         .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
         .index('by_user_date', ['userId', 'notificationDate'])
+        .index('by_user_organization_date', ['userId', 'organizationId', 'notificationDate'])
         .index('by_user_read', ['userId', 'read'])
+        .index('by_user_organization_read', ['userId', 'organizationId', 'read'])
         .index('by_user_type_read', ['userId', 'notificationType', 'read'])
+        .index('by_user_organization_type_read', [
+            'userId',
+            'organizationId',
+            'notificationType',
+            'read',
+        ])
         .index('by_objective', ['objective'])
         .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate']),
 

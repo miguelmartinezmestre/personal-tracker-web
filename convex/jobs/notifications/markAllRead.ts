@@ -8,6 +8,7 @@ export async function markAllReadBatchJob(
     ctx: MutationCtx,
     args: {
         userId: Id<'user'>;
+        organizationId: Id<'organization'>;
         cursor?: string | null;
         totalProcessed?: number;
     }
@@ -17,7 +18,9 @@ export async function markAllReadBatchJob(
 
     const page = await ctx.db
         .query('notifications')
-        .withIndex('by_user_read', q => q.eq('userId', args.userId).eq('read', false))
+        .withIndex('by_user_organization_read', q =>
+            q.eq('userId', args.userId).eq('organizationId', args.organizationId).eq('read', false)
+        )
         .paginate({
             numItems: BATCH_SIZE,
             cursor: args.cursor ?? null,
@@ -35,6 +38,7 @@ export async function markAllReadBatchJob(
     if (!page.isDone) {
         await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
             userId: args.userId,
+            organizationId: args.organizationId,
             cursor: page.continueCursor,
             totalProcessed: newTotal,
         });

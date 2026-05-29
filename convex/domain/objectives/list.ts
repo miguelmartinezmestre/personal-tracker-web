@@ -369,10 +369,9 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
                   )
             : ctx.db
                   .query('objectives')
-                  .withSearchIndex('search_text_by_user_organization_scope_status_category', q =>
+                  .withSearchIndex('search_text_by_organization_scope_status_category', q =>
                       q
                           .search('searchText', search)
-                          .eq('userId', ctx.userId)
                           .eq('organizationId', organizationId)
                           .eq('scope', 'organization')
                   );

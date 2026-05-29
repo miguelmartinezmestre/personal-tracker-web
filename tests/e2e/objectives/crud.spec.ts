@@ -1,5 +1,5 @@
 import { test, expect } from '../../fixtures/test-base';
-import { ensureDefaultCategories } from '../../helpers/test-helpers';
+import { ensureDefaultCategories, openCreateObjectiveModal } from '../../helpers/test-helpers';
 
 async function openObjectivesPage(page: import('@playwright/test').Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -26,21 +26,7 @@ async function createObjectiveFromModal(
     page: import('@playwright/test').Page,
     params: { title: string; target?: string; unit?: string; scope?: 'personal' | 'organization' }
 ): Promise<void> {
-    let modalOpened = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.getByTestId('objective-create-open').click();
-        try {
-            await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 5000 });
-            modalOpened = true;
-            break;
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-        }
-    }
-
-    if (!modalOpened) {
-        throw new Error('Could not open create objective modal');
-    }
+    await openCreateObjectiveModal(page);
 
     await page.getByTestId('objective-title-input').fill(params.title);
 

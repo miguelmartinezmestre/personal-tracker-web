@@ -1,5 +1,5 @@
 import { test, expect } from '../../fixtures/test-base';
-import { createObjective } from '../../helpers/test-helpers';
+import { createObjective, openCreateProgressModal } from '../../helpers/test-helpers';
 
 async function openObjectiveDetailFromList(page: import('@playwright/test').Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -29,21 +29,7 @@ async function createProgressUpdate(
     value: string,
     comment: string
 ): Promise<void> {
-    let modalOpened = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.getByTestId('progress-create-open').click();
-        try {
-            await expect(page.getByTestId('progress-value-input')).toBeVisible({ timeout: 5000 });
-            modalOpened = true;
-            break;
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-        }
-    }
-
-    if (!modalOpened) {
-        throw new Error('Could not open create progress modal');
-    }
+    await openCreateProgressModal(page);
 
     await page.getByTestId('progress-value-input').fill(value);
     await page.getByTestId('progress-comment-input').fill(comment);

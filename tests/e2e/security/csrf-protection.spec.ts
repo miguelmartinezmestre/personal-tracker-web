@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { createTestUserViaAPI, ensureDefaultCategories } from '../../helpers/test-helpers';
+import {
+    createTestUserViaAPI,
+    ensureDefaultCategories,
+    openCreateObjectiveModal,
+} from '../../helpers/test-helpers';
 
 test.describe('CSRF Protection', () => {
     test('should include csrf token in authenticated forms', async ({ page }) => {
@@ -9,8 +13,7 @@ test.describe('CSRF Protection', () => {
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
 
-        await page.getByTestId('objective-create-open').click();
-        await page.waitForSelector('[data-testid="objective-title-input"]', { timeout: 10000 });
+        await openCreateObjectiveModal(page);
 
         const form = page.locator('form').first();
         await expect(form).toBeVisible();
