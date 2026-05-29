@@ -170,7 +170,6 @@ describe('organization admins cannot access another organization by id', () => {
                 organization: orgBId,
                 achievement: achievementDefinitionId,
                 earnedAt: now,
-                contributorCount: 1,
                 createdAt: now,
                 updatedAt: now,
             });

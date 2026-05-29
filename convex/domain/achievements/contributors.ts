@@ -22,13 +22,6 @@ export async function addContributor(
         contributedAt: Date.now(),
         contributionValue: contributionValue ?? 1,
     });
-
-    const organizationAchievement = await ctx.db.get('organizationAchievements', orgAchievementId);
-    if (organizationAchievement) {
-        await ctx.db.patch('organizationAchievements', orgAchievementId, {
-            contributorCount: (organizationAchievement.contributorCount ?? 0) + 1,
-        });
-    }
 }
 
 export async function getContributors(

@@ -409,7 +409,6 @@ export async function checkOrganizationAchievementsJob(
                 organization: organizationId,
                 achievement: defId,
                 earnedAt: now,
-                contributorCount: 1,
                 createdAt: now,
                 updatedAt: now,
             });

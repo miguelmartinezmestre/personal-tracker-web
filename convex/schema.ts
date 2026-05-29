@@ -245,7 +245,6 @@ export default defineSchema({
         organization: v.id('organization'),
         achievement: v.id('achievementDefinitions'),
         earnedAt: v.number(),
-        contributorCount: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
