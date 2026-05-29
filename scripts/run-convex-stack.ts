@@ -16,6 +16,7 @@ import {
     sanitizeEnv,
 } from './lib/command';
 import { buildUrl, waitForHttp } from './lib/http';
+import { DEFAULT_MAILHOG_SMTP_ENV, buildMailhogConvexEnv } from './lib/mailhog-email';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.yml';
 const GENERATED_DIRECTORIES = ['mysql-data', 'mysql-data-dev', 'data', 'data-dev'];
@@ -26,6 +27,8 @@ const HTTP_REQUEST_TIMEOUT_MS = 3_000;
 const CONVEX_PORT = process.env.CONVEX_PORT ?? process.env.PORT ?? '3210';
 const CONVEX_SITE_PORT = process.env.CONVEX_SITE_PORT ?? process.env.SITE_PROXY_PORT ?? '3211';
 const DASHBOARD_PORT = process.env.CONVEX_DASHBOARD_PORT ?? process.env.DASHBOARD_PORT ?? '6791';
+const MAILHOG_SMTP_PORT = process.env.MAILHOG_SMTP_PORT ?? '1025';
+const MAILHOG_UI_PORT = process.env.MAILHOG_UI_PORT ?? '8025';
 const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${CONVEX_PORT}`;
 const CONVEX_SITE_URL =
     process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? `http://127.0.0.1:${CONVEX_SITE_PORT}`;
@@ -41,6 +44,8 @@ function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
         PORT: CONVEX_PORT,
         SITE_PROXY_PORT: CONVEX_SITE_PORT,
         DASHBOARD_PORT,
+        MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT,
         CONVEX_CLOUD_ORIGIN: CONVEX_URL,
         CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
         NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
@@ -115,7 +120,7 @@ function buildConvexCommandEnv(
     betterAuthSecret: string,
     jwks: string
 ): NodeJS.ProcessEnv {
-    return {
+    return buildMailhogConvexEnv({
         ...sanitizeEnv(process.env),
         BETTER_AUTH_SECRET: betterAuthSecret,
         BETTER_AUTH_URL: APP_URL,
@@ -126,7 +131,18 @@ function buildConvexCommandEnv(
         NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
         NEXT_PUBLIC_SITE_URL: APP_URL,
         SITE_URL: APP_URL,
-    };
+    });
+}
+
+async function setConvexEnvVar(
+    commandEnv: NodeJS.ProcessEnv,
+    key: string,
+    value: string
+): Promise<void> {
+    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
+        env: commandEnv,
+        shell: USE_SHELL_FOR_PNPM,
+    });
 }
 
 async function configureConvexEnv(commandEnv: NodeJS.ProcessEnv): Promise<void> {
@@ -155,6 +171,10 @@ async function configureConvexEnv(commandEnv: NodeJS.ProcessEnv): Promise<void> 
             shell: USE_SHELL_FOR_PNPM,
         }
     );
+
+    for (const [key, value] of Object.entries(DEFAULT_MAILHOG_SMTP_ENV)) {
+        await setConvexEnvVar(commandEnv, key, value);
+    }
 }
 
 async function main(): Promise<void> {
@@ -166,6 +186,7 @@ async function main(): Promise<void> {
     console.log(`  - Convex backend: ${CONVEX_URL}`);
     console.log(`  - Convex site: ${CONVEX_SITE_URL}`);
     console.log(`  - Convex dashboard: http://127.0.0.1:${DASHBOARD_PORT}`);
+    console.log(`  - MailHog UI: http://127.0.0.1:${MAILHOG_UI_PORT}`);
     console.log(`  - App origin for auth: ${APP_URL}`);
     await dockerCompose(['up', '-d', 'mysql', 'backend']);
 

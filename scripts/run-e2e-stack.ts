@@ -18,6 +18,7 @@ import {
     sanitizeEnv,
 } from './lib/command';
 import { buildUrl, fetchWithTimeout, sleep, waitForHttp } from './lib/http';
+import { DEFAULT_MAILHOG_SMTP_ENV, buildMailhogConvexEnv } from './lib/mailhog-email';
 
 const E2E_BUILD_META_FILE = 'build-meta.json';
 const BUILD_FINGERPRINT_INPUTS = [
@@ -40,6 +41,13 @@ const BUILD_FINGERPRINT_ENV_KEYS = [
     'NEXT_PUBLIC_CONVEX_URL',
     'NEXT_PUBLIC_SITE_URL',
     'SITE_URL',
+    'EMAIL_PROVIDER',
+    'EMAIL_FROM',
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_SECURE',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
 ];
 
 function parseScriptArgs(rawArgs: string[]): {
@@ -101,6 +109,8 @@ const E2E_CONVEX_SITE_PORT =
     process.env.E2E_CONVEX_SITE_PORT ?? String(BASE_SITE_PORT + SITE_PORT_OFFSET);
 const E2E_FRONTEND_PORT =
     process.env.E2E_FRONTEND_PORT ?? String(BASE_FRONTEND_PORT + FRONTEND_PORT_OFFSET);
+const E2E_MAILHOG_SMTP_PORT = process.env.E2E_MAILHOG_SMTP_PORT ?? '1026';
+const E2E_MAILHOG_UI_PORT = process.env.E2E_MAILHOG_UI_PORT ?? '8026';
 const E2E_NEXT_DIST_DIR =
     process.env.E2E_NEXT_DIST_DIR ??
     (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
@@ -193,6 +203,8 @@ function dockerCompose(args: Array<string>, options: RunCommandOptions = {}): Pr
         ...sanitizeEnv(process.env),
         PORT: E2E_CONVEX_PORT,
         SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
+        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
     };
 
     return runCommand(DOCKER_COMMAND, composeArgs(args), {
@@ -212,6 +224,8 @@ function dockerComposeCapture(
         ...sanitizeEnv(process.env),
         PORT: E2E_CONVEX_PORT,
         SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
+        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
     };
 
     return runCommandCapture(DOCKER_COMMAND, composeArgs(args), {
@@ -347,7 +361,7 @@ function buildCommandEnv(
 ): NodeJS.ProcessEnv {
     const baseEnv = sanitizeEnv(process.env);
 
-    return {
+    return buildMailhogConvexEnv({
         ...baseEnv,
         ALLOW_SETUP_TEST: 'true',
         E2E_SETUP_SECRET: baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
@@ -363,7 +377,18 @@ function buildCommandEnv(
         NEXT_DIST_DIR: nextDistDir,
         PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
         SITE_URL: siteUrl,
-    };
+    });
+}
+
+async function setConvexEnvVar(
+    commandEnv: NodeJS.ProcessEnv,
+    key: string,
+    value: string
+): Promise<void> {
+    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
+        env: commandEnv,
+        shell: USE_SHELL_FOR_PNPM,
+    });
 }
 
 async function waitForFrontendReady(
@@ -530,6 +555,7 @@ async function main(): Promise<void> {
     console.log(`  - Convex backend: port ${E2E_CONVEX_PORT}`);
     console.log(`  - Convex site: port ${E2E_CONVEX_SITE_PORT}`);
     console.log(`  - Frontend: port ${E2E_FRONTEND_PORT}`);
+    console.log(`  - MailHog UI: http://127.0.0.1:${E2E_MAILHOG_UI_PORT}`);
     console.log(`  - Docker project: ${COMPOSE_PROJECT}`);
     console.log(`  - Build directory: ${E2E_NEXT_DIST_DIR}`);
     await dockerCompose(['up', '-d']);
@@ -611,6 +637,9 @@ async function main(): Promise<void> {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });
+    for (const [key, value] of Object.entries(DEFAULT_MAILHOG_SMTP_ENV)) {
+        await setConvexEnvVar(commandEnv, key, value);
+    }
 
     console.log('Deploying Convex functions...');
     await runCommand(PNPM_COMMAND, ['exec', 'convex', 'dev', '--once', '--tail-logs', 'disable'], {
