@@ -16,6 +16,14 @@ export function useAuditLogsTableColumns() {
             },
         },
         {
+            accessorKey: 'actor',
+            header: t('auditLogsTable.columns.actorUserId'),
+            cell: ({ row }) => {
+                const actorUserId = row.original.actorUserId;
+                return <span className="font-mono text-xs">{actorUserId ?? ''}</span>;
+            },
+        },
+        {
             accessorKey: 'action',
             header: t('auditLogsTable.columns.action'),
             cell: ({ row }) => {

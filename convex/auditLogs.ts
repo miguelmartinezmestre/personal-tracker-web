@@ -3,7 +3,7 @@ import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS } from './rls';
 import { internalMutation } from './_generated/server';
 import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
-import { sanitizeAuditMetadata } from './domain/audit/privacy';
+import { resolveActorUserId, sanitizeAuditMetadata } from './domain/audit/privacy';
 import { auditSeverityValidator } from './utils/validators';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
@@ -71,6 +71,7 @@ export const pruneAuditLogsOlderThanRetention = internalMutation({
 export const recordAuditLog = internalMutation({
     args: {
         userId: v.id('user'),
+        actorUserId: v.optional(v.id('user')),
         organizationId: v.id('organization'),
         action: v.string(),
         resourceType: v.string(),
@@ -89,6 +90,7 @@ export const recordAuditLog = internalMutation({
 
         await ctx.db.insert('auditLogs', {
             userId: args.userId,
+            actorUserId: resolveActorUserId(args.userId, args.actorUserId),
             organizationId: args.organizationId,
             action: args.action,
             resourceType: args.resourceType,

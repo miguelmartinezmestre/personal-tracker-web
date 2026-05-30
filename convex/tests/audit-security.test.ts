@@ -284,6 +284,62 @@ describe('auditLogs security', () => {
             expect(log?.metadata?.before).toEqual({ status: 'old', count: 5 });
             expect(log?.metadata?.after).toEqual({ status: 'new', count: 10 });
         });
+
+        test('internal mutation persists actorUserId when it differs from userId', async () => {
+            const subject = await createTestUser(t, {
+                userId: 'test-actor-subject-' + Math.random().toString(36).substring(2, 10),
+                email: 'actor-subject@example.com-' + Math.random().toString(36).substring(2, 10),
+                name: 'Actor Subject',
+                password: 'test-password',
+                role: 'user',
+                emailVerified: true,
+            });
+
+            await adminIdentity.run(async ctx => {
+                await ctx.runMutation(internal.auditLogs.recordAuditLog, {
+                    userId: subject.docId,
+                    actorUserId: userId,
+                    organizationId,
+                    action: 'internal.actor',
+                    resourceType: 'internal',
+                    resourceId: 'actor-123',
+                    severity: 'info',
+                });
+            });
+
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+                resourceType: 'internal',
+                resourceId: 'actor-123',
+                paginationOpts: { numItems: 10, cursor: null },
+            });
+
+            expect(result.page.length).toBe(1);
+            expect(result.page[0]?.userId).toBe(subject.docId);
+            expect(result.page[0]?.actorUserId).toBe(userId);
+        });
+
+        test('internal mutation drops actorUserId when it equals userId', async () => {
+            await adminIdentity.run(async ctx => {
+                await ctx.runMutation(internal.auditLogs.recordAuditLog, {
+                    userId,
+                    actorUserId: userId,
+                    organizationId,
+                    action: 'internal.self',
+                    resourceType: 'internal',
+                    resourceId: 'self-123',
+                    severity: 'info',
+                });
+            });
+
+            const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+                resourceType: 'internal',
+                resourceId: 'self-123',
+                paginationOpts: { numItems: 10, cursor: null },
+            });
+
+            expect(result.page.length).toBe(1);
+            expect(result.page[0]?.actorUserId).toBeUndefined();
+        });
     });
 
     describe('redaction keys', () => {

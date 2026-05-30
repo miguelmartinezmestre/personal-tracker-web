@@ -125,6 +125,8 @@ describe('convex auditLogs', () => {
 
             expect(matchingLogs).toHaveLength(1);
             expect(matchingLogs[0]?.organizationId).toBe(userOrganizationId);
+            // Self-action (the owner created their own objective) ⇒ actor left empty.
+            expect(matchingLogs[0]?.actorUserId).toBeUndefined();
             expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('title');
             expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('category');
             expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('unit');
@@ -435,6 +437,45 @@ describe('convex auditLogs', () => {
 
             const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
             expect(log?.resourceId).toBeUndefined();
+        });
+
+        test('actorUserId is optional', async () => {
+            let logId: Id<'auditLogs'>;
+
+            await adminIdentity.run(async ctx => {
+                logId = await ctx.db.insert('auditLogs', {
+                    userId: adminId,
+                    organizationId: adminOrganizationId,
+                    action: 'objective.created',
+                    resourceType: 'objective',
+                    severity: 'info',
+                    createdAt: Date.now(),
+                });
+            });
+
+            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
+            expect(log?.actorUserId).toBeUndefined();
+        });
+
+        test('stores actorUserId distinct from userId', async () => {
+            let logId: Id<'auditLogs'>;
+
+            await adminIdentity.run(async ctx => {
+                logId = await ctx.db.insert('auditLogs', {
+                    userId: userId,
+                    actorUserId: adminId,
+                    organizationId: adminOrganizationId,
+                    action: 'user.updated',
+                    resourceType: 'user',
+                    resourceId: String(userId),
+                    severity: 'info',
+                    createdAt: Date.now(),
+                });
+            });
+
+            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
+            expect(log?.userId).toBe(userId);
+            expect(log?.actorUserId).toBe(adminId);
         });
     });
 

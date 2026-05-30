@@ -183,6 +183,7 @@ export default defineSchema({
 
     auditLogs: defineTable({
         userId: v.id('user'),
+        actorUserId: v.optional(v.id('user')),
         organizationId: v.id('organization'),
         action: v.string(),
         resourceType: v.string(),

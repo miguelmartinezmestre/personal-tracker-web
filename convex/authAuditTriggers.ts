@@ -1,8 +1,12 @@
 import type { MutationCtx } from './_generated/server';
-import type { Triggers as BetterAuthTriggers } from 'kitcn/auth';
+import { getAuthUserId, type Triggers as BetterAuthTriggers } from 'kitcn/auth';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
-import { sanitizeAuditMetadata, toAuditPrimitive } from './domain/audit/privacy';
+import {
+    resolveActorUserId,
+    sanitizeAuditMetadata,
+    toAuditPrimitive,
+} from './domain/audit/privacy';
 
 type BetterAuthSchema = typeof schema;
 
@@ -139,6 +143,12 @@ const insertAuthAuditLog = async (
         return;
     }
 
+    const rawActorUserId = await getAuthUserId(ctx);
+    const normalizedActorUserId = rawActorUserId
+        ? (ctx.db.normalizeId('user', rawActorUserId) ?? undefined)
+        : undefined;
+    const actorUserId = resolveActorUserId(normalizedUserId, normalizedActorUserId);
+
     let metadata: AuthAuditMetadata | undefined;
 
     if (args.metadata !== undefined) {
@@ -158,6 +168,7 @@ const insertAuthAuditLog = async (
 
     await ctx.db.insert('auditLogs', {
         userId: normalizedUserId,
+        actorUserId,
         organizationId,
         action: args.action,
         resourceType: args.resourceType,

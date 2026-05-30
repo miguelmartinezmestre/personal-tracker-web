@@ -58,6 +58,7 @@ export const runObjectiveSync = async (
         if (organizationId) {
             await ctx.runMutation(internal.auditLogs.recordAuditLog, {
                 userId,
+                actorUserId: userId,
                 organizationId,
                 action: 'WORKFLOW_ERROR',
                 resourceType,

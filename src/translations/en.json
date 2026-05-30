@@ -972,6 +972,7 @@
             "empty": "No audit logs recorded",
             "columns": {
                 "userId": "User ID",
+                "actorUserId": "Performed by",
                 "action": "Action",
                 "date": "Date"
             }

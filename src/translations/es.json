@@ -972,6 +972,7 @@
             "empty": "No hay logs de auditoría registrados",
             "columns": {
                 "userId": "Usuario ID",
+                "actorUserId": "Realizado por",
                 "action": "Acción",
                 "date": "Fecha"
             }
