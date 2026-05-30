@@ -8,6 +8,7 @@ import { ERROR_CODES } from '../../utils/constants';
 import { isVitestRuntime } from '../../utils/testRuntime';
 import {
     applyObjectiveProgressDelta,
+    recomputeObjectiveFromProgress,
     validateObjectiveNotCompleted,
     validateProgressDelta,
     validateUpdateDate,
@@ -200,7 +201,7 @@ export async function deleteProgressUpdate(ctx: MutationCtx, args: { id: Id<'pro
 
     await ctx.db.delete('progressUpdates', args.id);
 
-    await applyObjectiveProgressDelta(ctx, objective, -existing.updatedValue);
+    await recomputeObjectiveFromProgress(ctx, objective);
 
     return { success: true } as const;
 }
