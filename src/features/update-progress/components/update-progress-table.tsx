@@ -24,8 +24,7 @@ import { UpdateProgress } from '@/features/update-progress/schemas/update-progre
 import { useTranslations } from 'next-intl';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type ProgressResult = FunctionReturnType<typeof api.update_progress.getUpdateProgressByObjectiveId>;
 type ObjectiveResult = FunctionReturnType<typeof api.objectives.getObjectiveById>;

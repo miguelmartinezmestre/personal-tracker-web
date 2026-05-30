@@ -47,13 +47,10 @@ export default defineSchema({
     })
         .index('by_user', ['userId'])
         .index('by_user_scope', ['userId', 'scope'])
-        .index('by_user_scope_status', ['userId', 'scope', 'status'])
         .index('by_user_status', ['userId', 'status'])
         .index('by_user_status_deadline', ['userId', 'status', 'deadline'])
         .index('by_user_createdAt', ['userId', 'createdAt'])
         .index('by_user_status_updatedAt', ['userId', 'status', 'updatedAt'])
-        .index('by_user_scope_deadline', ['userId', 'scope', 'deadline'])
-        .index('by_user_scope_status_deadline', ['userId', 'scope', 'status', 'deadline'])
         .index('by_user_organization', ['userId', 'organizationId'])
         .index('by_user_organization_scope', ['userId', 'organizationId', 'scope'])
         .index('by_user_organization_scope_status', ['userId', 'organizationId', 'scope', 'status'])
@@ -98,7 +95,6 @@ export default defineSchema({
             'categoryId',
             'deadline',
         ])
-        .index('by_organization', ['organizationId'])
         .index('by_organization_scope', ['organizationId', 'scope'])
         .index('by_organization_scope_status', ['organizationId', 'scope', 'status'])
         .index('by_organization_scope_status_categoryId', [
@@ -128,7 +124,6 @@ export default defineSchema({
             'categoryId',
             'deadline',
         ])
-        .index('by_status', ['status'])
         .index('by_status_deadline', ['status', 'deadline'])
         .index('by_categoryId', ['categoryId'])
         .searchIndex('search_title_by_user_organization_scope_status_categoryId', {
@@ -167,13 +162,8 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index('by_user', ['userId'])
-        .index('by_organization', ['organizationId'])
-        .index('by_user_date', ['userId', 'notificationDate'])
         .index('by_user_organization_date', ['userId', 'organizationId', 'notificationDate'])
-        .index('by_user_read', ['userId', 'read'])
         .index('by_user_organization_read', ['userId', 'organizationId', 'read'])
-        .index('by_user_type_read', ['userId', 'notificationType', 'read'])
         .index('by_user_organization_type_read', [
             'userId',
             'organizationId',
@@ -200,8 +190,6 @@ export default defineSchema({
         severity: v.string(),
         createdAt: v.number(),
     })
-        .index('by_user', ['userId'])
-        .index('by_organization', ['organizationId'])
         .index('by_createdAt', ['createdAt'])
         .index('by_resourceType', ['resourceType'])
         .index('by_resourceType_resourceId', ['resourceType', 'resourceId']),
@@ -215,7 +203,6 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
         .index('by_organization_name', ['organizationId', 'name']),
 
@@ -230,9 +217,7 @@ export default defineSchema({
         isActive: v.boolean(),
         createdAt: v.number(),
         updatedAt: v.number(),
-    })
-        .index('by_code', ['code'])
-        .index('by_type', ['type']),
+    }).index('by_type', ['type']),
 
     obtainedAchievements: defineTable({
         userId: v.id('user'),
@@ -261,7 +246,6 @@ export default defineSchema({
         contributionValue: v.optional(v.number()),
     })
         .index('by_organizationAchievement', ['organizationAchievementId'])
-        .index('by_user', ['userId'])
         .index('by_organizationAchievement_user', ['organizationAchievementId', 'userId']),
 
     platformSettings: defineTable({
@@ -281,9 +265,7 @@ export default defineSchema({
         emailDigestEnabled: v.optional(v.boolean()),
         createdAt: v.number(),
         updatedAt: v.number(),
-    })
-        .index('by_user', ['userId'])
-        .index('by_user_achievement', ['userId', 'achievementNotifications']),
+    }).index('by_user', ['userId']),
 
     member: defineTable({
         organizationId: v.id('organization'),

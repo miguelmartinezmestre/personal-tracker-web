@@ -14,8 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
-
-const DEFAULT_PAGE_SIZE = 10;
+import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
 
 type UserSessionsQueryResult = FunctionReturnType<typeof api.admin.listUserSessions>;
 
@@ -27,7 +26,7 @@ export function UserSessions() {
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
-        useServerPagination(DEFAULT_PAGE_SIZE);
+        useServerPagination(ADMIN_PAGE_SIZE);
 
     const { data: sessionsQueryResult, isLoading } = useQuery(
         convexQuery(

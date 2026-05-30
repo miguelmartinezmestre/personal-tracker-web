@@ -11,10 +11,8 @@ import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
-import {
-    OBJECTIVE_SEARCH_LIMIT,
-    OBJECTIVES_PAGE_SIZE,
-} from '@/features/objectives/lib/objective-query-invalidation';
+import { OBJECTIVE_SEARCH_LIMIT } from '@/features/objectives/lib/objective-query-invalidation';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',
@@ -56,7 +54,7 @@ export function useObjectiveListState({
         preloadedOrganizationObjectivesQuery
     ) as OrganizationObjectivesResult | undefined;
 
-    const personalPagination = useServerPagination(OBJECTIVES_PAGE_SIZE);
+    const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts: personalPaginationOpts, reset: resetPersonalPagination } =
         personalPagination;
     const personalIsFirstPage = personalPaginationOpts.cursor === null;
@@ -98,7 +96,7 @@ export function useObjectiveListState({
         )
     );
 
-    const organizationPagination = useServerPagination(OBJECTIVES_PAGE_SIZE);
+    const organizationPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts: organizationPaginationOpts, reset: resetOrganizationPagination } =
         organizationPagination;
     const organizationIsFirstPage = organizationPaginationOpts.cursor === null;

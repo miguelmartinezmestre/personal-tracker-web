@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
 import type { AwaitedTranslations } from '@/lib/i18n-types';
 import type { Metadata } from 'next';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('Objectives');
@@ -29,10 +30,10 @@ export default async function ObjectivesPage() {
             await Promise.all([
                 getTranslations('Objectives'),
                 preloadAuthQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: { numItems: 20, cursor: null },
+                    paginationOpts: DEFAULT_PAGINATION_OPTS,
                 }),
                 preloadAuthQuery(api.objectives.getOrganizationObjectives, {
-                    paginationOpts: { numItems: 20, cursor: null },
+                    paginationOpts: DEFAULT_PAGINATION_OPTS,
                 }),
             ]);
     } catch {

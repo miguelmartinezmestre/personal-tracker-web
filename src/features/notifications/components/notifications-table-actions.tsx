@@ -6,9 +6,10 @@ import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { invalidateConvexQuery } from '@/platform/convex/query-keys';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 const NOTIFICATIONS_QUERY = convexQuery(api.notifications.getNotificationsByUser, {
-    paginationOpts: { numItems: 20, cursor: null },
+    paginationOpts: DEFAULT_PAGINATION_OPTS,
 });
 const UNREAD_COUNT_QUERY = convexQuery(api.notifications.getUnreadNotificationCount, {});
 

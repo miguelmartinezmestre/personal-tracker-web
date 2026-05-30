@@ -1,6 +1,5 @@
 import { useReducer } from 'react';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type State = {
     currentPage: number;

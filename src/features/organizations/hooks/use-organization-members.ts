@@ -7,6 +7,7 @@ import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import type { Id } from '@/convex/_generated/dataModel';
 import { invalidateConvexQueryWhere } from '@/platform/convex/query-keys';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export interface CreateOrganizationMemberParams {
     organizationId: string;
@@ -28,7 +29,7 @@ export interface DeleteOrganizationMemberParams {
 const organizationMembersQuery = (organizationId: Id<'organization'>) =>
     convexQuery(api.organizations.getOrganizationMembers, {
         organizationId,
-        paginationOpts: { numItems: 20, cursor: null },
+        paginationOpts: DEFAULT_PAGINATION_OPTS,
     });
 
 function invalidateOrganizationMembers(queryClient: QueryClient, organizationId: string | null) {

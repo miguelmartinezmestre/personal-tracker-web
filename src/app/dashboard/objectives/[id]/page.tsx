@@ -4,6 +4,7 @@ import { UpdateProgressLayout } from '@/features/update-progress';
 import { Id } from '@/convex/_generated/dataModel';
 import { Preloaded } from 'convex/react';
 import { redirect } from 'next/navigation';
+import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export default async function ObjectiveDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -21,7 +22,7 @@ export default async function ObjectiveDetailPage({ params }: { params: Promise<
         [preloadedProgressQuery, preloadedObjectiveQuery] = await Promise.all([
             preloadAuthQuery(api.update_progress.getUpdateProgressByObjectiveId, {
                 objectiveId,
-                paginationOpts: { numItems: 20, cursor: null },
+                paginationOpts: DEFAULT_PAGINATION_OPTS,
             }),
             preloadAuthQuery(api.objectives.getObjectiveById, { id: objectiveId }),
         ]);

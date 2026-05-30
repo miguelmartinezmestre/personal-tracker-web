@@ -369,7 +369,12 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const initialUnread = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+                    .withIndex('by_user_organization_read', q =>
+                        q
+                            .eq('userId', userId)
+                            .eq('organizationId', organizationId)
+                            .eq('read', false)
+                    )
                     .collect();
                 return notifs.length;
             });
@@ -404,7 +409,12 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const finalUnread = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_user_read', q => q.eq('userId', userId).eq('read', false))
+                    .withIndex('by_user_organization_read', q =>
+                        q
+                            .eq('userId', userId)
+                            .eq('organizationId', organizationId)
+                            .eq('read', false)
+                    )
                     .collect();
                 return notifs.length;
             });
@@ -413,7 +423,9 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const allNotifications = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_user_date', q => q.eq('userId', userId))
+                    .withIndex('by_user_organization_date', q =>
+                        q.eq('userId', userId).eq('organizationId', organizationId)
+                    )
                     .collect();
                 return notifs;
             });

@@ -9,8 +9,8 @@ import { useServerPagination } from '@/components/data-table/hooks/use-server-pa
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
+import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
 
-const DEFAULT_PAGE_SIZE = 10;
 const INITIAL_USERS_STALE_TIME_MS = 30_000;
 
 type UsersResult = FunctionReturnType<typeof api.admin.listUsers>;
@@ -24,7 +24,7 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
     const columns = useUsersTableColumns();
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
-        useServerPagination(DEFAULT_PAGE_SIZE);
+        useServerPagination(ADMIN_PAGE_SIZE);
     const isFirstPage = paginationOpts.cursor === null;
 
     const users = useQuery({

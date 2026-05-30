@@ -11,8 +11,7 @@ import { useServerPagination } from '@/components/data-table/hooks/use-server-pa
 import { FunctionReturnType } from 'convex/server';
 import { useNotificationsTableColumns } from './notifications-table-columns';
 import { useMarkAllNotificationsRead } from './notifications-table-actions';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type NotificationsResult = FunctionReturnType<typeof api.notifications.getNotificationsByUser>;
 

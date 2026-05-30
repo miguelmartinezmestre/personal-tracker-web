@@ -9,8 +9,7 @@ import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { useCategoriesTableColumns } from './categories-table-columns';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type ConvexCategory = {
     _id: Id<'categories'>;

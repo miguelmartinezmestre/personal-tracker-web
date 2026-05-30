@@ -198,10 +198,10 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             const awardedPoints = await userIdentity.run(async ctx => {
-                const achievementDefinition = await ctx.db
-                    .query('achievementDefinitions')
-                    .withIndex('by_code', q => q.eq('code', 'first_objective'))
-                    .first();
+                const definitions = await ctx.db.query('achievementDefinitions').collect();
+                const achievementDefinition = definitions.find(
+                    definition => definition.code === 'first_objective'
+                );
 
                 if (achievementDefinition) {
                     await ctx.db.insert('obtainedAchievements', {
@@ -488,10 +488,8 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             await userIdentity.run(async ctx => {
-                const def = await ctx.db
-                    .query('achievementDefinitions')
-                    .withIndex('by_code', q => q.eq('code', 'first_objective'))
-                    .first();
+                const definitions = await ctx.db.query('achievementDefinitions').collect();
+                const def = definitions.find(definition => definition.code === 'first_objective');
 
                 if (def) {
                     await ctx.db.insert('obtainedAchievements', {

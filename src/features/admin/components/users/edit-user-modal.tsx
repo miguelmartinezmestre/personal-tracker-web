@@ -29,9 +29,10 @@ import type { Doc } from '@/convex/_generated/dataModel';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { invalidateConvexQuery } from '@/platform/convex/query-keys';
+import { ADMIN_PAGINATION_OPTS } from '@/lib/pagination';
 
 const ADMIN_USERS_QUERY = convexQuery(api.admin.listUsers, {
-    paginationOpts: { numItems: 10, cursor: null },
+    paginationOpts: ADMIN_PAGINATION_OPTS,
 });
 
 export function EditUserModal({

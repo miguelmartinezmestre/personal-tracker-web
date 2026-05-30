@@ -9,8 +9,7 @@ import { useServerPagination } from '@/components/data-table/hooks/use-server-pa
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type AuditLogsResult = FunctionReturnType<typeof api.auditLogs.getAuditLogs>;
 

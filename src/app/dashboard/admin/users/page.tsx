@@ -4,6 +4,7 @@ import { UsersLayout } from '@/features/admin';
 import { isAdmin } from '@/features/auth/server';
 import { redirect } from 'next/navigation';
 import { Preloaded } from 'convex/react';
+import { ADMIN_PAGINATION_OPTS } from '@/lib/pagination';
 
 export default async function UsersPage() {
     if (!(await isAdmin())) {
@@ -14,10 +15,7 @@ export default async function UsersPage() {
 
     try {
         preloadedUsersQuery = await preloadAuthQuery(api.admin.listUsers, {
-            paginationOpts: {
-                numItems: 10,
-                cursor: null,
-            },
+            paginationOpts: ADMIN_PAGINATION_OPTS,
         });
     } catch {
         redirect('/dashboard/home');

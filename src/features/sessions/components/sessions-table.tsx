@@ -11,8 +11,7 @@ import { api } from '@/convex/_generated/api';
 import { FunctionReturnType } from 'convex/server';
 import { Button } from '@/components/ui/button';
 import { useInvalidateAllOtherSessions } from './sessions-table-actions';
-
-const DEFAULT_PAGE_SIZE = 20;
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 type SessionsResult = FunctionReturnType<typeof api.sessions.getSessionsByUser>;
 
