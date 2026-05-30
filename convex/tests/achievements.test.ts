@@ -537,6 +537,7 @@ describe('convex achievements', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: Date.now() + i * 1000,
                         comment: `Update ${i}`,
@@ -586,6 +587,7 @@ describe('convex achievements', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: todayMs - i * DAY_MS,
                         comment: `Day ${i + 1}`,

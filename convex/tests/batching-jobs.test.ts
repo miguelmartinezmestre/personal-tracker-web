@@ -91,6 +91,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     const id = await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
                         comment: `Update ${i}`,
@@ -234,6 +235,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
                         comment: `Update ${i}`,
@@ -486,6 +488,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
                         userId,
+                        organizationId,
                         updatedValue: 50,
                         updateDate: today.getTime(),
                         comment: 'Progress',
@@ -509,6 +512,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
                         userId,
+                        organizationId,
                         updatedValue: 50,
                         updateDate: yesterday.getTime(),
                         comment: 'Progress yesterday',
@@ -539,6 +543,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() - i * 24 * 60 * 60 * 1000,
                         comment: `Day ${i}`,
@@ -586,6 +591,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
                         userId,
+                        organizationId,
                         updatedValue: 50,
                         updateDate: today.getTime(),
                         comment: 'Progress',
@@ -618,6 +624,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId,
+                        organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
                         comment: `Update ${i}`,

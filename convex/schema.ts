@@ -143,6 +143,7 @@ export default defineSchema({
     progressUpdates: defineTable({
         objective: v.id('objectives'),
         userId: v.id('user'),
+        organizationId: v.id('organization'),
         updatedValue: v.number(),
         updateDate: v.number(),
         comment: v.optional(v.string()),
@@ -152,6 +153,7 @@ export default defineSchema({
         .index('by_objective', ['objective'])
         .index('by_objective_date', ['objective', 'updateDate'])
         .index('by_user_date', ['userId', 'updateDate'])
+        .index('by_user_organization_date', ['userId', 'organizationId', 'updateDate'])
         .index('by_user_objective', ['userId', 'objective']),
 
     notifications: defineTable({

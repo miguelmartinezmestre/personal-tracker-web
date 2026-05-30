@@ -165,6 +165,7 @@ describe('convex update_progress', () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId,
+                    organizationId,
                     updatedValue: i + 1,
                     updateDate: base + i * 1000,
                     createdAt: base + i * 1000,
@@ -202,6 +203,7 @@ describe('convex update_progress', () => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId: userId,
+                organizationId: organizationId,
                 updatedValue: 60,
                 updateDate,
                 comment: 'Initial comment',
@@ -229,6 +231,7 @@ describe('convex update_progress', () => {
             return await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId: userId,
+                organizationId: organizationId,
                 updatedValue: 60,
                 updateDate: Date.now(),
                 createdAt: Date.now(),
@@ -254,6 +257,7 @@ describe('convex update_progress', () => {
             const keepId = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId,
+                organizationId,
                 updatedValue: 60,
                 updateDate: now,
                 createdAt: now,
@@ -262,6 +266,7 @@ describe('convex update_progress', () => {
             const removeId = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId,
+                organizationId,
                 updatedValue: 30,
                 updateDate: now,
                 createdAt: now,
@@ -299,6 +304,7 @@ describe('convex update_progress', () => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 userId: userId,
+                organizationId: organizationId,
                 updatedValue: 60,
                 updateDate: Date.now(),
                 createdAt: Date.now(),

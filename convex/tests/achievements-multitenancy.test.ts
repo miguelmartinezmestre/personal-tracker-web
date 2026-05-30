@@ -190,6 +190,7 @@ describe('achievements multi-tenancy security', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userAId,
+                        organizationId: orgAId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -222,6 +223,7 @@ describe('achievements multi-tenancy security', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userAId,
+                    organizationId: orgAId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Today update',
@@ -262,6 +264,7 @@ describe('achievements multi-tenancy security', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveAId,
                         userId: userAId,
+                        organizationId: orgAId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Org A Day ${i + 1}`,
@@ -276,6 +279,7 @@ describe('achievements multi-tenancy security', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveBId,
                         userId: userAId,
+                        organizationId: orgBId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Org B Day ${i + 1}`,
@@ -398,6 +402,7 @@ describe('achievements multi-tenancy security', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: orgAObjectiveId,
                     userId: userAId,
+                    organizationId: orgAId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Org A Today',
@@ -408,6 +413,7 @@ describe('achievements multi-tenancy security', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: orgAObjectiveId,
                     userId: userAId,
+                    organizationId: orgAId,
                     updatedValue: 20,
                     updateDate: today.getTime() - 2 * DAY_MS,
                     comment: 'Org A 2 days ago',
@@ -420,6 +426,7 @@ describe('achievements multi-tenancy security', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: orgBObjectiveId,
                     userId: userAId,
+                    organizationId: orgBId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Org B Today',
@@ -430,6 +437,7 @@ describe('achievements multi-tenancy security', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: orgBObjectiveId,
                     userId: userAId,
+                    organizationId: orgBId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'Org B Yesterday',

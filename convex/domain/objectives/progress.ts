@@ -38,6 +38,7 @@ export async function createProgressUpdate(
     const progressUpdateId = await ctx.db.insert('progressUpdates', {
         objective: args.objective,
         userId: objective.userId,
+        organizationId: objective.organizationId,
         updatedValue: args.updatedValue,
         updateDate: args.updateDate,
         comment: args.comment,

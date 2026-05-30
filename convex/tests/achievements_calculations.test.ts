@@ -113,6 +113,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Today update',
@@ -152,6 +153,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: yesterday.getTime(),
                     comment: 'Yesterday update',
@@ -191,6 +193,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: twoDaysAgo.getTime(),
                     comment: 'Two days ago update',
@@ -229,6 +232,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Update 1',
@@ -239,6 +243,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() + 3600000,
                     comment: 'Update 2',
@@ -249,6 +254,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 30,
                     updateDate: today.getTime() + 7200000,
                     comment: 'Update 3',
@@ -288,6 +294,7 @@ describe('achievements calculations', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -328,6 +335,7 @@ describe('achievements calculations', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -367,6 +375,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Today',
@@ -377,6 +386,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'Yesterday',
@@ -387,6 +397,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 30,
                     updateDate: today.getTime() - 3 * DAY_MS,
                     comment: '3 days ago (gap)',
@@ -438,6 +449,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId1,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'Obj1 today',
@@ -448,6 +460,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId2,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'Obj2 yesterday',
@@ -497,6 +510,7 @@ describe('achievements calculations', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
@@ -577,6 +591,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId1,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
                     comment: 'User1 today',
@@ -587,6 +602,7 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId2,
                     userId: userId,
+                    organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
                     comment: 'User2 yesterday',
@@ -625,6 +641,7 @@ describe('achievements calculations', async () => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         userId: userId,
+                        organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
                         comment: `Day ${i + 1}`,
