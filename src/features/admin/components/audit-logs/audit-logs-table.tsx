@@ -8,27 +8,16 @@ import { useAuditLogsTableColumns } from './audit-logs-table-columns';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
-import { FunctionReturnType } from 'convex/server';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
-type AuditLogsResult = FunctionReturnType<typeof api.auditLogs.getAuditLogs>;
-
-interface AuditLogsTableProps {
-    initialLogs: AuditLogsResult | undefined;
-}
-
-export function AuditLogsTable({ initialLogs }: AuditLogsTableProps) {
+export function AuditLogsTable() {
     const t = useTranslations('Admin');
     const columns = useAuditLogsTableColumns();
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
-    const isFirstPage = paginationOpts.cursor === null;
 
-    const logs = useQuery({
-        ...convexQuery(api.auditLogs.getAuditLogs, { paginationOpts }),
-        initialData: isFirstPage ? initialLogs : undefined,
-    });
+    const logs = useQuery(convexQuery(api.auditLogs.getAuditLogs, { paginationOpts }));
 
     const continueCursor = logs.data?.continueCursor ?? null;
     const pageIsDone = logs.data?.isDone ?? false;

@@ -10,8 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { Preloaded } from 'convex/react';
-import { useConvexAuth, usePreloadedQuery } from 'convex/react';
+import { useConvexAuth } from 'convex/react';
 import {
     achievementProgressSchema,
     type AchievementProgress,
@@ -20,7 +19,6 @@ import { AchievementCard } from './achievement-card';
 
 const SKELETON_STATS = [1, 2, 3];
 const SKELETON_CARDS = [1, 2, 3, 4, 5, 6];
-const INITIAL_ACHIEVEMENTS_STALE_TIME_MS = 30_000;
 
 function parseAchievementProgress(data: unknown): AchievementProgress[] {
     if (!Array.isArray(data)) {
@@ -33,15 +31,7 @@ function parseAchievementProgress(data: unknown): AchievementProgress[] {
     });
 }
 
-interface AchievementsLayoutProps {
-    preloadedStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
-    preloadedProgressQuery: Preloaded<typeof api.achievements.getUserAchievementProgress>;
-}
-
-export default function AchievementsLayout({
-    preloadedStatsQuery,
-    preloadedProgressQuery,
-}: AchievementsLayoutProps) {
+export default function AchievementsLayout() {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
 
     if (authLoading) {
@@ -52,36 +42,19 @@ export default function AchievementsLayout({
         return null;
     }
 
-    return (
-        <AchievementsContent
-            preloadedStatsQuery={preloadedStatsQuery}
-            preloadedProgressQuery={preloadedProgressQuery}
-        />
-    );
+    return <AchievementsContent />;
 }
 
-function AchievementsContent({
-    preloadedStatsQuery,
-    preloadedProgressQuery,
-}: AchievementsLayoutProps) {
+function AchievementsContent() {
     const t = useTranslations('Achievements');
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
     const queryClient = useQueryClient();
 
-    const initialStats = usePreloadedQuery(preloadedStatsQuery);
-    const initialProgress = usePreloadedQuery(preloadedProgressQuery);
-
-    const { data: stats, isLoading: statsLoading } = useQuery({
-        ...convexQuery(api.achievements.getUserAchievementStats, {}),
-        initialData: initialStats ?? undefined,
-        enabled: !initialStats,
-        staleTime: initialStats ? INITIAL_ACHIEVEMENTS_STALE_TIME_MS : 0,
-    });
+    const { data: stats, isLoading: statsLoading } = useQuery(
+        convexQuery(api.achievements.getUserAchievementStats, {})
+    );
     const { data: progress, isLoading: progressLoading } = useQuery({
         ...convexQuery(api.achievements.getUserAchievementProgress, {}),
-        initialData: initialProgress ?? undefined,
-        enabled: !initialProgress,
-        staleTime: initialProgress ? INITIAL_ACHIEVEMENTS_STALE_TIME_MS : 0,
         select: parseAchievementProgress,
     });
 

@@ -17,6 +17,7 @@ async function openOrganizationDetail(page: Page, organizationName?: string) {
     await viewLink.click();
     await expect(page).toHaveURL(ORGANIZATION_DETAIL_URL, { timeout: 10000 });
     await expect(page.getByTestId('organization-members-table')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('table-row').first()).toBeVisible({ timeout: 10000 });
 }
 
 test.describe('Organization Members', () => {

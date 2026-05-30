@@ -1,14 +1,7 @@
-import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { CreateObjectiveFormModal } from '@/features/objectives';
 import { ResponsiveObjectivesView } from '@/features/objectives';
-import { preloadAuthQuery } from '@/features/auth/server';
-import { api } from '@/convex/_generated/api';
-import { redirect } from 'next/navigation';
-import { Preloaded } from 'convex/react';
-import type { AwaitedTranslations } from '@/lib/i18n-types';
 import type { Metadata } from 'next';
-import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('Objectives');
@@ -19,26 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ObjectivesPage() {
-    let preloadedPersonalObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
-    let preloadedOrganizationObjectivesQuery: Preloaded<
-        typeof api.objectives.getOrganizationObjectives
-    >;
-    let t: AwaitedTranslations<'Objectives'>;
-
-    try {
-        [t, preloadedPersonalObjectivesQuery, preloadedOrganizationObjectivesQuery] =
-            await Promise.all([
-                getTranslations('Objectives'),
-                preloadAuthQuery(api.objectives.getObjectivesByUser, {
-                    paginationOpts: DEFAULT_PAGINATION_OPTS,
-                }),
-                preloadAuthQuery(api.objectives.getOrganizationObjectives, {
-                    paginationOpts: DEFAULT_PAGINATION_OPTS,
-                }),
-            ]);
-    } catch {
-        redirect('/dashboard/home');
-    }
+    const t = await getTranslations('Objectives');
 
     return (
         <div className="w-full min-w-0 space-y-6">
@@ -52,12 +26,7 @@ export default async function ObjectivesPage() {
                 </div>
             </div>
             <div className="min-w-0">
-                <Suspense fallback={<div>{t('loadingObjectives')}</div>}>
-                    <ResponsiveObjectivesView
-                        preloadedPersonalObjectivesQuery={preloadedPersonalObjectivesQuery}
-                        preloadedOrganizationObjectivesQuery={preloadedOrganizationObjectivesQuery}
-                    />
-                </Suspense>
+                <ResponsiveObjectivesView />
             </div>
         </div>
     );
