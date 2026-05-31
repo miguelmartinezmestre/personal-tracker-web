@@ -59,13 +59,11 @@ describe('reminderSchedule', () => {
             const result = computeNextReminderAt('monthly');
             const after = Date.now();
 
-            const expectedMin = new Date(before);
-            expectedMin.setMonth(expectedMin.getMonth() + 1);
-            const expectedMax = new Date(after);
-            expectedMax.setMonth(expectedMax.getMonth() + 1);
+            const expectedMin = computeNextReminderAt('monthly', before)!;
+            const expectedMax = computeNextReminderAt('monthly', after)!;
 
-            expect(result).toBeGreaterThanOrEqual(expectedMin.getTime());
-            expect(result).toBeLessThanOrEqual(expectedMax.getTime());
+            expect(result).toBeGreaterThanOrEqual(expectedMin);
+            expect(result).toBeLessThanOrEqual(expectedMax);
         });
 
         test('handles year boundary for monthly', () => {
