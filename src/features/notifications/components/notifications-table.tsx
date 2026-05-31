@@ -8,28 +8,19 @@ import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/data-table/components/table';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
-import { FunctionReturnType } from 'convex/server';
 import { useNotificationsTableColumns } from './notifications-table-columns';
 import { useMarkAllNotificationsRead } from './notifications-table-actions';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
-type NotificationsResult = FunctionReturnType<typeof api.notifications.getNotificationsByUser>;
-
-interface NotificationsTableProps {
-    initialNotifications: NotificationsResult | undefined;
-}
-
-export default function NotificationsTable({ initialNotifications }: NotificationsTableProps) {
+export default function NotificationsTable() {
     const t = useTranslations('Notifications');
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
         useServerPagination(DEFAULT_PAGE_SIZE);
-    const isFirstPage = paginationOpts.cursor === null;
-    const notifications = useQuery({
-        ...convexQuery(api.notifications.getNotificationsByUser, {
+    const notifications = useQuery(
+        convexQuery(api.notifications.getNotificationsByUser, {
             paginationOpts,
-        }),
-        initialData: isFirstPage ? initialNotifications : undefined,
-    });
+        })
+    );
     const notificationsContinueCursor = notifications.data?.continueCursor ?? null;
     const notificationsIsDone = notifications.data?.isDone ?? false;
     const hasNextPage = Boolean(notificationsContinueCursor) && !notificationsIsDone;

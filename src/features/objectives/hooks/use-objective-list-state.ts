@@ -3,8 +3,6 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
-import { Preloaded, usePreloadedQuery } from 'convex/react';
-import { FunctionReturnType } from 'convex/server';
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
 import type { ObjectiveStatus } from '@/convex/utils/constants';
@@ -21,23 +19,9 @@ const DEFAULT_FILTERS: FilterOptions = {
     deadlineRange: 'all',
 };
 
-type PersonalResult = FunctionReturnType<typeof api.objectives.getObjectivesByUser>;
-type OrganizationObjectivesResult = FunctionReturnType<
-    typeof api.objectives.getOrganizationObjectives
->;
 type DeadlineRange = 'today' | 'week' | 'month' | 'overdue';
 
-type UseObjectiveListStateArgs = {
-    preloadedPersonalObjectivesQuery: Preloaded<typeof api.objectives.getObjectivesByUser>;
-    preloadedOrganizationObjectivesQuery: Preloaded<
-        typeof api.objectives.getOrganizationObjectives
-    >;
-};
-
-export function useObjectiveListState({
-    preloadedPersonalObjectivesQuery,
-    preloadedOrganizationObjectivesQuery,
-}: UseObjectiveListStateArgs) {
+export function useObjectiveListState() {
     const [filters, setFilters] = React.useState<FilterOptions>(() => ({ ...DEFAULT_FILTERS }));
     const searchText = filters.search.trim();
     const hasSearch = searchText.length > 0;
@@ -47,20 +31,12 @@ export function useObjectiveListState({
     const deadlineRangeFilter =
         filters.deadlineRange !== 'all' ? (filters.deadlineRange as DeadlineRange) : undefined;
 
-    const preloadedPersonal = usePreloadedQuery(preloadedPersonalObjectivesQuery) as
-        | PersonalResult
-        | undefined;
-    const preloadedOrganizationObjectives = usePreloadedQuery(
-        preloadedOrganizationObjectivesQuery
-    ) as OrganizationObjectivesResult | undefined;
-
     const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts: personalPaginationOpts, reset: resetPersonalPagination } =
         personalPagination;
-    const personalIsFirstPage = personalPaginationOpts.cursor === null;
 
-    const personalQuery = useQuery({
-        ...convexQuery(
+    const personalQuery = useQuery(
+        convexQuery(
             api.objectives.getObjectivesByUser,
             hasSearch
                 ? 'skip'
@@ -70,16 +46,8 @@ export function useObjectiveListState({
                       categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
                   }
-        ),
-        initialData:
-            !hasSearch &&
-            personalIsFirstPage &&
-            filters.status === 'all' &&
-            filters.category === 'all' &&
-            filters.deadlineRange === 'all'
-                ? preloadedPersonal
-                : undefined,
-    });
+        )
+    );
 
     const personalSearchQuery = useQuery(
         convexQuery(
@@ -99,10 +67,9 @@ export function useObjectiveListState({
     const organizationPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts: organizationPaginationOpts, reset: resetOrganizationPagination } =
         organizationPagination;
-    const organizationIsFirstPage = organizationPaginationOpts.cursor === null;
 
-    const organizationQuery = useQuery({
-        ...convexQuery(
+    const organizationQuery = useQuery(
+        convexQuery(
             api.objectives.getOrganizationObjectives,
             hasSearch
                 ? 'skip'
@@ -112,16 +79,8 @@ export function useObjectiveListState({
                       categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
                   }
-        ),
-        initialData:
-            !hasSearch &&
-            organizationIsFirstPage &&
-            filters.status === 'all' &&
-            filters.category === 'all' &&
-            filters.deadlineRange === 'all'
-                ? preloadedOrganizationObjectives
-                : undefined,
-    });
+        )
+    );
 
     const organizationSearchQuery = useQuery(
         convexQuery(

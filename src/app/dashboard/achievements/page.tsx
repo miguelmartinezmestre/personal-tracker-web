@@ -1,26 +1,5 @@
-import { preloadAuthQuery } from '@/features/auth/server';
-import { api } from '@/convex/_generated/api';
 import { AchievementsLayout } from '@/features/achievements';
-import { redirect } from 'next/navigation';
-import { Preloaded } from 'convex/react';
 
-export default async function AchievementsPage() {
-    let preloadedStatsQuery: Preloaded<typeof api.achievements.getUserAchievementStats>;
-    let preloadedProgressQuery: Preloaded<typeof api.achievements.getUserAchievementProgress>;
-
-    try {
-        [preloadedStatsQuery, preloadedProgressQuery] = await Promise.all([
-            preloadAuthQuery(api.achievements.getUserAchievementStats, {}),
-            preloadAuthQuery(api.achievements.getUserAchievementProgress, {}),
-        ]);
-    } catch {
-        redirect('/dashboard/home');
-    }
-
-    return (
-        <AchievementsLayout
-            preloadedStatsQuery={preloadedStatsQuery}
-            preloadedProgressQuery={preloadedProgressQuery}
-        />
-    );
+export default function AchievementsPage() {
+    return <AchievementsLayout />;
 }

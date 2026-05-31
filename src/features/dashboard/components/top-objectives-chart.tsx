@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Preloaded } from 'convex/react';
-import { usePreloadedQuery } from 'convex/react';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Loader2 } from 'lucide-react';
@@ -17,15 +17,11 @@ import {
     Cell,
 } from 'recharts';
 
-interface TopObjectivesChartProps {
-    preloadedTopObjectivesQuery: Preloaded<typeof api.dashboard.getObjectivesWithMostProgress>;
-}
-
-export default function TopObjectivesChart({
-    preloadedTopObjectivesQuery,
-}: TopObjectivesChartProps) {
+export default function TopObjectivesChart() {
     const t = useTranslations('DashboardHome');
-    const topObjectives = usePreloadedQuery(preloadedTopObjectivesQuery);
+    const { data: topObjectives } = useQuery(
+        convexQuery(api.dashboard.getObjectivesWithMostProgress, {})
+    );
 
     const chartData = (topObjectives ?? []).map(item => ({
         name: truncateText(item.objective, 20),

@@ -63,6 +63,7 @@ test.describe('Admin Users', () => {
         await expect(table).toBeVisible({ timeout: 10000 });
 
         const rows = page.getByTestId('table-row');
+        await expect(rows.first()).toBeVisible({ timeout: 10000 });
         const rowCount = await rows.count();
         expect(rowCount).toBeGreaterThanOrEqual(1);
     });
@@ -76,6 +77,8 @@ test.describe('Admin Users', () => {
 
             const usersTable = page.getByTestId('admin-users-table');
             await expect(usersTable).toBeVisible({ timeout: 15000 });
+
+            await expect(page.getByTestId('table-row').first()).toBeVisible({ timeout: 10000 });
 
             const headers = page.locator('table thead th');
             const headerTexts = await headers.allTextContents();
@@ -121,6 +124,8 @@ test.describe('Admin Users', () => {
 
             const usersTable = page.getByTestId('admin-users-table');
             await expect(usersTable).toBeVisible({ timeout: 15000 });
+
+            await expect(page.getByTestId('table-row').first()).toBeVisible({ timeout: 10000 });
 
             const banButton = page.getByTestId('user-ban-button');
             const unbanButton = page.getByTestId('user-unban-button');
