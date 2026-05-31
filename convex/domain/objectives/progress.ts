@@ -5,7 +5,6 @@ import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { shouldSendProgressNotification } from '../notifications/preferences';
 import { ERROR_CODES } from '../../utils/constants';
-import { isVitestRuntime } from '../../utils/testRuntime';
 import {
     applyObjectiveProgressDelta,
     recomputeObjectiveFromProgress,
@@ -79,13 +78,11 @@ export async function createProgressUpdate(
         });
     }
 
-    if (!isVitestRuntime()) {
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-            userId: objective.userId,
-            organizationId: objective.organizationId,
-            trigger: 'progress_update',
-        });
-    }
+    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+        userId: objective.userId,
+        organizationId: objective.organizationId,
+        trigger: 'progress_update',
+    });
 
     return await ctx.db.get('progressUpdates', progressUpdateId);
 }
@@ -162,13 +159,11 @@ export async function updateProgressUpdate(
         args.updatedValue - existing.updatedValue
     );
 
-    if (!isVitestRuntime()) {
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-            userId: objective.userId,
-            organizationId: objective.organizationId,
-            trigger: 'progress_update',
-        });
-    }
+    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+        userId: objective.userId,
+        organizationId: objective.organizationId,
+        trigger: 'progress_update',
+    });
 
     if (completedNow) {
         const now = Date.now();

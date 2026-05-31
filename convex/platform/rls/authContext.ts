@@ -3,7 +3,6 @@ import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
-import { isVitestRuntime } from '../../utils/testRuntime';
 
 export type AuthContext = {
     userId: Id<'user'>;
@@ -60,33 +59,13 @@ export async function resolveSessionActiveOrganizationId(
     return rawOrganizationId ? ctx.db.normalizeId('organization', rawOrganizationId) : null;
 }
 
-async function getLatestMembership(
-    ctx: QueryCtx | MutationCtx,
-    userId: Id<'user'>
-): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
-    const fallback = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .order('desc')
-        .first();
-    if (!fallback) {
-        return { role: null, organizationId: null };
-    }
-    return {
-        role: fallback.role,
-        organizationId: fallback.organizationId,
-    };
-}
-
 export async function resolveActiveMembership(
     ctx: QueryCtx | MutationCtx,
     userId: Id<'user'>,
     organizationId: Id<'organization'> | null
 ): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
     if (!organizationId) {
-        return isVitestRuntime()
-            ? await getLatestMembership(ctx, userId)
-            : { role: null, organizationId: null };
+        return { role: null, organizationId: null };
     }
 
     const membership = await ctx.db

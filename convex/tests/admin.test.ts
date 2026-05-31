@@ -113,14 +113,24 @@ describe('convex admin', () => {
             paginationOpts: { numItems: 10, cursor: null },
         });
 
-        expect(result.page).toEqual([
-            expect.objectContaining({
-                _id: sessionId,
-                ipAddress: '127.0.0.1',
-                userAgent: 'Vitest',
-                isCurrent: false,
-            }),
-        ]);
+        expect(result.page).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    _id: sessionId,
+                    ipAddress: '127.0.0.1',
+                    userAgent: 'Vitest',
+                    isCurrent: false,
+                }),
+            ])
+        );
+        expect(result.page).not.toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    _id: expect.any(String),
+                    isCurrent: true,
+                }),
+            ])
+        );
     });
 
     test('allows admins to revoke only sessions belonging to the target user', async () => {

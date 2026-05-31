@@ -71,7 +71,6 @@ import type * as update_progress from "../update_progress.js";
 import type * as utils_constants from "../utils/constants.js";
 import type * as utils_reminderSchedule from "../utils/reminderSchedule.js";
 import type * as utils_requiredAdmin from "../utils/requiredAdmin.js";
-import type * as utils_testRuntime from "../utils/testRuntime.js";
 import type * as utils_validators from "../utils/validators.js";
 import type * as workflow from "../workflow.js";
 
@@ -145,7 +144,6 @@ declare const fullApi: ApiFromModules<{
   "utils/constants": typeof utils_constants;
   "utils/reminderSchedule": typeof utils_reminderSchedule;
   "utils/requiredAdmin": typeof utils_requiredAdmin;
-  "utils/testRuntime": typeof utils_testRuntime;
   "utils/validators": typeof utils_validators;
   workflow: typeof workflow;
 }>;

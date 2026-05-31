@@ -11,7 +11,6 @@ import { getCategoryForObjective } from './domain/objectives/categoryResolution'
 import { deadlineRangeValidator } from './domain/objectives/filters';
 import { runObjectiveSync } from './domain/objectives/workflowSync';
 import { workflow } from './workflow';
-import { isVitestRuntime } from './utils/testRuntime';
 import { listObjectives, searchObjectives } from './domain/objectives/list';
 import {
     continueObjectiveDeletion,
@@ -182,13 +181,11 @@ export const createObjective = mutationWithRLS({
             updatedAt: now,
         });
 
-        if (!isVitestRuntime()) {
-            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-                userId,
-                organizationId,
-                trigger: 'objective_created',
-            });
-        }
+        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            userId,
+            organizationId,
+            trigger: 'objective_created',
+        });
 
         await runObjectiveSync(ctx, objectiveId, userId, organizationId, 'objective');
         return objectiveId;
