@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { categoryIconSchema } from '../src/features/categories/schemas/category';
 import { routing } from '../src/i18n/routing';
 
 type TranslationTree = Record<string, unknown>;
@@ -54,7 +55,8 @@ for (const locale of configuredLocales) {
     localeKeys.set(locale, getAllKeys(loadTranslations(locale)).sort());
 }
 
-const allKeys = [...new Set([...localeKeys.values()].flat())].sort();
+const requiredKeys = categoryIconSchema.options.map(icon => `Common.icons.${icon}`);
+const allKeys = [...new Set([...localeKeys.values()].flat().concat(requiredKeys))].sort();
 let hasErrors = false;
 
 if (orphanFiles.length > 0) {
