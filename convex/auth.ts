@@ -109,10 +109,10 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
         session: {
             create: {
                 before: async session => {
-
                     const userId = session.userId as Id<'user'>;
-                    const activeOrganizationId: Id<'organization'> = await (ctx as RunnableCtx)
-                    .runMutation(internal.auth.ensureDefaultOrganizationForUser, {
+                    const activeOrganizationId: Id<'organization'> = await (
+                        ctx as RunnableCtx
+                    ).runMutation(internal.auth.ensureDefaultOrganizationForUser, {
                         userId,
                     });
 
