@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAuthMutation } from '@/features/auth/server';
 import { api as convexApi } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 
 function isLoopbackUrl(value: string | undefined): boolean {
     if (!value) return false;
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
                 { name: 'Career', color: '#3B82F6', icon: 'briefcase' },
                 { name: 'Personal', color: '#F59E0B', icon: 'user' },
             ],
+            userId: 'test-user-1' as Id<'user'>,
         });
 
         return NextResponse.json({ success: true, organizationId: result.organizationId });

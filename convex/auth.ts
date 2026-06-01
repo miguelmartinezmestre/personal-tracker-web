@@ -94,6 +94,13 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
         revokeSessionsOnPasswordReset: true,
     },
     databaseHooks: {
+        user: {
+            create: {
+                before: async () => {
+                    await (ctx as MutationCtx).runMutation(internal.auth.incrementUsersCount);
+                },
+            },
+        },
         session: {
             create: {
                 before: async session => {
@@ -192,5 +199,33 @@ export const getCurrentOrganization = query({
         const membership = await resolveActiveMembership(ctx, userId, activeOrganizationId);
 
         return membership.organizationId;
+    },
+});
+
+export const incrementUsersCount = internalMutation({
+    args: {},
+    handler: async (ctx: MutationCtx) => {
+        const platformSettings = await ctx.db.query('platformSettings').first();
+        if (!platformSettings) {
+            return;
+        }
+
+        await ctx.db.patch(platformSettings._id, {
+            usersCount: platformSettings.usersCount + 1,
+        });
+    },
+});
+
+export const decrementUsersCount = internalMutation({
+    args: {},
+    handler: async (ctx: MutationCtx) => {
+        const platformSettings = await ctx.db.query('platformSettings').first();
+        if (!platformSettings) {
+            return;
+        }
+
+        await ctx.db.patch(platformSettings._id, {
+            usersCount: Math.max(0, platformSettings.usersCount - 1),
+        });
     },
 });

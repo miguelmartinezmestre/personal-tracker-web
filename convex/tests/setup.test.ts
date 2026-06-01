@@ -38,6 +38,7 @@ describe('convex setup', () => {
                     registrationPolicy: 'open',
                     setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
+                    usersCount: 1,
                 });
             });
 
@@ -77,6 +78,7 @@ describe('convex setup', () => {
                     registrationPolicy: 'invitation-only',
                     setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
+                    usersCount: 1,
                 });
             });
 
@@ -114,6 +116,7 @@ describe('convex setup', () => {
                     registrationPolicy: 'open',
                     setupCompletedAt: Date.now(),
                     setupCompletedBy: id,
+                    usersCount: 1,
                 });
 
                 return id;
@@ -135,6 +138,7 @@ describe('convex setup', () => {
 
             await expect(
                 asUser.mutation(api.setup.completeSetup, {
+                    userId,
                     platformName: 'New Platform',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
@@ -175,6 +179,7 @@ describe('convex setup', () => {
 
             await expect(
                 asUser1.mutation(api.setup.completeSetup, {
+                    userId: user1.docId,
                     platformName: 'Test Platform',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
@@ -219,6 +224,7 @@ describe('convex setup', () => {
             });
 
             const result = await userIdentity.mutation(api.setup.completeSetup, {
+                userId: user.docId,
                 platformName: 'My Platform',
                 defaultLanguage: 'es',
                 registrationPolicy: 'invitation-only',

@@ -39,12 +39,19 @@ export const completeSetup = mutation({
         organizationId: v.id('organization'),
     }),
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
+        const platformSettings = await ctx.db.query('platformSettings').first();
+
+        if (platformSettings && platformSettings.usersCount > 1) {
+            throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
 
-        return await completePlatformSetup(ctx, identity.userId, args);
+        const user = await ctx.db.get('user', args.userId);
+
+        if (!user) {
+            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
+        }
+
+        return await completePlatformSetup(ctx, args.userId, args);
     },
 });
 
