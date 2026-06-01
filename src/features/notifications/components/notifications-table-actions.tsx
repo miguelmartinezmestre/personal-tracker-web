@@ -1,29 +1,19 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConvexMutation, convexQuery } from '@convex-dev/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { invalidateConvexQuery } from '@/platform/convex/query-keys';
-import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
-
-const NOTIFICATIONS_QUERY = convexQuery(api.notifications.getNotificationsByUser, {
-    paginationOpts: DEFAULT_PAGINATION_OPTS,
-});
-const UNREAD_COUNT_QUERY = convexQuery(api.notifications.getUnreadNotificationCount, {});
 
 export function useSetNotificationRead(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
-    const queryClient = useQueryClient();
     const setNotificationRead = useConvexMutation(api.notifications.setNotificationRead);
 
     const { mutate, mutateAsync, isPending } = useMutation({
         mutationFn: setNotificationRead,
         onSuccess: () => {
             onSuccess?.();
-            invalidateConvexQuery(queryClient, NOTIFICATIONS_QUERY);
-            queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY.queryKey });
             toast.success(t('toast.updated'));
         },
         onError: () => {
@@ -40,15 +30,12 @@ export function useSetNotificationRead(onSuccess?: () => void) {
 
 export function useDeleteNotification(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
-    const queryClient = useQueryClient();
     const deleteNotification = useConvexMutation(api.notifications.deleteNotification);
 
     const { mutate, mutateAsync, isPending } = useMutation({
         mutationFn: deleteNotification,
         onSuccess: () => {
             onSuccess?.();
-            invalidateConvexQuery(queryClient, NOTIFICATIONS_QUERY);
-            queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY.queryKey });
             toast.success(t('toast.deleted'));
         },
         onError: () => {
@@ -65,17 +52,12 @@ export function useDeleteNotification(onSuccess?: () => void) {
 
 export function useMarkAllNotificationsRead(onSuccess?: () => void) {
     const t = useTranslations('Notifications');
-    const queryClient = useQueryClient();
     const markAllNotificationsRead = useConvexMutation(api.notifications.markAllNotificationsRead);
 
     const { mutate, mutateAsync, isPending } = useMutation({
         mutationFn: () => markAllNotificationsRead({}),
         onError: () => {
             toast.error(t('toast.markAllFailed'));
-        },
-        onSettled: () => {
-            invalidateConvexQuery(queryClient, NOTIFICATIONS_QUERY);
-            queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY.queryKey });
         },
         onSuccess: () => {
             onSuccess?.();

@@ -24,7 +24,7 @@ function mapDocToUpdateProgress(progressUpdateDoc: Doc<'progressUpdates'>): Upda
 
 export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgressTableColumnsProps) {
     const t = useTranslations('UpdateProgress');
-    const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress(objectiveId);
+    const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
 
     const columns: ColumnDef<Doc<'progressUpdates'>>[] = [
         {

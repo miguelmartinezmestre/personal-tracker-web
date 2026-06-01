@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -33,7 +33,6 @@ import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import type { Doc, Id } from '@/convex/_generated/dataModel';
 import FormModal from '@/components/forms/form-modal';
-import { invalidateConvexQuery } from '@/platform/convex/query-keys';
 import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 const FIRST_PAGE_QUERY_ARGS = {
@@ -49,7 +48,6 @@ const defaultValues: CreateNotification = {
 
 export default function CreateNotificationFormModal() {
     const t = useTranslations('Notifications');
-    const queryClient = useQueryClient();
 
     const objectives = useQuery(
         convexQuery(api.objectives.getObjectivesByUser, FIRST_PAGE_QUERY_ARGS)
@@ -58,10 +56,6 @@ export default function CreateNotificationFormModal() {
     const createNotification = useMutation({
         mutationFn: useConvexMutation(api.notifications.createNotification),
         onSuccess: () => {
-            invalidateConvexQuery(
-                queryClient,
-                convexQuery(api.notifications.getNotificationsByUser, FIRST_PAGE_QUERY_ARGS)
-            );
             toast.success(t('toast.created'));
         },
         onError: () => {

@@ -45,11 +45,16 @@ export async function completePlatformSetup(
     }
 
     const users = await ctx.db.query('user').take(2);
+    const currentUser = await ctx.db.get(userId);
+
+    if (!currentUser) {
+        throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
+    }
+
     if (users.length !== 1) {
         throw new ConvexError(ERROR_CODES.SETUP_USER_COUNT);
     }
 
-    const currentUser = users[0]!;
     if (currentUser._id !== userId) {
         throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
     }

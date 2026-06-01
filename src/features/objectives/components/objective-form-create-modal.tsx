@@ -3,7 +3,7 @@
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateObjective, objectiveSchema } from '@/features/objectives/schemas/objective';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
@@ -11,7 +11,6 @@ import FormModal from '@/components/forms/form-modal';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
 import { buildCreateObjectivePayload } from '@/features/objectives/lib/objective-form-payloads';
-import { invalidateObjectiveMutationQueries } from '@/features/objectives/lib/objective-query-invalidation';
 
 const defaultValues: CreateObjective = {
     title: '',
@@ -29,15 +28,11 @@ const defaultValues: CreateObjective = {
 export default function CreateObjectiveFormModal() {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
-    const queryClient = useQueryClient();
     const createObjective = useConvexMutation(api.objectives.createObjective);
 
     const createObjectiveMutation = useMutation({
         mutationFn: async (args: ReturnType<typeof buildCreateObjectivePayload>) =>
             await createObjective(args),
-        onSuccess: () => {
-            return invalidateObjectiveMutationQueries(queryClient);
-        },
     });
 
     const { categoriesQuery, categoryOptions } = useObjectiveCategoryOptions();

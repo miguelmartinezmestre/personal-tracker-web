@@ -12,6 +12,8 @@ import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
 import { NotificationSonnerListener } from '@/features/notifications';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const isPlatformSetUp = await checkPlatformSetUp();
     if (!isPlatformSetUp) {

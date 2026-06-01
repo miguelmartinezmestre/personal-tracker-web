@@ -7,7 +7,7 @@ import {
     SavedObjectiveForm,
     savedObjectiveSchema,
 } from '@/features/objectives/schemas/objective';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { useTranslations } from 'next-intl';
@@ -18,21 +18,16 @@ import {
     buildUpdateObjectivePayload,
     getObjectiveEditFormValues,
 } from '@/features/objectives/lib/objective-form-payloads';
-import { invalidateObjectiveMutationQueries } from '@/features/objectives/lib/objective-query-invalidation';
 
 export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
-    const queryClient = useQueryClient();
     const initialValues = getObjectiveEditFormValues(defaultValues);
     const updateObjective = useConvexMutation(api.objectives.updateObjective);
 
     const updateObjectiveMutation = useMutation({
         mutationFn: async (args: ReturnType<typeof buildUpdateObjectivePayload>) =>
             await updateObjective(args),
-        onSuccess: (_updatedObjective, variables) => {
-            return invalidateObjectiveMutationQueries(queryClient, variables.id);
-        },
     });
 
     const { categoriesQuery, categoryOptions } = useObjectiveCategoryOptions();

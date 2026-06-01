@@ -1,11 +1,9 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
-
-const INVITATIONS_QUERY_KEY = ['user-invitations'];
 
 export type InvitationRole = 'owner' | 'admin' | 'member';
 
@@ -80,37 +78,20 @@ export function usePendingInvitations() {
 }
 
 export function useAcceptInvitation() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (invitationId: string) => {
             return await authClient.organization.acceptInvitation({
                 invitationId,
             });
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: INVITATIONS_QUERY_KEY,
-            });
-            queryClient.invalidateQueries({
-                queryKey: ['organizations'],
-            });
-        },
     });
 }
 
 export function useRejectInvitation() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (invitationId: string) => {
             return await authClient.organization.rejectInvitation({
                 invitationId,
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: INVITATIONS_QUERY_KEY,
             });
         },
     });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,14 +26,6 @@ import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { Doc } from '@/convex/_generated/dataModel';
-import { api } from '@/convex/_generated/api';
-import { convexQuery } from '@convex-dev/react-query';
-import { invalidateConvexQuery } from '@/platform/convex/query-keys';
-import { ADMIN_PAGINATION_OPTS } from '@/lib/pagination';
-
-const ADMIN_USERS_QUERY = convexQuery(api.admin.listUsers, {
-    paginationOpts: ADMIN_PAGINATION_OPTS,
-});
 
 export function EditUserModal({
     user,
@@ -49,7 +41,6 @@ export function EditUserModal({
     const [email, setEmail] = useState(user.email);
     const [name, setName] = useState(user.name);
     const [role, setRole] = useState(user.role === 'ADMIN' ? 'admin' : user.role || 'user');
-    const queryClient = useQueryClient();
 
     const updateUser = useMutation({
         mutationFn: async () => {
@@ -65,7 +56,6 @@ export function EditUserModal({
         onSuccess: () => {
             toast.success(t('usersTable.toast.updatedSuccess'));
             setOpen(false);
-            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
             onSuccessAction?.();
         },
         onError: (error: Error) => {

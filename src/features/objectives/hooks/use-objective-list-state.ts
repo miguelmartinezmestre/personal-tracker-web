@@ -9,7 +9,6 @@ import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
-import { OBJECTIVE_SEARCH_LIMIT } from '@/features/objectives/lib/objective-query-invalidation';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 const DEFAULT_FILTERS: FilterOptions = {
@@ -55,7 +54,7 @@ export function useObjectiveListState() {
             hasSearch
                 ? {
                       search: searchText,
-                      limit: OBJECTIVE_SEARCH_LIMIT,
+                      limit: DEFAULT_PAGE_SIZE,
                       status: statusFilter,
                       categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
@@ -88,7 +87,7 @@ export function useObjectiveListState() {
             hasSearch
                 ? {
                       search: searchText,
-                      limit: OBJECTIVE_SEARCH_LIMIT,
+                      limit: DEFAULT_PAGE_SIZE,
                       status: statusFilter,
                       categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,

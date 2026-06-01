@@ -1,19 +1,10 @@
 import { authClient } from '@/features/auth/client';
-import { api } from '@/convex/_generated/api';
-import { convexQuery } from '@convex-dev/react-query';
-import { invalidateConvexQuery } from '@/platform/convex/query-keys';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { ADMIN_PAGINATION_OPTS } from '@/lib/pagination';
-
-const ADMIN_USERS_QUERY = convexQuery(api.admin.listUsers, {
-    paginationOpts: ADMIN_PAGINATION_OPTS,
-});
 
 export function useBanUser() {
     const t = useTranslations('Admin');
-    const queryClient = useQueryClient();
 
     const { mutate: banUser, isPending: isBanningUser } = useMutation({
         mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
@@ -24,7 +15,6 @@ export function useBanUser() {
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.bannedSuccess'));
-            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.banFailed', { message: error.message }));
@@ -35,7 +25,6 @@ export function useBanUser() {
 
 export function useUnBanUser() {
     const t = useTranslations('Admin');
-    const queryClient = useQueryClient();
 
     const { mutate: unbanUser, isPending: isUnbanningUser } = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
@@ -43,7 +32,6 @@ export function useUnBanUser() {
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.unbannedSuccess'));
-            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.unbanFailed', { message: error.message }));
@@ -54,7 +42,6 @@ export function useUnBanUser() {
 
 export function useDeleteUser() {
     const t = useTranslations('Admin');
-    const queryClient = useQueryClient();
 
     const { mutate: deleteUser, isPending: isDeletingUser } = useMutation({
         mutationFn: async ({ userId }: { userId: string }) => {
@@ -62,7 +49,6 @@ export function useDeleteUser() {
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.deletedSuccess'));
-            invalidateConvexQuery(queryClient, ADMIN_USERS_QUERY);
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.deleteFailed', { message: error.message }));
