@@ -5,7 +5,7 @@ services:
             - MYSQL_ROOT_PASSWORD=root
             - MYSQL_DATABASE=convex_self_hosted
         volumes:
-            - mysql-data-e2e:/var/lib/mysql
+            - ./mysql-data-e2e:/var/lib/mysql
         healthcheck:
             test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
             interval: 10s
@@ -39,7 +39,7 @@ services:
             - '${PORT:-4210}:3210'
             - '${SITE_PROXY_PORT:-4211}:3211'
         volumes:
-            - convex-data-e2e:/convex/data
+            - ./convex-data-e2e:/convex/data
         environment:
             - INSTANCE_NAME=${INSTANCE_NAME:-}
             - INSTANCE_SECRET=${INSTANCE_SECRET:-}
