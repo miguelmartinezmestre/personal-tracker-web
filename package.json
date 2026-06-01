@@ -116,21 +116,5 @@
   "engines": {
     "node": ">=22.21.1"
   },
-  "packageManager": "pnpm@11.0.8",
-  "pnpm": {
-    "overrides": {
-      "glob": "^11.1.0",
-      "js-yaml": "^4.1.1",
-      "tmp": ">=0.2.4"
-    },
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@swc/core",
-      "@tailwindcss/oxide",
-      "core-js-pure",
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ]
-  }
+  "packageManager": "pnpm@11.0.8"
 }
