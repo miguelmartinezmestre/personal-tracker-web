@@ -1,5 +1,5 @@
 import { test, expect } from '../../fixtures/test-base';
-import { createTestUserViaAPI, createOrganization } from '../../helpers/test-helpers';
+import { createTestUser, createOrganization } from '../../helpers/test-helpers';
 import { UserFactory } from '../../helpers/factories';
 
 test.describe('Organization Invitations', () => {
@@ -120,20 +120,16 @@ test.describe('Organization Invitations', () => {
     });
 
     test('view pending invitations received', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
-        await page.goto('/dashboard/invitations');
-        await page.waitForLoadState('domcontentloaded');
+        await page.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
 
         await expect(page).toHaveURL(/\/dashboard\/invitations/);
-
-        const emptyState = page.locator('text=/no.*invitations|sin invitaciones/i');
-        const invitationsList = page.getByTestId('table-row');
-
-        const hasContent = (await emptyState.count()) > 0 || (await invitationsList.count()) > 0;
-        expect(hasContent).toBeTruthy();
+        await expect(
+            page.getByTestId('invitations-empty').or(page.getByTestId('invitations-list'))
+        ).toBeVisible({ timeout: 15_000 });
     });
 
     test('accept invitation as existing user', { tag: ['@REQ-EQUIPOS-008'] }, async ({ page }) => {
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
         const organization = await createOrganization(page, {
             name: `Accept Org ${Date.now()}`,
         });

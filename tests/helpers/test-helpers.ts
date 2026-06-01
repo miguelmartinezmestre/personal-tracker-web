@@ -1,9 +1,8 @@
 import { Page, expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '@/convex/_generated/api';
 
 export const DEFAULT_PASSWORD = 'Password123';
+const DASHBOARD_HOME_RE = /\/dashboard\/home(\?|$)/;
 
 function normalizeForEmail(name: string): string {
     return name
@@ -49,23 +48,6 @@ export interface TestUserData {
     organizationSlug: string;
 }
 
-interface AuthSessionPayload {
-    session?: {
-        activeOrganizationId?: string | null;
-    } | null;
-    user?: unknown;
-    data?: {
-        session?: {
-            activeOrganizationId?: string | null;
-        } | null;
-        user?: unknown;
-    } | null;
-}
-
-interface OrganizationListItem {
-    id?: string;
-}
-
 export function generateTestUserData(options?: CreateTestUserOptions): TestUserData {
     const uuid = randomUUID();
     const shortId = uuid.substring(0, 8);
@@ -100,36 +82,7 @@ export function generateTestUserData(options?: CreateTestUserOptions): TestUserD
     };
 }
 
-async function getSessionData(page: Page): Promise<AuthSessionPayload | null> {
-    try {
-        const response = await page.request.get('/api/auth/get-session');
-
-        if (!response.ok()) {
-            return null;
-        }
-
-        const payload = (await response.json()) as AuthSessionPayload | null;
-        if (!payload || typeof payload !== 'object') {
-            return null;
-        }
-
-        return payload.data ?? payload;
-    } catch {
-        return null;
-    }
-}
-
-async function hasAuthenticatedSession(page: Page): Promise<boolean> {
-    const sessionData = await getSessionData(page);
-    return Boolean(sessionData?.session && sessionData?.user);
-}
-
-async function hasActiveOrganization(page: Page): Promise<boolean> {
-    const sessionData = await getSessionData(page);
-    return Boolean(sessionData?.session?.activeOrganizationId);
-}
-
-async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> {
+export async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> {
     const switcher = page.getByTestId('organization-switcher');
     if ((await switcher.count()) === 0) {
         return false;
@@ -149,61 +102,6 @@ async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> {
     }
 
     return !label.includes('no organization') && !label.includes('sin organizacion');
-}
-
-async function getOrganizationIds(page: Page): Promise<string[]> {
-    try {
-        return await page.evaluate(async () => {
-            const response = await fetch('/api/auth/organization/list', {
-                method: 'GET',
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                return [];
-            }
-
-            const payload = (await response.json()) as
-                | OrganizationListItem[]
-                | { data?: unknown }
-                | null;
-
-            const organizations = Array.isArray(payload)
-                ? payload
-                : Array.isArray(payload?.data)
-                  ? (payload.data as OrganizationListItem[])
-                  : [];
-
-            return organizations
-                .map(organization => organization.id)
-                .filter(
-                    (organizationId): organizationId is string =>
-                        typeof organizationId === 'string' && organizationId.length > 0
-                );
-        });
-    } catch {
-        return [];
-    }
-}
-
-async function setActiveOrganizationViaBrowser(
-    page: Page,
-    organizationId: string
-): Promise<boolean> {
-    try {
-        return await page.evaluate(async organizationIdArg => {
-            const response = await fetch('/api/auth/organization/set-active', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ organizationId: organizationIdArg }),
-            });
-
-            return response.ok;
-        }, organizationId);
-    } catch {
-        return false;
-    }
 }
 
 async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
@@ -228,38 +126,51 @@ async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
     }
 
     await option.click();
-    await expect(option).toBeHidden({ timeout: 5000 });
+    await expect(option)
+        .toBeHidden({ timeout: 5000 })
+        .catch(() => undefined);
 
     return true;
 }
 
-async function waitForAuthenticatedSession(page: Page, timeout = 15000): Promise<void> {
-    await expect
-        .poll(async () => await hasAuthenticatedSession(page), {
-            timeout,
-            intervals: [500, 1000, 2000],
-        })
-        .toBe(true);
+async function selectOrganizationByName(page: Page, organizationName: string): Promise<boolean> {
+    const switcher = page.getByTestId('organization-switcher');
+    if ((await switcher.count()) === 0) {
+        return false;
+    }
+
+    await switcher.first().click();
+    const option = page.locator('[data-testid^="organization-option-"]', {
+        hasText: organizationName,
+    });
+
+    try {
+        await expect(option.first()).toBeVisible({ timeout: 5000 });
+    } catch {
+        await page.keyboard.press('Escape').catch(() => undefined);
+        return false;
+    }
+
+    await option.first().click();
+    await expect(option.first())
+        .toBeHidden({ timeout: 5000 })
+        .catch(() => undefined);
+    return true;
+}
+
+async function waitForAuthenticatedDashboard(page: Page, timeout = 15000): Promise<void> {
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(DASHBOARD_HOME_RE, { timeout });
+    await expect(page.getByTestId('app-sidebar')).toBeVisible({ timeout });
 }
 
 async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<void> {
-    if ((await hasActiveOrganization(page)) && (await hasOrganizationSelectedInUI(page))) {
+    if (await hasOrganizationSelectedInUI(page)) {
         return;
     }
 
     const timeoutAt = Date.now() + timeout;
     while (Date.now() < timeoutAt) {
-        const organizationIds = await getOrganizationIds(page);
-        for (const organizationId of organizationIds) {
-            if (await setActiveOrganizationViaBrowser(page, organizationId)) {
-                await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-                await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
-                if (await hasOrganizationSelectedInUI(page)) {
-                    return;
-                }
-            }
-        }
-
         if (await setActiveOrganizationViaUi(page)) {
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
             if (await hasOrganizationSelectedInUI(page)) {
@@ -267,45 +178,25 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
             }
         }
 
-        await page
-            .goto('/dashboard/home', { waitUntil: 'domcontentloaded' })
-            .catch(() => undefined);
-        if ((await hasActiveOrganization(page)) && (await hasOrganizationSelectedInUI(page))) {
+        const organizationName = `Test Org ${Date.now()}`;
+        await createOrganization(page, {
+            name: organizationName,
+            description: 'Created from the Playwright UI setup flow',
+        });
+        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+        if (await selectOrganizationByName(page, organizationName)) {
+            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+        }
+        if (await hasOrganizationSelectedInUI(page)) {
             return;
         }
     }
 
-    try {
-        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    } catch {}
+    throw new Error('Could not select or create an active organization through the UI');
 }
 
 export async function ensureAuthenticatedState(page: Page): Promise<void> {
-    await waitForAuthenticatedSession(page);
-    let ensureOrganizationResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        ensureOrganizationResponse = await page.request.post('/api/test/ensure-organization', {
-            headers: { 'Content-Type': 'application/json' },
-            data: JSON.stringify({ createPersonalCategory: true }),
-        });
-
-        if (ensureOrganizationResponse.ok() || ensureOrganizationResponse.status() < 500) {
-            break;
-        }
-
-        await page.waitForTimeout(1000);
-    }
-
-    if (!ensureOrganizationResponse) {
-        throw new Error('Ensure organization API failed (0): No response');
-    }
-
-    if (!ensureOrganizationResponse.ok()) {
-        const body = await ensureOrganizationResponse.text();
-        throw new Error(
-            `Ensure organization API failed (${ensureOrganizationResponse.status()}): ${body}`
-        );
-    }
+    await waitForAuthenticatedDashboard(page);
     await ensureActiveOrganization(page);
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 }
@@ -319,27 +210,8 @@ async function loginWithCredentials(page: Page, email: string, password: string)
         await page.getByTestId('password-input').fill(password);
         await page.getByTestId('login-button').click();
 
-        const loginDeadline = Date.now() + 15_000;
-        while (Date.now() < loginDeadline) {
-            const currentUrl = page.url();
-            if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
-                break;
-            }
-
-            try {
-                if (await hasAuthenticatedSession(page)) {
-                    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-                    break;
-                }
-            } catch {}
-
-            await page.waitForTimeout(500);
-        }
-
         try {
-            if (!/\/dashboard\/home(\?|$)/.test(page.url())) {
-                await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-            }
+            await page.waitForURL(DASHBOARD_HOME_RE, { timeout: 15000 });
             await ensureAuthenticatedState(page);
             return;
         } catch {
@@ -369,7 +241,7 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
 
     await page.getByTestId('register-button').click();
 
-    let outcome: 'dashboard' | 'login' | 'session' | null = null;
+    let outcome: 'dashboard' | 'login' | null = null;
 
     try {
         await page.waitForURL(/\/(dashboard\/home|login)(\?|$)/, { timeout: 12000 });
@@ -379,11 +251,7 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
         } else {
             outcome = 'login';
         }
-    } catch {
-        if (await hasAuthenticatedSession(page)) {
-            outcome = 'session';
-        }
-    }
+    } catch {}
 
     if (!outcome) {
         throw new Error(`Registration did not complete. Current URL: ${page.url()}`);
@@ -394,29 +262,21 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
         return;
     }
 
-    if (outcome === 'session') {
-        await page.goto('/dashboard/home');
-        await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
-    }
-
-    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 15000 });
+    await page.waitForURL(DASHBOARD_HOME_RE, { timeout: 15000 });
     await ensureAuthenticatedState(page);
 }
 
 async function recoverAuthenticatedUser(page: Page, userData: TestUserData): Promise<boolean> {
-    if (await hasAuthenticatedSession(page)) {
-        try {
-            await page.goto('/dashboard/home');
-            await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 10000 });
+    try {
+        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+        if (DASHBOARD_HOME_RE.test(page.url())) {
             await ensureAuthenticatedState(page);
             return true;
-        } catch {
-            return false;
         }
-    }
+    } catch {}
 
     try {
-        await page.goto('/login');
+        await page.goto('/login', { waitUntil: 'domcontentloaded' });
         await loginWithCredentials(page, userData.email, userData.password);
         return true;
     } catch {
@@ -461,107 +321,6 @@ export async function createTestUser(
     throw new Error(`Failed to create test user after ${maxAttempts} attempt(s): ${reason}`);
 }
 
-export async function createTestUserViaAPI(
-    page: Page,
-    options?: CreateTestUserOptions
-): Promise<TestUserData> {
-    const userData = generateTestUserData(options);
-    const origin = process.env.BASE_URL || 'http://localhost:3000';
-    const headers = { Origin: origin };
-    const requestTimeout = 30000;
-
-    let signUpResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            signUpResponse = await page.request.post('/api/auth/sign-up/email', {
-                headers,
-                timeout: requestTimeout,
-                data: {
-                    email: userData.email,
-                    password: userData.password,
-                    name: userData.username,
-                },
-            });
-
-            if (signUpResponse.ok() || signUpResponse.status() < 500 || attempt === 2) {
-                break;
-            }
-
-            await page.waitForTimeout(1000);
-            continue;
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (
-                attempt < 2 &&
-                /ECONNRESET|fetch failed|ECONNREFUSED|ETIMEDOUT|Timeout .* exceeded/.test(message)
-            ) {
-                await page.waitForTimeout(1000);
-                continue;
-            }
-            throw error;
-        }
-    }
-
-    if (!signUpResponse || !signUpResponse.ok()) {
-        const body = signUpResponse ? await signUpResponse.text() : 'No response';
-        const status = signUpResponse ? signUpResponse.status() : 0;
-        throw new Error(`Sign-up API failed (${status}): ${body}`);
-    }
-
-    let createOrgResponse: Awaited<ReturnType<typeof page.request.post>> | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        createOrgResponse = await page.request.post('/api/auth/organization/create', {
-            headers,
-            timeout: requestTimeout,
-            data: {
-                name: `${userData.username} Org`,
-                slug: userData.organizationSlug,
-            },
-        });
-
-        if (createOrgResponse.ok()) {
-            break;
-        }
-
-        if (createOrgResponse.status() < 500 || attempt === 2) {
-            break;
-        }
-
-        await page.waitForTimeout(1000);
-    }
-
-    if (!createOrgResponse || !createOrgResponse.ok()) {
-        const body = createOrgResponse ? await createOrgResponse.text() : 'No response';
-        const status = createOrgResponse ? createOrgResponse.status() : 0;
-        throw new Error(`Create org API failed (${status}): ${body}`);
-    }
-
-    const orgPayload = (await createOrgResponse.json()) as { id?: string; data?: { id?: string } };
-    const orgId = orgPayload.id ?? orgPayload.data?.id;
-
-    if (!orgId) {
-        throw new Error('Create org API did not return an organization ID');
-    }
-
-    const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
-        headers,
-        timeout: requestTimeout,
-        data: { organizationId: orgId },
-    });
-
-    if (!setActiveResponse.ok()) {
-        const body = await setActiveResponse.text();
-        throw new Error(`Set active org API failed (${setActiveResponse.status()}): ${body}`);
-    }
-
-    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded', timeout: requestTimeout });
-    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: requestTimeout });
-    await setActiveOrganizationViaBrowser(page, orgId);
-    await ensureAuthenticatedState(page);
-
-    return userData;
-}
-
 export async function loginUser(
     page: Page,
     email: string,
@@ -569,37 +328,21 @@ export async function loginUser(
 ): Promise<void> {
     await page.goto('/login');
     await loginWithCredentials(page, email, password);
-    if (!/\/dashboard\/home(\?|$)/.test(page.url())) {
+    if (!DASHBOARD_HOME_RE.test(page.url())) {
         await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
     }
-    await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
+    await expect(page).toHaveURL(DASHBOARD_HOME_RE);
 }
 
 export async function logoutUser(page: Page): Promise<void> {
-    const origin = process.env.BASE_URL || 'http://localhost:3000';
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' }).catch(() => undefined);
+    if (/\/login(\?|$)/.test(page.url())) {
+        return;
+    }
 
-    await page.request
-        .post('/api/auth/sign-out', {
-            headers: { Origin: origin },
-            timeout: 15000,
-            data: {},
-        })
-        .catch(() => undefined);
-    await page.context().clearCookies();
-    await page
-        .evaluate(() => {
-            localStorage.clear();
-            sessionStorage.clear();
-        })
-        .catch(() => undefined);
-
-    await expect
-        .poll(async () => !(await hasAuthenticatedSession(page)), {
-            timeout: 10000,
-            intervals: [250, 500, 1000],
-        })
-        .toBe(true);
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    const logoutButton = page.getByTestId('logout-button');
+    await expect(logoutButton).toBeVisible({ timeout: 10000 });
+    await logoutButton.click();
     await expect(page).toHaveURL(/\/login(\?|$)/);
 }
 
@@ -672,13 +415,17 @@ export async function createObjective(
     const uuid = randomUUID();
     const title = options?.title ?? `test-objective-${uuid.substring(0, 8)}`;
     const description = options?.description ?? 'Test objective description';
-    const category = options?.category ?? 'Personal';
+    const category = options?.category ?? `Obj Cat ${uuid.substring(0, 8)}`;
     const targetValue = options?.targetValue ?? 100;
     const currentValue = options?.currentValue ?? 0;
     const unit = options?.unit ?? 'units';
 
     if (options?.ensureCategories !== false) {
         await ensureDefaultCategories(page);
+    }
+
+    if (options?.ensureCategories === false || options?.category === undefined) {
+        await createCategory(page, { name: category });
     }
 
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -692,14 +439,9 @@ export async function createObjective(
     const enabledOptions = page.locator(
         '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
     );
-    await expect(enabledOptions.first()).toBeVisible({ timeout: 10000 });
-
     const categoryOption = enabledOptions.filter({ hasText: new RegExp(category, 'i') }).first();
-    if ((await categoryOption.count()) > 0) {
-        await categoryOption.click();
-    } else {
-        await enabledOptions.first().click();
-    }
+    await expect(categoryOption).toBeVisible({ timeout: 10_000 });
+    await categoryOption.click();
 
     await page.getByTestId('objective-target-input').fill(`${targetValue}`);
     await page.getByTestId('objective-unit-input').fill(unit);
@@ -726,38 +468,20 @@ export interface CategoryData {
     color: string;
 }
 
-async function getConvexAuthToken(page: Page): Promise<string> {
-    const deadline = Date.now() + 15_000;
+const categoryColorValues: Record<string, string> = {
+    Red: '#ef4444',
+    Orange: '#f97316',
+    Yellow: '#eab308',
+    Green: '#22c55e',
+    Teal: '#14b8a6',
+    Blue: '#3b82f6',
+    Purple: '#a855f7',
+    Pink: '#ec4899',
+    Gray: '#6b7280',
+};
 
-    while (Date.now() < deadline) {
-        try {
-            const response = await page.request.get('/api/auth/convex/token');
-            if (!response.ok()) {
-                await page.waitForTimeout(500);
-                continue;
-            }
-
-            const payload = (await response.json()) as { token?: string } | null;
-            if (typeof payload?.token === 'string' && payload.token.length > 0) {
-                return payload.token;
-            }
-        } catch {}
-
-        await page.waitForTimeout(500);
-    }
-
-    throw new Error('Convex auth token response did not include a token');
-}
-
-async function createConvexClient(page: Page): Promise<ConvexHttpClient> {
-    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_SELF_HOSTED_URL;
-    if (!convexUrl) {
-        throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured for Playwright tests');
-    }
-
-    const client = new ConvexHttpClient(convexUrl);
-    client.setAuth(await getConvexAuthToken(page));
-    return client;
+function categoryColorValue(color: string): string {
+    return categoryColorValues[color] ?? color;
 }
 
 export async function createCategory(
@@ -767,29 +491,33 @@ export async function createCategory(
     const uuid = randomUUID();
     const name = options?.name ?? `test-category-${uuid.substring(0, 8)}`;
     const color = options?.color ?? 'Blue';
+    const colorValue = categoryColorValue(color);
 
     await ensureAuthenticatedState(page);
-    const client = await createConvexClient(page);
-    await client.mutation(api.categories.createCategory, {
-        name,
-        color,
+    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId('category-create-open').click();
+    await expect(page.getByTestId('category-name-input')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('category-name-input').fill(name);
+
+    await page.getByTestId('category-color-select').click();
+    await page.waitForSelector('[role="option"]', { timeout: 10_000 });
+    await page.getByTestId(`category-color-${colorValue}`).click();
+
+    const saveButton = page.getByTestId('category-save-button');
+    await expect(saveButton).toBeEnabled({ timeout: 10_000 });
+    await page
+        .locator('[role="dialog"] form')
+        .evaluate(form => (form as HTMLFormElement).requestSubmit())
+        .catch(async () => {
+            await saveButton.click();
+        });
+
+    await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
+        timeout: 15_000,
     });
 
-    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-
-    let count = 0;
-    const maxTime = Date.now() + 20_000;
-
-    while (Date.now() < maxTime && count === 0) {
-        count = await page.getByTestId('table-row').filter({ hasText: name }).count();
-        if (count === 0) {
-            await page.reload({ waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(1000);
-        }
-    }
-
-    expect(count).toBeGreaterThan(0);
-    return { name, color };
+    return { name, color: colorValue };
 }
 
 const PERSONAL_ROW = /\bPersonal\b/i;
@@ -812,15 +540,6 @@ async function hasVisiblePersonalCategory(page: Page): Promise<boolean> {
 
 export async function ensureDefaultCategories(page: Page): Promise<void> {
     await ensureAuthenticatedState(page);
-
-    const client = await createConvexClient(page);
-    await client
-        .mutation(api.categories.createCategory, {
-            name: 'Personal',
-            color: 'Blue',
-        })
-        .catch(() => undefined);
-
     await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
     await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15_000 });
 
@@ -838,6 +557,9 @@ export async function ensureDefaultCategories(page: Page): Promise<void> {
     if (hasPersonalCategory) {
         return;
     }
+
+    await createCategory(page, { name: 'Personal', color: 'Blue' }).catch(() => undefined);
+    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
 
     const maxVerify = Date.now() + 15_000;
     while (Date.now() < maxVerify) {
@@ -915,12 +637,30 @@ export async function createNotification(
 
     await page.goto('/dashboard/notifications');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('[data-testid="notification-create-open"]', { timeout: 15000 });
 
-    await page.getByTestId('notification-create-open').click();
-    await page.getByTestId('notification-objective-select').click();
+    const createButton = page.getByTestId('notification-create-open');
+    await expect(createButton).toBeVisible({ timeout: 15000 });
+
+    const objectiveSelect = page.getByTestId('notification-objective-select');
+    let modalOpened = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await createButton.click();
+        try {
+            await expect(objectiveSelect).toBeVisible({ timeout: 5000 });
+            modalOpened = true;
+            break;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+        }
+    }
+
+    if (!modalOpened) {
+        throw new Error('Could not open notification create modal');
+    }
+
+    await objectiveSelect.click();
     await page.waitForSelector('[role="option"]', { timeout: 5000 });
-    const objectiveOption = page.getByRole('option').filter({ hasText: objectiveTitle }).first();
+    const objectiveOption = page.getByRole('option', { name: objectiveTitle }).first();
     if ((await objectiveOption.count()) > 0) {
         await objectiveOption.click();
     } else {
@@ -930,43 +670,12 @@ export async function createNotification(
     await page.getByTestId('notification-message-input').fill(message);
     await page.getByTestId('notification-save-button').click();
 
-    await expect(page.getByText(message)).toBeVisible({ timeout: 10000 });
+    await expect(objectiveSelect).toBeHidden({ timeout: 15000 });
+    await expect(page.getByTestId('table-row').filter({ hasText: message })).toBeVisible({
+        timeout: 15000,
+    });
 
     return { message, type };
-}
-
-export async function promoteToAdmin(page: Page): Promise<void> {
-    return setupPlatformAsAdmin(page);
-}
-
-export async function setupPlatformAsAdmin(page: Page): Promise<void> {
-    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.evaluate(async () => {
-            const setupResponse = await fetch('/api/test/setup-platform', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({}),
-            });
-
-            if (!setupResponse.ok) {
-                const body = await setupResponse.text();
-                throw new Error(`Setup platform failed: ${setupResponse.status} ${body}`);
-            }
-
-            return await setupResponse.json();
-        });
-
-        await page.reload({ waitUntil: 'domcontentloaded' });
-        const adminMenuItem = page.locator('a[href*="/dashboard/admin"], [data-testid*="admin"]');
-        try {
-            await expect(adminMenuItem.first()).toBeVisible({ timeout: 5000 });
-            return;
-        } catch {}
-    }
-
-    throw new Error('Failed to setup platform as admin after retries');
 }
 
 export async function waitForToast(page: Page, message: string | RegExp): Promise<void> {

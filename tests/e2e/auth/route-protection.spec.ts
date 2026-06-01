@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
 import {
-    createTestUserViaAPI,
+    createObjective,
+    createTestUser,
     ensureAuthenticatedState,
-    ensureDefaultCategories,
     loginUser,
     logoutUser,
-    openCreateObjectiveModal,
 } from '../../helpers/test-helpers';
 import {
     expectOnLogin,
@@ -29,10 +28,9 @@ test.describe('Route Protection', () => {
     test(
         'redirect to login when not authenticated',
         { tag: ['@REQ-ROLES-001', '@cross-browser'] },
-        async ({ page }) => {
-            await page.goto('/dashboard/home');
-
-            await page.waitForURL(/\/login$/);
+        async ({ page, context }) => {
+            await context.clearCookies();
+            await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
             await expectOnLogin(page);
         }
     );
@@ -41,9 +39,9 @@ test.describe('Route Protection', () => {
         test(
             `redirect to login for ${name} page when not authenticated`,
             { tag: ['@REQ-ROLES-001'] },
-            async ({ page }) => {
-                await page.goto(route);
-                await page.waitForURL(/\/login$/);
+            async ({ page, context }) => {
+                await context.clearCookies();
+                await page.goto(route, { waitUntil: 'domcontentloaded' });
                 await expectOnLogin(page);
             }
         );
@@ -53,7 +51,7 @@ test.describe('Route Protection', () => {
         'redirect to dashboard after successful login',
         { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
-            await createTestUserViaAPI(page);
+            await createTestUser(page);
 
             await expectOnDashboard(page);
             await expect(page).toHaveURL(/\/dashboard\/home$/);
@@ -64,7 +62,7 @@ test.describe('Route Protection', () => {
         'protect admin routes from non-admin users',
         { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002', '@cross-browser'] },
         async ({ page }) => {
-            await createTestUserViaAPI(page);
+            await createTestUser(page);
 
             await page.goto('/dashboard/admin/users');
             await page.waitForLoadState('domcontentloaded');
@@ -139,7 +137,7 @@ test.describe('Route Protection', () => {
         'admin menu visible only for admin users',
         { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002'] },
         async ({ page }) => {
-            await createTestUserViaAPI(page);
+            await createTestUser(page);
 
             await page.goto('/dashboard/home');
             await page.waitForLoadState('domcontentloaded');
@@ -170,7 +168,7 @@ test.describe('Route Protection', () => {
         'authenticated user can access all dashboard routes',
         { tag: ['@REQ-ROLES-001'] },
         async ({ page }) => {
-            await createTestUserViaAPI(page);
+            await createTestUser(page);
 
             const routes = [
                 '/dashboard/home',
@@ -198,7 +196,7 @@ test.describe('Route Protection', () => {
         'session expires after logout',
         { tag: ['@REQ-AUTENTICACION-005', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
-            await createTestUserViaAPI(page);
+            await createTestUser(page);
             await expectOnDashboard(page);
 
             await logoutUser(page);
@@ -229,7 +227,7 @@ test.describe('Route Protection', () => {
             await page.goto('/login');
             await page.waitForLoadState('domcontentloaded');
 
-            await expect(page).toHaveURL(/\/login$/);
+            await expect(page).toHaveURL(/\/login(\?|$)/);
         }
     );
 
@@ -248,7 +246,7 @@ test.describe('Route Protection', () => {
         'authenticated user accessing login redirects to dashboard',
         { tag: ['@REQ-ROLES-001', '@cross-browser'] },
         async ({ page }) => {
-            await createTestUserViaAPI(page);
+            await createTestUser(page);
 
             await page.goto('/login');
             await page.waitForLoadState('domcontentloaded');
@@ -272,30 +270,14 @@ test.describe('Route Protection', () => {
             async ({ browser }) => {
                 const contextA = await browser.newContext();
                 const pageA = await contextA.newPage();
-                await createTestUserViaAPI(pageA);
+                await createTestUser(pageA);
 
-                await ensureDefaultCategories(pageA);
-                await pageA.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-                await openCreateObjectiveModal(pageA);
                 const objectiveTitle = `User A Secret Objective ${Date.now()}`;
-                await pageA.getByTestId('objective-title-input').fill(objectiveTitle);
-                await pageA.getByTestId('objective-target-input').fill('100');
-                await pageA.getByTestId('objective-unit-input').fill('units');
-                await pageA.getByTestId('objective-category-select').click();
-                const enabledCategoryOptions = pageA.locator(
-                    '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-                );
-                await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
-                await enabledCategoryOptions.first().click();
-                await pageA.getByTestId('objective-save-button').click();
-
-                await expect(
-                    pageA.getByTestId('table-row').filter({ hasText: objectiveTitle }).first()
-                ).toBeVisible({ timeout: 10000 });
+                await createObjective(pageA, { title: objectiveTitle, ensureCategories: false });
 
                 const contextB = await browser.newContext();
                 const pageB = await contextB.newPage();
-                const userB = await createTestUserViaAPI(pageB);
+                const userB = await createTestUser(pageB);
 
                 try {
                     await pageB.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -318,7 +300,7 @@ test.describe('Route Protection', () => {
                 const context = await browser.newContext();
                 const page = await context.newPage();
 
-                await createTestUserViaAPI(page);
+                await createTestUser(page);
 
                 await page.goto('/dashboard/admin/audit');
                 await page.waitForLoadState('domcontentloaded');
@@ -351,7 +333,7 @@ test.describe('Route Protection', () => {
                 const context = await browser.newContext();
                 const page = await context.newPage();
 
-                await createTestUserViaAPI(page);
+                await createTestUser(page);
 
                 await page.goto('/dashboard/admin/sessions');
                 await page.waitForLoadState('domcontentloaded');

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import {
-    createTestUserViaAPI,
-    ensureDefaultCategories,
+    createCategory,
+    createTestUser,
     openCreateObjectiveModal,
     openCreateProgressModal,
 } from '../../helpers/test-helpers';
@@ -28,13 +28,20 @@ async function assertNoDangerousDomNodes(page: Page): Promise<void> {
     ).toBe(0);
 }
 
-async function selectFirstEnabledCategory(page: Page): Promise<void> {
+async function seedObjectiveCategory(page: Page): Promise<string> {
+    const categoryName = `XSS Cat ${Date.now()}`;
+    await createCategory(page, { name: categoryName });
+    return categoryName;
+}
+
+async function selectObjectiveCategory(page: Page, categoryName: string): Promise<void> {
     await page.getByTestId('objective-category-select').click();
-    const enabledCategoryOptions = page.locator(
-        '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-    );
-    await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10000 });
-    await enabledCategoryOptions.first().click();
+    const categoryOption = page
+        .locator('[role="option"]:not([data-disabled]):not([aria-disabled="true"])')
+        .filter({ hasText: new RegExp(categoryName, 'i') })
+        .first();
+    await expect(categoryOption).toBeVisible({ timeout: 10_000 });
+    await categoryOption.click();
 }
 
 async function openObjectiveDetailFromList(page: Page, objectiveTitle: string): Promise<void> {
@@ -64,8 +71,8 @@ async function openObjectiveDetailFromList(page: Page, objectiveTitle: string): 
 
 test.describe('XSS Prevention - Objective Titles', () => {
     test('should sanitize script tags in objective titles', async ({ page }) => {
-        await createTestUserViaAPI(page);
-        await ensureDefaultCategories(page);
+        await createTestUser(page);
+        const categoryName = await seedObjectiveCategory(page);
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
@@ -77,7 +84,7 @@ test.describe('XSS Prevention - Objective Titles', () => {
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
 
-        await selectFirstEnabledCategory(page);
+        await selectObjectiveCategory(page, categoryName);
         await page.getByTestId('objective-save-button').click();
 
         const titleRow = page
@@ -95,8 +102,8 @@ test.describe('XSS Prevention - Objective Titles', () => {
     });
 
     test('should sanitize event handlers in objective titles', async ({ page }) => {
-        await createTestUserViaAPI(page);
-        await ensureDefaultCategories(page);
+        await createTestUser(page);
+        const categoryName = await seedObjectiveCategory(page);
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
@@ -108,7 +115,7 @@ test.describe('XSS Prevention - Objective Titles', () => {
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
 
-        await selectFirstEnabledCategory(page);
+        await selectObjectiveCategory(page, categoryName);
         await page.getByTestId('objective-save-button').click();
 
         await expect(
@@ -125,8 +132,8 @@ test.describe('XSS Prevention - Objective Titles', () => {
 
 test.describe('XSS Prevention - Progress Comments', () => {
     test('should sanitize XSS in progress update comments', async ({ page }) => {
-        await createTestUserViaAPI(page);
-        await ensureDefaultCategories(page);
+        await createTestUser(page);
+        const categoryName = await seedObjectiveCategory(page);
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');
@@ -138,7 +145,7 @@ test.describe('XSS Prevention - Progress Comments', () => {
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
 
-        await selectFirstEnabledCategory(page);
+        await selectObjectiveCategory(page, categoryName);
         await page.getByTestId('objective-save-button').click();
 
         await expect(
@@ -164,7 +171,7 @@ test.describe('XSS Prevention - Progress Comments', () => {
 
 test.describe('XSS Prevention - URL Parameters', () => {
     test('should sanitize malicious URL parameters', async ({ page }) => {
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
 
         const maliciousUrl = '/dashboard/home?message=<script>alert("XSS")</script>';
         await page.goto(maliciousUrl);
@@ -175,7 +182,7 @@ test.describe('XSS Prevention - URL Parameters', () => {
     });
 
     test('should handle javascript protocol in links', async ({ page }) => {
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
 
         await page.goto('/dashboard/home');
         await page.waitForLoadState('domcontentloaded');
@@ -188,7 +195,7 @@ test.describe('XSS Prevention - URL Parameters', () => {
 
 test.describe('XSS Prevention - Stored XSS', () => {
     test('should prevent stored XSS through category names', async ({ page }) => {
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
 
         await page.goto('/dashboard/categories');
         await page.waitForLoadState('domcontentloaded');
@@ -217,7 +224,7 @@ test.describe('XSS Prevention - Stored XSS', () => {
         const context = await browser.newContext();
         const page2 = await context.newPage();
 
-        await createTestUserViaAPI(page2);
+        await createTestUser(page2);
 
         await page2.goto('/dashboard/organizations');
         await page2.waitForLoadState('domcontentloaded');
@@ -242,7 +249,7 @@ test.describe('XSS Prevention - Stored XSS', () => {
 
 test.describe('XSS Prevention - DOM-based XSS', () => {
     test('should prevent DOM-based XSS through hash fragments', async ({ page }) => {
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
 
         await page.goto('/dashboard/home#<script>alert("XSS")</script>');
         await page.waitForLoadState('domcontentloaded');
@@ -252,7 +259,7 @@ test.describe('XSS Prevention - DOM-based XSS', () => {
     });
 
     test('should safely handle user input in search fields', async ({ page }) => {
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
 
         await page.goto('/dashboard/objectives');
         await page.waitForLoadState('domcontentloaded');

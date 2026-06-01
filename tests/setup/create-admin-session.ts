@@ -1,156 +1,54 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { type Page } from '@playwright/test';
-import { generateTestUserData, type TestUserData } from '../helpers/test-helpers';
+import { expect, type Page } from '@playwright/test';
+import {
+    generateTestUserData,
+    hasOrganizationSelectedInUI,
+    type TestUserData,
+} from '../helpers/test-helpers';
 
 const ADMIN_USER_FILE = 'tests/.auth/admin-user.json';
-const origin = process.env.BASE_URL || 'http://localhost:3000';
-const headers = { Origin: origin };
-
-async function setActiveOrganizationViaBrowser(
-    page: Page,
-    organizationId: string
-): Promise<boolean> {
-    try {
-        return await page.evaluate(async id => {
-            const response = await fetch('/api/auth/organization/set-active', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ organizationId: id }),
-            });
-
-            return response.ok;
-        }, organizationId);
-    } catch {
-        return false;
-    }
-}
 
 async function waitForAdminDashboardReady(page: Page): Promise<void> {
-    const deadline = Date.now() + 15_000;
-    const diagnostics: string[] = [];
-    const pushDiagnostic = (message: string) => {
-        diagnostics.push(message);
-        if (diagnostics.length > 12) {
-            diagnostics.shift();
-        }
-    };
-    const onPageError = (error: Error) => {
-        pushDiagnostic(`pageerror: ${error.message}`);
-    };
-    const onConsole = (message: { type(): string; text(): string }) => {
-        if (message.type() === 'error') {
-            pushDiagnostic(`console: ${message.text()}`);
-        }
-    };
-    const onResponse = (response: { status(): number; url(): string }) => {
-        if (response.status() >= 500) {
-            pushDiagnostic(`response ${response.status()}: ${response.url()}`);
-        }
-    };
+    await expect(async () => {
+        await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
+        await expect(page.getByTestId('organization-switcher')).toBeVisible();
+        expect(await hasOrganizationSelectedInUI(page)).toBe(true);
+    }).toPass({ timeout: 30_000 });
+}
 
-    page.on('pageerror', onPageError);
-    page.on('console', onConsole);
-    page.on('response', onResponse);
+async function completeSetupWizard(page: Page, userData: TestUserData): Promise<void> {
+    await page.goto('/setup', { waitUntil: 'domcontentloaded' });
 
-    try {
-        while (Date.now() < deadline) {
-            try {
-                await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('setup-platform-name').fill('Test Platform');
+    await page.getByTestId('setup-next-button').click();
 
-                const currentUrl = page.url();
-                if (!/\/dashboard\/home(\?|$)/.test(currentUrl)) {
-                    await page.waitForTimeout(500);
-                    continue;
-                }
+    await page.getByTestId('setup-username').fill(userData.username);
+    await page.getByTestId('setup-email').fill(userData.email);
+    await page.getByTestId('setup-password').fill(userData.password);
+    await page.getByTestId('setup-confirm-password').fill(userData.password);
+    await page.getByTestId('setup-next-button').click();
 
-                const switcher = page.getByTestId('organization-switcher');
-                if ((await switcher.count()) > 0) {
-                    const text = ((await switcher.first().textContent()) ?? '').toLowerCase();
-                    if (!text.includes('no organization') && !text.includes('sin organizacion')) {
-                        return;
-                    }
-                }
-            } catch (error) {
-                if (error instanceof Error) {
-                    pushDiagnostic(`wait error: ${error.message}`);
-                }
-            }
+    await page.getByTestId('setup-org-name').fill(`${userData.username} Org`);
+    await page.getByTestId('setup-next-button').click();
 
-            await page.waitForTimeout(500);
-        }
+    await page.getByTestId('setup-next-button').click();
+    await page.locator('#policy-open').click();
+    await page.getByTestId('setup-next-button').click();
 
-        throw new Error(
-            `Admin session did not reach a ready dashboard state. ${diagnostics.join(' | ')}`
-        );
-    } finally {
-        page.off('pageerror', onPageError);
-        page.off('console', onConsole);
-        page.off('response', onResponse);
-    }
+    await page.getByTestId('setup-complete-button').click();
+    await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 30_000 });
 }
 
 export async function createAdminSession(page: Page): Promise<TestUserData> {
     const userData = generateTestUserData();
 
-    const signUpResponse = await page.request.post('/api/auth/sign-up/email', {
-        headers,
-        data: {
-            email: userData.email,
-            password: userData.password,
-            name: userData.username,
-        },
-    });
-
-    if (!signUpResponse.ok()) {
-        const body = await signUpResponse.text();
-        throw new Error(`Sign-up failed (${signUpResponse.status()}): ${body}`);
-    }
-
-    const createOrgResponse = await page.request.post('/api/auth/organization/create', {
-        headers,
-        data: {
-            name: `${userData.username} Org`,
-            slug: userData.organizationSlug,
-        },
-    });
-
-    if (!createOrgResponse.ok()) {
-        const body = await createOrgResponse.text();
-        throw new Error(`Create org failed (${createOrgResponse.status()}): ${body}`);
-    }
-
-    const orgPayload = (await createOrgResponse.json()) as { id?: string; data?: { id?: string } };
-    const organizationId = orgPayload.id ?? orgPayload.data?.id;
-
-    if (!organizationId) {
-        throw new Error('Create org did not return an organization ID');
-    }
-
-    const setActiveResponse = await page.request.post('/api/auth/organization/set-active', {
-        headers,
-        data: { organizationId },
-    });
-
-    if (!setActiveResponse.ok()) {
-        const body = await setActiveResponse.text();
-        throw new Error(`Set active org failed (${setActiveResponse.status()}): ${body}`);
-    }
-
-    const setupResponse = await page.request.post('/api/test/setup-platform', {
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        data: JSON.stringify({}),
-    });
-
-    if (!setupResponse.ok()) {
-        const body = await setupResponse.text();
-        throw new Error(`Setup platform failed (${setupResponse.status()}): ${body}`);
-    }
-
-    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
-    await setActiveOrganizationViaBrowser(page, organizationId);
+    await completeSetupWizard(page, userData);
     await waitForAdminDashboardReady(page);
+    await expect(page.locator('a[href*="/dashboard/admin"]').first()).toBeVisible({
+        timeout: 10_000,
+    });
 
     await mkdir(dirname(ADMIN_USER_FILE), { recursive: true });
     await page.context().storageState({ path: ADMIN_USER_FILE });

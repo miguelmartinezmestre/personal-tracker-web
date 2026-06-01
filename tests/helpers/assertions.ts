@@ -5,7 +5,7 @@ export async function expectOnDashboard(page: Page): Promise<void> {
 }
 
 export async function expectOnLogin(page: Page): Promise<void> {
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/login(\?|$)/, { timeout: 15_000 });
 }
 
 export async function expectOnRegister(page: Page): Promise<void> {

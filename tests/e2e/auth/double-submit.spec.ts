@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { UserFactory } from '../../helpers/factories';
 import { loginUser } from '../../helpers/auth';
+import { createTestUser } from '../../helpers/test-helpers';
 
 test.describe('Double Submit Prevention', () => {
     test.describe('Login Form', () => {
@@ -8,15 +8,7 @@ test.describe('Double Submit Prevention', () => {
             'prevents double submit on login form - button disabled during submission',
             { tag: ['@REQ-AUTENTICACION-001', '@security'] },
             async ({ page }) => {
-                const user = UserFactory.create();
-
-                await page.goto('/register');
-                await page.getByTestId('register-username-input').fill(user.username);
-                await page.getByTestId('register-email-input').fill(user.email);
-                await page.getByTestId('register-password-input').fill(user.password);
-                await page.getByTestId('register-confirm-password-input').fill(user.password);
-                await page.getByTestId('register-button').click();
-                await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+                const user = await createTestUser(page);
 
                 await page.context().clearCookies();
                 await page.goto('/login');
@@ -39,15 +31,7 @@ test.describe('Double Submit Prevention', () => {
             'rapid multiple clicks only submit once - login form',
             { tag: ['@REQ-AUTENTICACION-001', '@security'] },
             async ({ page }) => {
-                const user = UserFactory.create();
-
-                await page.goto('/register');
-                await page.getByTestId('register-username-input').fill(user.username);
-                await page.getByTestId('register-email-input').fill(user.email);
-                await page.getByTestId('register-password-input').fill(user.password);
-                await page.getByTestId('register-confirm-password-input').fill(user.password);
-                await page.getByTestId('register-button').click();
-                await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+                const user = await createTestUser(page);
 
                 await page.context().clearCookies();
                 await page.goto('/login');

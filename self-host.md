@@ -66,8 +66,6 @@ NEXT_PUBLIC_CONVEX_SITE_URL=http://127.0.0.1:3211
 # URL de la app
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Solo para dev/test — habilita el endpoint /api/test/setup-platform
-ALLOW_SETUP_TEST=true
 ```
 
 Notas:

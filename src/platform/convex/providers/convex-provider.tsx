@@ -2,14 +2,47 @@
 
 import { ConvexAuthProvider } from 'kitcn/auth/client';
 import { authClient } from '@/features/auth/client';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { convex, queryClient } from './convex-query-client';
 import { useConvexAuth } from 'convex/react';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
+
+const publicRoutePrefixes = [
+    '/',
+    '/login',
+    '/register',
+    '/forget-password',
+    '/reset-password',
+    '/setup',
+    '/invitations',
+];
+
+function isPublicRoute(pathname: string | null): boolean {
+    if (!pathname) return false;
+    if (pathname === '/') return true;
+    return publicRoutePrefixes.some(prefix => prefix !== '/' && pathname.startsWith(prefix));
+}
 
 function AuthShield({ children }: { children: React.ReactNode }) {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
+    const pathname = usePathname();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (authLoading || isAuthenticated || isPublicRoute(pathname)) {
+            return;
+        }
+
+        const redirectTimer = window.setTimeout(() => {
+            router.replace('/login');
+        }, 750);
+
+        return () => {
+            window.clearTimeout(redirectTimer);
+        };
+    }, [authLoading, isAuthenticated, pathname, router]);
 
     if (authLoading) {
         return (
@@ -19,8 +52,12 @@ function AuthShield({ children }: { children: React.ReactNode }) {
         );
     }
 
-    if (!isAuthenticated) {
-        return <div>Unauthorized</div>;
+    if (!isAuthenticated && !isPublicRoute(pathname)) {
+        return (
+            <div className="flex items-center justify-center h-screen w-screen">
+                <Loader2 className="animate-spin" />
+            </div>
+        );
     }
 
     return children;

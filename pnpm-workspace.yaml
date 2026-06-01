@@ -1,9 +1,16 @@
 # Only resolve versions published at least this many minutes ago (7 days).
 minimumReleaseAge: 10080
 
+overrides:
+    glob: ^11.1.0
+    js-yaml: ^4.1.1
+    tmp: '>=0.2.4'
+
 allowBuilds:
     '@parcel/watcher': true
     '@swc/core': true
+    '@tailwindcss/oxide': true
+    core-js-pure: true
     esbuild: true
     sharp: true
     unrs-resolver: true

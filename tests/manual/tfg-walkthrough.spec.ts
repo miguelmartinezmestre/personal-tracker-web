@@ -1,7 +1,11 @@
 import { test, expect, Page } from '@playwright/test';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '@/convex/_generated/api';
-import { createTestUser, loginUser, openCreateObjectiveModal } from '../helpers/test-helpers';
+import {
+    createNotification,
+    createTestUser,
+    loginUser,
+    logoutUser,
+    openCreateObjectiveModal,
+} from '../helpers/test-helpers';
 import { createAdminSession } from '../setup/create-admin-session';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -80,13 +84,9 @@ async function safeFill(
 }
 
 async function clearBrowserSession(page: Page) {
-    await page
-        .evaluate(() => {
-            localStorage.clear();
-            sessionStorage.clear();
-        })
-        .catch(() => undefined);
-    await page.context().clearCookies();
+    await logoutUser(page).catch(async () => {
+        await page.goto('/login', { waitUntil: 'domcontentloaded' }).catch(() => undefined);
+    });
 }
 
 async function seedAchievementsAsAdmin(page: Page) {
@@ -100,48 +100,6 @@ async function seedAchievementsAsAdmin(page: Page) {
         await seedButton.click();
         await expect(seedButton).toBeHidden({ timeout: 15000 });
     }
-}
-
-async function createNotificationViaApi(
-    page: Page,
-    objectiveTitle: string,
-    message: string
-): Promise<void> {
-    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? process.env.CONVEX_SELF_HOSTED_URL;
-    if (!convexUrl) {
-        throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured for Playwright tests');
-    }
-
-    const tokenResponse = await page.request.get('/api/auth/convex/token');
-    if (!tokenResponse.ok()) {
-        throw new Error(`Convex token request failed: ${tokenResponse.status()}`);
-    }
-
-    const tokenPayload = (await tokenResponse.json()) as { token?: string };
-    if (!tokenPayload.token) {
-        throw new Error('Convex token response did not include a token');
-    }
-
-    const client = new ConvexHttpClient(convexUrl);
-    client.setAuth(tokenPayload.token);
-
-    const objectives = await client.query(api.objectives.getObjectivesByUser, {
-        paginationOpts: { numItems: 20, cursor: null },
-    });
-    const objective =
-        objectives.page.find(objectiveItem => objectiveItem.title === objectiveTitle) ??
-        objectives.page[0];
-
-    if (!objective) {
-        throw new Error('No objective available to create a notification');
-    }
-
-    await client.mutation(api.notifications.createNotification, {
-        objective: objective._id,
-        notificationType: 'reminder',
-        notificationDate: Date.now(),
-        message,
-    });
 }
 
 test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
@@ -511,14 +469,16 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         }
 
         const notificationMessage = 'Reminder: update Learn TypeScript progress before Friday';
-        await createNotificationViaApi(page, 'Learn TypeScript', notificationMessage);
+        await createNotification(page, 'Learn TypeScript', { message: notificationMessage });
 
         console.log('\n🔔 SECTION 8: Notifications\n');
 
         await page.goto('/dashboard/notifications');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
-        await expect(page.getByText(notificationMessage)).toBeVisible({ timeout: 10000 });
+        await expect(
+            page.getByTestId('table-row').filter({ hasText: notificationMessage })
+        ).toBeVisible({ timeout: 15000 });
         await takeTFGScreenshot(page, 'notifications-list', 'Notifications list');
 
         const markAllReadBtn = page
@@ -777,19 +737,19 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         }
 
         console.log('\n🔧 SECTION 14: Admin Panel\n');
-        let adminPromoted = false;
+        let adminSessionActive = false;
         try {
             console.log('Signing in as the preconfigured admin user...');
             await clearBrowserSession(page);
             await loginUser(page, adminUser.email, adminUser.password);
             console.log('Admin user session is active');
-            adminPromoted = true;
+            adminSessionActive = true;
         } catch {
             console.log('⚠️ Could not sign in as the preconfigured admin user');
             console.log('⚠️ Skipping admin panel screenshots');
         }
 
-        if (adminPromoted) {
+        if (adminSessionActive) {
             await page.goto('/dashboard/admin/users');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(500);

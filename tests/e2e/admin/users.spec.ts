@@ -1,5 +1,5 @@
 import { test, expect } from '../../fixtures/admin-test-base';
-import { createTestUserViaAPI } from '../../helpers/test-helpers';
+import { createTestUser } from '../../helpers/test-helpers';
 
 test.describe('Admin Users', () => {
     test('only admin can access users page', { tag: ['@REQ-ADMIN-001'] }, async ({ page }) => {
@@ -16,7 +16,7 @@ test.describe('Admin Users', () => {
         async ({ browser }) => {
             const freshContext = await browser.newContext();
             const nonAdminPage = await freshContext.newPage();
-            await createTestUserViaAPI(nonAdminPage);
+            await createTestUser(nonAdminPage);
 
             await nonAdminPage.goto('/dashboard/admin/users');
             await nonAdminPage.waitForLoadState('domcontentloaded');
