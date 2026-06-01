@@ -1,14 +1,7 @@
 {
-    "npm.exclude": [
-        "**/apps/**",
-        "**/packages/**"
-    ],
-    "typescript.preferences.autoImportSpecifierExcludeRegexes": [
-        "@radix-ui",
-    ],
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
     "i18n-ally.localesPaths": [
-        "translations"
-    ],
-    "i18n-ally.keystyle": "nested",
-    "i18n-ally.sourceLanguage": "en"
+        "src/i18n"
+    ]
 }
