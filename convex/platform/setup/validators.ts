@@ -13,7 +13,6 @@ export const completeSetupArgsValidator = {
     organizationName: v.string(),
     organizationLogo: v.optional(v.string()),
     categories: v.array(setupCategoryValidator),
-    userId: v.id('user'),
 } as const;
 
 export const ensureTestOrganizationArgsValidator = {

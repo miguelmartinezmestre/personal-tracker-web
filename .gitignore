@@ -28,10 +28,12 @@ next-env.d.ts
 .next
 
 # mysql
-mysql-data
-mysql-data-dev
-data
-data-dev
+/infrastructure/mysql-data-e2e
+/infrastructure/mysql-data
+/infrastructure/mysql-data-dev
+/infrastructure/data
+/infrastructure/data-dev
+/infrastructure/convex-data-e2e
 
 # Playwright
 node_modules/

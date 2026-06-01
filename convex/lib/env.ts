@@ -45,13 +45,8 @@ const siteUrl = requireProductionUrl('SITE_URL', 'http://localhost:3000');
 const betterAuthUrl = requireProductionUrl('BETTER_AUTH_URL', siteUrl);
 const jwks = authEnv.JWKS;
 
-if (isProduction && process.env.ALLOW_SETUP_TEST === 'true') {
-    throw new Error('ALLOW_SETUP_TEST must never be enabled in production');
-}
-
 export const env = {
     SITE_URL: siteUrl,
     BETTER_AUTH_URL: betterAuthUrl,
     JWKS: jwks,
-    ALLOW_SETUP_TEST: !isProduction && process.env.ALLOW_SETUP_TEST === 'true',
 } as const;

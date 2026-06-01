@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
+import { convex } from '@/platform/convex/providers/convex-query-client';
 import { useSetupWizard } from '../hooks/use-setup-wizard';
 import { getMessageOrFallback, getErrorMessage, emptyToUndefined } from '@/lib/error-utils';
 import SetupProgress from './setup-progress';
@@ -22,7 +23,6 @@ import StepCategories from './step-categories';
 import StepRegistrationPolicy from './step-registration-policy';
 import StepSummary from './step-summary';
 import { ErrorContext } from 'better-auth/client';
-import { Id } from '@/convex/_generated/dataModel';
 
 export default function SetupWizard() {
     const router = useRouter();
@@ -49,6 +49,16 @@ export default function SetupWizard() {
 
     const canProceed = isStepValid(currentStepName);
 
+    async function syncConvexAuthAfterSignUp() {
+        const tokenResult = await authClient.convex.token({ fetchOptions: { throw: false } });
+        const token = tokenResult.data?.token;
+        if (!token) {
+            throw new Error('User not found');
+        }
+
+        convex.setAuth(async () => token);
+    }
+
     async function handleComplete() {
         setError('');
         setIsSubmitting(true);
@@ -65,13 +75,7 @@ export default function SetupWizard() {
                 },
                 {
                     onSuccess: async () => {
-                        const session = await authClient.getSession();
-
-                        console.log('session', session);
-
-                        if (!session?.data?.user?.id) {
-                            throw new Error('User not found');
-                        }
+                        await syncConvexAuthAfterSignUp();
 
                         const setupResult = await completeSetup({
                             platformName: data.platform.platformName,
@@ -84,7 +88,6 @@ export default function SetupWizard() {
                                 color: category.color,
                                 icon: category.icon,
                             })),
-                            userId: session?.data?.user?.id as Id<'user'>,
                         });
 
                         if (setupResult.organizationId) {

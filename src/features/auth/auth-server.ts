@@ -1,6 +1,6 @@
 import { api } from '@/convex/_generated/api';
 import { convexBetterAuth } from 'kitcn/auth/nextjs';
-import { fetchMutation, fetchQuery, type NextjsOptions } from 'convex/nextjs';
+import { fetchQuery, type NextjsOptions } from 'convex/nextjs';
 import type { ArgsAndOptions, FunctionReference, FunctionReturnType } from 'convex/server';
 import { headers } from 'next/headers';
 import { cache } from 'react';
@@ -47,13 +47,6 @@ export async function fetchAuthQuery<Query extends FunctionReference<'query'>>(
     ...args: ArgsAndOptions<Query, NextjsOptions>
 ): Promise<FunctionReturnType<Query>> {
     return fetchQuery(query, ...(await withAuthOptions(args)));
-}
-
-export async function fetchAuthMutation<Mutation extends FunctionReference<'mutation'>>(
-    mutation: Mutation,
-    ...args: ArgsAndOptions<Mutation, NextjsOptions>
-): Promise<FunctionReturnType<Mutation>> {
-    return fetchMutation(mutation, ...(await withAuthOptions(args)));
 }
 
 export { handler };

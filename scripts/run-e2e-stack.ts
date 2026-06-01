@@ -4,7 +4,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import process from 'node:process';
 import { extractAdminKey, generateStaticJwks } from './lib/auth';
 import {
@@ -33,7 +33,6 @@ const BUILD_FINGERPRINT_INPUTS = [
 const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'public'];
 const BUILD_FINGERPRINT_FILE_PREFIXES = ['tsconfig'];
 const BUILD_FINGERPRINT_ENV_KEYS = [
-    'ALLOW_SETUP_TEST',
     'BASE_URL',
     'BETTER_AUTH_URL',
     'CONVEX_SELF_HOSTED_URL',
@@ -76,6 +75,10 @@ const { forwardedPlaywrightArgs, rebuild: rebuildFromArgs } = parseScriptArgs(
 const SHOULD_FORCE_REBUILD = rebuildFromArgs || process.env.E2E_FORCE_BUILD === 'true';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';
+const E2E_STORAGE_DIRECTORIES = [
+    join('infrastructure', 'mysql-data-e2e'),
+    join('infrastructure', 'convex-data-e2e'),
+] as const;
 
 function detectBrowserProject(args: string[]): string | null {
     for (let i = 0; i < args.length; i++) {
@@ -246,6 +249,24 @@ function cleanupNextArtifacts(nextDistDir: string): void {
     rmSync(directoryPath, { recursive: true, force: true });
 }
 
+function cleanupE2EStorage(): void {
+    const workspaceRoot = resolve(process.cwd());
+
+    for (const relativePath of E2E_STORAGE_DIRECTORIES) {
+        const directoryPath = resolve(workspaceRoot, relativePath);
+        if (
+            !directoryPath.startsWith(`${workspaceRoot}${sep}`) &&
+            directoryPath !== workspaceRoot
+        ) {
+            throw new Error(`Refusing to delete path outside workspace: ${directoryPath}`);
+        }
+
+        if (existsSync(directoryPath)) {
+            rmSync(directoryPath, { recursive: true, force: true });
+        }
+    }
+}
+
 function collectBuildFingerprintFiles(relativePath: string, files: Set<string>): void {
     const absolutePath = join(process.cwd(), relativePath);
     if (!existsSync(absolutePath)) {
@@ -363,7 +384,6 @@ function buildCommandEnv(
 
     return buildMailhogConvexEnv({
         ...baseEnv,
-        ALLOW_SETUP_TEST: 'true',
         E2E_SETUP_SECRET: baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
         BASE_URL: baseUrl,
         BETTER_AUTH_URL: siteUrl,
@@ -550,6 +570,7 @@ async function main(): Promise<void> {
     const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
     console.log(`Resetting previous isolated Convex stack${browserLabel}...`);
     await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
+    cleanupE2EStorage();
 
     console.log(`Starting isolated Convex docker compose${browserLabel}...`);
     console.log(`  - Convex backend: port ${E2E_CONVEX_PORT}`);
@@ -603,10 +624,6 @@ async function main(): Promise<void> {
         shell: USE_SHELL_FOR_PNPM,
     });
     await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_URL', siteUrl], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'ALLOW_SETUP_TEST', 'true'], {
         env: commandEnv,
         shell: USE_SHELL_FOR_PNPM,
     });

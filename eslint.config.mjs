@@ -28,6 +28,7 @@ const eslintConfig = [
         'infrastructure/data-dev/**',
         'infrastructure/mysql-data/**',
         'infrastructure/mysql-data-dev/**',
+        'infrastructure/convex-data-e2e/**',
         'tests/.auth/**',
         'test-results/**',
         'playwright-report/**',
