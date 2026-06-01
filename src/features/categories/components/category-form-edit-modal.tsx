@@ -5,27 +5,17 @@ import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { savedCategorySchema, Category } from '@/features/categories/schemas/category';
 import { useTranslations } from 'next-intl';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import FormModal from '@/components/forms/form-modal';
 import { CategoryFormFields } from './category-form-fields';
-import { invalidateConvexQuery } from '@/platform/convex/query-keys';
-import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
-
-const CATEGORIES_QUERY = convexQuery(api.categories.getCategoriesByUser, {
-    paginationOpts: DEFAULT_PAGINATION_OPTS,
-});
 
 export default function EditCategoryFormModal({ defaultValues }: { defaultValues: Category }) {
     const t = useTranslations('Objectives.categories');
-    const queryClient = useQueryClient();
 
     const updateCategory = useMutation({
         mutationFn: useConvexMutation(api.categories.updateCategory),
-        onSuccess: () => {
-            invalidateConvexQuery(queryClient, CATEGORIES_QUERY);
-        },
     });
 
     return (

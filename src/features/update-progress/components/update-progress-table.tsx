@@ -65,7 +65,7 @@ export default function UpdateProgressTable() {
     const pageIsDone = updateProgress.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress(objectiveId);
+    const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
 
     const columns = useUpdateProgressTableColumns({ objectiveId });
 

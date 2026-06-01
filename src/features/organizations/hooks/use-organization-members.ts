@@ -1,13 +1,8 @@
 'use client';
 
-import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/client';
 import { OrganizationRole } from '../types/roles';
-import { api } from '@/convex/_generated/api';
-import { convexQuery } from '@convex-dev/react-query';
-import type { Id } from '@/convex/_generated/dataModel';
-import { invalidateConvexQueryWhere } from '@/platform/convex/query-keys';
-import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export interface CreateOrganizationMemberParams {
     organizationId: string;
@@ -26,25 +21,7 @@ export interface DeleteOrganizationMemberParams {
     organizationId?: string;
 }
 
-const organizationMembersQuery = (organizationId: Id<'organization'>) =>
-    convexQuery(api.organizations.getOrganizationMembers, {
-        organizationId,
-        paginationOpts: DEFAULT_PAGINATION_OPTS,
-    });
-
-function invalidateOrganizationMembers(queryClient: QueryClient, organizationId: string | null) {
-    if (!organizationId) return;
-
-    invalidateConvexQueryWhere(
-        queryClient,
-        organizationMembersQuery(organizationId as Id<'organization'>),
-        args => args.organizationId === organizationId
-    );
-}
-
 export function useCreateOrganizationMember() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (values: CreateOrganizationMemberParams) => {
             return await authClient.organization.inviteMember({
@@ -53,15 +30,10 @@ export function useCreateOrganizationMember() {
                 organizationId: values.organizationId,
             });
         },
-        onSuccess: (_data, variables) => {
-            invalidateOrganizationMembers(queryClient, variables.organizationId);
-        },
     });
 }
 
 export function useUpdateOrganizationMember() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (values: UpdateOrganizationMemberParams) => {
             return await authClient.organization.updateMemberRole({
@@ -70,24 +42,16 @@ export function useUpdateOrganizationMember() {
                 organizationId: values.organizationId,
             });
         },
-        onSuccess: (_data, variables) => {
-            invalidateOrganizationMembers(queryClient, variables.organizationId ?? null);
-        },
     });
 }
 
 export function useDeleteOrganizationMember() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (values: DeleteOrganizationMemberParams) => {
             return await authClient.organization.removeMember({
                 memberIdOrEmail: values.memberId,
                 organizationId: values.organizationId,
             });
-        },
-        onSuccess: (_data, variables) => {
-            invalidateOrganizationMembers(queryClient, variables.organizationId ?? null);
         },
     });
 }

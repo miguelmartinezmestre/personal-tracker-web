@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
@@ -21,9 +21,6 @@ export interface UpdateOrganizationParams {
     description: string;
 }
 
-const ORGANIZATIONS_QUERY = convexQuery(api.organizations.getOrganizationsByUser, {});
-const ORGANIZATIONS_QUERY_KEY = ORGANIZATIONS_QUERY.queryKey;
-
 interface OrganizationRaw {
     id: string;
     name: string;
@@ -32,7 +29,9 @@ interface OrganizationRaw {
 }
 
 export function useOrganizations() {
-    const { data, isPending, isLoading } = useQuery(ORGANIZATIONS_QUERY);
+    const { data, isPending, isLoading } = useQuery(
+        convexQuery(api.organizations.getOrganizationsByUser, {})
+    );
 
     const organizations: Organization[] | undefined = data?.map(
         (rawOrganization: OrganizationRaw) => ({
@@ -90,8 +89,6 @@ export function useOrganizationByIdentifier(identifier: string | null) {
 }
 
 export function useCreateOrganization() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (values: CreateOrganizationParams | CreateOrganization) => {
             return await authClient.organization.create({
@@ -104,17 +101,10 @@ export function useCreateOrganization() {
                     .replace(/^-+|-+$/g, ''),
             });
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ORGANIZATIONS_QUERY_KEY,
-            });
-        },
     });
 }
 
 export function useUpdateOrganization() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (values: UpdateOrganizationParams | Organization) => {
             return await authClient.organization.update({
@@ -125,53 +115,14 @@ export function useUpdateOrganization() {
                 organizationId: values.id,
             });
         },
-        onMutate: async values => {
-            await queryClient.cancelQueries({ queryKey: ORGANIZATIONS_QUERY_KEY });
-            const previous = queryClient.getQueryData<Organization[]>(ORGANIZATIONS_QUERY_KEY);
-
-            if (previous) {
-                queryClient.setQueryData<Organization[]>(
-                    ORGANIZATIONS_QUERY_KEY,
-                    previousOrganizations =>
-                        previousOrganizations?.map(organization =>
-                            organization.id === values.id
-                                ? {
-                                      ...organization,
-                                      name: values.name,
-                                      description: values.description ?? '',
-                                  }
-                                : organization
-                        )
-                );
-            }
-
-            return { previous };
-        },
-        onError: (_error, _values, context) => {
-            if (context?.previous) {
-                queryClient.setQueryData(ORGANIZATIONS_QUERY_KEY, context.previous);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({
-                queryKey: ORGANIZATIONS_QUERY_KEY,
-            });
-        },
     });
 }
 
 export function useDeleteOrganization() {
-    const queryClient = useQueryClient();
-
     return useMutation({
         mutationFn: async (values: { id: string }) => {
             return await authClient.organization.delete({
                 organizationId: values.id,
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ORGANIZATIONS_QUERY_KEY,
             });
         },
     });

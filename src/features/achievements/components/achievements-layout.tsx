@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexAuth } from 'convex/react';
@@ -48,7 +48,6 @@ export default function AchievementsLayout() {
 function AchievementsContent() {
     const t = useTranslations('Achievements');
     const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
-    const queryClient = useQueryClient();
 
     const { data: stats, isLoading: statsLoading } = useQuery(
         convexQuery(api.achievements.getUserAchievementStats, {})
@@ -60,20 +59,6 @@ function AchievementsContent() {
 
     const seedMutation = useMutation({
         mutationFn: useConvexMutation(api.achievements.seedAchievementDefinitions),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(api.achievements.getAchievementDefinitions, {}).queryKey,
-            });
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(api.achievements.getUserAchievementProgress, {}).queryKey,
-            });
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(api.achievements.getUserAchievementStats, {}).queryKey,
-            });
-            queryClient.invalidateQueries({
-                queryKey: convexQuery(api.achievements.getUserAchievements, {}).queryKey,
-            });
-        },
     });
 
     const isLoading = statsLoading || progressLoading;

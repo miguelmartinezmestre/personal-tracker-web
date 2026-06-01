@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
@@ -20,11 +20,9 @@ import { ObjectivesFilters } from './objective-filters';
 import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
 import { MobilePagination } from './mobile-pagination';
 import { useObjectiveListState } from '@/features/objectives/hooks/use-objective-list-state';
-import { invalidateObjectiveListQueries } from '@/features/objectives/lib/objective-query-invalidation';
 
 export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>((_props, ref) => {
     const t = useTranslations('Objectives');
-    const queryClient = useQueryClient();
     const {
         filters,
         hasSearch,
@@ -37,9 +35,6 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
 
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
-        onSuccess: async () => {
-            await invalidateObjectiveListQueries(queryClient);
-        },
     });
 
     const statusLabels = {

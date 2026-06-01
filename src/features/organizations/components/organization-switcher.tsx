@@ -12,7 +12,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import {
     useActiveOrganization,
     useActiveMember,
@@ -23,7 +23,6 @@ import { useSession } from '@/features/auth/hooks/use-session';
 export function OrganizationSwitcher() {
     const t = useTranslations('OrganizationSwitcher');
     const router = useRouter();
-    const queryClient = useQueryClient();
     const activeOrganizationQuery = useActiveOrganization();
     const activeMemberQuery = useActiveMember();
     const organizationsQuery = useOrganizations();
@@ -49,7 +48,6 @@ export function OrganizationSwitcher() {
             });
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['convex'] });
             router.refresh();
         },
     });
