@@ -38,7 +38,6 @@ describe('convex setup', () => {
                     registrationPolicy: 'open',
                     setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
-                    usersCount: 1,
                 });
             });
 
@@ -78,7 +77,6 @@ describe('convex setup', () => {
                     registrationPolicy: 'invitation-only',
                     setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
-                    usersCount: 1,
                 });
             });
 
@@ -116,7 +114,6 @@ describe('convex setup', () => {
                     registrationPolicy: 'open',
                     setupCompletedAt: Date.now(),
                     setupCompletedBy: id,
-                    usersCount: 1,
                 });
 
                 return id;

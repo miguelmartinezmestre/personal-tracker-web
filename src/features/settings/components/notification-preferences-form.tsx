@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,14 +12,15 @@ import { Label } from '@/components/ui/label';
 
 export default function NotificationPreferencesForm() {
     const t = useTranslations('Settings');
+    const queryClient = useQueryClient();
+    const preferencesQuery = convexQuery(api.notificationPreferences.getUserPreferences, {});
 
-    const { data: preferences, isPending: isLoading } = useQuery(
-        convexQuery(api.notificationPreferences.getUserPreferences, {})
-    );
+    const { data: preferences, isPending: isLoading } = useQuery(preferencesQuery);
 
     const updateMutation = useMutation({
         mutationFn: useConvexMutation(api.notificationPreferences.updateUserPreferences),
         onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: preferencesQuery.queryKey });
             toast.success(t('preferencesSaved') || 'Preferences saved', {
                 description:
                     t('preferencesSavedDescription') ||
@@ -53,10 +54,10 @@ export default function NotificationPreferencesForm() {
 
     if (isLoading) {
         return (
-            <Card className="max-w-2xl">
-                <CardHeader>
+            <Card className="w-full">
+                <CardHeader className="border-b pb-6">
                     <CardTitle className="flex items-center gap-2">
-                        <Bell className="h-5 w-5" />
+                        <Bell className="size-5 text-primary" />
                         {t('notifications') || 'Notifications'}
                     </CardTitle>
                     <CardDescription>
@@ -65,17 +66,17 @@ export default function NotificationPreferencesForm() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
                 </CardContent>
             </Card>
         );
     }
 
     return (
-        <Card className="max-w-2xl">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Bell className="h-5 w-5" />
+        <Card className="w-full">
+            <CardHeader className="border-b pb-6">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                    <Bell className="size-5 text-primary" />
                     {t('notifications') || 'Notifications'}
                 </CardTitle>
                 <CardDescription>
@@ -84,10 +85,10 @@ export default function NotificationPreferencesForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex items-start justify-between space-x-4">
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                            <Trophy className="h-4 w-4 text-yellow-500" />
+                            <Trophy className="size-4 text-yellow-500" />
                             <Label htmlFor="achievement-notifications" className="font-medium">
                                 {t('achievementNotifications') || 'Achievement Notifications'}
                             </Label>
@@ -105,10 +106,10 @@ export default function NotificationPreferencesForm() {
                     />
                 </div>
 
-                <div className="flex items-start justify-between space-x-4">
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-blue-500" />
+                            <Clock className="size-4 text-blue-500" />
                             <Label htmlFor="deadline-notifications" className="font-medium">
                                 {t('deadlineNotifications') || 'Deadline Reminders'}
                             </Label>
@@ -126,10 +127,10 @@ export default function NotificationPreferencesForm() {
                     />
                 </div>
 
-                <div className="flex items-start justify-between space-x-4">
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-green-500" />
+                            <Clock className="size-4 text-green-500" />
                             <Label htmlFor="progress-notifications" className="font-medium">
                                 {t('progressNotifications') || 'Progress & Streak Alerts'}
                             </Label>
@@ -147,10 +148,10 @@ export default function NotificationPreferencesForm() {
                     />
                 </div>
 
-                <div className="flex items-start justify-between space-x-4">
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-purple-500" />
+                            <Users className="size-4 text-purple-500" />
                             <Label htmlFor="organization-notifications" className="font-medium">
                                 {t('organizationNotifications') || 'Organization Notifications'}
                             </Label>
@@ -168,10 +169,10 @@ export default function NotificationPreferencesForm() {
                     />
                 </div>
 
-                <div className="flex items-start justify-between space-x-4 opacity-60">
+                <div className="flex items-start justify-between gap-4 rounded-lg border p-4 opacity-60">
                     <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-gray-500" />
+                            <Mail className="size-4 text-gray-500" />
                             <Label htmlFor="email-digest" className="font-medium">
                                 {t('emailDigest') || 'Email Digest'}{' '}
                                 <span className="ml-2 text-xs text-muted-foreground">

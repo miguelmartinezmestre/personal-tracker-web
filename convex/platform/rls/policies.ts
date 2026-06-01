@@ -61,11 +61,8 @@ export async function createRlsRules(
             return isActiveOrganization(objective.organizationId);
         }
 
-        if (objective.userId === userId) {
-            return isActiveOrganization(objective.organizationId);
-        }
-
-        return hasActiveOrgAdminAccess(objective.organizationId);
+        // Personal scope: only the owner can access their own personal objectives
+        return objective.userId === userId && isActiveOrganization(objective.organizationId);
     };
 
     return {

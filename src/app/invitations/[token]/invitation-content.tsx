@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
@@ -24,6 +24,15 @@ export default function InvitationContent({ token }: InvitationContentProps) {
     const [status, setStatus] = useState<InvitationStatus>('ready');
     const [errorMessage, setErrorMessage] = useState('');
 
+    useEffect(() => {
+        if (status === 'accepted') {
+            const timer = setTimeout(() => {
+                router.push('/dashboard/organizations');
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [status, router]);
+
     async function handleAccept() {
         setStatus('accepting');
         setErrorMessage('');
@@ -33,10 +42,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                 invitationId: token,
             });
             setStatus('accepted');
-
-            setTimeout(() => {
-                router.push('/dashboard/organizations');
-            }, 2000);
         } catch {
             setStatus('error');
             setErrorMessage(t('errorAccepting'));

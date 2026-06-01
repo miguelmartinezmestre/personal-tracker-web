@@ -15,7 +15,7 @@ export const syncObjectiveFromProgress = internalMutation({
 
         const { currentValue, status, completedNow } = await recomputeObjectiveFromProgress(
             ctx,
-            objective
+            objective._id
         );
 
         const reopened = objective.status === 'completed' && status === 'active';

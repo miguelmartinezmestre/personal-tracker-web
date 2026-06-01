@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
 import { useTranslations } from 'next-intl';
+import { useSession } from '@/features/auth/hooks/use-session';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
@@ -36,6 +37,8 @@ export default function OrganizationMembersTable({
 }: OrganizationMembersTableProps) {
     const t = useTranslations('OrganizationMembers');
     const deleteOrganizationMember = useDeleteOrganizationMember();
+    const session = useSession();
+    const currentUserId = session.data?.user?.id;
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
@@ -90,6 +93,15 @@ export default function OrganizationMembersTable({
             header: t('delete'),
             id: 'delete',
             cell: ({ row }) => {
+                const isCurrentUser = row.original.userId === currentUserId;
+                const isOnlyOwner =
+                    row.original.role === OrganizationRole.OWNER &&
+                    members.filter(member => member.role === OrganizationRole.OWNER).length === 1;
+
+                if (isCurrentUser || isOnlyOwner) {
+                    return null;
+                }
+
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {

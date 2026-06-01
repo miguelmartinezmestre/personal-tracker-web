@@ -77,12 +77,13 @@ export default function TopObjectivesChart() {
                             />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: 'hsl(var(--popover))',
-                                    borderColor: 'hsl(var(--border))',
+                                    backgroundColor: 'var(--popover)',
+                                    borderColor: 'var(--border)',
                                     borderRadius: '0.5rem',
-                                    color: 'hsl(var(--popover-foreground))',
+                                    color: 'var(--popover-foreground)',
                                 }}
-                                labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                                labelStyle={{ color: 'var(--popover-foreground)' }}
+                                itemStyle={{ color: 'var(--popover-foreground)' }}
                                 formatter={value => [
                                     `${typeof value === 'number' ? value : 0}%`,
                                     t('charts.progress'),
@@ -94,8 +95,8 @@ export default function TopObjectivesChart() {
                                         key={entry.name}
                                         fill={
                                             entry.status === 'completed'
-                                                ? 'hsl(var(--chart-2))'
-                                                : 'hsl(var(--primary))'
+                                                ? 'var(--chart-2)'
+                                                : 'var(--primary)'
                                         }
                                     />
                                 ))}

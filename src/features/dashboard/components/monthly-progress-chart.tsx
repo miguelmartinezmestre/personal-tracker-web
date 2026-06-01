@@ -58,17 +58,18 @@ export default function MonthlyProgressChart() {
                             />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: 'hsl(var(--popover))',
-                                    borderColor: 'hsl(var(--border))',
+                                    backgroundColor: 'var(--popover)',
+                                    borderColor: 'var(--border)',
                                     borderRadius: '0.5rem',
-                                    color: 'hsl(var(--popover-foreground))',
+                                    color: 'var(--popover-foreground)',
                                 }}
-                                labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                                labelStyle={{ color: 'var(--popover-foreground)' }}
+                                itemStyle={{ color: 'var(--popover-foreground)' }}
                             />
                             <Bar
                                 dataKey="count"
                                 name={t('charts.updates')}
-                                fill="hsl(var(--primary))"
+                                fill="var(--primary)"
                                 radius={[4, 4, 0, 0]}
                             />
                         </BarChart>

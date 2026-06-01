@@ -58,6 +58,8 @@ export default function LoginForm() {
             await signOutMutation.mutateAsync();
         }
 
+        setLoginError('');
+
         await authClient.signIn.email(
             {
                 email: values.email,

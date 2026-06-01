@@ -512,20 +512,21 @@ describe('convex RLS (Row-Level Security)', async () => {
     });
 
     describe('admin privileges', () => {
-        test('admin can access all user data', async () => {
+        test('admin can access all organization user data', async () => {
             const obj1Id = await createTestObjective(t, {
                 userId: user1Id,
                 organizationId: _user1OrganizationId,
-                title: 'User 1 Secret Objective',
+                title: 'User 1 Org Objective',
                 targetValue: 100,
                 currentValue: 0,
+                scope: 'organization',
             });
 
             const obj = await adminIdentity.query(api.objectives.getObjectiveById, {
                 id: obj1Id,
             });
             expect(obj).toBeDefined();
-            expect(obj?.title).toBe('User 1 Secret Objective');
+            expect(obj?.title).toBe('User 1 Org Objective');
         });
 
         test('admin cannot modify another user personal objective', async () => {

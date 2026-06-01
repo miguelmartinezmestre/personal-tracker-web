@@ -143,10 +143,10 @@ describe('Domain Validation Tests', () => {
             { value: -1, error: ERROR_CODES.VALUE_NEGATIVE },
             { value: 1_000_000_001, error: ERROR_CODES.VALUE_TOO_LARGE },
         ])('rejects invalid progress value: $value', ({ value, error }) => {
-            expect(() => validateProgressDelta(value)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(value, 0)).toThrow(ConvexError);
 
             try {
-                validateProgressDelta(value);
+                validateProgressDelta(value, 0);
             } catch (e) {
                 expect(e).toBeInstanceOf(ConvexError);
                 if (e instanceof ConvexError) {
@@ -158,15 +158,27 @@ describe('Domain Validation Tests', () => {
         test.each([{ value: 0 }, { value: 1 }, { value: 100 }, { value: 1_000_000_000 }])(
             'accepts valid progress value: $value',
             ({ value }) => {
-                expect(() => validateProgressDelta(value)).not.toThrow();
+                expect(() => validateProgressDelta(value, 0)).not.toThrow();
             }
         );
+
+        test('rejects delta that would exceed MAX_METRIC when combined with currentValue', () => {
+            expect(() => validateProgressDelta(1, 1_000_000_000)).toThrow(ConvexError);
+            try {
+                validateProgressDelta(1, 1_000_000_000);
+            } catch (e) {
+                expect(e).toBeInstanceOf(ConvexError);
+                if (e instanceof ConvexError) {
+                    expect(e.data).toBe(ERROR_CODES.VALUE_TOO_LARGE);
+                }
+            }
+        });
     });
 
     describe('validateUpdateDate', () => {
         test.each([
             {
-                date: Date.now() + TIME.DAY_MS,
+                date: Date.now() + TIME.DAY_MS + 1000,
                 error: ERROR_CODES.FUTURE_DATE_NOT_ALLOWED,
                 description: 'tomorrow',
             },
@@ -176,9 +188,9 @@ describe('Domain Validation Tests', () => {
                 description: 'next week',
             },
             {
-                date: Date.now() - TIME.FIVE_YEARS_MS - TIME.DAY_MS,
+                date: Date.now() - TIME.DAY_MS - 1,
                 error: ERROR_CODES.DATE_TOO_OLD,
-                description: 'more than 5 years ago',
+                description: 'more than 1 day ago',
             },
         ])('rejects future date: $description', ({ date, error }) => {
             expect(() => validateUpdateDate(date)).toThrow(ConvexError);
@@ -205,8 +217,8 @@ describe('Domain Validation Tests', () => {
             expect(() => validateUpdateDate(Date.now() + 30 * 1000)).not.toThrow();
         });
 
-        test('rejects date beyond clock skew buffer', () => {
-            expect(() => validateUpdateDate(Date.now() + 2 * TIME.MINUTE_MS)).toThrow(ConvexError);
+        test('rejects date beyond 1 day in the future', () => {
+            expect(() => validateUpdateDate(Date.now() + 2 * TIME.DAY_MS)).toThrow(ConvexError);
         });
     });
 
@@ -246,7 +258,7 @@ describe('Domain Validation Tests', () => {
         test.each([
             {
                 description: 'future date',
-                overrides: { updateDate: Date.now() + TIME.DAY_MS },
+                overrides: { updateDate: Date.now() + 2 * TIME.DAY_MS },
                 expectedError: ERROR_CODES.FUTURE_DATE_NOT_ALLOWED,
             },
             {
@@ -378,7 +390,7 @@ describe('Domain Validation Tests', () => {
         test.each([
             {
                 description: 'future date',
-                overrides: { updateDate: Date.now() + TIME.DAY_MS },
+                overrides: { updateDate: Date.now() + 2 * TIME.DAY_MS },
                 expectedError: ERROR_CODES.FUTURE_DATE_NOT_ALLOWED,
             },
             {

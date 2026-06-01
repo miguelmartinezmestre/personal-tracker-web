@@ -71,16 +71,8 @@ export default function ObjectiveProgressTimeline({
                     <AreaChart data={chartData}>
                         <defs>
                             <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop
-                                    offset="5%"
-                                    stopColor="hsl(var(--primary))"
-                                    stopOpacity={0.3}
-                                />
-                                <stop
-                                    offset="95%"
-                                    stopColor="hsl(var(--primary))"
-                                    stopOpacity={0}
-                                />
+                                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -97,12 +89,13 @@ export default function ObjectiveProgressTimeline({
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: 'hsl(var(--popover))',
-                                borderColor: 'hsl(var(--border))',
+                                backgroundColor: 'var(--popover)',
+                                borderColor: 'var(--border)',
                                 borderRadius: '0.5rem',
-                                color: 'hsl(var(--popover-foreground))',
+                                color: 'var(--popover-foreground)',
                             }}
-                            labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                            labelStyle={{ color: 'var(--popover-foreground)' }}
+                            itemStyle={{ color: 'var(--popover-foreground)' }}
                             labelFormatter={(_label, payload) => {
                                 const item = payload[0]?.payload as
                                     | { fullLabel: string }
@@ -117,7 +110,7 @@ export default function ObjectiveProgressTimeline({
                         {targetValue != null && (
                             <ReferenceLine
                                 y={targetValue}
-                                stroke="hsl(var(--destructive))"
+                                stroke="var(--destructive)"
                                 strokeDasharray="6 3"
                                 label={{
                                     value: `${t('charts.target')}: ${targetValue}${unitSuffix}`,
@@ -129,10 +122,10 @@ export default function ObjectiveProgressTimeline({
                         <Area
                             type="monotone"
                             dataKey="value"
-                            stroke="hsl(var(--primary))"
+                            stroke="var(--primary)"
                             fill="url(#progressGradient)"
                             strokeWidth={2}
-                            dot={{ r: 3, fill: 'hsl(var(--primary))' }}
+                            dot={{ r: 3, fill: 'var(--primary)' }}
                             activeDot={{ r: 5 }}
                         />
                     </AreaChart>

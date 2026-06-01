@@ -3,8 +3,6 @@ import { Doc, Id } from '../../_generated/dataModel';
 import { TIME, ERROR_CODES } from '../../utils/constants';
 import { ConvexError } from 'convex/values';
 
-const PAGE_SIZE = 500;
-
 type ReadCtx = { db: DatabaseReader };
 
 export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
@@ -47,22 +45,10 @@ async function fetchUpdatesForObjective(
     ctx: ReadCtx,
     objectiveId: Id<'objectives'>
 ): Promise<Doc<'progressUpdates'>[]> {
-    const updates: Doc<'progressUpdates'>[] = [];
-    let cursor: string | null = null;
-    let isDone = false;
-
-    while (!isDone) {
-        const page = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', objectiveId))
-            .paginate({ numItems: PAGE_SIZE, cursor });
-
-        updates.push(...page.page);
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
-
-    return updates;
+    return await ctx.db
+        .query('progressUpdates')
+        .withIndex('by_objective', q => q.eq('objective', objectiveId))
+        .collect();
 }
 
 async function fetchUpdatesForUserObjective(
@@ -70,24 +56,10 @@ async function fetchUpdatesForUserObjective(
     userId: Id<'user'>,
     objectiveId: Id<'objectives'>
 ): Promise<Doc<'progressUpdates'>[]> {
-    const updates: Doc<'progressUpdates'>[] = [];
-    let cursor: string | null = null;
-    let isDone = false;
-
-    while (!isDone) {
-        const page = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_user_objective', q =>
-                q.eq('userId', userId).eq('objective', objectiveId)
-            )
-            .paginate({ numItems: PAGE_SIZE, cursor });
-
-        updates.push(...page.page);
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
-
-    return updates;
+    return await ctx.db
+        .query('progressUpdates')
+        .withIndex('by_user_objective', q => q.eq('userId', userId).eq('objective', objectiveId))
+        .collect();
 }
 
 async function fetchProgressUpdates(
@@ -137,22 +109,12 @@ export async function calculateUserStreak(
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
 
-    const objectives: Doc<'objectives'>[] = [];
-    let cursor: string | null = null;
-    let isDone = false;
-
-    while (!isDone) {
-        const page = await ctx.db
-            .query('objectives')
-            .withIndex('by_user_organization', q =>
-                q.eq('userId', userId).eq('organizationId', organizationId)
-            )
-            .paginate({ numItems: PAGE_SIZE, cursor });
-
-        objectives.push(...page.page);
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
+    const objectives = await ctx.db
+        .query('objectives')
+        .withIndex('by_user_organization', q =>
+            q.eq('userId', userId).eq('organizationId', organizationId)
+        )
+        .collect();
 
     const objectiveIds = objectives.map((objective: Doc<'objectives'>) => objective._id);
 
@@ -167,22 +129,12 @@ export async function calculateOrganizationStreak(
     ctx: ReadCtx,
     organizationId: Id<'organization'>
 ): Promise<number> {
-    const organizationObjectives: Doc<'objectives'>[] = [];
-    let cursor: string | null = null;
-    let isDone = false;
-
-    while (!isDone) {
-        const page = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization_scope', q =>
-                q.eq('organizationId', organizationId).eq('scope', 'organization')
-            )
-            .paginate({ numItems: PAGE_SIZE, cursor });
-
-        organizationObjectives.push(...page.page);
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
+    const organizationObjectives = await ctx.db
+        .query('objectives')
+        .withIndex('by_organization_scope', q =>
+            q.eq('organizationId', organizationId).eq('scope', 'organization')
+        )
+        .collect();
 
     const objectiveIds = organizationObjectives.map(
         (objective: Doc<'objectives'>) => objective._id

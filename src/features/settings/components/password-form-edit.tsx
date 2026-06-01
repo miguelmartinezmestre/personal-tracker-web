@@ -158,12 +158,15 @@ export default function PasswordFormEdit() {
                     </Button>
                 </DialogFooter>
                 {error && (
-                    <p className="text-red-500" data-testid="password-error-message">
+                    <p className="text-destructive" data-testid="password-error-message">
                         {error}
                     </p>
                 )}
                 {message && (
-                    <p className="text-green-500" data-testid="password-success-message">
+                    <p
+                        className="text-emerald-700 dark:text-emerald-300"
+                        data-testid="password-success-message"
+                    >
                         {message}
                     </p>
                 )}

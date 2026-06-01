@@ -21,6 +21,7 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
     'convex/organizations.ts:getOrganizationMembers:query',
     'convex/organizations.ts:getUserInvitations:query',
     'convex/organizations.ts:getOrganizationInvitations:query',
+    'convex/organizations.ts:expireInvitation:mutation',
     'convex/sessions.ts:invalidateSession:mutation',
     'convex/sessions.ts:invalidateAllOtherSessions:mutation',
     'convex/setup.ts:isPlatformSetUp:query',

@@ -1,5 +1,5 @@
 import { ConvexError } from 'convex/values';
-import type { Doc } from '../../_generated/dataModel';
+import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { ERROR_CODES, OBJECTIVE_STATUS, TIME, type ObjectiveStatus } from '../../utils/constants';
 
@@ -55,14 +55,17 @@ export function validateObjectiveMetrics(args: {
     }
 }
 
-export function validateProgressDelta(updatedValue: number): void {
-    if (!Number.isFinite(updatedValue)) {
+export function validateProgressDelta(delta: number, currentValue: number): void {
+    if (!Number.isFinite(delta)) {
         throw new ConvexError(ERROR_CODES.VALUE_NOT_FINITE);
     }
-    if (updatedValue < 0) {
+    if (delta < 0) {
         throw new ConvexError(ERROR_CODES.VALUE_NEGATIVE);
     }
-    if (updatedValue > MAX_METRIC) {
+    if (delta > MAX_METRIC) {
+        throw new ConvexError(ERROR_CODES.VALUE_TOO_LARGE);
+    }
+    if (currentValue + delta > MAX_METRIC) {
         throw new ConvexError(ERROR_CODES.VALUE_TOO_LARGE);
     }
 }
@@ -70,11 +73,11 @@ export function validateProgressDelta(updatedValue: number): void {
 export function validateUpdateDate(updateDate: number): void {
     const now = Date.now();
 
-    if (updateDate > now + TIME.MINUTE_MS) {
+    if (updateDate > now + TIME.DAY_MS) {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
     }
 
-    if (updateDate < now - TIME.FIVE_YEARS_MS) {
+    if (updateDate < now - TIME.DAY_MS) {
         throw new ConvexError(ERROR_CODES.DATE_TOO_OLD);
     }
 }
@@ -109,15 +112,20 @@ export const computeProgressPercent = (objective: {
 
 export async function applyObjectiveProgressDelta(
     ctx: MutationCtx,
-    objective: Doc<'objectives'>,
+    objectiveId: Id<'objectives'>,
     delta: number
 ): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
+    const objective = await ctx.db.get('objectives', objectiveId);
+    if (!objective) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+    }
+
     const baseValue = objective.startValue ?? 0;
     const currentValue = Math.max(baseValue, objective.currentValue + delta);
     const status = currentValue >= objective.targetValue ? 'completed' : 'active';
     const completedNow = objective.status !== 'completed' && status === 'completed';
 
-    await ctx.db.patch('objectives', objective._id, {
+    await ctx.db.patch('objectives', objectiveId, {
         currentValue,
         status,
         updatedAt: Date.now(),
@@ -128,8 +136,13 @@ export async function applyObjectiveProgressDelta(
 
 export async function recomputeObjectiveFromProgress(
     ctx: MutationCtx,
-    objective: Doc<'objectives'>
+    objectiveId: Id<'objectives'>
 ): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
+    const objective = await ctx.db.get('objectives', objectiveId);
+    if (!objective) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+    }
+
     const baseValue = objective.startValue ?? 0;
     let progressTotal = 0;
     let cursor: string | null = null;
@@ -138,7 +151,7 @@ export async function recomputeObjectiveFromProgress(
     while (!isDone) {
         const page = await ctx.db
             .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', objective._id))
+            .withIndex('by_objective', q => q.eq('objective', objectiveId))
             .paginate({ numItems: 500, cursor });
 
         for (const update of page.page) {
@@ -151,7 +164,7 @@ export async function recomputeObjectiveFromProgress(
 
     return await applyObjectiveProgressDelta(
         ctx,
-        objective,
+        objectiveId,
         baseValue + progressTotal - objective.currentValue
     );
 }

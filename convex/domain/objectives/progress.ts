@@ -30,7 +30,7 @@ export async function createProgressUpdate(
     }
 
     validateUpdateDate(args.updateDate);
-    validateProgressDelta(args.updatedValue);
+    validateProgressDelta(args.updatedValue, objective.currentValue);
     validateObjectiveNotCompleted(objective.status);
 
     const now = Date.now();
@@ -45,7 +45,11 @@ export async function createProgressUpdate(
         updatedAt: now,
     });
 
-    const { completedNow } = await applyObjectiveProgressDelta(ctx, objective, args.updatedValue);
+    const { completedNow } = await applyObjectiveProgressDelta(
+        ctx,
+        objective._id,
+        args.updatedValue
+    );
 
     const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
     if (notifyProgress) {
@@ -143,7 +147,7 @@ export async function updateProgressUpdate(
     }
 
     validateUpdateDate(args.updateDate);
-    validateProgressDelta(args.updatedValue);
+    validateProgressDelta(args.updatedValue, objective.currentValue);
     validateObjectiveNotCompleted(objective.status);
 
     await ctx.db.patch('progressUpdates', args.id, {
@@ -155,7 +159,7 @@ export async function updateProgressUpdate(
 
     const { completedNow } = await applyObjectiveProgressDelta(
         ctx,
-        objective,
+        objective._id,
         args.updatedValue - existing.updatedValue
     );
 
@@ -197,7 +201,7 @@ export async function deleteProgressUpdate(ctx: MutationCtx, args: { id: Id<'pro
 
     await ctx.db.delete('progressUpdates', args.id);
 
-    await recomputeObjectiveFromProgress(ctx, objective);
+    await recomputeObjectiveFromProgress(ctx, objective._id);
 
     return { success: true } as const;
 }
