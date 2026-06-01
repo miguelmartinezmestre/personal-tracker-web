@@ -108,6 +108,7 @@ export async function completePlatformSetup(
         registrationPolicy: args.registrationPolicy,
         setupCompletedAt: now,
         setupCompletedBy: userId,
+        usersCount: users.length,
     });
 
     return { success: true, organizationId };

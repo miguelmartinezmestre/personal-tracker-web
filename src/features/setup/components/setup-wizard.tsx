@@ -2,22 +2,6 @@
 
 import { useState } from 'react';
 
-async function retryWithBackoff<T>(
-    operation: () => Promise<T>,
-    options: { maxRetries: number; baseDelayMs: number }
-): Promise<T> {
-    let lastError: unknown;
-    for (let i = 0; i < options.maxRetries; i++) {
-        try {
-            return await operation();
-        } catch (error) {
-            lastError = error;
-            const delay = options.baseDelayMs * Math.pow(2, i);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    throw lastError;
-}
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -37,6 +21,8 @@ import StepOrganization from './step-organization';
 import StepCategories from './step-categories';
 import StepRegistrationPolicy from './step-registration-policy';
 import StepSummary from './step-summary';
+import { ErrorContext } from 'better-auth/client';
+import { Id } from '@/convex/_generated/dataModel';
 
 export default function SetupWizard() {
     const router = useRouter();
@@ -71,42 +57,50 @@ export default function SetupWizard() {
         const setupFailedMsg = t('errors.setupFailed');
 
         try {
-            const signUpResult = await authClient.signUp.email({
-                name: data.admin.username,
-                email: data.admin.email,
-                password: data.admin.password,
-            });
+            await authClient.signUp.email(
+                {
+                    name: data.admin.username,
+                    email: data.admin.email,
+                    password: data.admin.password,
+                },
+                {
+                    onSuccess: async () => {
+                        const session = await authClient.getSession();
 
-            if (signUpResult.error) {
-                setError(getMessageOrFallback(signUpResult.error.message, signUpFailedMsg));
-                setIsSubmitting(false);
-                return;
-            }
+                        console.log('session', session);
 
-            const result = await retryWithBackoff(
-                () =>
-                    completeSetup({
-                        platformName: data.platform.platformName,
-                        defaultLanguage: data.platform.defaultLanguage,
-                        registrationPolicy: data.registration.policy,
-                        organizationName: data.organization.name,
-                        organizationLogo: emptyToUndefined(data.organization.logo),
-                        categories: data.categories.map(category => ({
-                            name: category.name,
-                            color: category.color,
-                            icon: category.icon,
-                        })),
-                    }),
-                { maxRetries: 6, baseDelayMs: 500 }
+                        if (!session?.data?.user?.id) {
+                            throw new Error('User not found');
+                        }
+
+                        const setupResult = await completeSetup({
+                            platformName: data.platform.platformName,
+                            defaultLanguage: data.platform.defaultLanguage,
+                            registrationPolicy: data.registration.policy,
+                            organizationName: data.organization.name,
+                            organizationLogo: emptyToUndefined(data.organization.logo),
+                            categories: data.categories.map(category => ({
+                                name: category.name,
+                                color: category.color,
+                                icon: category.icon,
+                            })),
+                            userId: session?.data?.user?.id as Id<'user'>,
+                        });
+
+                        if (setupResult.organizationId) {
+                            await authClient.organization.setActive({
+                                organizationId: setupResult.organizationId,
+                            });
+                        }
+
+                        router.push('/dashboard/home');
+                    },
+                    onError: (error: ErrorContext) => {
+                        setError(getMessageOrFallback(error.error.message, signUpFailedMsg));
+                        setIsSubmitting(false);
+                    },
+                }
             );
-
-            if (result.organizationId) {
-                await authClient.organization.setActive({
-                    organizationId: result.organizationId,
-                });
-            }
-
-            router.push('/dashboard/home');
         } catch (error: unknown) {
             setError(getErrorMessage(error, setupFailedMsg));
             setIsSubmitting(false);
