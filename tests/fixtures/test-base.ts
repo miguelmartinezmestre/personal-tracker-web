@@ -1,12 +1,11 @@
 import { test as base, Page, BrowserContext, expect } from '@playwright/test';
 import {
-    createTestUserViaAPI,
+    createTestUser,
     createObjective,
     createCategory,
     createOrganization,
     createNotification,
     ensureDefaultCategories,
-    setupPlatformAsAdmin,
     loginUser,
     logoutUser,
     TestUserData,
@@ -29,7 +28,7 @@ export interface TestFixtures {
     adminPage: Page;
     testUser: TestUserData;
     isolatedTestUser: TestUserData;
-    createUser: (options?: Parameters<typeof createTestUserViaAPI>[1]) => Promise<TestUserData>;
+    createUser: (options?: Parameters<typeof createTestUser>[1]) => Promise<TestUserData>;
     createObjectiveHelper: (
         options?: Parameters<typeof createObjective>[1]
     ) => Promise<ObjectiveData>;
@@ -42,7 +41,6 @@ export interface TestFixtures {
         options?: Parameters<typeof createNotification>[2]
     ) => Promise<NotificationData>;
     ensureCategories: () => Promise<void>;
-    makeAdmin: () => Promise<void>;
     login: (email: string, password?: string) => Promise<void>;
     logout: () => Promise<void>;
     isolatedSession: IsolatedSessionFixture;
@@ -53,7 +51,7 @@ export const test = base.extend<TestFixtures>({
         const context = await browser.newContext();
         const page = await context.newPage();
         attachPageDiagnostics(page, 'isolated-session');
-        const user = await createTestUserViaAPI(page);
+        const user = await createTestUser(page);
         await use({ context, page, user });
         await context.close();
     },
@@ -94,7 +92,7 @@ export const test = base.extend<TestFixtures>({
 
     createUser: async ({ page }, use) => {
         await use(async options => {
-            return createTestUserViaAPI(page, options);
+            return createTestUser(page, options);
         });
     },
 
@@ -128,12 +126,6 @@ export const test = base.extend<TestFixtures>({
         });
     },
 
-    makeAdmin: async ({ page }, use) => {
-        await use(async () => {
-            await setupPlatformAsAdmin(page);
-        });
-    },
-
     login: async ({ page }, use) => {
         await use(async (email, password) => {
             await loginUser(page, email, password);
@@ -150,13 +142,12 @@ export const test = base.extend<TestFixtures>({
 export { expect };
 
 export {
-    createTestUserViaAPI,
+    createTestUser,
     createObjective,
     createCategory,
     createOrganization,
     createNotification,
     ensureDefaultCategories,
-    setupPlatformAsAdmin,
     loginUser,
     logoutUser,
 };

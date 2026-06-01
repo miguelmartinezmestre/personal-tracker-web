@@ -1,32 +1,41 @@
 import { test, expect } from '../../fixtures/admin-test-base';
-import { createTestUserViaAPI } from '../../helpers/test-helpers';
+import { createTestUser } from '../../helpers/test-helpers';
 import type { Page } from '@playwright/test';
 
-interface SessionPayload {
-    user?: { id?: string };
-    data?: { user?: { id?: string } };
-}
+async function getVisibleUserIdFromUsersTable(page: Page): Promise<string> {
+    await page.goto('/dashboard/admin/users');
+    await page.waitForURL(/\/dashboard\/admin\/users(?:\?|$)/, { timeout: 15000 });
 
-async function getCurrentUserId(page: Page): Promise<string> {
-    const response = await page.request.get('/api/auth/get-session');
-    expect(response.ok()).toBeTruthy();
+    const usersTable = page.getByTestId('admin-users-table');
+    await expect(usersTable).toBeVisible({ timeout: 15000 });
 
-    const payload = (await response.json()) as SessionPayload;
-    const userId = payload.data?.user?.id ?? payload.user?.id;
-    if (!userId) {
-        throw new Error('Current admin session did not include a user ID');
-    }
+    const userRow = usersTable.getByTestId('table-row').first();
+    await expect(userRow).toBeVisible({ timeout: 15000 });
+
+    let userId = '';
+    await expect
+        .poll(
+            async () => {
+                userId =
+                    (await userRow.getByTestId('table-cell').first().textContent())?.trim() ?? '';
+                return userId;
+            },
+            { timeout: 15000 }
+        )
+        .toMatch(/\S+/);
 
     return userId;
 }
 
 async function loadCurrentUserSessions(page: Page) {
+    const userId = await getVisibleUserIdFromUsersTable(page);
+
     await page.goto('/dashboard/admin/sessions');
     await page.waitForURL(/\/dashboard\/admin\/sessions(?:\?|$)/, { timeout: 15000 });
 
     const userIdInput = page.getByTestId('user-sessions-userid-input');
     await expect(userIdInput).toBeVisible({ timeout: 15000 });
-    await userIdInput.fill(await getCurrentUserId(page));
+    await userIdInput.fill(userId);
     await expect(page.getByTestId('table')).toBeVisible({ timeout: 15000 });
 }
 
@@ -62,7 +71,7 @@ test.describe('Admin Sessions', () => {
     test('admin can revoke any session', { tag: ['@REQ-ADMIN-004'] }, async ({ page, browser }) => {
         const freshContext = await browser.newContext();
         const newPage = await freshContext.newPage();
-        await createTestUserViaAPI(newPage);
+        await createTestUser(newPage);
         await freshContext.close();
 
         await page.goto('/dashboard/admin/sessions');

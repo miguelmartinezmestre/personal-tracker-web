@@ -1,12 +1,15 @@
-import { test, expect } from '@playwright/test';
-import { createTestUserViaAPI } from '../../helpers/test-helpers';
+import { test, expect, type Page } from '@playwright/test';
+import { createTestUser } from '../../helpers/test-helpers';
+
+async function headersFromNavigation(page: Page, path = '/') {
+    const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
+    expect(response).not.toBeNull();
+    return response!.headers();
+}
 
 test.describe('Security Headers', () => {
     test('should include Content-Security-Policy header', async ({ page }) => {
-        await page.goto('/');
-
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const cspHeader = headers['content-security-policy'] || headers['Content-Security-Policy'];
 
@@ -17,8 +20,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should include X-Frame-Options header', async ({ page }) => {
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const frameOptions = headers['x-frame-options'] || headers['X-Frame-Options'];
 
@@ -29,8 +31,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should include X-Content-Type-Options header', async ({ page }) => {
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const contentTypeOptions =
             headers['x-content-type-options'] || headers['X-Content-Type-Options'];
@@ -42,8 +43,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should include Referrer-Policy header', async ({ page }) => {
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const referrerPolicy = headers['referrer-policy'] || headers['Referrer-Policy'];
 
@@ -53,8 +53,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should include Permissions-Policy header', async ({ page }) => {
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const permissionsPolicy =
             headers['permissions-policy'] ||
@@ -71,7 +70,7 @@ test.describe('Security Headers', () => {
         const context = await browser.newContext();
         const page = await context.newPage();
 
-        await createTestUserViaAPI(page);
+        await createTestUser(page);
 
         const cookies = await context.cookies();
 
@@ -94,8 +93,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should not expose server information in headers', async ({ page }) => {
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const serverHeader = headers['server'] || headers['Server'];
         if (serverHeader) {
@@ -109,8 +107,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should include HSTS header for HTTPS', async ({ page }) => {
-        const response = await page.request.get('/');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page);
 
         const hsts = headers['strict-transport-security'] || headers['Strict-Transport-Security'];
 
@@ -137,8 +134,7 @@ test.describe('Security Headers', () => {
     });
 
     test('should prevent clickjacking via X-Frame-Options', async ({ page }) => {
-        const response = await page.request.get('/login');
-        const headers = response.headers();
+        const headers = await headersFromNavigation(page, '/login');
 
         const frameOptions = headers['x-frame-options'] || headers['X-Frame-Options'];
 

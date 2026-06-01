@@ -1,5 +1,5 @@
 import { test, expect } from '../../fixtures/test-base';
-import { ensureDefaultCategories, openCreateObjectiveModal } from '../../helpers/test-helpers';
+import { createCategory, openCreateObjectiveModal } from '../../helpers/test-helpers';
 
 async function openObjectivesPage(page: import('@playwright/test').Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -7,19 +7,19 @@ async function openObjectivesPage(page: import('@playwright/test').Page): Promis
 
 async function selectObjectiveCategory(page: import('@playwright/test').Page): Promise<void> {
     await page.getByTestId('objective-category-select').click();
-    await page.waitForSelector('[role="option"]', { timeout: 10000 });
 
-    const personalOption = page
-        .getByRole('option')
-        .filter({ hasText: /personal/i })
-        .first();
+    const enabledCategoryOptions = page.locator(
+        '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
+    );
+    await expect(enabledCategoryOptions.first()).toBeVisible({ timeout: 10_000 });
 
+    const personalOption = enabledCategoryOptions.filter({ hasText: /personal/i }).first();
     if ((await personalOption.count()) > 0) {
         await personalOption.click();
         return;
     }
 
-    await page.getByRole('option').first().click();
+    await enabledCategoryOptions.first().click();
 }
 
 async function createObjectiveFromModal(
@@ -47,7 +47,7 @@ function objectiveRow(page: import('@playwright/test').Page, title: string) {
 
 test.describe('Objectives CRUD', () => {
     test.beforeEach(async ({ page }) => {
-        await ensureDefaultCategories(page);
+        await createCategory(page, { name: `Obj Setup ${Date.now()}` });
     });
 
     test(

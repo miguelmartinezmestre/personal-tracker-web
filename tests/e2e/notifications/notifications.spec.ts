@@ -61,15 +61,21 @@ async function createNotificationInModal(
 
 test.describe('Notifications', () => {
     test('view notifications list', { tag: ['@REQ-NOTIFICACIONES-003'] }, async ({ page }) => {
-        await page.goto('/dashboard/notifications');
-        await page.waitForLoadState('domcontentloaded');
+        await page.goto('/dashboard/notifications', { waitUntil: 'domcontentloaded' });
 
         await expect(page).toHaveURL(/\/dashboard\/notifications/);
+        await expect(page.getByTestId('notification-create-open')).toBeVisible({ timeout: 15_000 });
 
-        const emptyState = page.locator('text=/no.*notifications|sin notificaciones/i');
+        const emptyState = page.locator(
+            'text=/no.*notifications|sin notificaciones|caught up|notificaciones pendientes/i'
+        );
         const notificationsList = page.getByTestId('table-row');
+        const tableRows = page.locator('table tbody tr');
 
-        const hasContent = (await emptyState.count()) > 0 || (await notificationsList.count()) > 0;
+        const hasContent =
+            (await emptyState.count()) > 0 ||
+            (await notificationsList.count()) > 0 ||
+            (await tableRows.count()) > 0;
         expect(hasContent).toBeTruthy();
     });
 

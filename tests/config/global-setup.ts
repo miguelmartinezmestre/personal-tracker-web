@@ -17,7 +17,7 @@ async function globalSetup(config: FullConfig) {
                     waitUntil: 'domcontentloaded',
                 });
 
-                await page.goto(`${baseURL}/api/auth`, {
+                await page.goto(`${baseURL}/login`, {
                     timeout: 1500,
                     waitUntil: 'domcontentloaded',
                 });

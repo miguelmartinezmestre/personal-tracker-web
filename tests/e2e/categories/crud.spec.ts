@@ -2,7 +2,6 @@ import { test, expect } from '../../fixtures/test-base';
 import {
     createCategory,
     ensureAuthenticatedState,
-    ensureDefaultCategories,
     openCreateObjectiveModal,
     openModal,
 } from '../../helpers/test-helpers';
@@ -110,10 +109,11 @@ test.describe('Categories CRUD', () => {
             });
 
             await page.getByTestId('category-name-input').fill(categoryData.name);
-            await expect(page.getByTestId('category-color-select')).toBeVisible();
-            await page.keyboard.press('Escape').catch(() => undefined);
+            await page.getByTestId('category-color-select').click();
+            await page.waitForSelector('[role="option"]', { timeout: 10000 });
+            await page.getByTestId('category-color-#3b82f6').click();
 
-            await createCategory(page, { name: categoryData.name, color: 'Blue' });
+            await saveCategoryAndWaitForRow(page, categoryData.name);
         }
     );
 
@@ -262,10 +262,10 @@ test.describe('Categories CRUD', () => {
     });
 
     test('assign category to objective', async ({ page }) => {
-        await ensureDefaultCategories(page);
+        const categoryName = `Objective Cat ${Date.now()}`;
+        await createCategory(page, { name: categoryName });
 
-        await page.goto('/dashboard/objectives');
-
+        await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
         await openCreateObjectiveModal(page);
 
         const title = `Categorized Obj ${Date.now()}`;
@@ -273,16 +273,12 @@ test.describe('Categories CRUD', () => {
         await page.getByTestId('objective-description-input').fill('Test with category');
 
         await page.getByTestId('objective-category-select').click();
-        await page.waitForSelector('[role="option"]', { timeout: 10000 });
-        const personalOption = page
-            .getByRole('option')
-            .filter({ hasText: /personal/i })
-            .first();
-        if ((await personalOption.count()) > 0) {
-            await personalOption.click();
-        } else {
-            await page.getByRole('option').first().click();
-        }
+        const enabledCategoryOptions = page.locator(
+            '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
+        );
+        const categoryOption = enabledCategoryOptions.filter({ hasText: categoryName }).first();
+        await expect(categoryOption).toBeVisible({ timeout: 10000 });
+        await categoryOption.click();
 
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');

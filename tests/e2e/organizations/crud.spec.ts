@@ -225,7 +225,7 @@ test.describe('Organizations CRUD', () => {
 
             await expect(page).toHaveURL(/\/dashboard\/organizations\/.+/);
 
-            await expect(page.getByText(org.name)).toBeVisible();
+            await expect(page.getByText(org.name).first()).toBeVisible();
         }
     });
 

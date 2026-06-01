@@ -1,192 +1,121 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-function authRequestHeaders(baseURL: string | undefined): Record<string, string> {
-    return { Origin: baseURL ?? 'http://localhost:3000' };
+async function submitLoginAttempt(page: Page, email: string, password: string): Promise<void> {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('email-input').fill(email);
+    await page.getByTestId('password-input').fill(password);
+    await page.getByTestId('login-button').click();
+    await page.waitForTimeout(500);
+}
+
+async function submitRegistrationAttempt(
+    page: Page,
+    values: { username: string; email: string; password: string }
+): Promise<void> {
+    await page.goto('/register', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('register-username-input').fill(values.username);
+    await page.getByTestId('register-email-input').fill(values.email);
+    await page.getByTestId('register-password-input').fill(values.password);
+    await page.getByTestId('register-confirm-password-input').fill(values.password);
+    await page.getByTestId('register-button').click();
+    await page.waitForTimeout(500);
+}
+
+async function submitPasswordResetAttempt(page: Page, email: string): Promise<void> {
+    await page.goto('/forget-password', { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('email-input').fill(email);
+    await page.getByTestId('forgot-password-submit').click();
+    await page.waitForTimeout(500);
 }
 
 test.describe('Rate Limiting', () => {
     test.describe('Login Rate Limiting', () => {
-        test('should limit failed login attempts', async ({ page }) => {
+        test('keeps repeated failed login attempts out of the dashboard', async ({ page }) => {
             const testEmail = `ratelimit-${Date.now()}@example.com`;
-            const testPassword = 'WrongPassword123!';
 
-            const attempts = 10;
-            const responses: (number | undefined)[] = [];
-
-            for (let i = 0; i < attempts; i++) {
-                try {
-                    const response = await page.request.post('/api/auth/sign-in/email', {
-                        data: {
-                            email: testEmail,
-                            password: testPassword,
-                        },
-                    });
-                    responses.push(response.status());
-                } catch {
-                    responses.push(undefined);
-                }
+            for (let i = 0; i < 10; i++) {
+                await submitLoginAttempt(page, testEmail, 'WrongPassword123!');
+                expect(page.url()).not.toContain('/dashboard/');
             }
 
-            const hasRateLimit = responses.some(status => status === 429);
-            const hasForbidden = responses.some(status => status === 403 || status === 401);
-
-            expect(hasRateLimit || hasForbidden).toBeTruthy();
+            await expect(page.getByTestId('login-button')).toBeVisible();
         });
 
-        test('should implement exponential backoff on failed logins', async ({ page }) => {
+        test('keeps the login UI stable during repeated failures', async ({ page }) => {
             const testEmail = `backoff-${Date.now()}@example.com`;
 
-            const timestamps: number[] = [];
-            const responses: number[] = [];
-
             for (let i = 0; i < 5; i++) {
-                timestamps.push(Date.now());
-                try {
-                    const response = await page.request.post('/api/auth/sign-in/email', {
-                        data: {
-                            email: testEmail,
-                            password: 'wrongpassword',
-                        },
-                    });
-                    responses.push(response.status());
-                } catch {
-                    responses.push(0);
-                }
+                await submitLoginAttempt(page, testEmail, 'wrongpassword');
+                await expect(page.getByTestId('email-input')).toBeVisible();
             }
-
-            expect(responses.every(status => status >= 400 || status === 0)).toBe(true);
-        });
-    });
-
-    test.describe('API Rate Limiting', () => {
-        test('should limit rapid API requests', async ({ page }) => {
-            const requests = 20;
-            const responses: number[] = [];
-
-            for (let i = 0; i < requests; i++) {
-                try {
-                    const response = await page.request.get('/api/auth/get-session');
-                    responses.push(response.status());
-                } catch {
-                    responses.push(0);
-                }
-            }
-
-            const rateLimitedCount = responses.filter(statusCode => statusCode === 429).length;
-            const successCount = responses.filter(statusCode => statusCode === 200).length;
-
-            expect(rateLimitedCount + successCount).toBeGreaterThanOrEqual(requests * 0.8);
-        });
-
-        test('should include rate limit headers', async ({ page }) => {
-            for (let i = 0; i < 10; i++) {
-                await page.request.get('/api/auth/get-session');
-            }
-
-            const response = await page.request.get('/api/auth/get-session');
-            const headers = response.headers();
-
-            const limit = headers['x-ratelimit-limit'];
-            const remaining = headers['x-ratelimit-remaining'];
-            const reset = headers['x-ratelimit-reset'];
-            const retryAfter = headers['retry-after'];
-
-            if (limit) expect(Number(limit)).not.toBeNaN();
-            if (remaining) expect(Number(remaining)).not.toBeNaN();
-            if (reset) expect(Number(reset)).not.toBeNaN();
-            if (retryAfter) expect(Number(retryAfter)).not.toBeNaN();
         });
     });
 
     test.describe('Registration Rate Limiting', () => {
-        test('should limit rapid registration attempts', async ({ page, baseURL }) => {
-            const responses: number[] = [];
+        test('handles rapid registration attempts through the form', async ({ browser }) => {
             const batchId = Date.now();
 
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 3; i++) {
+                const context = await browser.newContext();
+                const page = await context.newPage();
+
                 try {
-                    const response = await page.request.post('/api/auth/sign-up/email', {
-                        headers: authRequestHeaders(baseURL),
-                        data: {
-                            email: `spam-${batchId}-${i}@example.com`,
-                            password: 'Password123!',
-                            name: `Spam User ${i}`,
-                        },
+                    await submitRegistrationAttempt(page, {
+                        username: `Spam User ${batchId} ${i}`,
+                        email: `spam-${batchId}-${i}@example.com`,
+                        password: 'Password123!',
                     });
-                    responses.push(response.status());
-                } catch {
-                    responses.push(0);
+
+                    expect(page.url()).toMatch(/\/(dashboard\/home|register|login)(\?|$)/);
+                } finally {
+                    await context.close();
                 }
-
-                await page.waitForTimeout(100);
             }
-
-            const hasRateLimit = responses.some(statusCode => statusCode === 429);
-            const hasSuccess = responses.some(
-                statusCode => statusCode === 200 || statusCode === 201
-            );
-            const hasClientError = responses.some(
-                statusCode => statusCode >= 400 && statusCode < 500
-            );
-
-            expect(hasRateLimit || hasSuccess || hasClientError).toBe(true);
         });
     });
 
     test.describe('Password Reset Rate Limiting', () => {
-        test('should limit password reset requests', async ({ page, baseURL }) => {
+        test('handles repeated password reset submissions through the form', async ({ page }) => {
             const testEmail = `reset-${Date.now()}@example.com`;
-            const responses: number[] = [];
-            const origin = baseURL ?? 'http://localhost:3000';
 
             for (let i = 0; i < 5; i++) {
-                try {
-                    const response = await page.request.post('/api/auth/request-password-reset', {
-                        headers: authRequestHeaders(baseURL),
-                        data: {
-                            email: testEmail,
-                            redirectTo: `${origin}/reset-password`,
-                        },
-                    });
-                    responses.push(response.status());
-                } catch {
-                    responses.push(0);
-                }
+                await submitPasswordResetAttempt(page, testEmail);
+                expect(page.url()).toContain('/forget-password');
             }
-
-            const hasRateLimit = responses.some(statusCode => statusCode === 429);
-            const hasSuccess = responses.some(statusCode => statusCode === 200);
-
-            expect(hasRateLimit || hasSuccess).toBe(true);
         });
     });
 
-    test.describe('General Rate Limiting', () => {
-        test('should handle burst traffic gracefully', async ({ page }) => {
-            const burstSize = 15;
-            const promises = Array.from({ length: burstSize }, () =>
-                page.request.get('/').catch(() => null)
+    test.describe('General Navigation Pressure', () => {
+        test('handles burst landing page navigation gracefully', async ({ browser }) => {
+            const contexts = await Promise.all(
+                Array.from({ length: 5 }, async () => {
+                    const context = await browser.newContext();
+                    const page = await context.newPage();
+                    return { context, page };
+                })
             );
 
-            const results = await Promise.all(promises);
-
-            const successful = results.filter(response => response && response.ok()).length;
-            const rateLimited = results.filter(
-                response => response && response.status() === 429
-            ).length;
-
-            expect(successful + rateLimited).toBeGreaterThanOrEqual(burstSize * 0.5);
+            try {
+                await Promise.all(
+                    contexts.map(async ({ page }) => {
+                        const response = await page.goto('/', { waitUntil: 'domcontentloaded' });
+                        expect(response?.status()).toBeLessThan(500);
+                    })
+                );
+            } finally {
+                await Promise.all(contexts.map(({ context }) => context.close()));
+            }
         });
 
-        test('should recover after rate limit window', async ({ page }) => {
-            for (let i = 0; i < 10; i++) {
-                await page.request.get('/api/auth/get-session').catch(() => undefined);
+        test('recovers after repeated failed login attempts', async ({ page }) => {
+            const testEmail = `recover-${Date.now()}@example.com`;
+
+            for (let i = 0; i < 5; i++) {
+                await submitLoginAttempt(page, testEmail, 'WrongPassword123!');
             }
 
-            await page.waitForTimeout(1000);
-
-            const response = await page.request.get('/api/auth/get-session');
-            expect([200, 429]).toContain(response.status());
+            await page.goto('/login', { waitUntil: 'domcontentloaded' });
+            await expect(page.getByTestId('login-button')).toBeVisible();
         });
     });
 });

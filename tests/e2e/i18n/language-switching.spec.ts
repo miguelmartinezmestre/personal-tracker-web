@@ -1,28 +1,30 @@
 import { test, expect } from '../../fixtures/test-base';
 
-async function openLanguageMenu(page: import('@playwright/test').Page): Promise<void> {
-    const languageSwitcher = page.getByTestId('language-switcher');
-    await expect(languageSwitcher).toBeVisible({ timeout: 15000 });
-    await languageSwitcher.click();
-}
-
 async function switchLanguage(
     page: import('@playwright/test').Page,
     option: 'es' | 'en',
     expectedText: RegExp
 ): Promise<void> {
+    const languageSwitcher = page.getByTestId('language-switcher');
+
     for (let attempt = 0; attempt < 3; attempt++) {
-        await openLanguageMenu(page);
-        const optionLocator = page.getByTestId(`language-option-${option}`);
-        await expect(optionLocator).toBeVisible({ timeout: 5000 });
-        await optionLocator.evaluate(element => {
-            (element as HTMLElement).click();
-        });
+        await page.keyboard.press('Escape').catch(() => undefined);
+        await expect(page.getByRole('menu'))
+            .toBeHidden({ timeout: 2000 })
+            .catch(() => undefined);
+
+        await expect(languageSwitcher).toBeVisible({ timeout: 15000 });
+        await languageSwitcher.click();
+
+        const menu = page.getByRole('menu');
+        await expect(menu).toBeVisible({ timeout: 5000 });
+        await menu.getByTestId(`language-option-${option}`).click();
+        await expect(menu).toBeHidden({ timeout: 5000 });
         await page.waitForLoadState('domcontentloaded');
 
         try {
-            await expect(page.getByTestId('language-switcher')).toContainText(expectedText, {
-                timeout: 5000,
+            await expect(languageSwitcher).toContainText(expectedText, {
+                timeout: 10_000,
             });
             return;
         } catch {
@@ -30,8 +32,8 @@ async function switchLanguage(
         }
     }
 
-    await expect(page.getByTestId('language-switcher')).toContainText(expectedText, {
-        timeout: 5000,
+    await expect(languageSwitcher).toContainText(expectedText, {
+        timeout: 10_000,
     });
 }
 

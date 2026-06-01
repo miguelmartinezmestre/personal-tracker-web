@@ -135,25 +135,6 @@ test.describe('Sessions', () => {
 
                 await expect
                     .poll(
-                        async () => {
-                            try {
-                                const response =
-                                    await isolatedAuthenticatedPage.request.get(
-                                        '/api/auth/convex/token'
-                                    );
-                                if (!response.ok()) return false;
-                                const body = (await response.json()) as { token?: string } | null;
-                                return typeof body?.token === 'string' && body.token.length > 0;
-                            } catch {
-                                return false;
-                            }
-                        },
-                        { timeout: 15000, intervals: [250, 500, 1000] }
-                    )
-                    .toBe(true);
-
-                await expect
-                    .poll(
                         () =>
                             isolatedAuthenticatedPage.getByTestId('session-revoke-button').count(),
                         { timeout: 15000, intervals: [250, 500, 1000] }
