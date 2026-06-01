@@ -100,6 +100,11 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
                     await (ctx as MutationCtx).runMutation(internal.auth.incrementUsersCount);
                 },
             },
+            delete: {
+                before: async () => {
+                    await (ctx as MutationCtx).runMutation(internal.auth.decrementUsersCount);
+                },
+            },
         },
         session: {
             create: {
