@@ -30,7 +30,7 @@ export async function createProgressUpdate(
     }
 
     validateUpdateDate(args.updateDate);
-    validateProgressDelta(args.updatedValue);
+    validateProgressDelta(args.updatedValue, objective.currentValue);
     validateObjectiveNotCompleted(objective.status);
 
     const now = Date.now();
@@ -147,7 +147,7 @@ export async function updateProgressUpdate(
     }
 
     validateUpdateDate(args.updateDate);
-    validateProgressDelta(args.updatedValue);
+    validateProgressDelta(args.updatedValue, objective.currentValue);
     validateObjectiveNotCompleted(objective.status);
 
     await ctx.db.patch('progressUpdates', args.id, {

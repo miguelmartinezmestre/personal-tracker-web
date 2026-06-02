@@ -55,14 +55,17 @@ export function validateObjectiveMetrics(args: {
     }
 }
 
-export function validateProgressDelta(updatedValue: number): void {
-    if (!Number.isFinite(updatedValue)) {
+export function validateProgressDelta(delta: number, currentValue: number): void {
+    if (!Number.isFinite(delta)) {
         throw new ConvexError(ERROR_CODES.VALUE_NOT_FINITE);
     }
-    if (updatedValue < 0) {
+    if (delta < 0) {
         throw new ConvexError(ERROR_CODES.VALUE_NEGATIVE);
     }
-    if (updatedValue > MAX_METRIC) {
+    if (delta > MAX_METRIC) {
+        throw new ConvexError(ERROR_CODES.VALUE_TOO_LARGE);
+    }
+    if (currentValue + delta > MAX_METRIC) {
         throw new ConvexError(ERROR_CODES.VALUE_TOO_LARGE);
     }
 }
@@ -70,11 +73,11 @@ export function validateProgressDelta(updatedValue: number): void {
 export function validateUpdateDate(updateDate: number): void {
     const now = Date.now();
 
-    if (updateDate > now + TIME.MINUTE_MS) {
+    if (updateDate > now + TIME.DAY_MS) {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
     }
 
-    if (updateDate < now - TIME.FIVE_YEARS_MS) {
+    if (updateDate < now - TIME.DAY_MS) {
         throw new ConvexError(ERROR_CODES.DATE_TOO_OLD);
     }
 }
