@@ -60,6 +60,15 @@ export const banUser = mutationWithRLS({
             headers,
         });
 
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', args.userId))
+            .collect();
+
+        for (const session of sessions) {
+            await ctx.db.delete(session._id);
+        }
+
         return { success: true };
     },
 });
