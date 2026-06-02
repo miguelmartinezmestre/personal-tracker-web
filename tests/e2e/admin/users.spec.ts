@@ -94,15 +94,22 @@ test.describe('Admin Users', () => {
     test(
         'edit user modal opens and can change role',
         { tag: ['@REQ-ADMIN-003'] },
-        async ({ page }) => {
+        async ({ page, browser }) => {
+            const freshContext = await browser.newContext();
+            const testUserPage = await freshContext.newPage();
+            const testUser = await createTestUser(testUserPage);
+            await freshContext.close();
+
             await page.goto('/dashboard/admin/users');
             await page.waitForLoadState('domcontentloaded');
 
             const usersTable = page.getByTestId('admin-users-table');
             await expect(usersTable).toBeVisible({ timeout: 15000 });
 
-            const editButton = page.getByTestId('user-edit-open').first();
-            await editButton.click();
+            const row = page.getByTestId('table-row').filter({ hasText: testUser.email }).first();
+            await expect(row).toBeVisible({ timeout: 10000 });
+
+            await row.getByTestId('user-edit-open').click();
 
             const modal = page.getByTestId('user-edit-modal');
             await expect(modal).toBeVisible({ timeout: 5000 });
@@ -110,8 +117,17 @@ test.describe('Admin Users', () => {
             const roleSelect = page.getByTestId('user-edit-role-select');
             await expect(roleSelect).toBeVisible();
 
-            const cancelButton = page.getByTestId('user-edit-cancel-button');
-            await cancelButton.click();
+            await roleSelect.click();
+            const adminOption = page.locator('[role="option"][data-value="admin"]');
+            await expect(adminOption).toBeVisible({ timeout: 5000 });
+            await adminOption.click();
+
+            const saveButton = page.getByTestId('user-edit-save-button');
+            await saveButton.click();
+
+            await expect(modal).toBeHidden({ timeout: 10000 });
+
+            await expect(row).toContainText('admin');
         }
     );
 

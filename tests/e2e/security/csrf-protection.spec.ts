@@ -6,7 +6,7 @@ import {
 } from '../../helpers/test-helpers';
 
 test.describe('CSRF Protection', () => {
-    test('should include csrf token in authenticated forms', async ({ page }) => {
+    test('should use POST method for state-changing forms', async ({ page }) => {
         await createTestUser(page);
         await ensureDefaultCategories(page);
 

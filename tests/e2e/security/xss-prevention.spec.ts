@@ -13,7 +13,7 @@ async function assertNoXssExecution(page: Page): Promise<void> {
         await dialog.dismiss();
     });
 
-    await page.waitForTimeout(500);
+    await page.waitForLoadState('networkidle');
     expect(dialogShown).toBe(false);
 }
 
@@ -222,28 +222,32 @@ test.describe('XSS Prevention - Stored XSS', () => {
 
     test('should prevent XSS in organization names', async ({ browser }) => {
         const context = await browser.newContext();
-        const page2 = await context.newPage();
+        try {
+            const page2 = await context.newPage();
 
-        await createTestUser(page2);
+            await createTestUser(page2);
 
-        await page2.goto('/dashboard/organizations');
-        await page2.waitForLoadState('domcontentloaded');
+            await page2.goto('/dashboard/organizations');
+            await page2.waitForLoadState('domcontentloaded');
 
-        await page2.getByTestId('organization-create-open').click();
-        await page2.waitForSelector('[data-testid="organization-name-input"]', { timeout: 10000 });
+            await page2.getByTestId('organization-create-open').click();
+            await page2.waitForSelector('[data-testid="organization-name-input"]', {
+                timeout: 10000,
+            });
 
-        const maliciousOrgName = 'Test <script>alert("XSS")</script> Org';
-        await page2.getByTestId('organization-name-input').fill(maliciousOrgName);
-        await page2.getByTestId('organization-description-input').fill('Test description');
+            const maliciousOrgName = 'Test <script>alert("XSS")</script> Org';
+            await page2.getByTestId('organization-name-input').fill(maliciousOrgName);
+            await page2.getByTestId('organization-description-input').fill('Test description');
 
-        await page2.getByTestId('organization-save-button').click();
+            await page2.getByTestId('organization-save-button').click();
 
-        await page2.waitForTimeout(1000);
+            await page2.waitForTimeout(1000);
 
-        await assertNoDangerousDomNodes(page2);
-        await assertNoXssExecution(page2);
-
-        await context.close();
+            await assertNoDangerousDomNodes(page2);
+            await assertNoXssExecution(page2);
+        } finally {
+            await context.close();
+        }
     });
 });
 

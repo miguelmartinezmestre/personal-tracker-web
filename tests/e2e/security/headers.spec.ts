@@ -13,10 +13,8 @@ test.describe('Security Headers', () => {
 
         const cspHeader = headers['content-security-policy'] || headers['Content-Security-Policy'];
 
-        if (process.env.NODE_ENV === 'production') {
-            expect(cspHeader).toBeDefined();
-            expect(cspHeader).toContain('default-src');
-        }
+        expect(cspHeader).toBeDefined();
+        expect(cspHeader).toContain('default-src');
     });
 
     test('should include X-Frame-Options header', async ({ page }) => {
@@ -24,10 +22,8 @@ test.describe('Security Headers', () => {
 
         const frameOptions = headers['x-frame-options'] || headers['X-Frame-Options'];
 
-        if (process.env.NODE_ENV === 'production') {
-            expect(frameOptions).toBeDefined();
-            expect(frameOptions?.toLowerCase()).toMatch(/deny|sameorigin/);
-        }
+        expect(frameOptions).toBeDefined();
+        expect(frameOptions?.toLowerCase()).toMatch(/deny|sameorigin/);
     });
 
     test('should include X-Content-Type-Options header', async ({ page }) => {
@@ -36,10 +32,8 @@ test.describe('Security Headers', () => {
         const contentTypeOptions =
             headers['x-content-type-options'] || headers['X-Content-Type-Options'];
 
-        if (process.env.NODE_ENV === 'production') {
-            expect(contentTypeOptions).toBeDefined();
-            expect(contentTypeOptions?.toLowerCase()).toBe('nosniff');
-        }
+        expect(contentTypeOptions).toBeDefined();
+        expect(contentTypeOptions?.toLowerCase()).toBe('nosniff');
     });
 
     test('should include Referrer-Policy header', async ({ page }) => {
@@ -47,9 +41,7 @@ test.describe('Security Headers', () => {
 
         const referrerPolicy = headers['referrer-policy'] || headers['Referrer-Policy'];
 
-        if (process.env.NODE_ENV === 'production') {
-            expect(referrerPolicy).toBeDefined();
-        }
+        expect(referrerPolicy).toBeDefined();
     });
 
     test('should include Permissions-Policy header', async ({ page }) => {
@@ -61,9 +53,7 @@ test.describe('Security Headers', () => {
             headers['feature-policy'] ||
             headers['Feature-Policy'];
 
-        if (permissionsPolicy) {
-            expect(permissionsPolicy).toBeDefined();
-        }
+        expect(permissionsPolicy).toBeDefined();
     });
 
     test('should set secure cookie attributes', async ({ browser }) => {
@@ -79,13 +69,11 @@ test.describe('Security Headers', () => {
                 cookie.name.toLowerCase().includes('session') ||
                 cookie.name.toLowerCase().includes('auth')
             ) {
-                if (process.env.NODE_ENV === 'production') {
-                    expect(cookie.httpOnly).toBe(true);
+                expect(cookie.httpOnly).toBe(true);
 
-                    expect(cookie.secure).toBe(true);
+                expect(cookie.secure).toBe(true);
 
-                    expect(['Lax', 'Strict', 'None']).toContain(cookie.sameSite);
-                }
+                expect(['Lax', 'Strict', 'None']).toContain(cookie.sameSite);
             }
         }
 
@@ -101,9 +89,7 @@ test.describe('Security Headers', () => {
         }
 
         const poweredBy = headers['x-powered-by'] || headers['X-Powered-By'];
-        if (process.env.NODE_ENV === 'production') {
-            expect(poweredBy).toBeUndefined();
-        }
+        expect(poweredBy).toBeUndefined();
     });
 
     test('should include HSTS header for HTTPS', async ({ page }) => {
@@ -111,17 +97,15 @@ test.describe('Security Headers', () => {
 
         const hsts = headers['strict-transport-security'] || headers['Strict-Transport-Security'];
 
-        if (process.env.NODE_ENV === 'production') {
-            expect(hsts).toBeDefined();
-            expect(hsts).toContain('max-age');
-            expect(hsts).toContain('includeSubDomains');
-        }
+        expect(hsts).toBeDefined();
+        expect(hsts).toContain('max-age');
+        expect(hsts).toContain('includeSubDomains');
     });
 
     test('CSP should prevent inline script execution', async ({ page }) => {
         await page.goto('/');
 
-        await page.evaluate(() => {
+        const result = await page.evaluate(() => {
             try {
                 const script = document.createElement('script');
                 script.textContent = 'window.cspTest = "executed";';
@@ -131,6 +115,8 @@ test.describe('Security Headers', () => {
                 return 'blocked';
             }
         });
+
+        expect(result).toBe('blocked');
     });
 
     test('should prevent clickjacking via X-Frame-Options', async ({ page }) => {
@@ -138,10 +124,9 @@ test.describe('Security Headers', () => {
 
         const frameOptions = headers['x-frame-options'] || headers['X-Frame-Options'];
 
-        if (process.env.NODE_ENV === 'production' && frameOptions) {
-            expect(['DENY', 'SAMEORIGIN'].map(frameOption => frameOption.toLowerCase())).toContain(
-                frameOptions.toLowerCase()
-            );
-        }
+        expect(frameOptions).toBeDefined();
+        expect(['DENY', 'SAMEORIGIN'].map(frameOption => frameOption.toLowerCase())).toContain(
+            frameOptions!.toLowerCase()
+        );
     });
 });
