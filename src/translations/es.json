@@ -533,7 +533,8 @@
         "statusOptions": {
             "all": "Todos los estados",
             "active": "Activo",
-            "completed": "Completado"
+            "completed": "Completado",
+            "overdue": "Atrasado"
         },
         "statusLabels": {
             "completed": "Completado",
