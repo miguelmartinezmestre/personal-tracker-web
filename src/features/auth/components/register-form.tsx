@@ -18,27 +18,6 @@ import { useSession } from '@/features/auth/hooks/use-session';
 import { getErrorMessage } from '@/lib/error-utils';
 import { RegisterFormInputField } from './register-form-input-field';
 
-interface OrganizationListResponse {
-    data?: Array<{ id: string }>;
-}
-
-function extractOrgList(result: unknown): Array<{ id: string }> {
-    if (result === null || typeof result !== 'object') {
-        return [];
-    }
-    const data = (result as OrganizationListResponse).data;
-    if (!Array.isArray(data)) {
-        return [];
-    }
-    return data.filter(
-        (organization): organization is { id: string } =>
-            typeof organization === 'object' &&
-            organization !== null &&
-            'id' in organization &&
-            typeof organization.id === 'string'
-    );
-}
-
 interface RegisterFormProps {
     invitationToken?: string | null;
 }
@@ -98,16 +77,6 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                                 await authClient.organization.acceptInvitation({
                                     invitationId: invitationToken,
                                 });
-
-                                const organizationListResult = await authClient.organization.list();
-                                const organizations = extractOrgList(organizationListResult);
-
-                                const firstOrganization = organizations[0];
-                                if (firstOrganization) {
-                                    await authClient.organization.setActive({
-                                        organizationId: firstOrganization.id,
-                                    });
-                                }
                             }
 
                             router.push('/dashboard/home');
