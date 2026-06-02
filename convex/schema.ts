@@ -254,7 +254,6 @@ export default defineSchema({
         registrationPolicy: v.string(),
         setupCompletedAt: v.optional(v.number()),
         setupCompletedBy: v.optional(v.id('user')),
-        usersCount: v.number(),
     }),
 
     notificationPreferences: defineTable({

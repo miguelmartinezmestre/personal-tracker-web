@@ -47,7 +47,7 @@ export const completeSetup = mutation({
 
         const platformSettings = await ctx.db.query('platformSettings').first();
 
-        if (platformSettings && platformSettings.usersCount > 1) {
+        if (platformSettings) {
             throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
 
