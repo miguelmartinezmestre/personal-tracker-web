@@ -8,49 +8,28 @@ import { toast } from 'sonner';
 import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
 
 export function NotificationSonnerListener() {
-    const { data: unreadCount } = useQuery(
-        convexQuery(api.notifications.getUnreadNotificationCount, {})
-    );
-
     const { data } = useQuery(
         convexQuery(api.notifications.getNotificationsByUser, {
             paginationOpts: DEFAULT_PAGINATION_OPTS,
         })
     );
 
-    const initializedRef = useRef(false);
-    const previousUnreadCountRef = useRef<number>(0);
-    const seenNotificationIdsRef = useRef<Set<string>>(new Set());
+    const previousNotificationsRef = useRef<Set<string>>(new Set());
 
-    const unreadCountValue = unreadCount?.count ?? 0;
     const notificationPage = data?.page;
 
     useEffect(() => {
-        const notifications = notificationPage ?? [];
+        if (!notificationPage) return;
+        const currentIds = new Set(notificationPage.map(notification => notification._id));
+        const previousIds = previousNotificationsRef.current;
 
-        if (!initializedRef.current) {
-            initializedRef.current = true;
-            previousUnreadCountRef.current = unreadCountValue;
-            notifications.forEach(notification =>
-                seenNotificationIdsRef.current.add(notification._id)
-            );
-            return;
-        }
+        const newNotifications = notificationPage.filter(
+            notification => !previousIds.has(notification._id)
+        );
+        newNotifications.slice(0, 3).forEach(notification => toast.info(notification.message));
 
-        if (unreadCountValue > previousUnreadCountRef.current) {
-            const newUnreadNotifications = notifications.filter(
-                notification =>
-                    !notification.read && !seenNotificationIdsRef.current.has(notification._id)
-            );
-            for (const notification of newUnreadNotifications.slice(0, 3)) {
-                toast.info(notification.message);
-                seenNotificationIdsRef.current.add(notification._id);
-            }
-        }
-
-        previousUnreadCountRef.current = unreadCountValue;
-        notifications.forEach(notification => seenNotificationIdsRef.current.add(notification._id));
-    }, [unreadCountValue, notificationPage]);
+        previousNotificationsRef.current = currentIds;
+    }, [notificationPage]);
 
     return null;
 }
