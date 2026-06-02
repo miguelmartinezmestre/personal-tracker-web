@@ -70,6 +70,7 @@ import type * as setup from "../setup.js";
 import type * as tests_test_helpers from "../tests/test_helpers.js";
 import type * as update_progress from "../update_progress.js";
 import type * as utils_constants from "../utils/constants.js";
+import type * as utils_pagination from "../utils/pagination.js";
 import type * as utils_reminderSchedule from "../utils/reminderSchedule.js";
 import type * as utils_requiredAdmin from "../utils/requiredAdmin.js";
 import type * as utils_validators from "../utils/validators.js";
@@ -144,6 +145,7 @@ declare const fullApi: ApiFromModules<{
   "tests/test_helpers": typeof tests_test_helpers;
   update_progress: typeof update_progress;
   "utils/constants": typeof utils_constants;
+  "utils/pagination": typeof utils_pagination;
   "utils/reminderSchedule": typeof utils_reminderSchedule;
   "utils/requiredAdmin": typeof utils_requiredAdmin;
   "utils/validators": typeof utils_validators;

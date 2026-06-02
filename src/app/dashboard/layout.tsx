@@ -20,10 +20,15 @@ export default async function Layout({ children }: { children: React.ReactNode }
         redirect('/setup');
     }
 
-    const initialUser = await fetchAuthQuery(api.auth.getCurrentUser).catch(() => null);
+    const [initialUser, activeOrganizationId] = await Promise.all([
+        fetchAuthQuery(api.auth.getCurrentUser).catch(() => null),
+        fetchAuthQuery(api.auth.getCurrentOrganization).catch(() => null),
+    ]);
     if (!initialUser) {
         redirect('/login');
     }
+
+    const dashboardScopeKey = activeOrganizationId ?? 'no-active-organization';
 
     return (
         <SidebarProvider>
@@ -43,7 +48,10 @@ export default async function Layout({ children }: { children: React.ReactNode }
                 </header>
                 <CommandMenu />
                 <NotificationSonnerListener />
-                <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4 pt-0 [&>*]:min-w-0">
+                <div
+                    key={dashboardScopeKey}
+                    className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4 pt-0 [&>*]:min-w-0"
+                >
                     {children}
                 </div>
             </SidebarInset>
