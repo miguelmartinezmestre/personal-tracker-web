@@ -14,7 +14,6 @@ import { notificationTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import type { NotificationType } from './utils/constants';
 
-const NOTIFICATION_LIMIT = 100;
 const OBJECTIVE_ID_LIMIT = 50;
 const EMPTY_NOTIFICATION_PAGE = {
     page: [],
@@ -84,14 +83,28 @@ export const getUnreadNotificationCount = queryWithRLS({
             return { count: 0 };
         }
 
-        const unreadNotifications = await ctx.db
-            .query('notifications')
-            .withIndex('by_user_organization_read', q =>
-                q.eq('userId', ctx.userId).eq('organizationId', organizationId).eq('read', false)
-            )
-            .take(NOTIFICATION_LIMIT);
+        let count = 0;
+        let cursor: string | null = null;
+        let isDone = false;
+        const BATCH_SIZE = 1000;
 
-        return { count: unreadNotifications.length };
+        while (!isDone) {
+            const page = await ctx.db
+                .query('notifications')
+                .withIndex('by_user_organization_read', q =>
+                    q
+                        .eq('userId', ctx.userId)
+                        .eq('organizationId', organizationId)
+                        .eq('read', false)
+                )
+                .paginate({ numItems: BATCH_SIZE, cursor });
+
+            count += page.page.length;
+            isDone = page.isDone;
+            cursor = page.continueCursor;
+        }
+
+        return { count };
     },
 });
 

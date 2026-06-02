@@ -397,7 +397,7 @@ describe('convex achievements', async () => {
                     currentValue: 100,
                     status: 'completed',
                     deadline: pastDeadline,
-                    createdAt: now - 2000,
+                    createdAt: now,
                     updatedAt: now,
                 });
             });

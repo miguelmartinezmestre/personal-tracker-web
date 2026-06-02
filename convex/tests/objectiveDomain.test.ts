@@ -91,9 +91,9 @@ describe('objectiveDomain', () => {
 
     describe('validateProgressDelta', () => {
         test('validateProgressDelta rejects negative values', () => {
-            expect(() => validateProgressDelta(-1)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(-1, 0)).toThrow(ConvexError);
             try {
-                validateProgressDelta(-1);
+                validateProgressDelta(-1, 0);
             } catch (e) {
                 expect(e).toBeInstanceOf(ConvexError);
                 if (e instanceof ConvexError) {
@@ -103,23 +103,27 @@ describe('objectiveDomain', () => {
         });
 
         test('validateProgressDelta accepts zero', () => {
-            expect(() => validateProgressDelta(0)).not.toThrow();
+            expect(() => validateProgressDelta(0, 0)).not.toThrow();
         });
 
         test('validateProgressDelta accepts positive values', () => {
-            expect(() => validateProgressDelta(100)).not.toThrow();
+            expect(() => validateProgressDelta(100, 0)).not.toThrow();
         });
 
         test('validateProgressDelta rejects NaN', () => {
-            expect(() => validateProgressDelta(Number.NaN)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(Number.NaN, 0)).toThrow(ConvexError);
         });
 
         test('validateProgressDelta rejects infinite values', () => {
-            expect(() => validateProgressDelta(Number.POSITIVE_INFINITY)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(Number.POSITIVE_INFINITY, 0)).toThrow(ConvexError);
         });
 
         test('validateProgressDelta rejects values exceeding maximum', () => {
-            expect(() => validateProgressDelta(1_000_000_001)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(1_000_000_001, 0)).toThrow(ConvexError);
+        });
+
+        test('validateProgressDelta rejects currentValue + delta exceeding maximum', () => {
+            expect(() => validateProgressDelta(1, 1_000_000_000)).toThrow(ConvexError);
         });
     });
 
@@ -128,7 +132,7 @@ describe('objectiveDomain', () => {
             expect(() => validateUpdateDate(Date.now())).not.toThrow();
         });
 
-        test('accepts past timestamp', () => {
+        test('accepts past timestamp within 1 day', () => {
             expect(() => validateUpdateDate(Date.now() - 86400000)).not.toThrow();
         });
 
@@ -136,10 +140,10 @@ describe('objectiveDomain', () => {
             expect(() => validateUpdateDate(Date.now() + 30000)).not.toThrow();
         });
 
-        test('rejects future timestamp beyond buffer', () => {
-            expect(() => validateUpdateDate(Date.now() + 120000)).toThrow(ConvexError);
+        test('rejects future timestamp beyond 1 day', () => {
+            expect(() => validateUpdateDate(Date.now() + 2 * 86400000)).toThrow(ConvexError);
             try {
-                validateUpdateDate(Date.now() + 120000);
+                validateUpdateDate(Date.now() + 2 * 86400000);
             } catch (e) {
                 expect(e).toBeInstanceOf(ConvexError);
                 if (e instanceof ConvexError) {
@@ -148,13 +152,10 @@ describe('objectiveDomain', () => {
             }
         });
 
-        test('rejects timestamp too old (5+ years)', () => {
-            const fiveYearsMs = 5 * 365 * 24 * 60 * 60 * 1000;
-            expect(() => validateUpdateDate(Date.now() - fiveYearsMs - 86400000)).toThrow(
-                ConvexError
-            );
+        test('rejects timestamp too old (more than 1 day)', () => {
+            expect(() => validateUpdateDate(Date.now() - 2 * 86400000)).toThrow(ConvexError);
             try {
-                validateUpdateDate(Date.now() - fiveYearsMs - 86400000);
+                validateUpdateDate(Date.now() - 2 * 86400000);
             } catch (e) {
                 expect(e).toBeInstanceOf(ConvexError);
                 if (e instanceof ConvexError) {

@@ -94,8 +94,9 @@ export const getObjectivesWithMostProgress = queryWithRLS({
     ),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
-        const maxItems = args.limit ?? PAGINATION.DASHBOARD_LIMIT;
-        const fetchLimit = maxItems * 3;
+        const MAX_QUERY_LIMIT = 100;
+        const maxItems = Math.min(args.limit ?? PAGINATION.DASHBOARD_LIMIT, MAX_QUERY_LIMIT);
+        const fetchLimit = Math.min(maxItems * 3, MAX_QUERY_LIMIT);
 
         const objectives = await ctx.db
             .query('objectives')
