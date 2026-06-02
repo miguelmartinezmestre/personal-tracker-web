@@ -10,7 +10,6 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form-tanstack';
-import { Input } from '@/components/ui/input';
 import {
     OrganizationMember,
     savedOrganizationMemberSchema,
@@ -80,16 +79,9 @@ export default function OrganizationMemberEditFormModal({
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>{t('email')}</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder={t('enterEmail')}
-                                        type="email"
-                                        {...field}
-                                        value={(field.value as string) || ''}
-                                        onChange={e => field.onChange(e.target.value)}
-                                        data-testid="organization-member-edit-email-input"
-                                    />
-                                </FormControl>
+                                <p className="text-sm text-muted-foreground py-2">
+                                    {(field.value as string) || ''}
+                                </p>
                                 <FormDescription>
                                     {t('giveYourOrganizationMemberAClearConciseEmail')}
                                 </FormDescription>
