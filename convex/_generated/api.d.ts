@@ -32,6 +32,7 @@ import type * as domain_objectives_list from "../domain/objectives/list.js";
 import type * as domain_objectives_metrics from "../domain/objectives/metrics.js";
 import type * as domain_objectives_progress from "../domain/objectives/progress.js";
 import type * as domain_objectives_workflowSync from "../domain/objectives/workflowSync.js";
+import type * as domain_organizations_personalOrganization from "../domain/organizations/personalOrganization.js";
 import type * as email from "../email.js";
 import type * as emailSmtp from "../emailSmtp.js";
 import type * as generated_auth from "../generated/auth.js";
@@ -105,6 +106,7 @@ declare const fullApi: ApiFromModules<{
   "domain/objectives/metrics": typeof domain_objectives_metrics;
   "domain/objectives/progress": typeof domain_objectives_progress;
   "domain/objectives/workflowSync": typeof domain_objectives_workflowSync;
+  "domain/organizations/personalOrganization": typeof domain_organizations_personalOrganization;
   email: typeof email;
   emailSmtp: typeof emailSmtp;
   "generated/auth": typeof generated_auth;

@@ -26,6 +26,7 @@ interface OrganizationRaw {
     name: string;
     slug: string;
     description?: string;
+    isPersonal?: boolean;
 }
 
 export function useOrganizations() {
@@ -39,6 +40,7 @@ export function useOrganizations() {
             name: rawOrganization.name,
             slug: rawOrganization.slug,
             description: rawOrganization.description ?? '',
+            isPersonal: rawOrganization.isPersonal ?? false,
         })
     );
 
@@ -78,6 +80,7 @@ export function useOrganizationByIdentifier(identifier: string | null) {
               name: matchedOrganization.name,
               slug: matchedOrganization.slug,
               description: matchedOrganization.description ?? '',
+              isPersonal: matchedOrganization.isPersonal ?? false,
           }
         : null;
 

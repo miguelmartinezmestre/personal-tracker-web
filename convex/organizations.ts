@@ -7,6 +7,7 @@ import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
 import { resolveActiveMembership } from './platform/rls/authContext';
+import { isPersonalOrganizationForUser } from './domain/organizations/personalOrganization';
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
     if (!metadata) {
@@ -122,6 +123,11 @@ export const getOrganizationsByUser = query({
                     logo: org.logo,
                     createdAt: org.createdAt,
                     role: member.role,
+                    isPersonal: isPersonalOrganizationForUser({
+                        metadata: org.metadata,
+                        slug: org.slug,
+                        userId: member.userId,
+                    }),
                 };
             })
             .filter(org => org !== null);

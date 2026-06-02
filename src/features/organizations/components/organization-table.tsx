@@ -41,6 +41,10 @@ export default function OrganizationsTable() {
             id: 'delete',
             cell: ({ row }) => {
                 const organizationRow = row.original;
+                if (organizationRow.isPersonal) {
+                    return null;
+                }
+
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {

@@ -4,6 +4,7 @@ import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
+import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
 
 describe('convex auth', () => {
     const t = initConvexTest();
@@ -126,5 +127,59 @@ describe('convex auth', () => {
             expect(log.metadata?.after ?? {}).not.toHaveProperty('userAgent');
             expect(log.metadata?.before ?? log.metadata?.after).toHaveProperty('userId');
         }
+    });
+
+    test('default organization created for a user is protected', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const user = await createTestUser(t, {
+            userId: `default-org-user-${randomSuffix}`,
+            email: `default-org-user-${randomSuffix}@example.com`,
+            name: 'Default Org User',
+        });
+
+        const organizationId = await t.mutation(internal.auth.ensureDefaultOrganizationForUser, {
+            userId: user.docId,
+        });
+
+        const organization = await t.run(async ctx => await ctx.db.get(organizationId));
+        expect(organization?.metadata).toBe(JSON.stringify({ type: 'personal' }));
+
+        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
+            organizationId,
+        });
+
+        expect(isDefaultOrganization).toBe(true);
+    });
+
+    test('legacy default organization slug is protected', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const user = await createTestUser(t, {
+            userId: `legacy-default-org-user-${randomSuffix}`,
+            email: `legacy-default-org-user-${randomSuffix}@example.com`,
+            name: 'Legacy Default Org User',
+        });
+        const organizationId = await createTestOrganization(t, {
+            name: 'Renamed Personal Organization',
+            slug: buildDefaultOrganizationSlug(user.docId),
+        });
+        await createTestMember(t, {
+            organizationId,
+            userId: user.docId,
+            role: 'owner',
+        });
+
+        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
+            organizationId,
+        });
+
+        expect(isDefaultOrganization).toBe(true);
+    });
+
+    test('regular organization is not protected as default organization', async () => {
+        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
+            organizationId: _organizationId,
+        });
+
+        expect(isDefaultOrganization).toBe(false);
     });
 });
