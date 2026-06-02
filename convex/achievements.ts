@@ -88,7 +88,8 @@ export const getOrganizationAchievementContributors = queryWithRLS({
         maxResults: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const maxResults = args.maxResults ?? 100;
+        const MAX_QUERY_LIMIT = 100;
+        const maxResults = Math.min(args.maxResults ?? 100, MAX_QUERY_LIMIT);
 
         const contributors = await getContributors(ctx, args.organizationAchievementId, maxResults);
 
@@ -141,7 +142,8 @@ export const getRecentAchievements = queryWithRLS({
     },
     handler: async (ctx, args) => {
         const userId = ctx.userId;
-        const limit = args.limit ?? 5;
+        const MAX_QUERY_LIMIT = 100;
+        const limit = Math.min(args.limit ?? 5, MAX_QUERY_LIMIT);
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -225,7 +227,7 @@ export const getUserAchievementProgress = queryWithRLS({
             progressUpdates: progressUpdatesCount,
             earlyBirdCompletions: completedObjectives.filter(objective => {
                 if (!objective.deadline) return false;
-                return objective.updatedAt <= objective.deadline;
+                return objective.createdAt <= objective.deadline;
             }).length,
             organizationObjectivesCreated: 0,
             organizationObjectivesCompleted: 0,
