@@ -233,12 +233,24 @@ async function main(): Promise<void> {
     console.log('Local Convex stack is ready. Updated .env.local with local Convex settings.');
 }
 
-main().catch(error => {
+async function cleanup(): Promise<void> {
+    console.log('Cleaning up Docker containers...');
+    await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
+    cleanupGeneratedDirectories();
+}
+
+main().catch(async error => {
     console.error('\nLocal Convex stack setup failed.');
     if (error instanceof Error) {
         console.error(error.message);
     } else {
         console.error(error);
+    }
+
+    try {
+        await cleanup();
+    } catch (cleanupError) {
+        console.error('Cleanup failed:', cleanupError);
     }
 
     process.exitCode = 1;
