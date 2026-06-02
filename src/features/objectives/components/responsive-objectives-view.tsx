@@ -40,7 +40,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
     const statusLabels = {
         active: t('statusOptions.active'),
         completed: t('statusOptions.completed'),
-        overdue: t('statusLabels.overdue'),
+        overdue: t('statusOptions.overdue'),
     };
 
     const renderObjectiveActions = (objective: Doc<'objectives'>) => (
