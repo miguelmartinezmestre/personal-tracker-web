@@ -96,12 +96,12 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
     databaseHooks: {
         user: {
             create: {
-                before: async () => {
+                after: async () => {
                     await (ctx as MutationCtx).runMutation(internal.auth.incrementUsersCount);
                 },
             },
             delete: {
-                before: async () => {
+                after: async () => {
                     await (ctx as MutationCtx).runMutation(internal.auth.decrementUsersCount);
                 },
             },
