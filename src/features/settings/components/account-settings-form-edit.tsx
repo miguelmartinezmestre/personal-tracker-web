@@ -95,7 +95,7 @@ export default function AccountSettingsFormEdit() {
     if (sessionQuery?.isPending) {
         return (
             <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="size-8 animate-spin text-primary" />
             </div>
         );
     }
@@ -158,12 +158,15 @@ export default function AccountSettingsFormEdit() {
                     </Button>
                 </DialogFooter>
                 {error && (
-                    <p className="text-red-500" data-testid="account-error-message">
+                    <p className="text-destructive" data-testid="account-error-message">
                         {error}
                     </p>
                 )}
                 {message && (
-                    <p className="text-green-500" data-testid="account-success-message">
+                    <p
+                        className="text-emerald-700 dark:text-emerald-300"
+                        data-testid="account-success-message"
+                    >
                         {message}
                     </p>
                 )}
