@@ -264,6 +264,33 @@ describe('convex achievements', async () => {
             expect(progress[0]).toHaveProperty('isEarned');
         });
 
+        test('returns organization achievement progress for active organization', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            await createTestObjective(t, {
+                userId: userId,
+                organizationId: organizationId,
+                scope: 'organization',
+                title: 'Organization Objective',
+                targetValue: 100,
+                currentValue: 0,
+            });
+
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const organizationProgress = progress.find(
+                progressEntry => progressEntry.definition.code === 'organization_first_objective'
+            );
+
+            expect(organizationProgress).toBeDefined();
+            expect(organizationProgress?.definition.type).toBe('organization');
+            expect(organizationProgress?.currentProgress).toBe(1);
+            expect(organizationProgress?.isEarned).toBe(false);
+        });
+
         test('shows correct progress for objectives created', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
