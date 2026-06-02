@@ -31,54 +31,46 @@ async function notifyOrganizationAchievementUnlocked(
     points: number,
     now: number
 ): Promise<void> {
-    let cursor: string | null = null;
-    let isDone = false;
+    const members = await ctx.db
+        .query('member')
+        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+        .collect();
 
-    while (!isDone) {
-        const page = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-            .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor });
+    const memberUserIds = members.map(member => member.userId);
 
-        const memberUserIds = page.page.map(member => member.userId);
+    const preferencesList = await Promise.all(
+        memberUserIds.map(uid =>
+            ctx.db
+                .query('notificationPreferences')
+                .withIndex('by_user', q => q.eq('userId', uid))
+                .first()
+        )
+    );
 
-        const preferencesList = await Promise.all(
-            memberUserIds.map(uid =>
-                ctx.db
-                    .query('notificationPreferences')
-                    .withIndex('by_user', q => q.eq('userId', uid))
-                    .first()
-            )
-        );
+    const preferencesMap = new Map<Id<'user'>, boolean>();
+    for (let i = 0; i < memberUserIds.length; i++) {
+        const uid = memberUserIds[i]!;
+        const pref = preferencesList[i];
+        const shouldNotify = pref ? (pref.organizationNotifications ?? true) : true;
+        preferencesMap.set(uid, shouldNotify);
+    }
 
-        const preferencesMap = new Map<Id<'user'>, boolean>();
-        for (let i = 0; i < memberUserIds.length; i++) {
-            const uid = memberUserIds[i]!;
-            const pref = preferencesList[i];
-            const shouldNotify = pref ? (pref.organizationNotifications ?? true) : true;
-            preferencesMap.set(uid, shouldNotify);
+    for (const member of members) {
+        const uid = member.userId;
+        const shouldNotify = preferencesMap.get(uid) ?? true;
+        if (shouldNotify) {
+            await ctx.db.insert('notifications', {
+                userId: uid,
+                organizationId,
+                objective: undefined,
+                read: false,
+                notificationType: 'achievement',
+                notificationDate: now,
+                message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
+                createdAt: now,
+                updatedAt: now,
+            });
         }
-
-        for (const member of page.page) {
-            const uid = member.userId;
-            const shouldNotify = preferencesMap.get(uid) ?? true;
-            if (shouldNotify) {
-                await ctx.db.insert('notifications', {
-                    userId: uid,
-                    organizationId,
-                    objective: undefined,
-                    read: false,
-                    notificationType: 'achievement',
-                    notificationDate: now,
-                    message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
-                    createdAt: now,
-                    updatedAt: now,
-                });
-            }
-        }
-
-        isDone = page.isDone;
-        cursor = page.continueCursor;
     }
 }
 
@@ -92,22 +84,12 @@ async function countProgressUpdatesForObjectives(
     }
 
     const objectiveIdsSet = new Set(objectiveIds);
-    let total = 0;
-    let cursor: string | null = null;
-    let isDone = false;
+    const updates = await ctx.db
+        .query('progressUpdates')
+        .withIndex('by_user_date', q => q.eq('userId', userId))
+        .collect();
 
-    while (!isDone) {
-        const page = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_user_date', q => q.eq('userId', userId))
-            .paginate({ numItems: ACHIEVEMENT_BATCH_SIZE, cursor });
-
-        total += page.page.filter(update => objectiveIdsSet.has(update.objective)).length;
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
-
-    return total;
+    return updates.filter(update => objectiveIdsSet.has(update.objective)).length;
 }
 
 type EvaluateAndAwardParams = {
@@ -227,7 +209,7 @@ export async function checkUserAchievementsJob(
         objective =>
             objective.status === 'completed' &&
             objective.deadline != null &&
-            objective.updatedAt <= objective.deadline
+            objective.createdAt <= objective.deadline
     ).length;
 
     const objectiveIds = objectivesBatch.map(objective => objective._id);
