@@ -168,13 +168,23 @@ export const getUserAchievementProgress = queryWithRLS({
     args: {},
     handler: async ctx => {
         const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
 
-        const definitions = await ctx.db
+        const individualDefinitions = await ctx.db
             .query('achievementDefinitions')
             .withIndex('by_type', q => q.eq('type', 'individual'))
             .take(LIST_LIMIT);
 
-        const activeDefinitions = definitions.filter(definition => definition.isActive);
+        const organizationDefinitions = organizationId
+            ? await ctx.db
+                  .query('achievementDefinitions')
+                  .withIndex('by_type', q => q.eq('type', 'organization'))
+                  .take(LIST_LIMIT)
+            : [];
+
+        const activeDefinitions = [...individualDefinitions, ...organizationDefinitions].filter(
+            definition => definition.isActive
+        );
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -185,11 +195,24 @@ export const getUserAchievementProgress = queryWithRLS({
             obtainedAchievements.map(obtainedAchievement => obtainedAchievement.achievement)
         );
 
-        const objectivesCount = ctx.organizationId
+        const organizationAchievements = organizationId
+            ? await ctx.db
+                  .query('organizationAchievements')
+                  .withIndex('by_organization', q => q.eq('organization', organizationId))
+                  .take(LIST_LIMIT)
+            : [];
+
+        const organizationEarnedIds = new Set(
+            organizationAchievements.map(
+                organizationAchievement => organizationAchievement.achievement
+            )
+        );
+
+        const objectivesCount = organizationId
             ? await ctx.db
                   .query('objectives')
                   .withIndex('by_user_organization', q =>
-                      q.eq('userId', userId).eq('organizationId', ctx.organizationId!)
+                      q.eq('userId', userId).eq('organizationId', organizationId)
                   )
                   .take(LIST_LIMIT)
             : await ctx.db
@@ -216,9 +239,32 @@ export const getUserAchievementProgress = queryWithRLS({
             progressUpdatesCount = progressUpdatesForObjectives.length;
         }
 
-        const streak = ctx.organizationId
-            ? countStreakFromUpdates(progressUpdatesForObjectives)
-            : 0;
+        const streak = organizationId ? countStreakFromUpdates(progressUpdatesForObjectives) : 0;
+
+        const organizationObjectives = organizationId
+            ? await ctx.db
+                  .query('objectives')
+                  .withIndex('by_organization_scope', q =>
+                      q.eq('organizationId', organizationId).eq('scope', 'organization')
+                  )
+                  .take(LIST_LIMIT)
+            : [];
+        const completedOrganizationObjectives = organizationObjectives.filter(
+            objective => objective.status === 'completed'
+        );
+        let organizationProgressUpdates: Doc<'progressUpdates'>[] = [];
+
+        if (organizationObjectives.length > 0) {
+            const updatesByObjective = await Promise.all(
+                organizationObjectives.map(objective =>
+                    ctx.db
+                        .query('progressUpdates')
+                        .withIndex('by_objective', q => q.eq('objective', objective._id))
+                        .take(LIST_LIMIT)
+                )
+            );
+            organizationProgressUpdates = updatesByObjective.flat();
+        }
 
         const metrics: AchievementMetricSnapshot = {
             objectivesCreated: objectivesCount.length,
@@ -229,13 +275,25 @@ export const getUserAchievementProgress = queryWithRLS({
                 if (!objective.deadline) return false;
                 return objective.createdAt <= objective.deadline;
             }).length,
-            organizationObjectivesCreated: 0,
-            organizationObjectivesCompleted: 0,
-            organizationProgressStreak: 0,
+            organizationObjectivesCreated: organizationObjectives.length,
+            organizationObjectivesCompleted: completedOrganizationObjectives.length,
+            organizationProgressStreak: countStreakFromUpdates(organizationProgressUpdates),
         };
 
         const progressList = activeDefinitions.map(definition => {
-            const isEarned = earnedIds.has(definition._id);
+            const earnedAchievement =
+                definition.type === 'organization'
+                    ? organizationAchievements.find(
+                          organizationAchievement =>
+                              organizationAchievement.achievement === definition._id
+                      )
+                    : obtainedAchievements.find(
+                          obtainedAchievement => obtainedAchievement.achievement === definition._id
+                      );
+            const isEarned =
+                definition.type === 'organization'
+                    ? organizationEarnedIds.has(definition._id)
+                    : earnedIds.has(definition._id);
             const rule = getAchievementRule(definition.code);
             const currentProgress = rule ? metrics[rule.metricKey] : 0;
 
@@ -243,11 +301,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 definition,
                 currentProgress,
                 isEarned,
-                earnedAt: isEarned
-                    ? obtainedAchievements.find(
-                          obtainedAchievement => obtainedAchievement.achievement === definition._id
-                      )?.earnedAt
-                    : undefined,
+                earnedAt: isEarned ? earnedAchievement?.earnedAt : undefined,
             };
         });
 

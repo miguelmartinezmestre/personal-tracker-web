@@ -29,9 +29,10 @@ function AuthShield({ children }: { children: React.ReactNode }) {
     const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
     const pathname = usePathname();
     const router = useRouter();
+    const isPublic = isPublicRoute(pathname);
 
     useEffect(() => {
-        if (authLoading || isAuthenticated || isPublicRoute(pathname)) {
+        if (authLoading || isAuthenticated || isPublic) {
             return;
         }
 
@@ -42,9 +43,9 @@ function AuthShield({ children }: { children: React.ReactNode }) {
         return () => {
             window.clearTimeout(redirectTimer);
         };
-    }, [authLoading, isAuthenticated, pathname, router]);
+    }, [authLoading, isAuthenticated, isPublic, router]);
 
-    if (authLoading) {
+    if (!isPublic && authLoading) {
         return (
             <div className="flex items-center justify-center h-screen w-screen">
                 <Loader2 className="animate-spin" />
@@ -52,7 +53,7 @@ function AuthShield({ children }: { children: React.ReactNode }) {
         );
     }
 
-    if (!isAuthenticated && !isPublicRoute(pathname)) {
+    if (!isAuthenticated && !isPublic) {
         return (
             <div className="flex items-center justify-center h-screen w-screen">
                 <Loader2 className="animate-spin" />

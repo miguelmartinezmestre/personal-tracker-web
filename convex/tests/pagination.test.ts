@@ -185,6 +185,52 @@ describe('convex pagination', () => {
         expect(page1.isDone).toBe(false);
     });
 
+    test('paginated queries recover from invalid cursors', async () => {
+        for (let i = 0; i < 6; i++) {
+            const objectiveId = await createTestObjective(t, {
+                userId,
+                organizationId: _organizationId,
+                title: `Objective ${i}`,
+                targetValue: 100,
+                currentValue: 10,
+            });
+            await userIdentity.mutation(api.categories.createCategory, {
+                name: `Stale Cursor Category ${i}`,
+                color: '#10b981',
+            });
+            await userIdentity.mutation(api.notifications.createNotification, {
+                objective: objectiveId,
+                notificationType: 'reminder',
+                message: `Stale Cursor Notification ${i}`,
+            });
+        }
+
+        const invalidCursor = 'not-a-valid-convex-cursor';
+
+        const categoriesFromStaleCursor = await userIdentity.query(
+            api.categories.getCategoriesByUser,
+            {
+                paginationOpts: { numItems: 5, cursor: invalidCursor },
+            }
+        );
+        const objectivesFromStaleCursor = await userIdentity.query(
+            api.objectives.getObjectivesByUser,
+            {
+                paginationOpts: { numItems: 5, cursor: invalidCursor },
+            }
+        );
+        const notificationsFromStaleCursor = await userIdentity.query(
+            api.notifications.getNotificationsByUser,
+            {
+                paginationOpts: { numItems: 5, cursor: invalidCursor },
+            }
+        );
+
+        expect(categoriesFromStaleCursor.page).toHaveLength(5);
+        expect(objectivesFromStaleCursor.page).toHaveLength(5);
+        expect(notificationsFromStaleCursor.page).toHaveLength(5);
+    });
+
     test('getAuditLogs paginates', async () => {
         await userIdentity.run(async ctx => {
             const now = Date.now();

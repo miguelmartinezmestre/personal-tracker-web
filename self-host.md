@@ -105,6 +105,67 @@ pnpm exec convex env set SMTP_USER mailhog
 pnpm exec convex env set SMTP_PASSWORD mailhog
 ```
 
+### Opciones de email
+
+El backend envia correos transaccionales desde Convex. Actualmente se usan para reset de contrasena
+e invitaciones de organizacion.
+
+El proveedor se selecciona con `EMAIL_PROVIDER`:
+
+| Opcion             | Uso recomendado                            | Variables principales                                                               |
+| ------------------ | ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `smtp` con MailHog | Desarrollo local y e2e                     | `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` |
+| `resend`           | Produccion sencilla con dominio verificado | `EMAIL_FROM`, `RESEND_API_KEY`                                                      |
+| `smtp` generico    | Produccion con un proveedor SMTP externo   | `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` |
+
+#### MailHog local
+
+MailHog es la configuracion usada por `pnpm run convex:local`. Captura los correos en una UI local y
+no envia mensajes reales.
+
+```bash
+pnpm exec convex env set EMAIL_PROVIDER smtp
+pnpm exec convex env set EMAIL_FROM "Metricas <noreply@metricas.local>"
+pnpm exec convex env set SMTP_HOST mailhog
+pnpm exec convex env set SMTP_PORT 1025
+pnpm exec convex env set SMTP_SECURE false
+pnpm exec convex env set SMTP_USER mailhog
+pnpm exec convex env set SMTP_PASSWORD mailhog
+```
+
+#### Resend
+
+Resend es la opcion mas directa para produccion si tienes un dominio verificado. Si `EMAIL_PROVIDER`
+no se configura, el codigo usa `resend` por defecto.
+
+```bash
+pnpm exec convex env set EMAIL_PROVIDER resend
+pnpm exec convex env set EMAIL_FROM "Metricas <noreply@tu-dominio.com>"
+pnpm exec convex env set RESEND_API_KEY "<TU_RESEND_API_KEY>"
+```
+
+#### SMTP generico
+
+Usa esta opcion si ya tienes un proveedor con SMTP, como Brevo, SendGrid, Mailgun, Amazon SES,
+Postmark, Gmail SMTP o un servidor propio.
+
+```bash
+pnpm exec convex env set EMAIL_PROVIDER smtp
+pnpm exec convex env set EMAIL_FROM "Metricas <noreply@tu-dominio.com>"
+pnpm exec convex env set SMTP_HOST smtp.example.com
+pnpm exec convex env set SMTP_PORT 587
+pnpm exec convex env set SMTP_SECURE false
+pnpm exec convex env set SMTP_USER "<TU_SMTP_USER>"
+pnpm exec convex env set SMTP_PASSWORD "<TU_SMTP_PASSWORD>"
+```
+
+Notas:
+
+- Para puerto `465`, usa normalmente `SMTP_SECURE true`.
+- Para puerto `587`, usa normalmente `SMTP_SECURE false`.
+- Proveedores por API propia, como SendGrid API, Mailgun API o SES SDK, requeririan ampliar el
+  codigo. Ahora mismo `EMAIL_PROVIDER` solo soporta `resend` y `smtp`.
+
 Si `convex env set` falla por autenticacion, exporta en tu terminal:
 
 ```bash

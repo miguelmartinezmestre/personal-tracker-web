@@ -138,11 +138,7 @@ test.describe('Double Submit Prevention', () => {
                     element.click();
                 });
 
-                await expect(saveButton)
-                    .toBeDisabled({ timeout: 1000 })
-                    .catch(async () => {
-                        await expect(saveButton).toBeEnabled({ timeout: 5000 });
-                    });
+                await expect(saveButton).toBeDisabled();
             }
         );
     });

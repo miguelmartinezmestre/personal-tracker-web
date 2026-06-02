@@ -120,11 +120,7 @@ test.describe('Settings', () => {
             await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
             const newPassword = 'newpassword123';
-            await settings.fillPasswordForm(
-                isolatedTestUser.password,
-                isolatedTestUser.password,
-                newPassword
-            );
+            await settings.fillPasswordForm(isolatedTestUser.password, newPassword, newPassword);
             await settings.passwordSaveButton.click();
 
             await expect(settings.passwordSuccessMessage).toBeVisible({ timeout: 10000 });

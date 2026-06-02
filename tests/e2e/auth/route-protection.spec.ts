@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ConvexHttpClient } from 'convex/browser';
 import {
     createObjective,
     createTestUser,
@@ -400,9 +401,45 @@ test.describe('Route Protection', () => {
                     timeout: 10000,
                 });
 
+                const adminUrl = adminPage.url();
+                const organizationId = adminUrl.split('/').pop() ?? '';
+
+                const cookies = await adminContext.cookies();
+                const convexToken = cookies.find(c => c.name === 'better-auth.convex_jwt')?.value;
+
+                const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? 'http://127.0.0.1:3210';
+                const client = new ConvexHttpClient(convexUrl);
+                if (convexToken) {
+                    client.setAuth(convexToken);
+                }
+
+                const invitations = (await client.query(
+                    'organizations:getOrganizationInvitations' as unknown as Parameters<
+                        typeof client.query
+                    >[0],
+                    {
+                        organizationId,
+                    }
+                )) as Array<{ id: string; email: string; expiresAt: number }>;
+
+                const invitation = invitations.find(inv => inv.email === inviteEmail);
+                if (!invitation) {
+                    throw new Error('Invitation was not found after creation');
+                }
+
+                await client.mutation(
+                    'organizations:expireInvitation' as unknown as Parameters<
+                        typeof client.mutation
+                    >[0],
+                    {
+                        organizationId,
+                        invitationId: invitation.id,
+                    }
+                );
+
                 await adminContext.close();
 
-                await page.goto('/register');
+                await page.goto(`/register?invitation=${invitation.id}`);
                 await page.waitForLoadState('domcontentloaded');
 
                 await page
@@ -416,9 +453,13 @@ test.describe('Route Protection', () => {
 
                 await page.getByRole('button', { name: /register|registrar/i }).click();
 
-                await page.waitForLoadState('domcontentloaded');
-                const url = page.url();
-                expect(url).toMatch(/\/(dashboard|login|register)/);
+                await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
+                await expect(
+                    page.getByText(/invitation not found|invitaci.n no encontrada|error/i)
+                ).toBeVisible();
+
+                const currentUrl = page.url();
+                expect(currentUrl).toMatch(/\/register/);
             }
         );
     });

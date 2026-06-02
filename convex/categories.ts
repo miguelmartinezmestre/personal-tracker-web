@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './rls';
+import { withInvalidCursorRetry } from './utils/pagination';
 import {
     createCategoryForCurrentOrganization,
     createDefaultCategoriesForCurrentOrganization,
@@ -15,7 +16,9 @@ export const getCategoriesByUser = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        return await listCategoriesForCurrentUser(ctx, args);
+        return await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
+            listCategoriesForCurrentUser(ctx, { ...args, paginationOpts })
+        );
     },
 });
 

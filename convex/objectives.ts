@@ -6,6 +6,7 @@ import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { objectiveScopeValidator, objectiveStatusValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
+import { withInvalidCursorRetry } from './utils/pagination';
 import { validateObjectiveMetrics } from './domain/objectives/metrics';
 import { getCategoryForObjective } from './domain/objectives/categoryResolution';
 import { deadlineRangeValidator } from './domain/objectives/filters';
@@ -49,13 +50,15 @@ export const getObjectivesByUser = queryWithRLS({
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
-        return await listObjectives(ctx, {
-            section: 'personal',
-            paginationOpts,
-            status,
-            categoryId,
-            deadlineRange,
-        });
+        return await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
+            listObjectives(ctx, {
+                section: 'personal',
+                paginationOpts: retryPaginationOpts,
+                status,
+                categoryId,
+                deadlineRange,
+            })
+        );
     },
 });
 
@@ -67,13 +70,15 @@ export const getOrganizationObjectives = queryWithRLS({
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
-        return await listObjectives(ctx, {
-            section: 'organization',
-            paginationOpts,
-            status,
-            categoryId,
-            deadlineRange,
-        });
+        return await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
+            listObjectives(ctx, {
+                section: 'organization',
+                paginationOpts: retryPaginationOpts,
+                status,
+                categoryId,
+                deadlineRange,
+            })
+        );
     },
 });
 

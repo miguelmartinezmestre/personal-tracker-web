@@ -30,8 +30,11 @@
         "**/test-results/**",
         "**/playwright-report/**",
         "mysql-data/**",
-        "data/**"
+        "data/**",
+        "**/*.d2",
+        "figures/**"
     ],
+    "ignoreBinaries": ["d2"],
     "ignoreDependencies": [
         "postcss",
         "postcss-load-config",

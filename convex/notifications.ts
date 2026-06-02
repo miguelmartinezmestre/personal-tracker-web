@@ -2,6 +2,7 @@ import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
+import type { Doc } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
 import { runDeadlineNotificationsJob } from './jobs/notifications/deadlineNotifications';
 import { markAllReadBatchJob } from './jobs/notifications/markAllRead';
@@ -12,6 +13,7 @@ import {
 } from './domain/notifications/delivery';
 import { notificationTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
+import { isInvalidCursorError, withInvalidCursorRetry } from './utils/pagination';
 import type { NotificationType } from './utils/constants';
 
 const OBJECTIVE_ID_LIMIT = 50;
@@ -31,13 +33,15 @@ export const getNotificationsByUser = queryWithRLS({
             return EMPTY_NOTIFICATION_PAGE;
         }
 
-        const results = await ctx.db
-            .query('notifications')
-            .withIndex('by_user_organization_date', q =>
-                q.eq('userId', ctx.userId).eq('organizationId', organizationId)
-            )
-            .order('desc')
-            .paginate(paginationOpts);
+        const results = await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
+            ctx.db
+                .query('notifications')
+                .withIndex('by_user_organization_date', q =>
+                    q.eq('userId', ctx.userId).eq('organizationId', organizationId)
+                )
+                .order('desc')
+                .paginate(retryPaginationOpts)
+        );
 
         return {
             page: results.page,
@@ -86,18 +90,31 @@ export const getUnreadNotificationCount = queryWithRLS({
         let count = 0;
         let cursor: string | null = null;
         let isDone = false;
+        let retriedInvalidCursor = false;
         const BATCH_SIZE = 1000;
 
         while (!isDone) {
-            const page = await ctx.db
-                .query('notifications')
-                .withIndex('by_user_organization_read', q =>
-                    q
-                        .eq('userId', ctx.userId)
-                        .eq('organizationId', organizationId)
-                        .eq('read', false)
-                )
-                .paginate({ numItems: BATCH_SIZE, cursor });
+            let page: { page: Doc<'notifications'>[]; continueCursor: string; isDone: boolean };
+            try {
+                page = await ctx.db
+                    .query('notifications')
+                    .withIndex('by_user_organization_read', q =>
+                        q
+                            .eq('userId', ctx.userId)
+                            .eq('organizationId', organizationId)
+                            .eq('read', false)
+                    )
+                    .paginate({ numItems: BATCH_SIZE, cursor });
+            } catch (error) {
+                if (!cursor || retriedInvalidCursor || !isInvalidCursorError(error)) {
+                    throw error;
+                }
+
+                count = 0;
+                cursor = null;
+                retriedInvalidCursor = true;
+                continue;
+            }
 
             count += page.page.length;
             isDone = page.isDone;

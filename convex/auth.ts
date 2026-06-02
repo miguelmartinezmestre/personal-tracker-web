@@ -2,6 +2,7 @@ import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { convex, getAuthUserIdentity, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { internal } from './_generated/api';
 import {
+    internalQuery,
     internalMutation,
     query,
     type ActionCtx,
@@ -20,6 +21,14 @@ import {
     resolveActiveMembership,
     resolveSessionActiveOrganizationId,
 } from './platform/rls/authContext';
+import {
+    DEFAULT_ORGANIZATION_NAME,
+    DEFAULT_ORGANIZATION_SLUG_BASE,
+    buildDefaultOrganizationSlug,
+    getDefaultOrganizationMetadata,
+    isLegacyPersonalOrganizationSlugForUser,
+    isPersonalOrganizationMetadata,
+} from './domain/organizations/personalOrganization';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 type RunnableCtx = MutationCtx | ActionCtx;
@@ -29,16 +38,8 @@ type AuthOptions = BetterAuthOptionsWithoutDatabase & {
 
 import { env } from './lib/env';
 import { validatePasswordPolicy } from '../shared/password-policy';
-const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
-const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
-const buildDefaultOrganizationSlug = (userId: string) => {
-    const normalizedSuffix = userId
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '')
-        .slice(-12);
-    return `${DEFAULT_ORGANIZATION_SLUG_BASE}-${normalizedSuffix || Date.now().toString(36)}`;
-};
+const PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT = 1000;
 
 export const ensureDefaultOrganizationForUser = internalMutation({
     args: {
@@ -59,7 +60,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             name: DEFAULT_ORGANIZATION_NAME,
             slug: buildDefaultOrganizationSlug(args.userId),
             createdAt: now,
-            metadata: null,
+            metadata: getDefaultOrganizationMetadata(),
             logo: null,
         });
 
@@ -73,6 +74,62 @@ export const ensureDefaultOrganizationForUser = internalMutation({
         return organizationId;
     },
 });
+
+export const isDefaultOrganization = internalQuery({
+    args: {
+        organizationId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
+        if (!organizationId) {
+            return false;
+        }
+
+        const organization = await ctx.db.get('organization', organizationId);
+        if (!organization) {
+            return false;
+        }
+
+        if (isPersonalOrganizationMetadata(organization.metadata)) {
+            return true;
+        }
+
+        if (!organization.slug.startsWith(`${DEFAULT_ORGANIZATION_SLUG_BASE}-`)) {
+            return false;
+        }
+
+        const members = await ctx.db
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+            .take(PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT);
+
+        return members.some(member =>
+            isLegacyPersonalOrganizationSlugForUser(organization.slug, member.userId)
+        );
+    },
+});
+
+async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: string) {
+    const isDefaultOrganization: boolean = await ctx.runQuery(internal.auth.isDefaultOrganization, {
+        organizationId,
+    });
+
+    return isDefaultOrganization;
+}
+
+function throwPersonalOrganizationDeleteForbidden(): never {
+    throw new APIError('FORBIDDEN', {
+        code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
+        message: 'Personal organization cannot be deleted.',
+    });
+}
+
+function throwPersonalOrganizationUpdateRestricted(): never {
+    throw new APIError('FORBIDDEN', {
+        code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
+        message: 'Personal organization slug and metadata cannot be changed.',
+    });
+}
 
 const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
     baseURL: env.BETTER_AUTH_URL,
@@ -144,6 +201,22 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
         organization({
             invitationExpiresIn: 60 * 60 * 24 * 2,
             defaultRole: 'member',
+            organizationHooks: {
+                beforeDeleteOrganization: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throwPersonalOrganizationDeleteForbidden();
+                    }
+                },
+                beforeUpdateOrganization: async ({ organization, member }) => {
+                    if (!('slug' in organization) && !('metadata' in organization)) {
+                        return;
+                    }
+
+                    if (await isProtectedDefaultOrganization(ctx, member.organizationId)) {
+                        throwPersonalOrganizationUpdateRestricted();
+                    }
+                },
+            },
             sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
                 const invitationEmail = buildInvitationEmail({
                     siteUrl: env.SITE_URL,
