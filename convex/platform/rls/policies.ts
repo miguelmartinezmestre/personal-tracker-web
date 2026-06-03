@@ -1,6 +1,7 @@
 import type { Rules } from 'convex-helpers/server/rowLevelSecurity';
 import type { DataModel, Id } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
+import { isGlobalAdminRole } from '../../../shared/platform-roles';
 
 export async function createRlsRules(
     userId: Id<'user'>,
@@ -9,7 +10,7 @@ export async function createRlsRules(
     ctx: QueryCtx,
     organizationId?: Id<'organization'> | null
 ) {
-    const isGlobalAdmin = role === 'admin';
+    const isGlobalAdmin = isGlobalAdminRole(role);
     const isOrgAdmin =
         Boolean(organizationId) && (memberRole === 'admin' || memberRole === 'owner');
     const activeOrgMembershipCache = new Map<string, Promise<boolean>>();

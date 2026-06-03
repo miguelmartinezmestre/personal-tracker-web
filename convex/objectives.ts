@@ -17,12 +17,13 @@ import {
     continueObjectiveDeletion,
     deleteObjectiveWithDependents,
 } from './jobs/objectives/deleteObjective';
+import { isGlobalAdminRole } from '../shared/platform-roles';
 
 function assertCanModifyObjective(
     ctx: { userId: Id<'user'>; organizationId: Id<'organization'> | null; role: string },
     objective: { userId: Id<'user'>; organizationId: Id<'organization'> }
 ): void {
-    const isGlobalAdmin = ctx.role === 'admin';
+    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
     if (isGlobalAdmin) return;
 
     if (!ctx.organizationId || objective.organizationId !== ctx.organizationId) {

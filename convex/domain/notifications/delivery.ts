@@ -2,6 +2,7 @@ import { ConvexError } from 'convex/values';
 import type { Doc, Id } from '../../_generated/dataModel';
 import type { DatabaseReader } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
+import { isGlobalAdminRole } from '../../../shared/platform-roles';
 
 type NotificationAccessCtx = {
     db: DatabaseReader;
@@ -23,7 +24,7 @@ export async function assertCanCreateNotificationForObjective(
     ctx: NotificationAccessCtx,
     objective: Doc<'objectives'>
 ) {
-    const isGlobalAdmin = ctx.role === 'admin';
+    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
     const isOrganizationAdmin = isOrgAdminFor(ctx, objective.organizationId);
     const isOwner = objective.userId === ctx.userId;
 
@@ -47,7 +48,7 @@ export function assertCanMutateNotification(
     ctx: NotificationAccessCtx,
     notification: Doc<'notifications'>
 ) {
-    const isGlobalAdmin = ctx.role === 'admin';
+    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
     const isOrganizationAdmin = isOrgAdminFor(ctx, notification.organizationId);
     const isOwner = notification.userId === ctx.userId;
 
@@ -62,7 +63,7 @@ export function canReadObjectiveFromNotification(
 ) {
     const isVisibleOrganization =
         ctx.organizationId !== null && objective.organizationId === ctx.organizationId;
-    const isGlobalAdmin = ctx.role === 'admin';
+    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
     const isOrganizationAdmin = isOrgAdminFor(ctx, objective.organizationId);
 
     return isGlobalAdmin || isOrganizationAdmin || isVisibleOrganization;

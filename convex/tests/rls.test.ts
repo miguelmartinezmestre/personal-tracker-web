@@ -111,7 +111,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             email: 'rls-admin@example.com-' + adminRandom,
             name: 'RLS Admin ' + adminRandom,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);

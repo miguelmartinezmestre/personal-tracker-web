@@ -20,7 +20,7 @@ describe('convex update_progress', () => {
             email: 'update-progress@example.com-' + randomSuffix,
             name: 'Update Progress Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
 

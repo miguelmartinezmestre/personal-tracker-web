@@ -27,7 +27,7 @@ describe('Domain Validation Tests', () => {
             email: 'domain-test@example.com-' + randomSuffix,
             name: 'Domain Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
 

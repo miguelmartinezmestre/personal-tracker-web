@@ -24,7 +24,7 @@ describe('convex achievements', async () => {
             email: 'achievements-test@example.com-' + randomSuffix,
             name: 'Achievements Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
 

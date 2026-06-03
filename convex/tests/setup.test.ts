@@ -21,7 +21,7 @@ describe('convex setup', () => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Admin',
                     email: 'admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -60,7 +60,7 @@ describe('convex setup', () => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Admin',
                     email: 'admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -235,7 +235,7 @@ describe('convex setup', () => {
             const updatedUser = await t.run(async ctx => {
                 return await ctx.db.get(user.docId);
             });
-            expect(updatedUser?.role).toBe('admin');
+            expect(updatedUser?.role).toBe('globalAdmin');
 
             const organization = await t.run(async ctx => {
                 return await ctx.db.get(result.organizationId as Id<'organization'>);
@@ -273,7 +273,7 @@ describe('convex setup', () => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Setup Admin',
                     email: 'setup-admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -300,7 +300,7 @@ describe('convex setup', () => {
                 userId: setupUserId,
                 email: 'setup-admin@test.com',
                 name: 'Setup Admin',
-                role: 'admin',
+                role: 'globalAdmin',
                 emailVerified: true,
                 createdAt: Date.now(),
                 image: null,
@@ -329,7 +329,7 @@ describe('convex setup', () => {
                 const setupUserId = await ctx.db.insert('user', {
                     name: 'Setup Admin',
                     email: 'setup-admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),

@@ -69,7 +69,7 @@ describe('convex notifications', async () => {
             email: 'notifications-admin@example.com-' + adminRandom,
             name: 'Notifications Admin User ' + adminRandom,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);

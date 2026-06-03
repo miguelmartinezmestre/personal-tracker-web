@@ -38,7 +38,7 @@ describe('convex invitations (better-auth)', () => {
             email: 'inviter@example.com-' + randomSuffix,
             name: 'Inviter User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         });
 
@@ -78,7 +78,7 @@ describe('convex invitations (better-auth)', () => {
             email: 'inviter2@example.com-' + randomSuffix,
             name: 'Inviter 2 ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         });
 
@@ -148,7 +148,7 @@ describe('convex invitations (better-auth)', () => {
             email: 'inviter3@example.com-' + randomSuffix,
             name: 'Inviter 3 ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         });
 
@@ -189,7 +189,7 @@ describe('convex invitations (better-auth)', () => {
             email: 'inviter4@example.com-' + randomSuffix,
             name: 'Inviter 4 ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         });
 
@@ -227,7 +227,7 @@ describe('convex invitations (better-auth)', () => {
             email: 'inviter-many@example.com-' + randomSuffix,
             name: 'Many Inviter ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         });
 

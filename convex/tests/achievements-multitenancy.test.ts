@@ -30,7 +30,7 @@ describe('achievements multi-tenancy security', async () => {
             email: 'user-a@example.com-' + randomSuffix,
             name: 'User A ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         });
         userAId = userAData.docId;
@@ -75,7 +75,7 @@ describe('achievements multi-tenancy security', async () => {
 
         userAIdentity = t.withIdentity({
             subject: userAData.docId,
-            role: userAData.role ?? 'admin',
+            role: userAData.role ?? 'globalAdmin',
             email: userAData.email,
             name: userAData.name,
             password: 'test-password',

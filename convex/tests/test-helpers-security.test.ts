@@ -14,7 +14,7 @@ describe('test helpers security', () => {
                 userId: 'test-user-security',
                 email: 'security-test@example.com',
                 name: 'Security Test User',
-                role: 'admin',
+                role: 'globalAdmin',
             });
 
             const result = await t.mutation(internal.setup.ensureTestOrganizationInternal, {
@@ -81,7 +81,7 @@ describe('test helpers security', () => {
                 userId: 'admin-user',
                 email: 'admin@example.com',
                 name: 'Admin User',
-                role: 'admin',
+                role: 'globalAdmin',
             });
 
             const result = await t.query(internal.setup.requireAdminInternal, {
@@ -89,7 +89,7 @@ describe('test helpers security', () => {
             });
 
             expect(result).toBeDefined();
-            expect(result.role).toBe('admin');
+            expect(result.role).toBe('globalAdmin');
         });
 
         test('throws FORBIDDEN when user is not admin', async () => {
@@ -116,7 +116,7 @@ describe('test helpers security', () => {
                 userId: 'temp-admin-user',
                 email: 'temp@example.com',
                 name: 'Temp User',
-                role: 'admin',
+                role: 'globalAdmin',
             });
             const userId = user.docId;
 

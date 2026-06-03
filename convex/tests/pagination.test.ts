@@ -25,7 +25,7 @@ describe('convex pagination', () => {
             email: 'pagination@example.com-' + randomSuffix,
             name: 'Pagination User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         };
 

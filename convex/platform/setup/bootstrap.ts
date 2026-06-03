@@ -8,6 +8,7 @@ import {
     completeSetupArgsValidator,
     ensureTestOrganizationInternalArgsValidator,
 } from './validators';
+import { GLOBAL_ADMIN_ROLE, isGlobalAdminRole } from '../../../shared/platform-roles';
 
 type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
 
@@ -69,7 +70,7 @@ export async function completePlatformSetup(
         throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
     }
 
-    await ctx.db.patch(userId, { role: 'admin' });
+    await ctx.db.patch(userId, { role: GLOBAL_ADMIN_ROLE });
 
     const membership = await ctx.db
         .query('member')
@@ -134,7 +135,7 @@ export async function getUserById(ctx: { db: DatabaseReader }, userId: Id<'user'
 
 export async function requireAdminUser(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
     const user = await ctx.db.get(userId);
-    if (!user || user.role !== 'admin') {
+    if (!user || !isGlobalAdminRole(user.role)) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
     return user;

@@ -101,7 +101,7 @@ describe('notifications security - cross-user access prevention', async () => {
             email: 'security-admin@example.com-' + randomSuffix,
             name: 'Security Admin ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);

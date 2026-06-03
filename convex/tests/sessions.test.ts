@@ -20,7 +20,7 @@ describe('convex sessions', () => {
             email: 'sessions-test@example.com-' + randomSuffix,
             name: 'Sessions Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
 

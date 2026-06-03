@@ -38,6 +38,7 @@ type AuthOptions = BetterAuthOptionsWithoutDatabase & {
 
 import { env } from './lib/env';
 import { validatePasswordPolicy } from '../shared/password-policy';
+import { platformAdminRoles, platformRoles } from '../shared/platform-admin-access';
 
 const PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT = 1000;
 
@@ -226,7 +227,10 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
             authConfig,
             jwks: env.JWKS,
         }),
-        admin(),
+        admin({
+            adminRoles: platformAdminRoles,
+            roles: platformRoles,
+        }),
         organization({
             invitationExpiresIn: 60 * 60 * 24 * 2,
             defaultRole: 'member',

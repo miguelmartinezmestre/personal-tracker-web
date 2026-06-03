@@ -7,6 +7,7 @@ import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
 import { isPlatformSetupUser } from './platform/setup/bootstrap';
+import { GLOBAL_ADMIN_ROLE, USER_ROLE } from '../shared/platform-roles';
 
 type AdminApi = {
     banUser: (args: {
@@ -100,7 +101,7 @@ export const unbanUser = mutationWithRLS({
 export const updateUserRole = mutationWithRLS({
     args: {
         userId: v.id('user'),
-        role: v.union(v.literal('admin'), v.literal('user')),
+        role: v.union(v.literal(GLOBAL_ADMIN_ROLE), v.literal(USER_ROLE)),
     },
     returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
