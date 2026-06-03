@@ -899,6 +899,7 @@
             },
             "roles": {
                 "admin": "Admin",
+                "globalAdmin": "Global admin",
                 "member": "Member",
                 "owner": "Owner",
                 "user": "User"
@@ -934,6 +935,7 @@
             "description": "Update the user's information",
             "roles": {
                 "admin": "Admin",
+                "globalAdmin": "Global admin",
                 "member": "Member",
                 "owner": "Owner",
                 "user": "User"

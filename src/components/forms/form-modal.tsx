@@ -15,7 +15,9 @@ import {
 import { Form } from '@/components/ui/form-tanstack';
 
 type FormModalProps<TFormValues extends Record<string, unknown>> = {
-    trigger: ReactNode;
+    trigger?: ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
     title: string;
     description?: string;
     formOptions: Omit<AnyFormOptions, 'onSubmit'> & {
@@ -35,6 +37,8 @@ type FormModalProps<TFormValues extends Record<string, unknown>> = {
 
 export default function FormModal<TFormValues extends Record<string, unknown>>({
     trigger,
+    open: controlledOpen,
+    onOpenChange: controlledOnOpenChange,
     title,
     description,
     formOptions,
@@ -49,7 +53,17 @@ export default function FormModal<TFormValues extends Record<string, unknown>>({
     cancelTestId,
     submitTestId,
 }: FormModalProps<TFormValues>) {
-    const [open, setOpen] = useState(false);
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+    const isControlled = controlledOpen !== undefined;
+    const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+    const setOpen = (nextOpen: boolean) => {
+        if (isControlled) {
+            controlledOnOpenChange?.(nextOpen);
+        } else {
+            setUncontrolledOpen(nextOpen);
+        }
+    };
 
     const form = useForm({
         ...formOptions,
@@ -62,7 +76,7 @@ export default function FormModal<TFormValues extends Record<string, unknown>>({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
             <DialogContent className={contentClassName}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>

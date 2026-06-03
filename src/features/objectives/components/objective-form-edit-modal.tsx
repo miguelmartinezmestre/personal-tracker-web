@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,19 @@ import {
     getObjectiveEditFormValues,
 } from '@/features/objectives/lib/objective-form-payloads';
 
-export default function EditObjectiveFormModal({ defaultValues }: { defaultValues: Objective }) {
+type EditObjectiveFormModalProps = {
+    defaultValues: Objective;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    trigger?: ReactNode;
+};
+
+export default function EditObjectiveFormModal({
+    defaultValues,
+    open,
+    onOpenChange,
+    trigger,
+}: EditObjectiveFormModalProps) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
     const initialValues = getObjectiveEditFormValues(defaultValues);
@@ -32,14 +45,18 @@ export default function EditObjectiveFormModal({ defaultValues }: { defaultValue
 
     const { categoriesQuery, categoryOptions } = useObjectiveCategoryOptions();
 
+    const defaultTrigger = (
+        <Button className="gap-2" data-testid="objective-edit-open">
+            <Pencil className="h-4 w-4" />
+            {t('editObjective')}
+        </Button>
+    );
+
     return (
         <FormModal<SavedObjectiveForm>
-            trigger={
-                <Button className="gap-2" data-testid="objective-edit-open">
-                    <Pencil className="h-4 w-4" />
-                    {t('editObjective')}
-                </Button>
-            }
+            trigger={trigger ?? (open === undefined ? defaultTrigger : undefined)}
+            open={open}
+            onOpenChange={onOpenChange}
             title={t('editObjective')}
             description={t('editObjectiveDescription')}
             formOptions={{

@@ -31,6 +31,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { api } from '@/convex/_generated/api';
 import type { FunctionReturnType } from 'convex/server';
+import { isGlobalAdminRole } from '@shared/platform-roles';
 
 type ProjectNavItem = {
     name: string;
@@ -108,7 +109,7 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
 
     const user = initialUser;
 
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = isGlobalAdminRole(user?.role);
 
     const projects = isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
 

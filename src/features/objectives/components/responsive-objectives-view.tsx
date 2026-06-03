@@ -1,14 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { Doc } from '@/convex/_generated/dataModel';
+import { Doc, Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CircularProgress } from '@/components/ui/circular-progress';
@@ -37,9 +39,16 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         onNextPage,
     } = useObjectiveListState();
 
+    const [editingObjectiveId, setEditingObjectiveId] = useState<Id<'objectives'> | null>(null);
+
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
     });
+
+    const editingObjective =
+        editingObjectiveId === null
+            ? null
+            : (objectives.find(objective => objective._id === editingObjectiveId) ?? null);
 
     const statusLabels = {
         active: t('statusOptions.active'),
@@ -49,7 +58,15 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
 
     const renderObjectiveActions = (objective: Doc<'objectives'>) => (
         <div className="flex flex-wrap gap-2">
-            <EditObjectiveFormModal defaultValues={normalizeObjective(objective)} />
+            <Button
+                className="gap-2"
+                size="sm"
+                data-testid="objective-edit-open"
+                onClick={() => setEditingObjectiveId(objective._id)}
+            >
+                <Pencil className="h-4 w-4" />
+                {t('editObjective')}
+            </Button>
             <DeleteConfirmationDialog
                 onConfirm={async () => {
                     await deleteObjectiveMutation.mutateAsync({ id: objective._id });
@@ -201,6 +218,17 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
 
     return (
         <div ref={ref} className="w-full min-w-0 space-y-4">
+            {editingObjective ? (
+                <EditObjectiveFormModal
+                    defaultValues={normalizeObjective(editingObjective)}
+                    open
+                    onOpenChange={open => {
+                        if (!open) {
+                            setEditingObjectiveId(null);
+                        }
+                    }}
+                />
+            ) : null}
             <ObjectivesFilters
                 filters={filters}
                 onFiltersChange={handleFiltersChange}

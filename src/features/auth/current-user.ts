@@ -1,6 +1,7 @@
 import 'server-only';
 import { fetchAuthQuery } from './auth-server';
 import { api } from '@/convex/_generated/api';
+import { isGlobalAdminRole } from '@shared/platform-roles';
 
 export async function getCurrentUser() {
     const user = await fetchAuthQuery(api.auth.getCurrentUser, {});
@@ -9,5 +10,5 @@ export async function getCurrentUser() {
 
 export async function isAdmin() {
     const user = await getCurrentUser();
-    return user?.role === 'admin';
+    return isGlobalAdminRole(user?.role);
 }

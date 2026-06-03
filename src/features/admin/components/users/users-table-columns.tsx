@@ -11,6 +11,7 @@ import { EditUserModal } from './edit-user-modal';
 import { Doc } from '@/convex/_generated/dataModel';
 import { api } from '@/convex/_generated/api';
 import { useBanUser, useDeleteUser, useUnBanUser } from './users-table-actions';
+import { GLOBAL_ADMIN_ROLE } from '@shared/platform-roles';
 
 export function useUsersTableColumns() {
     const t = useTranslations('Admin');
@@ -20,6 +21,11 @@ export function useUsersTableColumns() {
     const { unbanUser, isUnbanningUser } = useUnBanUser();
     const { deleteUser, isDeletingUser } = useDeleteUser();
     const { data: setupUserId } = useQuery(convexQuery(api.setup.getPlatformSetupUserId, {}));
+
+    const getRoleLabel = (role: string | null | undefined) => {
+        if (role === GLOBAL_ADMIN_ROLE) return t('usersTable.roles.globalAdmin');
+        return role || t('usersTable.roles.user');
+    };
 
     const columns: ColumnDef<Doc<'user'>>[] = [
         {
@@ -46,12 +52,12 @@ export function useUsersTableColumns() {
                     return (
                         <div className="flex gap-1">
                             {role.map(roleName => (
-                                <Badge key={roleName}>{roleName}</Badge>
+                                <Badge key={roleName}>{getRoleLabel(roleName)}</Badge>
                             ))}
                         </div>
                     );
                 }
-                return <Badge>{role || t('usersTable.roles.user')}</Badge>;
+                return <Badge>{getRoleLabel(role)}</Badge>;
             },
         },
         {

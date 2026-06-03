@@ -878,6 +878,7 @@
             "emptyWithSearch": "No hay usuarios que coincidan con la busqueda.",
             "roles": {
                 "admin": "Administrador",
+                "globalAdmin": "Administrador global",
                 "member": "Miembro",
                 "owner": "Propietario",
                 "user": "Usuario"
@@ -934,6 +935,7 @@
             "description": "Modifica la información del usuario",
             "roles": {
                 "admin": "Administrador",
+                "globalAdmin": "Administrador global",
                 "member": "Miembro",
                 "owner": "Propietario",
                 "user": "Usuario"

@@ -4,12 +4,15 @@ import { adminClient } from 'better-auth/client/plugins';
 import { organizationClient } from 'better-auth/client/plugins';
 import { createAuthMutations } from 'kitcn/react';
 import { env } from '@/lib/env';
+import { platformRoles } from '@shared/platform-admin-access';
 
 export const authClient = createAuthClient({
     baseURL: env.NEXT_PUBLIC_SITE_URL,
     plugins: [
         convexClient(),
-        adminClient(),
+        adminClient({
+            roles: platformRoles,
+        }),
         organizationClient({
             schema: {
                 organization: {
