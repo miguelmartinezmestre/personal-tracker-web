@@ -108,7 +108,6 @@ describe('convex auditLogs', () => {
                 title,
                 targetValue: 10,
                 currentValue: 0,
-                scope: 'personal',
             });
 
             const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {

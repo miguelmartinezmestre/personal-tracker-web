@@ -22,7 +22,6 @@ describe('objective workflow lifecycle', () => {
             return await ctx.db.insert('objectives', {
                 userId: user.docId,
                 organizationId,
-                scope: 'personal',
                 title: 'Workflow race objective',
                 targetValue: 100,
                 currentValue: 10,
@@ -77,7 +76,6 @@ describe('objective workflow lifecycle', () => {
             return await ctx.db.insert('objectives', {
                 userId: user.docId,
                 organizationId,
-                scope: 'personal',
                 title: 'Workflow cleanup objective',
                 targetValue: 100,
                 currentValue: 10,

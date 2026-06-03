@@ -120,7 +120,6 @@ describe('organization admins cannot access another organization by id', () => {
             title: 'Org B private objective',
             targetValue: 100,
             currentValue: 10,
-            scope: 'organization',
         });
 
         const now = Date.now();

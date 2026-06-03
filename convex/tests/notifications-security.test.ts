@@ -134,7 +134,6 @@ describe('notifications security - cross-user access prevention', async () => {
             title: 'User A Objective',
             targetValue: 100,
             currentValue: 0,
-            scope: 'organization',
         })) as Id<'objectives'>;
 
         userBObjectiveId = (await createTestObjective(t, {
@@ -143,7 +142,6 @@ describe('notifications security - cross-user access prevention', async () => {
             title: 'User B Objective',
             targetValue: 100,
             currentValue: 0,
-            scope: 'organization',
         })) as Id<'objectives'>;
     });
 
@@ -391,7 +389,6 @@ describe('notifications security - cross-user access prevention', async () => {
                 title: 'User A Personal Objective',
                 targetValue: 100,
                 currentValue: 0,
-                scope: 'personal',
             });
 
             const personalNotification = await userAIdentity.mutation(

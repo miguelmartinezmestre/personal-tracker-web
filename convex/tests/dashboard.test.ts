@@ -74,7 +74,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'In Progress Objective 1',
                     targetValue: 100,
                     currentValue: 50,
@@ -86,7 +85,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'In Progress Objective 2',
                     targetValue: 100,
                     currentValue: 25,
@@ -98,7 +96,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Completed Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -202,7 +199,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Low Progress',
                     targetValue: 100,
                     currentValue: 20,
@@ -214,7 +210,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'High Progress',
                     targetValue: 100,
                     currentValue: 90,
@@ -226,7 +221,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Medium Progress',
                     targetValue: 100,
                     currentValue: 50,
@@ -255,7 +249,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Active High Progress',
                     targetValue: 100,
                     currentValue: 95,
@@ -267,7 +260,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Completed High Progress',
                     targetValue: 100,
                     currentValue: 100,
@@ -292,7 +284,6 @@ describe('convex dashboard', async () => {
                     await ctx.db.insert('objectives', {
                         userId: userId,
                         organizationId: organizationId,
-                        scope: 'personal',
                         title: `Objective ${i}`,
                         targetValue: 100,
                         currentValue: i * 10,
@@ -320,7 +311,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'No Deadline',
                     targetValue: 100,
                     currentValue: 50,
@@ -343,7 +333,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Deadline in 3 days',
                     targetValue: 100,
                     currentValue: 60,
@@ -356,7 +345,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Deadline in 6 days',
                     targetValue: 100,
                     currentValue: 40,
@@ -369,7 +357,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Deadline in 10 days',
                     targetValue: 100,
                     currentValue: 30,
@@ -397,7 +384,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Active with deadline',
                     targetValue: 100,
                     currentValue: 50,
@@ -410,7 +396,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Completed with deadline',
                     targetValue: 100,
                     currentValue: 100,
@@ -435,7 +420,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Deadline 5 days',
                     targetValue: 100,
                     currentValue: 50,
@@ -448,7 +432,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Deadline 2 days',
                     targetValue: 100,
                     currentValue: 50,
@@ -461,7 +444,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Deadline 7 days',
                     targetValue: 100,
                     currentValue: 50,
@@ -543,7 +525,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Recently Created 1',
                     targetValue: 100,
                     currentValue: 0,
@@ -555,7 +536,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Recently Created 2',
                     targetValue: 100,
                     currentValue: 0,
@@ -567,7 +547,6 @@ describe('convex dashboard', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Recently Completed',
                     targetValue: 100,
                     currentValue: 100,

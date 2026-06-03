@@ -8,7 +8,6 @@ function objective(deadline?: number): Doc<'objectives'> {
         _creationTime: 0,
         userId: 'user-id',
         organizationId: 'organization-id',
-        scope: 'personal',
         title: 'Submit thesis',
         targetValue: 100,
         currentValue: 25,

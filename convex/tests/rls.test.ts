@@ -164,13 +164,13 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            const user1Objectives = await user1Identity.query(api.objectives.getObjectivesByUser, {
+            const user1Objectives = await user1Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
             expect(user1Objectives.page.some(objective => objective._id === obj1Id)).toBe(true);
             expect(user1Objectives.page.some(objective => objective._id === obj2Id)).toBe(false);
 
-            const user2Objectives = await user2Identity.query(api.objectives.getObjectivesByUser, {
+            const user2Objectives = await user2Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
             expect(user2Objectives.page.some(objective => objective._id === obj2Id)).toBe(true);
@@ -463,7 +463,7 @@ describe('convex RLS (Row-Level Security)', async () => {
     describe('unauthenticated access', () => {
         test('unauthenticated user cannot access objectives', async () => {
             await expect(
-                t.query(api.objectives.getObjectivesByUser, {
+                t.query(api.objectives.getObjectives, {
                     paginationOpts: { numItems: 10, cursor: null },
                 })
             ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
@@ -519,7 +519,6 @@ describe('convex RLS (Row-Level Security)', async () => {
                 title: 'User 1 Org Objective',
                 targetValue: 100,
                 currentValue: 0,
-                scope: 'organization',
             });
 
             const obj = await adminIdentity.query(api.objectives.getObjectiveById, {
@@ -529,7 +528,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             expect(obj?.title).toBe('User 1 Org Objective');
         });
 
-        test('admin cannot modify another user personal objective', async () => {
+        test('global admin can modify any organization objective', async () => {
             const obj1Id = await createTestObjective(t, {
                 userId: user1Id,
                 organizationId: _user1OrganizationId,
@@ -538,26 +537,24 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            await expect(
-                adminIdentity.mutation(api.objectives.updateObjective, {
-                    id: obj1Id,
-                    title: 'Admin Updated Title',
-                })
-            ).rejects.toThrow(/Not authorized to edit this objective|NOT_AUTHORIZED_OBJECTIVE/);
+            await adminIdentity.mutation(api.objectives.updateObjective, {
+                id: obj1Id,
+                title: 'Admin Updated Title',
+            });
 
             const obj = await user1Identity.query(api.objectives.getObjectiveById, {
                 id: obj1Id,
             });
-            expect(obj?.title).toBe('Original Title');
+            expect(obj?.title).toBe('Admin Updated Title');
         });
     });
 
     describe('data isolation', () => {
         test('creating data for one user does not affect another', async () => {
-            const initialUser1 = await user1Identity.query(api.objectives.getObjectivesByUser, {
+            const initialUser1 = await user1Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 100, cursor: null },
             });
-            const initialUser2 = await user2Identity.query(api.objectives.getObjectivesByUser, {
+            const initialUser2 = await user2Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 100, cursor: null },
             });
 
@@ -576,12 +573,12 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            const afterUser2 = await user2Identity.query(api.objectives.getObjectivesByUser, {
+            const afterUser2 = await user2Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 100, cursor: null },
             });
             expect(afterUser2.page.length).toBe(initialUser2.page.length);
 
-            const afterUser1 = await user1Identity.query(api.objectives.getObjectivesByUser, {
+            const afterUser1 = await user1Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 100, cursor: null },
             });
             expect(afterUser1.page.length).toBe(initialUser1.page.length + 2);
@@ -606,7 +603,7 @@ describe('convex RLS (Row-Level Security)', async () => {
 
             await user1Identity.mutation(api.objectives.deleteObjective, { id: obj1Id });
 
-            const user2Objs = await user2Identity.query(api.objectives.getObjectivesByUser, {
+            const user2Objs = await user2Identity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 10, cursor: null },
             });
             expect(user2Objs.page.length).toBeGreaterThan(0);
