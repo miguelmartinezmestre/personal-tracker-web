@@ -59,6 +59,7 @@ export function OrganizationSwitcher() {
     );
     const displayName =
         activeOrganization?.name || activeOrganizationFromList?.name || t('noOrganization');
+    const activeIsPersonal = Boolean(activeOrganizationFromList?.isPersonal);
 
     const handleOrganizationChange = (organizationId: string) => {
         if (!organizationId || organizationId === activeOrganizationId) {
@@ -100,7 +101,14 @@ export function OrganizationSwitcher() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         {t('activeOrganization') || 'Active Organization'}
                     </p>
-                    <p className="mt-1 truncate text-sm font-semibold">{displayName}</p>
+                    <p className="mt-1 flex items-center gap-2 truncate text-sm font-semibold">
+                        <span className="truncate">{displayName}</span>
+                        {activeIsPersonal ? (
+                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                {t('personal')}
+                            </span>
+                        ) : null}
+                    </p>
                 </div>
                 <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
                     {t('switchOrganization') || 'Switch to:'}
@@ -124,6 +132,11 @@ export function OrganizationSwitcher() {
                                     <Building className="h-3 w-3" />
                                 </div>
                                 <span className="flex-1 truncate">{organization.name}</span>
+                                {organization.isPersonal ? (
+                                    <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        {t('personal')}
+                                    </span>
+                                ) : null}
                                 {organization.id === activeOrganizationId ? (
                                     <span className="text-xs text-primary font-medium">
                                         {t('current') || 'Current'}

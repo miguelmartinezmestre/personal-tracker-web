@@ -1,11 +1,15 @@
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import { UserCheck, Ban, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { EditUserModal } from './edit-user-modal';
 import { Doc } from '@/convex/_generated/dataModel';
+import { api } from '@/convex/_generated/api';
 import { useBanUser, useDeleteUser, useUnBanUser } from './users-table-actions';
 
 export function useUsersTableColumns() {
@@ -15,6 +19,7 @@ export function useUsersTableColumns() {
     const { banUser, isBanningUser } = useBanUser();
     const { unbanUser, isUnbanningUser } = useUnBanUser();
     const { deleteUser, isDeletingUser } = useDeleteUser();
+    const { data: setupUserId } = useQuery(convexQuery(api.setup.getPlatformSetupUserId, {}));
 
     const columns: ColumnDef<Doc<'user'>>[] = [
         {
@@ -73,6 +78,8 @@ export function useUsersTableColumns() {
             id: 'actions',
             cell: ({ row }) => {
                 const user = row.original;
+                const isSetupUser = setupUserId === user._id;
+
                 return (
                     <div className="flex gap-2">
                         <EditUserModal user={user} />
@@ -97,26 +104,48 @@ export function useUsersTableColumns() {
                                 <Ban className="h-4 w-4" />
                             </Button>
                         )}
-                        <DeleteConfirmationDialog
-                            onConfirm={async () => {
-                                await deleteUser({ userId: user._id });
-                            }}
-                            title={t('usersTable.confirm.deleteUser')}
-                            description={t('usersTable.confirm.deleteUserDescription')}
-                            confirmLabel={t('usersTable.confirm.deleteConfirm')}
-                            cancelLabel={t('usersTable.confirm.cancel')}
-                            isLoading={isDeletingUser}
-                            trigger={
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    disabled={isDeletingUser}
-                                    data-testid="user-delete-button"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            }
-                        />
+                        {isSetupUser ? (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span tabIndex={0}>
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                disabled
+                                                data-testid="user-delete-button"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        {t('usersTable.setupUserDeleteDisabled')}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        ) : (
+                            <DeleteConfirmationDialog
+                                onConfirm={async () => {
+                                    await deleteUser({ userId: user._id });
+                                }}
+                                title={t('usersTable.confirm.deleteUser')}
+                                description={t('usersTable.confirm.deleteUserDescription')}
+                                confirmLabel={t('usersTable.confirm.deleteConfirm')}
+                                cancelLabel={t('usersTable.confirm.cancel')}
+                                isLoading={isDeletingUser}
+                                trigger={
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        disabled={isDeletingUser}
+                                        data-testid="user-delete-button"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                }
+                            />
+                        )}
                     </div>
                 );
             },

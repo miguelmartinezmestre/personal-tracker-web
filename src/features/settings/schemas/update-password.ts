@@ -7,7 +7,7 @@ export const updatePasswordSchema = z
         newPassword: z.string().min(8),
     })
     .superRefine((values, ctx) => {
-        if (values.currentPassword !== values.confirmPassword) {
+        if (values.newPassword !== values.confirmPassword) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['confirmPassword'],

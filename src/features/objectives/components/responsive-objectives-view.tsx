@@ -29,8 +29,12 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         categories,
         categoryNameById,
         handleFiltersChange,
-        personal,
-        organization,
+        objectives,
+        pagination,
+        hasNextPage,
+        isLoading,
+        isFetching,
+        onNextPage,
     } = useObjectiveListState();
 
     const deleteObjectiveMutation = useMutation({
@@ -206,90 +210,44 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
 
             <section className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">{t('sections.personal')}</h2>
-                    <Badge variant="secondary">{personal.objectives.length}</Badge>
+                    <h2 className="text-xl font-semibold">{t('title')}</h2>
+                    <Badge variant="secondary">{objectives.length}</Badge>
                 </div>
                 <div className="md:hidden">
-                    {personal.objectives.length === 0 ? (
+                    {objectives.length === 0 ? (
                         <p className="text-muted-foreground text-sm">
                             {t('empty.noObjectivesFound')}
                         </p>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
-                            {personal.objectives.map(renderObjectiveCard)}
+                            {objectives.map(renderObjectiveCard)}
                         </div>
                     )}
                     {!hasSearch && (
                         <MobilePagination
-                            pagination={personal.pagination}
-                            rowCount={personal.objectives.length}
-                            hasNextPage={personal.hasNextPage}
-                            isLoading={personal.isFetching}
-                            onNextPage={personal.onNextPage}
+                            pagination={pagination}
+                            rowCount={objectives.length}
+                            hasNextPage={hasNextPage}
+                            isLoading={isFetching}
+                            onNextPage={onNextPage}
                         />
                     )}
                 </div>
                 <div className="hidden md:block">
                     <DataTable
                         columns={objectiveColumns}
-                        data={personal.objectives}
-                        isLoading={personal.isLoading}
+                        data={objectives}
+                        isLoading={isLoading}
                         pagination={
                             hasSearch
                                 ? undefined
                                 : {
-                                      currentPage: personal.pagination.currentPage,
-                                      onNextPage: personal.onNextPage,
-                                      onPreviousPage: personal.pagination.previousPage,
-                                      hasNextPage: personal.hasNextPage,
-                                      hasPreviousPage: personal.pagination.hasPreviousPage,
-                                      isLoading: personal.isFetching,
-                                  }
-                        }
-                    />
-                </div>
-            </section>
-
-            <section className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">{t('sections.organization')}</h2>
-                    <Badge variant="secondary">{organization.objectives.length}</Badge>
-                </div>
-                <div className="md:hidden">
-                    {organization.objectives.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">
-                            {t('empty.noObjectivesFound')}
-                        </p>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-4">
-                            {organization.objectives.map(renderObjectiveCard)}
-                        </div>
-                    )}
-                    {!hasSearch && (
-                        <MobilePagination
-                            pagination={organization.pagination}
-                            rowCount={organization.objectives.length}
-                            hasNextPage={organization.hasNextPage}
-                            isLoading={organization.isFetching}
-                            onNextPage={organization.onNextPage}
-                        />
-                    )}
-                </div>
-                <div className="hidden md:block">
-                    <DataTable
-                        columns={objectiveColumns}
-                        data={organization.objectives}
-                        isLoading={organization.isLoading}
-                        pagination={
-                            hasSearch
-                                ? undefined
-                                : {
-                                      currentPage: organization.pagination.currentPage,
-                                      onNextPage: organization.onNextPage,
-                                      onPreviousPage: organization.pagination.previousPage,
-                                      hasNextPage: organization.hasNextPage,
-                                      hasPreviousPage: organization.pagination.hasPreviousPage,
-                                      isLoading: organization.isFetching,
+                                      currentPage: pagination.currentPage,
+                                      onNextPage: onNextPage,
+                                      onPreviousPage: pagination.previousPage,
+                                      hasNextPage: hasNextPage,
+                                      hasPreviousPage: pagination.hasPreviousPage,
+                                      isLoading: isFetching,
                                   }
                         }
                     />

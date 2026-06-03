@@ -164,4 +164,22 @@ describe('convex admin', () => {
         expect(revokedSession).toBeNull();
         expect(adminSession).not.toBeNull();
     });
+
+    test('rejects deleting the platform setup user', async () => {
+        await t.run(async ctx => {
+            await ctx.db.insert('platformSettings', {
+                platformName: 'Test Platform',
+                defaultLanguage: 'en',
+                registrationPolicy: 'open',
+                setupCompletedAt: Date.now(),
+                setupCompletedBy: adminId,
+            });
+        });
+
+        await expect(
+            adminIdentity.mutation(api.admin.deleteUser, {
+                userId: adminId,
+            })
+        ).rejects.toThrow(/SETUP_USER_DELETE_FORBIDDEN/);
+    });
 });

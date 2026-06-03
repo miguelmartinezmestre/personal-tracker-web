@@ -93,7 +93,6 @@ const RESOURCE_ALLOWED_AUDIT_FIELDS: Record<string, Set<string>> = {
         '_id',
         'organizationId',
         'userId',
-        'scope',
         'status',
         'categoryId',
         'targetValue',

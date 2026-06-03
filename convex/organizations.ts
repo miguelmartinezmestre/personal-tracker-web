@@ -2,7 +2,7 @@ import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 
 const LIST_LIMIT = 1000;
-import { query, type QueryCtx } from './_generated/server';
+import { mutation, query, type QueryCtx } from './_generated/server';
 import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from './_generated/dataModel';
 import { ERROR_CODES } from './utils/constants';
@@ -398,5 +398,44 @@ export const getOrganizationInvitations = query({
         });
 
         return invitationsWithDetails;
+    },
+});
+
+export const expireInvitation = mutation({
+    args: {
+        organizationId: v.id('organization'),
+        invitationId: v.id('invitation'),
+    },
+    handler: async (ctx, args) => {
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
+
+        const userId = normalizeUserId(ctx, identity.userId);
+        if (!userId) {
+            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+        }
+
+        const userMembership = await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', args.organizationId).eq('userId', userId)
+            )
+            .first();
+
+        if (!userMembership || !['admin', 'owner'].includes(userMembership.role)) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
+
+        const invitation = await ctx.db.get('invitation', args.invitationId);
+        if (!invitation || invitation.organizationId !== args.organizationId) {
+            throw new ConvexError(ERROR_CODES.INVITATION_NOT_FOUND);
+        }
+
+        await ctx.db.patch(args.invitationId, {
+            expiresAt: 0,
+            status: 'cancelled',
+        });
     },
 });

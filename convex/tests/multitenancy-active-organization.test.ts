@@ -181,13 +181,12 @@ describe('active organization tenant boundary', () => {
             title: 'Org A personal objective',
             targetValue: 100,
             currentValue: 0,
-            scope: 'personal',
         });
 
         const [activeOrganization, currentOrganization, objectives] = await Promise.all([
             invalidActiveOrgIdentity.query(api.organizations.getActiveOrganization, {}),
             invalidActiveOrgIdentity.query(api.auth.getCurrentOrganization, {}),
-            invalidActiveOrgIdentity.query(api.objectives.getObjectivesByUser, {
+            invalidActiveOrgIdentity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 10, cursor: null },
             }),
         ]);
@@ -216,16 +215,12 @@ describe('active organization tenant boundary', () => {
             title: 'Shared revenue objective',
             targetValue: 100,
             currentValue: 0,
-            scope: 'organization',
         });
 
-        const results = await activeOrgAIdentity.query(
-            api.objectives.searchOrganizationObjectives,
-            {
-                search: 'revenue',
-                limit: 10,
-            }
-        );
+        const results = await activeOrgAIdentity.query(api.objectives.searchObjectivesQuery, {
+            search: 'revenue',
+            limit: 10,
+        });
 
         expect(results.map(objective => objective._id)).toContain(objectiveId);
     });

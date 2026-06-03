@@ -97,78 +97,42 @@ export function ObjectiveFormFields({
                 )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                    name="scope"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{t('scope')}</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                value={field.value as string | undefined}
-                            >
-                                <FormControl>
-                                    <SelectTrigger data-testid={getTestId(mode, 'scope-select')}>
-                                        <SelectValue placeholder={t('scope')} />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem
-                                        value="personal"
-                                        data-testid={getTestId(mode, 'scope-personal')}
-                                    >
-                                        {t('scopeOptions.personal')}
+            <FormField
+                name="categoryId"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{categoryLabel}</FormLabel>
+                        <Select
+                            onValueChange={field.onChange}
+                            value={(field.value as string) || ''}
+                        >
+                            <FormControl>
+                                <SelectTrigger data-testid={getTestId(mode, 'category-select')}>
+                                    <SelectValue placeholder={t('selectACategory')} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {categoriesLoading ? (
+                                    <SelectItem value={CATEGORY_LOADING_VALUE} disabled>
+                                        {tCommon('loading')}
                                     </SelectItem>
-                                    <SelectItem
-                                        value="organization"
-                                        data-testid={getTestId(mode, 'scope-organization')}
-                                    >
-                                        {t('scopeOptions.organization')}
+                                ) : categoryOptions.length === 0 ? (
+                                    <SelectItem value={CATEGORY_EMPTY_VALUE} disabled>
+                                        {t('categories.emptyTitle')}
                                     </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    name="categoryId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{categoryLabel}</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                value={(field.value as string) || ''}
-                            >
-                                <FormControl>
-                                    <SelectTrigger data-testid={getTestId(mode, 'category-select')}>
-                                        <SelectValue placeholder={t('selectACategory')} />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {categoriesLoading ? (
-                                        <SelectItem value={CATEGORY_LOADING_VALUE} disabled>
-                                            {tCommon('loading')}
+                                ) : (
+                                    categoryOptions.map(category => (
+                                        <SelectItem key={category.id} value={category.id}>
+                                            {category.label}
                                         </SelectItem>
-                                    ) : categoryOptions.length === 0 ? (
-                                        <SelectItem value={CATEGORY_EMPTY_VALUE} disabled>
-                                            {t('categories.emptyTitle')}
-                                        </SelectItem>
-                                    ) : (
-                                        categoryOptions.map(category => (
-                                            <SelectItem key={category.id} value={category.id}>
-                                                {category.label}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField

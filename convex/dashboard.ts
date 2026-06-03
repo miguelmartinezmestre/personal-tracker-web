@@ -14,11 +14,14 @@ export const getDashboardStats = queryWithRLS({
         pendingObjectives: v.number(),
     }),
     handler: async ctx => {
-        const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            return { totalObjectives: 0, completedObjectives: 0, pendingObjectives: 0 };
+        }
 
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user', q => q.eq('userId', userId))
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .take(LIST_LIMIT);
 
         return {
@@ -93,14 +96,20 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         })
     ),
     handler: async (ctx, args) => {
-        const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
         const MAX_QUERY_LIMIT = 100;
         const maxItems = Math.min(args.limit ?? PAGINATION.DASHBOARD_LIMIT, MAX_QUERY_LIMIT);
         const fetchLimit = Math.min(maxItems * 3, MAX_QUERY_LIMIT);
 
+        if (!organizationId) {
+            return [];
+        }
+
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user_status', q => q.eq('userId', userId).eq('status', 'active'))
+            .withIndex('by_organization_status', q =>
+                q.eq('organizationId', organizationId).eq('status', 'active')
+            )
             .take(fetchLimit);
 
         const objectivesWithProgress = objectives
@@ -138,16 +147,20 @@ export const getUpcomingDeadlines = queryWithRLS({
         })
     ),
     handler: async (ctx, args) => {
-        const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
         const daysAhead = args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD;
         const now = Date.now();
         const futureLimit = now + daysAhead * TIME.DAY_MS;
 
+        if (!organizationId) {
+            return [];
+        }
+
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_user_status_deadline', q =>
+            .withIndex('by_organization_status_deadline', q =>
                 q
-                    .eq('userId', userId)
+                    .eq('organizationId', organizationId)
                     .eq('status', 'active')
                     .gt('deadline', now - 1)
                     .lt('deadline', futureLimit + 1)
@@ -190,33 +203,45 @@ export const getRecentActivity = queryWithRLS({
     }),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
+        const organizationId = ctx.organizationId;
         const daysBack = args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK;
         const startDate = Date.now() - daysBack * TIME.DAY_MS;
 
+        if (!organizationId) {
+            return {
+                progressUpdatesCount: 0,
+                objectivesCreatedCount: 0,
+                objectivesCompletedCount: 0,
+                periodDays: daysBack,
+            };
+        }
+
         const recentObjectivesPromise = ctx.db
             .query('objectives')
-            .withIndex('by_user_createdAt', q => q.eq('userId', userId).gte('createdAt', startDate))
+            .withIndex('by_organization_createdAt', q =>
+                q.eq('organizationId', organizationId).gte('createdAt', startDate)
+            )
             .take(100);
 
         const recentlyCompletedPromise = ctx.db
             .query('objectives')
-            .withIndex('by_user_status_updatedAt', q =>
-                q.eq('userId', userId).eq('status', 'completed').gte('updatedAt', startDate)
+            .withIndex('by_organization_status_updatedAt', q =>
+                q
+                    .eq('organizationId', organizationId)
+                    .eq('status', 'completed')
+                    .gte('updatedAt', startDate)
             )
             .take(100);
 
-        const organizationId = ctx.organizationId;
-        const recentUpdatesPromise = organizationId
-            ? ctx.db
-                  .query('progressUpdates')
-                  .withIndex('by_user_organization_date', q =>
-                      q
-                          .eq('userId', userId)
-                          .eq('organizationId', organizationId)
-                          .gte('updateDate', startDate)
-                  )
-                  .take(100)
-            : Promise.resolve([]);
+        const recentUpdatesPromise = ctx.db
+            .query('progressUpdates')
+            .withIndex('by_user_organization_date', q =>
+                q
+                    .eq('userId', userId)
+                    .eq('organizationId', organizationId)
+                    .gte('updateDate', startDate)
+            )
+            .take(100);
 
         const [recentObjectives, recentlyCompleted, recentUpdates] = await Promise.all([
             recentObjectivesPromise,

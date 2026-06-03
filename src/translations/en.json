@@ -412,7 +412,8 @@
         "manageOrganizations": "Manage organizations",
         "activeOrganization": "Active organization",
         "current": "Current",
-        "switchOrganization": "Switch to:"
+        "switchOrganization": "Switch to:",
+        "personal": "Personal"
     },
     "ThemeSwitcher": {
         "toggle": "Change theme",
@@ -475,15 +476,6 @@
         "saveObjective": "Save Objective",
         "category": "Category",
         "unit": "Unit",
-        "scope": "Scope",
-        "scopeOptions": {
-            "personal": "Personal",
-            "organization": "Organization"
-        },
-        "sections": {
-            "personal": "My objectives",
-            "organization": "Organization objectives"
-        },
         "objectiveType": "Objective type",
         "objectiveTypeDescription": "Select how this objective is measured.",
         "objectiveTypeOptions": {
@@ -843,10 +835,6 @@
         "progressNotificationsDescription": "Receive notifications about your progress updates and streak milestones.",
         "organizationNotifications": "Organization Notifications",
         "organizationNotificationsDescription": "Receive notifications about organization-wide achievements and member activities.",
-        "emailDigest": "Email Digest",
-        "emailDigestDescription": "Receive a weekly summary of your achievements and progress via email.",
-        "comingSoon": "Coming Soon",
-        "privacyNote": "Privacy Note: All notifications are enabled by default to maintain backward compatibility. You can disable any notification type above at any time. Your achievement unlocks are always tracked regardless of notification settings.",
         "cancel": "Cancel",
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
@@ -865,7 +853,9 @@
         "deleteAccountEmailMismatch": "Email does not match",
         "deleteAccountSuccess": "Your account has been deleted. Redirecting...",
         "deleteAccountPasswordLabel": "Enter your password to confirm",
-        "deleteAccountPasswordPlaceholder": "Your password"
+        "deleteAccountPasswordPlaceholder": "Your password",
+        "deleteAccountProtectedTitle": "Account Protected",
+        "deleteAccountProtectedDescription": "The account that configured this platform cannot be deleted. Transfer admin responsibilities to another user before making changes to this account."
     },
     "Admin": {
         "title": "Admin Panel",
@@ -924,6 +914,7 @@
                 "cancel": "Cancel",
                 "banReasonPrompt": "Ban reason (optional):"
             },
+            "setupUserDeleteDisabled": "The platform setup user cannot be deleted.",
             "placeholders": {
                 "searchByEmail": "Search by email..."
             },

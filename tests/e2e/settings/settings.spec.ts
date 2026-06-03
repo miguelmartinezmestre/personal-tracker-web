@@ -137,7 +137,7 @@ test.describe('Settings', () => {
             await settings.switchToPassword();
             await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-            await settings.fillPasswordForm('wrongpassword', 'wrongpassword', 'newpassword123');
+            await settings.fillPasswordForm('wrongpassword', 'newpassword123', 'newpassword123');
             await settings.passwordSaveButton.click();
 
             await expect(settings.passwordErrorMessage).toBeVisible({ timeout: 10000 });

@@ -21,7 +21,6 @@ const defaultValues: CreateObjective = {
     startValue: 0,
     deadline: null,
     status: 'active',
-    scope: 'personal',
     unit: '',
 };
 

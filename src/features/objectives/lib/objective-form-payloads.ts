@@ -17,7 +17,6 @@ export function getObjectiveEditFormValues(objective: Objective): SavedObjective
         startValue: objective.startValue,
         deadline: objective.deadline,
         status: objective.status,
-        scope: objective.scope,
         unit: objective.unit,
     };
 }
@@ -31,7 +30,6 @@ export function buildCreateObjectivePayload(value: CreateObjective) {
         startValue: 0,
         currentValue: 0,
         deadline: value.deadline ?? undefined,
-        scope: value.scope,
         unit: value.unit ?? undefined,
     };
 }
@@ -46,6 +44,5 @@ export function buildUpdateObjectivePayload(value: SavedObjectiveForm) {
         targetValue: value.targetValue,
         deadline: value.deadline ?? undefined,
         unit: value.unit ?? undefined,
-        scope: value.scope,
     };
 }

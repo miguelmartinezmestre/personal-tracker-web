@@ -336,9 +336,7 @@ export async function checkOrganizationAchievementsJob(
 
     const objectivesPage = await ctx.db
         .query('objectives')
-        .withIndex('by_organization_scope', q =>
-            q.eq('organizationId', organizationId).eq('scope', 'organization')
-        )
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .paginate({
             numItems: ACHIEVEMENT_BATCH_SIZE,
             cursor: args.orgObjectivesContinueCursor ?? null,

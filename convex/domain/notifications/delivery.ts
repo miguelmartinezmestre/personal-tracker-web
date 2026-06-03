@@ -28,7 +28,7 @@ export async function assertCanCreateNotificationForObjective(
     const isOwner = objective.userId === ctx.userId;
 
     let isOrganizationMember = false;
-    if (objective.scope === 'organization' && objective.organizationId === ctx.organizationId) {
+    if (objective.organizationId === ctx.organizationId) {
         const membership = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
@@ -60,13 +60,10 @@ export function canReadObjectiveFromNotification(
     ctx: NotificationAccessCtx,
     objective: Doc<'objectives'>
 ) {
-    const isVisiblePersonal = objective.scope === 'personal' && objective.userId === ctx.userId;
     const isVisibleOrganization =
-        objective.scope === 'organization' &&
-        ctx.organizationId !== null &&
-        objective.organizationId === ctx.organizationId;
+        ctx.organizationId !== null && objective.organizationId === ctx.organizationId;
     const isGlobalAdmin = ctx.role === 'admin';
     const isOrganizationAdmin = isOrgAdminFor(ctx, objective.organizationId);
 
-    return isGlobalAdmin || isOrganizationAdmin || isVisiblePersonal || isVisibleOrganization;
+    return isGlobalAdmin || isOrganizationAdmin || isVisibleOrganization;
 }

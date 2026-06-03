@@ -27,13 +27,6 @@ export const OBJECTIVE_STATUS = {
 
 export type ObjectiveStatus = (typeof OBJECTIVE_STATUS)[keyof typeof OBJECTIVE_STATUS];
 
-export const OBJECTIVE_SCOPE = {
-    PERSONAL: 'personal',
-    ORGANIZATION: 'organization',
-} as const;
-
-export type ObjectiveScope = (typeof OBJECTIVE_SCOPE)[keyof typeof OBJECTIVE_SCOPE];
-
 export const NOTIFICATION_TYPE = {
     DEADLINE: 'deadline',
     PROGRESS: 'progress',
@@ -107,6 +100,7 @@ export const ERROR_CODES = {
     PLATFORM_ALREADY_CONFIGURED: 'PLATFORM_ALREADY_CONFIGURED',
     SETUP_USER_COUNT: 'SETUP_USER_COUNT',
     SETUP_USER_MISMATCH: 'SETUP_USER_MISMATCH',
+    SETUP_USER_DELETE_FORBIDDEN: 'SETUP_USER_DELETE_FORBIDDEN',
     SETUP_AUTH_REQUIRED: 'SETUP_AUTH_REQUIRED',
 
     INTERNAL_ERROR: 'INTERNAL_ERROR',

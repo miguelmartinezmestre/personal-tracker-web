@@ -412,7 +412,8 @@
         "manageOrganizations": "Gestionar organizaciones",
         "activeOrganization": "Organización activa",
         "current": "Actual",
-        "switchOrganization": "Cambiar a:"
+        "switchOrganization": "Cambiar a:",
+        "personal": "Personal"
     },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
@@ -475,15 +476,6 @@
         "saveObjective": "Guardar objetivo",
         "category": "Categoría",
         "unit": "Unidad",
-        "scope": "Alcance",
-        "scopeOptions": {
-            "personal": "Personal",
-            "organization": "Organización"
-        },
-        "sections": {
-            "personal": "Mis objetivos",
-            "organization": "Objetivos de organización"
-        },
         "objectiveType": "Tipo de objetivo",
         "objectiveTypeDescription": "Selecciona como se mide este objetivo.",
         "objectiveTypeOptions": {
@@ -829,10 +821,6 @@
         "progressNotificationsDescription": "Recibe notificaciones sobre tus actualizaciones de progreso y hitos de rachas.",
         "organizationNotifications": "Notificaciones de Organización",
         "organizationNotificationsDescription": "Recibe notificaciones sobre logros organizacionales y actividades de miembros.",
-        "emailDigest": "Resumen por Email",
-        "emailDigestDescription": "Recibe un resumen semanal de tus logros y progreso por correo electrónico.",
-        "comingSoon": "Próximamente",
-        "privacyNote": "Nota de privacidad: Todas las notificaciones están habilitadas por defecto para mantener la compatibilidad. Puedes desactivar cualquier tipo de notificación en cualquier momento. Tus desbloqueos de logros siempre se registran independientemente de la configuración de notificaciones.",
         "title": "Configuración",
         "description": "Gestiona tus configuraciones para mantener un seguimiento de tu progreso.",
         "accountSettings": "Configuración de cuenta",
@@ -865,7 +853,9 @@
         "deleteAccountEmailMismatch": "El correo electrónico no coincide",
         "deleteAccountSuccess": "Tu cuenta ha sido eliminada. Redireccionando...",
         "deleteAccountPasswordLabel": "Ingresa tu contraseña para confirmar",
-        "deleteAccountPasswordPlaceholder": "Tu contraseña"
+        "deleteAccountPasswordPlaceholder": "Tu contraseña",
+        "deleteAccountProtectedTitle": "Cuenta protegida",
+        "deleteAccountProtectedDescription": "La cuenta que configuró esta plataforma no puede eliminarse. Transfiere las responsabilidades de administración a otro usuario antes de modificar esta cuenta."
     },
     "Admin": {
         "title": "Panel de Administración",
@@ -924,6 +914,7 @@
                 "cancel": "Cancelar",
                 "banReasonPrompt": "Razón del ban (opcional):"
             },
+            "setupUserDeleteDisabled": "El usuario que configuró la plataforma no puede eliminarse.",
             "placeholders": {
                 "searchByEmail": "Buscar por email..."
             },

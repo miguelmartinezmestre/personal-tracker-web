@@ -49,9 +49,7 @@ const defaultValues: CreateNotification = {
 export default function CreateNotificationFormModal() {
     const t = useTranslations('Notifications');
 
-    const objectives = useQuery(
-        convexQuery(api.objectives.getObjectivesByUser, FIRST_PAGE_QUERY_ARGS)
-    );
+    const objectives = useQuery(convexQuery(api.objectives.getObjectives, FIRST_PAGE_QUERY_ARGS));
 
     const createNotification = useMutation({
         mutationFn: useConvexMutation(api.notifications.createNotification),

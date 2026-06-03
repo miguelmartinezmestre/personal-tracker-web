@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from 'next-intl';
@@ -9,6 +9,9 @@ import { useDeleteAccount } from '@/features/settings/hooks/use-delete-account';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useRouter } from 'next/navigation';
 import { useMountEffect } from '@/hooks/use-mount-effect';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
 
 export default function AccountDeletionSection() {
     const t = useTranslations('Settings');
@@ -18,6 +21,10 @@ export default function AccountDeletionSection() {
     const deleteAccount = useDeleteAccount();
     const router = useRouter();
     const redirectTimerRef = useRef<number | null>(null);
+
+    const { data: isPlatformSetupUser, isPending: isSetupUserPending } = useQuery(
+        convexQuery(api.setup.isCurrentUserPlatformSetupUser, {})
+    );
 
     const [emailConfirmation, setEmailConfirmation] = useState('');
     const [password, setPassword] = useState('');
@@ -56,10 +63,31 @@ export default function AccountDeletionSection() {
         }
     };
 
-    if (sessionQuery?.isPending) {
+    if (sessionQuery?.isPending || isSetupUserPending) {
         return (
             <div className="flex justify-center items-center py-8">
                 <Loader2 className="size-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (isPlatformSetupUser) {
+        return (
+            <div
+                className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-6"
+                data-testid="delete-account-protected"
+            >
+                <div className="flex items-start gap-4">
+                    <Shield className="size-6 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <div className="space-y-2">
+                        <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+                            {t('deleteAccountProtectedTitle')}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                            {t('deleteAccountProtectedDescription')}
+                        </p>
+                    </div>
+                </div>
             </div>
         );
     }

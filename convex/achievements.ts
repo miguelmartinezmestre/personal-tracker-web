@@ -217,7 +217,7 @@ export const getUserAchievementProgress = queryWithRLS({
                   .take(LIST_LIMIT)
             : await ctx.db
                   .query('objectives')
-                  .withIndex('by_user_scope', q => q.eq('userId', userId).eq('scope', 'personal'))
+                  .withIndex('by_user', q => q.eq('userId', userId))
                   .take(LIST_LIMIT);
 
         const completedObjectives = objectivesCount.filter(
@@ -244,9 +244,7 @@ export const getUserAchievementProgress = queryWithRLS({
         const organizationObjectives = organizationId
             ? await ctx.db
                   .query('objectives')
-                  .withIndex('by_organization_scope', q =>
-                      q.eq('organizationId', organizationId).eq('scope', 'organization')
-                  )
+                  .withIndex('by_organization', q => q.eq('organizationId', organizationId))
                   .take(LIST_LIMIT)
             : [];
         const completedOrganizationObjectives = organizationObjectives.filter(

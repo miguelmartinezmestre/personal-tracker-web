@@ -6,6 +6,7 @@ import { mutationWithRLS, queryWithRLS } from './rls';
 import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
+import { isPlatformSetupUser } from './platform/setup/bootstrap';
 
 type AdminApi = {
     banUser: (args: {
@@ -120,6 +121,10 @@ export const deleteUser = mutationWithRLS({
     returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
+
+        if (await isPlatformSetupUser(ctx, args.userId)) {
+            throw new ConvexError(ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN);
+        }
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);

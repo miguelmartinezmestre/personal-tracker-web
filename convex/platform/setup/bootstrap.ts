@@ -34,6 +34,16 @@ export async function getPublicSettings(ctx: { db: DatabaseReader }) {
     };
 }
 
+export async function isPlatformSetupUser(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
+    const settings = await ctx.db.query('platformSettings').first();
+    return settings?.setupCompletedBy === userId;
+}
+
+export async function getPlatformSetupUserId(ctx: { db: DatabaseReader }) {
+    const settings = await ctx.db.query('platformSettings').first();
+    return settings?.setupCompletedBy ?? null;
+}
+
 export async function completePlatformSetup(
     ctx: MutationCtx,
     userId: Id<'user'>,
