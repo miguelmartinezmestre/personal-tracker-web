@@ -74,9 +74,14 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                     onSuccess: async () => {
                         try {
                             if (invitationToken) {
-                                await authClient.organization.acceptInvitation({
-                                    invitationId: invitationToken,
-                                });
+                                const acceptResult = await authClient.organization.acceptInvitation(
+                                    {
+                                        invitationId: invitationToken,
+                                    }
+                                );
+                                if (acceptResult.error) {
+                                    throw new Error(acceptResult.error.message);
+                                }
                             }
 
                             router.push('/dashboard/home');
