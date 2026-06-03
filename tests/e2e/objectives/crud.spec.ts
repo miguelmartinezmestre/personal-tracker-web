@@ -144,7 +144,6 @@ test.describe('Objectives CRUD', () => {
         const editTitleInput = page.getByTestId('objective-edit-title-input');
         await editTitleInput.clear();
         await editTitleInput.fill(updatedTitle);
-        await editTitleInput.blur();
         await expect(editTitleInput).toHaveValue(updatedTitle);
 
         await saveEditedObjectiveAndWaitForRow(page, editTitleInput, updatedTitle);
