@@ -25,7 +25,11 @@ import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 
-export default function LoginForm() {
+interface LoginFormProps {
+    showPasswordResetSuccess?: boolean;
+}
+
+export default function LoginForm({ showPasswordResetSuccess = false }: LoginFormProps) {
     const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
@@ -86,6 +90,14 @@ export default function LoginForm() {
                 }}
                 className="space-y-6"
             >
+                {showPasswordResetSuccess && (
+                    <Alert variant="default" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{tCommon('success')}</AlertTitle>
+                        <AlertDescription>{t('resetPasswordSuccess')}</AlertDescription>
+                    </Alert>
+                )}
+
                 {loginError && (
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />

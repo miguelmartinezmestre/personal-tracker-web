@@ -3,15 +3,22 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
 
-export default async function Login() {
+export default async function Login({
+    searchParams,
+}: {
+    searchParams: Promise<{ passwordReset?: string }>;
+}) {
     if (!(await checkPlatformSetUp())) redirect('/setup');
+
+    const params = await searchParams;
+    const showPasswordResetSuccess = params.passwordReset === 'success';
 
     const t = await getTranslations('HomePage');
 
     return (
         <div className="w-full max-w-md rounded-xl shadow-lg p-8 border">
             <h1 className="text-2xl font-bold text-center mb-6 text-primary">{t('login')}</h1>
-            <LoginForm />
+            <LoginForm showPasswordResetSuccess={showPasswordResetSuccess} />
         </div>
     );
 }

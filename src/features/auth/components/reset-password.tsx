@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -26,11 +27,11 @@ interface ResetPasswordProps {
 }
 
 export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) {
+    const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
 
     const [registerError, setRegisterError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
 
     const form = useForm({
         defaultValues: {
@@ -49,7 +50,6 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
 
     async function handleResetPassword(values: z.infer<typeof resetPasswordSchema>) {
         setRegisterError('');
-        setSuccessMessage('');
 
         if (values.password !== values.confirmPassword) {
             return;
@@ -66,7 +66,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
             return;
         }
 
-        setSuccessMessage(t('resetPasswordSuccess'));
+        router.push('/login?passwordReset=success');
     }
 
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleResetPassword);
@@ -84,14 +84,6 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{registerError}</AlertDescription>
-                    </Alert>
-                )}
-
-                {successMessage && (
-                    <Alert variant="default" className="mb-6">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{tCommon('success')}</AlertTitle>
-                        <AlertDescription>{successMessage}</AlertDescription>
                     </Alert>
                 )}
 
