@@ -1,382 +1,324 @@
-﻿direction: right
+direction: right
 
 legend: {
-  label: "Modelo de datos Convex\nCampos automaticos omitidos en todas las tablas: _id, _creationTime\nSolida = referencia fuerte con v.id(...)\nDiscontinua = relacion logica via string\nPunteada = relacion polimorfica o desnormalizada"
-  style: {
-    fill: "#FFFBEB"
-    stroke: "#D97706"
-    font-size: 16
-    font-color: "#7C2D12"
-  }
+  shape: text
+  label: |`md
+| Modelo ER compacto (Convex) | |
+| --- | --- |
+| Omitidos | `_id`, `_creationTime`, timestamps y campos secundarios |
+| Tipos | `string`, `number`, `boolean`, `id('tabla')`, `optional(...)` |
+| Relaciones | solida = referencia fuerte; discontinua = logica o externa |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-auth_core: {
-  label: "Better Auth"
-  direction: down
-  style: {
-    fill: "#EFF6FF"
-    stroke: "#60A5FA"
-    font-color: "#1D4ED8"
-  }
-
-  user: {
-    shape: sql_table
-    name: string
-    email: string
-    emailVerified: boolean
-    role: string_optional
-    banned: boolean_optional
-    userId: external_string_optional
-  }
-
-  session: {
-    shape: sql_table
-    userId: string
-    token: string
-    expiresAt: number
-    activeOrganizationId: string_optional
-    impersonatedBy: string_optional
-  }
-
-  account: {
-    shape: sql_table
-    accountId: string
-    providerId: string
-    userId: string
-    accessToken: string_optional
-    password: string_optional
-  }
-
-  verification: {
-    shape: sql_table
-    identifier: string
-    value: string
-    expiresAt: number
-    updatedAt: number
-  }
-
-  jwks: {
-    shape: sql_table
-    publicKey: string
-    privateKey: string
-    createdAt: number
-    expiresAt: number_optional
-  }
+user: {
+  shape: text
+  label: |`md
+| user | |
+| --- | --- |
+| name | string |
+| email | string |
+| role | optional(string \| null) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-org_access: {
-  label: "Organizaciones y acceso"
-  direction: down
-  style: {
-    fill: "#ECFDF5"
-    stroke: "#34D399"
-    font-color: "#047857"
-  }
-
-  organization: {
-    shape: sql_table
-    name: string
-    slug: string
-    logo: string_optional
-    metadata: string_optional
-    createdAt: number
-  }
-
-  member: {
-    shape: sql_table
-    organizationId: string
-    userId: string
-    role: string
-    createdAt: number
-  }
-
-  invitation: {
-    shape: sql_table
-    organizationId: string
-    email: string
-    role: string_optional
-    status: string
-    inviterId: string
-    expiresAt: number
-  }
+session: {
+  shape: text
+  label: |`md
+| session | |
+| --- | --- |
+| userId | string |
+| activeOrganizationId | optional(string \| null) |
+| expiresAt | number |
+| impersonatedBy | optional(string \| null) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-goals_progress: {
-  label: "Objetivos y progreso"
-  direction: down
-  style: {
-    fill: "#FFF7ED"
-    stroke: "#FB923C"
-    font-color: "#C2410C"
-  }
-
-  objectives: {
-    shape: sql_table
-    organizationId: id_organization
-    userId: id_user
-    scope: enum_personal_organization
-    title: string
-    category: string_optional
-    targetValue: number
-    currentValue: number
-    deadline: number_optional
-    status: enum_active_completed
-  }
-
-  progressUpdates: {
-    shape: sql_table
-    objective: id_objectives
-    updatedValue: number
-    updateDate: number
-    comment: string_optional
-    updatedAt: number
-  }
+account: {
+  shape: text
+  label: |`md
+| account | |
+| --- | --- |
+| accountId | string |
+| providerId | string |
+| userId | string |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit: {
-  label: "Notificaciones y auditoria"
-  direction: down
-  style: {
-    fill: "#FEF2F2"
-    stroke: "#F87171"
-    font-color: "#B91C1C"
-  }
-
-  notifications: {
-    shape: sql_table
-    userId: id_user
-    organizationId: id_organization
-    objective: id_objectives_optional
-    notificationType: enum_notification_type
-    read: boolean
-    notificationDate: number
-  }
-
-  auditLogs: {
-    shape: sql_table
-    userId: id_user
-    organizationId: id_organization
-    action: string
-    resourceType: string
-    resourceId: string_optional
-    severity: string
-    createdAt: number
-  }
-
-  categories: {
-    shape: sql_table
-    userId: id_user
-    organizationId: id_organization
-    name: string
-    color: string
-    "icon": string_optional
-    updatedAt: number
-  }
+verification: {
+  shape: text
+  label: |`md
+| verification | |
+| --- | --- |
+| identifier | string |
+| expiresAt | number |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-achievements_block: {
-  label: "Logros"
-  direction: down
-  style: {
-    fill: "#F0FDF4"
-    stroke: "#86EFAC"
-    font-color: "#166534"
-  }
-
-  achievementDefinitions: {
-    shape: sql_table
-    code: string
-    type: enum_individual_organization
-    category: enum_achievement_category
-    tier: enum_achievement_tier
-    threshold: number
-    points: number
-    isActive: boolean
-  }
-
-  obtainedAchievements: {
-    shape: sql_table
-    userId: id_user
-    achievement: id_achievementDefinitions
-    earnedAt: number
-    updatedAt: number
-  }
-
-  organizationAchievements: {
-    shape: sql_table
-    organization: id_organization
-    achievement: id_achievementDefinitions
-    contributingUsers: id_user_array
-    earnedAt: number
-    updatedAt: number
-  }
+jwks: {
+  shape: text
+  label: |`md
+| jwks | |
+| --- | --- |
+| publicKey | string |
+| expiresAt | optional(number \| null) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-platform_block: {
-  label: "Plataforma"
-  direction: down
-  style: {
-    fill: "#F8FAFC"
-    stroke: "#94A3B8"
-    font-color: "#334155"
-  }
-
-  platformSettings: {
-    shape: sql_table
-    platformName: string
-    defaultLanguage: string
-    registrationPolicy: string
-    setupCompletedAt: number_optional
-    setupCompletedBy: id_user_optional
-  }
+organization: {
+  shape: text
+  label: |`md
+| organization | |
+| --- | --- |
+| name | string |
+| slug | string |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-resource_pointer: {
-  label: "Polymorphic pointer\nresourceType + resourceId\ncan reference any resource"
-  style: {
-    fill: "#F8FAFC"
-    stroke: "#94A3B8"
-    font-color: "#475569"
-  }
+member: {
+  shape: text
+  label: |`md
+| member | |
+| --- | --- |
+| organizationId | id('organization') |
+| userId | id('user') |
+| role | string |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-goals_progress.objectives -> auth_core.user: {
-  label: "userId"
+invitation: {
+  shape: text
+  label: |`md
+| invitation | |
+| --- | --- |
+| organizationId | id('organization') |
+| inviterId | id('user') |
+| email | string |
+| status | string |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-goals_progress.objectives -> org_access.organization: {
-  label: "organizationId"
+objectives: {
+  shape: text
+  label: |`md
+| objectives | |
+| --- | --- |
+| organizationId | id('organization') |
+| userId | id('user') |
+| scope | objectiveScopeValidator |
+| title | string |
+| categoryId | optional(id('categories')) |
+| targetValue | number |
+| currentValue | number |
+| deadline | optional(number) |
+| status | objectiveStatusValidator |
+| workflowId | optional(vWorkflowId) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-goals_progress.progressUpdates -> goals_progress.objectives: {
-  label: "objective"
+progressUpdates: {
+  shape: text
+  label: |`md
+| progressUpdates | |
+| --- | --- |
+| objective | id('objectives') |
+| userId | id('user') |
+| organizationId | id('organization') |
+| updatedValue | number |
+| updateDate | number |
+| comment | optional(string) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.notifications -> auth_core.user: {
-  label: "userId"
+categories: {
+  shape: text
+  label: |`md
+| categories | |
+| --- | --- |
+| userId | id('user') |
+| organizationId | id('organization') |
+| name | string |
+| color | string |
+| icon | optional(string) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.notifications -> org_access.organization: {
-  label: "organizationId"
+notifications: {
+  shape: text
+  label: |`md
+| notifications | |
+| --- | --- |
+| userId | id('user') |
+| organizationId | id('organization') |
+| objective | optional(id('objectives')) |
+| read | boolean |
+| notificationType | notificationTypeValidator |
+| notificationDate | number |
+| message | string |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.notifications -> goals_progress.objectives: {
-  label: "objective?"
+notificationPreferences: {
+  shape: text
+  label: |`md
+| notificationPreferences | |
+| --- | --- |
+| userId | id('user') |
+| achievementNotifications | boolean |
+| deadlineNotifications | boolean |
+| progressNotifications | boolean |
+| organizationNotifications | boolean |
+| emailDigestEnabled | optional(boolean) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.auditLogs -> auth_core.user: {
-  label: "userId"
+auditLogs: {
+  shape: text
+  label: |`md
+| auditLogs | |
+| --- | --- |
+| userId | id('user') |
+| actorUserId | optional(id('user')) |
+| organizationId | id('organization') |
+| action | string |
+| resourceType | string |
+| resourceId | optional(string) |
+| severity | string |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.auditLogs -> org_access.organization: {
-  label: "organizationId"
+achievementDefinitions: {
+  shape: text
+  label: |`md
+| achievementDefinitions | |
+| --- | --- |
+| code | string |
+| type | achievementTypeValidator |
+| category | achievementCategoryValidator |
+| tier | achievementTierValidator |
+| threshold | number |
+| points | number |
+| isActive | boolean |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.categories -> auth_core.user: {
-  label: "userId"
+obtainedAchievements: {
+  shape: text
+  label: |`md
+| obtainedAchievements | |
+| --- | --- |
+| userId | id('user') |
+| achievement | id('achievementDefinitions') |
+| earnedAt | number |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-notif_audit.categories -> org_access.organization: {
-  label: "organizationId"
+organizationAchievements: {
+  shape: text
+  label: |`md
+| organizationAchievements | |
+| --- | --- |
+| organization | id('organization') |
+| achievement | id('achievementDefinitions') |
+| earnedAt | number |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-achievements_block.obtainedAchievements -> auth_core.user: {
-  label: "userId"
+organizationAchievementContributors: {
+  shape: text
+  label: |`md
+| organizationAchievementContributors | |
+| --- | --- |
+| organizationAchievementId | id('organizationAchievements') |
+| userId | id('user') |
+| contributedAt | number |
+| contributionValue | optional(number) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-achievements_block.obtainedAchievements -> achievements_block.achievementDefinitions: {
-  label: "achievement"
+platformSettings: {
+  shape: text
+  label: |`md
+| platformSettings | |
+| --- | --- |
+| platformName | string |
+| defaultLanguage | string |
+| registrationPolicy | string |
+| setupCompletedAt | optional(number) |
+| setupCompletedBy | optional(id('user')) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-achievements_block.organizationAchievements -> org_access.organization: {
-  label: "organization"
+workflow: {
+  shape: text
+  label: |`md
+| Convex Workflow | |
+| --- | --- |
+| workflowId | vWorkflowId |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-achievements_block.organizationAchievements -> achievements_block.achievementDefinitions: {
-  label: "achievement"
+resourcePointer: {
+  shape: text
+  label: |`md
+| Recurso polimorfico | |
+| --- | --- |
+| resourceType + resourceId | relacion polimorfica |
+`|
+  style: { font-size: 10; font-color: "#111827" }
 }
 
-platform_block.platformSettings -> auth_core.user: {
-  label: "setupCompletedBy?"
-}
+user -> session: { style: { stroke: "#1D4ED8"; stroke-width: 2; stroke-dash: 4 } }
+user -> account: { style: { stroke: "#1D4ED8"; stroke-width: 2; stroke-dash: 4 } }
+user -> member: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> invitation: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> objectives: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> progressUpdates: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> categories: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> notifications: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> notificationPreferences: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> auditLogs: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> obtainedAchievements: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> organizationAchievementContributors: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> platformSettings: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 
-auth_core.session -> auth_core.user: {
-  label: "userId"
-  style: {
-    stroke-dash: 4
-  }
-}
+organization -> session: { style: { stroke: "#334155"; stroke-width: 2; stroke-dash: 4 } }
+organization -> member: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> invitation: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> objectives: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> progressUpdates: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> categories: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> notifications: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> auditLogs: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> organizationAchievements: { style: { stroke: "#334155"; stroke-width: 2 } }
 
-auth_core.session -> org_access.organization: {
-  label: "activeOrganizationId?"
-  style: {
-    stroke-dash: 4
-  }
-}
+categories -> objectives: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
+objectives -> progressUpdates: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
+objectives -> notifications: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
+achievementDefinitions -> obtainedAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
+achievementDefinitions -> organizationAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
+organizationAchievements -> organizationAchievementContributors: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
 
-auth_core.session -> auth_core.user: {
-  label: "impersonatedBy?"
-  style: {
-    stroke-dash: 4
-  }
-}
-
-auth_core.account -> auth_core.user: {
-  label: "userId"
-  style: {
-    stroke-dash: 4
-  }
-}
-
-org_access.member -> org_access.organization: {
-  label: "organizationId"
-  style: {
-    stroke-dash: 4
-  }
-}
-
-org_access.member -> auth_core.user: {
-  label: "userId"
-  style: {
-    stroke-dash: 4
-  }
-}
-
-org_access.invitation -> org_access.organization: {
-  label: "organizationId"
-  style: {
-    stroke-dash: 4
-  }
-}
-
-org_access.invitation -> auth_core.user: {
-  label: "inviterId"
-  style: {
-    stroke-dash: 4
-  }
-}
-
-goals_progress.objectives -> notif_audit.categories: {
-  label: "category -> name"
-  style: {
-    stroke-dash: 2
-  }
-}
-
-notif_audit.auditLogs -> resource_pointer: {
-  label: "resourceType + resourceId"
-  style: {
-    stroke-dash: 2
-  }
-}
-
-achievements_block.organizationAchievements -> auth_core.user: {
-  label: "contributingUsers[]"
-  style: {
-    stroke-dash: 2
-  }
-}
-
-
-
-
+objectives -> workflow: { style: { stroke: "#6B7280"; stroke-width: 2; stroke-dash: 2 } }
+auditLogs -> resourcePointer: { style: { stroke: "#6B7280"; stroke-width: 2; stroke-dash: 2 } }
