@@ -7,7 +7,7 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Bell, Trophy, Clock, Users, Mail, Loader2 } from 'lucide-react';
+import { Bell, Trophy, Clock, Users, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 export default function NotificationPreferencesForm() {
@@ -42,7 +42,6 @@ export default function NotificationPreferencesForm() {
             | 'deadlineNotifications'
             | 'progressNotifications'
             | 'organizationNotifications'
-            | 'emailDigestEnabled'
     ) => {
         if (!preferences) return;
 
@@ -167,37 +166,6 @@ export default function NotificationPreferencesForm() {
                         onCheckedChange={() => handleToggle('organizationNotifications')}
                         disabled={updateMutation.isPending}
                     />
-                </div>
-
-                <div className="flex items-start justify-between gap-4 rounded-lg border p-4 opacity-60">
-                    <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                            <Mail className="size-4 text-gray-500" />
-                            <Label htmlFor="email-digest" className="font-medium">
-                                {t('emailDigest') || 'Email Digest'}{' '}
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                    ({t('comingSoon') || 'Coming Soon'})
-                                </span>
-                            </Label>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            {t('emailDigestDescription') ||
-                                'Receive a weekly summary of your achievements and progress via email.'}
-                        </p>
-                    </div>
-                    <Switch
-                        id="email-digest"
-                        checked={preferences?.emailDigestEnabled ?? false}
-                        disabled={true}
-                        onCheckedChange={() => handleToggle('emailDigestEnabled')}
-                    />
-                </div>
-
-                <div className="mt-6 border-t pt-4 text-xs text-muted-foreground">
-                    <p>
-                        {t('privacyNote') ||
-                            'Privacy Note: All notifications are enabled by default to maintain backward compatibility. You can disable any notification type above at any time. Your achievement unlocks are always tracked regardless of notification settings.'}
-                    </p>
                 </div>
             </CardContent>
         </Card>
