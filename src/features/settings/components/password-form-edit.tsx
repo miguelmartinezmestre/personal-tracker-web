@@ -41,7 +41,7 @@ export default function PasswordFormEdit() {
     });
 
     const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
-        if (values.currentPassword !== values.confirmPassword) {
+        if (values.newPassword !== values.confirmPassword) {
             setError(t('passwordMismatch'));
             return;
         }
