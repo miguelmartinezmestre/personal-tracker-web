@@ -131,9 +131,7 @@ export async function calculateOrganizationStreak(
 ): Promise<number> {
     const organizationObjectives = await ctx.db
         .query('objectives')
-        .withIndex('by_organization_scope', q =>
-            q.eq('organizationId', organizationId).eq('scope', 'organization')
-        )
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .collect();
 
     const objectiveIds = organizationObjectives.map(

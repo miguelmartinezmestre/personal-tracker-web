@@ -4,7 +4,7 @@ import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './rls';
-import { objectiveScopeValidator, objectiveStatusValidator } from './utils/validators';
+import { objectiveStatusValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import { withInvalidCursorRetry } from './utils/pagination';
 import { validateObjectiveMetrics } from './domain/objectives/metrics';
@@ -20,29 +20,17 @@ import {
 
 function assertCanModifyObjective(
     ctx: { userId: Id<'user'>; organizationId: Id<'organization'> | null; role: string },
-    objective: { userId: Id<'user'>; organizationId: Id<'organization'>; scope: string }
+    objective: { userId: Id<'user'>; organizationId: Id<'organization'> }
 ): void {
     const isGlobalAdmin = ctx.role === 'admin';
+    if (isGlobalAdmin) return;
 
-    if (objective.scope === 'personal') {
-        if (objective.userId !== ctx.userId) {
-            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
-        }
-        return;
+    if (!ctx.organizationId || objective.organizationId !== ctx.organizationId) {
+        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
     }
-
-    if (objective.scope === 'organization') {
-        if (isGlobalAdmin) return;
-        if (!ctx.organizationId || objective.organizationId !== ctx.organizationId) {
-            throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
-        }
-        return;
-    }
-
-    throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
 }
 
-export const getObjectivesByUser = queryWithRLS({
+export const getObjectives = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
         status: v.optional(objectiveStatusValidator),
@@ -52,7 +40,6 @@ export const getObjectivesByUser = queryWithRLS({
     handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
         return await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
             listObjectives(ctx, {
-                section: 'personal',
                 paginationOpts: retryPaginationOpts,
                 status,
                 categoryId,
@@ -62,27 +49,7 @@ export const getObjectivesByUser = queryWithRLS({
     },
 });
 
-export const getOrganizationObjectives = queryWithRLS({
-    args: {
-        paginationOpts: paginationOptsValidator,
-        status: v.optional(objectiveStatusValidator),
-        categoryId: v.optional(v.id('categories')),
-        deadlineRange: v.optional(deadlineRangeValidator),
-    },
-    handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
-        return await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
-            listObjectives(ctx, {
-                section: 'organization',
-                paginationOpts: retryPaginationOpts,
-                status,
-                categoryId,
-                deadlineRange,
-            })
-        );
-    },
-});
-
-export const searchObjectivesByUser = queryWithRLS({
+export const searchObjectivesQuery = queryWithRLS({
     args: {
         search: v.string(),
         limit: v.optional(v.number()),
@@ -91,26 +58,7 @@ export const searchObjectivesByUser = queryWithRLS({
         deadlineRange: v.optional(deadlineRangeValidator),
     },
     handler: async (ctx, args) => {
-        return await searchObjectives(ctx, {
-            section: 'personal',
-            ...args,
-        });
-    },
-});
-
-export const searchOrganizationObjectives = queryWithRLS({
-    args: {
-        search: v.string(),
-        limit: v.optional(v.number()),
-        status: v.optional(objectiveStatusValidator),
-        categoryId: v.optional(v.id('categories')),
-        deadlineRange: v.optional(deadlineRangeValidator),
-    },
-    handler: async (ctx, args) => {
-        return await searchObjectives(ctx, {
-            section: 'organization',
-            ...args,
-        });
+        return await searchObjectives(ctx, args);
     },
 });
 
@@ -133,20 +81,14 @@ export const createObjective = mutationWithRLS({
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         unit: v.optional(v.string()),
-        scope: v.optional(objectiveScopeValidator),
     },
     returns: v.id('objectives'),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const now = Date.now();
-        const scope = args.scope ?? 'personal';
         const organizationId = ctx.organizationId;
 
         if (!organizationId) {
-            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
-        }
-
-        if (scope === 'organization' && !organizationId) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
 
@@ -172,7 +114,6 @@ export const createObjective = mutationWithRLS({
         const objectiveId = await ctx.db.insert('objectives', {
             userId,
             organizationId,
-            scope,
             title: args.title,
             description: args.description,
             categoryId: resolvedCategoryId,
@@ -207,7 +148,6 @@ export const updateObjective = mutationWithRLS({
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         unit: v.optional(v.string()),
-        scope: v.optional(objectiveScopeValidator),
     },
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
@@ -226,10 +166,6 @@ export const updateObjective = mutationWithRLS({
             startValue: args.startValue,
             deadline: args.deadline,
         });
-
-        if (args.scope === 'organization' && !ctx.organizationId) {
-            throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
-        }
 
         // categoryId: an id sets/changes the category, null clears it, undefined leaves it as-is.
         let resolvedCategoryId: Id<'categories'> | undefined;
@@ -250,7 +186,6 @@ export const updateObjective = mutationWithRLS({
             startValue: number;
             deadline: number;
             unit: string;
-            scope: 'personal' | 'organization';
             updatedAt: number;
         }> = {
             updatedAt: Date.now(),
@@ -263,7 +198,6 @@ export const updateObjective = mutationWithRLS({
         if (args.startValue !== undefined) patch.startValue = args.startValue;
         if (args.deadline !== undefined) patch.deadline = args.deadline;
         if (args.unit !== undefined) patch.unit = args.unit;
-        if (args.scope !== undefined) patch.scope = args.scope;
 
         await ctx.db.patch('objectives', args.id, patch);
 
