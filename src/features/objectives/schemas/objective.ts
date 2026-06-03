@@ -1,13 +1,8 @@
 import { z } from 'zod';
-import { OBJECTIVE_STATUS, OBJECTIVE_SCOPE } from '@/convex/utils/constants';
+import { OBJECTIVE_STATUS } from '@/convex/utils/constants';
 import { isCategorySelectPlaceholder } from '@/features/objectives/lib/objective-category-selection';
 
 export const objectiveStatusSchema = z.enum([OBJECTIVE_STATUS.ACTIVE, OBJECTIVE_STATUS.COMPLETED]);
-
-export const objectiveScopeSchema = z.enum([
-    OBJECTIVE_SCOPE.PERSONAL,
-    OBJECTIVE_SCOPE.ORGANIZATION,
-]);
 
 const categorySelectionSchema = z
     .string()
@@ -27,7 +22,6 @@ export const objectiveSchema = z.object({
     startValue: z.number().optional().nullable(),
     deadline: z.number().optional().nullable(),
     status: objectiveStatusSchema.optional().nullable(),
-    scope: objectiveScopeSchema,
     unit: z.string().optional().nullable(),
 });
 
