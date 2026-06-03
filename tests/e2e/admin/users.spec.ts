@@ -1,5 +1,30 @@
 import { test, expect } from '../../fixtures/admin-test-base';
+import type { Page } from '@playwright/test';
 import { createTestUser } from '../../helpers/test-helpers';
+
+async function findAdminUserRow(page: Page, email: string) {
+    await page.goto('/dashboard/admin/users');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByTestId('admin-users-table')).toBeVisible({ timeout: 15000 });
+
+    const nextButton = page.getByRole('button', { name: /^next$|siguiente/i });
+
+    for (let attempt = 0; attempt < 30; attempt++) {
+        const row = page.getByTestId('table-row').filter({ hasText: email }).first();
+
+        try {
+            await expect(row).toBeVisible({ timeout: 2000 });
+            return row;
+        } catch {
+            if (!(await nextButton.isEnabled())) {
+                break;
+            }
+            await nextButton.click();
+        }
+    }
+
+    throw new Error(`Could not find admin user row for ${email}`);
+}
 
 test.describe('Admin Users', () => {
     test('only admin can access users page', { tag: ['@REQ-ADMIN-001'] }, async ({ page }) => {
@@ -100,14 +125,7 @@ test.describe('Admin Users', () => {
             const testUser = await createTestUser(testUserPage);
             await freshContext.close();
 
-            await page.goto('/dashboard/admin/users');
-            await page.waitForLoadState('domcontentloaded');
-
-            const usersTable = page.getByTestId('admin-users-table');
-            await expect(usersTable).toBeVisible({ timeout: 15000 });
-
-            const row = page.getByTestId('table-row').filter({ hasText: testUser.email }).first();
-            await expect(row).toBeVisible({ timeout: 10000 });
+            const row = await findAdminUserRow(page, testUser.email);
 
             await row.getByTestId('user-edit-open').click();
 
@@ -118,7 +136,7 @@ test.describe('Admin Users', () => {
             await expect(roleSelect).toBeVisible();
 
             await roleSelect.click();
-            const adminOption = page.locator('[role="option"][data-value="admin"]');
+            const adminOption = page.getByRole('option', { name: /^admin$/i });
             await expect(adminOption).toBeVisible({ timeout: 5000 });
             await adminOption.click();
 

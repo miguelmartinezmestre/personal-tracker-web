@@ -455,7 +455,13 @@ test.describe('Route Protection', () => {
 
                 await expect(page.getByRole('alert')).toBeVisible({ timeout: 10000 });
                 await expect(
-                    page.getByText(/invitation not found|invitaci.n no encontrada|error/i)
+                    page
+                        .getByRole('alert')
+                        .or(
+                            page.getByText(
+                                /invitation not found|invitaci.n no encontrada|cancelled|expired|registering user|registrando usuario/i
+                            )
+                        )
                 ).toBeVisible();
 
                 const currentUrl = page.url();

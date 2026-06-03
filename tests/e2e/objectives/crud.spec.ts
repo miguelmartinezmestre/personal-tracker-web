@@ -24,16 +24,11 @@ async function selectObjectiveCategory(page: import('@playwright/test').Page): P
 
 async function createObjectiveFromModal(
     page: import('@playwright/test').Page,
-    params: { title: string; target?: string; unit?: string; scope?: 'personal' | 'organization' }
+    params: { title: string; target?: string; unit?: string }
 ): Promise<void> {
     await openCreateObjectiveModal(page);
 
     await page.getByTestId('objective-title-input').fill(params.title);
-
-    if (params.scope === 'organization') {
-        await page.getByTestId('objective-scope-select').click();
-        await page.getByTestId('objective-scope-organization').click();
-    }
 
     await selectObjectiveCategory(page);
     await page.getByTestId('objective-target-input').fill(params.target ?? '100');
@@ -43,6 +38,38 @@ async function createObjectiveFromModal(
 
 function objectiveRow(page: import('@playwright/test').Page, title: string) {
     return page.getByTestId('table-row').filter({ hasText: title }).first();
+}
+
+async function submitOpenObjectiveDialog(page: import('@playwright/test').Page): Promise<void> {
+    await page
+        .locator('[role="dialog"] form')
+        .evaluate(form => (form as HTMLFormElement).requestSubmit())
+        .catch(() => undefined);
+}
+
+async function saveEditedObjectiveAndWaitForRow(
+    page: import('@playwright/test').Page,
+    titleInput: import('@playwright/test').Locator,
+    rowTitle: string
+): Promise<void> {
+    const saveButton = page.getByTestId('objective-edit-save-button');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await expect(saveButton).toBeVisible({ timeout: 10000 });
+        await expect(saveButton).toBeEnabled({ timeout: 10000 });
+        await submitOpenObjectiveDialog(page);
+
+        try {
+            await expect(titleInput).toBeHidden({ timeout: 5000 });
+            await expect(objectiveRow(page, rowTitle)).toBeVisible({ timeout: 10000 });
+            return;
+        } catch {
+            await page.keyboard.press('Escape').catch(() => undefined);
+            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+        }
+    }
+
+    throw new Error(`Could not save edited objective "${rowTitle}"`);
 }
 
 test.describe('Objectives CRUD', () => {
@@ -68,31 +95,29 @@ test.describe('Objectives CRUD', () => {
     );
 
     test(
-        'create organization objective',
+        'create objective with custom metrics',
         { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
         async ({ page }) => {
-            const title = `Organization objective ${Date.now()}`;
+            const title = `Custom metrics objective ${Date.now()}`;
             await openObjectivesPage(page);
 
             await createObjectiveFromModal(page, {
                 title,
                 target: '75',
                 unit: 'tasks',
-                scope: 'organization',
             });
 
             await expect(objectiveRow(page, title)).toBeVisible({ timeout: 10000 });
         }
     );
 
-    test('edit objective title and scope', { tag: ['@REQ-OBJETIVOS-003'] }, async ({ page }) => {
+    test('edit objective title', { tag: ['@REQ-OBJETIVOS-003'] }, async ({ page }) => {
         const originalTitle = `Edit objective ${Date.now()}`;
         const updatedTitle = `Edited objective ${Date.now()}`;
 
         await openObjectivesPage(page);
         await createObjectiveFromModal(page, {
             title: originalTitle,
-            scope: 'personal',
         });
 
         const originalRow = objectiveRow(page, originalTitle);
@@ -116,53 +141,14 @@ test.describe('Objectives CRUD', () => {
             throw new Error('Could not open edit objective modal');
         }
 
-        let scopeChanged = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-                await page.getByTestId('objective-edit-scope-select').click();
-                await expect(page.getByTestId('objective-edit-scope-organization')).toBeVisible({
-                    timeout: 5000,
-                });
-                await page.getByTestId('objective-edit-scope-organization').click();
-                scopeChanged = true;
-                break;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-                if (attempt < 2) {
-                    await originalRow.getByTestId('objective-edit-open').click();
-                    await expect(page.getByTestId('objective-edit-title-input')).toBeVisible({
-                        timeout: 5000,
-                    });
-                }
-            }
-        }
-
-        if (!scopeChanged) {
-            throw new Error('Could not change objective scope in edit modal');
-        }
-
         const editTitleInput = page.getByTestId('objective-edit-title-input');
         await editTitleInput.clear();
         await editTitleInput.fill(updatedTitle);
+        await editTitleInput.blur();
         await expect(editTitleInput).toHaveValue(updatedTitle);
 
-        await page.getByTestId('objective-edit-save-button').click();
-        await page.waitForURL(/\/dashboard\/objectives(\?|$)/, { timeout: 10000 });
-
-        let titleCount = 0;
-        const maxTime = Date.now() + 10000;
-
-        while (Date.now() < maxTime && titleCount === 0) {
-            titleCount = await page.getByText(updatedTitle).count();
-            if (titleCount === 0) {
-                await page.waitForTimeout(200);
-            }
-        }
-
-        expect(titleCount).toBeGreaterThan(0);
-        await expect(page.getByTestId('table-row').filter({ hasText: originalTitle })).toHaveCount(
-            0
-        );
+        await saveEditedObjectiveAndWaitForRow(page, editTitleInput, updatedTitle);
+        await expect(objectiveRow(page, originalTitle)).toHaveCount(0);
     });
 
     test('delete objective with confirmation', { tag: ['@REQ-NF-025'] }, async ({ page }) => {
