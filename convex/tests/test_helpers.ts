@@ -152,6 +152,7 @@ export async function createTestObjective(
         targetValue: number;
         currentValue?: number;
         startValue?: number;
+        /** @deprecated tenant model removed objective scope; accepted but ignored. */
         scope?: 'personal' | 'organization';
         status?: 'active' | 'completed';
         description?: string;
@@ -166,7 +167,6 @@ export async function createTestObjective(
         return await ctx.db.insert('objectives', {
             userId: options.userId,
             organizationId: options.organizationId,
-            scope: options.scope ?? 'personal',
             title: options.title,
             description: options.description,
             categoryId: options.categoryId,

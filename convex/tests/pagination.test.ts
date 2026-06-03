@@ -81,7 +81,7 @@ describe('convex pagination', () => {
         });
     });
 
-    test('getObjectivesByUser paginates', async () => {
+    test('getObjectives paginates', async () => {
         for (let i = 0; i < 15; i++) {
             await createTestObjective(t, {
                 userId,
@@ -92,10 +92,10 @@ describe('convex pagination', () => {
             });
         }
 
-        const page1 = await userIdentity.query(api.objectives.getObjectivesByUser, {
+        const page1 = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 5, cursor: null },
         });
-        const page2 = await userIdentity.query(api.objectives.getObjectivesByUser, {
+        const page2 = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 5, cursor: page1.continueCursor },
         });
 
@@ -213,12 +213,9 @@ describe('convex pagination', () => {
                 paginationOpts: { numItems: 5, cursor: invalidCursor },
             }
         );
-        const objectivesFromStaleCursor = await userIdentity.query(
-            api.objectives.getObjectivesByUser,
-            {
-                paginationOpts: { numItems: 5, cursor: invalidCursor },
-            }
-        );
+        const objectivesFromStaleCursor = await userIdentity.query(api.objectives.getObjectives, {
+            paginationOpts: { numItems: 5, cursor: invalidCursor },
+        });
         const notificationsFromStaleCursor = await userIdentity.query(
             api.notifications.getNotificationsByUser,
             {
@@ -260,7 +257,7 @@ describe('convex pagination', () => {
         expect(page1.isDone).toBe(false);
     });
 
-    test('getObjectivesByUser with status filter', async () => {
+    test('getObjectives with status filter', async () => {
         for (let i = 0; i < 5; i++) {
             await createTestObjective(t, {
                 userId,
@@ -282,12 +279,12 @@ describe('convex pagination', () => {
             });
         }
 
-        const activeResult = await userIdentity.query(api.objectives.getObjectivesByUser, {
+        const activeResult = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 50, cursor: null },
             status: 'active',
         });
 
-        const completedResult = await userIdentity.query(api.objectives.getObjectivesByUser, {
+        const completedResult = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 50, cursor: null },
             status: 'completed',
         });
@@ -300,7 +297,7 @@ describe('convex pagination', () => {
         expect(completedResult.page.length).toBe(3);
     });
 
-    test('getObjectivesByUser filters deadline ranges before pagination', async () => {
+    test('getObjectives filters deadline ranges before pagination', async () => {
         const now = Date.now();
         const today = now + 60 * 60 * 1000;
         const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
@@ -322,7 +319,7 @@ describe('convex pagination', () => {
             deadline: nextWeek,
         });
 
-        const todayResult = await userIdentity.query(api.objectives.getObjectivesByUser, {
+        const todayResult = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 10, cursor: null },
             deadlineRange: 'today',
         });
@@ -330,7 +327,7 @@ describe('convex pagination', () => {
         expect(todayResult.page.map(objective => objective.title)).toEqual(['Due today']);
     });
 
-    test('getOrganizationObjectives combines deadline range, status, and category before pagination', async () => {
+    test('getObjectives combines deadline range, status, and category before pagination', async () => {
         const now = Date.now();
         const dueToday = now + 60 * 60 * 1000;
         const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
@@ -347,7 +344,6 @@ describe('convex pagination', () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
-            scope: 'organization',
             title: 'Org launch due today',
             targetValue: 100,
             currentValue: 10,
@@ -358,7 +354,6 @@ describe('convex pagination', () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
-            scope: 'organization',
             title: 'Org launch next week',
             targetValue: 100,
             currentValue: 10,
@@ -369,7 +364,6 @@ describe('convex pagination', () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
-            scope: 'organization',
             title: 'Org finance due today',
             targetValue: 100,
             currentValue: 10,
@@ -380,7 +374,6 @@ describe('convex pagination', () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
-            scope: 'organization',
             title: 'Org completed launch due today',
             targetValue: 100,
             currentValue: 100,
@@ -389,7 +382,7 @@ describe('convex pagination', () => {
             deadline: dueToday,
         });
 
-        const result = await userIdentity.query(api.objectives.getOrganizationObjectives, {
+        const result = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 10, cursor: null },
             status: 'active',
             categoryId: launchCategoryId,
@@ -418,7 +411,7 @@ describe('convex pagination', () => {
             currentValue: 10,
         });
 
-        const result = await userIdentity.query(api.objectives.getObjectivesByUser, {
+        const result = await userIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 10, cursor: null },
             deadlineRange: 'overdue',
         });
@@ -426,7 +419,7 @@ describe('convex pagination', () => {
         expect(result.page.map(objective => objective.title)).toEqual(['Overdue objective']);
     });
 
-    test('searchObjectivesByUser returns matching authorized objectives without cursor pages', async () => {
+    test('searchObjectivesQuery returns matching authorized objectives without cursor pages', async () => {
         const otherUser = await createTestUser(t, {
             userId: 'other-user-pagination',
             email: 'other-pagination@example.com',
@@ -457,15 +450,20 @@ describe('convex pagination', () => {
             currentValue: 10,
         });
 
-        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const result = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'Revenue',
             limit: 50,
         });
 
-        expect(result.map(objective => objective.title)).toEqual(['Quarterly Revenue Goal']);
+        // Tenant model: search returns every matching objective in the active organization,
+        // regardless of which member created it.
+        expect(result.map(objective => objective.title).sort()).toEqual([
+            'Private Revenue Goal',
+            'Quarterly Revenue Goal',
+        ]);
     });
 
-    test('searchObjectivesByUser does not match objective descriptions', async () => {
+    test('searchObjectivesQuery does not match objective descriptions', async () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
@@ -476,7 +474,7 @@ describe('convex pagination', () => {
         });
 
         // Search is title-only, so a description-only token must not match.
-        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const result = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'rare-description-token',
             limit: 50,
         });
@@ -484,7 +482,7 @@ describe('convex pagination', () => {
         expect(result).toEqual([]);
     });
 
-    test('searchObjectivesByUser matches only by objective title', async () => {
+    test('searchObjectivesQuery matches only by objective title', async () => {
         const categoryId = await userIdentity.mutation(api.categories.createCategory, {
             name: 'RareCategoryToken',
             color: '#10b981',
@@ -499,15 +497,15 @@ describe('convex pagination', () => {
             currentValue: 10,
         });
 
-        const titleResult = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const titleResult = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'Distinctive',
             limit: 50,
         });
-        const categoryResult = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const categoryResult = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'RareCategoryToken',
             limit: 50,
         });
-        const descriptionResult = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const descriptionResult = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'rare-description-token',
             limit: 50,
         });
@@ -518,7 +516,7 @@ describe('convex pagination', () => {
         expect(descriptionResult).toEqual([]);
     });
 
-    test('searchObjectivesByUser applies deadlineRange before the bounded search result limit', async () => {
+    test('searchObjectivesQuery applies deadlineRange before the bounded search result limit', async () => {
         const now = Date.now();
         const tomorrow = now + 24 * 60 * 60 * 1000;
         const today = now + 60 * 60 * 1000;
@@ -542,7 +540,7 @@ describe('convex pagination', () => {
             deadline: today,
         });
 
-        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const result = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'Bounded Search Contract',
             deadlineRange: 'today',
             limit: 50,
@@ -553,7 +551,7 @@ describe('convex pagination', () => {
         );
     });
 
-    test('searchObjectivesByUser finds matches beyond the old candidate scan window', async () => {
+    test('searchObjectivesQuery finds matches beyond the old candidate scan window', async () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
@@ -572,7 +570,7 @@ describe('convex pagination', () => {
             });
         }
 
-        const result = await userIdentity.query(api.objectives.searchObjectivesByUser, {
+        const result = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'Needle Objective',
             limit: 50,
         });
@@ -582,7 +580,7 @@ describe('convex pagination', () => {
         ]);
     });
 
-    test('searchOrganizationObjectives matches only by objective title', async () => {
+    test('searchObjectivesQuery matches only by objective title', async () => {
         const categoryId = await userIdentity.mutation(api.categories.createCategory, {
             name: 'OrganizationCategoryToken',
             color: '#10b981',
@@ -590,7 +588,6 @@ describe('convex pagination', () => {
         await createTestObjective(t, {
             userId,
             organizationId: _organizationId,
-            scope: 'organization',
             title: 'Org searchable title',
             description: 'Includes organization-description-token',
             categoryId,
@@ -598,24 +595,18 @@ describe('convex pagination', () => {
             currentValue: 10,
         });
 
-        const titleResult = await userIdentity.query(api.objectives.searchOrganizationObjectives, {
+        const titleResult = await userIdentity.query(api.objectives.searchObjectivesQuery, {
             search: 'searchable',
             limit: 50,
         });
-        const descriptionResult = await userIdentity.query(
-            api.objectives.searchOrganizationObjectives,
-            {
-                search: 'organization-description-token',
-                limit: 50,
-            }
-        );
-        const categoryResult = await userIdentity.query(
-            api.objectives.searchOrganizationObjectives,
-            {
-                search: 'OrganizationCategoryToken',
-                limit: 50,
-            }
-        );
+        const descriptionResult = await userIdentity.query(api.objectives.searchObjectivesQuery, {
+            search: 'organization-description-token',
+            limit: 50,
+        });
+        const categoryResult = await userIdentity.query(api.objectives.searchObjectivesQuery, {
+            search: 'OrganizationCategoryToken',
+            limit: 50,
+        });
 
         expect(titleResult.map(objective => objective.title)).toEqual(['Org searchable title']);
         // Search is title-only: description and category name no longer match.

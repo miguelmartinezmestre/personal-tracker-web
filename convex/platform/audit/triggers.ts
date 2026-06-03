@@ -31,7 +31,6 @@ function sanitizeObjective(
         _id: toAuditPrimitive(objectiveRecord._id),
         organizationId: toAuditPrimitive(objectiveRecord.organizationId),
         userId: toAuditPrimitive(objectiveRecord.userId),
-        scope: toAuditPrimitive(objectiveRecord.scope),
         status: toAuditPrimitive(objectiveRecord.status),
         categoryId: toAuditPrimitive(objectiveRecord.categoryId),
         targetValue: toAuditPrimitive(objectiveRecord.targetValue),

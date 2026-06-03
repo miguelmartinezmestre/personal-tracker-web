@@ -73,7 +73,6 @@ describe('achievements calculations', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -95,7 +94,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -134,7 +132,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -174,7 +171,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -214,7 +210,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -275,7 +270,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -316,7 +310,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -357,7 +350,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -418,7 +410,6 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Objective 1',
                     targetValue: 100,
                     currentValue: 0,
@@ -432,7 +423,6 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Objective 2',
                     targetValue: 50,
                     currentValue: 0,
@@ -491,7 +481,6 @@ describe('achievements calculations', async () => {
                 const id = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Test Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -560,7 +549,6 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'organization',
                     title: 'User1 Objective',
                     targetValue: 100,
                     currentValue: 0,
@@ -574,7 +562,6 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: user2Data.docId,
                     organizationId: organizationId,
-                    scope: 'organization',
                     title: 'User2 Objective',
                     targetValue: 50,
                     currentValue: 0,
@@ -623,7 +610,6 @@ describe('achievements calculations', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'organization',
                     title: 'Org Objective',
                     targetValue: 100,
                     currentValue: 0,

@@ -51,18 +51,10 @@ export async function createRlsRules(
     const hasActiveOrgAdminAccessToUser = async (targetUserId: Id<'user'> | string) => {
         return isOrgAdmin && (await isActiveOrganizationMember(targetUserId));
     };
-    const canAccessObjective = (objective: {
-        userId: Id<'user'>;
-        organizationId: Id<'organization'>;
-        scope?: string;
-    }) => {
+    const canAccessObjective = (objective: { organizationId: Id<'organization'> }) => {
         if (isGlobalAdmin) return true;
-        if (objective.scope === 'organization') {
-            return isActiveOrganization(objective.organizationId);
-        }
-
-        // Personal scope: only the owner can access their own personal objectives
-        return objective.userId === userId && isActiveOrganization(objective.organizationId);
+        // Tenant model: any member of the active organization can access its objectives.
+        return isActiveOrganization(objective.organizationId);
     };
 
     return {

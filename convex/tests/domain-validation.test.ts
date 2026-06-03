@@ -276,7 +276,6 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Active Test Objective',
                     targetValue: 100,
                     currentValue: 50,
@@ -302,7 +301,6 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Completed Test Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -327,7 +325,6 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Active Test Objective',
                     targetValue: 100,
                     currentValue: 50,
@@ -355,7 +352,6 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Completed Test Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -403,7 +399,6 @@ describe('Domain Validation Tests', () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Active Test Objective',
                     targetValue: 100,
                     currentValue: 50,

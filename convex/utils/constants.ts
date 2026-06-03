@@ -27,13 +27,6 @@ export const OBJECTIVE_STATUS = {
 
 export type ObjectiveStatus = (typeof OBJECTIVE_STATUS)[keyof typeof OBJECTIVE_STATUS];
 
-export const OBJECTIVE_SCOPE = {
-    PERSONAL: 'personal',
-    ORGANIZATION: 'organization',
-} as const;
-
-export type ObjectiveScope = (typeof OBJECTIVE_SCOPE)[keyof typeof OBJECTIVE_SCOPE];
-
 export const NOTIFICATION_TYPE = {
     DEADLINE: 'deadline',
     PROGRESS: 'progress',

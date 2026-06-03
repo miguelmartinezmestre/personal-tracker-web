@@ -30,17 +30,16 @@ export function useObjectiveListState() {
     const deadlineRangeFilter =
         filters.deadlineRange !== 'all' ? (filters.deadlineRange as DeadlineRange) : undefined;
 
-    const personalPagination = useServerPagination(DEFAULT_PAGE_SIZE);
-    const { paginationOpts: personalPaginationOpts, reset: resetPersonalPagination } =
-        personalPagination;
+    const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const { paginationOpts, reset: resetPagination } = pagination;
 
-    const personalQuery = useQuery(
+    const listQuery = useQuery(
         convexQuery(
-            api.objectives.getObjectivesByUser,
+            api.objectives.getObjectives,
             hasSearch
                 ? 'skip'
                 : {
-                      paginationOpts: personalPaginationOpts,
+                      paginationOpts,
                       status: statusFilter,
                       categoryId: categoryFilter,
                       deadlineRange: deadlineRangeFilter,
@@ -48,42 +47,9 @@ export function useObjectiveListState() {
         )
     );
 
-    const personalSearchQuery = useQuery(
+    const searchQuery = useQuery(
         convexQuery(
-            api.objectives.searchObjectivesByUser,
-            hasSearch
-                ? {
-                      search: searchText,
-                      limit: DEFAULT_PAGE_SIZE,
-                      status: statusFilter,
-                      categoryId: categoryFilter,
-                      deadlineRange: deadlineRangeFilter,
-                  }
-                : 'skip'
-        )
-    );
-
-    const organizationPagination = useServerPagination(DEFAULT_PAGE_SIZE);
-    const { paginationOpts: organizationPaginationOpts, reset: resetOrganizationPagination } =
-        organizationPagination;
-
-    const organizationQuery = useQuery(
-        convexQuery(
-            api.objectives.getOrganizationObjectives,
-            hasSearch
-                ? 'skip'
-                : {
-                      paginationOpts: organizationPaginationOpts,
-                      status: statusFilter,
-                      categoryId: categoryFilter,
-                      deadlineRange: deadlineRangeFilter,
-                  }
-        )
-    );
-
-    const organizationSearchQuery = useQuery(
-        convexQuery(
-            api.objectives.searchOrganizationObjectives,
+            api.objectives.searchObjectivesQuery,
             hasSearch
                 ? {
                       search: searchText,
@@ -98,19 +64,13 @@ export function useObjectiveListState() {
 
     const { categoryOptions, categoryNameById } = useObjectiveCategoryOptions();
 
-    const personalContinueCursor = personalQuery.data?.continueCursor ?? null;
-    const personalPageIsDone = personalQuery.data?.isDone ?? false;
-    const personalHasNextPage = Boolean(personalContinueCursor) && !personalPageIsDone;
-    const organizationContinueCursor = organizationQuery.data?.continueCursor ?? null;
-    const organizationPageIsDone = organizationQuery.data?.isDone ?? false;
-    const organizationHasNextPage = Boolean(organizationContinueCursor) && !organizationPageIsDone;
+    const continueCursor = listQuery.data?.continueCursor ?? null;
+    const pageIsDone = listQuery.data?.isDone ?? false;
+    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const personalObjectives: Doc<'objectives'>[] = hasSearch
-        ? (personalSearchQuery.data ?? [])
-        : (personalQuery.data?.page ?? []);
-    const organizationObjectives: Doc<'objectives'>[] = hasSearch
-        ? (organizationSearchQuery.data ?? [])
-        : (organizationQuery.data?.page ?? []);
+    const objectives: Doc<'objectives'>[] = hasSearch
+        ? (searchQuery.data ?? [])
+        : (listQuery.data?.page ?? []);
 
     const handleFiltersChange = (nextFilters: FilterOptions) => {
         const shouldResetPagination =
@@ -120,8 +80,7 @@ export function useObjectiveListState() {
             nextFilters.search !== filters.search;
 
         if (shouldResetPagination) {
-            resetPersonalPagination();
-            resetOrganizationPagination();
+            resetPagination();
         }
 
         setFilters(nextFilters);
@@ -133,23 +92,11 @@ export function useObjectiveListState() {
         categories: categoryOptions,
         categoryNameById,
         handleFiltersChange,
-        personal: {
-            objectives: personalObjectives,
-            pagination: personalPagination,
-            hasNextPage: personalHasNextPage,
-            isLoading: hasSearch ? personalSearchQuery.isLoading : personalQuery.isLoading,
-            isFetching: personalQuery.isFetching,
-            onNextPage: () =>
-                personalPagination.nextPage(personalContinueCursor, personalPageIsDone),
-        },
-        organization: {
-            objectives: organizationObjectives,
-            pagination: organizationPagination,
-            hasNextPage: organizationHasNextPage,
-            isLoading: hasSearch ? organizationSearchQuery.isLoading : organizationQuery.isLoading,
-            isFetching: organizationQuery.isFetching,
-            onNextPage: () =>
-                organizationPagination.nextPage(organizationContinueCursor, organizationPageIsDone),
-        },
+        objectives,
+        pagination,
+        hasNextPage,
+        isLoading: hasSearch ? searchQuery.isLoading : listQuery.isLoading,
+        isFetching: listQuery.isFetching,
+        onNextPage: () => pagination.nextPage(continueCursor, pageIsDone),
     };
 }

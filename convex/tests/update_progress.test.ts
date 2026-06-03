@@ -59,7 +59,6 @@ describe('convex update_progress', () => {
             return await ctx.db.insert('objectives', {
                 userId: userId,
                 organizationId: organizationId,
-                scope: 'personal',
                 title: 'Test Objective',
                 targetValue: 100,
                 currentValue: 50,

@@ -412,7 +412,8 @@
         "manageOrganizations": "Manage organizations",
         "activeOrganization": "Active organization",
         "current": "Current",
-        "switchOrganization": "Switch to:"
+        "switchOrganization": "Switch to:",
+        "personal": "Personal"
     },
     "ThemeSwitcher": {
         "toggle": "Change theme",
@@ -475,15 +476,6 @@
         "saveObjective": "Save Objective",
         "category": "Category",
         "unit": "Unit",
-        "scope": "Scope",
-        "scopeOptions": {
-            "personal": "Personal",
-            "organization": "Organization"
-        },
-        "sections": {
-            "personal": "My objectives",
-            "organization": "Organization objectives"
-        },
         "objectiveType": "Objective type",
         "objectiveTypeDescription": "Select how this objective is measured.",
         "objectiveTypeOptions": {

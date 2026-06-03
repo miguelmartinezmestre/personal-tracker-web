@@ -13,7 +13,6 @@ export const normalizeObjective = (objective: Doc<'objectives'>): Objective => {
         startValue: objective.startValue ?? 0,
         deadline: objective.deadline ?? null,
         status: objective.status,
-        scope: objective.scope,
         unit: objective.unit ?? null,
     });
 };

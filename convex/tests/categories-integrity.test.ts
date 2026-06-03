@@ -64,7 +64,6 @@ describe('categories integrity', async () => {
                 title: 'Test Objective',
                 categoryId,
                 targetValue: 100,
-                scope: 'personal',
             });
 
             await expect(
@@ -346,7 +345,6 @@ describe('categories integrity', async () => {
                 title: 'Test Objective',
                 categoryId,
                 targetValue: 100,
-                scope: 'personal',
             });
 
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
@@ -364,7 +362,6 @@ describe('categories integrity', async () => {
                 title: 'Query Objective',
                 categoryId,
                 targetValue: 100,
-                scope: 'personal',
             });
 
             const objectives = await userIdentity.run(async ctx =>
@@ -390,7 +387,6 @@ describe('categories integrity', async () => {
                 title: 'Test Objective',
                 categoryId,
                 targetValue: 100,
-                scope: 'personal',
             });
 
             await userIdentity.mutation(api.categories.updateCategory, {
@@ -446,7 +442,6 @@ describe('categories integrity', async () => {
                 title: 'Objective With Team Category',
                 categoryId,
                 targetValue: 100,
-                scope: 'personal',
             });
 
             const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));

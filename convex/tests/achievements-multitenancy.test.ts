@@ -130,13 +130,12 @@ describe('achievements multi-tenancy security', async () => {
             expect(progress).toBe(2);
         });
 
-        test('when no organization context, should only show personal objectives', async () => {
+        test('lists every objective that belongs to the organization', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('objectives', {
                     userId: userAId,
                     organizationId: orgAId,
-                    scope: 'personal',
-                    title: 'Personal Objective',
+                    title: 'Objective One',
                     targetValue: 100,
                     currentValue: 0,
                     status: 'active',
@@ -149,8 +148,7 @@ describe('achievements multi-tenancy security', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userAId,
                     organizationId: orgAId,
-                    scope: 'organization',
-                    title: 'Org Scoped Objective',
+                    title: 'Objective Two',
                     targetValue: 100,
                     currentValue: 0,
                     status: 'active',
@@ -159,16 +157,14 @@ describe('achievements multi-tenancy security', async () => {
                 });
             });
 
-            const personalObjectives = await t.run(async ctx => {
+            const orgObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userAId))
-                    .filter(q => q.eq(q.field('scope'), 'personal'))
+                    .withIndex('by_organization', q => q.eq('organizationId', orgAId))
                     .collect();
             });
 
-            expect(personalObjectives.length).toBe(1);
-            expect(personalObjectives[0]?.scope).toBe('personal');
+            expect(orgObjectives.length).toBe(2);
         });
     });
 
@@ -459,14 +455,13 @@ describe('achievements multi-tenancy security', async () => {
         });
     });
 
-    describe('personal scope objectives', () => {
-        test('personal objectives should be visible when no org context', async () => {
-            const personalObjectiveId = await t.run(async ctx => {
+    describe('organization tenant scoping', () => {
+        test('objectives are listed by organization', async () => {
+            const objectiveId = await t.run(async ctx => {
                 return await ctx.db.insert('objectives', {
                     userId: userAId,
                     organizationId: orgAId,
-                    scope: 'personal',
-                    title: 'Personal Objective',
+                    title: 'Org A Objective',
                     targetValue: 100,
                     currentValue: 0,
                     status: 'active',
@@ -475,25 +470,23 @@ describe('achievements multi-tenancy security', async () => {
                 });
             });
 
-            const personalObjectives = await t.run(async ctx => {
+            const orgObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userAId))
-                    .filter(q => q.eq(q.field('scope'), 'personal'))
+                    .withIndex('by_organization', q => q.eq('organizationId', orgAId))
                     .collect();
             });
 
-            expect(personalObjectives.length).toBe(1);
-            expect(personalObjectives[0]?._id).toBe(personalObjectiveId);
+            expect(orgObjectives.length).toBe(1);
+            expect(orgObjectives[0]?._id).toBe(objectiveId);
         });
 
-        test('organization-scoped objectives should not appear in personal context', async () => {
+        test('objectives from another organization are not listed', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('objectives', {
                     userId: userAId,
-                    organizationId: orgAId,
-                    scope: 'organization',
-                    title: 'Org Scoped Objective',
+                    organizationId: orgBId,
+                    title: 'Org B Objective',
                     targetValue: 100,
                     currentValue: 0,
                     status: 'active',
@@ -502,15 +495,14 @@ describe('achievements multi-tenancy security', async () => {
                 });
             });
 
-            const personalObjectives = await t.run(async ctx => {
+            const orgAObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userAId))
-                    .filter(q => q.eq(q.field('scope'), 'personal'))
+                    .withIndex('by_organization', q => q.eq('organizationId', orgAId))
                     .collect();
             });
 
-            expect(personalObjectives.length).toBe(0);
+            expect(orgAObjectives.length).toBe(0);
         });
     });
 });

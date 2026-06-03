@@ -270,7 +270,6 @@ describe('convex achievements', async () => {
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
-                scope: 'organization',
                 title: 'Organization Objective',
                 targetValue: 100,
                 currentValue: 0,
@@ -355,7 +354,6 @@ describe('convex achievements', async () => {
                 return await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Early Bird Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -386,7 +384,6 @@ describe('convex achievements', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'No Deadline Objective',
                     targetValue: 100,
                     currentValue: 100,
@@ -418,7 +415,6 @@ describe('convex achievements', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: organizationId,
-                    scope: 'personal',
                     title: 'Late Objective',
                     targetValue: 100,
                     currentValue: 100,

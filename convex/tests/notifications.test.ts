@@ -158,7 +158,6 @@ describe('convex notifications', async () => {
                 const tempId = await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'temp',
                     targetValue: 1,
                     currentValue: 0,
@@ -532,7 +531,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Due Today',
                     targetValue: 100,
                     currentValue: 50,
@@ -557,7 +555,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Overdue',
                     targetValue: 100,
                     currentValue: 50,
@@ -585,7 +582,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Disabled Deadline Preference',
                     targetValue: 100,
                     currentValue: 50,
@@ -619,7 +615,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Due Soon',
                     targetValue: 100,
                     currentValue: 50,
@@ -644,7 +639,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Completed',
                     targetValue: 100,
                     currentValue: 100,
@@ -669,7 +663,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Completed Again',
                     targetValue: 100,
                     currentValue: 100,
@@ -694,7 +687,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'No Deadline',
                     targetValue: 100,
                     currentValue: 50,
@@ -718,7 +710,6 @@ describe('convex notifications', async () => {
                 await ctx.db.insert('objectives', {
                     userId: userId,
                     organizationId: userOrganizationId,
-                    scope: 'personal',
                     title: 'Due Today',
                     targetValue: 100,
                     currentValue: 50,

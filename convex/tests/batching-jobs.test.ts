@@ -480,7 +480,6 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     const id = await ctx.db.insert('objectives', {
                         userId,
                         organizationId,
-                        scope: 'personal',
                         title: `Objective ${i}`,
                         targetValue: 100,
                         currentValue: 0,
@@ -583,7 +582,6 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                     const id = await ctx.db.insert('objectives', {
                         userId,
                         organizationId,
-                        scope: 'organization',
                         title: `Org Objective ${i}`,
                         targetValue: 100,
                         currentValue: 0,

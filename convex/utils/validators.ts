@@ -1,7 +1,6 @@
 import { v } from 'convex/values';
 import {
     OBJECTIVE_STATUS,
-    OBJECTIVE_SCOPE,
     NOTIFICATION_TYPE,
     ACHIEVEMENT_TYPE,
     ACHIEVEMENT_CATEGORY,
@@ -11,11 +10,6 @@ import {
 export const objectiveStatusValidator = v.union(
     v.literal(OBJECTIVE_STATUS.ACTIVE),
     v.literal(OBJECTIVE_STATUS.COMPLETED)
-);
-
-export const objectiveScopeValidator = v.union(
-    v.literal(OBJECTIVE_SCOPE.PERSONAL),
-    v.literal(OBJECTIVE_SCOPE.ORGANIZATION)
 );
 
 export const notificationTypeValidator = v.union(
