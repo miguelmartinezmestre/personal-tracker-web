@@ -853,7 +853,9 @@
         "deleteAccountEmailMismatch": "El correo electrónico no coincide",
         "deleteAccountSuccess": "Tu cuenta ha sido eliminada. Redireccionando...",
         "deleteAccountPasswordLabel": "Ingresa tu contraseña para confirmar",
-        "deleteAccountPasswordPlaceholder": "Tu contraseña"
+        "deleteAccountPasswordPlaceholder": "Tu contraseña",
+        "deleteAccountProtectedTitle": "Cuenta protegida",
+        "deleteAccountProtectedDescription": "La cuenta que configuró esta plataforma no puede eliminarse. Transfiere las responsabilidades de administración a otro usuario antes de modificar esta cuenta."
     },
     "Admin": {
         "title": "Panel de Administración",
@@ -912,6 +914,7 @@
                 "cancel": "Cancelar",
                 "banReasonPrompt": "Razón del ban (opcional):"
             },
+            "setupUserDeleteDisabled": "El usuario que configuró la plataforma no puede eliminarse.",
             "placeholders": {
                 "searchByEmail": "Buscar por email..."
             },

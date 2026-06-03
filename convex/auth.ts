@@ -131,11 +131,32 @@ function throwPersonalOrganizationUpdateRestricted(): never {
     });
 }
 
+function throwSetupUserDeleteForbidden(): never {
+    throw new APIError('FORBIDDEN', {
+        code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
+        message: 'The platform setup user cannot be deleted.',
+    });
+}
+
+async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'user'>) {
+    const isSetupUser: boolean = await (ctx as RunnableCtx).runQuery(
+        internal.setup.isPlatformSetupUserInternal,
+        { userId }
+    );
+
+    if (isSetupUser) {
+        throwSetupUserDeleteForbidden();
+    }
+}
+
 const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
     baseURL: env.BETTER_AUTH_URL,
     user: {
         deleteUser: {
             enabled: true,
+            beforeDelete: async user => {
+                await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
+            },
         },
     },
     emailAndPassword: {
@@ -167,6 +188,14 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
                             activeOrganizationId,
                         },
                     };
+                },
+            },
+        },
+        user: {
+            delete: {
+                before: async user => {
+                    await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
+                    return true;
                 },
             },
         },

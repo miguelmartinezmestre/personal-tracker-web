@@ -853,7 +853,9 @@
         "deleteAccountEmailMismatch": "Email does not match",
         "deleteAccountSuccess": "Your account has been deleted. Redirecting...",
         "deleteAccountPasswordLabel": "Enter your password to confirm",
-        "deleteAccountPasswordPlaceholder": "Your password"
+        "deleteAccountPasswordPlaceholder": "Your password",
+        "deleteAccountProtectedTitle": "Account Protected",
+        "deleteAccountProtectedDescription": "The account that configured this platform cannot be deleted. Transfer admin responsibilities to another user before making changes to this account."
     },
     "Admin": {
         "title": "Admin Panel",
@@ -912,6 +914,7 @@
                 "cancel": "Cancel",
                 "banReasonPrompt": "Ban reason (optional):"
             },
+            "setupUserDeleteDisabled": "The platform setup user cannot be deleted.",
             "placeholders": {
                 "searchByEmail": "Search by email..."
             },

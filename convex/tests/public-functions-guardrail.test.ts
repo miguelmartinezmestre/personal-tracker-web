@@ -26,6 +26,8 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
     'convex/sessions.ts:invalidateAllOtherSessions:mutation',
     'convex/setup.ts:isPlatformSetUp:query',
     'convex/setup.ts:getPublicPlatformSettings:query',
+    'convex/setup.ts:isCurrentUserPlatformSetupUser:query',
+    'convex/setup.ts:getPlatformSetupUserId:query',
     'convex/setup.ts:completeSetup:mutation',
     'convex/setup.ts:ensureTestOrganization:mutation',
 ]);

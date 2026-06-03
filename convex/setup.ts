@@ -4,10 +4,13 @@ import { internalMutation, internalQuery, mutation, query } from './_generated/s
 import {
     completePlatformSetup,
     ensureTestOrganizationForUser,
+    getPlatformSetupUserId as resolvePlatformSetupUserId,
     getPublicSettings,
     isPlatformConfigured,
+    isPlatformSetupUser,
     requireAdminUser,
 } from './platform/setup/bootstrap';
+import { requireAdmin } from './utils/requiredAdmin';
 import {
     completeSetupArgsValidator,
     ensureTestOrganizationInternalArgsValidator,
@@ -52,6 +55,41 @@ export const completeSetup = mutation({
         }
 
         return await completePlatformSetup(ctx, userId, args);
+    },
+});
+
+export const isPlatformSetupUserInternal = internalQuery({
+    args: { userId: v.id('user') },
+    returns: v.boolean(),
+    handler: async (ctx, args) => {
+        return await isPlatformSetupUser(ctx, args.userId);
+    },
+});
+
+export const isCurrentUserPlatformSetupUser = query({
+    args: {},
+    returns: v.boolean(),
+    handler: async ctx => {
+        const identity = await getAuthUserIdentity(ctx);
+        if (!identity) {
+            return false;
+        }
+
+        const userId = ctx.db.normalizeId('user', identity.userId);
+        if (!userId) {
+            return false;
+        }
+
+        return await isPlatformSetupUser(ctx, userId);
+    },
+});
+
+export const getPlatformSetupUserId = query({
+    args: {},
+    returns: v.union(v.id('user'), v.null()),
+    handler: async ctx => {
+        await requireAdmin(ctx);
+        return await resolvePlatformSetupUserId(ctx);
     },
 });
 
