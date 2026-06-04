@@ -80,103 +80,41 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
 
     if (filters.deadlineRange) {
         const bounds = getDeadlineRangeBounds(filters.deadlineRange);
+        let query = ctx.db.query('objectives').withIndex('by_organization_deadline', q => {
+            const indexed = q.eq('organizationId', organizationId);
+            return bounds.gte !== undefined
+                ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
+                : indexed.lt('deadline', bounds.lt);
+        });
 
-        if (filters.status && filters.categoryId) {
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_status_categoryId_deadline', q => {
-                    const indexed = q
-                        .eq('organizationId', organizationId)
-                        .eq('status', filters.status!)
-                        .eq('categoryId', filters.categoryId!);
-                    return bounds.gte !== undefined
-                        ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                        : indexed.lt('deadline', bounds.lt);
-                })
-                .order('desc')
-                .paginate(paginationOpts);
+        const status = filters.status;
+        if (status) {
+            query = query.filter(q => q.eq(q.field('status'), status));
         }
 
-        if (filters.status) {
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_status_deadline', q => {
-                    const indexed = q
-                        .eq('organizationId', organizationId)
-                        .eq('status', filters.status!);
-                    return bounds.gte !== undefined
-                        ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                        : indexed.lt('deadline', bounds.lt);
-                })
-                .order('desc')
-                .paginate(paginationOpts);
+        const categoryId = filters.categoryId;
+        if (categoryId) {
+            query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
         }
 
-        if (filters.categoryId) {
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_categoryId_deadline', q => {
-                    const indexed = q
-                        .eq('organizationId', organizationId)
-                        .eq('categoryId', filters.categoryId!);
-                    return bounds.gte !== undefined
-                        ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                        : indexed.lt('deadline', bounds.lt);
-                })
-                .order('desc')
-                .paginate(paginationOpts);
-        }
-
-        return await ctx.db
-            .query('objectives')
-            .withIndex('by_organization_deadline', q => {
-                const indexed = q.eq('organizationId', organizationId);
-                return bounds.gte !== undefined
-                    ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                    : indexed.lt('deadline', bounds.lt);
-            })
-            .order('desc')
-            .paginate(paginationOpts);
+        return await query.order('desc').paginate(paginationOpts);
     }
 
-    if (filters.status) {
-        if (filters.categoryId) {
-            return await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_status_categoryId', q =>
-                    q
-                        .eq('organizationId', organizationId)
-                        .eq('status', filters.status!)
-                        .eq('categoryId', filters.categoryId!)
-                )
-                .order('desc')
-                .paginate(paginationOpts);
-        }
-
-        return await ctx.db
-            .query('objectives')
-            .withIndex('by_organization_status', q =>
-                q.eq('organizationId', organizationId).eq('status', filters.status!)
-            )
-            .order('desc')
-            .paginate(paginationOpts);
-    }
-
-    if (filters.categoryId) {
-        return await ctx.db
-            .query('objectives')
-            .withIndex('by_organization_categoryId', q =>
-                q.eq('organizationId', organizationId).eq('categoryId', filters.categoryId!)
-            )
-            .order('desc')
-            .paginate(paginationOpts);
-    }
-
-    return await ctx.db
+    let query = ctx.db
         .query('objectives')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-        .order('desc')
-        .paginate(paginationOpts);
+        .withIndex('by_organization', q => q.eq('organizationId', organizationId));
+
+    const status = filters.status;
+    if (status) {
+        query = query.filter(q => q.eq(q.field('status'), status));
+    }
+
+    const categoryId = filters.categoryId;
+    if (categoryId) {
+        query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
+    }
+
+    return await query.order('desc').paginate(paginationOpts);
 }
 
 export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSearchArgs) {

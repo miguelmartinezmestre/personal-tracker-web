@@ -151,7 +151,7 @@ export async function recomputeObjectiveFromProgress(
     while (!isDone) {
         const page = await ctx.db
             .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', objectiveId))
+            .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
             .paginate({ numItems: 500, cursor });
 
         for (const update of page.page) {

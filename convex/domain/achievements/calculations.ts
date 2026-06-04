@@ -47,7 +47,7 @@ async function fetchUpdatesForObjective(
 ): Promise<Doc<'progressUpdates'>[]> {
     return await ctx.db
         .query('progressUpdates')
-        .withIndex('by_objective', q => q.eq('objective', objectiveId))
+        .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
         .collect();
 }
 
@@ -58,7 +58,8 @@ async function fetchUpdatesForUserObjective(
 ): Promise<Doc<'progressUpdates'>[]> {
     return await ctx.db
         .query('progressUpdates')
-        .withIndex('by_user_objective', q => q.eq('userId', userId).eq('objective', objectiveId))
+        .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+        .filter(q => q.eq(q.field('userId'), userId))
         .collect();
 }
 

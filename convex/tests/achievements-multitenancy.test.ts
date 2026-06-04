@@ -120,8 +120,9 @@ describe('achievements multi-tenancy security', async () => {
             const progress = await t.run(async ctx => {
                 const objectivesInOrgA = await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userAId))
-                    .filter(q => q.eq(q.field('organizationId'), orgAId))
+                    .withIndex('by_user_organization', q =>
+                        q.eq('userId', userAId).eq('organizationId', orgAId)
+                    )
                     .collect();
 
                 return objectivesInOrgA.length;
@@ -354,16 +355,18 @@ describe('achievements multi-tenancy security', async () => {
             const orgAObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userAId))
-                    .filter(q => q.eq(q.field('organizationId'), orgAId))
+                    .withIndex('by_user_organization', q =>
+                        q.eq('userId', userAId).eq('organizationId', orgAId)
+                    )
                     .collect();
             });
 
             const orgBObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user', q => q.eq('userId', userAId))
-                    .filter(q => q.eq(q.field('organizationId'), orgBId))
+                    .withIndex('by_user_organization', q =>
+                        q.eq('userId', userAId).eq('organizationId', orgBId)
+                    )
                     .collect();
             });
 

@@ -107,9 +107,8 @@ export const getObjectivesWithMostProgress = queryWithRLS({
 
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_organization_status', q =>
-                q.eq('organizationId', organizationId).eq('status', 'active')
-            )
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+            .filter(q => q.eq(q.field('status'), 'active'))
             .take(fetchLimit);
 
         const objectivesWithProgress = objectives
@@ -158,13 +157,13 @@ export const getUpcomingDeadlines = queryWithRLS({
 
         const objectives = await ctx.db
             .query('objectives')
-            .withIndex('by_organization_status_deadline', q =>
+            .withIndex('by_organization_deadline', q =>
                 q
                     .eq('organizationId', organizationId)
-                    .eq('status', 'active')
                     .gt('deadline', now - 1)
                     .lt('deadline', futureLimit + 1)
             )
+            .filter(q => q.eq(q.field('status'), 'active'))
             .take(50);
 
         const upcomingDeadlines = objectives
@@ -218,18 +217,15 @@ export const getRecentActivity = queryWithRLS({
 
         const recentObjectivesPromise = ctx.db
             .query('objectives')
-            .withIndex('by_organization_createdAt', q =>
-                q.eq('organizationId', organizationId).gte('createdAt', startDate)
-            )
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+            .filter(q => q.gte(q.field('createdAt'), startDate))
             .take(100);
 
         const recentlyCompletedPromise = ctx.db
             .query('objectives')
-            .withIndex('by_organization_status_updatedAt', q =>
-                q
-                    .eq('organizationId', organizationId)
-                    .eq('status', 'completed')
-                    .gte('updatedAt', startDate)
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+            .filter(q =>
+                q.and(q.eq(q.field('status'), 'completed'), q.gte(q.field('updatedAt'), startDate))
             )
             .take(100);
 

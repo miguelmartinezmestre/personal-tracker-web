@@ -139,7 +139,7 @@ describe('input validation security', () => {
         const progressUpdates = await userIdentity.run(async ctx => {
             return await ctx.db
                 .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
                 .collect();
         });
 

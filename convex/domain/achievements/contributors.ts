@@ -31,7 +31,7 @@ export async function getContributors(
 ): Promise<Doc<'user'>[]> {
     const contributions = await ctx.db
         .query('organizationAchievementContributors')
-        .withIndex('by_organizationAchievement', q =>
+        .withIndex('by_organizationAchievement_user', q =>
             q.eq('organizationAchievementId', orgAchievementId)
         )
         .take(maxResults);

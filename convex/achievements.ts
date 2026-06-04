@@ -1,13 +1,11 @@
-import { v, ConvexError } from 'convex/values';
-import { internalMutation, mutation } from './_generated/server';
+import { v } from 'convex/values';
+import { internalMutation } from './_generated/server';
 import { internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { countStreakFromUpdates } from './domain/achievements/calculations';
 import { getContributors } from './domain/achievements/contributors';
-import { queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './rls';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
-import { ERROR_CODES } from './utils/constants';
-import { getAuthUserIdentity } from 'kitcn/auth';
 import {
     checkOrganizationAchievementsJob,
     checkUserAchievementsJob,
@@ -23,16 +21,14 @@ export const getAchievementDefinitions = queryWithRLS({
     },
     handler: async (ctx, args) => {
         const typeFilter = args.type;
+        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
 
         if (typeFilter) {
-            const definitions = await ctx.db
-                .query('achievementDefinitions')
-                .withIndex('by_type', q => q.eq('type', typeFilter))
-                .take(LIST_LIMIT);
-            return definitions.filter(definition => definition.isActive);
+            return definitions.filter(
+                definition => definition.type === typeFilter && definition.isActive
+            );
         }
 
-        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
         return definitions.filter(definition => definition.isActive);
     },
 });
@@ -67,7 +63,9 @@ export const getOrganizationAchievements = queryWithRLS({
     handler: async (ctx, args) => {
         const organizationAchievements = await ctx.db
             .query('organizationAchievements')
-            .withIndex('by_organization', q => q.eq('organization', args.organizationId))
+            .withIndex('by_organization_achievement', q =>
+                q.eq('organization', args.organizationId)
+            )
             .take(LIST_LIMIT);
 
         const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
@@ -170,16 +168,12 @@ export const getUserAchievementProgress = queryWithRLS({
         const userId = ctx.userId;
         const organizationId = ctx.organizationId;
 
-        const individualDefinitions = await ctx.db
-            .query('achievementDefinitions')
-            .withIndex('by_type', q => q.eq('type', 'individual'))
-            .take(LIST_LIMIT);
-
+        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
+        const individualDefinitions = definitions.filter(
+            definition => definition.type === 'individual'
+        );
         const organizationDefinitions = organizationId
-            ? await ctx.db
-                  .query('achievementDefinitions')
-                  .withIndex('by_type', q => q.eq('type', 'organization'))
-                  .take(LIST_LIMIT)
+            ? definitions.filter(definition => definition.type === 'organization')
             : [];
 
         const activeDefinitions = [...individualDefinitions, ...organizationDefinitions].filter(
@@ -198,7 +192,9 @@ export const getUserAchievementProgress = queryWithRLS({
         const organizationAchievements = organizationId
             ? await ctx.db
                   .query('organizationAchievements')
-                  .withIndex('by_organization', q => q.eq('organization', organizationId))
+                  .withIndex('by_organization_achievement', q =>
+                      q.eq('organization', organizationId)
+                  )
                   .take(LIST_LIMIT)
             : [];
 
@@ -217,7 +213,7 @@ export const getUserAchievementProgress = queryWithRLS({
                   .take(LIST_LIMIT)
             : await ctx.db
                   .query('objectives')
-                  .withIndex('by_user', q => q.eq('userId', userId))
+                  .withIndex('by_user_organization', q => q.eq('userId', userId))
                   .take(LIST_LIMIT);
 
         const completedObjectives = objectivesCount.filter(
@@ -257,7 +253,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 organizationObjectives.map(objective =>
                     ctx.db
                         .query('progressUpdates')
-                        .withIndex('by_objective', q => q.eq('objective', objective._id))
+                        .withIndex('by_objective_date', q => q.eq('objective', objective._id))
                         .take(LIST_LIMIT)
                 )
             );
@@ -319,13 +315,10 @@ export const getUnviewedAchievementsCount = queryWithRLS({
 
         const notifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user_organization_type_read', q =>
-                q
-                    .eq('userId', userId)
-                    .eq('organizationId', organizationId)
-                    .eq('notificationType', 'achievement')
-                    .eq('read', false)
+            .withIndex('by_user_organization_read', q =>
+                q.eq('userId', userId).eq('organizationId', organizationId).eq('read', false)
             )
+            .filter(q => q.eq(q.field('notificationType'), 'achievement'))
             .take(100);
 
         return notifications.length;
@@ -339,17 +332,10 @@ export const seedAchievementDefinitionsInternal = internalMutation({
     },
 });
 
-export const seedAchievementDefinitions = mutation({
+export const seedAchievementDefinitions = mutationWithRLS({
     args: {},
     handler: async (ctx): Promise<{ message: string; count: number }> => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-
-        const userId = identity.userId;
-
-        await ctx.runQuery(internal.setup.requireAdminInternal, { userId });
+        await ctx.runQuery(internal.setup.requireAdminInternal, { userId: ctx.userId });
 
         return await ctx.runMutation(internal.achievements.seedAchievementDefinitionsInternal, {});
     },

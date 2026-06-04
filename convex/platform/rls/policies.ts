@@ -8,19 +8,23 @@ export async function createRlsRules(
     role: string,
     memberRole: string | null,
     ctx: QueryCtx,
-    organizationId?: Id<'organization'> | null
+    organizationId?: Id<'organization'> | null,
+    email?: string | null
 ) {
     const isGlobalAdmin = isGlobalAdminRole(role);
     const isOrgAdmin =
         Boolean(organizationId) && (memberRole === 'admin' || memberRole === 'owner');
     const activeOrgMembershipCache = new Map<string, Promise<boolean>>();
-    const normalizeUserId = (targetUserId: Id<'user'> | string) => {
-        return ctx.db.normalizeId('user', targetUserId);
-    };
-    const normalizeOrganizationId = (targetOrganizationId: Id<'organization'> | string | null) => {
-        if (targetOrganizationId === null) return null;
-        return ctx.db.normalizeId('organization', targetOrganizationId);
-    };
+    const organizationMembershipRoleCache = new Map<string, Promise<string | null>>();
+    const targetUserMembershipsCache = new Map<string, Promise<Set<Id<'organization'>>>>();
+    let currentUserOrganizationIdsPromise: Promise<Set<Id<'organization'>>> | null = null;
+    let pendingInvitationsForEmailPromise: Promise<
+        Array<{
+            organizationId: Id<'organization'>;
+            inviterId: Id<'user'>;
+        }>
+    > | null = null;
+
     const isActiveOrganization = (targetOrganizationId?: Id<'organization'> | null) => {
         return (
             Boolean(organizationId) &&
@@ -32,7 +36,7 @@ export async function createRlsRules(
         return isOrgAdmin && isActiveOrganization(targetOrganizationId);
     };
     const isActiveOrganizationMember = async (targetUserId: Id<'user'> | string) => {
-        const normalizedUserId = normalizeUserId(targetUserId);
+        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
         if (!organizationId || !normalizedUserId) return false;
 
         let cached = activeOrgMembershipCache.get(normalizedUserId);
@@ -51,6 +55,125 @@ export async function createRlsRules(
     };
     const hasActiveOrgAdminAccessToUser = async (targetUserId: Id<'user'> | string) => {
         return isOrgAdmin && (await isActiveOrganizationMember(targetUserId));
+    };
+    const membershipRoleForOrganization = async (
+        targetOrganizationId?: Id<'organization'> | string | null
+    ) => {
+        const normalizedOrganizationId = targetOrganizationId
+            ? ctx.db.normalizeId('organization', targetOrganizationId)
+            : null;
+        if (!normalizedOrganizationId) return null;
+
+        let cached = organizationMembershipRoleCache.get(normalizedOrganizationId);
+        if (!cached) {
+            cached = ctx.db
+                .query('member')
+                .withIndex('by_organizationId_and_userId', q =>
+                    q.eq('organizationId', normalizedOrganizationId).eq('userId', userId)
+                )
+                .first()
+                .then(member => member?.role ?? null);
+            organizationMembershipRoleCache.set(normalizedOrganizationId, cached);
+        }
+
+        return await cached;
+    };
+    const isMemberOfOrganization = async (
+        targetOrganizationId?: Id<'organization'> | string | null
+    ) => {
+        return (await membershipRoleForOrganization(targetOrganizationId)) !== null;
+    };
+    const hasOrganizationAdminAccess = async (
+        targetOrganizationId?: Id<'organization'> | string | null
+    ) => {
+        if (isGlobalAdmin) return true;
+        const targetRole = await membershipRoleForOrganization(targetOrganizationId);
+        return targetRole === 'admin' || targetRole === 'owner';
+    };
+    const currentUserOrganizationIds = async () => {
+        if (!currentUserOrganizationIdsPromise) {
+            currentUserOrganizationIdsPromise = ctx.db
+                .query('member')
+                .withIndex('userId', q => q.eq('userId', userId))
+                .take(1000)
+                .then(members => new Set(members.map(member => member.organizationId)));
+        }
+
+        return await currentUserOrganizationIdsPromise;
+    };
+    const organizationIdsForUser = async (targetUserId: Id<'user'> | string) => {
+        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
+        if (!normalizedUserId) return new Set<Id<'organization'>>();
+
+        let cached = targetUserMembershipsCache.get(normalizedUserId);
+        if (!cached) {
+            cached = ctx.db
+                .query('member')
+                .withIndex('userId', q => q.eq('userId', normalizedUserId))
+                .take(1000)
+                .then(members => new Set(members.map(member => member.organizationId)));
+            targetUserMembershipsCache.set(normalizedUserId, cached);
+        }
+
+        return await cached;
+    };
+    const sharesOrganizationWithUser = async (targetUserId: Id<'user'> | string) => {
+        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
+        if (!normalizedUserId) return false;
+        if (normalizedUserId === userId) return true;
+
+        const [currentOrganizationIds, targetOrganizationIds] = await Promise.all([
+            currentUserOrganizationIds(),
+            organizationIdsForUser(normalizedUserId),
+        ]);
+
+        for (const targetOrganizationId of targetOrganizationIds) {
+            if (currentOrganizationIds.has(targetOrganizationId)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    const pendingInvitationsForEmail = async () => {
+        if (!email) return [];
+        if (!pendingInvitationsForEmailPromise) {
+            const now = Date.now();
+            pendingInvitationsForEmailPromise = ctx.db
+                .query('invitation')
+                .withIndex('by_email_status_expiresAt', q =>
+                    q.eq('email', email).eq('status', 'pending').gt('expiresAt', now)
+                )
+                .take(1000)
+                .then(invitations =>
+                    invitations.map(invitation => ({
+                        organizationId: invitation.organizationId,
+                        inviterId: invitation.inviterId,
+                    }))
+                );
+        }
+
+        return await pendingInvitationsForEmailPromise;
+    };
+    const hasPendingInvitationForOrganization = async (
+        targetOrganizationId?: Id<'organization'> | string | null
+    ) => {
+        const normalizedOrganizationId = targetOrganizationId
+            ? ctx.db.normalizeId('organization', targetOrganizationId)
+            : null;
+        if (!normalizedOrganizationId) return false;
+
+        return (await pendingInvitationsForEmail()).some(
+            invitation => invitation.organizationId === normalizedOrganizationId
+        );
+    };
+    const isInviterForPendingInvitation = async (targetUserId: Id<'user'> | string) => {
+        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
+        if (!normalizedUserId) return false;
+
+        return (await pendingInvitationsForEmail()).some(
+            invitation => invitation.inviterId === normalizedUserId
+        );
     };
     const canAccessObjective = (objective: { organizationId: Id<'organization'> }) => {
         if (isGlobalAdmin) return true;
@@ -185,7 +308,7 @@ export async function createRlsRules(
             read: async (_, member) => {
                 if (isGlobalAdmin) return true;
                 if (member.userId === userId) return true;
-                return isActiveOrganization(member.organizationId);
+                return await isMemberOfOrganization(member.organizationId);
             },
             insert: async () => false,
             modify: async () => false,
@@ -194,19 +317,46 @@ export async function createRlsRules(
             read: async (_, user) => {
                 if (isGlobalAdmin) return true;
                 if (await hasActiveOrgAdminAccessToUser(user._id)) return true;
+                if (await sharesOrganizationWithUser(user._id)) return true;
+                if (await isInviterForPendingInvitation(user._id)) return true;
                 return user._id === userId;
             },
             insert: async () => false,
             modify: async () => isGlobalAdmin,
         },
+        organization: {
+            read: async (_, organization) => {
+                if (isGlobalAdmin) return true;
+                if (await isMemberOfOrganization(organization._id)) return true;
+                return await hasPendingInvitationForOrganization(organization._id);
+            },
+            insert: async () => false,
+            modify: async () => false,
+        },
+        invitation: {
+            read: async (_, invitation) => {
+                if (isGlobalAdmin) return true;
+                if (await hasOrganizationAdminAccess(invitation.organizationId)) return true;
+                return (
+                    Boolean(email) &&
+                    invitation.email === email &&
+                    invitation.status === 'pending' &&
+                    invitation.expiresAt > Date.now()
+                );
+            },
+            insert: async () => false,
+            modify: async (_, invitation) => {
+                return await hasOrganizationAdminAccess(invitation.organizationId);
+            },
+        },
         session: {
             read: async (_, session) => {
                 if (isGlobalAdmin) return true;
-                const sessionUserId = normalizeUserId(session.userId);
+                const sessionUserId = ctx.db.normalizeId('user', session.userId);
                 if (sessionUserId === userId) return true;
                 const sessionOrganizationId =
                     typeof session.activeOrganizationId === 'string'
-                        ? normalizeOrganizationId(session.activeOrganizationId)
+                        ? ctx.db.normalizeId('organization', session.activeOrganizationId)
                         : null;
                 return (
                     isActiveOrganization(sessionOrganizationId) &&
@@ -216,12 +366,12 @@ export async function createRlsRules(
             insert: async () => false,
             modify: async (_, session) => {
                 if (isGlobalAdmin) return true;
-                const sessionUserId = normalizeUserId(session.userId);
+                const sessionUserId = ctx.db.normalizeId('user', session.userId);
                 if (sessionUserId === userId) return true;
 
                 const sessionOrganizationId =
                     typeof session.activeOrganizationId === 'string'
-                        ? normalizeOrganizationId(session.activeOrganizationId)
+                        ? ctx.db.normalizeId('organization', session.activeOrganizationId)
                         : null;
                 return (
                     isActiveOrganization(sessionOrganizationId) &&

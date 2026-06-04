@@ -1,26 +1,22 @@
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { convex, getAuthUserIdentity, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
+import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { internal } from './_generated/api';
 import {
     internalQuery,
     internalMutation,
-    query,
     type ActionCtx,
     type MutationCtx,
     type QueryCtx,
 } from './_generated/server';
 import authConfig from './auth.config';
 import { admin, organization } from 'better-auth/plugins';
-import { ConvexError, v } from 'convex/values';
+import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
 import { buildInvitationEmail } from './platform/email/invitationEmail';
-import {
-    resolveActiveMembership,
-    resolveSessionActiveOrganizationId,
-} from './platform/rls/authContext';
+import { queryWithRLS } from './rls';
 import {
     DEFAULT_ORGANIZATION_NAME,
     DEFAULT_ORGANIZATION_SLUG_BASE,
@@ -272,27 +268,16 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
 
 export default defineAuth(ctx => createAuthOptions(ctx as GenericCtx));
 
-export const getCurrentUser = query({
+export const getCurrentUser = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        return await ctx.db.get('user', identity.userId);
+        return await ctx.db.get('user', ctx.userId);
     },
 });
 
-export const getCurrentOrganization = query({
+export const getCurrentOrganization = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return null;
-
-        const userId = ctx.db.normalizeId('user', identity.userId);
-        if (!userId) return null;
-
-        const activeOrganizationId = await resolveSessionActiveOrganizationId(ctx);
-        const membership = await resolveActiveMembership(ctx, userId, activeOrganizationId);
-
-        return membership.organizationId;
+        return ctx.organizationId;
     },
 });

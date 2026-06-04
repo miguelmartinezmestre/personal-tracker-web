@@ -6,6 +6,7 @@ import { ERROR_CODES } from '../../utils/constants';
 
 export type AuthContext = {
     userId: Id<'user'>;
+    email: string;
     organizationId: Id<'organization'> | null;
     role: string;
     memberRole: string | null;
@@ -103,6 +104,7 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
 
     return {
         userId: currentUser._id,
+        email: currentUser.email,
         organizationId,
         role: currentUser.role ?? 'user',
         memberRole,
