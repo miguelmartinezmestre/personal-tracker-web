@@ -10,12 +10,13 @@ import {
     isPlatformSetupUser,
     requireAdminUser,
 } from './platform/setup/bootstrap';
-import { requireAdmin } from './utils/requiredAdmin';
 import {
     completeSetupArgsValidator,
     ensureTestOrganizationInternalArgsValidator,
 } from './platform/setup/validators';
 import { ERROR_CODES } from './utils/constants';
+import { queryWithRLS } from './rls';
+import { isGlobalAdminRole } from '../shared/platform-roles';
 
 export const isPlatformSetUp = query({
     args: {},
@@ -84,11 +85,13 @@ export const isCurrentUserPlatformSetupUser = query({
     },
 });
 
-export const getPlatformSetupUserId = query({
+export const getPlatformSetupUserId = queryWithRLS({
     args: {},
     returns: v.union(v.id('user'), v.null()),
     handler: async ctx => {
-        await requireAdmin(ctx);
+        if (!isGlobalAdminRole(ctx.role)) {
+            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+        }
         return await resolvePlatformSetupUserId(ctx);
     },
 });
