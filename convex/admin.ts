@@ -2,11 +2,12 @@ import { ConvexError, v } from 'convex/values';
 import { getAuth } from './generated/auth';
 import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
 import { isPlatformSetupUser } from './platform/setup/bootstrap';
+import { GLOBAL_ADMIN_ROLE, USER_ROLE } from '../shared/platform-roles';
 
 type AdminApi = {
     banUser: (args: {
@@ -29,10 +30,18 @@ export const listUsers = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
-        const result = await ctx.db
-            .query('user')
-            .withIndex('email_name')
-            .paginate(args.paginationOpts);
+        const search = args.searchValue?.trim();
+        const result = search
+            ? search.includes('@')
+                ? await ctx.db
+                      .query('user')
+                      .withSearchIndex('search_user_email', q => q.search('email', search))
+                      .paginate(args.paginationOpts)
+                : await ctx.db
+                      .query('user')
+                      .withSearchIndex('search_user_name', q => q.search('name', search))
+                      .paginate(args.paginationOpts)
+            : await ctx.db.query('user').withIndex('email_name').paginate(args.paginationOpts);
 
         return result;
     },
@@ -100,7 +109,7 @@ export const unbanUser = mutationWithRLS({
 export const updateUserRole = mutationWithRLS({
     args: {
         userId: v.id('user'),
-        role: v.union(v.literal('admin'), v.literal('user')),
+        role: v.union(v.literal(GLOBAL_ADMIN_ROLE), v.literal(USER_ROLE)),
     },
     returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {

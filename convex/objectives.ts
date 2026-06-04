@@ -3,7 +3,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import type { Id } from './_generated/dataModel';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { objectiveStatusValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import { withInvalidCursorRetry } from './utils/pagination';
@@ -17,12 +17,13 @@ import {
     continueObjectiveDeletion,
     deleteObjectiveWithDependents,
 } from './jobs/objectives/deleteObjective';
+import { isGlobalAdminRole } from '../shared/platform-roles';
 
 function assertCanModifyObjective(
     ctx: { userId: Id<'user'>; organizationId: Id<'organization'> | null; role: string },
-    objective: { userId: Id<'user'>; organizationId: Id<'organization'> }
+    objective: { organizationId: Id<'organization'> }
 ): void {
-    const isGlobalAdmin = ctx.role === 'admin';
+    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
     if (isGlobalAdmin) return;
 
     if (!ctx.organizationId || objective.organizationId !== ctx.organizationId) {
@@ -111,6 +112,8 @@ export const createObjective = mutationWithRLS({
             resolvedCategoryId = category._id;
         }
 
+        const isCompleted = startValue >= args.targetValue;
+
         const objectiveId = await ctx.db.insert('objectives', {
             userId,
             organizationId,
@@ -121,7 +124,8 @@ export const createObjective = mutationWithRLS({
             currentValue: startValue,
             startValue,
             deadline: args.deadline,
-            status: startValue >= args.targetValue ? 'completed' : 'active',
+            status: isCompleted ? 'completed' : 'active',
+            completedAt: isCompleted ? now : undefined,
             unit: args.unit,
             createdAt: now,
             updatedAt: now,
@@ -132,6 +136,14 @@ export const createObjective = mutationWithRLS({
             organizationId,
             trigger: 'objective_created',
         });
+
+        if (isCompleted) {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId,
+                organizationId,
+                trigger: 'objective_completed',
+            });
+        }
 
         await runObjectiveSync(ctx, objectiveId, userId, organizationId, 'objective');
         return objectiveId;

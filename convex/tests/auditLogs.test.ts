@@ -24,7 +24,7 @@ describe('convex auditLogs', () => {
             email: 'admin-audit@example.com-' + adminRandom,
             name: 'Admin Audit User ' + adminRandom,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         };
         const adminData = await createTestUser(t, admin);

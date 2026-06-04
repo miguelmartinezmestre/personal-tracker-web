@@ -3,10 +3,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-function repoRoot() {
-    return fileURLToPath(new URL('../..', import.meta.url));
-}
-
 function listSourceFiles(dir: string): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
         const path = join(dir, entry.name);
@@ -23,7 +19,7 @@ function listSourceFiles(dir: string): string[] {
 
 describe('runtime parity guardrail', () => {
     test('Convex source does not branch on the Vitest runtime', () => {
-        const root = repoRoot();
+        const root = fileURLToPath(new URL('../..', import.meta.url));
         const convexDir = join(root, 'convex');
         const forbiddenRuntimeBranch = ['is', 'Vitest', 'Runtime'].join('');
 

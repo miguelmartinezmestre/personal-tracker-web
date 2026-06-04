@@ -16,18 +16,14 @@ const isLocalE2E =
     isLoopbackUrl(process.env.SITE_URL ?? process.env.BETTER_AUTH_URL);
 const isProduction = process.env.NODE_ENV === 'production' && !isLocalE2E;
 
-function requireProductionValue(name: string, fallback: string): string {
-    const value = process.env[name];
+function requireProductionUrl(name: string, fallback: string): string {
+    const envValue = process.env[name];
 
-    if (isProduction && !value) {
+    if (isProduction && !envValue) {
         throw new Error(`${name} must be set in production`);
     }
 
-    return value ?? fallback;
-}
-
-function requireProductionUrl(name: string, fallback: string): string {
-    const value = requireProductionValue(name, fallback);
+    const value = envValue ?? fallback;
 
     try {
         const parsed = new URL(value);

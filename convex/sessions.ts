@@ -1,7 +1,6 @@
 import { v, ConvexError } from 'convex/values';
-import { queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { paginationOptsValidator } from 'convex/server';
-import { mutation } from './_generated/server';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import type { Doc, Id } from './_generated/dataModel';
@@ -58,17 +57,12 @@ export const getSessionsByUser = queryWithRLS({
     },
 });
 
-export const invalidateSession = mutation({
+export const invalidateSession = mutationWithRLS({
     args: { sessionId: v.id('session') },
     returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity?.userId) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-
-        const session = await ctx.db.get(args.sessionId);
-        if (!session || session.userId !== identity.userId) {
+        const session = await ctx.db.get('session', args.sessionId);
+        if (!session || session.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
@@ -78,23 +72,18 @@ export const invalidateSession = mutation({
     },
 });
 
-export const invalidateAllOtherSessions = mutation({
+export const invalidateAllOtherSessions = mutationWithRLS({
     args: { currentSessionId: v.id('session') },
     returns: v.object({ success: v.boolean(), revokedCount: v.number() }),
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-
-        const current = await ctx.db.get(args.currentSessionId);
-        if (!current || current.userId !== identity.userId) {
+        const current = await ctx.db.get('session', args.currentSessionId);
+        if (!current || current.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
         const sessions = await ctx.db
             .query('session')
-            .withIndex('userId', q => q.eq('userId', identity.userId as string))
+            .withIndex('userId', q => q.eq('userId', ctx.userId))
             .take(MAX_OTHER_SESSIONS_TO_REVOKE + 2);
 
         const otherSessions = sessions.filter(session => session._id !== args.currentSessionId);

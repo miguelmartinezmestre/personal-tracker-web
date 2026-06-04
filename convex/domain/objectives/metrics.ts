@@ -124,12 +124,27 @@ export async function applyObjectiveProgressDelta(
     const currentValue = Math.max(baseValue, objective.currentValue + delta);
     const status = currentValue >= objective.targetValue ? 'completed' : 'active';
     const completedNow = objective.status !== 'completed' && status === 'completed';
+    const reopened = objective.status === 'completed' && status === 'active';
+    const now = Date.now();
 
-    await ctx.db.patch('objectives', objectiveId, {
+    const patch: {
+        currentValue: number;
+        status: 'active' | 'completed';
+        updatedAt: number;
+        completedAt?: number;
+    } = {
         currentValue,
         status,
-        updatedAt: Date.now(),
-    });
+        updatedAt: now,
+    };
+
+    if (completedNow) {
+        patch.completedAt = now;
+    } else if (reopened) {
+        patch.completedAt = undefined;
+    }
+
+    await ctx.db.patch('objectives', objectiveId, patch);
 
     return { currentValue, status, completedNow };
 }
@@ -151,7 +166,7 @@ export async function recomputeObjectiveFromProgress(
     while (!isDone) {
         const page = await ctx.db
             .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', objectiveId))
+            .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
             .paginate({ numItems: 500, cursor });
 
         for (const update of page.page) {

@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from './platform/rls/wrappers';
 import { internalMutation } from './_generated/server';
 import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
 import { resolveActorUserId, sanitizeAuditMetadata } from './domain/audit/privacy';
@@ -31,7 +31,8 @@ export const getAuditLogs = queryWithRLS({
         if (resourceType !== undefined) {
             return await ctx.db
                 .query('auditLogs')
-                .withIndex('by_resourceType', q => q.eq('resourceType', resourceType))
+                .withIndex('by_createdAt', q => q.gte('createdAt', 0))
+                .filter(q => q.eq(q.field('resourceType'), resourceType))
                 .order('desc')
                 .paginate(args.paginationOpts);
         }

@@ -61,7 +61,7 @@ describe('convex categories', async () => {
             email: 'categories-admin@example.com-' + adminRandom,
             name: 'Categories Admin User ' + adminRandom,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);

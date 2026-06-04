@@ -25,7 +25,7 @@ describe('input validation security', () => {
             email: 'input-validation@example.com-' + random,
             name: 'Input Validation User ' + random,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         };
         const userData = await createTestUser(t, user);
@@ -139,7 +139,7 @@ describe('input validation security', () => {
         const progressUpdates = await userIdentity.run(async ctx => {
             return await ctx.db
                 .query('progressUpdates')
-                .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
                 .collect();
         });
 

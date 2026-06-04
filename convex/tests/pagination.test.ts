@@ -6,6 +6,7 @@ import {
     createTestOrganization,
     createTestMember,
     createTestObjective,
+    createTestNotification,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
@@ -25,7 +26,7 @@ describe('convex pagination', () => {
             email: 'pagination@example.com-' + randomSuffix,
             name: 'Pagination User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         };
 
@@ -145,7 +146,9 @@ describe('convex pagination', () => {
         });
 
         for (let i = 0; i < 12; i++) {
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: _organizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: `Notification ${i}`,
@@ -198,7 +201,9 @@ describe('convex pagination', () => {
                 name: `Stale Cursor Category ${i}`,
                 color: '#10b981',
             });
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: _organizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: `Stale Cursor Notification ${i}`,

@@ -6,6 +6,7 @@ import {
     createTestOrganization,
     createTestMember,
     createTestObjective,
+    createTestNotification,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
@@ -101,7 +102,7 @@ describe('notifications security - cross-user access prevention', async () => {
             email: 'security-admin@example.com-' + randomSuffix,
             name: 'Security Admin ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);
@@ -147,14 +148,13 @@ describe('notifications security - cross-user access prevention', async () => {
 
     describe('CRITICAL: User B cannot access User A notifications in same org', () => {
         test('user B cannot modify user A notification via setNotificationRead', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A Private Notification',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A Private Notification',
+            });
 
             expect(notificationA!.read).toBe(false);
 
@@ -172,14 +172,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('user B cannot delete user A notification', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A Private Notification',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A Private Notification',
+            });
 
             await expect(
                 userBIdentity.mutation(api.notifications.deleteNotification, {
@@ -194,18 +193,24 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('user B queries only return their own notifications, not user A', async () => {
-            await userAIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
                 notificationType: 'reminder',
                 message: 'User A Reminder 1',
             });
-            await userAIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
                 notificationType: 'deadline',
                 message: 'User A Deadline',
             });
 
-            await userBIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId: userBId,
+                organizationId: sharedOrganizationId,
                 objective: userBObjectiveId,
                 notificationType: 'reminder',
                 message: 'User B Reminder',
@@ -229,14 +234,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('user B cannot access user A notification details via API', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'progress',
-                    message: 'User A Progress Update',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'progress',
+                message: 'User A Progress Update',
+            });
 
             await expect(
                 userBIdentity.mutation(api.notifications.setNotificationRead, {
@@ -247,14 +251,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('RLS rules prevent cross-user notification read access', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'RLS Test Notification',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'RLS Test Notification',
+            });
 
             const userAQuery = await userAIdentity.query(api.notifications.getNotificationsByUser, {
                 paginationOpts: { numItems: 10, cursor: null },
@@ -325,14 +328,13 @@ describe('notifications security - cross-user access prevention', async () => {
 
     describe('Admin access verification', () => {
         test('admin can read any notification in the organization', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A Private For Admin Test',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A Private For Admin Test',
+            });
 
             const accessedByAdmin = await adminIdentity.run(async ctx => {
                 return await ctx.db.get(notificationA!._id);
@@ -343,14 +345,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('admin can modify any notification', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A For Admin Modify Test',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A For Admin Modify Test',
+            });
 
             const updated = await adminIdentity.mutation(api.notifications.setNotificationRead, {
                 id: notificationA!._id,
@@ -361,14 +362,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('admin can delete any notification', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A For Admin Delete Test',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A For Admin Delete Test',
+            });
 
             await adminIdentity.mutation(api.notifications.deleteNotification, {
                 id: notificationA!._id,
@@ -391,14 +391,13 @@ describe('notifications security - cross-user access prevention', async () => {
                 currentValue: 0,
             });
 
-            const personalNotification = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: personalObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A Personal Reminder',
-                }
-            );
+            const personalNotification = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: personalObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A Personal Reminder',
+            });
 
             await expect(
                 userBIdentity.mutation(api.notifications.setNotificationRead, {
@@ -414,23 +413,21 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('notification read status changes are isolated per user', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User A Isolation Test',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'User A Isolation Test',
+            });
 
-            const notificationB = await userBIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userBObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'User B Isolation Test',
-                }
-            );
+            const notificationB = await createTestNotification(t, {
+                userId: userBId,
+                organizationId: sharedOrganizationId,
+                objective: userBObjectiveId,
+                notificationType: 'reminder',
+                message: 'User B Isolation Test',
+            });
 
             await userAIdentity.mutation(api.notifications.setNotificationRead, {
                 id: notificationA!._id,
@@ -444,14 +441,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('cannot modify other user notification even with valid ID', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'Security Bypass Test',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'reminder',
+                message: 'Security Bypass Test',
+            });
 
             await expect(
                 userBIdentity.mutation(api.notifications.setNotificationRead, {
@@ -468,14 +464,13 @@ describe('notifications security - cross-user access prevention', async () => {
         });
 
         test('notification security summary - all access attempts blocked', async () => {
-            const notificationA = await userAIdentity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: userAObjectiveId,
-                    notificationType: 'deadline',
-                    message: 'Comprehensive Security Test',
-                }
-            );
+            const notificationA = await createTestNotification(t, {
+                userId: userAId,
+                organizationId: sharedOrganizationId,
+                objective: userAObjectiveId,
+                notificationType: 'deadline',
+                message: 'Comprehensive Security Test',
+            });
 
             const accessAttempts = [
                 {

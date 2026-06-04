@@ -37,7 +37,7 @@ export async function continueObjectiveDeletion(
     if (phase === 'progress') {
         const page = await ctx.db
             .query('progressUpdates')
-            .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+            .withIndex('by_objective_date', q => q.eq('objective', args.objectiveId))
             .paginate({
                 numItems: BATCH_SIZE,
                 cursor: null,
@@ -83,7 +83,7 @@ export async function continueObjectiveDeletion(
 
     const page = await ctx.db
         .query('notifications')
-        .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+        .withIndex('by_objective_type_date', q => q.eq('objective', args.objectiveId))
         .paginate({
             numItems: BATCH_SIZE,
             cursor: null,
@@ -127,7 +127,7 @@ export async function deleteObjectiveWithDependents(
 ) {
     const progressBatch = await ctx.db
         .query('progressUpdates')
-        .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+        .withIndex('by_objective_date', q => q.eq('objective', args.objectiveId))
         .take(BATCH_SIZE + 1);
 
     if (progressBatch.length > BATCH_SIZE) {
@@ -148,7 +148,7 @@ export async function deleteObjectiveWithDependents(
 
     const notificationsBatch = await ctx.db
         .query('notifications')
-        .withIndex('by_objective', q => q.eq('objective', args.objectiveId))
+        .withIndex('by_objective_type_date', q => q.eq('objective', args.objectiveId))
         .take(BATCH_SIZE + 1);
 
     if (notificationsBatch.length > BATCH_SIZE) {

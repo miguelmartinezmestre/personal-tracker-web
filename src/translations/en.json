@@ -331,29 +331,9 @@
         "description": "View your notifications and updates.",
         "loading": "Loading notifications...",
         "empty": "No notifications yet.",
-        "createNotification": "Create notification",
-        "createNotificationDescription": "Add a new notification tied to one of your objectives.",
-        "loadingObjectives": "Loading objectives...",
-        "noObjectives": "Create an objective first to add notifications.",
         "markAllRead": "Mark all as read",
         "allCaughtUp": "You're all caught up.",
         "unreadCount": "You have {count} unread notifications.",
-        "form": {
-            "objective": "Objective",
-            "selectObjective": "Select an objective",
-            "objectiveHelper": "Choose the objective this notification is about.",
-            "notificationType": "Type",
-            "typePlaceholder": "e.g. reminder, deadline, progress",
-            "typeHelper": "Add a type to help categorize this notification.",
-            "message": "Message",
-            "messagePlaceholder": "Describe the notification...",
-            "messageHelper": "Keep it short and actionable.",
-            "notificationDate": "Notification date",
-            "pickADate": "Pick a date",
-            "dateHelper": "When should this notification appear?",
-            "cancel": "Cancel",
-            "save": "Save notification"
-        },
         "table": {
             "columns": {
                 "message": "Message",
@@ -377,8 +357,6 @@
             "status": "Status"
         },
         "toast": {
-            "created": "Notification created.",
-            "createFailed": "Failed to create notification.",
             "updated": "Notification updated.",
             "updateFailed": "Failed to update notification.",
             "deleted": "Notification deleted.",
@@ -880,6 +858,7 @@
             "loading": "Loading users...",
             "empty": "No users found.",
             "emptyWithSearch": "No users match your search.",
+            "searchPlaceholder": "Search users by name or email...",
             "errors": {
                 "loadFailed": "Error loading users: {message}",
                 "permissionsHint": "Make sure you have admin permissions to access this section."
@@ -899,6 +878,7 @@
             },
             "roles": {
                 "admin": "Admin",
+                "globalAdmin": "Global admin",
                 "member": "Member",
                 "owner": "Owner",
                 "user": "User"
@@ -934,6 +914,7 @@
             "description": "Update the user's information",
             "roles": {
                 "admin": "Admin",
+                "globalAdmin": "Global admin",
                 "member": "Member",
                 "owner": "Owner",
                 "user": "User"
@@ -1163,6 +1144,7 @@
         "cancel": "Cancel",
         "edit": "Edit",
         "delete": "Delete",
+        "personalOrgInviteRestricted": "Personal organizations cannot invite members.",
         "title": "Organization Members",
         "editOrganizationMemberDescription": "Fill out the form below to edit your organization member. Click save when you're done.",
         "editOrganizationMember": "Edit Organization Member",

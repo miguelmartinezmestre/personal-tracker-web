@@ -6,6 +6,7 @@ import {
     createTestOrganization,
     createTestMember,
     createTestObjective,
+    createTestNotification,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
@@ -111,7 +112,7 @@ describe('convex RLS (Row-Level Security)', async () => {
             email: 'rls-admin@example.com-' + adminRandom,
             name: 'RLS Admin ' + adminRandom,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
         const adminData = await createTestUser(t, admin);
@@ -317,13 +318,17 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            await user1Identity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
                 objective: obj1Id,
                 notificationType: 'reminder',
                 message: 'User 1 notification',
             });
 
-            await user2Identity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId: user2Id,
+                organizationId: _user2OrganizationId,
                 objective: obj2Id,
                 notificationType: 'reminder',
                 message: 'User 2 notification',
@@ -353,14 +358,13 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            const notification = await user1Identity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: obj1Id,
-                    notificationType: 'reminder',
-                    message: 'User 1 notification',
-                }
-            );
+            const notification = await createTestNotification(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
+                objective: obj1Id,
+                notificationType: 'reminder',
+                message: 'User 1 notification',
+            });
 
             try {
                 await user2Identity.mutation(api.notifications.setNotificationRead, {
@@ -388,14 +392,13 @@ describe('convex RLS (Row-Level Security)', async () => {
                 currentValue: 0,
             });
 
-            const notification = await user1Identity.mutation(
-                api.notifications.createNotification,
-                {
-                    objective: obj1Id,
-                    notificationType: 'reminder',
-                    message: 'User 1 notification',
-                }
-            );
+            const notification = await createTestNotification(t, {
+                userId: user1Id,
+                organizationId: _user1OrganizationId,
+                objective: obj1Id,
+                notificationType: 'reminder',
+                message: 'User 1 notification',
+            });
 
             try {
                 await user2Identity.mutation(api.notifications.deleteNotification, {

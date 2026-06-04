@@ -1,7 +1,8 @@
+import { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 
 async function switchLanguage(
-    page: import('@playwright/test').Page,
+    page: Page,
     option: 'es' | 'en',
     expectedText: RegExp
 ): Promise<void> {

@@ -13,8 +13,11 @@ describe('convex admin', () => {
     const t = initConvexTest();
     let adminIdentity: ReturnType<typeof t.withIdentity>;
     let userIdentity: ReturnType<typeof t.withIdentity>;
+    let orgAdminIdentity: ReturnType<typeof t.withIdentity>;
     let adminId: Id<'user'>;
     let userId: Id<'user'>;
+    let adminName: string;
+    let userEmail: string;
 
     beforeEach(async () => {
         const random = Math.random().toString(36).substring(2, 15);
@@ -22,7 +25,7 @@ describe('convex admin', () => {
             userId: `admin-${random}`,
             email: `admin-${random}@example.com`,
             name: `Admin ${random}`,
-            role: 'admin',
+            role: 'globalAdmin',
         });
         const user = await createTestUser(t, {
             userId: `user-${random}`,
@@ -30,8 +33,16 @@ describe('convex admin', () => {
             name: `User ${random}`,
             role: 'user',
         });
+        const orgAdmin = await createTestUser(t, {
+            userId: `org-admin-${random}`,
+            email: `org-admin-${random}@example.com`,
+            name: `Org Admin ${random}`,
+            role: 'user',
+        });
         adminId = admin.docId;
         userId = user.docId;
+        adminName = admin.name;
+        userEmail = user.email;
 
         const organizationId = await createTestOrganization(t, {
             name: `Admin Test Org ${random}`,
@@ -39,13 +50,18 @@ describe('convex admin', () => {
         });
         await createTestMember(t, { organizationId, userId: adminId, role: 'owner' });
         await createTestMember(t, { organizationId, userId, role: 'member' });
+        await createTestMember(t, {
+            organizationId,
+            userId: orgAdmin.docId,
+            role: 'admin',
+        });
 
         adminIdentity = t.withIdentity({
             subject: adminId,
             userId: adminId,
             email: admin.email,
             name: admin.name,
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
             createdAt: Date.now(),
             image: null,
@@ -67,6 +83,20 @@ describe('convex admin', () => {
             banReason: null,
             banned: false,
         });
+
+        orgAdminIdentity = t.withIdentity({
+            subject: orgAdmin.docId,
+            userId: orgAdmin.docId,
+            email: orgAdmin.email,
+            name: orgAdmin.name,
+            role: 'user',
+            emailVerified: true,
+            createdAt: Date.now(),
+            image: null,
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
     });
 
     test('allows admins to list users', async () => {
@@ -79,6 +109,45 @@ describe('convex admin', () => {
         );
     });
 
+    test('listUsers without searchValue returns test users', async () => {
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 50, cursor: null },
+        });
+
+        expect(result.page.map(user => user._id)).toEqual(
+            expect.arrayContaining([adminId, userId])
+        );
+    });
+
+    test('listUsers with name fragment searchValue returns matching user', async () => {
+        const nameFragment = adminName.split(' ')[0];
+
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 10, cursor: null },
+            searchValue: nameFragment,
+        });
+
+        expect(result.page.map(user => user._id)).toContain(adminId);
+    });
+
+    test('listUsers with full email searchValue returns that user', async () => {
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 10, cursor: null },
+            searchValue: userEmail,
+        });
+
+        expect(result.page).toEqual([expect.objectContaining({ _id: userId, email: userEmail })]);
+    });
+
+    test('listUsers with no-match searchValue returns empty page', async () => {
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 10, cursor: null },
+            searchValue: 'zzzznonexistent-user-search-12345',
+        });
+
+        expect(result.page).toEqual([]);
+    });
+
     test('rejects non-admin users from listing users', async () => {
         await expect(
             userIdentity.query(api.admin.listUsers, {
@@ -87,16 +156,24 @@ describe('convex admin', () => {
         ).rejects.toThrow(/FORBIDDEN|Unauthorized|Unauthenticated|AUTH_REQUIRED/);
     });
 
+    test('rejects organization admins from global admin APIs', async () => {
+        await expect(
+            orgAdminIdentity.query(api.admin.listUsers, {
+                paginationOpts: { numItems: 10, cursor: null },
+            })
+        ).rejects.toThrow(/FORBIDDEN|Unauthorized|Unauthenticated|AUTH_REQUIRED/);
+    });
+
     test('allows admins to update user roles', async () => {
         const result = await adminIdentity.mutation(api.admin.updateUserRole, {
             userId,
-            role: 'admin',
+            role: 'globalAdmin',
         });
 
         const updatedUser = await t.run(async ctx => await ctx.db.get(userId));
 
         expect(result).toEqual({ success: true });
-        expect(updatedUser?.role).toBe('admin');
+        expect(updatedUser?.role).toBe('globalAdmin');
     });
 
     test('lists user sessions as non-current admin session items', async () => {

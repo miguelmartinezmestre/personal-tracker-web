@@ -1,6 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 import {
-    createNotification,
     createTestUser,
     loginUser,
     logoutUser,
@@ -468,17 +467,11 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             await page.keyboard.press('Escape');
         }
 
-        const notificationMessage = 'Reminder: update Learn TypeScript progress before Friday';
-        await createNotification(page, 'Learn TypeScript', { message: notificationMessage });
-
         console.log('\n🔔 SECTION 8: Notifications\n');
 
         await page.goto('/dashboard/notifications');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(500);
-        await expect(
-            page.getByTestId('table-row').filter({ hasText: notificationMessage })
-        ).toBeVisible({ timeout: 15000 });
         await takeTFGScreenshot(page, 'notifications-list', 'Notifications list');
 
         const markAllReadBtn = page

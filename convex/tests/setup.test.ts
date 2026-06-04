@@ -1,27 +1,30 @@
-import { convexTest } from 'convex-test';
 import { describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import schema from '../schema';
-import { modules } from './test.setup';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
+import { initConvexTest } from './test.helper';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    ensureTestUserAuth,
+} from './test_helpers';
 import type { Id } from '../_generated/dataModel';
 
 describe('convex setup', () => {
     describe('isPlatformSetUp', () => {
         test('returns false when no platformSettings exist', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
             const result = await t.query(api.setup.isPlatformSetUp, {});
             expect(result).toBe(false);
         });
 
         test('returns true when platformSettings exist', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Admin',
                     email: 'admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -48,19 +51,19 @@ describe('convex setup', () => {
 
     describe('getPublicPlatformSettings', () => {
         test('returns null when no settings exist', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
             const result = await t.query(api.setup.getPublicPlatformSettings, {});
             expect(result).toBeNull();
         });
 
         test('returns only public fields when settings exist', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Admin',
                     email: 'admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -91,7 +94,7 @@ describe('convex setup', () => {
 
     describe('completeSetup', () => {
         test('fails when platform is already configured', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             const userId = await t.run(async ctx => {
                 const id = await ctx.db.insert('user', {
@@ -145,7 +148,7 @@ describe('convex setup', () => {
         });
 
         test('fails when more than one user exists', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             const user1 = await createTestUser(t, {
                 userId: 'user-1',
@@ -185,7 +188,7 @@ describe('convex setup', () => {
         });
 
         test('succeeds with exactly one user and no existing settings', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             const user = await createTestUser(t, {
                 userId: 'user-1',
@@ -235,7 +238,7 @@ describe('convex setup', () => {
             const updatedUser = await t.run(async ctx => {
                 return await ctx.db.get(user.docId);
             });
-            expect(updatedUser?.role).toBe('admin');
+            expect(updatedUser?.role).toBe('globalAdmin');
 
             const organization = await t.run(async ctx => {
                 return await ctx.db.get(result.organizationId as Id<'organization'>);
@@ -267,13 +270,13 @@ describe('convex setup', () => {
 
     describe('isPlatformSetupUser queries', () => {
         test('isCurrentUserPlatformSetupUser returns true for setup user', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             const setupUserId = await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
                     name: 'Setup Admin',
                     email: 'setup-admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -295,12 +298,17 @@ describe('convex setup', () => {
                 return userId;
             });
 
+            await ensureTestUserAuth(t, setupUserId, {
+                organizationName: 'Setup Admin Org',
+                role: 'owner',
+            });
+
             const userIdentity = t.withIdentity({
                 subject: setupUserId,
                 userId: setupUserId,
                 email: 'setup-admin@test.com',
                 name: 'Setup Admin',
-                role: 'admin',
+                role: 'globalAdmin',
                 emailVerified: true,
                 createdAt: Date.now(),
                 image: null,
@@ -323,13 +331,13 @@ describe('convex setup', () => {
         });
 
         test('isCurrentUserPlatformSetupUser returns false for other users', async () => {
-            const t = convexTest(schema, modules);
+            const t = initConvexTest({ workflow: false });
 
             const otherUserId = await t.run(async ctx => {
                 const setupUserId = await ctx.db.insert('user', {
                     name: 'Setup Admin',
                     email: 'setup-admin@test.com',
-                    role: 'admin',
+                    role: 'globalAdmin',
                     emailVerified: true,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),

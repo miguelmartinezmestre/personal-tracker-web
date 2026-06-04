@@ -2,12 +2,12 @@ import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 
 const LIST_LIMIT = 1000;
-import { mutation, query, type QueryCtx } from './_generated/server';
-import { getAuthUserIdentity, getSession } from 'kitcn/auth';
-import type { Id } from './_generated/dataModel';
+import { query } from './_generated/server';
+import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import { resolveActiveMembership } from './platform/rls/authContext';
 import { isPersonalOrganizationForUser } from './domain/organizations/personalOrganization';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
     if (!metadata) {
@@ -26,31 +26,13 @@ function getOrganizationDescription(metadata: string | null | undefined): string
     return '';
 }
 
-async function resolveCurrentSession(ctx: QueryCtx) {
-    const currentSession = await getSession(ctx);
-
-    if (!currentSession || !currentSession.expiresAt || currentSession.expiresAt < Date.now()) {
-        return null;
-    }
-
-    return currentSession;
-}
-
-function normalizeUserId(ctx: QueryCtx, userId: string): Id<'user'> | null {
-    return ctx.db.normalizeId('user', userId);
-}
-
-function normalizeOrganizationId(ctx: QueryCtx, organizationId: string): Id<'organization'> | null {
-    return ctx.db.normalizeId('organization', organizationId);
-}
-
 export const getCurrentSession = query({
     args: {},
     handler: async ctx => {
-        const currentSession = await resolveCurrentSession(ctx);
+        const currentSession = await getSession(ctx);
         if (!currentSession) return null;
 
-        const userId = normalizeUserId(ctx, currentSession.userId);
+        const userId = ctx.db.normalizeId('user', currentSession.userId);
         const user = userId ? await ctx.db.get('user', userId) : null;
         const activeOrganizationId =
             userId && currentSession.activeOrganizationId
@@ -58,7 +40,7 @@ export const getCurrentSession = query({
                       await resolveActiveMembership(
                           ctx,
                           userId,
-                          normalizeOrganizationId(ctx, currentSession.activeOrganizationId)
+                          ctx.db.normalizeId('organization', currentSession.activeOrganizationId)
                       )
                   ).organizationId
                 : null;
@@ -84,17 +66,12 @@ export const getCurrentSession = query({
     },
 });
 
-export const getOrganizationsByUser = query({
+export const getOrganizationsByUser = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return [];
-        const userId = normalizeUserId(ctx, identity.userId);
-        if (!userId) return [];
-
         const memberships = await ctx.db
             .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
+            .withIndex('userId', q => q.eq('userId', ctx.userId))
             .take(LIST_LIMIT);
 
         if (memberships.length === 0) return [];
@@ -136,23 +113,10 @@ export const getOrganizationsByUser = query({
     },
 });
 
-export const getActiveOrganization = query({
+export const getActiveOrganization = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const currentSession = await resolveCurrentSession(ctx);
-        if (!currentSession?.activeOrganizationId) return null;
-        const userId = normalizeUserId(ctx, currentSession.userId);
-        const requestedOrganizationId = normalizeOrganizationId(
-            ctx,
-            currentSession.activeOrganizationId
-        );
-        if (!userId || !requestedOrganizationId) return null;
-
-        const { organizationId } = await resolveActiveMembership(
-            ctx,
-            userId,
-            requestedOrganizationId
-        );
+        const organizationId = ctx.organizationId;
         if (!organizationId) return null;
 
         const org = await ctx.db.get('organization', organizationId);
@@ -170,20 +134,16 @@ export const getActiveOrganization = query({
     },
 });
 
-export const getActiveMember = query({
+export const getActiveMember = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const currentSession = await resolveCurrentSession(ctx);
-        const activeOrganizationId = currentSession?.activeOrganizationId;
-        if (!activeOrganizationId) return null;
-        const organizationId = normalizeOrganizationId(ctx, activeOrganizationId);
-        const userId = normalizeUserId(ctx, currentSession.userId);
-        if (!organizationId || !userId) return null;
+        const organizationId = ctx.organizationId;
+        if (!organizationId) return null;
 
         const member = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', organizationId).eq('userId', userId)
+                q.eq('organizationId', organizationId).eq('userId', ctx.userId)
             )
             .first();
 
@@ -199,25 +159,16 @@ export const getActiveMember = query({
     },
 });
 
-export const getOrganizationMembers = query({
+export const getOrganizationMembers = queryWithRLS({
     args: {
         organizationId: v.id('organization'),
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-        const userId = normalizeUserId(ctx, identity.userId);
-        if (!userId) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-
         const userMembership = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', userId)
+                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
             )
             .first();
 
@@ -266,22 +217,14 @@ export const getOrganizationMembers = query({
     },
 });
 
-export const getUserInvitations = query({
+export const getUserInvitations = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return [];
-        const userId = normalizeUserId(ctx, identity.userId);
-        if (!userId) return [];
-
-        const user = await ctx.db.get('user', userId);
-        if (!user) throw new ConvexError(ERROR_CODES.USER_NOT_FOUND);
-
         const now = Date.now();
         const invitations = await ctx.db
             .query('invitation')
             .withIndex('by_email_status_expiresAt', q =>
-                q.eq('email', user.email).eq('status', 'pending').gt('expiresAt', now)
+                q.eq('email', ctx.email).eq('status', 'pending').gt('expiresAt', now)
             )
             .take(LIST_LIMIT);
 
@@ -342,18 +285,13 @@ export const getUserInvitations = query({
     },
 });
 
-export const getOrganizationInvitations = query({
+export const getOrganizationInvitations = queryWithRLS({
     args: { organizationId: v.id('organization') },
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return [];
-        const userId = normalizeUserId(ctx, identity.userId);
-        if (!userId) return [];
-
         const userMembership = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', userId)
+                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
             )
             .first();
 
@@ -401,26 +339,16 @@ export const getOrganizationInvitations = query({
     },
 });
 
-export const expireInvitation = mutation({
+export const expireInvitation = mutationWithRLS({
     args: {
         organizationId: v.id('organization'),
         invitationId: v.id('invitation'),
     },
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-
-        const userId = normalizeUserId(ctx, identity.userId);
-        if (!userId) {
-            throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        }
-
         const userMembership = await ctx.db
             .query('member')
             .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', userId)
+                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
             )
             .first();
 

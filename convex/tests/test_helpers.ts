@@ -8,16 +8,6 @@ const defaultTestSessionIds = new WeakMap<
     Map<Id<'user'>, Id<'session'>>
 >();
 
-function setDefaultTestSessionId(
-    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
-    userId: Id<'user'>,
-    sessionId: Id<'session'>
-) {
-    const sessions = defaultTestSessionIds.get(t) ?? new Map<Id<'user'>, Id<'session'>>();
-    sessions.set(userId, sessionId);
-    defaultTestSessionIds.set(t, sessions);
-}
-
 export function getDefaultTestSessionId(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     userId: Id<'user'>
@@ -138,9 +128,46 @@ export async function createTestMember(
             .toString(36)
             .slice(2)}`,
     });
-    setDefaultTestSessionId(t, options.userId, sessionId);
+
+    const sessions = defaultTestSessionIds.get(t) ?? new Map<Id<'user'>, Id<'session'>>();
+    sessions.set(options.userId, sessionId);
+    defaultTestSessionIds.set(t, sessions);
 
     return memberId;
+}
+
+/** Ensures the user has membership and a default session with activeOrganizationId for RLS APIs. */
+export async function ensureTestUserAuth(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    userId: Id<'user'>,
+    options?: {
+        organizationId?: Id<'organization'>;
+        organizationName?: string;
+        role?: string;
+    }
+): Promise<{ organizationId: Id<'organization'>; sessionId: Id<'session'> }> {
+    let organizationId = options?.organizationId;
+
+    if (!organizationId) {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        organizationId = await createTestOrganization(t, {
+            name: options?.organizationName ?? `Test Org ${suffix}`,
+            slug: `test-org-${suffix}`,
+        });
+    }
+
+    await createTestMember(t, {
+        organizationId,
+        userId,
+        role: options?.role ?? 'owner',
+    });
+
+    const sessionId = getDefaultTestSessionId(t, userId);
+    if (!sessionId) {
+        throw new Error(`Failed to create test session for user ${userId}`);
+    }
+
+    return { organizationId, sessionId };
 }
 
 export async function createTestObjective(
@@ -152,9 +179,8 @@ export async function createTestObjective(
         targetValue: number;
         currentValue?: number;
         startValue?: number;
-        /** @deprecated tenant model removed objective scope; accepted but ignored. */
-        scope?: 'personal' | 'organization';
         status?: 'active' | 'completed';
+        completedAt?: number;
         description?: string;
         categoryId?: Id<'categories'>;
         deadline?: number;
@@ -163,10 +189,12 @@ export async function createTestObjective(
 ): Promise<Id<'objectives'>> {
     const now = Date.now();
     const startValue = options.startValue ?? options.currentValue ?? 0;
+    const status = options.status ?? (startValue >= options.targetValue ? 'completed' : 'active');
+    const completedAt = options.completedAt ?? (status === 'completed' ? now : undefined);
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
-            userId: options.userId,
             organizationId: options.organizationId,
+            userId: options.userId,
             title: options.title,
             description: options.description,
             categoryId: options.categoryId,
@@ -174,11 +202,45 @@ export async function createTestObjective(
             currentValue: startValue,
             startValue,
             deadline: options.deadline,
-            status: options.status ?? (startValue >= options.targetValue ? 'completed' : 'active'),
+            status,
+            completedAt,
             unit: options.unit,
             createdAt: now,
             updatedAt: now,
         });
+    });
+}
+
+export async function createTestNotification(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    options: {
+        userId: Id<'user'>;
+        organizationId: Id<'organization'>;
+        message: string;
+        notificationType?: 'reminder' | 'deadline' | 'progress' | 'status' | 'achievement';
+        objective?: Id<'objectives'>;
+        read?: boolean;
+        notificationDate?: number;
+    }
+) {
+    const now = Date.now();
+    return t.run(async (ctx: MutationCtx) => {
+        const id = await ctx.db.insert('notifications', {
+            userId: options.userId,
+            organizationId: options.organizationId,
+            objective: options.objective,
+            read: options.read ?? false,
+            notificationType: options.notificationType ?? 'reminder',
+            notificationDate: options.notificationDate ?? now,
+            message: options.message,
+            createdAt: now,
+            updatedAt: now,
+        });
+        const notification = await ctx.db.get(id);
+        if (!notification) {
+            throw new Error('Failed to create test notification');
+        }
+        return notification;
     });
 }
 

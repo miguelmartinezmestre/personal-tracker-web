@@ -5,6 +5,19 @@ import { ConvexError } from 'convex/values';
 
 type ReadCtx = { db: DatabaseReader };
 
+export function isEarlyBirdCompletion(objective: {
+    status: string;
+    deadline?: number;
+    completedAt?: number;
+}): boolean {
+    return (
+        objective.status === 'completed' &&
+        objective.deadline != null &&
+        objective.completedAt != null &&
+        objective.completedAt <= objective.deadline
+    );
+}
+
 export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
     if (updates.length === 0) return 0;
 
@@ -41,27 +54,6 @@ export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): 
     return streak;
 }
 
-async function fetchUpdatesForObjective(
-    ctx: ReadCtx,
-    objectiveId: Id<'objectives'>
-): Promise<Doc<'progressUpdates'>[]> {
-    return await ctx.db
-        .query('progressUpdates')
-        .withIndex('by_objective', q => q.eq('objective', objectiveId))
-        .collect();
-}
-
-async function fetchUpdatesForUserObjective(
-    ctx: ReadCtx,
-    userId: Id<'user'>,
-    objectiveId: Id<'objectives'>
-): Promise<Doc<'progressUpdates'>[]> {
-    return await ctx.db
-        .query('progressUpdates')
-        .withIndex('by_user_objective', q => q.eq('userId', userId).eq('objective', objectiveId))
-        .collect();
-}
-
 async function fetchProgressUpdates(
     ctx: ReadCtx,
     objectiveIds: Id<'objectives'>[],
@@ -82,13 +74,24 @@ async function fetchProgressUpdates(
 
     if (userId) {
         const results = await Promise.all(
-            objectiveIds.map(objectiveId => fetchUpdatesForUserObjective(ctx, userId, objectiveId))
+            objectiveIds.map(async objectiveId => {
+                return await ctx.db
+                    .query('progressUpdates')
+                    .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+                    .filter(q => q.eq(q.field('userId'), userId))
+                    .collect();
+            })
         );
         return results.flat();
     }
 
     const results = await Promise.all(
-        objectiveIds.map(objectiveId => fetchUpdatesForObjective(ctx, objectiveId))
+        objectiveIds.map(async objectiveId => {
+            return await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+                .collect();
+        })
     );
     return results.flat();
 }

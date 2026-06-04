@@ -24,7 +24,7 @@ describe('convex dashboard', async () => {
             email: 'dashboard-test@example.com-' + randomSuffix,
             name: 'Dashboard Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         };
 

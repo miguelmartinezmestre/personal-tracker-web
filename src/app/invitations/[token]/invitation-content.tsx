@@ -48,14 +48,6 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         }
     }
 
-    function handleGoToRegister() {
-        router.push(`/register?invitation=${token}`);
-    }
-
-    function handleGoToLogin() {
-        router.push(`/login?callbackURL=/invitations/${token}`);
-    }
-
     if (sessionQuery?.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center">
@@ -112,7 +104,10 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         <CardDescription>{t('loginRequiredDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Button onClick={handleGoToLogin} className="w-full">
+                        <Button
+                            onClick={() => router.push(`/login?callbackURL=/invitations/${token}`)}
+                            className="w-full"
+                        >
                             {t('login')}
                         </Button>
                         <div className="text-center text-sm">
@@ -120,7 +115,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                             <Button
                                 variant="link"
                                 className="h-auto p-0"
-                                onClick={handleGoToRegister}
+                                onClick={() => router.push(`/register?invitation=${token}`)}
                             >
                                 {t('register')}
                             </Button>

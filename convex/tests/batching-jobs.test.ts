@@ -105,7 +105,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const initialCount = await t.run(async ctx => {
                 const updates = await ctx.db
                     .query('progressUpdates')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
                     .collect();
                 return updates.length;
             });
@@ -141,7 +141,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const finalCount = await t.run(async ctx => {
                 const updates = await ctx.db
                     .query('progressUpdates')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
                     .collect();
                 return updates.length;
             });
@@ -181,7 +181,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const initialCount = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .withIndex('by_objective_type_date', q => q.eq('objective', objectiveId))
                     .collect();
                 return notifs.length;
             });
@@ -214,7 +214,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const finalCount = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .withIndex('by_objective_type_date', q => q.eq('objective', objectiveId))
                     .collect();
                 return notifs.length;
             });
@@ -692,7 +692,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const remainingProgress = await t.run(async ctx => {
                 const updates = await ctx.db
                     .query('progressUpdates')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
                     .collect();
                 return updates.length;
             });
@@ -701,7 +701,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             const remainingNotifications = await t.run(async ctx => {
                 const notifs = await ctx.db
                     .query('notifications')
-                    .withIndex('by_objective', q => q.eq('objective', objectiveId))
+                    .withIndex('by_objective_type_date', q => q.eq('objective', objectiveId))
                     .collect();
                 return notifs.length;
             });

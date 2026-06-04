@@ -10,34 +10,16 @@ type RawPublicFunction = {
 };
 
 const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
-    'convex/achievements.ts:seedAchievementDefinitions:mutation',
-    'convex/auth.ts:getCurrentUser:query',
-    'convex/auth.ts:getCurrentOrganization:query',
     'convex/healthCheck.ts:get:query',
     'convex/organizations.ts:getCurrentSession:query',
-    'convex/organizations.ts:getOrganizationsByUser:query',
-    'convex/organizations.ts:getActiveOrganization:query',
-    'convex/organizations.ts:getActiveMember:query',
-    'convex/organizations.ts:getOrganizationMembers:query',
-    'convex/organizations.ts:getUserInvitations:query',
-    'convex/organizations.ts:getOrganizationInvitations:query',
-    'convex/organizations.ts:expireInvitation:mutation',
-    'convex/sessions.ts:invalidateSession:mutation',
-    'convex/sessions.ts:invalidateAllOtherSessions:mutation',
     'convex/setup.ts:isPlatformSetUp:query',
     'convex/setup.ts:getPublicPlatformSettings:query',
     'convex/setup.ts:isCurrentUserPlatformSetupUser:query',
-    'convex/setup.ts:getPlatformSetupUserId:query',
     'convex/setup.ts:completeSetup:mutation',
-    'convex/setup.ts:ensureTestOrganization:mutation',
 ]);
 
-function repoRoot() {
-    return fileURLToPath(new URL('../..', import.meta.url));
-}
-
 function listTopLevelConvexFiles() {
-    const root = repoRoot();
+    const root = fileURLToPath(new URL('../..', import.meta.url));
     const convexDir = join(root, 'convex');
 
     return readdirSync(convexDir, { withFileTypes: true })
@@ -46,7 +28,7 @@ function listTopLevelConvexFiles() {
 }
 
 function findRawPublicFunctions(): RawPublicFunction[] {
-    const root = repoRoot();
+    const root = fileURLToPath(new URL('../..', import.meta.url));
     const publicFunctionPattern =
         /export\s+const\s+([A-Za-z0-9_]+)\s*=\s*(query|mutation|action)\s*\(/g;
 

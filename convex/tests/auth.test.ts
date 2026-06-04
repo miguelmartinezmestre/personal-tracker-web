@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    createTestSession,
+} from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
 import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
@@ -20,7 +25,7 @@ describe('convex auth', () => {
             email: 'test@example.com-' + randomSuffix,
             name: 'Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         });
         userId = userData.docId;
@@ -40,7 +45,7 @@ describe('convex auth', () => {
 
         userIdentity = t.withIdentity({
             subject: userData.docId,
-            role: userData.role ?? 'admin',
+            role: userData.role ?? 'globalAdmin',
             email: userData.email,
             name: userData.name,
             password: 'test-password',
@@ -181,5 +186,55 @@ describe('convex auth', () => {
         });
 
         expect(isDefaultOrganization).toBe(false);
+    });
+
+    test('getOrganizationsByUser marks default organization as personal', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const user = await createTestUser(t, {
+            userId: `personal-org-list-user-${randomSuffix}`,
+            email: `personal-org-list-user-${randomSuffix}@example.com`,
+            name: 'Personal Org List User',
+        });
+
+        const personalOrganizationId = await t.mutation(
+            internal.auth.ensureDefaultOrganizationForUser,
+            {
+                userId: user.docId,
+            }
+        );
+
+        const sessionId = await createTestSession(t, {
+            userId: user.docId,
+            activeOrganizationId: personalOrganizationId,
+            expiresAt: Date.now() + 60_000,
+            token: `personal-org-list-session-${randomSuffix}`,
+        });
+
+        const personalOrgIdentity = t.withIdentity({
+            subject: user.docId,
+            sessionId,
+            role: 'user',
+            email: user.email,
+            name: user.name,
+            password: 'test-password',
+            emailVerified: false,
+            createdAt: Date.now(),
+            userId: user.docId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        const organizations = await personalOrgIdentity.query(
+            api.organizations.getOrganizationsByUser,
+            {}
+        );
+
+        const personalOrganization = organizations.find(
+            organization => organization.id === personalOrganizationId
+        );
+
+        expect(personalOrganization?.isPersonal).toBe(true);
     });
 });

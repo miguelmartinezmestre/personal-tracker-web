@@ -1,26 +1,22 @@
 import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { convex, getAuthUserIdentity, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
+import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { internal } from './_generated/api';
 import {
     internalQuery,
     internalMutation,
-    query,
     type ActionCtx,
     type MutationCtx,
     type QueryCtx,
 } from './_generated/server';
 import authConfig from './auth.config';
 import { admin, organization } from 'better-auth/plugins';
-import { ConvexError, v } from 'convex/values';
+import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
 import { buildInvitationEmail } from './platform/email/invitationEmail';
-import {
-    resolveActiveMembership,
-    resolveSessionActiveOrganizationId,
-} from './platform/rls/authContext';
+import { queryWithRLS } from './platform/rls/wrappers';
 import {
     DEFAULT_ORGANIZATION_NAME,
     DEFAULT_ORGANIZATION_SLUG_BASE,
@@ -38,6 +34,7 @@ type AuthOptions = BetterAuthOptionsWithoutDatabase & {
 
 import { env } from './lib/env';
 import { validatePasswordPolicy } from '../shared/password-policy';
+import { platformAdminRoles, platformRoles } from '../shared/platform-admin-access';
 
 const PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT = 1000;
 
@@ -117,27 +114,6 @@ async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: s
     return isDefaultOrganization;
 }
 
-function throwPersonalOrganizationDeleteForbidden(): never {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
-        message: 'Personal organization cannot be deleted.',
-    });
-}
-
-function throwPersonalOrganizationUpdateRestricted(): never {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
-        message: 'Personal organization slug and metadata cannot be changed.',
-    });
-}
-
-function throwSetupUserDeleteForbidden(): never {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
-        message: 'The platform setup user cannot be deleted.',
-    });
-}
-
 async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'user'>) {
     const isSetupUser: boolean = await (ctx as RunnableCtx).runQuery(
         internal.setup.isPlatformSetupUserInternal,
@@ -145,7 +121,10 @@ async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'use
     );
 
     if (isSetupUser) {
-        throwSetupUserDeleteForbidden();
+        throw new APIError('FORBIDDEN', {
+            code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
+            message: 'The platform setup user cannot be deleted.',
+        });
     }
 }
 
@@ -226,14 +205,20 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
             authConfig,
             jwks: env.JWKS,
         }),
-        admin(),
+        admin({
+            adminRoles: platformAdminRoles,
+            roles: platformRoles,
+        }),
         organization({
             invitationExpiresIn: 60 * 60 * 24 * 2,
             defaultRole: 'member',
             organizationHooks: {
                 beforeDeleteOrganization: async ({ organization }) => {
                     if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throwPersonalOrganizationDeleteForbidden();
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
+                            message: 'Personal organization cannot be deleted.',
+                        });
                     }
                 },
                 beforeUpdateOrganization: async ({ organization, member }) => {
@@ -242,7 +227,34 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
                     }
 
                     if (await isProtectedDefaultOrganization(ctx, member.organizationId)) {
-                        throwPersonalOrganizationUpdateRestricted();
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
+                            message: 'Personal organization slug and metadata cannot be changed.',
+                        });
+                    }
+                },
+                beforeCreateInvitation: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
+                            message: 'Personal organization cannot invite members.',
+                        });
+                    }
+                },
+                beforeAcceptInvitation: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
+                            message: 'Personal organization cannot invite members.',
+                        });
+                    }
+                },
+                beforeAddMember: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_MEMBER_ADD_FORBIDDEN,
+                            message: 'Personal organization cannot add members.',
+                        });
                     }
                 },
             },
@@ -268,27 +280,16 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
 
 export default defineAuth(ctx => createAuthOptions(ctx as GenericCtx));
 
-export const getCurrentUser = query({
+export const getCurrentUser = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
-        return await ctx.db.get('user', identity.userId);
+        return await ctx.db.get('user', ctx.userId);
     },
 });
 
-export const getCurrentOrganization = query({
+export const getCurrentOrganization = queryWithRLS({
     args: {},
     handler: async ctx => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity) return null;
-
-        const userId = ctx.db.normalizeId('user', identity.userId);
-        if (!userId) return null;
-
-        const activeOrganizationId = await resolveSessionActiveOrganizationId(ctx);
-        const membership = await resolveActiveMembership(ctx, userId, activeOrganizationId);
-
-        return membership.organizationId;
+        return ctx.organizationId;
     },
 });

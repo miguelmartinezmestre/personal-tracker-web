@@ -1,19 +1,6 @@
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { TIME } from './constants';
 
 type ReminderInterval = string | undefined;
-
-const computeNextBiweeklyLikeReminderAt = (now: number) => {
-    const next = new Date(now);
-    const dayOfMonth = next.getDate();
-
-    if (dayOfMonth < 15) {
-        next.setDate(15);
-        return next.getTime();
-    }
-
-    next.setMonth(next.getMonth() + 1, 1);
-    return next.getTime();
-};
 
 export const computeNextReminderAt = (
     interval: ReminderInterval,
@@ -38,8 +25,17 @@ export const computeNextReminderAt = (
     }
 
     if (interval === 'biweekly') {
-        return computeNextBiweeklyLikeReminderAt(now);
+        const next = new Date(now);
+        const dayOfMonth = next.getDate();
+
+        if (dayOfMonth < 15) {
+            next.setDate(15);
+            return next.getTime();
+        }
+
+        next.setMonth(next.getMonth() + 1, 1);
+        return next.getTime();
     }
 
-    return now + 14 * DAY_MS;
+    return now + 14 * TIME.DAY_MS;
 };

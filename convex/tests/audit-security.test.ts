@@ -19,7 +19,7 @@ describe('auditLogs security', () => {
             email: 'admin-audit-security@example.com-' + random,
             name: 'Admin Audit Security ' + random,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: true,
         };
         const adminData = await createTestUser(t, admin);

@@ -5,6 +5,7 @@ import type { MutationCtx } from '../../_generated/server';
 import {
     calculateOrganizationStreak,
     calculateUserStreak,
+    isEarlyBirdCompletion,
 } from '../../domain/achievements/calculations';
 import { addContributor } from '../../domain/achievements/contributors';
 import {
@@ -21,7 +22,6 @@ type AchievementTrigger = Infer<typeof achievementTriggerValidator>;
 type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
 
 const LIST_LIMIT = 1000;
-const BATCH_SIZE = 100;
 const ACHIEVEMENT_BATCH_SIZE = 50;
 
 async function notifyOrganizationAchievementUnlocked(
@@ -102,12 +102,11 @@ type EvaluateAndAwardParams = {
 async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
     const { ctx, scopeType, evaluate, award } = params;
 
-    const definitions = await ctx.db
-        .query('achievementDefinitions')
-        .withIndex('by_type', q => q.eq('type', scopeType))
-        .take(BATCH_SIZE);
+    const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
 
-    const activeDefinitions = definitions.filter(definition => definition.isActive);
+    const activeDefinitions = definitions.filter(
+        definition => definition.type === scopeType && definition.isActive
+    );
 
     const newAchievements: string[] = [];
 
@@ -205,12 +204,7 @@ export async function checkUserAchievementsJob(
     cumulativeCompletedCount += objectivesBatch.filter(
         objective => objective.status === 'completed'
     ).length;
-    cumulativeEarlyBirdCount += objectivesBatch.filter(
-        objective =>
-            objective.status === 'completed' &&
-            objective.deadline != null &&
-            objective.createdAt <= objective.deadline
-    ).length;
+    cumulativeEarlyBirdCount += objectivesBatch.filter(isEarlyBirdCompletion).length;
 
     const objectiveIds = objectivesBatch.map(objective => objective._id);
 
@@ -321,7 +315,7 @@ export async function checkOrganizationAchievementsJob(
 
     const earnedAchievements = await ctx.db
         .query('organizationAchievements')
-        .withIndex('by_organization', q => q.eq('organization', organizationId))
+        .withIndex('by_organization_achievement', q => q.eq('organization', organizationId))
         .take(LIST_LIMIT);
 
     const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);

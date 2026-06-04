@@ -20,7 +20,7 @@ describe('performance tests', async () => {
             email: 'perf-test@example.com-' + randomSuffix,
             name: 'Performance Test User ' + randomSuffix,
             password: 'test-password',
-            role: 'admin',
+            role: 'globalAdmin',
             emailVerified: false,
         });
         userId = userData.docId;
@@ -40,7 +40,7 @@ describe('performance tests', async () => {
 
         userIdentity = t.withIdentity({
             subject: userData.docId,
-            role: userData.role ?? 'admin',
+            role: userData.role ?? 'globalAdmin',
             email: userData.email,
             name: userData.name,
             password: 'test-password',

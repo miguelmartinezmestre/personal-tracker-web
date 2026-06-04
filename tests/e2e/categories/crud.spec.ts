@@ -6,6 +6,7 @@ import {
     openModal,
 } from '../../helpers/test-helpers';
 import { CategoryFactory } from '../../helpers/factories';
+import { Locator, Page } from '@playwright/test';
 
 test.describe('Categories CRUD', () => {
     test.describe.configure({ mode: 'serial' });
@@ -14,17 +15,14 @@ test.describe('Categories CRUD', () => {
         await ensureAuthenticatedState(page);
     });
 
-    async function submitOpenCategoryDialog(page: import('@playwright/test').Page): Promise<void> {
+    async function submitOpenCategoryDialog(page: Page): Promise<void> {
         await page
             .locator('[role="dialog"] form')
             .evaluate(form => (form as HTMLFormElement).requestSubmit())
             .catch(() => undefined);
     }
 
-    async function saveCategoryAndWaitForRow(
-        page: import('@playwright/test').Page,
-        name: string
-    ): Promise<void> {
+    async function saveCategoryAndWaitForRow(page: Page, name: string): Promise<void> {
         const saveButton = page.getByTestId('category-save-button');
 
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -57,8 +55,8 @@ test.describe('Categories CRUD', () => {
     }
 
     async function saveEditedCategoryAndWaitForRow(
-        page: import('@playwright/test').Page,
-        nameInput: import('@playwright/test').Locator,
+        page: Page,
+        nameInput: Locator,
         rowName: string
     ): Promise<void> {
         const saveButton = page.getByTestId('category-edit-save-button');

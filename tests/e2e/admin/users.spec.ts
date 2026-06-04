@@ -136,7 +136,9 @@ test.describe('Admin Users', () => {
             await expect(roleSelect).toBeVisible();
 
             await roleSelect.click();
-            const adminOption = page.getByRole('option', { name: /^admin$/i });
+            const adminOption = page.getByRole('option', {
+                name: /^(global admin|administrador global)$/i,
+            });
             await expect(adminOption).toBeVisible({ timeout: 5000 });
             await adminOption.click();
 
@@ -145,7 +147,7 @@ test.describe('Admin Users', () => {
 
             await expect(modal).toBeHidden({ timeout: 10000 });
 
-            await expect(row).toContainText('admin');
+            await expect(row).toContainText(/Global admin|Administrador global/);
         }
     );
 

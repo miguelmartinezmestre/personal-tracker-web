@@ -331,29 +331,9 @@
         "description": "Ver tus notificaciones y actualizaciones.",
         "loading": "Cargando notificaciones...",
         "empty": "Aún no hay notificaciones.",
-        "createNotification": "Crear notificación",
-        "createNotificationDescription": "Añade una nueva notificación vinculada a uno de tus objetivos.",
-        "loadingObjectives": "Cargando objetivos...",
-        "noObjectives": "Crea un objetivo primero para añadir notificaciones.",
         "markAllRead": "Marcar todas como leídas",
         "allCaughtUp": "No tienes notificaciones pendientes.",
         "unreadCount": "Tienes {count} notificaciones sin leer.",
-        "form": {
-            "objective": "Objetivo",
-            "selectObjective": "Selecciona un objetivo",
-            "objectiveHelper": "Elige el objetivo al que pertenece esta notificación.",
-            "notificationType": "Tipo",
-            "typePlaceholder": "p. ej. recordatorio, fecha límite, progreso",
-            "typeHelper": "Añade un tipo para clasificar la notificación.",
-            "message": "Mensaje",
-            "messagePlaceholder": "Describe la notificación...",
-            "messageHelper": "Sé breve y accionable.",
-            "notificationDate": "Fecha de notificación",
-            "pickADate": "Elige una fecha",
-            "dateHelper": "¿Cuándo debe aparecer esta notificación?",
-            "cancel": "Cancelar",
-            "save": "Guardar notificación"
-        },
         "table": {
             "columns": {
                 "message": "Mensaje",
@@ -377,8 +357,6 @@
             "status": "Estado"
         },
         "toast": {
-            "created": "Notificación creada.",
-            "createFailed": "No se pudo crear la notificación.",
             "updated": "Notificación actualizada.",
             "updateFailed": "No se pudo actualizar la notificación.",
             "deleted": "Notificación eliminada.",
@@ -876,8 +854,10 @@
         "usersTable": {
             "empty": "No se encontraron usuarios.",
             "emptyWithSearch": "No hay usuarios que coincidan con la busqueda.",
+            "searchPlaceholder": "Buscar usuarios por nombre o correo...",
             "roles": {
                 "admin": "Administrador",
+                "globalAdmin": "Administrador global",
                 "member": "Miembro",
                 "owner": "Propietario",
                 "user": "Usuario"
@@ -934,6 +914,7 @@
             "description": "Modifica la información del usuario",
             "roles": {
                 "admin": "Administrador",
+                "globalAdmin": "Administrador global",
                 "member": "Miembro",
                 "owner": "Propietario",
                 "user": "Usuario"
@@ -1163,6 +1144,7 @@
         "cancel": "Cancelar",
         "edit": "Editar",
         "delete": "Eliminar",
+        "personalOrgInviteRestricted": "Las organizaciones personales no pueden invitar miembros.",
         "title": "Miembros de la organización",
         "editOrganizationMemberDescription": "Llena el formulario a continuación para editar tu miembro de la organización. Haz clic en guardar cuando hayas terminado.",
         "editOrganizationMember": "Editar miembro de la organización",

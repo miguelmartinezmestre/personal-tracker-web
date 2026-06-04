@@ -26,6 +26,7 @@ import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { Doc } from '@/convex/_generated/dataModel';
+import { GLOBAL_ADMIN_ROLE, USER_ROLE } from '@shared/platform-roles';
 
 export function EditUserModal({
     user,
@@ -40,7 +41,9 @@ export function EditUserModal({
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState(user.email);
     const [name, setName] = useState(user.name);
-    const [role, setRole] = useState(user.role === 'ADMIN' ? 'admin' : user.role || 'user');
+    const [role, setRole] = useState(
+        user.role === 'ADMIN' ? GLOBAL_ADMIN_ROLE : user.role || USER_ROLE
+    );
 
     const updateUser = useMutation({
         mutationFn: async () => {
@@ -101,11 +104,11 @@ export function EditUserModal({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="user">
+                                <SelectItem value={USER_ROLE}>
                                     {t('editUserModal.roles.user')}
                                 </SelectItem>
-                                <SelectItem value="admin">
-                                    {t('editUserModal.roles.admin')}
+                                <SelectItem value={GLOBAL_ADMIN_ROLE}>
+                                    {t('editUserModal.roles.globalAdmin')}
                                 </SelectItem>
                             </SelectContent>
                         </Select>

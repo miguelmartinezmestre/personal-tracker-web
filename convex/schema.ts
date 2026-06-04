@@ -38,32 +38,17 @@ export default defineSchema({
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
+        completedAt: v.optional(v.number()),
         unit: v.optional(v.string()),
         workflowId: v.optional(vWorkflowId),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        // Individual achievement metrics (global across the user's orgs).
-        .index('by_user', ['userId'])
+        // User/org scoped metrics; prefix `userId` supports user-wide reads.
         .index('by_user_organization', ['userId', 'organizationId'])
-        // Listing matrix scoped by organization (tenant). Variants ending in
-        // `_deadline` order by `deadline`; the rest order by `_creationTime`.
+        // Listings stay scoped by organization; optional filters are applied after this index.
         .index('by_organization', ['organizationId'])
-        .index('by_organization_status', ['organizationId', 'status'])
-        .index('by_organization_categoryId', ['organizationId', 'categoryId'])
-        .index('by_organization_status_categoryId', ['organizationId', 'status', 'categoryId'])
         .index('by_organization_deadline', ['organizationId', 'deadline'])
-        .index('by_organization_status_deadline', ['organizationId', 'status', 'deadline'])
-        .index('by_organization_categoryId_deadline', ['organizationId', 'categoryId', 'deadline'])
-        .index('by_organization_status_categoryId_deadline', [
-            'organizationId',
-            'status',
-            'categoryId',
-            'deadline',
-        ])
-        // Dashboard activity feeds scoped by organization.
-        .index('by_organization_createdAt', ['organizationId', 'createdAt'])
-        .index('by_organization_status_updatedAt', ['organizationId', 'status', 'updatedAt'])
         .index('by_status_deadline', ['status', 'deadline'])
         .index('by_categoryId', ['categoryId'])
         .searchIndex('search_title_by_organization_status_categoryId', {
@@ -81,11 +66,9 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index('by_objective', ['objective'])
         .index('by_objective_date', ['objective', 'updateDate'])
         .index('by_user_date', ['userId', 'updateDate'])
-        .index('by_user_organization_date', ['userId', 'organizationId', 'updateDate'])
-        .index('by_user_objective', ['userId', 'objective']),
+        .index('by_user_organization_date', ['userId', 'organizationId', 'updateDate']),
 
     notifications: defineTable({
         userId: v.id('user'),
@@ -100,13 +83,6 @@ export default defineSchema({
     })
         .index('by_user_organization_date', ['userId', 'organizationId', 'notificationDate'])
         .index('by_user_organization_read', ['userId', 'organizationId', 'read'])
-        .index('by_user_organization_type_read', [
-            'userId',
-            'organizationId',
-            'notificationType',
-            'read',
-        ])
-        .index('by_objective', ['objective'])
         .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate']),
 
     auditLogs: defineTable({
@@ -127,7 +103,6 @@ export default defineSchema({
         createdAt: v.number(),
     })
         .index('by_createdAt', ['createdAt'])
-        .index('by_resourceType', ['resourceType'])
         .index('by_resourceType_resourceId', ['resourceType', 'resourceId']),
 
     categories: defineTable({
@@ -153,7 +128,7 @@ export default defineSchema({
         isActive: v.boolean(),
         createdAt: v.number(),
         updatedAt: v.number(),
-    }).index('by_type', ['type']),
+    }),
 
     obtainedAchievements: defineTable({
         userId: v.id('user'),
@@ -171,18 +146,14 @@ export default defineSchema({
         earnedAt: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
-    })
-        .index('by_organization', ['organization'])
-        .index('by_organization_achievement', ['organization', 'achievement']),
+    }).index('by_organization_achievement', ['organization', 'achievement']),
 
     organizationAchievementContributors: defineTable({
         organizationAchievementId: v.id('organizationAchievements'),
         userId: v.id('user'),
         contributedAt: v.number(),
         contributionValue: v.optional(v.number()),
-    })
-        .index('by_organizationAchievement', ['organizationAchievementId'])
-        .index('by_organizationAchievement_user', ['organizationAchievementId', 'userId']),
+    }).index('by_organizationAchievement_user', ['organizationAchievementId', 'userId']),
 
     platformSettings: defineTable({
         platformName: v.string(),
@@ -202,6 +173,25 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     }).index('by_user', ['userId']),
+
+    user: defineTable({
+        name: v.string(),
+        email: v.string(),
+        emailVerified: v.boolean(),
+        image: v.optional(v.union(v.null(), v.string())),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        userId: v.optional(v.union(v.null(), v.string())),
+        role: v.optional(v.union(v.null(), v.string())),
+        banned: v.optional(v.union(v.null(), v.boolean())),
+        banReason: v.optional(v.union(v.null(), v.string())),
+        banExpires: v.optional(v.union(v.null(), v.number())),
+    })
+        .index('email_name', ['email', 'name'])
+        .index('name', ['name'])
+        .index('userId', ['userId'])
+        .searchIndex('search_user_name', { searchField: 'name' })
+        .searchIndex('search_user_email', { searchField: 'email' }),
 
     member: defineTable({
         organizationId: v.id('organization'),
@@ -228,6 +218,5 @@ export default defineSchema({
         .index('role', ['role'])
         .index('status', ['status'])
         .index('inviterId', ['inviterId'])
-        .index('by_email_status_expiresAt', ['email', 'status', 'expiresAt'])
-        .index('by_status_expiresAt', ['status', 'expiresAt']),
+        .index('by_email_status_expiresAt', ['email', 'status', 'expiresAt']),
 });

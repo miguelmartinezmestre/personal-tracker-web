@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import {
     getNotificationPreferencesForUser,
     updateNotificationPreferencesForUser,

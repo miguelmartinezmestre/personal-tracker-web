@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
+import {
+    createTestMember,
+    createTestOrganization,
+    createTestUser,
+    ensureTestUserAuth,
+} from './test_helpers';
 import { Id } from '../_generated/dataModel';
 
 describe('convex organizations', () => {
@@ -71,5 +76,111 @@ describe('convex organizations', () => {
                 paginationOpts: { numItems: 20, cursor: null },
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
+    });
+
+    test('getOrganizationMembers rejects users outside the organization', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const outsider = await createTestUser(t, {
+            userId: 'organizations-outsider-' + randomSuffix,
+            email: 'organizations-outsider@example.com-' + randomSuffix,
+            name: 'Organizations Outsider ' + randomSuffix,
+            role: 'user',
+        });
+        await ensureTestUserAuth(t, outsider.docId);
+        const outsiderIdentity = t.withIdentity({
+            subject: outsider.docId,
+            role: outsider.role ?? 'user',
+            email: outsider.email,
+            name: outsider.name,
+            emailVerified: false,
+            createdAt: Date.now(),
+            userId: outsider.docId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        await expect(
+            outsiderIdentity.query(api.organizations.getOrganizationMembers, {
+                organizationId,
+                paginationOpts: { numItems: 20, cursor: null },
+            })
+        ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
+    });
+
+    test('organization owners can list and expire invitations', async () => {
+        const invitationId = await t.run(async ctx => {
+            return await ctx.db.insert('invitation', {
+                organizationId,
+                email: 'pending-member@example.com',
+                role: 'member',
+                status: 'pending',
+                expiresAt: Date.now() + 60_000,
+                createdAt: Date.now(),
+                inviterId: memberUserId,
+            });
+        });
+
+        const invitations = await userIdentity.query(api.organizations.getOrganizationInvitations, {
+            organizationId,
+        });
+
+        expect(invitations).toHaveLength(1);
+        expect(invitations[0]?.id).toBe(invitationId);
+
+        await userIdentity.mutation(api.organizations.expireInvitation, {
+            organizationId,
+            invitationId,
+        });
+
+        const expiredInvitation = await t.run(async ctx => {
+            return await ctx.db.get(invitationId);
+        });
+
+        expect(expiredInvitation?.status).toBe('cancelled');
+        expect(expiredInvitation?.expiresAt).toBe(0);
+    });
+
+    test('users outside the organization cannot list invitations', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const outsider = await createTestUser(t, {
+            userId: 'organizations-invite-outsider-' + randomSuffix,
+            email: 'organizations-invite-outsider@example.com-' + randomSuffix,
+            name: 'Organizations Invite Outsider ' + randomSuffix,
+            role: 'user',
+        });
+        await ensureTestUserAuth(t, outsider.docId);
+        const outsiderIdentity = t.withIdentity({
+            subject: outsider.docId,
+            role: outsider.role ?? 'user',
+            email: outsider.email,
+            name: outsider.name,
+            emailVerified: false,
+            createdAt: Date.now(),
+            userId: outsider.docId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        await t.run(async ctx => {
+            await ctx.db.insert('invitation', {
+                organizationId,
+                email: 'pending-outsider-check@example.com',
+                role: 'member',
+                status: 'pending',
+                expiresAt: Date.now() + 60_000,
+                createdAt: Date.now(),
+                inviterId: memberUserId,
+            });
+        });
+
+        await expect(
+            outsiderIdentity.query(api.organizations.getOrganizationInvitations, {
+                organizationId,
+            })
+        ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
     });
 });

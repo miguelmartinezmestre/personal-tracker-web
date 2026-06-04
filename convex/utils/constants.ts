@@ -20,6 +20,8 @@ export const DASHBOARD = {
     ACTIVITY_DAYS_BACK: 30,
 } as const;
 
+import { GLOBAL_ADMIN_ROLE, USER_ROLE as PLATFORM_USER_ROLE } from '../../shared/platform-roles';
+
 export const OBJECTIVE_STATUS = {
     ACTIVE: 'active',
     COMPLETED: 'completed',
@@ -63,8 +65,8 @@ export const ACHIEVEMENT_TIER = {
 export type AchievementTier = (typeof ACHIEVEMENT_TIER)[keyof typeof ACHIEVEMENT_TIER];
 
 export const USER_ROLE = {
-    USER: 'user',
-    ADMIN: 'admin',
+    USER: PLATFORM_USER_ROLE,
+    ADMIN: GLOBAL_ADMIN_ROLE,
 } as const;
 
 export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
@@ -86,6 +88,8 @@ export const ERROR_CODES = {
     ORG_NOT_FOUND: 'ORG_NOT_FOUND',
     PERSONAL_ORG_DELETE_FORBIDDEN: 'PERSONAL_ORG_DELETE_FORBIDDEN',
     PERSONAL_ORG_UPDATE_RESTRICTED: 'PERSONAL_ORG_UPDATE_RESTRICTED',
+    PERSONAL_ORG_INVITE_FORBIDDEN: 'PERSONAL_ORG_INVITE_FORBIDDEN',
+    PERSONAL_ORG_MEMBER_ADD_FORBIDDEN: 'PERSONAL_ORG_MEMBER_ADD_FORBIDDEN',
 
     OBJECTIVE_NOT_FOUND: 'OBJECTIVE_NOT_FOUND',
     PROGRESS_NOT_FOUND: 'PROGRESS_NOT_FOUND',

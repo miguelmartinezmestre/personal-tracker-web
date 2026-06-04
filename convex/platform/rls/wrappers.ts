@@ -15,6 +15,7 @@ const config: RLSConfig = { defaultPolicy: 'deny' };
 type QueryRlsCtx = {
     db: DatabaseReader;
     userId: Id<'user'>;
+    email: string;
     organizationId: Id<'organization'> | null;
     role: string;
     memberRole: string | null;
@@ -23,6 +24,7 @@ type QueryRlsCtx = {
 type MutationRlsCtx = {
     db: DatabaseWriter;
     userId: Id<'user'>;
+    email: string;
     organizationId: Id<'organization'> | null;
     role: string;
     memberRole: string | null;
@@ -31,16 +33,17 @@ type MutationRlsCtx = {
 export const queryWithRLS = customQuery(
     query,
     customCtx(async (ctx): Promise<QueryRlsCtx> => {
-        const { userId, organizationId, role, memberRole } = await resolveAuthContext(ctx);
+        const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
 
         return {
             db: wrapDatabaseReader(
                 ctx,
                 ctx.db,
-                await createRlsRules(userId, role, memberRole, ctx, organizationId),
+                await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
                 config
             ),
             userId,
+            email,
             organizationId,
             role,
             memberRole,
@@ -51,7 +54,7 @@ export const queryWithRLS = customQuery(
 export const mutationWithRLS = customMutation(
     mutation,
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
-        const { userId, organizationId, role, memberRole } = await resolveAuthContext(ctx);
+        const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
         const triggerDb = auditLogTriggers.wrapDB({
             db: ctx.db,
             userId,
@@ -62,13 +65,14 @@ export const mutationWithRLS = customMutation(
         const rlsDb = wrapDatabaseWriter(
             ctx,
             triggerDb,
-            await createRlsRules(userId, role, memberRole, ctx, organizationId),
+            await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
             config
         );
 
         return {
             db: rlsDb,
             userId,
+            email,
             organizationId,
             role,
             memberRole,

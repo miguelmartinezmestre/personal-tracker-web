@@ -47,10 +47,6 @@ export function InvitationCard({
         }
     };
 
-    const handleAcceptClick = () => {
-        setShowAcceptConfirm(true);
-    };
-
     const handleConfirmAccept = () => {
         onAccept();
         setShowAcceptConfirm(false);
@@ -90,7 +86,7 @@ export function InvitationCard({
                         </p>
                         <div className="flex gap-2">
                             <Button
-                                onClick={handleAcceptClick}
+                                onClick={() => setShowAcceptConfirm(true)}
                                 disabled={isAccepting || isRejecting}
                                 className="flex-1"
                                 data-testid="invitation-accept-button"

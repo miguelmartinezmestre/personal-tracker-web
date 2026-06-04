@@ -49,16 +49,6 @@ export default function SetupWizard() {
 
     const canProceed = isStepValid(currentStepName);
 
-    async function syncConvexAuthAfterSignUp() {
-        const tokenResult = await authClient.convex.token({ fetchOptions: { throw: false } });
-        const token = tokenResult.data?.token;
-        if (!token) {
-            throw new Error('User not found');
-        }
-
-        convex.setAuth(async () => token);
-    }
-
     async function handleComplete() {
         setError('');
         setIsSubmitting(true);
@@ -75,7 +65,15 @@ export default function SetupWizard() {
                 },
                 {
                     onSuccess: async () => {
-                        await syncConvexAuthAfterSignUp();
+                        const tokenResult = await authClient.convex.token({
+                            fetchOptions: { throw: false },
+                        });
+                        const token = tokenResult.data?.token;
+                        if (!token) {
+                            throw new Error('User not found');
+                        }
+
+                        convex.setAuth(async () => token);
 
                         const setupResult = await completeSetup({
                             platformName: data.platform.platformName,
