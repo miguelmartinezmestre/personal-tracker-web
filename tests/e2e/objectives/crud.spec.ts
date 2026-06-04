@@ -1,11 +1,12 @@
+import { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 import { createCategory, openCreateObjectiveModal } from '../../helpers/test-helpers';
 
-async function openObjectivesPage(page: import('@playwright/test').Page): Promise<void> {
+async function openObjectivesPage(page: Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
 }
 
-async function selectObjectiveCategory(page: import('@playwright/test').Page): Promise<void> {
+async function selectObjectiveCategory(page: Page): Promise<void> {
     await page.getByTestId('objective-category-select').click();
 
     const enabledCategoryOptions = page.locator(
@@ -23,7 +24,7 @@ async function selectObjectiveCategory(page: import('@playwright/test').Page): P
 }
 
 async function createObjectiveFromModal(
-    page: import('@playwright/test').Page,
+    page: Page,
     params: { title: string; target?: string; unit?: string }
 ): Promise<void> {
     await openCreateObjectiveModal(page);
@@ -36,11 +37,11 @@ async function createObjectiveFromModal(
     await page.getByTestId('objective-save-button').click();
 }
 
-function objectiveRow(page: import('@playwright/test').Page, title: string) {
+function objectiveRow(page: Page, title: string) {
     return page.getByTestId('table-row').filter({ hasText: title }).first();
 }
 
-async function submitOpenObjectiveDialog(page: import('@playwright/test').Page): Promise<void> {
+async function submitOpenObjectiveDialog(page: Page): Promise<void> {
     await page
         .locator('[role="dialog"] form')
         .evaluate(form => (form as HTMLFormElement).requestSubmit())
@@ -48,8 +49,8 @@ async function submitOpenObjectiveDialog(page: import('@playwright/test').Page):
 }
 
 async function saveEditedObjectiveAndWaitForRow(
-    page: import('@playwright/test').Page,
-    titleInput: import('@playwright/test').Locator,
+    page: Page,
+    titleInput: Locator,
     rowTitle: string
 ): Promise<void> {
     const saveButton = page.getByTestId('objective-edit-save-button');

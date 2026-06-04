@@ -1,7 +1,8 @@
+import { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 import { createObjective, openCreateProgressModal } from '../../helpers/test-helpers';
 
-async function openObjectiveDetailFromList(page: import('@playwright/test').Page): Promise<void> {
+async function openObjectiveDetailFromList(page: Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
 
     const rowWithProgressLink = page
@@ -24,11 +25,7 @@ async function openObjectiveDetailFromList(page: import('@playwright/test').Page
     await page.waitForSelector('[data-testid="progress-create-open"]', { timeout: 10000 });
 }
 
-async function createProgressUpdate(
-    page: import('@playwright/test').Page,
-    value: string,
-    comment: string
-): Promise<void> {
+async function createProgressUpdate(page: Page, value: string, comment: string): Promise<void> {
     await openCreateProgressModal(page);
 
     await page.getByTestId('progress-value-input').fill(value);

@@ -114,27 +114,6 @@ async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: s
     return isDefaultOrganization;
 }
 
-function throwPersonalOrganizationDeleteForbidden(): never {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
-        message: 'Personal organization cannot be deleted.',
-    });
-}
-
-function throwPersonalOrganizationUpdateRestricted(): never {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
-        message: 'Personal organization slug and metadata cannot be changed.',
-    });
-}
-
-function throwSetupUserDeleteForbidden(): never {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
-        message: 'The platform setup user cannot be deleted.',
-    });
-}
-
 async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'user'>) {
     const isSetupUser: boolean = await (ctx as RunnableCtx).runQuery(
         internal.setup.isPlatformSetupUserInternal,
@@ -142,7 +121,10 @@ async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'use
     );
 
     if (isSetupUser) {
-        throwSetupUserDeleteForbidden();
+        throw new APIError('FORBIDDEN', {
+            code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
+            message: 'The platform setup user cannot be deleted.',
+        });
     }
 }
 
@@ -233,7 +215,10 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
             organizationHooks: {
                 beforeDeleteOrganization: async ({ organization }) => {
                     if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throwPersonalOrganizationDeleteForbidden();
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
+                            message: 'Personal organization cannot be deleted.',
+                        });
                     }
                 },
                 beforeUpdateOrganization: async ({ organization, member }) => {
@@ -242,7 +227,10 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
                     }
 
                     if (await isProtectedDefaultOrganization(ctx, member.organizationId)) {
-                        throwPersonalOrganizationUpdateRestricted();
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
+                            message: 'Personal organization slug and metadata cannot be changed.',
+                        });
                     }
                 },
             },

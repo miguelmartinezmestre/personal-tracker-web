@@ -48,10 +48,6 @@ export function normalizeObjectiveListFilters(
     };
 }
 
-function matchesObjectiveSearch(objective: SearchableObjective, search: string) {
-    return objective.title.toLowerCase().includes(search.toLowerCase());
-}
-
 function matchesObjectiveFilters(
     objective: SearchableObjective & { status: ObjectiveStatus },
     filters: NormalizedObjectiveListFilters
@@ -135,6 +131,6 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
 
     return (await query.take(limit * 5))
         .filter(objective => matchesObjectiveFilters(objective, filters))
-        .filter(objective => matchesObjectiveSearch(objective, search))
+        .filter(objective => objective.title.toLowerCase().includes(search.toLowerCase()))
         .slice(0, limit);
 }

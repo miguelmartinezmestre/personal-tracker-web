@@ -21,22 +21,6 @@ interface AuthSession {
     };
 }
 
-function extractOrganizationId(session: unknown): string | null {
-    if (session === null || typeof session !== 'object') {
-        return null;
-    }
-
-    const authSession = session as AuthSession;
-    const raw =
-        authSession.session?.activeOrganizationId ?? authSession.activeOrganizationId ?? null;
-
-    if (typeof raw !== 'string') {
-        return null;
-    }
-
-    return raw;
-}
-
 function isExpiredSession(session: unknown): boolean {
     if (session === null || typeof session !== 'object') {
         return false;
@@ -46,18 +30,6 @@ function isExpiredSession(session: unknown): boolean {
     const expiresAt = authSession.session?.expiresAt ?? authSession.expiresAt ?? null;
 
     return typeof expiresAt === 'number' && expiresAt < Date.now();
-}
-
-export async function resolveSessionActiveOrganizationId(
-    ctx: QueryCtx | MutationCtx
-): Promise<Id<'organization'> | null> {
-    const session = await getSession(ctx);
-    if (!session || isExpiredSession(session)) {
-        return null;
-    }
-
-    const rawOrganizationId = extractOrganizationId(session);
-    return rawOrganizationId ? ctx.db.normalizeId('organization', rawOrganizationId) : null;
 }
 
 export async function resolveActiveMembership(
@@ -94,7 +66,13 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const activeOrganizationId = await resolveSessionActiveOrganizationId(ctx);
+    const session = await getSession(ctx);
+
+    if (!session || isExpiredSession(session) || !session.activeOrganizationId) {
+        throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
+    }
+
+    const activeOrganizationId = ctx.db.normalizeId('organization', session?.activeOrganizationId);
 
     const { role: memberRole, organizationId } = await resolveActiveMembership(
         ctx,

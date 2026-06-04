@@ -1,9 +1,8 @@
+import { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 import { createObjective, ensureDefaultCategories } from '../../helpers/test-helpers';
 
-async function openNotificationCreateModal(
-    page: import('@playwright/test').Page
-): Promise<boolean> {
+async function openNotificationCreateModal(page: Page): Promise<boolean> {
     const createButton = page.getByTestId('notification-create-open');
 
     try {
@@ -29,7 +28,7 @@ async function openNotificationCreateModal(
 }
 
 async function createNotificationInModal(
-    page: import('@playwright/test').Page,
+    page: Page,
     objectiveTitle: string,
     message: string
 ): Promise<boolean> {

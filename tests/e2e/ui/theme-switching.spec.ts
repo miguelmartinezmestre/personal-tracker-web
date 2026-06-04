@@ -1,9 +1,7 @@
+import { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 
-async function openThemeMenu(
-    page: import('@playwright/test').Page,
-    option: 'light' | 'dark'
-): Promise<void> {
+async function openThemeMenu(page: Page, option: 'light' | 'dark'): Promise<void> {
     const toggle = page.getByTestId('dashboard-theme-toggle').first();
     const desiredOption = page.getByTestId(`theme-option-${option}`).first();
 
@@ -19,10 +17,7 @@ async function openThemeMenu(
     await expect(desiredOption).toBeVisible({ timeout: 5000 });
 }
 
-async function clickThemeOption(
-    page: import('@playwright/test').Page,
-    option: 'light' | 'dark'
-): Promise<void> {
+async function clickThemeOption(page: Page, option: 'light' | 'dark'): Promise<void> {
     for (let attempt = 0; attempt < 3; attempt++) {
         await openThemeMenu(page, option);
         const desiredOption = page.getByTestId(`theme-option-${option}`).first();

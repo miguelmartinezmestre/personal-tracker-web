@@ -41,28 +41,6 @@ export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): 
     return streak;
 }
 
-async function fetchUpdatesForObjective(
-    ctx: ReadCtx,
-    objectiveId: Id<'objectives'>
-): Promise<Doc<'progressUpdates'>[]> {
-    return await ctx.db
-        .query('progressUpdates')
-        .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
-        .collect();
-}
-
-async function fetchUpdatesForUserObjective(
-    ctx: ReadCtx,
-    userId: Id<'user'>,
-    objectiveId: Id<'objectives'>
-): Promise<Doc<'progressUpdates'>[]> {
-    return await ctx.db
-        .query('progressUpdates')
-        .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
-        .filter(q => q.eq(q.field('userId'), userId))
-        .collect();
-}
-
 async function fetchProgressUpdates(
     ctx: ReadCtx,
     objectiveIds: Id<'objectives'>[],
@@ -83,13 +61,24 @@ async function fetchProgressUpdates(
 
     if (userId) {
         const results = await Promise.all(
-            objectiveIds.map(objectiveId => fetchUpdatesForUserObjective(ctx, userId, objectiveId))
+            objectiveIds.map(async objectiveId => {
+                return await ctx.db
+                    .query('progressUpdates')
+                    .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+                    .filter(q => q.eq(q.field('userId'), userId))
+                    .collect();
+            })
         );
         return results.flat();
     }
 
     const results = await Promise.all(
-        objectiveIds.map(objectiveId => fetchUpdatesForObjective(ctx, objectiveId))
+        objectiveIds.map(async objectiveId => {
+            return await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+                .collect();
+        })
     );
     return results.flat();
 }

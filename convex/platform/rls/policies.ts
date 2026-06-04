@@ -14,10 +14,6 @@ export async function createRlsRules(
     const isGlobalAdmin = isGlobalAdminRole(role);
     const isOrgAdmin =
         Boolean(organizationId) && (memberRole === 'admin' || memberRole === 'owner');
-    const activeOrgMembershipCache = new Map<string, Promise<boolean>>();
-    const organizationMembershipRoleCache = new Map<string, Promise<string | null>>();
-    const targetUserMembershipsCache = new Map<string, Promise<Set<Id<'organization'>>>>();
-    let currentUserOrganizationIdsPromise: Promise<Set<Id<'organization'>>> | null = null;
     let pendingInvitationsForEmailPromise: Promise<
         Array<{
             organizationId: Id<'organization'>;
@@ -39,19 +35,13 @@ export async function createRlsRules(
         const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
         if (!organizationId || !normalizedUserId) return false;
 
-        let cached = activeOrgMembershipCache.get(normalizedUserId);
-        if (!cached) {
-            cached = ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', organizationId).eq('userId', normalizedUserId)
-                )
-                .first()
-                .then(member => member !== null);
-            activeOrgMembershipCache.set(normalizedUserId, cached);
-        }
-
-        return await cached;
+        return await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', organizationId).eq('userId', normalizedUserId)
+            )
+            .first()
+            .then(member => member !== null);
     };
     const hasActiveOrgAdminAccessToUser = async (targetUserId: Id<'user'> | string) => {
         return isOrgAdmin && (await isActiveOrganizationMember(targetUserId));
@@ -64,19 +54,13 @@ export async function createRlsRules(
             : null;
         if (!normalizedOrganizationId) return null;
 
-        let cached = organizationMembershipRoleCache.get(normalizedOrganizationId);
-        if (!cached) {
-            cached = ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', normalizedOrganizationId).eq('userId', userId)
-                )
-                .first()
-                .then(member => member?.role ?? null);
-            organizationMembershipRoleCache.set(normalizedOrganizationId, cached);
-        }
-
-        return await cached;
+        return await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', normalizedOrganizationId).eq('userId', userId)
+            )
+            .first()
+            .then(member => member?.role ?? null);
     };
     const isMemberOfOrganization = async (
         targetOrganizationId?: Id<'organization'> | string | null
@@ -91,31 +75,21 @@ export async function createRlsRules(
         return targetRole === 'admin' || targetRole === 'owner';
     };
     const currentUserOrganizationIds = async () => {
-        if (!currentUserOrganizationIdsPromise) {
-            currentUserOrganizationIdsPromise = ctx.db
-                .query('member')
-                .withIndex('userId', q => q.eq('userId', userId))
-                .take(1000)
-                .then(members => new Set(members.map(member => member.organizationId)));
-        }
-
-        return await currentUserOrganizationIdsPromise;
+        return await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .take(1000)
+            .then(members => new Set(members.map(member => member.organizationId)));
     };
     const organizationIdsForUser = async (targetUserId: Id<'user'> | string) => {
         const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
         if (!normalizedUserId) return new Set<Id<'organization'>>();
 
-        let cached = targetUserMembershipsCache.get(normalizedUserId);
-        if (!cached) {
-            cached = ctx.db
-                .query('member')
-                .withIndex('userId', q => q.eq('userId', normalizedUserId))
-                .take(1000)
-                .then(members => new Set(members.map(member => member.organizationId)));
-            targetUserMembershipsCache.set(normalizedUserId, cached);
-        }
-
-        return await cached;
+        return ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', normalizedUserId))
+            .take(1000)
+            .then(members => new Set(members.map(member => member.organizationId)));
     };
     const sharesOrganizationWithUser = async (targetUserId: Id<'user'> | string) => {
         const normalizedUserId = ctx.db.normalizeId('user', targetUserId);

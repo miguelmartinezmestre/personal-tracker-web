@@ -2,7 +2,7 @@ import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 
 const LIST_LIMIT = 1000;
-import { query, type QueryCtx } from './_generated/server';
+import { query } from './_generated/server';
 import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import { resolveActiveMembership } from './platform/rls/authContext';
@@ -26,20 +26,10 @@ function getOrganizationDescription(metadata: string | null | undefined): string
     return '';
 }
 
-async function resolveCurrentSession(ctx: QueryCtx) {
-    const currentSession = await getSession(ctx);
-
-    if (!currentSession || !currentSession.expiresAt || currentSession.expiresAt < Date.now()) {
-        return null;
-    }
-
-    return currentSession;
-}
-
 export const getCurrentSession = query({
     args: {},
     handler: async ctx => {
-        const currentSession = await resolveCurrentSession(ctx);
+        const currentSession = await getSession(ctx);
         if (!currentSession) return null;
 
         const userId = ctx.db.normalizeId('user', currentSession.userId);
