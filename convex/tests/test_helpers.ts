@@ -8,16 +8,6 @@ const defaultTestSessionIds = new WeakMap<
     Map<Id<'user'>, Id<'session'>>
 >();
 
-function setDefaultTestSessionId(
-    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
-    userId: Id<'user'>,
-    sessionId: Id<'session'>
-) {
-    const sessions = defaultTestSessionIds.get(t) ?? new Map<Id<'user'>, Id<'session'>>();
-    sessions.set(userId, sessionId);
-    defaultTestSessionIds.set(t, sessions);
-}
-
 export function getDefaultTestSessionId(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     userId: Id<'user'>
@@ -138,9 +128,46 @@ export async function createTestMember(
             .toString(36)
             .slice(2)}`,
     });
-    setDefaultTestSessionId(t, options.userId, sessionId);
+
+    const sessions = defaultTestSessionIds.get(t) ?? new Map<Id<'user'>, Id<'session'>>();
+    sessions.set(options.userId, sessionId);
+    defaultTestSessionIds.set(t, sessions);
 
     return memberId;
+}
+
+/** Ensures the user has membership and a default session with activeOrganizationId for RLS APIs. */
+export async function ensureTestUserAuth(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    userId: Id<'user'>,
+    options?: {
+        organizationId?: Id<'organization'>;
+        organizationName?: string;
+        role?: string;
+    }
+): Promise<{ organizationId: Id<'organization'>; sessionId: Id<'session'> }> {
+    let organizationId = options?.organizationId;
+
+    if (!organizationId) {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        organizationId = await createTestOrganization(t, {
+            name: options?.organizationName ?? `Test Org ${suffix}`,
+            slug: `test-org-${suffix}`,
+        });
+    }
+
+    await createTestMember(t, {
+        organizationId,
+        userId,
+        role: options?.role ?? 'owner',
+    });
+
+    const sessionId = getDefaultTestSessionId(t, userId);
+    if (!sessionId) {
+        throw new Error(`Failed to create test session for user ${userId}`);
+    }
+
+    return { organizationId, sessionId };
 }
 
 export async function createTestObjective(

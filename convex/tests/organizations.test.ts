@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
+import {
+    createTestMember,
+    createTestOrganization,
+    createTestUser,
+    ensureTestUserAuth,
+} from './test_helpers';
 import { Id } from '../_generated/dataModel';
 
 describe('convex organizations', () => {
@@ -81,6 +86,7 @@ describe('convex organizations', () => {
             name: 'Organizations Outsider ' + randomSuffix,
             role: 'user',
         });
+        await ensureTestUserAuth(t, outsider.docId);
         const outsiderIdentity = t.withIdentity({
             subject: outsider.docId,
             role: outsider.role ?? 'user',
@@ -144,6 +150,7 @@ describe('convex organizations', () => {
             name: 'Organizations Invite Outsider ' + randomSuffix,
             role: 'user',
         });
+        await ensureTestUserAuth(t, outsider.docId);
         const outsiderIdentity = t.withIdentity({
             subject: outsider.docId,
             role: outsider.role ?? 'user',

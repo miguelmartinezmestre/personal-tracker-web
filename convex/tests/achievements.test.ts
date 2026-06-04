@@ -91,6 +91,15 @@ describe('convex achievements', async () => {
                 role: 'user',
             });
 
+            await createTestMember(t, {
+                organizationId: await createTestOrganization(t, {
+                    name: 'Regular User Org',
+                    slug: 'regular-user-seed-org',
+                }),
+                userId: regularUser.docId,
+                role: 'owner',
+            });
+
             const regularUserIdentity = t.withIdentity({
                 subject: regularUser.docId,
                 role: regularUser.role ?? null,

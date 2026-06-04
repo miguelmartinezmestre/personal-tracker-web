@@ -32,24 +32,6 @@ function identityFor(user: {
     };
 }
 
-async function expectNullOrDenied<T>(promise: Promise<T | null>) {
-    try {
-        const result = await promise;
-        expect(result).toBeNull();
-    } catch (error) {
-        expect(error).toBeDefined();
-    }
-}
-
-async function expectEmptyPageOrDenied<T extends { page: unknown[] }>(promise: Promise<T>) {
-    try {
-        const result = await promise;
-        expect(result.page).toHaveLength(0);
-    } catch (error) {
-        expect(error).toBeDefined();
-    }
-}
-
 async function expectEmptyListOrDenied<T>(promise: Promise<T[]>) {
     try {
         const result = await promise;
@@ -186,20 +168,29 @@ describe('organization admins cannot access another organization by id', () => {
     });
 
     test('does not reveal another organization objective by id', async () => {
-        await expectNullOrDenied(
-            orgAOwnerIdentity.query(api.objectives.getObjectiveById, {
+        try {
+            const result = await orgAOwnerIdentity.query(api.objectives.getObjectiveById, {
                 id: orgBObjectiveId,
-            })
-        );
+            });
+            expect(result).toBeNull();
+        } catch (error) {
+            expect(error).toBeDefined();
+        }
     });
 
     test('does not reveal another organization progress updates by objective id', async () => {
-        await expectEmptyPageOrDenied(
-            orgAOwnerIdentity.query(api.update_progress.getUpdateProgressByObjectiveId, {
-                objectiveId: orgBObjectiveId,
-                paginationOpts: { numItems: 10, cursor: null },
-            })
-        );
+        try {
+            const result = await orgAOwnerIdentity.query(
+                api.update_progress.getUpdateProgressByObjectiveId,
+                {
+                    objectiveId: orgBObjectiveId,
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+            expect(result.page).toHaveLength(0);
+        } catch (error) {
+            expect(error).toBeDefined();
+        }
 
         await expectEmptyListOrDenied(
             orgAOwnerIdentity

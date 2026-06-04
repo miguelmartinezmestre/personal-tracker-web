@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization } from './test_helpers';
+import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test_helpers';
 import { TIME } from '../utils/constants';
 import type { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';
@@ -269,6 +269,8 @@ describe('convex invitations (better-auth)', () => {
                 inviterId: inviter.docId,
             });
         });
+
+        await ensureTestUserAuth(t, target.docId);
 
         const targetIdentity = t.withIdentity({
             subject: target.docId,

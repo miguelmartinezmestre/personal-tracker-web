@@ -18,12 +18,8 @@ const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
     'convex/setup.ts:completeSetup:mutation',
 ]);
 
-function repoRoot() {
-    return fileURLToPath(new URL('../..', import.meta.url));
-}
-
 function listTopLevelConvexFiles() {
-    const root = repoRoot();
+    const root = fileURLToPath(new URL('../..', import.meta.url));
     const convexDir = join(root, 'convex');
 
     return readdirSync(convexDir, { withFileTypes: true })
@@ -32,7 +28,7 @@ function listTopLevelConvexFiles() {
 }
 
 function findRawPublicFunctions(): RawPublicFunction[] {
-    const root = repoRoot();
+    const root = fileURLToPath(new URL('../..', import.meta.url));
     const publicFunctionPattern =
         /export\s+const\s+([A-Za-z0-9_]+)\s*=\s*(query|mutation|action)\s*\(/g;
 

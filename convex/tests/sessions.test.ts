@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestSession, createTestUser } from './test_helpers';
+import { createTestSession, createTestUser, ensureTestUserAuth } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
 import type { GenericQueryCtx } from 'convex/server';
@@ -27,6 +27,12 @@ describe('convex sessions', () => {
         const userData = await createTestUser(t, user);
         userId = userData.docId;
 
+        const { sessionId: defaultSessionId } = await ensureTestUserAuth(t, userId, {
+            organizationName: 'Sessions Test Org ' + randomSuffix,
+            role: 'owner',
+        });
+        sessionId = defaultSessionId;
+
         _userIdentity = t.withIdentity({
             subject: userData.docId,
             role: user.role,
@@ -40,14 +46,6 @@ describe('convex sessions', () => {
             banExpires: null,
             banReason: null,
             banned: false,
-        });
-
-        sessionId = await createTestSession(t, {
-            userId,
-            expiresAt: Date.now() + 1000000,
-            token: 'test-token-' + randomSuffix,
-            ipAddress: '127.0.0.1',
-            userAgent: 'test-agent',
         });
     });
 
@@ -92,6 +90,7 @@ describe('convex sessions', () => {
             role: 'user',
             emailVerified: false,
         });
+        await ensureTestUserAuth(t, otherUser.docId);
         const otherSessionId = await createTestSession(t, {
             userId: otherUser.docId,
             expiresAt: Date.now() + 1000000,
