@@ -38,6 +38,7 @@ export default defineSchema({
         startValue: v.optional(v.number()),
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
+        completedAt: v.optional(v.number()),
         unit: v.optional(v.string()),
         workflowId: v.optional(vWorkflowId),
         createdAt: v.number(),

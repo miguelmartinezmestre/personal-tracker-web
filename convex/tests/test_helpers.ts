@@ -180,6 +180,7 @@ export async function createTestObjective(
         currentValue?: number;
         startValue?: number;
         status?: 'active' | 'completed';
+        completedAt?: number;
         description?: string;
         categoryId?: Id<'categories'>;
         deadline?: number;
@@ -188,6 +189,8 @@ export async function createTestObjective(
 ): Promise<Id<'objectives'>> {
     const now = Date.now();
     const startValue = options.startValue ?? options.currentValue ?? 0;
+    const status = options.status ?? (startValue >= options.targetValue ? 'completed' : 'active');
+    const completedAt = options.completedAt ?? (status === 'completed' ? now : undefined);
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
             organizationId: options.organizationId,
@@ -199,7 +202,8 @@ export async function createTestObjective(
             currentValue: startValue,
             startValue,
             deadline: options.deadline,
-            status: options.status ?? (startValue >= options.targetValue ? 'completed' : 'active'),
+            status,
+            completedAt,
             unit: options.unit,
             createdAt: now,
             updatedAt: now,

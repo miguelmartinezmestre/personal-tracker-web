@@ -5,6 +5,19 @@ import { ConvexError } from 'convex/values';
 
 type ReadCtx = { db: DatabaseReader };
 
+export function isEarlyBirdCompletion(objective: {
+    status: string;
+    deadline?: number;
+    completedAt?: number;
+}): boolean {
+    return (
+        objective.status === 'completed' &&
+        objective.deadline != null &&
+        objective.completedAt != null &&
+        objective.completedAt <= objective.deadline
+    );
+}
+
 export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): number {
     if (updates.length === 0) return 0;
 

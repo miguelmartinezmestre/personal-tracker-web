@@ -112,6 +112,8 @@ export const createObjective = mutationWithRLS({
             resolvedCategoryId = category._id;
         }
 
+        const isCompleted = startValue >= args.targetValue;
+
         const objectiveId = await ctx.db.insert('objectives', {
             userId,
             organizationId,
@@ -122,7 +124,8 @@ export const createObjective = mutationWithRLS({
             currentValue: startValue,
             startValue,
             deadline: args.deadline,
-            status: startValue >= args.targetValue ? 'completed' : 'active',
+            status: isCompleted ? 'completed' : 'active',
+            completedAt: isCompleted ? now : undefined,
             unit: args.unit,
             createdAt: now,
             updatedAt: now,
@@ -133,6 +136,14 @@ export const createObjective = mutationWithRLS({
             organizationId,
             trigger: 'objective_created',
         });
+
+        if (isCompleted) {
+            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+                userId,
+                organizationId,
+                trigger: 'objective_completed',
+            });
+        }
 
         await runObjectiveSync(ctx, objectiveId, userId, organizationId, 'objective');
         return objectiveId;

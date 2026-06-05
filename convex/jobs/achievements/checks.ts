@@ -5,6 +5,7 @@ import type { MutationCtx } from '../../_generated/server';
 import {
     calculateOrganizationStreak,
     calculateUserStreak,
+    isEarlyBirdCompletion,
 } from '../../domain/achievements/calculations';
 import { addContributor } from '../../domain/achievements/contributors';
 import {
@@ -203,12 +204,7 @@ export async function checkUserAchievementsJob(
     cumulativeCompletedCount += objectivesBatch.filter(
         objective => objective.status === 'completed'
     ).length;
-    cumulativeEarlyBirdCount += objectivesBatch.filter(
-        objective =>
-            objective.status === 'completed' &&
-            objective.deadline != null &&
-            objective.createdAt <= objective.deadline
-    ).length;
+    cumulativeEarlyBirdCount += objectivesBatch.filter(isEarlyBirdCompletion).length;
 
     const objectiveIds = objectivesBatch.map(objective => objective._id);
 

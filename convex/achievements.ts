@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { internalMutation } from './_generated/server';
 import { internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
-import { countStreakFromUpdates } from './domain/achievements/calculations';
+import { countStreakFromUpdates, isEarlyBirdCompletion } from './domain/achievements/calculations';
 import { getContributors } from './domain/achievements/contributors';
 import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
@@ -265,10 +265,7 @@ export const getUserAchievementProgress = queryWithRLS({
             objectivesCompleted: completedObjectives.length,
             progressStreak: streak,
             progressUpdates: progressUpdatesCount,
-            earlyBirdCompletions: completedObjectives.filter(objective => {
-                if (!objective.deadline) return false;
-                return objective.createdAt <= objective.deadline;
-            }).length,
+            earlyBirdCompletions: completedObjectives.filter(isEarlyBirdCompletion).length,
             organizationObjectivesCreated: organizationObjectives.length,
             organizationObjectivesCompleted: completedOrganizationObjectives.length,
             organizationProgressStreak: countStreakFromUpdates(organizationProgressUpdates),

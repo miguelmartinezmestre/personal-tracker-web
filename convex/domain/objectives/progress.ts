@@ -88,6 +88,14 @@ export async function createProgressUpdate(
         trigger: 'progress_update',
     });
 
+    if (completedNow) {
+        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            trigger: 'objective_completed',
+        });
+    }
+
     return await ctx.db.get('progressUpdates', progressUpdateId);
 }
 
@@ -170,6 +178,12 @@ export async function updateProgressUpdate(
     });
 
     if (completedNow) {
+        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            userId: objective.userId,
+            organizationId: objective.organizationId,
+            trigger: 'objective_completed',
+        });
+
         const now = Date.now();
         await ctx.db.insert('notifications', {
             userId: objective.userId,

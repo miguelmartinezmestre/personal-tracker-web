@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
@@ -368,6 +368,7 @@ describe('convex achievements', async () => {
                     currentValue: 100,
                     status: 'completed',
                     deadline: futureDeadline,
+                    completedAt: now,
                     createdAt: now - 1000,
                     updatedAt: now,
                 });
@@ -429,7 +430,8 @@ describe('convex achievements', async () => {
                     currentValue: 100,
                     status: 'completed',
                     deadline: pastDeadline,
-                    createdAt: now,
+                    completedAt: now,
+                    createdAt: pastDeadline - 7 * 24 * 60 * 60 * 1000,
                     updatedAt: now,
                 });
             });
@@ -444,6 +446,79 @@ describe('convex achievements', async () => {
             );
 
             expect(earlyBirdProgress?.currentProgress).toBe(0);
+        });
+
+        test('early_bird does not count late completion when created before deadline', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+            const now = Date.now();
+            const pastDeadline = now - 1000;
+            const createdBeforeDeadline = pastDeadline - 7 * 24 * 60 * 60 * 1000;
+
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Created Early Completed Late',
+                    targetValue: 100,
+                    currentValue: 100,
+                    status: 'completed',
+                    deadline: pastDeadline,
+                    completedAt: now,
+                    createdAt: createdBeforeDeadline,
+                    updatedAt: now,
+                });
+            });
+
+            const progress = await userIdentity.query(
+                api.achievements.getUserAchievementProgress,
+                {}
+            );
+
+            const earlyBirdProgress = progress.find(
+                progressEntry => progressEntry.definition.code === 'early_bird'
+            );
+
+            expect(earlyBirdProgress?.currentProgress).toBe(0);
+        });
+
+        test('awards early_bird when objective is completed via progress update', async () => {
+            vi.useFakeTimers();
+            try {
+                await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+
+                const now = Date.now();
+                const futureDeadline = now + 7 * 24 * 60 * 60 * 1000;
+
+                const objectiveId = await createTestObjective(t, {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'Progress Complete Early Bird',
+                    targetValue: 100,
+                    currentValue: 0,
+                    startValue: 0,
+                    deadline: futureDeadline,
+                });
+
+                await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+                    objective: objectiveId,
+                    updatedValue: 100,
+                    updateDate: now,
+                });
+
+                await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+                const achievements = await userIdentity.query(
+                    api.achievements.getUserAchievements,
+                    {}
+                );
+
+                expect(
+                    achievements.some(achievement => achievement.definition?.code === 'early_bird')
+                ).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
         });
     });
 
