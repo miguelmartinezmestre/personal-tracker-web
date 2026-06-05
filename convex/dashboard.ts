@@ -39,6 +39,11 @@ export const getMonthlyProgress = queryWithRLS({
     },
     returns: v.array(v.object({ month: v.string(), monthKey: v.string(), count: v.number() })),
     handler: async (ctx, args) => {
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            return [];
+        }
+
         const userId = ctx.userId;
         const monthsToFetch = args.months ?? DASHBOARD.MONTHS_TO_SHOW;
 
@@ -46,18 +51,15 @@ export const getMonthlyProgress = queryWithRLS({
         const oldestDate = new Date(now.getFullYear(), now.getMonth() - (monthsToFetch - 1), 1);
         const startDate = oldestDate.getTime();
 
-        const organizationId = ctx.organizationId;
-        const userUpdates = organizationId
-            ? await ctx.db
-                  .query('progressUpdates')
-                  .withIndex('by_user_organization_date', q =>
-                      q
-                          .eq('userId', userId)
-                          .eq('organizationId', organizationId)
-                          .gte('updateDate', startDate)
-                  )
-                  .take(LIST_LIMIT)
-            : [];
+        const userUpdates = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_user_organization_date', q =>
+                q
+                    .eq('userId', userId)
+                    .eq('organizationId', organizationId)
+                    .gte('updateDate', startDate)
+            )
+            .take(LIST_LIMIT);
 
         const monthsData: { month: string; monthKey: string; count: number }[] = [];
 
