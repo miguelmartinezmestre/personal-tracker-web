@@ -1143,6 +1143,7 @@
         "cancel": "Cancelar",
         "edit": "Editar",
         "delete": "Eliminar",
+        "personalOrgInviteRestricted": "Las organizaciones personales no pueden invitar miembros.",
         "title": "Miembros de la organización",
         "editOrganizationMemberDescription": "Llena el formulario a continuación para editar tu miembro de la organización. Haz clic en guardar cuando hayas terminado.",
         "editOrganizationMember": "Editar miembro de la organización",

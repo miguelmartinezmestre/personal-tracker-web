@@ -44,7 +44,16 @@ export default function OrganizationDetailClient({
                     <span className="text-sm text-muted-foreground">({organization.slug})</span>
                 </h1>
                 <div className="w-full sm:w-auto">
-                    <CreateOrganizationMemberFormModal organizationId={organization.id} />
+                    {organization.isPersonal ? (
+                        <p
+                            className="text-sm text-muted-foreground"
+                            data-testid="organization-personal-invite-restricted"
+                        >
+                            {tMembers('personalOrgInviteRestricted')}
+                        </p>
+                    ) : (
+                        <CreateOrganizationMemberFormModal organizationId={organization.id} />
+                    )}
                 </div>
             </div>
             <section className="space-y-3" aria-labelledby="organization-members-heading">

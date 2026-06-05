@@ -233,6 +233,30 @@ const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
                         });
                     }
                 },
+                beforeCreateInvitation: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
+                            message: 'Personal organization cannot invite members.',
+                        });
+                    }
+                },
+                beforeAcceptInvitation: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
+                            message: 'Personal organization cannot invite members.',
+                        });
+                    }
+                },
+                beforeAddMember: async ({ organization }) => {
+                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                        throw new APIError('FORBIDDEN', {
+                            code: ERROR_CODES.PERSONAL_ORG_MEMBER_ADD_FORBIDDEN,
+                            message: 'Personal organization cannot add members.',
+                        });
+                    }
+                },
             },
             sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
                 const invitationEmail = buildInvitationEmail({
