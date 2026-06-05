@@ -191,6 +191,7 @@ export async function createTestObjective(
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
             organizationId: options.organizationId,
+            userId: options.userId,
             title: options.title,
             description: options.description,
             categoryId: options.categoryId,
@@ -203,6 +204,39 @@ export async function createTestObjective(
             createdAt: now,
             updatedAt: now,
         });
+    });
+}
+
+export async function createTestNotification(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    options: {
+        userId: Id<'user'>;
+        organizationId: Id<'organization'>;
+        message: string;
+        notificationType?: 'reminder' | 'deadline' | 'progress' | 'status' | 'achievement';
+        objective?: Id<'objectives'>;
+        read?: boolean;
+        notificationDate?: number;
+    }
+) {
+    const now = Date.now();
+    return t.run(async (ctx: MutationCtx) => {
+        const id = await ctx.db.insert('notifications', {
+            userId: options.userId,
+            organizationId: options.organizationId,
+            objective: options.objective,
+            read: options.read ?? false,
+            notificationType: options.notificationType ?? 'reminder',
+            notificationDate: options.notificationDate ?? now,
+            message: options.message,
+            createdAt: now,
+            updatedAt: now,
+        });
+        const notification = await ctx.db.get(id);
+        if (!notification) {
+            throw new Error('Failed to create test notification');
+        }
+        return notification;
     });
 }
 

@@ -7,14 +7,11 @@ import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { runDeadlineNotificationsJob } from './jobs/notifications/deadlineNotifications';
 import { markAllReadBatchJob } from './jobs/notifications/markAllRead';
 import {
-    assertCanCreateNotificationForObjective,
     assertCanMutateNotification,
     canReadObjectiveFromNotification,
 } from './domain/notifications/delivery';
-import { notificationTypeValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import { isInvalidCursorError, withInvalidCursorRetry } from './utils/pagination';
-import type { NotificationType } from './utils/constants';
 
 const OBJECTIVE_ID_LIMIT = 50;
 const EMPTY_NOTIFICATION_PAGE = {
@@ -122,38 +119,6 @@ export const getUnreadNotificationCount = queryWithRLS({
         }
 
         return { count };
-    },
-});
-
-export const createNotification = mutationWithRLS({
-    args: {
-        objective: v.id('objectives'),
-        notificationType: notificationTypeValidator,
-        notificationDate: v.optional(v.number()),
-        message: v.string(),
-    },
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.objective);
-        if (!objective) throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-
-        await assertCanCreateNotificationForObjective(ctx, objective);
-
-        const now = Date.now();
-        const notificationDate = args.notificationDate ?? now;
-
-        const id = await ctx.db.insert('notifications', {
-            userId: ctx.userId,
-            organizationId: objective.organizationId,
-            objective: args.objective,
-            read: false,
-            notificationType: args.notificationType as NotificationType,
-            notificationDate,
-            message: args.message,
-            createdAt: now,
-            updatedAt: now,
-        });
-
-        return await ctx.db.get('notifications', id);
     },
 });
 

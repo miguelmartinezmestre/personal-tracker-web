@@ -616,68 +616,6 @@ export async function createOrganization(
     return { name, description };
 }
 
-export interface CreateNotificationOptions {
-    message?: string;
-    type?: string;
-}
-
-export interface NotificationData {
-    message: string;
-    type: string;
-}
-
-export async function createNotification(
-    page: Page,
-    objectiveTitle: string,
-    options?: CreateNotificationOptions
-): Promise<NotificationData> {
-    const uuid = randomUUID();
-    const message = options?.message ?? `test-notification-${uuid.substring(0, 8)}`;
-    const type = options?.type ?? 'reminder';
-
-    await page.goto('/dashboard/notifications');
-    await page.waitForLoadState('domcontentloaded');
-
-    const createButton = page.getByTestId('notification-create-open');
-    await expect(createButton).toBeVisible({ timeout: 15000 });
-
-    const objectiveSelect = page.getByTestId('notification-objective-select');
-    let modalOpened = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await createButton.click();
-        try {
-            await expect(objectiveSelect).toBeVisible({ timeout: 5000 });
-            modalOpened = true;
-            break;
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-        }
-    }
-
-    if (!modalOpened) {
-        throw new Error('Could not open notification create modal');
-    }
-
-    await objectiveSelect.click();
-    await page.waitForSelector('[role="option"]', { timeout: 5000 });
-    const objectiveOption = page.getByRole('option', { name: objectiveTitle }).first();
-    if ((await objectiveOption.count()) > 0) {
-        await objectiveOption.click();
-    } else {
-        await page.getByRole('option').first().click();
-    }
-    await page.getByTestId('notification-type-input').fill(type);
-    await page.getByTestId('notification-message-input').fill(message);
-    await page.getByTestId('notification-save-button').click();
-
-    await expect(objectiveSelect).toBeHidden({ timeout: 15000 });
-    await expect(page.getByTestId('table-row').filter({ hasText: message })).toBeVisible({
-        timeout: 15000,
-    });
-
-    return { message, type };
-}
-
 export async function waitForToast(page: Page, message: string | RegExp): Promise<void> {
     const toast = page.locator('[data-sonner-toast]', { hasText: message });
     await expect(toast).toBeVisible({ timeout: 5000 });

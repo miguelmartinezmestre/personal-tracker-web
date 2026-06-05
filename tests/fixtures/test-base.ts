@@ -4,7 +4,6 @@ import {
     createObjective,
     createCategory,
     createOrganization,
-    createNotification,
     ensureDefaultCategories,
     loginUser,
     logoutUser,
@@ -12,7 +11,6 @@ import {
     ObjectiveData,
     CategoryData,
     OrganizationData,
-    NotificationData,
 } from '../helpers/test-helpers';
 import { attachPageDiagnostics } from '../helpers/page-diagnostics';
 
@@ -36,10 +34,6 @@ export interface TestFixtures {
     createOrganizationHelper: (
         options?: Parameters<typeof createOrganization>[1]
     ) => Promise<OrganizationData>;
-    createNotificationHelper: (
-        objectiveTitle: string,
-        options?: Parameters<typeof createNotification>[2]
-    ) => Promise<NotificationData>;
     ensureCategories: () => Promise<void>;
     login: (email: string, password?: string) => Promise<void>;
     logout: () => Promise<void>;
@@ -114,12 +108,6 @@ export const test = base.extend<TestFixtures>({
         });
     },
 
-    createNotificationHelper: async ({ page }, use) => {
-        await use(async (objectiveTitle, options) => {
-            return createNotification(page, objectiveTitle, options);
-        });
-    },
-
     ensureCategories: async ({ page }, use) => {
         await use(async () => {
             await ensureDefaultCategories(page);
@@ -146,7 +134,6 @@ export {
     createObjective,
     createCategory,
     createOrganization,
-    createNotification,
     ensureDefaultCategories,
     loginUser,
     logoutUser,

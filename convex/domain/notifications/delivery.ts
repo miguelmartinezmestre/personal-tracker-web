@@ -20,30 +20,6 @@ function isOrgAdminFor(ctx: NotificationAccessCtx, organizationId: Id<'organizat
     );
 }
 
-export async function assertCanCreateNotificationForObjective(
-    ctx: NotificationAccessCtx,
-    objective: Doc<'objectives'>
-) {
-    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
-    const isOrganizationAdmin = isOrgAdminFor(ctx, objective.organizationId);
-    const isOwner = objective.userId === ctx.userId;
-
-    let isOrganizationMember = false;
-    if (objective.organizationId === ctx.organizationId) {
-        const membership = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', objective.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-        isOrganizationMember = membership !== null;
-    }
-
-    if (!isGlobalAdmin && !isOrganizationAdmin && !isOwner && !isOrganizationMember) {
-        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
-    }
-}
-
 export function assertCanMutateNotification(
     ctx: NotificationAccessCtx,
     notification: Doc<'notifications'>

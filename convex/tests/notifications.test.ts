@@ -6,6 +6,7 @@ import {
     createTestOrganization,
     createTestMember,
     createTestObjective,
+    createTestNotification,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
@@ -13,7 +14,6 @@ import { DataModel, Id } from '../_generated/dataModel';
 describe('convex notifications', async () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
-    let adminIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;
     let objectiveId: Id<'objectives'>;
     let userOrganizationId: Id<'organization'>;
@@ -88,21 +88,6 @@ describe('convex notifications', async () => {
 
         _adminOrganizationId = adminOrgId;
 
-        adminIdentity = t.withIdentity({
-            subject: adminData.docId,
-            role: admin.role,
-            email: admin.email,
-            name: admin.name,
-            password: admin.password,
-            emailVerified: admin.emailVerified,
-            createdAt: Date.now(),
-            userId: adminData.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-
         objectiveId = (await createTestObjective(t, {
             userId: userId,
             organizationId: userOrganizationId,
@@ -110,83 +95,6 @@ describe('convex notifications', async () => {
             targetValue: 100,
             currentValue: 0,
         })) as Id<'objectives'>;
-    });
-
-    describe('createNotification', () => {
-        test('creates notification successfully', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
-                objective: objectiveId,
-                notificationType: 'reminder',
-                message: 'Test notification message',
-            });
-
-            expect(notification).toBeDefined();
-            expect(notification?.message).toBe('Test notification message');
-            expect(notification?.notificationType).toBe('reminder');
-            expect(notification?.objective).toBe(objectiveId);
-            expect(notification?.userId).toBe(userId);
-            expect(notification?.read).toBe(false);
-        });
-
-        test('creates notification with custom date', async () => {
-            const customDate = Date.now() + DAY_MS;
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
-                objective: objectiveId,
-                notificationType: 'deadline',
-                message: 'Deadline approaching',
-                notificationDate: customDate,
-            });
-
-            expect(notification?.notificationDate).toBe(customDate);
-        });
-
-        test('sets current date when notificationDate not provided', async () => {
-            const before = Date.now();
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
-                objective: objectiveId,
-                notificationType: 'progress',
-                message: 'Progress update',
-            });
-            const after = Date.now();
-
-            expect(notification?.notificationDate).toBeGreaterThanOrEqual(before);
-            expect(notification?.notificationDate).toBeLessThanOrEqual(after);
-        });
-
-        test('rejects notification for non-existent objective', async () => {
-            const fakeObjectiveId = await userIdentity.run(async ctx => {
-                const tempId = await ctx.db.insert('objectives', {
-                    userId: userId,
-                    organizationId: userOrganizationId,
-                    title: 'temp',
-                    targetValue: 1,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                await ctx.db.delete(tempId);
-                return tempId;
-            });
-
-            await expect(
-                userIdentity.mutation(api.notifications.createNotification, {
-                    objective: fakeObjectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                })
-            ).rejects.toThrow(/Objective not found|OBJECTIVE_NOT_FOUND/);
-        });
-
-        test('rejects unauthenticated users', async () => {
-            await expect(
-                t.mutation(api.notifications.createNotification, {
-                    objective: objectiveId,
-                    notificationType: 'reminder',
-                    message: 'Test',
-                })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-        });
     });
 
     describe('getNotificationsByUser', () => {
@@ -201,13 +109,17 @@ describe('convex notifications', async () => {
         });
 
         test('returns user notifications ordered by date descending', async () => {
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'First',
                 notificationDate: Date.now() - DAY_MS,
             });
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Second',
@@ -227,7 +139,9 @@ describe('convex notifications', async () => {
         });
 
         test('returns only user own notifications', async () => {
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'User notification',
@@ -240,7 +154,9 @@ describe('convex notifications', async () => {
                 targetValue: 100,
                 currentValue: 0,
             })) as Id<'objectives'>;
-            await adminIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId: adminUserId,
+                organizationId: _adminOrganizationId,
                 objective: adminObjectiveId,
                 notificationType: 'reminder',
                 message: 'Admin notification',
@@ -313,7 +229,9 @@ describe('convex notifications', async () => {
 
     describe('setNotificationRead', () => {
         test('marks notification as read', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Test',
@@ -328,7 +246,9 @@ describe('convex notifications', async () => {
         });
 
         test('marks notification as unread', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Test',
@@ -348,7 +268,9 @@ describe('convex notifications', async () => {
         });
 
         test('updates updatedAt timestamp', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Test',
@@ -365,7 +287,9 @@ describe('convex notifications', async () => {
         });
 
         test('rejects unauthenticated users', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Test',
@@ -392,17 +316,23 @@ describe('convex notifications', async () => {
         });
 
         test('marks all unread notifications as read', async () => {
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Notification 1',
             });
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'deadline',
                 message: 'Notification 2',
             });
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'progress',
                 message: 'Notification 3',
@@ -430,7 +360,9 @@ describe('convex notifications', async () => {
         });
 
         test('returns zero when all notifications already read', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Test',
@@ -450,7 +382,9 @@ describe('convex notifications', async () => {
         });
 
         test('only updates unread notifications', async () => {
-            const read = await userIdentity.mutation(api.notifications.createNotification, {
+            const read = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Read',
@@ -460,7 +394,9 @@ describe('convex notifications', async () => {
                 read: true,
             });
 
-            await userIdentity.mutation(api.notifications.createNotification, {
+            await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Unread',
@@ -483,7 +419,9 @@ describe('convex notifications', async () => {
 
     describe('deleteNotification', () => {
         test('deletes notification successfully', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'To Delete',
@@ -500,7 +438,9 @@ describe('convex notifications', async () => {
         });
 
         test('rejects unauthenticated users', async () => {
-            const notification = await userIdentity.mutation(api.notifications.createNotification, {
+            const notification = await createTestNotification(t, {
+                userId,
+                organizationId: userOrganizationId,
                 objective: objectiveId,
                 notificationType: 'reminder',
                 message: 'Test',
