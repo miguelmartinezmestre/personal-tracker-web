@@ -16,6 +16,8 @@ describe('convex admin', () => {
     let orgAdminIdentity: ReturnType<typeof t.withIdentity>;
     let adminId: Id<'user'>;
     let userId: Id<'user'>;
+    let adminName: string;
+    let userEmail: string;
 
     beforeEach(async () => {
         const random = Math.random().toString(36).substring(2, 15);
@@ -39,6 +41,8 @@ describe('convex admin', () => {
         });
         adminId = admin.docId;
         userId = user.docId;
+        adminName = admin.name;
+        userEmail = user.email;
 
         const organizationId = await createTestOrganization(t, {
             name: `Admin Test Org ${random}`,
@@ -103,6 +107,45 @@ describe('convex admin', () => {
         expect(result.page.map(user => user._id)).toEqual(
             expect.arrayContaining([adminId, userId])
         );
+    });
+
+    test('listUsers without searchValue returns test users', async () => {
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 50, cursor: null },
+        });
+
+        expect(result.page.map(user => user._id)).toEqual(
+            expect.arrayContaining([adminId, userId])
+        );
+    });
+
+    test('listUsers with name fragment searchValue returns matching user', async () => {
+        const nameFragment = adminName.split(' ')[0];
+
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 10, cursor: null },
+            searchValue: nameFragment,
+        });
+
+        expect(result.page.map(user => user._id)).toContain(adminId);
+    });
+
+    test('listUsers with full email searchValue returns that user', async () => {
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 10, cursor: null },
+            searchValue: userEmail,
+        });
+
+        expect(result.page).toEqual([expect.objectContaining({ _id: userId, email: userEmail })]);
+    });
+
+    test('listUsers with no-match searchValue returns empty page', async () => {
+        const result = await adminIdentity.query(api.admin.listUsers, {
+            paginationOpts: { numItems: 10, cursor: null },
+            searchValue: 'zzzznonexistent-user-search-12345',
+        });
+
+        expect(result.page).toEqual([]);
     });
 
     test('rejects non-admin users from listing users', async () => {

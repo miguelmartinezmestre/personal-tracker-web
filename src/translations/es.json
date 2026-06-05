@@ -854,6 +854,7 @@
         "usersTable": {
             "empty": "No se encontraron usuarios.",
             "emptyWithSearch": "No hay usuarios que coincidan con la busqueda.",
+            "searchPlaceholder": "Buscar usuarios por nombre o correo...",
             "roles": {
                 "admin": "Administrador",
                 "globalAdmin": "Administrador global",

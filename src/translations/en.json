@@ -858,6 +858,7 @@
             "loading": "Loading users...",
             "empty": "No users found.",
             "emptyWithSearch": "No users match your search.",
+            "searchPlaceholder": "Search users by name or email...",
             "errors": {
                 "loadFailed": "Error loading users: {message}",
                 "permissionsHint": "Make sure you have admin permissions to access this section."

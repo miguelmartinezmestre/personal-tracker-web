@@ -173,6 +173,25 @@ export default defineSchema({
         updatedAt: v.number(),
     }).index('by_user', ['userId']),
 
+    user: defineTable({
+        name: v.string(),
+        email: v.string(),
+        emailVerified: v.boolean(),
+        image: v.optional(v.union(v.null(), v.string())),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        userId: v.optional(v.union(v.null(), v.string())),
+        role: v.optional(v.union(v.null(), v.string())),
+        banned: v.optional(v.union(v.null(), v.boolean())),
+        banReason: v.optional(v.union(v.null(), v.string())),
+        banExpires: v.optional(v.union(v.null(), v.number())),
+    })
+        .index('email_name', ['email', 'name'])
+        .index('name', ['name'])
+        .index('userId', ['userId'])
+        .searchIndex('search_user_name', { searchField: 'name' })
+        .searchIndex('search_user_email', { searchField: 'email' }),
+
     member: defineTable({
         organizationId: v.id('organization'),
         userId: v.id('user'),

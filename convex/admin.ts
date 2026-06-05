@@ -30,10 +30,18 @@ export const listUsers = queryWithRLS({
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
 
-        const result = await ctx.db
-            .query('user')
-            .withIndex('email_name')
-            .paginate(args.paginationOpts);
+        const search = args.searchValue?.trim();
+        const result = search
+            ? search.includes('@')
+                ? await ctx.db
+                      .query('user')
+                      .withSearchIndex('search_user_email', q => q.search('email', search))
+                      .paginate(args.paginationOpts)
+                : await ctx.db
+                      .query('user')
+                      .withSearchIndex('search_user_name', q => q.search('name', search))
+                      .paginate(args.paginationOpts)
+            : await ctx.db.query('user').withIndex('email_name').paginate(args.paginationOpts);
 
         return result;
     },
