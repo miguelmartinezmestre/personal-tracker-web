@@ -3,7 +3,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import type { Doc } from './_generated/dataModel';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { runDeadlineNotificationsJob } from './jobs/notifications/deadlineNotifications';
 import { markAllReadBatchJob } from './jobs/notifications/markAllRead';
 import {

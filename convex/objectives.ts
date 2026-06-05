@@ -3,7 +3,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import type { Id } from './_generated/dataModel';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { objectiveStatusValidator } from './utils/validators';
 import { ERROR_CODES } from './utils/constants';
 import { withInvalidCursorRetry } from './utils/pagination';
@@ -21,7 +21,7 @@ import { isGlobalAdminRole } from '../shared/platform-roles';
 
 function assertCanModifyObjective(
     ctx: { userId: Id<'user'>; organizationId: Id<'organization'> | null; role: string },
-    objective: { userId: Id<'user'>; organizationId: Id<'organization'> }
+    objective: { organizationId: Id<'organization'> }
 ): void {
     const isGlobalAdmin = isGlobalAdminRole(ctx.role);
     if (isGlobalAdmin) return;

@@ -4,7 +4,7 @@ import { internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { countStreakFromUpdates } from './domain/achievements/calculations';
 import { getContributors } from './domain/achievements/contributors';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
 import {
     checkOrganizationAchievementsJob,

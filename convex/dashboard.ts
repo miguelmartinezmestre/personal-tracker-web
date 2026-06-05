@@ -1,4 +1,4 @@
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from './platform/rls/wrappers';
 import { v } from 'convex/values';
 import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
 import { computeProgressPercent } from './domain/objectives/metrics';

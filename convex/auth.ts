@@ -16,7 +16,7 @@ import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
 import { buildInvitationEmail } from './platform/email/invitationEmail';
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from './platform/rls/wrappers';
 import {
     DEFAULT_ORGANIZATION_NAME,
     DEFAULT_ORGANIZATION_SLUG_BASE,

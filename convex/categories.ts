@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
-import { queryWithRLS, mutationWithRLS } from './rls';
+import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { withInvalidCursorRetry } from './utils/pagination';
 import {
     createCategoryForCurrentOrganization,

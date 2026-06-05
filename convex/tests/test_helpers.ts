@@ -179,8 +179,6 @@ export async function createTestObjective(
         targetValue: number;
         currentValue?: number;
         startValue?: number;
-        /** @deprecated tenant model removed objective scope; accepted but ignored. */
-        scope?: 'personal' | 'organization';
         status?: 'active' | 'completed';
         description?: string;
         categoryId?: Id<'categories'>;
@@ -192,7 +190,6 @@ export async function createTestObjective(
     const startValue = options.startValue ?? options.currentValue ?? 0;
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
-            userId: options.userId,
             organizationId: options.organizationId,
             title: options.title,
             description: options.description,

@@ -2,7 +2,7 @@ import { ConvexError, v } from 'convex/values';
 import { getAuth } from './generated/auth';
 import { paginationOptsValidator } from 'convex/server';
 import { requireAdmin } from './utils/requiredAdmin';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';

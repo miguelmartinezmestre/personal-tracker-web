@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from './platform/rls/wrappers';
 import { internalMutation } from './_generated/server';
 import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
 import { resolveActorUserId, sanitizeAuditMetadata } from './domain/audit/privacy';

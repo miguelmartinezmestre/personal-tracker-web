@@ -15,7 +15,7 @@ import {
     ensureTestOrganizationInternalArgsValidator,
 } from './platform/setup/validators';
 import { ERROR_CODES } from './utils/constants';
-import { queryWithRLS } from './rls';
+import { queryWithRLS } from './platform/rls/wrappers';
 import { isGlobalAdminRole } from '../shared/platform-roles';
 
 export const isPlatformSetUp = query({

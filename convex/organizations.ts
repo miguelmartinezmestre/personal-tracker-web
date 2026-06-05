@@ -7,7 +7,7 @@ import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import { resolveActiveMembership } from './platform/rls/authContext';
 import { isPersonalOrganizationForUser } from './domain/organizations/personalOrganization';
-import { mutationWithRLS, queryWithRLS } from './rls';
+import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
     if (!metadata) {
