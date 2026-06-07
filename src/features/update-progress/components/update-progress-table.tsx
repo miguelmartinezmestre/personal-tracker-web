@@ -19,7 +19,7 @@ const ObjectiveProgressTimeline = dynamic(() => import('./objective-progress-tim
 import { useUpdateProgressTableColumns } from './update-progress-table-columns';
 import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
-import { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
+import { mapDocToUpdateProgress } from '@/features/update-progress/lib/map-doc-to-update-progress';
 import { useTranslations } from 'next-intl';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -135,12 +135,7 @@ export default function UpdateProgressTable() {
                     </div>
                 ) : (
                     updates.map(progressRow => {
-                        const defaultValues = {
-                            _id: progressRow._id,
-                            updatedValue: progressRow.updatedValue,
-                            updateDate: new Date(progressRow.updateDate),
-                            comment: progressRow.comment ?? null,
-                        } satisfies UpdateProgress;
+                        const defaultValues = mapDocToUpdateProgress(progressRow);
 
                         return (
                             <Card key={progressRow._id} className="w-full">
