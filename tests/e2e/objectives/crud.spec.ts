@@ -1,6 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 import { createCategory, openCreateObjectiveModal } from '../../helpers/test-helpers';
+import { saveEditedItemAndWaitForRow } from '../../helpers/save-and-wait-for-row';
 
 async function openObjectivesPage(page: Page): Promise<void> {
     await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
@@ -41,36 +42,22 @@ function objectiveRow(page: Page, title: string) {
     return page.getByTestId('table-row').filter({ hasText: title }).first();
 }
 
-async function submitOpenObjectiveDialog(page: Page): Promise<void> {
-    await page
-        .locator('[role="dialog"] form')
-        .evaluate(form => (form as HTMLFormElement).requestSubmit())
-        .catch(() => undefined);
-}
-
 async function saveEditedObjectiveAndWaitForRow(
     page: Page,
     titleInput: Locator,
     rowTitle: string
 ): Promise<void> {
-    const saveButton = page.getByTestId('objective-edit-save-button');
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await expect(saveButton).toBeVisible({ timeout: 10000 });
-        await expect(saveButton).toBeEnabled({ timeout: 10000 });
-        await submitOpenObjectiveDialog(page);
-
-        try {
-            await expect(titleInput).toBeHidden({ timeout: 5000 });
-            await expect(objectiveRow(page, rowTitle)).toBeVisible({ timeout: 10000 });
-            return;
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-        }
-    }
-
-    throw new Error(`Could not save edited objective "${rowTitle}"`);
+    await saveEditedItemAndWaitForRow({
+        page,
+        saveButtonTestId: 'objective-edit-save-button',
+        dialogInput: titleInput,
+        rowLocator: objectiveRow(page, rowTitle),
+        entityLabel: `objective "${rowTitle}"`,
+        onRetry: async currentPage => {
+            await currentPage.keyboard.press('Escape').catch(() => undefined);
+            await currentPage.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+        },
+    });
 }
 
 test.describe('Objectives CRUD', () => {
