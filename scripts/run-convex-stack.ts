@@ -1,28 +1,20 @@
 #!/usr/bin/env node
 
-import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { extractAdminKey, generateStaticJwks } from './lib/auth';
+import { sanitizeEnv } from './lib/command';
 import {
-    DOCKER_COMMAND,
-    PNPM_COMMAND,
-    type RunCommandOptions,
-    USE_SHELL_FOR_PNPM,
-    runCommand,
-    runCommandCapture,
-    runCommandWithInput,
-    sanitizeEnv,
-} from './lib/command';
-import { buildUrl, waitForHttp } from './lib/http';
-import { DEFAULT_MAILHOG_SMTP_ENV, buildMailhogConvexEnv } from './lib/mailhog-email';
+    bootstrapConvexCredentials,
+    buildConvexCommandEnv,
+    configureConvexEnv,
+    createDockerComposeHelpers,
+    deployConvexFunctions,
+    waitForConvexBackend,
+} from './lib/convex-stack';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.yml';
 const GENERATED_DIRECTORIES = ['mysql-data', 'mysql-data-dev', 'data', 'data-dev'];
-const CONVEX_START_TIMEOUT_MS = 120_000;
-const POLL_INTERVAL_MS = 1_000;
-const HTTP_REQUEST_TIMEOUT_MS = 3_000;
 
 const CONVEX_PORT = process.env.CONVEX_PORT ?? process.env.PORT ?? '3210';
 const CONVEX_SITE_PORT = process.env.CONVEX_SITE_PORT ?? process.env.SITE_PROXY_PORT ?? '3211';
@@ -53,22 +45,10 @@ function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     };
 }
 
-function dockerCompose(args: Array<string>, options: RunCommandOptions = {}): Promise<void> {
-    return runCommand(DOCKER_COMMAND, ['compose', '-f', COMPOSE_FILE, ...args], {
-        ...options,
-        env: getComposeEnv(options.env),
-    });
-}
-
-function dockerComposeCapture(
-    args: Array<string>,
-    options: RunCommandOptions = {}
-): Promise<string> {
-    return runCommandCapture(DOCKER_COMMAND, ['compose', '-f', COMPOSE_FILE, ...args], {
-        ...options,
-        env: getComposeEnv(options.env),
-    });
-}
+const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
+    composeFile: COMPOSE_FILE,
+    getComposeEnv,
+});
 
 function cleanupGeneratedDirectories(): void {
     for (const directory of GENERATED_DIRECTORIES) {
@@ -115,68 +95,6 @@ function upsertEnvFile(filePath: string, updates: Record<string, string>): void 
     writeFileSync(filePath, `${updatedLines.join(newline)}${newline}`);
 }
 
-function buildConvexCommandEnv(
-    adminKey: string,
-    betterAuthSecret: string,
-    jwks: string
-): NodeJS.ProcessEnv {
-    return buildMailhogConvexEnv({
-        ...sanitizeEnv(process.env),
-        BETTER_AUTH_SECRET: betterAuthSecret,
-        BETTER_AUTH_URL: APP_URL,
-        CONVEX_SELF_HOSTED_ADMIN_KEY: adminKey,
-        CONVEX_SELF_HOSTED_URL: CONVEX_URL,
-        JWKS: jwks,
-        NEXT_PUBLIC_CONVEX_SITE_URL: CONVEX_SITE_URL,
-        NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
-        NEXT_PUBLIC_SITE_URL: APP_URL,
-        SITE_URL: APP_URL,
-    });
-}
-
-async function setConvexEnvVar(
-    commandEnv: NodeJS.ProcessEnv,
-    key: string,
-    value: string
-): Promise<void> {
-    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-}
-
-async function configureConvexEnv(commandEnv: NodeJS.ProcessEnv): Promise<void> {
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'SITE_URL', APP_URL], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_URL', APP_URL], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-    await runCommand(
-        PNPM_COMMAND,
-        ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_SECRET', commandEnv.BETTER_AUTH_SECRET ?? ''],
-        {
-            env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
-        }
-    );
-    await runCommandWithInput(
-        PNPM_COMMAND,
-        ['exec', 'convex', 'env', 'set', 'JWKS'],
-        `${commandEnv.JWKS ?? ''}\n`,
-        {
-            env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
-        }
-    );
-
-    for (const [key, value] of Object.entries(DEFAULT_MAILHOG_SMTP_ENV)) {
-        await setConvexEnvVar(commandEnv, key, value);
-    }
-}
-
 async function main(): Promise<void> {
     console.log('Resetting local Convex docker compose...');
     await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
@@ -191,37 +109,28 @@ async function main(): Promise<void> {
     await dockerCompose(['up', '-d', 'mysql', 'backend']);
 
     console.log('Waiting for Convex backend readiness...');
-    await waitForHttp({
-        url: buildUrl(CONVEX_URL, '/version'),
-        timeoutMs: CONVEX_START_TIMEOUT_MS,
-        requestTimeoutMs: HTTP_REQUEST_TIMEOUT_MS,
-        pollIntervalMs: POLL_INTERVAL_MS,
-        isReady: response => response.ok,
-    });
+    await waitForConvexBackend(CONVEX_URL);
 
     console.log('Starting local Convex dashboard...');
     await dockerCompose(['up', '-d', 'dashboard']);
 
     console.log('Generating Convex self-hosted admin key...');
-    const adminKeyOutput = await dockerComposeCapture([
-        'exec',
-        '-T',
-        'backend',
-        './generate_admin_key.sh',
-    ]);
-    const adminKey = extractAdminKey(adminKeyOutput);
-    const betterAuthSecret = randomBytes(32).toString('base64');
-    const jwks = await generateStaticJwks(betterAuthSecret);
-    const commandEnv = buildConvexCommandEnv(adminKey, betterAuthSecret, jwks);
+    const { adminKey, betterAuthSecret, jwks } =
+        await bootstrapConvexCredentials(dockerComposeCapture);
+    const commandEnv = buildConvexCommandEnv({
+        adminKey,
+        betterAuthSecret,
+        jwks,
+        convexUrl: CONVEX_URL,
+        convexSiteUrl: CONVEX_SITE_URL,
+        siteUrl: APP_URL,
+    });
 
     console.log('Configuring Convex env vars...');
-    await configureConvexEnv(commandEnv);
+    await configureConvexEnv(commandEnv, APP_URL);
 
     console.log('Deploying Convex functions...');
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'dev', '--once', '--tail-logs', 'disable'], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
+    await deployConvexFunctions(commandEnv);
 
     upsertEnvFile(join(process.cwd(), '.env.local'), {
         CONVEX_SELF_HOSTED_ADMIN_KEY: adminKey,

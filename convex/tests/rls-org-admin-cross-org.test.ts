@@ -9,28 +9,7 @@ import {
 } from './test_helpers';
 import type { DataModel, Id } from '../_generated/dataModel';
 import type { TestConvexForDataModel } from 'convex-test';
-
-function identityFor(user: {
-    docId: Id<'user'>;
-    email: string;
-    name: string;
-    role?: string;
-}): Parameters<ReturnType<typeof initConvexTest>['withIdentity']>[0] {
-    return {
-        subject: user.docId,
-        role: user.role ?? 'user',
-        email: user.email,
-        name: user.name,
-        password: 'test-password',
-        emailVerified: false,
-        createdAt: Date.now(),
-        userId: user.docId,
-        image: 'https://example.com/image.png',
-        banExpires: null,
-        banReason: null,
-        banned: false,
-    };
-}
+import { identityFor } from './test_identities';
 
 async function expectEmptyListOrDenied<T>(promise: Promise<T[]>) {
     try {
@@ -51,7 +30,6 @@ describe('organization admins cannot access another organization by id', () => {
     let orgBObjectiveId: Id<'objectives'>;
     let orgBProgressId: Id<'progressUpdates'>;
     let orgBNotificationId: Id<'notifications'>;
-    let orgBAchievementId: Id<'organizationAchievements'>;
 
     beforeEach(async () => {
         const suffix = Math.random().toString(36).slice(2, 12);
@@ -130,40 +108,6 @@ describe('organization admins cannot access another organization by id', () => {
                 createdAt: now,
                 updatedAt: now,
             });
-        });
-
-        const achievementDefinitionId = await t.run(async ctx => {
-            return await ctx.db.insert('achievementDefinitions', {
-                code: `cross_org_private_${suffix}`,
-                type: 'organization',
-                category: 'milestone',
-                tier: 'bronze',
-                threshold: 1,
-                icon: 'shield',
-                points: 10,
-                isActive: true,
-                createdAt: now,
-                updatedAt: now,
-            });
-        });
-
-        orgBAchievementId = await t.run(async ctx => {
-            const organizationAchievementId = await ctx.db.insert('organizationAchievements', {
-                organization: orgBId,
-                achievement: achievementDefinitionId,
-                earnedAt: now,
-                createdAt: now,
-                updatedAt: now,
-            });
-
-            await ctx.db.insert('organizationAchievementContributors', {
-                organizationAchievementId,
-                userId: orgBUserId,
-                contributedAt: now,
-                contributionValue: 1,
-            });
-
-            return organizationAchievementId;
         });
     });
 
@@ -254,12 +198,6 @@ describe('organization admins cannot access another organization by id', () => {
         await expectEmptyListOrDenied(
             orgAOwnerIdentity.query(api.achievements.getOrganizationAchievements, {
                 organizationId: orgBId,
-            })
-        );
-
-        await expectEmptyListOrDenied(
-            orgAOwnerIdentity.query(api.achievements.getOrganizationAchievementContributors, {
-                organizationAchievementId: orgBAchievementId,
             })
         );
     });

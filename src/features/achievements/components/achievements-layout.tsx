@@ -6,7 +6,6 @@ import { Trophy, Star, Award, Users, User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
@@ -16,9 +15,7 @@ import {
     type AchievementProgress,
 } from '@/features/achievements/schemas/achievement';
 import { AchievementCard } from './achievement-card';
-
-const SKELETON_STATS = [1, 2, 3];
-const SKELETON_CARDS = [1, 2, 3, 4, 5, 6];
+import { AchievementsSkeleton } from './achievements-skeleton';
 
 function parseAchievementProgress(data: unknown): AchievementProgress[] {
     if (!Array.isArray(data)) {
@@ -81,24 +78,7 @@ function AchievementsContent() {
     };
 
     if (isLoading) {
-        return (
-            <div className="container mx-auto p-4 space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <Trophy className="h-8 w-8 text-yellow-500" />
-                    <Skeleton className="h-8 w-48" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {SKELETON_STATS.map(i => (
-                        <Skeleton key={i} className="h-24" />
-                    ))}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {SKELETON_CARDS.map(i => (
-                        <Skeleton key={i} className="h-40" />
-                    ))}
-                </div>
-            </div>
-        );
+        return <AchievementsSkeleton />;
     }
 
     const needsSeeding = !progress || progress.length === 0;
@@ -299,27 +279,6 @@ function AchievementsContent() {
                     )}
                 </TabsContent>
             </Tabs>
-        </div>
-    );
-}
-
-function AchievementsSkeleton() {
-    return (
-        <div className="container mx-auto p-4 space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-                <Trophy className="h-8 w-8 text-yellow-500" />
-                <Skeleton className="h-8 w-48" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {SKELETON_STATS.map(i => (
-                    <Skeleton key={i} className="h-24" />
-                ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {SKELETON_CARDS.map(i => (
-                    <Skeleton key={i} className="h-40" />
-                ))}
-            </div>
         </div>
     );
 }

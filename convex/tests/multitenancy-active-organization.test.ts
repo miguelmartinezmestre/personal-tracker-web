@@ -11,24 +11,7 @@ import {
     type TestUserData,
 } from './test_helpers';
 import type { TestConvexForDataModel } from 'convex-test';
-import type { UserIdentity } from 'convex/server';
-
-function identityFor(user: TestUserData, sessionId?: Id<'session'>): Partial<UserIdentity> {
-    return {
-        subject: user.docId,
-        role: user.role ?? 'user',
-        email: user.email,
-        name: user.name,
-        emailVerified: false,
-        createdAt: Date.now(),
-        userId: user.docId,
-        sessionId,
-        image: 'https://example.com/image.png',
-        banExpires: null,
-        banReason: null,
-        banned: false,
-    } as Partial<UserIdentity>;
-}
+import { identityFor } from './test_identities';
 
 async function createActiveSession(
     t: ReturnType<typeof initConvexTest>,

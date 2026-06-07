@@ -7,7 +7,7 @@ import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import { resolveActiveMembership } from './platform/rls/authContext';
 import { isPersonalOrganizationForUser } from './domain/organizations/personalOrganization';
-import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
+import { queryWithRLS } from './platform/rls/wrappers';
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
     if (!metadata) {
@@ -336,34 +336,5 @@ export const getOrganizationInvitations = queryWithRLS({
         });
 
         return invitationsWithDetails;
-    },
-});
-
-export const expireInvitation = mutationWithRLS({
-    args: {
-        organizationId: v.id('organization'),
-        invitationId: v.id('invitation'),
-    },
-    handler: async (ctx, args) => {
-        const userMembership = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-
-        if (!userMembership || !['admin', 'owner'].includes(userMembership.role)) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
-
-        const invitation = await ctx.db.get('invitation', args.invitationId);
-        if (!invitation || invitation.organizationId !== args.organizationId) {
-            throw new ConvexError(ERROR_CODES.INVITATION_NOT_FOUND);
-        }
-
-        await ctx.db.patch(args.invitationId, {
-            expiresAt: 0,
-            status: 'cancelled',
-        });
     },
 });

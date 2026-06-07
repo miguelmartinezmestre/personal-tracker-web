@@ -109,39 +109,6 @@ describe('convex organizations', () => {
         ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
     });
 
-    test('organization owners can list and expire invitations', async () => {
-        const invitationId = await t.run(async ctx => {
-            return await ctx.db.insert('invitation', {
-                organizationId,
-                email: 'pending-member@example.com',
-                role: 'member',
-                status: 'pending',
-                expiresAt: Date.now() + 60_000,
-                createdAt: Date.now(),
-                inviterId: memberUserId,
-            });
-        });
-
-        const invitations = await userIdentity.query(api.organizations.getOrganizationInvitations, {
-            organizationId,
-        });
-
-        expect(invitations).toHaveLength(1);
-        expect(invitations[0]?.id).toBe(invitationId);
-
-        await userIdentity.mutation(api.organizations.expireInvitation, {
-            organizationId,
-            invitationId,
-        });
-
-        const expiredInvitation = await t.run(async ctx => {
-            return await ctx.db.get(invitationId);
-        });
-
-        expect(expiredInvitation?.status).toBe('cancelled');
-        expect(expiredInvitation?.expiresAt).toBe(0);
-    });
-
     test('users outside the organization cannot list invitations', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const outsider = await createTestUser(t, {

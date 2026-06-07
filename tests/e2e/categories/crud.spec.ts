@@ -7,6 +7,10 @@ import {
 } from '../../helpers/test-helpers';
 import { CategoryFactory } from '../../helpers/factories';
 import { Locator, Page } from '@playwright/test';
+import {
+    saveEditedItemAndWaitForRow,
+    submitOpenDialogForm,
+} from '../../helpers/save-and-wait-for-row';
 
 test.describe('Categories CRUD', () => {
     test.describe.configure({ mode: 'serial' });
@@ -15,13 +19,6 @@ test.describe('Categories CRUD', () => {
         await ensureAuthenticatedState(page);
     });
 
-    async function submitOpenCategoryDialog(page: Page): Promise<void> {
-        await page
-            .locator('[role="dialog"] form')
-            .evaluate(form => (form as HTMLFormElement).requestSubmit())
-            .catch(() => undefined);
-    }
-
     async function saveCategoryAndWaitForRow(page: Page, name: string): Promise<void> {
         const saveButton = page.getByTestId('category-save-button');
 
@@ -29,7 +26,7 @@ test.describe('Categories CRUD', () => {
             await page.keyboard.press('Escape').catch(() => undefined);
             await expect(saveButton).toBeVisible({ timeout: 10000 });
             await expect(saveButton).toBeEnabled({ timeout: 10000 });
-            await submitOpenCategoryDialog(page);
+            await submitOpenDialogForm(page);
 
             try {
                 await expect(page.getByTestId('category-name-input')).toBeHidden({ timeout: 5000 });
@@ -59,27 +56,20 @@ test.describe('Categories CRUD', () => {
         nameInput: Locator,
         rowName: string
     ): Promise<void> {
-        const saveButton = page.getByTestId('category-edit-save-button');
-
-        for (let attempt = 0; attempt < 3; attempt++) {
-            await expect(saveButton).toBeVisible({ timeout: 10000 });
-            await expect(saveButton).toBeEnabled({ timeout: 10000 });
-            await submitOpenCategoryDialog(page);
-
-            try {
-                await expect(nameInput).toBeHidden({ timeout: 5000 });
-                await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-                await expect(
-                    page.getByTestId('table-row').filter({ hasText: rowName }).first()
-                ).toBeVisible({ timeout: 10000 });
-                return;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-                await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-            }
-        }
-
-        throw new Error(`Could not save edited category "${rowName}"`);
+        await saveEditedItemAndWaitForRow({
+            page,
+            saveButtonTestId: 'category-edit-save-button',
+            dialogInput: nameInput,
+            rowLocator: page.getByTestId('table-row').filter({ hasText: rowName }).first(),
+            entityLabel: `category "${rowName}"`,
+            prepareForRowCheck: async currentPage => {
+                await currentPage.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
+            },
+            onRetry: async currentPage => {
+                await currentPage.keyboard.press('Escape').catch(() => undefined);
+                await currentPage.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
+            },
+        });
     }
 
     test('view categories list', async ({ page }) => {

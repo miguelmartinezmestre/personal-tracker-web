@@ -427,16 +427,6 @@ test.describe('Route Protection', () => {
                     throw new Error('Invitation was not found after creation');
                 }
 
-                await client.mutation(
-                    'organizations:expireInvitation' as unknown as Parameters<
-                        typeof client.mutation
-                    >[0],
-                    {
-                        organizationId,
-                        invitationId: invitation.id,
-                    }
-                );
-
                 await adminContext.close();
 
                 await page.goto(`/register?invitation=${invitation.id}`);
