@@ -1,7 +1,7 @@
 import { v, ConvexError } from 'convex/values';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { paginationOptsValidator } from 'convex/server';
-import { getAuthUserIdentity } from 'kitcn/auth';
+import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
 import type { Doc, Id } from './_generated/dataModel';
 
@@ -35,23 +35,22 @@ export const getSessionsByUser = queryWithRLS({
         paginationOpts: paginationOptsValidator,
     },
     handler: async (ctx, args) => {
-        const identity = await getAuthUserIdentity(ctx);
-        if (!identity?.sessionId) {
+        const currentSession = await getSession(ctx);
+
+        if (!currentSession) {
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         }
 
-        const currentSessionId = identity.sessionId;
-
         const paginatedSessions = await ctx.db
             .query('session')
-            .withIndex('userId', q => q.eq('userId', identity.userId))
+            .withIndex('userId', q => q.eq('userId', ctx.userId))
             .order('desc')
             .paginate(args.paginationOpts);
 
         return {
             ...paginatedSessions,
             page: paginatedSessions.page.map(session =>
-                toSessionListItem(session, currentSessionId)
+                toSessionListItem(session, currentSession._id)
             ),
         };
     },

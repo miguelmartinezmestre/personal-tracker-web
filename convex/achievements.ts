@@ -3,7 +3,6 @@ import { internalMutation } from './_generated/server';
 import { internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
 import { countStreakFromUpdates, isEarlyBirdCompletion } from './domain/achievements/calculations';
-import { getContributors } from './domain/achievements/contributors';
 import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
 import {
@@ -77,25 +76,6 @@ export const getOrganizationAchievements = queryWithRLS({
         }));
 
         return achievementsWithDetails;
-    },
-});
-
-export const getOrganizationAchievementContributors = queryWithRLS({
-    args: {
-        organizationAchievementId: v.id('organizationAchievements'),
-        maxResults: v.optional(v.number()),
-    },
-    handler: async (ctx, args) => {
-        const MAX_QUERY_LIMIT = 100;
-        const maxResults = Math.min(args.maxResults ?? 100, MAX_QUERY_LIMIT);
-
-        const contributors = await getContributors(ctx, args.organizationAchievementId, maxResults);
-
-        return contributors.map(user => ({
-            userId: user._id,
-            name: user.name,
-            image: user.image,
-        }));
     },
 });
 
