@@ -66,6 +66,7 @@ import type * as platform_setup_validators from "../platform/setup/validators.js
 import type * as sessions from "../sessions.js";
 import type * as setup from "../setup.js";
 import type * as tests_test_helpers from "../tests/test_helpers.js";
+import type * as tests_test_identities from "../tests/test_identities.js";
 import type * as update_progress from "../update_progress.js";
 import type * as utils_constants from "../utils/constants.js";
 import type * as utils_pagination from "../utils/pagination.js";
@@ -139,6 +140,7 @@ declare const fullApi: ApiFromModules<{
   sessions: typeof sessions;
   setup: typeof setup;
   "tests/test_helpers": typeof tests_test_helpers;
+  "tests/test_identities": typeof tests_test_identities;
   update_progress: typeof update_progress;
   "utils/constants": typeof utils_constants;
   "utils/pagination": typeof utils_pagination;

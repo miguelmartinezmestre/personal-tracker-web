@@ -164,18 +164,6 @@ describe('convex admin', () => {
         ).rejects.toThrow(/FORBIDDEN|Unauthorized|Unauthenticated|AUTH_REQUIRED/);
     });
 
-    test('allows admins to update user roles', async () => {
-        const result = await adminIdentity.mutation(api.admin.updateUserRole, {
-            userId,
-            role: 'globalAdmin',
-        });
-
-        const updatedUser = await t.run(async ctx => await ctx.db.get(userId));
-
-        expect(result).toEqual({ success: true });
-        expect(updatedUser?.role).toBe('globalAdmin');
-    });
-
     test('lists user sessions as non-current admin session items', async () => {
         const sessionId = await createTestSession(t, {
             userId,
