@@ -1,24 +1,23 @@
 #!/usr/bin/env node
 
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import process from 'node:process';
-import { extractAdminKey, generateStaticJwks } from './lib/auth';
+import { PNPM_COMMAND, USE_SHELL_FOR_PNPM, runCommand, sanitizeEnv } from './lib/command';
 import {
-    DOCKER_COMMAND,
-    PNPM_COMMAND,
-    type RunCommandOptions,
-    USE_SHELL_FOR_PNPM,
-    runCommand,
-    runCommandCapture,
-    runCommandWithInput,
-    sanitizeEnv,
-} from './lib/command';
-import { buildUrl, fetchWithTimeout, sleep, waitForHttp } from './lib/http';
-import { DEFAULT_MAILHOG_SMTP_ENV, buildMailhogConvexEnv } from './lib/mailhog-email';
+    bootstrapConvexCredentials,
+    buildConvexCommandEnv,
+    configureConvexEnv,
+    createDockerComposeHelpers,
+    deployConvexFunctions,
+    HTTP_REQUEST_TIMEOUT_MS,
+    POLL_INTERVAL_MS,
+    waitForConvexBackend,
+} from './lib/convex-stack';
+import { buildUrl, fetchWithTimeout, sleep } from './lib/http';
 
 const E2E_BUILD_META_FILE = 'build-meta.json';
 const BUILD_FINGERPRINT_INPUTS = [
@@ -123,10 +122,7 @@ const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${E2E
 const CONVEX_SITE_URL =
     process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? `http://127.0.0.1:${E2E_CONVEX_SITE_PORT}`;
 
-const CONVEX_START_TIMEOUT_MS = 120_000;
 const FRONTEND_START_TIMEOUT_MS = 180_000;
-const POLL_INTERVAL_MS = 1_000;
-const HTTP_REQUEST_TIMEOUT_MS = 3_000;
 const FRONTEND_STOP_TIMEOUT_MS = 10_000;
 const SHOW_NEXT_LOGS = process.env.E2E_SHOW_NEXT_LOGS === 'true';
 const FRONTEND_LOG_TAIL_LIMIT = 120;
@@ -197,48 +193,22 @@ async function findAvailableFrontendPort(preferredPort: string): Promise<string>
     );
 }
 
-function composeArgs(args: Array<string>): Array<string> {
-    return ['compose', '-f', COMPOSE_FILE, '-p', COMPOSE_PROJECT, ...args];
-}
-
-function dockerCompose(args: Array<string>, options: RunCommandOptions = {}): Promise<void> {
-    const composeEnv = {
+function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+    return {
         ...sanitizeEnv(process.env),
         PORT: E2E_CONVEX_PORT,
         SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
         MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
         MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
+        ...extraEnv,
     };
-
-    return runCommand(DOCKER_COMMAND, composeArgs(args), {
-        ...options,
-        env: {
-            ...composeEnv,
-            ...(options.env ?? {}),
-        },
-    });
 }
 
-function dockerComposeCapture(
-    args: Array<string>,
-    options: RunCommandOptions = {}
-): Promise<string> {
-    const composeEnv = {
-        ...sanitizeEnv(process.env),
-        PORT: E2E_CONVEX_PORT,
-        SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
-        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
-        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
-    };
-
-    return runCommandCapture(DOCKER_COMMAND, composeArgs(args), {
-        ...options,
-        env: {
-            ...composeEnv,
-            ...(options.env ?? {}),
-        },
-    });
-}
+const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
+    composeFile: COMPOSE_FILE,
+    projectName: COMPOSE_PROJECT,
+    getComposeEnv,
+});
 
 function cleanupNextArtifacts(nextDistDir: string): void {
     const directoryPath = join(process.cwd(), nextDistDir);
@@ -370,45 +340,6 @@ function writeBuildMeta(nextDistDir: string, fingerprint: string): void {
     const buildMetaPath = getBuildMetaPath(nextDistDir);
     mkdirSync(join(process.cwd(), nextDistDir), { recursive: true });
     writeFileSync(buildMetaPath, JSON.stringify({ fingerprint }, null, 2));
-}
-
-function buildCommandEnv(
-    adminKey: string,
-    betterAuthSecret: string,
-    jwks: string,
-    baseUrl: string,
-    siteUrl: string,
-    nextDistDir: string
-): NodeJS.ProcessEnv {
-    const baseEnv = sanitizeEnv(process.env);
-
-    return buildMailhogConvexEnv({
-        ...baseEnv,
-        E2E_SETUP_SECRET: baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
-        BASE_URL: baseUrl,
-        BETTER_AUTH_URL: siteUrl,
-        BETTER_AUTH_SECRET: betterAuthSecret,
-        CONVEX_SELF_HOSTED_ADMIN_KEY: adminKey,
-        CONVEX_SELF_HOSTED_URL: CONVEX_URL,
-        JWKS: jwks,
-        NEXT_PUBLIC_CONVEX_SITE_URL: CONVEX_SITE_URL,
-        NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
-        NEXT_PUBLIC_SITE_URL: siteUrl,
-        NEXT_DIST_DIR: nextDistDir,
-        PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
-        SITE_URL: siteUrl,
-    });
-}
-
-async function setConvexEnvVar(
-    commandEnv: NodeJS.ProcessEnv,
-    key: string,
-    value: string
-): Promise<void> {
-    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
 }
 
 async function waitForFrontendReady(
@@ -582,24 +513,11 @@ async function main(): Promise<void> {
     await dockerCompose(['up', '-d']);
 
     console.log('Waiting for Convex backend readiness...');
-    await waitForHttp({
-        url: buildUrl(CONVEX_URL, '/version'),
-        timeoutMs: CONVEX_START_TIMEOUT_MS,
-        requestTimeoutMs: HTTP_REQUEST_TIMEOUT_MS,
-        pollIntervalMs: POLL_INTERVAL_MS,
-        isReady: response => response.ok,
-    });
+    await waitForConvexBackend(CONVEX_URL);
 
     console.log('Generating admin key from Convex backend...');
-    const adminKeyOutput = await dockerComposeCapture([
-        'exec',
-        '-T',
-        'backend',
-        './generate_admin_key.sh',
-    ]);
-    const adminKey = extractAdminKey(adminKeyOutput);
-    const betterAuthSecret = randomBytes(32).toString('base64');
-    const jwks = await generateStaticJwks(betterAuthSecret);
+    const { adminKey, betterAuthSecret, jwks } =
+        await bootstrapConvexCredentials(dockerComposeCapture);
     const frontendPort = await findAvailableFrontendPort(E2E_FRONTEND_PORT);
 
     if (frontendPort !== E2E_FRONTEND_PORT) {
@@ -609,60 +527,28 @@ async function main(): Promise<void> {
     const baseUrl = `http://127.0.0.1:${frontendPort}`;
     const siteUrl = baseUrl;
     const nextDistDir = E2E_NEXT_DIST_DIR;
-    const commandEnv = buildCommandEnv(
+    const baseEnv = sanitizeEnv(process.env);
+    const e2eSetupSecret = baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret';
+    const commandEnv = buildConvexCommandEnv({
         adminKey,
         betterAuthSecret,
         jwks,
-        baseUrl,
+        convexUrl: CONVEX_URL,
+        convexSiteUrl: CONVEX_SITE_URL,
         siteUrl,
-        nextDistDir
-    );
+        extra: {
+            E2E_SETUP_SECRET: e2eSetupSecret,
+            BASE_URL: baseUrl,
+            NEXT_DIST_DIR: nextDistDir,
+            PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
+        },
+    });
 
     console.log('Configuring Convex env vars for e2e...');
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'SITE_URL', siteUrl], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_URL', siteUrl], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-    await runCommand(
-        PNPM_COMMAND,
-        [
-            'exec',
-            'convex',
-            'env',
-            'set',
-            'E2E_SETUP_SECRET',
-            commandEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret',
-        ],
-        {
-            env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
-        }
-    );
-    await runCommand(
-        PNPM_COMMAND,
-        ['exec', 'convex', 'env', 'set', 'BETTER_AUTH_SECRET', betterAuthSecret],
-        {
-            env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
-        }
-    );
-    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'JWKS'], `${jwks}\n`, {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
-    for (const [key, value] of Object.entries(DEFAULT_MAILHOG_SMTP_ENV)) {
-        await setConvexEnvVar(commandEnv, key, value);
-    }
+    await configureConvexEnv(commandEnv, siteUrl, { e2eSetupSecret });
 
     console.log('Deploying Convex functions...');
-    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'dev', '--once', '--tail-logs', 'disable'], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
+    await deployConvexFunctions(commandEnv);
 
     if (E2E_FRONTEND_MODE === 'production') {
         const buildFingerprint = computeBuildFingerprint(commandEnv);
