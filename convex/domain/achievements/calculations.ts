@@ -1,5 +1,5 @@
 import type { DatabaseReader } from '../../_generated/server';
-import { Doc, Id } from '../../_generated/dataModel';
+import { Id } from '../../_generated/dataModel';
 import { TIME, ERROR_CODES } from '../../utils/constants';
 import { ConvexError } from 'convex/values';
 
@@ -54,46 +54,49 @@ export function countStreakFromUpdates(updates: Array<{ updateDate: number }>): 
     return streak;
 }
 
-async function fetchProgressUpdates(
-    ctx: ReadCtx,
-    objectiveIds: Id<'objectives'>[],
-    organizationId: Id<'organization'>,
-    userId?: Id<'user'>
-): Promise<Doc<'progressUpdates'>[]> {
-    for (const objectiveId of objectiveIds) {
-        const objective = await ctx.db.get('objectives', objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+function startOfDayMs(ms: number): number {
+    const date = new Date(ms);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime();
+}
+
+// Counts consecutive activity days ending today/yesterday from updates streamed
+// newest-first. Stops at the first day-gap, so it reads only as far back as the
+// current streak reaches instead of loading the whole history.
+async function countStreakFromOrderedUpdates(
+    updates: AsyncIterable<{ updateDate: number }>
+): Promise<number> {
+    const todayMs = startOfDayMs(Date.now());
+
+    let streak = 0;
+    let expectedDay: number | null = null;
+
+    for await (const update of updates) {
+        const day = startOfDayMs(update.updateDate);
+
+        if (expectedDay === null) {
+            // Anchor on the most recent activity; if it predates yesterday there is no streak.
+            if (day < todayMs - TIME.DAY_MS) {
+                return 0;
+            }
+            streak = 1;
+            expectedDay = day - TIME.DAY_MS;
+            continue;
         }
-        if (objective.organizationId !== organizationId) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
+
+        if (day === expectedDay) {
+            streak++;
+            expectedDay -= TIME.DAY_MS;
+        } else if (day > expectedDay) {
+            // Another update on an already-counted day — skip the duplicate.
+            continue;
+        } else {
+            // A day was skipped: the streak ended here.
+            break;
         }
     }
 
-    if (objectiveIds.length === 0) return [];
-
-    if (userId) {
-        const results = await Promise.all(
-            objectiveIds.map(async objectiveId => {
-                return await ctx.db
-                    .query('progressUpdates')
-                    .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
-                    .filter(q => q.eq(q.field('userId'), userId))
-                    .collect();
-            })
-        );
-        return results.flat();
-    }
-
-    const results = await Promise.all(
-        objectiveIds.map(async objectiveId => {
-            return await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
-                .collect();
-        })
-    );
-    return results.flat();
+    return streak;
 }
 
 export async function calculateUserStreak(
@@ -112,38 +115,24 @@ export async function calculateUserStreak(
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
 
-    const objectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_user_organization', q =>
+    const userUpdates = ctx.db
+        .query('progressUpdates')
+        .withIndex('by_user_organization_date', q =>
             q.eq('userId', userId).eq('organizationId', organizationId)
         )
-        .collect();
+        .order('desc');
 
-    const objectiveIds = objectives.map((objective: Doc<'objectives'>) => objective._id);
-
-    if (objectiveIds.length === 0) return 0;
-
-    const userUpdates = await fetchProgressUpdates(ctx, objectiveIds, organizationId, userId);
-
-    return countStreakFromUpdates(userUpdates);
+    return countStreakFromOrderedUpdates(userUpdates);
 }
 
 export async function calculateOrganizationStreak(
     ctx: ReadCtx,
     organizationId: Id<'organization'>
 ): Promise<number> {
-    const organizationObjectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-        .collect();
+    const organizationUpdates = ctx.db
+        .query('progressUpdates')
+        .withIndex('by_organization_date', q => q.eq('organizationId', organizationId))
+        .order('desc');
 
-    const objectiveIds = organizationObjectives.map(
-        (objective: Doc<'objectives'>) => objective._id
-    );
-
-    if (objectiveIds.length === 0) return 0;
-
-    const organizationUpdates = await fetchProgressUpdates(ctx, objectiveIds, organizationId);
-
-    return countStreakFromUpdates(organizationUpdates);
+    return countStreakFromOrderedUpdates(organizationUpdates);
 }
