@@ -110,7 +110,7 @@ export default function LoginForm({ showPasswordResetSuccess = false }: LoginFor
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">
+                            <FormLabel className="text-foreground">
                                 {tCommon('fields.email')}
                             </FormLabel>
                             <FormControl>
@@ -131,7 +131,7 @@ export default function LoginForm({ showPasswordResetSuccess = false }: LoginFor
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">
+                            <FormLabel className="text-foreground">
                                 {tCommon('fields.password')}
                             </FormLabel>
                             <FormControl>
@@ -167,7 +167,7 @@ export default function LoginForm({ showPasswordResetSuccess = false }: LoginFor
                 </Button>
 
                 <div className="text-center mt-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                         <Link href="/register" prefetch={false}>
                             {t('noAccount')} {t('register')}
                         </Link>

@@ -29,7 +29,7 @@ export function RegisterFormInputField({
             name={name}
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel className="text-gray-700">{label}</FormLabel>
+                    <FormLabel className="text-foreground">{label}</FormLabel>
                     <FormControl>
                         <Input
                             {...field}

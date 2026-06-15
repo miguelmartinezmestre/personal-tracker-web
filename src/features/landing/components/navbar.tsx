@@ -27,7 +27,7 @@ export default function NavBar() {
                 <Link
                     key={link.name}
                     href={link.href}
-                    className="text-primary hover:text-gray-700"
+                    className="text-primary hover:text-primary/80"
                     prefetch={false}
                     data-testid={
                         link.href === '/register'
@@ -43,17 +43,17 @@ export default function NavBar() {
             {isAuthenticated && (
                 <Link
                     href="/dashboard/home"
-                    className="text-primary hover:text-gray-700"
+                    className="text-primary hover:text-primary/80"
                     prefetch={false}
                     data-testid="navbar-dashboard-link"
                 >
                     {t('goToDashboard')}
                 </Link>
             )}
-            <div className="text-primary hover:text-gray-700">
+            <div className="text-primary hover:text-primary/80">
                 <ThemeToggle />
             </div>
-            <div className="text-primary hover:text-gray-700">
+            <div className="text-primary hover:text-primary/80">
                 <LanguageSwitcher />
             </div>
         </div>

@@ -88,7 +88,7 @@ export default function ForgetPasswordForm() {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">
+                            <FormLabel className="text-foreground">
                                 {tCommon('fields.email')}
                             </FormLabel>
                             <FormControl>
