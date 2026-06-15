@@ -68,7 +68,8 @@ export default defineSchema({
     })
         .index('by_objective_date', ['objective', 'updateDate'])
         .index('by_user_date', ['userId', 'updateDate'])
-        .index('by_user_organization_date', ['userId', 'organizationId', 'updateDate']),
+        .index('by_user_organization_date', ['userId', 'organizationId', 'updateDate'])
+        .index('by_organization_date', ['organizationId', 'updateDate']),
 
     notifications: defineTable({
         userId: v.id('user'),
@@ -103,7 +104,8 @@ export default defineSchema({
         createdAt: v.number(),
     })
         .index('by_createdAt', ['createdAt'])
-        .index('by_resourceType_resourceId', ['resourceType', 'resourceId']),
+        .index('by_resourceType_resourceId', ['resourceType', 'resourceId'])
+        .index('by_resourceType_createdAt', ['resourceType', 'createdAt']),
 
     categories: defineTable({
         userId: v.id('user'),

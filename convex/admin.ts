@@ -8,6 +8,8 @@ import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
 import { isPlatformSetupUser } from './platform/setup/bootstrap';
 
+const SESSION_REVOKE_LIMIT = 1000;
+
 type AdminApi = {
     banUser: (args: {
         body: { userId: string; banReason?: string; banExpiresIn?: number };
@@ -72,7 +74,7 @@ export const banUser = mutationWithRLS({
         const sessions = await ctx.db
             .query('session')
             .withIndex('userId', q => q.eq('userId', args.userId))
-            .collect();
+            .take(SESSION_REVOKE_LIMIT);
 
         for (const session of sessions) {
             await ctx.db.delete(session._id);
