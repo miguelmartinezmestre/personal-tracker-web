@@ -25,9 +25,11 @@
         "error": "Error",
         "success": "Éxito",
         "unknownError": "Error desconocido",
+        "queryError": "Ha ocurrido un error al cargar los datos.",
         "search": "Buscar",
         "user": "Usuario",
         "actions": {
+            "retry": "Reintentar",
             "save": "Guardar",
             "saving": "Guardando...",
             "cancel": "Cancelar",
