@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatMonth } from '@/lib/format-date';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
@@ -10,10 +11,11 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 
 export default function MonthlyProgressChart() {
     const t = useTranslations('DashboardHome');
+    const locale = useLocale();
     const { data: monthlyProgress } = useQuery(convexQuery(api.dashboard.getMonthlyProgress, {}));
 
     const chartData = (monthlyProgress ?? []).map(item => ({
-        month: formatMonthLabel(item.monthKey),
+        month: formatMonthLabel(item.monthKey, locale),
         count: item.count,
     }));
 
@@ -80,9 +82,8 @@ export default function MonthlyProgressChart() {
     );
 }
 
-function formatMonthLabel(monthKey: string): string {
+function formatMonthLabel(monthKey: string, locale: string): string {
     const [year, month] = monthKey.split('-');
     if (!year || !month) return monthKey;
-    const date = new Date(Number(year), Number(month) - 1);
-    return date.toLocaleDateString(undefined, { month: 'short' });
+    return formatMonth(new Date(Number(year), Number(month) - 1), locale);
 }

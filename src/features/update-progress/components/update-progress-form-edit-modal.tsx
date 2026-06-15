@@ -23,7 +23,8 @@ import {
     savedUpdateProgressSchema,
 } from '@/features/update-progress/schemas/update-progress';
 import { Id } from '@/convex/_generated/dataModel';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/format-date';
 import FormModal from '@/components/forms/form-modal';
 
 export default function UpdateProgressFormModal({
@@ -35,6 +36,7 @@ export default function UpdateProgressFormModal({
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
+    const locale = useLocale();
 
     const updateUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress),
@@ -133,7 +135,7 @@ export default function UpdateProgressFormModal({
                                                 {field.value &&
                                                 (typeof field.value === 'string' ||
                                                     typeof field.value === 'number') ? (
-                                                    new Date(field.value).toLocaleDateString()
+                                                    formatDate(field.value, locale)
                                                 ) : (
                                                     <span>{t('pickADate')}</span>
                                                 )}

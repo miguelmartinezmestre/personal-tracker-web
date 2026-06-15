@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/format-date';
 import { AchievementBadge } from './achievement-badge';
 import type {
     AchievementDefinition,
@@ -41,10 +42,11 @@ export function AchievementCard({
     onClick,
 }: AchievementCardProps) {
     const t = useTranslations('Achievements');
+    const locale = useLocale();
 
     const progressPercent = Math.min((currentProgress / definition.threshold) * 100, 100);
 
-    const formattedEarnedDate = earnedAt ? new Date(earnedAt).toLocaleDateString() : null;
+    const formattedEarnedDate = earnedAt ? formatDate(earnedAt, locale) : null;
 
     const tier = definition.tier;
 

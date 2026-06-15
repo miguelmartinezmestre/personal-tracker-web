@@ -20,7 +20,8 @@ import { useUpdateProgressTableColumns } from './update-progress-table-columns';
 import UpdateProgressFormModal from './update-progress-form-edit-modal';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
 import { mapDocToUpdateProgress } from '@/features/update-progress/lib/map-doc-to-update-progress';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate, formatTime } from '@/lib/format-date';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
@@ -30,6 +31,7 @@ const MOBILE_SKELETON_ITEMS = [1, 2, 3];
 export default function UpdateProgressTable() {
     const t = useTranslations('UpdateProgress');
     const tTable = useTranslations('Table');
+    const locale = useLocale();
     const params = useParams();
     const objectiveIdParam = params.id;
     const rawObjectiveId = Array.isArray(objectiveIdParam) ? objectiveIdParam[0] : objectiveIdParam;
@@ -146,13 +148,8 @@ export default function UpdateProgressTable() {
                                                 {t('table.columns.date')}
                                             </p>
                                             <p className="font-medium">
-                                                {new Date(
-                                                    progressRow.updateDate
-                                                ).toLocaleDateString()}{' '}
-                                                -{' '}
-                                                {new Date(
-                                                    progressRow.updateDate
-                                                ).toLocaleTimeString()}
+                                                {formatDate(progressRow.updateDate, locale)} -{' '}
+                                                {formatTime(progressRow.updateDate, locale)}
                                             </p>
                                         </div>
                                         <div className="shrink-0 text-right">

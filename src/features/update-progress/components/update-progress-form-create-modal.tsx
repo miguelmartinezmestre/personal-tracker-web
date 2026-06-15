@@ -20,7 +20,8 @@ import {
     updateProgressSchema,
 } from '@/features/update-progress/schemas/update-progress';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/format-date';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
@@ -28,6 +29,7 @@ import FormModal from '@/components/forms/form-modal';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
+    const locale = useLocale();
     const { id: objectiveId } = useParams();
 
     const createUpdateProgress = useMutation({
@@ -130,7 +132,7 @@ export default function CreateUpdateProgressFormModal() {
                                                 {field.value &&
                                                 (typeof field.value === 'string' ||
                                                     typeof field.value === 'number') ? (
-                                                    new Date(field.value).toLocaleDateString()
+                                                    formatDate(field.value, locale)
                                                 ) : (
                                                     <span>{t('pickADate')}</span>
                                                 )}

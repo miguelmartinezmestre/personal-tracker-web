@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/format-date';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -25,6 +26,7 @@ import { useObjectiveListState } from '@/features/objectives/hooks/use-objective
 
 export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>((_props, ref) => {
     const t = useTranslations('Objectives');
+    const locale = useLocale();
     const {
         filters,
         hasSearch,
@@ -120,7 +122,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
             accessorKey: 'deadline',
             header: t('deadline'),
             cell: ({ row }) =>
-                row.original.deadline ? new Date(row.original.deadline).toLocaleDateString() : '-',
+                row.original.deadline ? formatDate(row.original.deadline, locale) : '-',
         },
         {
             id: 'status',
@@ -205,7 +207,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
                         ) : null}
                         {objective.deadline ? (
                             <Badge variant="outline">
-                                {new Date(objective.deadline).toLocaleDateString()}
+                                {formatDate(objective.deadline, locale)}
                             </Badge>
                         ) : null}
                     </div>
