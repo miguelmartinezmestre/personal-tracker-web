@@ -101,7 +101,6 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         const organizationId = ctx.organizationId;
         const MAX_QUERY_LIMIT = 100;
         const maxItems = Math.min(args.limit ?? PAGINATION.DASHBOARD_LIMIT, MAX_QUERY_LIMIT);
-        const fetchLimit = Math.min(maxItems * 3, MAX_QUERY_LIMIT);
 
         if (!organizationId) {
             return [];
@@ -110,10 +109,10 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         const objectives = await ctx.db
             .query('objectives')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .filter(q => q.eq(q.field('status'), 'active'))
-            .take(fetchLimit);
+            .take(LIST_LIMIT);
 
         const objectivesWithProgress = objectives
+            .filter(objective => objective.status === 'active')
             .map(objective => {
                 const progress = computeProgressPercent({
                     currentValue: objective.currentValue,
@@ -165,12 +164,12 @@ export const getUpcomingDeadlines = queryWithRLS({
                     .gt('deadline', now - 1)
                     .lt('deadline', futureLimit + 1)
             )
-            .filter(q => q.eq(q.field('status'), 'active'))
-            .take(50);
+            .take(LIST_LIMIT);
 
         const upcomingDeadlines = objectives
-            .filter((objective): objective is typeof objective & { deadline: number } =>
-                Boolean(objective.deadline)
+            .filter(
+                (objective): objective is typeof objective & { deadline: number } =>
+                    objective.status === 'active' && Boolean(objective.deadline)
             )
             .map(objective => {
                 const daysRemaining = Math.ceil((objective.deadline - now) / TIME.DAY_MS);
@@ -217,19 +216,13 @@ export const getRecentActivity = queryWithRLS({
             };
         }
 
-        const recentObjectivesPromise = ctx.db
+        // Newest-first so the bounded read keeps the recently created/completed
+        // objectives (the ones "recent activity" counts) in orgs past LIST_LIMIT.
+        const organizationObjectivesPromise = ctx.db
             .query('objectives')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .filter(q => q.gte(q.field('createdAt'), startDate))
-            .take(100);
-
-        const recentlyCompletedPromise = ctx.db
-            .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .filter(q =>
-                q.and(q.eq(q.field('status'), 'completed'), q.gte(q.field('updatedAt'), startDate))
-            )
-            .take(100);
+            .order('desc')
+            .take(LIST_LIMIT);
 
         const recentUpdatesPromise = ctx.db
             .query('progressUpdates')
@@ -241,11 +234,17 @@ export const getRecentActivity = queryWithRLS({
             )
             .take(100);
 
-        const [recentObjectives, recentlyCompleted, recentUpdates] = await Promise.all([
-            recentObjectivesPromise,
-            recentlyCompletedPromise,
+        const [organizationObjectives, recentUpdates] = await Promise.all([
+            organizationObjectivesPromise,
             recentUpdatesPromise,
         ]);
+
+        const recentObjectives = organizationObjectives.filter(
+            objective => objective.createdAt >= startDate
+        );
+        const recentlyCompleted = organizationObjectives.filter(
+            objective => objective.status === 'completed' && objective.updatedAt >= startDate
+        );
 
         return {
             progressUpdatesCount: recentUpdates.length,

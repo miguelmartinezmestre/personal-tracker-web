@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/format-date';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ type SessionListItem = FunctionReturnType<typeof api.sessions.getSessionsByUser>
 
 export function useSessionsTableColumns() {
     const t = useTranslations('Sessions');
+    const locale = useLocale();
     const { invalidateSessionAsync, isInvalidatingSession } = useInvalidateSession();
     const [now] = useState(Date.now);
 
@@ -41,14 +43,14 @@ export function useSessionsTableColumns() {
             accessorKey: 'createdAt',
             header: t('date'),
             cell: ({ row }) => {
-                return new Date(row.original.createdAt).toLocaleDateString();
+                return formatDate(row.original.createdAt, locale);
             },
         },
         {
             accessorKey: 'expiresAt',
             header: t('expiresAt'),
             cell: ({ row }) => {
-                return new Date(row.original.expiresAt).toLocaleDateString();
+                return formatDate(row.original.expiresAt, locale);
             },
         },
         {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate, formatTime } from '@/lib/format-date';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
@@ -15,6 +16,7 @@ interface UseUpdateProgressTableColumnsProps {
 
 export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgressTableColumnsProps) {
     const t = useTranslations('UpdateProgress');
+    const locale = useLocale();
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
 
     const columns: ColumnDef<Doc<'progressUpdates'>>[] = [
@@ -29,8 +31,8 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
                 const progressRow = row.original;
                 return (
                     <span>
-                        {new Date(progressRow.updateDate).toLocaleDateString()} -{' '}
-                        {new Date(progressRow.updateDate).toLocaleTimeString()}
+                        {formatDate(progressRow.updateDate, locale)} -{' '}
+                        {formatTime(progressRow.updateDate, locale)}
                     </span>
                 );
             },

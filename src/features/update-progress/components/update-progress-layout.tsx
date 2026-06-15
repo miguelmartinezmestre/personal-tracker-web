@@ -7,6 +7,7 @@ import { useConvexAuth } from 'convex/react';
 import { useParams } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import CreateUpdateProgressFormModal from './update-progress-form-create-modal';
 import UpdateProgressTable from './update-progress-table';
 
@@ -25,10 +26,19 @@ export default function UpdateProgressLayout() {
 
     const objectiveId = rawObjectiveId as Id<'objectives'>;
 
-    const { data: objective } = useQuery({
+    const objectiveQuery = useQuery({
         ...convexQuery(api.objectives.getObjectiveById, { id: objectiveId }),
         enabled: isAuthenticated,
     });
+    const { data: objective } = objectiveQuery;
+
+    if (objectiveQuery.isError) {
+        return (
+            <div className="w-full min-w-0 space-y-6">
+                <QueryErrorFallback onRetry={() => objectiveQuery.refetch()} />
+            </div>
+        );
+    }
 
     const objectiveTitle = objective?.title ?? '';
     const objectiveDescription = objective?.description?.trim() ?? '';

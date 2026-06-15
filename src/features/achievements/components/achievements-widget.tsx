@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Trophy, ChevronRight, Star, Award } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -15,12 +16,33 @@ import { convexQuery } from '@convex-dev/react-query';
 const SKELETON_COUNTS = [1, 2, 3, 4];
 
 export function AchievementsWidget() {
-    const { data: stats } = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
-    const { data: recentAchievements } = useQuery(
-        convexQuery(api.achievements.getRecentAchievements, { limit: 5 })
-    );
+    const statsQuery = useQuery(convexQuery(api.achievements.getUserAchievementStats, {}));
+    const recentQuery = useQuery(convexQuery(api.achievements.getRecentAchievements, { limit: 5 }));
+    const { data: stats } = statsQuery;
+    const { data: recentAchievements } = recentQuery;
 
     const t = useTranslations('Achievements');
+
+    if (statsQuery.isError || recentQuery.isError) {
+        return (
+            <Card className="border-border/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Trophy className="h-5 w-5" />
+                        {t('widget.title')}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <QueryErrorFallback
+                        onRetry={() => {
+                            void statsQuery.refetch();
+                            void recentQuery.refetch();
+                        }}
+                    />
+                </CardContent>
+            </Card>
+        );
+    }
 
     const isLoading = !stats || !recentAchievements;
 

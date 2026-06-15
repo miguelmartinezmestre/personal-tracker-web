@@ -25,9 +25,11 @@
         "error": "Error",
         "success": "Success",
         "unknownError": "Unknown error",
+        "queryError": "Something went wrong while loading the data.",
         "search": "Search",
         "user": "User",
         "actions": {
+            "retry": "Retry",
             "save": "Save",
             "saving": "Saving...",
             "cancel": "Cancel",

@@ -67,13 +67,13 @@ export function useUsersTableColumns() {
                 const user = row.original;
                 if (user.banned) {
                     return (
-                        <Badge className="bg-red-100 text-red-800">
+                        <Badge className="bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
                             {tCommon('status.banned')}
                         </Badge>
                     );
                 }
                 return (
-                    <Badge className="bg-green-100 text-green-800">
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">
                         {tCommon('status.active')}
                     </Badge>
                 );

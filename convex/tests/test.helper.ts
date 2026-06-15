@@ -8,7 +8,7 @@ import { getDefaultTestSessionId } from './test_helpers';
 
 export { modules };
 
-async function drainScheduledFunctions(t: ReturnType<typeof convexTest>) {
+export async function drainScheduledFunctions(t: ReturnType<typeof convexTest>) {
     for (let i = 0; i < 20; i++) {
         await new Promise<void>(resolve => setTimeout(resolve, 0));
         await t.finishInProgressScheduledFunctions();

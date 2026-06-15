@@ -91,7 +91,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">
+                            <FormLabel className="text-foreground">
                                 {tCommon('fields.password')}
                             </FormLabel>
                             <FormControl>
@@ -112,7 +112,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-gray-700">
+                            <FormLabel className="text-foreground">
                                 {tCommon('fields.confirmPassword')}
                             </FormLabel>
                             <FormControl>
@@ -139,7 +139,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                 </Button>
 
                 <div className="text-center mt-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                         <Link href="/login" prefetch={false}>
                             {t('alreadyHaveAccount')} {t('login')}
                         </Link>

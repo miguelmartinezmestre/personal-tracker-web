@@ -34,7 +34,7 @@ async function notifyOrganizationAchievementUnlocked(
     const members = await ctx.db
         .query('member')
         .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .collect();
+        .take(LIST_LIMIT);
 
     const memberUserIds = members.map(member => member.userId);
 
@@ -87,7 +87,7 @@ async function countProgressUpdatesForObjectives(
     const updates = await ctx.db
         .query('progressUpdates')
         .withIndex('by_user_date', q => q.eq('userId', userId))
-        .collect();
+        .take(LIST_LIMIT);
 
     return updates.filter(update => objectiveIdsSet.has(update.objective)).length;
 }

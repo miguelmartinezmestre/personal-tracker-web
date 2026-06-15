@@ -54,7 +54,7 @@ export const getObjectivesForNotifications = queryWithRLS({
     },
     handler: async (ctx, args) => {
         if (args.objectiveIds.length > OBJECTIVE_ID_LIMIT) {
-            throw new ConvexError('OBJECTIVE_ID_LIMIT_EXCEEDED');
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_ID_LIMIT_EXCEEDED);
         }
 
         const uniqueIds = [...new Set(args.objectiveIds)];

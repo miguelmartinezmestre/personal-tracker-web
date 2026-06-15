@@ -7,6 +7,7 @@ import { Loader2, Target, CheckCircle, Calendar, Activity } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import StatCard from '@/features/dashboard/components/stat-card';
 import dynamic from 'next/dynamic';
 
@@ -20,12 +21,14 @@ const TopObjectivesChart = dynamic(
 );
 
 export default function Home() {
-    const { data: user } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
-    const { data: stats } = useQuery(convexQuery(api.dashboard.getDashboardStats, {}));
-    const { data: upcomingDeadlines } = useQuery(
-        convexQuery(api.dashboard.getUpcomingDeadlines, {})
-    );
-    const { data: recentActivity } = useQuery(convexQuery(api.dashboard.getRecentActivity, {}));
+    const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const { data: user } = userQuery;
+    const statsQuery = useQuery(convexQuery(api.dashboard.getDashboardStats, {}));
+    const deadlinesQuery = useQuery(convexQuery(api.dashboard.getUpcomingDeadlines, {}));
+    const activityQuery = useQuery(convexQuery(api.dashboard.getRecentActivity, {}));
+    const { data: stats } = statsQuery;
+    const { data: upcomingDeadlines } = deadlinesQuery;
+    const { data: recentActivity } = activityQuery;
 
     const t = useTranslations('DashboardHome');
 
@@ -34,7 +37,9 @@ export default function Home() {
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
                 <p data-testid="welcome-message" className="text-muted-foreground">
-                    {!user ? (
+                    {userQuery.isError ? (
+                        t('welcome', { name: '' })
+                    ) : !user ? (
                         <Loader2 className="animate-spin" />
                     ) : (
                         t('welcome', { name: user?.name ?? '' })
@@ -42,18 +47,22 @@ export default function Home() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4" data-testid="dashboard-stats">
-                <StatCard
-                    label={t('stats.active')}
-                    value={stats?.pendingObjectives}
-                    icon={Target}
-                />
-                <StatCard
-                    label={t('stats.completed')}
-                    value={stats?.completedObjectives}
-                    icon={CheckCircle}
-                />
-            </div>
+            {statsQuery.isError ? (
+                <QueryErrorFallback onRetry={() => statsQuery.refetch()} />
+            ) : (
+                <div className="grid grid-cols-2 gap-4" data-testid="dashboard-stats">
+                    <StatCard
+                        label={t('stats.active')}
+                        value={stats?.pendingObjectives}
+                        icon={Target}
+                    />
+                    <StatCard
+                        label={t('stats.completed')}
+                        value={stats?.completedObjectives}
+                        icon={CheckCircle}
+                    />
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <MonthlyProgressChart />
@@ -73,7 +82,9 @@ export default function Home() {
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {!upcomingDeadlines ? (
+                        {deadlinesQuery.isError ? (
+                            <QueryErrorFallback onRetry={() => deadlinesQuery.refetch()} />
+                        ) : !upcomingDeadlines ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                         ) : upcomingDeadlines.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
@@ -100,7 +111,9 @@ export default function Home() {
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {!recentActivity ? (
+                        {activityQuery.isError ? (
+                            <QueryErrorFallback onRetry={() => activityQuery.refetch()} />
+                        ) : !recentActivity ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                         ) : (
                             <>

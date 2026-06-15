@@ -1,7 +1,8 @@
 'use client';
 
 import { CalendarIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatDate } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
 import {
     FormControl,
@@ -46,6 +47,7 @@ export function ObjectiveFormFields({
 }: ObjectiveFormFieldsProps) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
+    const locale = useLocale();
     const titleLabel = mode === 'create' ? t('smartForm.fields.titleRequired') : t('title');
     const descriptionLabel =
         mode === 'create' ? t('smartForm.fields.description') : t('description');
@@ -191,7 +193,7 @@ export function ObjectiveFormFields({
                                         data-testid={getTestId(mode, 'deadline-button')}
                                     >
                                         {field.value ? (
-                                            new Date(field.value as number).toLocaleDateString()
+                                            formatDate(field.value as number, locale)
                                         ) : (
                                             <span>{t('pickADate')}</span>
                                         )}

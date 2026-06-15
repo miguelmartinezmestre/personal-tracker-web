@@ -265,6 +265,52 @@ describe('achievements calculations', async () => {
             expect(streak).toBe(1);
         });
 
+        test('counts the full streak even with thousands of same-window updates', async () => {
+            // 40 updates/day over 30 consecutive days = 1200 updates. A fixed
+            // .take(1000) would truncate to the most recent ~25 days; streaming
+            // until the first day-gap must still report the full 30-day streak.
+            const objectiveId = await userIdentity.run(async ctx => {
+                return ctx.db.insert('objectives', {
+                    userId: userId,
+                    organizationId: organizationId,
+                    title: 'High volume objective',
+                    targetValue: 100,
+                    currentValue: 0,
+                    status: 'active',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+            });
+
+            const today = new Date();
+            today.setHours(12, 0, 0, 0);
+            const days = 30;
+            const updatesPerDay = 40;
+
+            await userIdentity.run(async ctx => {
+                for (let day = 0; day < days; day++) {
+                    const dayStart = today.getTime() - day * DAY_MS;
+                    for (let j = 0; j < updatesPerDay; j++) {
+                        await ctx.db.insert('progressUpdates', {
+                            objective: objectiveId,
+                            userId: userId,
+                            organizationId: organizationId,
+                            updatedValue: j,
+                            updateDate: dayStart + j * 1000,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                        });
+                    }
+                }
+            });
+
+            const streak = await userIdentity.run(async ctx => {
+                return calculateUserStreak(ctx, userId, organizationId);
+            });
+
+            expect(streak).toBe(days);
+        });
+
         test('returns correct streak for 3 consecutive days', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {

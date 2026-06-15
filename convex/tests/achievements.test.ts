@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
-import { initConvexTest } from './test.helper';
+import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import {
     createTestMember,
     createTestObjective,
@@ -584,7 +584,7 @@ describe('convex achievements', async () => {
                 currentValue: 0,
             });
 
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await drainScheduledFunctions(t);
 
             const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
 

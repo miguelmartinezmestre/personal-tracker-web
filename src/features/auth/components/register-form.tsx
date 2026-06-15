@@ -161,7 +161,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                 </Button>
 
                 <div className="text-center mt-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                         <Link href="/login" prefetch={false}>
                             {t('alreadyHaveAccount')} {t('login')}
                         </Link>
