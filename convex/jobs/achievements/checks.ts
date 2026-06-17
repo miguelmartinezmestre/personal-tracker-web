@@ -7,11 +7,9 @@ import {
     calculateUserStreak,
     isEarlyBirdCompletion,
 } from '../../domain/achievements/calculations';
-import { addContributor } from '../../domain/achievements/contributors';
 import {
     ACHIEVEMENT_DEFINITIONS,
     getAchievementRule,
-    toStoredAchievementDefinition,
     type AchievementMetricKey,
 } from '../../domain/achievements/definitions';
 import { shouldSendAchievementNotification } from '../../domain/notifications/preferences';
@@ -23,74 +21,6 @@ type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
 
 const LIST_LIMIT = 1000;
 const ACHIEVEMENT_BATCH_SIZE = 50;
-
-async function notifyOrganizationAchievementUnlocked(
-    ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    code: string,
-    points: number,
-    now: number
-): Promise<void> {
-    const members = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .take(LIST_LIMIT);
-
-    const memberUserIds = members.map(member => member.userId);
-
-    const preferencesList = await Promise.all(
-        memberUserIds.map(uid =>
-            ctx.db
-                .query('notificationPreferences')
-                .withIndex('by_user', q => q.eq('userId', uid))
-                .first()
-        )
-    );
-
-    const preferencesMap = new Map<Id<'user'>, boolean>();
-    for (let i = 0; i < memberUserIds.length; i++) {
-        const uid = memberUserIds[i]!;
-        const pref = preferencesList[i];
-        const shouldNotify = pref ? (pref.organizationNotifications ?? true) : true;
-        preferencesMap.set(uid, shouldNotify);
-    }
-
-    for (const member of members) {
-        const uid = member.userId;
-        const shouldNotify = preferencesMap.get(uid) ?? true;
-        if (shouldNotify) {
-            await ctx.db.insert('notifications', {
-                userId: uid,
-                organizationId,
-                objective: undefined,
-                read: false,
-                notificationType: 'achievement',
-                notificationDate: now,
-                message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
-                createdAt: now,
-                updatedAt: now,
-            });
-        }
-    }
-}
-
-async function countProgressUpdatesForObjectives(
-    ctx: MutationCtx,
-    userId: Id<'user'>,
-    objectiveIds: Id<'objectives'>[]
-): Promise<number> {
-    if (objectiveIds.length === 0) {
-        return 0;
-    }
-
-    const objectiveIdsSet = new Set(objectiveIds);
-    const updates = await ctx.db
-        .query('progressUpdates')
-        .withIndex('by_user_date', q => q.eq('userId', userId))
-        .take(LIST_LIMIT);
-
-    return updates.filter(update => objectiveIdsSet.has(update.objective)).length;
-}
 
 type EvaluateAndAwardParams = {
     ctx: MutationCtx;
@@ -131,8 +61,9 @@ export async function seedAchievementDefinitionsJob(ctx: MutationCtx) {
 
     let count = 0;
     for (const definition of ACHIEVEMENT_DEFINITIONS) {
+        const { metricKey: _metricKey, trigger: _trigger, ...storedDefinition } = definition;
         await ctx.db.insert('achievementDefinitions', {
-            ...toStoredAchievementDefinition(definition),
+            ...storedDefinition,
             isActive: true,
             createdAt: now,
             updatedAt: now,
@@ -191,8 +122,8 @@ export async function checkUserAchievementsJob(
 
     const objectivesPage = await ctx.db
         .query('objectives')
-        .withIndex('by_user_organization', q =>
-            q.eq('userId', userId).eq('organizationId', organizationId)
+        .withIndex('by_createdBy_organization', q =>
+            q.eq('createdBy', userId).eq('organizationId', organizationId)
         )
         .paginate({
             numItems: ACHIEVEMENT_BATCH_SIZE,
@@ -209,7 +140,15 @@ export async function checkUserAchievementsJob(
     const objectiveIds = objectivesBatch.map(objective => objective._id);
 
     if (objectiveIds.length > 0) {
-        progressUpdatesCount += await countProgressUpdatesForObjectives(ctx, userId, objectiveIds);
+        const objectiveIdsSet = new Set(objectiveIds);
+        const updates = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_createdBy_date', q => q.eq('createdBy', userId))
+            .take(LIST_LIMIT);
+
+        progressUpdatesCount += updates.filter(update =>
+            objectiveIdsSet.has(update.objective)
+        ).length;
     }
 
     const streak = await calculateUserStreak(ctx, userId, organizationId);
@@ -387,9 +326,63 @@ export async function checkOrganizationAchievementsJob(
                 updatedAt: now,
             });
 
-            await addContributor(ctx, orgAchievementId, userId, 1);
+            const existingContributor = await ctx.db
+                .query('organizationAchievementContributors')
+                .withIndex('by_organizationAchievement_user', q =>
+                    q.eq('organizationAchievementId', orgAchievementId).eq('userId', userId)
+                )
+                .first();
 
-            await notifyOrganizationAchievementUnlocked(ctx, organizationId, code, points, now);
+            if (!existingContributor) {
+                await ctx.db.insert('organizationAchievementContributors', {
+                    organizationAchievementId: orgAchievementId,
+                    userId,
+                    contributedAt: Date.now(),
+                    contributionValue: 1,
+                });
+            }
+
+            const members = await ctx.db
+                .query('member')
+                .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+                .take(LIST_LIMIT);
+
+            const memberUserIds = members.map(member => member.userId);
+
+            const preferencesList = await Promise.all(
+                memberUserIds.map(uid =>
+                    ctx.db
+                        .query('notificationPreferences')
+                        .withIndex('by_user', q => q.eq('userId', uid))
+                        .first()
+                )
+            );
+
+            const preferencesMap = new Map<Id<'user'>, boolean>();
+            for (let i = 0; i < memberUserIds.length; i++) {
+                const uid = memberUserIds[i]!;
+                const pref = preferencesList[i];
+                const shouldNotify = pref ? (pref.organizationNotifications ?? true) : true;
+                preferencesMap.set(uid, shouldNotify);
+            }
+
+            for (const member of members) {
+                const uid = member.userId;
+                const shouldNotify = preferencesMap.get(uid) ?? true;
+                if (shouldNotify) {
+                    await ctx.db.insert('notifications', {
+                        userId: uid,
+                        organizationId,
+                        objective: undefined,
+                        read: false,
+                        notificationType: 'achievement',
+                        notificationDate: now,
+                        message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                }
+            }
         },
     });
 

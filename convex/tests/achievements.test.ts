@@ -361,7 +361,11 @@ describe('convex achievements', async () => {
 
             await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Early Bird Objective',
                     targetValue: 100,
@@ -392,7 +396,11 @@ describe('convex achievements', async () => {
 
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'No Deadline Objective',
                     targetValue: 100,
@@ -423,7 +431,11 @@ describe('convex achievements', async () => {
 
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Late Objective',
                     targetValue: 100,
@@ -457,7 +469,11 @@ describe('convex achievements', async () => {
 
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Created Early Completed Late',
                     targetValue: 100,
@@ -641,7 +657,7 @@ describe('convex achievements', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: Date.now() + i * 1000,
@@ -691,7 +707,7 @@ describe('convex achievements', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: todayMs - i * DAY_MS,

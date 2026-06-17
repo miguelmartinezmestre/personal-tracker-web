@@ -274,7 +274,11 @@ describe('Domain Validation Tests', () => {
         ])('rejects $description', async ({ overrides, expectedError }) => {
             const activeObjectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Active Test Objective',
                     targetValue: 100,
@@ -299,7 +303,11 @@ describe('Domain Validation Tests', () => {
         test('rejects progress on completed objective', async () => {
             const completedObjectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Completed Test Objective',
                     targetValue: 100,
@@ -323,7 +331,11 @@ describe('Domain Validation Tests', () => {
         test('allows progress on active objective', async () => {
             const activeObjectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Active Test Objective',
                     targetValue: 100,
@@ -350,7 +362,11 @@ describe('Domain Validation Tests', () => {
         test('rejects update to completed objective', async () => {
             const completedObjectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Completed Test Objective',
                     targetValue: 100,
@@ -365,7 +381,7 @@ describe('Domain Validation Tests', () => {
             const progressUpdateId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('progressUpdates', {
                     objective: completedObjectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 60,
                     updateDate: Date.now(),
@@ -397,7 +413,11 @@ describe('Domain Validation Tests', () => {
         ])('rejects update with $description', async ({ overrides, expectedError }) => {
             const activeObjectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Active Test Objective',
                     targetValue: 100,
@@ -412,7 +432,7 @@ describe('Domain Validation Tests', () => {
             const progressUpdateId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('progressUpdates', {
                     objective: activeObjectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 60,
                     updateDate: Date.now(),

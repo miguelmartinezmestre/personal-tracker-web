@@ -1,7 +1,6 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { formatMonth } from '@/lib/format-date';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
@@ -85,5 +84,7 @@ export default function MonthlyProgressChart() {
 function formatMonthLabel(monthKey: string, locale: string): string {
     const [year, month] = monthKey.split('-');
     if (!year || !month) return monthKey;
-    return formatMonth(new Date(Number(year), Number(month) - 1), locale);
+    return new Intl.DateTimeFormat(locale, { month: 'short' }).format(
+        new Date(Number(year), Number(month) - 1)
+    );
 }

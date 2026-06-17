@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
+import {
+    createTestUser,
+    createTestOrganization,
+    createTestMember,
+    createTestCollaborator,
+} from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
 
@@ -57,7 +62,11 @@ describe('convex update_progress', () => {
 
         objectiveId = await userIdentity.run(async ctx => {
             return await ctx.db.insert('objectives', {
-                userId: userId,
+                createdBy: userId,
+
+                ownerId: userId,
+
+                visibility: 'private',
                 organizationId: organizationId,
                 title: 'Test Objective',
                 targetValue: 100,
@@ -87,6 +96,125 @@ describe('convex update_progress', () => {
         expect(progressUpdate?.updateDate).toBe(updateDate);
         expect(progressUpdate?.comment).toBe('Great progress!');
         expect(progressUpdate?.objective).toBe(objectiveId);
+        expect(progressUpdate?.createdBy).toBe(userId);
+    });
+
+    test('createUpdateProgress records the acting user as createdBy, not the objective creator', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const otherUser = await createTestUser(t, {
+            userId: 'other-progress-user-' + randomSuffix,
+            email: 'other-progress@example.com-' + randomSuffix,
+            name: 'Other Progress User',
+            password: 'test-password',
+            role: 'member',
+            emailVerified: false,
+        });
+
+        await createTestMember(t, {
+            organizationId,
+            userId: otherUser.docId,
+            role: 'member',
+        });
+
+        await createTestCollaborator(t, {
+            objectiveId,
+            userId: otherUser.docId,
+            organizationId,
+            addedBy: userId,
+            role: 'editor',
+        });
+
+        const otherUserIdentity = t.withIdentity({
+            subject: otherUser.docId,
+            role: otherUser.role ?? 'member',
+            email: otherUser.email,
+            name: otherUser.name,
+            password: otherUser.password,
+            emailVerified: false,
+            createdAt: Date.now(),
+            userId: otherUser.docId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        const progressUpdate = await otherUserIdentity.mutation(
+            api.update_progress.createUpdateProgress,
+            {
+                objective: objectiveId,
+                updatedValue: 10,
+                updateDate: Date.now(),
+            }
+        );
+
+        expect(progressUpdate?.createdBy).toBe(otherUser.docId);
+        expect(progressUpdate?.createdBy).not.toBe(userId);
+    });
+
+    test('progress achievements are attributed to the contributing user, not the objective creator', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const otherUser = await createTestUser(t, {
+            userId: 'attrib-progress-user-' + randomSuffix,
+            email: 'attrib-progress@example.com-' + randomSuffix,
+            name: 'Attribution Progress User',
+            password: 'test-password',
+            role: 'member',
+            emailVerified: false,
+        });
+
+        await createTestMember(t, {
+            organizationId,
+            userId: otherUser.docId,
+            role: 'member',
+        });
+
+        await createTestCollaborator(t, {
+            objectiveId,
+            userId: otherUser.docId,
+            organizationId,
+            addedBy: userId,
+            role: 'editor',
+        });
+
+        const otherUserIdentity = t.withIdentity({
+            subject: otherUser.docId,
+            role: otherUser.role ?? 'member',
+            email: otherUser.email,
+            name: otherUser.name,
+            password: otherUser.password,
+            emailVerified: false,
+            createdAt: Date.now(),
+            userId: otherUser.docId,
+            image: 'https://example.com/image.png',
+            banExpires: null,
+            banReason: null,
+            banned: false,
+        });
+
+        const beforeIds = await t.run(async ctx => {
+            const rows = await ctx.db.system.query('_scheduled_functions').collect();
+            return rows.map(row => row._id as string);
+        });
+        const beforeIdSet = new Set(beforeIds);
+
+        await otherUserIdentity.mutation(api.update_progress.createUpdateProgress, {
+            objective: objectiveId,
+            updatedValue: 10,
+            updateDate: Date.now(),
+        });
+
+        const progressJobs = await t.run(async ctx => {
+            const rows = await ctx.db.system.query('_scheduled_functions').collect();
+            return rows
+                .filter(row => !beforeIdSet.has(row._id as string))
+                .map(row => row.args[0] as { userId: Id<'user'>; trigger: string } | undefined)
+                .filter(arg => arg?.trigger === 'progress_update');
+        });
+
+        expect(progressJobs.length).toBeGreaterThan(0);
+        expect(progressJobs.every(arg => arg?.userId === otherUser.docId)).toBe(true);
+        expect(progressJobs.some(arg => arg?.userId === userId)).toBe(false);
     });
 
     test('createUpdateProgress works without comment', async () => {
@@ -163,7 +291,7 @@ describe('convex update_progress', () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId,
+                    createdBy: userId,
                     organizationId,
                     updatedValue: i + 1,
                     updateDate: base + i * 1000,
@@ -201,7 +329,7 @@ describe('convex update_progress', () => {
         const progressUpdateId = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
-                userId: userId,
+                createdBy: userId,
                 organizationId: organizationId,
                 updatedValue: 60,
                 updateDate,
@@ -229,7 +357,7 @@ describe('convex update_progress', () => {
         const progressUpdateId = await userIdentity.run(async ctx => {
             return await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
-                userId: userId,
+                createdBy: userId,
                 organizationId: organizationId,
                 updatedValue: 60,
                 updateDate: Date.now(),
@@ -255,7 +383,7 @@ describe('convex update_progress', () => {
             const now = Date.now();
             const keepId = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
-                userId,
+                createdBy: userId,
                 organizationId,
                 updatedValue: 60,
                 updateDate: now,
@@ -264,7 +392,7 @@ describe('convex update_progress', () => {
             });
             const removeId = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
-                userId,
+                createdBy: userId,
                 organizationId,
                 updatedValue: 30,
                 updateDate: now,
@@ -302,7 +430,7 @@ describe('convex update_progress', () => {
         const progressUpdateId = await userIdentity.run(async ctx => {
             const id = await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
-                userId: userId,
+                createdBy: userId,
                 organizationId: organizationId,
                 updatedValue: 60,
                 updateDate: Date.now(),

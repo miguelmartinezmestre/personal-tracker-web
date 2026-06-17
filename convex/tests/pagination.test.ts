@@ -304,7 +304,9 @@ describe('convex pagination', () => {
 
     test('getObjectives filters deadline ranges before pagination', async () => {
         const now = Date.now();
-        const today = now + 60 * 60 * 1000;
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+        const today = startOfToday.getTime() + 12 * 60 * 60 * 1000;
         const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
 
         await createTestObjective(t, {
@@ -334,7 +336,9 @@ describe('convex pagination', () => {
 
     test('getObjectives combines deadline range, status, and category before pagination', async () => {
         const now = Date.now();
-        const dueToday = now + 60 * 60 * 1000;
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+        const dueToday = startOfToday.getTime() + 12 * 60 * 60 * 1000;
         const nextWeek = now + 8 * 24 * 60 * 60 * 1000;
 
         const launchCategoryId = await userIdentity.mutation(api.categories.createCategory, {
@@ -523,8 +527,10 @@ describe('convex pagination', () => {
 
     test('searchObjectivesQuery applies deadlineRange before the bounded search result limit', async () => {
         const now = Date.now();
-        const tomorrow = now + 24 * 60 * 60 * 1000;
-        const today = now + 60 * 60 * 1000;
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+        const tomorrow = startOfToday.getTime() + 36 * 60 * 60 * 1000;
+        const today = startOfToday.getTime() + 12 * 60 * 60 * 1000;
 
         for (let i = 0; i < 60; i++) {
             await createTestObjective(t, {

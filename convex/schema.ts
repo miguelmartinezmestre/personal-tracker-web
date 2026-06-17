@@ -4,6 +4,8 @@ import authSchema from './authSchema';
 import { vWorkflowId } from '@convex-dev/workflow';
 import {
     objectiveStatusValidator,
+    objectiveVisibilityValidator,
+    objectiveCollaboratorRoleValidator,
     notificationTypeValidator,
     achievementTypeValidator,
     achievementCategoryValidator,
@@ -29,7 +31,9 @@ export default defineSchema({
 
     objectives: defineTable({
         organizationId: v.id('organization'),
-        userId: v.id('user'),
+        createdBy: v.id('user'),
+        ownerId: v.id('user'),
+        visibility: objectiveVisibilityValidator,
         title: v.string(),
         description: v.optional(v.string()),
         categoryId: v.optional(v.id('categories')),
@@ -41,13 +45,17 @@ export default defineSchema({
         completedAt: v.optional(v.number()),
         unit: v.optional(v.string()),
         workflowId: v.optional(vWorkflowId),
+        deletedAt: v.optional(v.number()),
+        deletedBy: v.optional(v.id('user')),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        // User/org scoped metrics; prefix `userId` supports user-wide reads.
-        .index('by_user_organization', ['userId', 'organizationId'])
+        // Creator/org scoped metrics; prefix `createdBy` supports creator-wide reads.
+        .index('by_createdBy_organization', ['createdBy', 'organizationId'])
+        .index('by_owner', ['ownerId'])
         // Listings stay scoped by organization; optional filters are applied after this index.
         .index('by_organization', ['organizationId'])
+        .index('by_organization_visibility', ['organizationId', 'visibility'])
         .index('by_organization_deadline', ['organizationId', 'deadline'])
         .index('by_status_deadline', ['status', 'deadline'])
         .index('by_categoryId', ['categoryId'])
@@ -56,9 +64,22 @@ export default defineSchema({
             filterFields: ['organizationId', 'status', 'categoryId'],
         }),
 
+    objectiveCollaborators: defineTable({
+        objectiveId: v.id('objectives'),
+        userId: v.id('user'),
+        organizationId: v.id('organization'),
+        role: objectiveCollaboratorRoleValidator,
+        addedBy: v.id('user'),
+        createdAt: v.number(),
+    })
+        .index('by_objective', ['objectiveId'])
+        .index('by_user', ['userId'])
+        .index('by_objective_user', ['objectiveId', 'userId'])
+        .index('by_user_organization', ['userId', 'organizationId']),
+
     progressUpdates: defineTable({
         objective: v.id('objectives'),
-        userId: v.id('user'),
+        createdBy: v.id('user'),
         organizationId: v.id('organization'),
         updatedValue: v.number(),
         updateDate: v.number(),
@@ -67,8 +88,8 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index('by_objective_date', ['objective', 'updateDate'])
-        .index('by_user_date', ['userId', 'updateDate'])
-        .index('by_user_organization_date', ['userId', 'organizationId', 'updateDate'])
+        .index('by_createdBy_date', ['createdBy', 'updateDate'])
+        .index('by_createdBy_organization_date', ['createdBy', 'organizationId', 'updateDate'])
         .index('by_organization_date', ['organizationId', 'updateDate']),
 
     notifications: defineTable({

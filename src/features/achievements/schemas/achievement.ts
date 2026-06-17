@@ -15,7 +15,6 @@ export const achievementTierSchema = z.enum([
     ACHIEVEMENT_TIER.BRONZE,
     ACHIEVEMENT_TIER.SILVER,
     ACHIEVEMENT_TIER.GOLD,
-    ACHIEVEMENT_TIER.PLATINUM,
 ]);
 
 export const achievementDefinitionSchema = z.object({

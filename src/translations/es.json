@@ -220,8 +220,7 @@
         "tiers": {
             "bronze": "Bronce",
             "silver": "Plata",
-            "gold": "Oro",
-            "platinum": "Platino"
+            "gold": "Oro"
         },
         "categories": {
             "milestone": "Hito",
@@ -462,7 +461,7 @@
             "value": "Valor",
             "count": "Veces",
             "money": "Dinero",
-            "duration": "Duracion"
+            "duration": "Duración"
         },
         "direction": "Dirección",
         "directionDescription": "Elige si el objetivo progresa al subir o al bajar.",
@@ -495,8 +494,8 @@
         "initialValueDescription": "Tu punto de partida para este objetivo.",
         "periodStart": "Inicio del periodo",
         "periodStartDescription": "Fecha de inicio para el periodo personalizado.",
-        "periodLengthDays": "Duracion del periodo (dias)",
-        "periodLengthDaysDescription": "Longitud de cada periodo en dias.",
+        "periodLengthDays": "Duración del periodo (días)",
+        "periodLengthDaysDescription": "Longitud de cada periodo en días.",
         "editObjectiveDescription": "Llena el formulario a continuación para editar tu objetivo. Haz clic en guardar cuando hayas terminado.",
         "cancel": "Cancelar",
         "giveYourObjectiveAClearConciseTitle": "Dale a tu objetivo un título claro y conciso.",
@@ -554,6 +553,37 @@
         "selectStatus": "Selecciona un estado",
         "empty": {
             "noObjectivesFound": "No se encontraron objetivos"
+        },
+        "visibility": {
+            "label": "Visibilidad",
+            "private": "Privado (solo propietario y colaboradores)",
+            "organization": "Organización (visible para todos los miembros)",
+            "description": "Los objetivos privados solo son visibles para ti y tus colaboradores. Los objetivos de organización son visibles para todos los miembros, pero solo los colaboradores pueden añadir progreso."
+        },
+        "collaborators": {
+            "manage": "Colaboradores",
+            "title": "Gestionar colaboradores",
+            "description": "Añade miembros que puedan ver o aportar progreso a este objetivo.",
+            "addMember": "Añadir miembro",
+            "selectMember": "Selecciona un miembro",
+            "add": "Añadir",
+            "current": "Colaboradores actuales",
+            "empty": "Aún no hay colaboradores.",
+            "remove": "Eliminar",
+            "makeOwner": "Hacer propietario",
+            "added": "Colaborador añadido",
+            "addFailed": "Error al añadir colaborador",
+            "removed": "Colaborador eliminado",
+            "removeFailed": "Error al eliminar colaborador",
+            "updateFailed": "Error al actualizar rol del colaborador",
+            "visibilityUpdated": "Visibilidad actualizada",
+            "visibilityUpdateFailed": "Error al actualizar visibilidad",
+            "ownershipTransferred": "Propiedad transferida",
+            "transferFailed": "Error al transferir propiedad",
+            "roles": {
+                "editor": "Editor",
+                "viewer": "Lector"
+            }
         },
         "confirm": {
             "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
@@ -784,7 +814,7 @@
         "dashboard": "Dashboard",
         "settings": "Configuracion",
         "account": "Cuenta",
-        "passwordSettingsDescription": "Edita tus configuraciones de contrasena aqui.",
+        "passwordSettingsDescription": "Edita tus configuraciones de contraseña aquí.",
         "notificationsPlaceholder": "Cambia tus notificaciones aquí.",
         "notifications": "Notificaciones",
         "notificationSettings": "Configuración de Notificaciones",
@@ -865,7 +895,7 @@
                 "user": "Usuario"
             },
             "defaults": {
-                "banReason": "Banned by administrator"
+                "banReason": "Bloqueado por el administrador"
             },
             "loading": "Cargando usuarios...",
             "errors": {
@@ -1002,15 +1032,15 @@
             "value": "Valor actualizado",
             "count": "Veces",
             "money": "Monto",
-            "duration": "Duracion"
+            "duration": "Duración"
         },
         "valuePlaceholders": {
             "value": "Ingresa el valor actualizado",
             "count": "Ingresa las veces",
             "money": "Ingresa el monto",
-            "duration": "Ingresa la duracion"
+            "duration": "Ingresa la duración"
         },
-        "valueDescription": "Valor de esta actualizacion{unit}",
+        "valueDescription": "Valor de esta actualización{unit}",
         "valueDescriptionCumulative": "Introduce el incremento desde el último registro{unit}.",
         "valueDescriptionSnapshot": "Introduce el valor actual{unit}. Los registros anteriores no cuentan.",
         "comment": "Comentario",
@@ -1189,7 +1219,12 @@
         "register": "Registrarse",
         "acceptTitle": "Aceptar Invitación",
         "acceptDescription": "Has sido invitado a unirte a una organización. Haz clic en aceptar para unirte.",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "orgSwitchNote": "Al aceptar, cambiarás tu organización activa a esta.",
+        "confirmAcceptTitle": "¿Cambiar de organización?",
+        "confirmAcceptDescription": "Estás a punto de unirte a «{orgName}» y establecerla como tu organización activa. Esto cambiará el contexto de tu espacio de trabajo actual. ¿Seguro que quieres continuar?",
+        "joining": "Uniéndote...",
+        "confirmJoin": "Sí, unirme a la organización"
     },
     "TextSelection": {
         "openIn": "Abrir en {provider}"

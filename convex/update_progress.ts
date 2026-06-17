@@ -17,7 +17,7 @@ export const createUpdateProgress = mutationWithRLS({
         comment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        return await createProgressUpdate(ctx, args);
+        return await createProgressUpdate(ctx, { ...args, actingUserId: ctx.userId });
     },
 });
 
@@ -39,7 +39,7 @@ export const getProgressSeriesByObjectiveId = queryWithRLS({
         points: v.array(
             v.object({
                 objective: v.id('objectives'),
-                userId: v.id('user'),
+                createdBy: v.id('user'),
                 organizationId: v.id('organization'),
                 updatedValue: v.number(),
                 updateDate: v.number(),

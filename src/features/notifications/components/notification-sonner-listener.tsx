@@ -5,12 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
-import { DEFAULT_PAGINATION_OPTS } from '@/lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 export function NotificationSonnerListener() {
     const { data } = useQuery(
         convexQuery(api.notifications.getNotificationsByUser, {
-            paginationOpts: DEFAULT_PAGINATION_OPTS,
+            paginationOpts: { numItems: DEFAULT_PAGE_SIZE, cursor: null },
         })
     );
 

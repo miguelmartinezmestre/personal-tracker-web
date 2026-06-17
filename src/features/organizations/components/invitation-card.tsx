@@ -80,10 +80,7 @@ export function InvitationCard({
                                 {t('invitedBy')}: {invitation.inviter?.name ?? 'Unknown'}
                             </span>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {t('orgSwitchNote') ||
-                                'Accepting will switch your active organization to this one.'}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{t('orgSwitchNote')}</p>
                         <div className="flex gap-2">
                             <Button
                                 onClick={() => setShowAcceptConfirm(true)}
@@ -114,25 +111,23 @@ export function InvitationCard({
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                            {t('confirmAcceptTitle') || 'Switch Organization?'}
+                            {t('confirmAcceptTitle')}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            {t('confirmAcceptDescription') ||
-                                `You are about to join "${invitation.organization?.name}" and set it as your active organization. This will change your current workspace context. Are you sure you want to proceed?`}
+                            {t('confirmAcceptDescription', {
+                                orgName: invitation.organization?.name ?? '',
+                            })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isAccepting}>
-                            {t('cancel') || 'Cancel'}
-                        </AlertDialogCancel>
+                        <AlertDialogCancel disabled={isAccepting}>{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmAccept}
                             disabled={isAccepting}
                             className="bg-primary"
+                            data-testid="invitation-accept-confirm-button"
                         >
-                            {isAccepting
-                                ? t('joining') || 'Joining...'
-                                : t('confirmJoin') || 'Yes, Join Organization'}
+                            {isAccepting ? t('joining') : t('confirmJoin')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

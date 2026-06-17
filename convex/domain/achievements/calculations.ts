@@ -117,8 +117,8 @@ export async function calculateUserStreak(
 
     const userUpdates = ctx.db
         .query('progressUpdates')
-        .withIndex('by_user_organization_date', q =>
-            q.eq('userId', userId).eq('organizationId', organizationId)
+        .withIndex('by_createdBy_organization_date', q =>
+            q.eq('createdBy', userId).eq('organizationId', organizationId)
         )
         .order('desc');
 

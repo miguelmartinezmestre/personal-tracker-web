@@ -35,7 +35,7 @@ export async function runDeadlineNotificationsJob(
 
     const objectives = page.page;
 
-    const userIds = [...new Set(objectives.map(objective => objective.userId))];
+    const userIds = [...new Set(objectives.map(objective => objective.ownerId))];
     const preferenceMap = new Map<string, boolean>();
     await Promise.all(
         userIds.map(async uid => {
@@ -50,7 +50,7 @@ export async function runDeadlineNotificationsJob(
         const message = buildDeadlineMessage(objective, now, dayStart, dayEnd);
         if (!message) continue;
 
-        if (!preferenceMap.get(objective.userId)) {
+        if (!preferenceMap.get(objective.ownerId)) {
             skipped += 1;
             continue;
         }
@@ -78,7 +78,7 @@ export async function runDeadlineNotificationsJob(
         }
 
         await ctx.db.insert('notifications', {
-            userId: objective.userId,
+            userId: objective.ownerId,
             organizationId: objective.organizationId,
             objective: objective._id,
             read: false,

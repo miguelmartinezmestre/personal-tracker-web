@@ -185,6 +185,10 @@ export async function createTestObjective(
         categoryId?: Id<'categories'>;
         deadline?: number;
         unit?: string;
+        ownerId?: Id<'user'>;
+        visibility?: 'private' | 'organization';
+        deletedAt?: number;
+        deletedBy?: Id<'user'>;
     }
 ): Promise<Id<'objectives'>> {
     const now = Date.now();
@@ -194,7 +198,9 @@ export async function createTestObjective(
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
             organizationId: options.organizationId,
-            userId: options.userId,
+            createdBy: options.userId,
+            ownerId: options.ownerId ?? options.userId,
+            visibility: options.visibility ?? 'private',
             title: options.title,
             description: options.description,
             categoryId: options.categoryId,
@@ -205,8 +211,33 @@ export async function createTestObjective(
             status,
             completedAt,
             unit: options.unit,
+            deletedAt: options.deletedAt,
+            deletedBy: options.deletedBy,
             createdAt: now,
             updatedAt: now,
+        });
+    });
+}
+
+export async function createTestCollaborator(
+    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
+    options: {
+        objectiveId: Id<'objectives'>;
+        userId: Id<'user'>;
+        organizationId: Id<'organization'>;
+        addedBy: Id<'user'>;
+        role?: 'editor' | 'viewer';
+    }
+): Promise<Id<'objectiveCollaborators'>> {
+    const now = Date.now();
+    return t.run(async (ctx: MutationCtx) => {
+        return await ctx.db.insert('objectiveCollaborators', {
+            objectiveId: options.objectiveId,
+            userId: options.userId,
+            organizationId: options.organizationId,
+            role: options.role ?? 'editor',
+            addedBy: options.addedBy,
+            createdAt: now,
         });
     });
 }

@@ -12,7 +12,7 @@ import type { DataModel, Id } from '../_generated/dataModel';
 import type { TestConvexForDataModel } from 'convex-test';
 
 describe('convex objectives', () => {
-    const t = initConvexTest();
+    const t = initConvexTest({ workflow: false });
 
     let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;
@@ -74,7 +74,9 @@ describe('convex objectives', () => {
                 currentValue: 0,
                 startValue: 0,
                 status: 'active',
-                userId,
+                createdBy: userId,
+                ownerId: userId,
+                visibility: 'private',
                 organizationId,
             });
             expect(objective?.completedAt).toBeUndefined();
@@ -274,7 +276,7 @@ describe('convex objectives', () => {
     });
 
     describe('deleteObjective', () => {
-        test('deletes the objective with its progress updates', async () => {
+        test('soft-deletes the objective', async () => {
             const objectiveId = await createTestObjective(t, {
                 userId,
                 organizationId,
@@ -285,7 +287,7 @@ describe('convex objectives', () => {
                 const now = Date.now();
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId,
+                    createdBy: userId,
                     organizationId,
                     updatedValue: 10,
                     updateDate: now,
@@ -298,9 +300,11 @@ describe('convex objectives', () => {
                 id: objectiveId,
             });
             expect(result.objectiveId).toBe(objectiveId);
+            expect(result.status).toBe('soft_deleted');
 
             const objective = await t.run(async ctx => ctx.db.get(objectiveId));
-            expect(objective).toBeNull();
+            expect(objective?.deletedAt).toBeDefined();
+            expect(objective?.deletedBy).toBe(userId);
         });
 
         test('denies deleting objectives of another organization', async () => {
@@ -366,6 +370,113 @@ describe('convex objectives', () => {
 
             expect(results).toHaveLength(1);
             expect(results[0]?.title).toBe('Marathon finished');
+        });
+    });
+
+    describe('permissions by organization role', () => {
+        let sharedOrgId: Id<'organization'>;
+        let ownerUser: Awaited<ReturnType<typeof createTestUser>>;
+        let memberUser: Awaited<ReturnType<typeof createTestUser>>;
+        let adminUser: Awaited<ReturnType<typeof createTestUser>>;
+        let memberIdentity: TestConvexForDataModel<DataModel>;
+        let adminIdentity: TestConvexForDataModel<DataModel>;
+        let ownerObjectiveId: Id<'objectives'>;
+        let memberObjectiveId: Id<'objectives'>;
+
+        beforeEach(async () => {
+            const suffix = Math.random().toString(36).slice(2, 12);
+
+            sharedOrgId = await createTestOrganization(t, {
+                name: `Shared Org ${suffix}`,
+                slug: `shared-org-${suffix}`,
+            });
+
+            ownerUser = await createTestUser(t, {
+                userId: `perm-owner-${suffix}`,
+                email: `perm-owner-${suffix}@example.com`,
+                name: `Perm Owner ${suffix}`,
+            });
+            memberUser = await createTestUser(t, {
+                userId: `perm-member-${suffix}`,
+                email: `perm-member-${suffix}@example.com`,
+                name: `Perm Member ${suffix}`,
+            });
+            adminUser = await createTestUser(t, {
+                userId: `perm-admin-${suffix}`,
+                email: `perm-admin-${suffix}@example.com`,
+                name: `Perm Admin ${suffix}`,
+            });
+
+            await createTestMember(t, {
+                organizationId: sharedOrgId,
+                userId: ownerUser.docId,
+                role: 'member',
+            });
+            await createTestMember(t, {
+                organizationId: sharedOrgId,
+                userId: memberUser.docId,
+                role: 'member',
+            });
+            await createTestMember(t, {
+                organizationId: sharedOrgId,
+                userId: adminUser.docId,
+                role: 'admin',
+            });
+
+            memberIdentity = t.withIdentity(identityFor(memberUser));
+            adminIdentity = t.withIdentity(identityFor(adminUser));
+
+            ownerObjectiveId = await createTestObjective(t, {
+                userId: ownerUser.docId,
+                ownerId: ownerUser.docId,
+                organizationId: sharedOrgId,
+                title: 'Owner objective',
+                targetValue: 100,
+                visibility: 'private',
+            });
+            memberObjectiveId = await createTestObjective(t, {
+                userId: memberUser.docId,
+                ownerId: memberUser.docId,
+                organizationId: sharedOrgId,
+                title: 'Member objective',
+                targetValue: 50,
+                visibility: 'private',
+            });
+        });
+
+        test('member cannot update another owners private objective', async () => {
+            await expect(
+                memberIdentity.mutation(api.objectives.updateObjective, {
+                    id: ownerObjectiveId,
+                    title: 'Hijacked',
+                })
+            ).rejects.toThrow();
+        });
+
+        test('member can update and delete their own objectives', async () => {
+            const updated = await memberIdentity.mutation(api.objectives.updateObjective, {
+                id: memberObjectiveId,
+                title: 'Updated by member',
+            });
+            expect(updated?.title).toBe('Updated by member');
+
+            const result = await memberIdentity.mutation(api.objectives.deleteObjective, {
+                id: memberObjectiveId,
+            });
+            expect(result.status).toBe('soft_deleted');
+        });
+
+        test('admin can update and soft-delete objectives owned by others', async () => {
+            const updated = await adminIdentity.mutation(api.objectives.updateObjective, {
+                id: ownerObjectiveId,
+                title: 'Updated by admin',
+            });
+            expect(updated?.title).toBe('Updated by admin');
+
+            const result = await adminIdentity.mutation(api.objectives.deleteObjective, {
+                id: ownerObjectiveId,
+            });
+            expect(result.status).toBe('soft_deleted');
         });
     });
 });

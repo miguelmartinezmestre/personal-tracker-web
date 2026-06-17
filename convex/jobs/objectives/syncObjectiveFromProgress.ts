@@ -22,10 +22,10 @@ export const syncObjectiveFromProgress = internalMutation({
         const now = Date.now();
 
         if (completedNow) {
-            const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
+            const notifyProgress = await shouldSendProgressNotification(ctx, objective.ownerId);
             if (notifyProgress) {
                 await ctx.db.insert('notifications', {
-                    userId: objective.userId,
+                    userId: objective.ownerId,
                     organizationId: objective.organizationId,
                     objective: args.objectiveId,
                     read: false,

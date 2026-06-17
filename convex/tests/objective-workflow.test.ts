@@ -20,7 +20,11 @@ describe('objective workflow lifecycle', () => {
         const now = Date.now();
         const objectiveId = await t.run(async ctx => {
             return await ctx.db.insert('objectives', {
-                userId: user.docId,
+                createdBy: user.docId,
+
+                ownerId: user.docId,
+
+                visibility: 'private',
                 organizationId,
                 title: 'Workflow race objective',
                 targetValue: 100,
@@ -74,7 +78,11 @@ describe('objective workflow lifecycle', () => {
         const now = Date.now();
         const objectiveId = await t.run(async ctx => {
             return await ctx.db.insert('objectives', {
-                userId: user.docId,
+                createdBy: user.docId,
+
+                ownerId: user.docId,
+
+                visibility: 'private',
                 organizationId,
                 title: 'Workflow cleanup objective',
                 targetValue: 100,

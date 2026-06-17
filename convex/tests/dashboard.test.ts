@@ -72,7 +72,11 @@ describe('convex dashboard', async () => {
         test('calculates correct stats with multiple objectives', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'In Progress Objective 1',
                     targetValue: 100,
@@ -83,7 +87,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'In Progress Objective 2',
                     targetValue: 100,
@@ -94,7 +102,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Completed Objective',
                     targetValue: 100,
@@ -141,7 +153,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: currentMonth.getTime() + i * 1000,
@@ -156,7 +168,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: lastMonth.getTime() + i * 1000,
@@ -197,7 +209,11 @@ describe('convex dashboard', async () => {
         test('sorts objectives by progress percentage', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Low Progress',
                     targetValue: 100,
@@ -208,7 +224,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'High Progress',
                     targetValue: 100,
@@ -219,7 +239,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Medium Progress',
                     targetValue: 100,
@@ -247,7 +271,11 @@ describe('convex dashboard', async () => {
         test('includes completed objectives in ranking', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Active High Progress',
                     targetValue: 100,
@@ -258,7 +286,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Completed High Progress',
                     targetValue: 100,
@@ -282,7 +314,11 @@ describe('convex dashboard', async () => {
             for (let i = 1; i <= 7; i++) {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('objectives', {
-                        userId: userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId: organizationId,
                         title: `Objective ${i}`,
                         targetValue: 100,
@@ -309,7 +345,11 @@ describe('convex dashboard', async () => {
         test('returns empty array when no objectives have deadlines', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'No Deadline',
                     targetValue: 100,
@@ -331,7 +371,11 @@ describe('convex dashboard', async () => {
 
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Deadline in 3 days',
                     targetValue: 100,
@@ -343,7 +387,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Deadline in 6 days',
                     targetValue: 100,
@@ -355,7 +403,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Deadline in 10 days',
                     targetValue: 100,
@@ -382,7 +434,11 @@ describe('convex dashboard', async () => {
 
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Active with deadline',
                     targetValue: 100,
@@ -394,7 +450,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Completed with deadline',
                     targetValue: 100,
@@ -418,7 +478,11 @@ describe('convex dashboard', async () => {
 
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Deadline 5 days',
                     targetValue: 100,
@@ -430,7 +494,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Deadline 2 days',
                     targetValue: 100,
@@ -442,7 +510,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Deadline 7 days',
                     targetValue: 100,
@@ -489,7 +561,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: now - i * DAY_MS,
@@ -504,7 +576,7 @@ describe('convex dashboard', async () => {
                 await userIdentity.run(async ctx => {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 5,
                         updateDate: now - (40 + i) * DAY_MS,
@@ -523,7 +595,11 @@ describe('convex dashboard', async () => {
         test('counts recently created and completed objectives', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Recently Created 1',
                     targetValue: 100,
@@ -534,7 +610,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Recently Created 2',
                     targetValue: 100,
@@ -545,7 +625,11 @@ describe('convex dashboard', async () => {
                 });
 
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Recently Completed',
                     targetValue: 100,

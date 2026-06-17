@@ -20,8 +20,8 @@ import { queryWithRLS } from './platform/rls/wrappers';
 import {
     DEFAULT_ORGANIZATION_NAME,
     DEFAULT_ORGANIZATION_SLUG_BASE,
+    PERSONAL_ORGANIZATION_METADATA_TYPE,
     buildDefaultOrganizationSlug,
-    getDefaultOrganizationMetadata,
     isLegacyPersonalOrganizationSlugForUser,
     isPersonalOrganizationMetadata,
 } from './domain/organizations/personalOrganization';
@@ -57,7 +57,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             name: DEFAULT_ORGANIZATION_NAME,
             slug: buildDefaultOrganizationSlug(args.userId),
             createdAt: now,
-            metadata: getDefaultOrganizationMetadata(),
+            metadata: JSON.stringify({ type: PERSONAL_ORGANIZATION_METADATA_TYPE }),
             logo: null,
         });
 
@@ -128,157 +128,159 @@ async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'use
     }
 }
 
-const createAuthOptions = (ctx: GenericCtx): AuthOptions => ({
-    baseURL: env.BETTER_AUTH_URL,
-    user: {
-        deleteUser: {
-            enabled: true,
-            beforeDelete: async user => {
-                await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
+export default defineAuth(
+    (ctx: GenericCtx): AuthOptions => ({
+        baseURL: env.BETTER_AUTH_URL,
+        user: {
+            deleteUser: {
+                enabled: true,
+                beforeDelete: async user => {
+                    await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
+                },
             },
         },
-    },
-    emailAndPassword: {
-        enabled: true,
-        sendResetPassword: async ({ user, url }, _request) => {
-            await (ctx as MutationCtx).runMutation(internal.email.sendTransactionalEmail, {
-                to: user.email,
-                subject: 'Reset your password',
-                text: `Click the link to reset your password: ${url}`,
-            });
+        emailAndPassword: {
+            enabled: true,
+            sendResetPassword: async ({ user, url }, _request) => {
+                await (ctx as MutationCtx).runMutation(internal.email.sendTransactionalEmail, {
+                    to: user.email,
+                    subject: 'Reset your password',
+                    text: `Click the link to reset your password: ${url}`,
+                });
+            },
+            onPasswordReset: async () => {},
+            revokeSessionsOnPasswordReset: true,
         },
-        onPasswordReset: async () => {},
-        revokeSessionsOnPasswordReset: true,
-    },
-    databaseHooks: {
-        session: {
-            create: {
-                before: async session => {
-                    const userId = session.userId as Id<'user'>;
-                    const activeOrganizationId: Id<'organization'> = await (
-                        ctx as RunnableCtx
-                    ).runMutation(internal.auth.ensureDefaultOrganizationForUser, {
-                        userId,
+        databaseHooks: {
+            session: {
+                create: {
+                    before: async session => {
+                        const userId = session.userId as Id<'user'>;
+                        const activeOrganizationId: Id<'organization'> = await (
+                            ctx as RunnableCtx
+                        ).runMutation(internal.auth.ensureDefaultOrganizationForUser, {
+                            userId,
+                        });
+
+                        return {
+                            data: {
+                                ...session,
+                                activeOrganizationId,
+                            },
+                        };
+                    },
+                },
+            },
+            user: {
+                delete: {
+                    before: async user => {
+                        await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
+                        return true;
+                    },
+                },
+            },
+        },
+        hooks: {
+            before: createAuthMiddleware(async ctx => {
+                const pathsWithStrongPassword = ['/sign-up/email', '/reset-password'];
+                if (!pathsWithStrongPassword.includes(ctx.path)) {
+                    return;
+                }
+
+                const password =
+                    (ctx.body as { password?: unknown; newPassword?: unknown } | undefined)
+                        ?.password ??
+                    (ctx.body as { newPassword?: unknown } | undefined)?.newPassword ??
+                    undefined;
+
+                const passwordPolicy = validatePasswordPolicy(password);
+                if (!passwordPolicy.ok) {
+                    throw new APIError('BAD_REQUEST', {
+                        code: passwordPolicy.code,
+                        message: passwordPolicy.message,
+                    });
+                }
+            }),
+        },
+        plugins: [
+            convex({
+                authConfig,
+                jwks: env.JWKS,
+            }),
+            admin({
+                adminRoles: platformAdminRoles,
+                roles: platformRoles,
+            }),
+            organization({
+                invitationExpiresIn: 60 * 60 * 24 * 2,
+                defaultRole: 'member',
+                organizationHooks: {
+                    beforeDeleteOrganization: async ({ organization }) => {
+                        if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                            throw new APIError('FORBIDDEN', {
+                                code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
+                                message: 'Personal organization cannot be deleted.',
+                            });
+                        }
+                    },
+                    beforeUpdateOrganization: async ({ organization, member }) => {
+                        if (!('slug' in organization) && !('metadata' in organization)) {
+                            return;
+                        }
+
+                        if (await isProtectedDefaultOrganization(ctx, member.organizationId)) {
+                            throw new APIError('FORBIDDEN', {
+                                code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
+                                message:
+                                    'Personal organization slug and metadata cannot be changed.',
+                            });
+                        }
+                    },
+                    beforeCreateInvitation: async ({ organization }) => {
+                        if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                            throw new APIError('FORBIDDEN', {
+                                code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
+                                message: 'Personal organization cannot invite members.',
+                            });
+                        }
+                    },
+                    beforeAcceptInvitation: async ({ organization }) => {
+                        if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                            throw new APIError('FORBIDDEN', {
+                                code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
+                                message: 'Personal organization cannot invite members.',
+                            });
+                        }
+                    },
+                    beforeAddMember: async ({ organization }) => {
+                        if (await isProtectedDefaultOrganization(ctx, organization.id)) {
+                            throw new APIError('FORBIDDEN', {
+                                code: ERROR_CODES.PERSONAL_ORG_MEMBER_ADD_FORBIDDEN,
+                                message: 'Personal organization cannot add members.',
+                            });
+                        }
+                    },
+                },
+                sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
+                    const invitationEmail = buildInvitationEmail({
+                        siteUrl: env.SITE_URL,
+                        invitationId: id,
+                        inviteeEmail: email,
+                        organizationName: organization.name,
+                        inviterName: inviter.user.name ?? inviter.user.email,
+                        role,
                     });
 
-                    return {
-                        data: {
-                            ...session,
-                            activeOrganizationId,
-                        },
-                    };
+                    await (ctx as MutationCtx).runMutation(
+                        internal.email.sendTransactionalEmail,
+                        invitationEmail
+                    );
                 },
-            },
-        },
-        user: {
-            delete: {
-                before: async user => {
-                    await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
-                    return true;
-                },
-            },
-        },
-    },
-    hooks: {
-        before: createAuthMiddleware(async ctx => {
-            const pathsWithStrongPassword = ['/sign-up/email', '/reset-password'];
-            if (!pathsWithStrongPassword.includes(ctx.path)) {
-                return;
-            }
-
-            const password =
-                (ctx.body as { password?: unknown; newPassword?: unknown } | undefined)?.password ??
-                (ctx.body as { newPassword?: unknown } | undefined)?.newPassword ??
-                undefined;
-
-            const passwordPolicy = validatePasswordPolicy(password);
-            if (!passwordPolicy.ok) {
-                throw new APIError('BAD_REQUEST', {
-                    code: passwordPolicy.code,
-                    message: passwordPolicy.message,
-                });
-            }
-        }),
-    },
-    plugins: [
-        convex({
-            authConfig,
-            jwks: env.JWKS,
-        }),
-        admin({
-            adminRoles: platformAdminRoles,
-            roles: platformRoles,
-        }),
-        organization({
-            invitationExpiresIn: 60 * 60 * 24 * 2,
-            defaultRole: 'member',
-            organizationHooks: {
-                beforeDeleteOrganization: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
-                            message: 'Personal organization cannot be deleted.',
-                        });
-                    }
-                },
-                beforeUpdateOrganization: async ({ organization, member }) => {
-                    if (!('slug' in organization) && !('metadata' in organization)) {
-                        return;
-                    }
-
-                    if (await isProtectedDefaultOrganization(ctx, member.organizationId)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
-                            message: 'Personal organization slug and metadata cannot be changed.',
-                        });
-                    }
-                },
-                beforeCreateInvitation: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
-                            message: 'Personal organization cannot invite members.',
-                        });
-                    }
-                },
-                beforeAcceptInvitation: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
-                            message: 'Personal organization cannot invite members.',
-                        });
-                    }
-                },
-                beforeAddMember: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_MEMBER_ADD_FORBIDDEN,
-                            message: 'Personal organization cannot add members.',
-                        });
-                    }
-                },
-            },
-            sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
-                const invitationEmail = buildInvitationEmail({
-                    siteUrl: env.SITE_URL,
-                    invitationId: id,
-                    inviteeEmail: email,
-                    organizationName: organization.name,
-                    inviterName: inviter.user.name ?? inviter.user.email,
-                    role,
-                });
-
-                await (ctx as MutationCtx).runMutation(
-                    internal.email.sendTransactionalEmail,
-                    invitationEmail
-                );
-            },
-        }),
-    ],
-    triggers: authAuditTriggers as never,
-});
-
-export default defineAuth(ctx => createAuthOptions(ctx as GenericCtx));
+            }),
+        ],
+        triggers: authAuditTriggers as never,
+    })
+);
 
 export const getCurrentUser = queryWithRLS({
     args: {},

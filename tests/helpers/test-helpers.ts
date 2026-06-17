@@ -133,26 +133,32 @@ async function setActiveOrganizationViaUi(page: Page): Promise<boolean> {
     return true;
 }
 
-async function selectOrganizationByName(page: Page, organizationName: string): Promise<boolean> {
+export async function selectOrganizationByName(
+    page: Page,
+    organizationName: string
+): Promise<boolean> {
     const switcher = page.getByTestId('organization-switcher');
     if ((await switcher.count()) === 0) {
         return false;
     }
 
     await switcher.first().click();
-    const option = page.locator('[data-testid^="organization-option-"]', {
-        hasText: organizationName,
-    });
+    const option = page
+        .locator(
+            '[data-testid^="organization-option-"]:not([data-disabled]):not([aria-disabled="true"])'
+        )
+        .filter({ hasText: organizationName })
+        .first();
 
     try {
-        await expect(option.first()).toBeVisible({ timeout: 5000 });
+        await expect(option).toBeVisible({ timeout: 5000 });
     } catch {
         await page.keyboard.press('Escape').catch(() => undefined);
         return false;
     }
 
-    await option.first().click();
-    await expect(option.first())
+    await option.click();
+    await expect(option)
         .toBeHidden({ timeout: 5000 })
         .catch(() => undefined);
     return true;
@@ -353,6 +359,7 @@ export interface CreateObjectiveOptions {
     targetValue?: number;
     currentValue?: number;
     unit?: string;
+    visibility?: 'private' | 'organization';
     ensureCategories?: boolean;
 }
 
@@ -445,6 +452,14 @@ export async function createObjective(
 
     await page.getByTestId('objective-target-input').fill(`${targetValue}`);
     await page.getByTestId('objective-unit-input').fill(unit);
+
+    if (options?.visibility) {
+        await page.getByTestId('objective-visibility-select').click();
+        await page
+            .getByRole('option', { name: new RegExp(options.visibility, 'i') })
+            .first()
+            .click();
+    }
 
     await page.getByTestId('objective-save-button').click();
 

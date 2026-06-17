@@ -90,7 +90,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 0; i < updateCount; i++) {
                     const id = await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
@@ -234,7 +234,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 0; i < 60; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
@@ -478,7 +478,11 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             await t.run(async ctx => {
                 for (let i = 0; i < objectiveCount; i++) {
                     const id = await ctx.db.insert('objectives', {
-                        userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId,
                         title: `Objective ${i}`,
                         targetValue: 100,
@@ -498,7 +502,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 0; i < 50; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: 50,
                         updateDate: today.getTime(),
@@ -522,7 +526,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 50; i < 100; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: 50,
                         updateDate: yesterday.getTime(),
@@ -553,7 +557,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 0; i < 150; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() - i * 24 * 60 * 60 * 1000,
@@ -580,7 +584,11 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
             await t.run(async ctx => {
                 for (let i = 0; i < objectiveCount; i++) {
                     const id = await ctx.db.insert('objectives', {
-                        userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId,
                         title: `Org Objective ${i}`,
                         targetValue: 100,
@@ -600,7 +608,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 0; i < 50; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveIds[i],
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: 50,
                         updateDate: today.getTime(),
@@ -619,7 +627,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
         });
     });
 
-    describe('end-to-end deleteObjective flow', () => {
+    describe('end-to-end purgeObjective flow', () => {
         test('should completely delete objective with 200+ related records', async () => {
             const objectiveId = await createTestObjective(t, {
                 userId,
@@ -633,7 +641,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 for (let i = 0; i < 100; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId,
+                        createdBy: userId,
                         organizationId,
                         updatedValue: i + 1,
                         updateDate: Date.now() + i,
@@ -657,7 +665,7 @@ describe('CRITICAL: Batching jobs with large datasets', async () => {
                 }
             });
 
-            const startResult = await userIdentity.mutation(api.objectives.deleteObjective, {
+            const startResult = await userIdentity.mutation(api.objectives.purgeObjective, {
                 id: objectiveId,
             });
             expect(startResult.status).toBe('deletion_started');

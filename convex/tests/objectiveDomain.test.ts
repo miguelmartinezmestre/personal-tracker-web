@@ -250,7 +250,11 @@ describe('objectiveDomain', () => {
 
             await t.run(async ctx => {
                 const objectiveId = await ctx.db.insert('objectives', {
-                    userId: userData.docId,
+                    createdBy: userData.docId,
+
+                    ownerId: userData.docId,
+
+                    visibility: 'private',
                     organizationId,
                     title: 'Complete Me',
                     targetValue: 100,
@@ -285,7 +289,11 @@ describe('objectiveDomain', () => {
 
             await t.run(async ctx => {
                 const objectiveId = await ctx.db.insert('objectives', {
-                    userId: userData.docId as Id<'user'>,
+                    createdBy: userData.docId as Id<'user'>,
+
+                    ownerId: userData.docId as Id<'user'>,
+
+                    visibility: 'private',
                     organizationId,
                     title: 'Reopen Me',
                     targetValue: 100,

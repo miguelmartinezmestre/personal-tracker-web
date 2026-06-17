@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../../shared/pagination';
+import { DEFAULT_PAGE_SIZE } from '../../shared/pagination';
 
 export const TIME = {
     MINUTE_MS: 60 * 1000,
@@ -10,7 +10,6 @@ export const TIME = {
 
 export const PAGINATION = {
     DEFAULT_PAGE_SIZE,
-    MAX_PAGE_SIZE,
     DASHBOARD_LIMIT: 5,
 } as const;
 
@@ -59,7 +58,6 @@ export const ACHIEVEMENT_TIER = {
     BRONZE: 'bronze',
     SILVER: 'silver',
     GOLD: 'gold',
-    PLATINUM: 'platinum',
 } as const;
 
 export type AchievementTier = (typeof ACHIEVEMENT_TIER)[keyof typeof ACHIEVEMENT_TIER];
@@ -78,6 +76,21 @@ export const ORGANIZATION_ROLE = {
 } as const;
 
 export type OrganizationRole = (typeof ORGANIZATION_ROLE)[keyof typeof ORGANIZATION_ROLE];
+
+export const OBJECTIVE_VISIBILITY = {
+    PRIVATE: 'private',
+    ORGANIZATION: 'organization',
+} as const;
+
+export type ObjectiveVisibility = (typeof OBJECTIVE_VISIBILITY)[keyof typeof OBJECTIVE_VISIBILITY];
+
+export const OBJECTIVE_COLLABORATOR_ROLE = {
+    EDITOR: 'editor',
+    VIEWER: 'viewer',
+} as const;
+
+export type ObjectiveCollaboratorRole =
+    (typeof OBJECTIVE_COLLABORATOR_ROLE)[keyof typeof OBJECTIVE_COLLABORATOR_ROLE];
 
 export const ERROR_CODES = {
     AUTH_REQUIRED: 'AUTH_REQUIRED',
@@ -99,6 +112,11 @@ export const ERROR_CODES = {
 
     NOT_OBJECTIVE_OWNER: 'NOT_OBJECTIVE_OWNER',
     NOT_AUTHORIZED_OBJECTIVE: 'NOT_AUTHORIZED_OBJECTIVE',
+    NOT_AUTHORIZED_PROGRESS: 'NOT_AUTHORIZED_PROGRESS',
+    NOT_AUTHORIZED_COLLABORATOR: 'NOT_AUTHORIZED_COLLABORATOR',
+    COLLABORATOR_NOT_FOUND: 'COLLABORATOR_NOT_FOUND',
+    COLLABORATOR_ALREADY_EXISTS: 'COLLABORATOR_ALREADY_EXISTS',
+    CANNOT_REMOVE_OWNER: 'CANNOT_REMOVE_OWNER',
     NOT_AUTHORIZED_NOTIFICATION: 'NOT_AUTHORIZED_NOTIFICATION',
     OBJECTIVE_ID_LIMIT_EXCEEDED: 'OBJECTIVE_ID_LIMIT_EXCEEDED',
 

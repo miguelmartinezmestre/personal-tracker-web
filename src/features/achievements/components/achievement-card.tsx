@@ -16,14 +16,12 @@ const TIER_LABELS: Record<AchievementTier, string> = {
     bronze: 'Bronze',
     silver: 'Silver',
     gold: 'Gold',
-    platinum: 'Platinum',
 };
 
 const TIER_BADGE_VARIANTS: Record<AchievementTier, 'default' | 'secondary' | 'outline'> = {
     bronze: 'outline',
     silver: 'secondary',
     gold: 'default',
-    platinum: 'default',
 };
 
 interface AchievementCardProps {

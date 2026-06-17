@@ -1,6 +1,12 @@
 import type { Rules } from 'convex-helpers/server/rowLevelSecurity';
 import type { DataModel, Id } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
+import {
+    buildPermissionSubject,
+    canEditProgress,
+    canObjective,
+} from '../../domain/objectives/permissions';
+import { getCollaboratorRoleForUser } from '../../domain/objectives/collaborators';
 import { isGlobalAdminRole } from '../../../shared/platform-roles';
 
 export async function createRlsRules(
@@ -74,41 +80,6 @@ export async function createRlsRules(
         const targetRole = await membershipRoleForOrganization(targetOrganizationId);
         return targetRole === 'admin' || targetRole === 'owner';
     };
-    const currentUserOrganizationIds = async () => {
-        return await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .take(1000)
-            .then(members => new Set(members.map(member => member.organizationId)));
-    };
-    const organizationIdsForUser = async (targetUserId: Id<'user'> | string) => {
-        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
-        if (!normalizedUserId) return new Set<Id<'organization'>>();
-
-        return ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', normalizedUserId))
-            .take(1000)
-            .then(members => new Set(members.map(member => member.organizationId)));
-    };
-    const sharesOrganizationWithUser = async (targetUserId: Id<'user'> | string) => {
-        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
-        if (!normalizedUserId) return false;
-        if (normalizedUserId === userId) return true;
-
-        const [currentOrganizationIds, targetOrganizationIds] = await Promise.all([
-            currentUserOrganizationIds(),
-            organizationIdsForUser(normalizedUserId),
-        ]);
-
-        for (const targetOrganizationId of targetOrganizationIds) {
-            if (currentOrganizationIds.has(targetOrganizationId)) {
-                return true;
-            }
-        }
-
-        return false;
-    };
     const pendingInvitationsForEmail = async () => {
         if (!email) return [];
         if (!pendingInvitationsForEmailPromise) {
@@ -129,59 +100,118 @@ export async function createRlsRules(
 
         return await pendingInvitationsForEmailPromise;
     };
-    const hasPendingInvitationForOrganization = async (
-        targetOrganizationId?: Id<'organization'> | string | null
-    ) => {
-        const normalizedOrganizationId = targetOrganizationId
-            ? ctx.db.normalizeId('organization', targetOrganizationId)
-            : null;
-        if (!normalizedOrganizationId) return false;
-
-        return (await pendingInvitationsForEmail()).some(
-            invitation => invitation.organizationId === normalizedOrganizationId
-        );
-    };
-    const isInviterForPendingInvitation = async (targetUserId: Id<'user'> | string) => {
-        const normalizedUserId = ctx.db.normalizeId('user', targetUserId);
-        if (!normalizedUserId) return false;
-
-        return (await pendingInvitationsForEmail()).some(
-            invitation => invitation.inviterId === normalizedUserId
-        );
-    };
-    const canAccessObjective = (objective: { organizationId: Id<'organization'> }) => {
+    const canAccessObjectiveOrg = (objective: { organizationId: Id<'organization'> }) => {
         if (isGlobalAdmin) return true;
-        // Tenant model: any member of the active organization can access its objectives.
         return isActiveOrganization(objective.organizationId);
     };
 
+    const collaboratorRoleCache = new Map<
+        string,
+        Awaited<ReturnType<typeof getCollaboratorRoleForUser>>
+    >();
+    const resolveCollaboratorRole = async (objectiveId: Id<'objectives'>) => {
+        const cacheKey = String(objectiveId);
+        if (!collaboratorRoleCache.has(cacheKey)) {
+            collaboratorRoleCache.set(
+                cacheKey,
+                await getCollaboratorRoleForUser(ctx, objectiveId, userId)
+            );
+        }
+        return collaboratorRoleCache.get(cacheKey) ?? null;
+    };
+
+    const buildSubject = async (objectiveId: Id<'objectives'>) =>
+        buildPermissionSubject({
+            userId,
+            platformRole: role,
+            memberRole,
+            collaboratorRole: await resolveCollaboratorRole(objectiveId),
+        });
+
     return {
         objectives: {
-            read: async (_, objective) => canAccessObjective(objective),
-            insert: async (_, objective) => canAccessObjective(objective),
-            modify: async (_, objective) => canAccessObjective(objective),
+            read: async (_, objective) => {
+                if (!canAccessObjectiveOrg(objective)) return false;
+                const subject = await buildSubject(objective._id);
+                return canObjective('view', subject, objective);
+            },
+            insert: async (_, objective) => canAccessObjectiveOrg(objective),
+            modify: async (_, objective) => {
+                if (!canAccessObjectiveOrg(objective)) return false;
+                const subject = await buildSubject(objective._id);
+                return (
+                    canObjective('editDefinition', subject, objective) ||
+                    canObjective('delete', subject, objective) ||
+                    canObjective('restore', subject, objective) ||
+                    canObjective('setVisibility', subject, objective) ||
+                    canObjective('transferOwnership', subject, objective) ||
+                    canObjective('contributeProgress', subject, objective)
+                );
+            },
+        },
+        objectiveCollaborators: {
+            read: async (_, collaborator) => {
+                if (isGlobalAdmin) return true;
+                if (!isActiveOrganization(collaborator.organizationId)) return false;
+                if (collaborator.userId === userId) return true;
+
+                const objective = await ctx.db.get('objectives', collaborator.objectiveId);
+                if (!objective) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('view', subject, objective);
+            },
+            insert: async (_, collaborator) => {
+                if (isGlobalAdmin) return true;
+                if (!isActiveOrganization(collaborator.organizationId)) return false;
+
+                const objective = await ctx.db.get('objectives', collaborator.objectiveId);
+                if (!objective) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('manageCollaborators', subject, objective);
+            },
+            modify: async (_, collaborator) => {
+                if (isGlobalAdmin) return true;
+                if (!isActiveOrganization(collaborator.organizationId)) return false;
+
+                const objective = await ctx.db.get('objectives', collaborator.objectiveId);
+                if (!objective) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('manageCollaborators', subject, objective);
+            },
         },
         progressUpdates: {
             read: async (_, progressUpdate) => {
                 if (isGlobalAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (!objective) return false;
-                return canAccessObjective(objective);
+                if (!objective || !canAccessObjectiveOrg(objective)) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('view', subject, objective);
             },
             insert: async (_, progressUpdate) => {
                 if (isGlobalAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (!objective) return false;
-                return canAccessObjective(objective);
+                if (!objective || !canAccessObjectiveOrg(objective)) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('contributeProgress', subject, objective);
             },
             modify: async (_, progressUpdate) => {
                 if (isGlobalAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (!objective) return false;
-                return canAccessObjective(objective);
+                if (!objective || !canAccessObjectiveOrg(objective)) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canEditProgress(subject, {
+                    authorId: progressUpdate.createdBy,
+                    ownerId: objective.ownerId,
+                });
             },
         },
         notifications: {
@@ -206,8 +236,8 @@ export async function createRlsRules(
                 }
                 if (!notification.objective) return false;
                 const objective = await ctx.db.get('objectives', notification.objective);
-                if (!objective || notification.userId !== objective.userId) return false;
-                return canAccessObjective(objective);
+                if (!objective || notification.userId !== objective.ownerId) return false;
+                return canAccessObjectiveOrg(objective);
             },
             modify: async (_, notification) => {
                 if (isGlobalAdmin) return true;
@@ -291,8 +321,41 @@ export async function createRlsRules(
             read: async (_, user) => {
                 if (isGlobalAdmin) return true;
                 if (await hasActiveOrgAdminAccessToUser(user._id)) return true;
-                if (await sharesOrganizationWithUser(user._id)) return true;
-                if (await isInviterForPendingInvitation(user._id)) return true;
+
+                const normalizedTargetUserId = ctx.db.normalizeId('user', user._id);
+                if (normalizedTargetUserId) {
+                    if (normalizedTargetUserId === userId) {
+                        return true;
+                    }
+
+                    const [currentOrganizationIds, targetOrganizationIds] = await Promise.all([
+                        ctx.db
+                            .query('member')
+                            .withIndex('userId', q => q.eq('userId', userId))
+                            .take(1000)
+                            .then(members => new Set(members.map(member => member.organizationId))),
+                        ctx.db
+                            .query('member')
+                            .withIndex('userId', q => q.eq('userId', normalizedTargetUserId))
+                            .take(1000)
+                            .then(members => new Set(members.map(member => member.organizationId))),
+                    ]);
+
+                    for (const targetOrganizationId of targetOrganizationIds) {
+                        if (currentOrganizationIds.has(targetOrganizationId)) {
+                            return true;
+                        }
+                    }
+
+                    if (
+                        (await pendingInvitationsForEmail()).some(
+                            invitation => invitation.inviterId === normalizedTargetUserId
+                        )
+                    ) {
+                        return true;
+                    }
+                }
+
                 return user._id === userId;
             },
             insert: async () => false,
@@ -302,7 +365,16 @@ export async function createRlsRules(
             read: async (_, organization) => {
                 if (isGlobalAdmin) return true;
                 if (await isMemberOfOrganization(organization._id)) return true;
-                return await hasPendingInvitationForOrganization(organization._id);
+
+                const normalizedOrganizationId = ctx.db.normalizeId(
+                    'organization',
+                    organization._id
+                );
+                if (!normalizedOrganizationId) return false;
+
+                return (await pendingInvitationsForEmail()).some(
+                    invitation => invitation.organizationId === normalizedOrganizationId
+                );
             },
             insert: async () => false,
             modify: async () => false,

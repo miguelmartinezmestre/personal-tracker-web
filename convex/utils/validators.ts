@@ -1,6 +1,8 @@
 import { v } from 'convex/values';
 import {
     OBJECTIVE_STATUS,
+    OBJECTIVE_VISIBILITY,
+    OBJECTIVE_COLLABORATOR_ROLE,
     NOTIFICATION_TYPE,
     ACHIEVEMENT_TYPE,
     ACHIEVEMENT_CATEGORY,
@@ -10,6 +12,16 @@ import {
 export const objectiveStatusValidator = v.union(
     v.literal(OBJECTIVE_STATUS.ACTIVE),
     v.literal(OBJECTIVE_STATUS.COMPLETED)
+);
+
+export const objectiveVisibilityValidator = v.union(
+    v.literal(OBJECTIVE_VISIBILITY.PRIVATE),
+    v.literal(OBJECTIVE_VISIBILITY.ORGANIZATION)
+);
+
+export const objectiveCollaboratorRoleValidator = v.union(
+    v.literal(OBJECTIVE_COLLABORATOR_ROLE.EDITOR),
+    v.literal(OBJECTIVE_COLLABORATOR_ROLE.VIEWER)
 );
 
 export const notificationTypeValidator = v.union(
@@ -35,8 +47,7 @@ export const achievementCategoryValidator = v.union(
 export const achievementTierValidator = v.union(
     v.literal(ACHIEVEMENT_TIER.BRONZE),
     v.literal(ACHIEVEMENT_TIER.SILVER),
-    v.literal(ACHIEVEMENT_TIER.GOLD),
-    v.literal(ACHIEVEMENT_TIER.PLATINUM)
+    v.literal(ACHIEVEMENT_TIER.GOLD)
 );
 
 export const achievementTriggerValidator = v.union(

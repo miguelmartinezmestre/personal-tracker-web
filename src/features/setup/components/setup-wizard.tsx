@@ -14,7 +14,7 @@ import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convex } from '@/platform/convex/providers/convex-query-client';
 import { useSetupWizard } from '../hooks/use-setup-wizard';
-import { getMessageOrFallback, getErrorMessage, emptyToUndefined } from '@/lib/error-utils';
+import { getMessageOrFallback, getErrorMessage } from '@/lib/error-utils';
 import SetupProgress from './setup-progress';
 import StepPlatformConfig from './step-platform-config';
 import StepAdminAccount from './step-admin-account';
@@ -80,7 +80,7 @@ export default function SetupWizard() {
                             defaultLanguage: data.platform.defaultLanguage,
                             registrationPolicy: data.registration.policy,
                             organizationName: data.organization.name,
-                            organizationLogo: emptyToUndefined(data.organization.logo),
+                            organizationLogo: data.organization.logo || undefined,
                             categories: data.categories.map(category => ({
                                 name: category.name,
                                 color: category.color,

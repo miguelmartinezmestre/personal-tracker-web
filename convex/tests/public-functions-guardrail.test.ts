@@ -10,7 +10,6 @@ type RawPublicFunction = {
 };
 
 const ALLOWED_RAW_PUBLIC_FUNCTIONS = new Set([
-    'convex/healthCheck.ts:get:query',
     'convex/organizations.ts:getCurrentSession:query',
     'convex/setup.ts:isPlatformSetUp:query',
     'convex/setup.ts:getPublicPlatformSettings:query',

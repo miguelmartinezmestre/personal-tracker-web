@@ -7,6 +7,7 @@ import {
     sanitizeAuditMetadata,
     toAuditPrimitive,
 } from './domain/audit/privacy';
+import { reassignObjectivesOnMemberLeave } from './domain/objectives/collaborators';
 
 type BetterAuthSchema = typeof schema;
 
@@ -75,40 +76,6 @@ const sanitizeInvitation = (
     return result;
 };
 
-const resolveOrganizationId = async (
-    ctx: MutationCtx,
-    explicitOrganizationId?: string | null,
-    fallbackUserId?: string | null
-): Promise<Id<'organization'> | null> => {
-    if (explicitOrganizationId) {
-        const normalized = ctx.db.normalizeId('organization', explicitOrganizationId);
-        if (normalized) {
-            return normalized;
-        }
-    }
-
-    if (fallbackUserId) {
-        const normalizedUserId = ctx.db.normalizeId('user', fallbackUserId);
-        if (!normalizedUserId) {
-            return null;
-        }
-
-        const membership = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', normalizedUserId))
-            .first();
-
-        if (membership?.organizationId) {
-            const normalized = ctx.db.normalizeId('organization', membership.organizationId);
-            if (normalized) {
-                return normalized;
-            }
-        }
-    }
-
-    return null;
-};
-
 type AuthAuditMetadata = {
     before?: Record<string, string | number | boolean | null>;
     after?: Record<string, string | number | boolean | null>;
@@ -136,7 +103,25 @@ const insertAuthAuditLog = async (
         };
     }
 ) => {
-    const organizationId = await resolveOrganizationId(ctx, args.organizationId, args.userId);
+    let organizationId: Id<'organization'> | null = null;
+    if (args.organizationId) {
+        organizationId = ctx.db.normalizeId('organization', args.organizationId);
+    }
+
+    if (!organizationId && args.userId) {
+        const fallbackUserId = ctx.db.normalizeId('user', args.userId);
+        if (fallbackUserId) {
+            const membership = await ctx.db
+                .query('member')
+                .withIndex('userId', q => q.eq('userId', fallbackUserId))
+                .first();
+
+            if (membership?.organizationId) {
+                organizationId = ctx.db.normalizeId('organization', membership.organizationId);
+            }
+        }
+    }
+
     const normalizedUserId = ctx.db.normalizeId('user', args.userId);
 
     if (!organizationId || !normalizedUserId) {
@@ -270,4 +255,35 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
         },
     },
-};
+    member: {
+        change: async (change, ctx) => {
+            if (change.operation === 'delete') {
+                const organizationId = ctx.db.normalizeId(
+                    'organization',
+                    change.oldDoc.organizationId
+                );
+                const userId = ctx.db.normalizeId('user', change.oldDoc.userId);
+                if (organizationId && userId) {
+                    await reassignObjectivesOnMemberLeave(ctx, organizationId, userId);
+                }
+
+                const memberDoc = change.oldDoc as Record<string, unknown>;
+                const sanitizedMember: Record<string, string | number | boolean | null> = {};
+                for (const key of ['_id', 'organizationId', 'userId', 'role', 'createdAt']) {
+                    if (key in memberDoc) {
+                        sanitizedMember[key] = toAuditPrimitive(memberDoc[key]);
+                    }
+                }
+
+                await insertAuthAuditLog(ctx, {
+                    action: 'organization_member.deleted',
+                    resourceType: 'organization_member',
+                    resourceId: change.oldDoc._id,
+                    userId: change.oldDoc.userId,
+                    organizationId: change.oldDoc.organizationId,
+                    metadata: { before: sanitizedMember },
+                });
+            }
+        },
+    },
+} as BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx>;

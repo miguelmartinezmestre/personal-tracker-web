@@ -2,6 +2,8 @@ import { queryWithRLS } from './platform/rls/wrappers';
 import { v } from 'convex/values';
 import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
 import { computeProgressPercent } from './domain/objectives/metrics';
+import { canUserViewObjectiveInList } from './domain/objectives/list';
+import { getCollaboratedObjectiveIdsForUser } from './domain/objectives/collaborators';
 import { objectiveStatusValidator } from './utils/validators';
 
 const LIST_LIMIT = 1000;
@@ -19,16 +21,29 @@ export const getDashboardStats = queryWithRLS({
             return { totalObjectives: 0, completedObjectives: 0, pendingObjectives: 0 };
         }
 
-        const objectives = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .take(LIST_LIMIT);
+        const objectives = (
+            await ctx.db
+                .query('objectives')
+                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                .take(LIST_LIMIT)
+        ).filter(objective => objective.deletedAt === undefined);
+
+        const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
+            ctx,
+            ctx.userId,
+            organizationId
+        );
+        const visibleObjectives = objectives.filter(objective =>
+            canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
+        );
 
         return {
-            totalObjectives: objectives.length,
-            completedObjectives: objectives.filter(objective => objective.status === 'completed')
+            totalObjectives: visibleObjectives.length,
+            completedObjectives: visibleObjectives.filter(
+                objective => objective.status === 'completed'
+            ).length,
+            pendingObjectives: visibleObjectives.filter(objective => objective.status === 'active')
                 .length,
-            pendingObjectives: objectives.filter(objective => objective.status === 'active').length,
         };
     },
 });
@@ -53,9 +68,9 @@ export const getMonthlyProgress = queryWithRLS({
 
         const userUpdates = await ctx.db
             .query('progressUpdates')
-            .withIndex('by_user_organization_date', q =>
+            .withIndex('by_createdBy_organization_date', q =>
                 q
-                    .eq('userId', userId)
+                    .eq('createdBy', userId)
                     .eq('organizationId', organizationId)
                     .gte('updateDate', startDate)
             )
@@ -106,10 +121,22 @@ export const getObjectivesWithMostProgress = queryWithRLS({
             return [];
         }
 
-        const objectives = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .take(LIST_LIMIT);
+        const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
+            ctx,
+            ctx.userId,
+            organizationId
+        );
+
+        const objectives = (
+            await ctx.db
+                .query('objectives')
+                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                .take(LIST_LIMIT)
+        ).filter(
+            objective =>
+                objective.deletedAt === undefined &&
+                canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
+        );
 
         const objectivesWithProgress = objectives
             .filter(objective => objective.status === 'active')
@@ -156,15 +183,27 @@ export const getUpcomingDeadlines = queryWithRLS({
             return [];
         }
 
-        const objectives = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization_deadline', q =>
-                q
-                    .eq('organizationId', organizationId)
-                    .gt('deadline', now - 1)
-                    .lt('deadline', futureLimit + 1)
-            )
-            .take(LIST_LIMIT);
+        const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
+            ctx,
+            ctx.userId,
+            organizationId
+        );
+
+        const objectives = (
+            await ctx.db
+                .query('objectives')
+                .withIndex('by_organization_deadline', q =>
+                    q
+                        .eq('organizationId', organizationId)
+                        .gt('deadline', now - 1)
+                        .lt('deadline', futureLimit + 1)
+                )
+                .take(LIST_LIMIT)
+        ).filter(
+            objective =>
+                objective.deletedAt === undefined &&
+                canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
+        );
 
         const upcomingDeadlines = objectives
             .filter(
@@ -226,9 +265,9 @@ export const getRecentActivity = queryWithRLS({
 
         const recentUpdatesPromise = ctx.db
             .query('progressUpdates')
-            .withIndex('by_user_organization_date', q =>
+            .withIndex('by_createdBy_organization_date', q =>
                 q
-                    .eq('userId', userId)
+                    .eq('createdBy', userId)
                     .eq('organizationId', organizationId)
                     .gte('updateDate', startDate)
             )
@@ -240,10 +279,13 @@ export const getRecentActivity = queryWithRLS({
         ]);
 
         const recentObjectives = organizationObjectives.filter(
-            objective => objective.createdAt >= startDate
+            objective => objective.deletedAt === undefined && objective.createdAt >= startDate
         );
         const recentlyCompleted = organizationObjectives.filter(
-            objective => objective.status === 'completed' && objective.updatedAt >= startDate
+            objective =>
+                objective.deletedAt === undefined &&
+                objective.status === 'completed' &&
+                objective.updatedAt >= startDate
         );
 
         return {

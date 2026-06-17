@@ -181,29 +181,23 @@ test.describe('Critical Paths - Smoke Tests', () => {
             await expect(editTitleInput).toBeHidden({ timeout: 10000 });
 
             const objectiveRow = page.getByTestId('table-row').filter({ hasText: title });
+            const deleteDialog = page.getByRole('alertdialog');
             let deletionCompleted = false;
             let lastDeleteError: unknown = null;
 
             for (let attempt = 0; attempt < 3; attempt++) {
-                const row = objectiveRow.first();
-                await expect(row).toBeVisible({ timeout: 10000 });
-                await row.getByTestId('objective-delete-button').click();
-
-                const deleteDialog = page.getByRole('alertdialog');
-                await expect(deleteDialog).toBeVisible({ timeout: 10000 });
-
-                const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
-                await expect(confirmButton).toBeVisible({ timeout: 10000 });
-                await expect(confirmButton).toBeEnabled({ timeout: 10000 });
-
                 try {
-                    await confirmButton.click({ timeout: 5000 });
-                } catch (error) {
-                    lastDeleteError = error;
-                }
+                    const row = objectiveRow.first();
+                    await expect(row).toBeVisible({ timeout: 10000 });
+                    await row.getByTestId('objective-delete-button').click();
 
-                try {
-                    await expect(objectiveRow).toHaveCount(0, { timeout: 10000 });
+                    await expect(deleteDialog).toBeVisible({ timeout: 5000 });
+
+                    const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
+                    await expect(confirmButton).toBeEnabled({ timeout: 10000 });
+                    await confirmButton.click();
+
+                    await expect(deleteDialog).toBeHidden({ timeout: 10000 });
                     deletionCompleted = true;
                     break;
                 } catch (error) {
@@ -217,6 +211,22 @@ test.describe('Critical Paths - Smoke Tests', () => {
                     `Could not confirm objective deletion in smoke test: ${String(lastDeleteError)}`
                 );
             }
+
+            // The objectives list filters out soft-deleted objectives, but the live query can
+            // briefly keep the removed row in the DOM. Reload until the row is truly gone.
+            let rowCount = -1;
+            const maxTime = Date.now() + 15000;
+
+            while (Date.now() < maxTime && rowCount !== 0) {
+                await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
+                rowCount = await objectiveRow.count();
+
+                if (rowCount !== 0) {
+                    await page.waitForTimeout(500);
+                }
+            }
+
+            expect(rowCount).toBe(0);
 
             console.log('CRUD smoke test completed successfully');
         }

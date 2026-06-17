@@ -71,7 +71,11 @@ describe('achievements calculations', async () => {
         test('returns 0 when objectives exist but no progress updates', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -92,7 +96,11 @@ describe('achievements calculations', async () => {
         test('returns 1 for single day of activity today', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -110,7 +118,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -130,7 +138,11 @@ describe('achievements calculations', async () => {
         test('returns 1 for activity yesterday (streak continues)', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -149,7 +161,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: yesterday.getTime(),
@@ -169,7 +181,11 @@ describe('achievements calculations', async () => {
         test('returns 0 when last activity is 2+ days ago (streak broken)', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -188,7 +204,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: twoDaysAgo.getTime(),
@@ -208,7 +224,11 @@ describe('achievements calculations', async () => {
         test('counts multiple updates on same day as 1', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -226,7 +246,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -237,7 +257,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() + 3600000,
@@ -248,7 +268,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 30,
                     updateDate: today.getTime() + 7200000,
@@ -271,7 +291,11 @@ describe('achievements calculations', async () => {
             // until the first day-gap must still report the full 30-day streak.
             const objectiveId = await userIdentity.run(async ctx => {
                 return ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'High volume objective',
                     targetValue: 100,
@@ -293,7 +317,7 @@ describe('achievements calculations', async () => {
                     for (let j = 0; j < updatesPerDay; j++) {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
-                            userId: userId,
+                            createdBy: userId,
                             organizationId: organizationId,
                             updatedValue: j,
                             updateDate: dayStart + j * 1000,
@@ -314,7 +338,11 @@ describe('achievements calculations', async () => {
         test('returns correct streak for 3 consecutive days', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -333,7 +361,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 3; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
@@ -354,7 +382,11 @@ describe('achievements calculations', async () => {
         test('returns correct streak for 7 consecutive days', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -373,7 +405,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 7; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
@@ -394,7 +426,11 @@ describe('achievements calculations', async () => {
         test('breaks streak on gap in days', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -412,7 +448,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -423,7 +459,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
@@ -434,7 +470,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 30,
                     updateDate: today.getTime() - 3 * DAY_MS,
@@ -454,7 +490,11 @@ describe('achievements calculations', async () => {
         test('aggregates updates from multiple objectives', async () => {
             const objectiveId1 = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Objective 1',
                     targetValue: 100,
@@ -467,7 +507,11 @@ describe('achievements calculations', async () => {
 
             const objectiveId2 = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Objective 2',
                     targetValue: 50,
@@ -484,7 +528,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId1,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -495,7 +539,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId2,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
@@ -525,7 +569,11 @@ describe('achievements calculations', async () => {
         test('returns correct streak with mutation context', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 const id = await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Test Objective',
                     targetValue: 100,
@@ -544,7 +592,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 5; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
@@ -593,7 +641,11 @@ describe('achievements calculations', async () => {
 
             const objectiveId1 = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'User1 Objective',
                     targetValue: 100,
@@ -606,7 +658,11 @@ describe('achievements calculations', async () => {
 
             const objectiveId2 = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: user2Data.docId,
+                    createdBy: user2Data.docId,
+
+                    ownerId: user2Data.docId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'User2 Objective',
                     targetValue: 50,
@@ -623,7 +679,7 @@ describe('achievements calculations', async () => {
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId1,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -634,7 +690,7 @@ describe('achievements calculations', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId2,
-                    userId: userId,
+                    createdBy: userId,
                     organizationId: organizationId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
@@ -654,7 +710,11 @@ describe('achievements calculations', async () => {
         test('returns correct streak for organization with 7 day streak', async () => {
             const objectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: organizationId,
                     title: 'Org Objective',
                     targetValue: 100,
@@ -672,7 +732,7 @@ describe('achievements calculations', async () => {
                 for (let i = 0; i < 7; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
