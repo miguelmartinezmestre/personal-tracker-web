@@ -59,7 +59,6 @@ export const ACHIEVEMENT_TIER = {
     BRONZE: 'bronze',
     SILVER: 'silver',
     GOLD: 'gold',
-    PLATINUM: 'platinum',
 } as const;
 
 export type AchievementTier = (typeof ACHIEVEMENT_TIER)[keyof typeof ACHIEVEMENT_TIER];

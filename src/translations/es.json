@@ -220,8 +220,7 @@
         "tiers": {
             "bronze": "Bronce",
             "silver": "Plata",
-            "gold": "Oro",
-            "platinum": "Platino"
+            "gold": "Oro"
         },
         "categories": {
             "milestone": "Hito",

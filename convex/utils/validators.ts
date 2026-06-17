@@ -35,8 +35,7 @@ export const achievementCategoryValidator = v.union(
 export const achievementTierValidator = v.union(
     v.literal(ACHIEVEMENT_TIER.BRONZE),
     v.literal(ACHIEVEMENT_TIER.SILVER),
-    v.literal(ACHIEVEMENT_TIER.GOLD),
-    v.literal(ACHIEVEMENT_TIER.PLATINUM)
+    v.literal(ACHIEVEMENT_TIER.GOLD)
 );
 
 export const achievementTriggerValidator = v.union(

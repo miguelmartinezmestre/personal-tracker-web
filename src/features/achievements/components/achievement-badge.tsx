@@ -10,14 +10,12 @@ const TIER_COLORS: Record<AchievementTier, string> = {
     bronze: 'bg-amber-600 text-amber-50',
     silver: 'bg-gray-400 text-gray-50',
     gold: 'bg-yellow-500 text-yellow-50',
-    platinum: 'bg-purple-500 text-purple-50',
 };
 
 const TIER_BORDER_COLORS: Record<AchievementTier, string> = {
     bronze: 'border-amber-600',
     silver: 'border-gray-400',
     gold: 'border-yellow-500',
-    platinum: 'border-purple-500',
 };
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {

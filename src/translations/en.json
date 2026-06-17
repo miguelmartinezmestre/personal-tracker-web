@@ -220,8 +220,7 @@
         "tiers": {
             "bronze": "Bronze",
             "silver": "Silver",
-            "gold": "Gold",
-            "platinum": "Platinum"
+            "gold": "Gold"
         },
         "categories": {
             "milestone": "Milestone",
