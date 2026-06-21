@@ -4,7 +4,8 @@ import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import type { Doc, Id } from '@/convex/_generated/dataModel';
+import type { Id } from '@/convex/_generated/dataModel';
+import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
@@ -68,7 +69,7 @@ export function useObjectiveListState() {
     const pageIsDone = listQuery.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
-    const objectives: Doc<'objectives'>[] = hasSearch
+    const objectives: ObjectiveWithCapabilities[] = hasSearch
         ? (searchQuery.data ?? [])
         : (listQuery.data?.page ?? []);
 

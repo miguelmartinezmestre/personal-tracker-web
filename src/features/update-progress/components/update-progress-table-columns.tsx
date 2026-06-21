@@ -9,15 +9,28 @@ import UpdateProgressFormModal from '@/features/update-progress/components/updat
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { mapDocToUpdateProgress } from '@/features/update-progress/lib/map-doc-to-update-progress';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
+import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 
 interface UseUpdateProgressTableColumnsProps {
     objectiveId: Id<'objectives'>;
+    objective: ObjectiveWithCapabilities | null;
+    currentUserId: Id<'user'> | null;
 }
 
-export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgressTableColumnsProps) {
+export function useUpdateProgressTableColumns({
+    objectiveId,
+    objective,
+    currentUserId,
+}: UseUpdateProgressTableColumnsProps) {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
+
+    const canEditProgressRow = (authorId: Id<'user'>) => {
+        if (!objective || !currentUserId) return false;
+        if (authorId === currentUserId) return true;
+        return objective.capabilities.canEditDefinition;
+    };
 
     const columns: ColumnDef<Doc<'progressUpdates'>>[] = [
         {
@@ -46,6 +59,9 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
             id: 'edit',
             cell: ({ row }) => {
                 const progressRow = row.original;
+                if (!canEditProgressRow(progressRow.createdBy)) {
+                    return null;
+                }
                 return (
                     <UpdateProgressFormModal
                         defaultValues={mapDocToUpdateProgress(progressRow)}
@@ -59,6 +75,9 @@ export function useUpdateProgressTableColumns({ objectiveId }: UseUpdateProgress
             id: 'delete',
             cell: ({ row }) => {
                 const progressRow = row.original;
+                if (!canEditProgressRow(progressRow.createdBy)) {
+                    return null;
+                }
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {

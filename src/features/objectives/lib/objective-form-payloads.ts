@@ -31,6 +31,7 @@ export function buildCreateObjectivePayload(value: CreateObjective) {
         currentValue: 0,
         deadline: value.deadline ?? undefined,
         unit: value.unit ?? undefined,
+        visibility: value.visibility ?? 'private',
     };
 }
 

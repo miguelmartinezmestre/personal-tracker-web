@@ -3,6 +3,7 @@
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateObjective, objectiveSchema } from '@/features/objectives/schemas/objective';
+import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -22,6 +23,7 @@ const defaultValues: CreateObjective = {
     deadline: null,
     status: 'active',
     unit: '',
+    visibility: OBJECTIVE_VISIBILITY.PRIVATE,
 };
 
 export default function CreateObjectiveFormModal() {

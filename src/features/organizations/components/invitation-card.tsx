@@ -129,6 +129,7 @@ export function InvitationCard({
                             onClick={handleConfirmAccept}
                             disabled={isAccepting}
                             className="bg-primary"
+                            data-testid="invitation-accept-confirm-button"
                         >
                             {isAccepting
                                 ? t('joining') || 'Joining...'

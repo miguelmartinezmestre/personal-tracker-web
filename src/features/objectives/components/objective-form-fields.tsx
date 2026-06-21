@@ -29,6 +29,7 @@ import {
     CATEGORY_LOADING_VALUE,
     type CategoryOption,
 } from '@/features/objectives/lib/objective-category-selection';
+import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
 
 type ObjectiveFormFieldsProps = {
     mode: 'create' | 'edit';
@@ -57,6 +58,7 @@ export function ObjectiveFormFields({
     const unitLabel = mode === 'create' ? t('smartForm.fields.unit') : t('unit');
     const unitPlaceholder = mode === 'create' ? t('unitExample') : t('enterUnit');
     const deadlineLabel = mode === 'create' ? t('smartForm.fields.deadline') : t('deadline');
+    const visibilityLabel = t('visibility.label');
 
     return (
         <>
@@ -175,6 +177,39 @@ export function ObjectiveFormFields({
                     )}
                 />
             </div>
+
+            {mode === 'create' ? (
+                <FormField
+                    name="visibility"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>{visibilityLabel}</FormLabel>
+                            <Select
+                                onValueChange={field.onChange}
+                                value={(field.value as string) || OBJECTIVE_VISIBILITY.PRIVATE}
+                            >
+                                <FormControl>
+                                    <SelectTrigger
+                                        data-testid={getTestId(mode, 'visibility-select')}
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value={OBJECTIVE_VISIBILITY.PRIVATE}>
+                                        {t('visibility.private')}
+                                    </SelectItem>
+                                    <SelectItem value={OBJECTIVE_VISIBILITY.ORGANIZATION}>
+                                        {t('visibility.organization')}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>{t('visibility.description')}</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            ) : null}
 
             <FormField
                 name="deadline"

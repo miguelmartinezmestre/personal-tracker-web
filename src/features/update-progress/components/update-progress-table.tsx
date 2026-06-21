@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
+import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 import { Doc, Id } from '@/convex/_generated/dataModel';
 import { useConvexAuth } from 'convex/react';
 import { ObjectiveProgressGraph } from '@/features/objectives/components/objective-graph';
@@ -28,7 +29,15 @@ import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 
 const MOBILE_SKELETON_ITEMS = [1, 2, 3];
 
-export default function UpdateProgressTable() {
+type UpdateProgressTableProps = {
+    objective: ObjectiveWithCapabilities | null;
+    currentUserId: Id<'user'> | null;
+};
+
+export default function UpdateProgressTable({
+    objective: objectiveProp,
+    currentUserId,
+}: UpdateProgressTableProps) {
     const t = useTranslations('UpdateProgress');
     const tTable = useTranslations('Table');
     const locale = useLocale();
@@ -56,7 +65,7 @@ export default function UpdateProgressTable() {
 
     const objective = useQuery({
         ...convexQuery(api.objectives.getObjectiveById, { id: objectiveId }),
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && !objectiveProp,
     });
     const progressSeries = useQuery({
         ...convexQuery(api.update_progress.getProgressSeriesByObjectiveId, { objectiveId }),
@@ -69,15 +78,26 @@ export default function UpdateProgressTable() {
 
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
 
-    const columns = useUpdateProgressTableColumns({ objectiveId });
+    const columns = useUpdateProgressTableColumns({
+        objectiveId,
+        objective:
+            objectiveProp ?? (objective.data as ObjectiveWithCapabilities | undefined) ?? null,
+        currentUserId,
+    });
 
     const updates = updateProgress.data?.page ?? [];
     const chartUpdates = progressSeries.data?.points ?? updates;
-    const objectiveDoc = objective.data as
-        | (Doc<'objectives'> & {
+    const objectiveDoc = (objectiveProp ?? objective.data) as
+        | (ObjectiveWithCapabilities & {
               startValue?: number;
           })
         | undefined;
+
+    const canEditProgressRow = (authorId: Id<'user'>) => {
+        if (!objectiveDoc || !currentUserId) return false;
+        if (authorId === currentUserId) return true;
+        return objectiveDoc.capabilities.canEditDefinition;
+    };
 
     const sortedUpdates = [...chartUpdates].sort((a, b) => a.updateDate - b.updateDate);
     const baseValue = objectiveDoc?.startValue ?? 0;
@@ -174,32 +194,36 @@ export default function UpdateProgressTable() {
                                     </div>
 
                                     <div className="flex flex-wrap gap-2 border-t pt-2">
-                                        <UpdateProgressFormModal
-                                            defaultValues={defaultValues}
-                                            objectiveId={objectiveId}
-                                        />
-                                        <DeleteConfirmationDialog
-                                            onConfirm={async () => {
-                                                await deleteUpdateProgressAsync({
-                                                    _id: progressRow._id as Id<'progressUpdates'>,
-                                                });
-                                            }}
-                                            title={t('confirm.deleteTitle')}
-                                            description={t('confirm.deleteDescription')}
-                                            triggerLabel={t('table.columns.delete')}
-                                            confirmLabel={t('confirm.deleteConfirm')}
-                                            cancelLabel={t('confirm.cancel')}
-                                            isLoading={isDeletingProgress}
-                                            trigger={
-                                                <Button
-                                                    data-testid="progress-delete-button"
-                                                    variant="destructive"
-                                                    size="sm"
-                                                >
-                                                    {t('table.columns.delete')}
-                                                </Button>
-                                            }
-                                        />
+                                        {canEditProgressRow(progressRow.createdBy) ? (
+                                            <>
+                                                <UpdateProgressFormModal
+                                                    defaultValues={defaultValues}
+                                                    objectiveId={objectiveId}
+                                                />
+                                                <DeleteConfirmationDialog
+                                                    onConfirm={async () => {
+                                                        await deleteUpdateProgressAsync({
+                                                            _id: progressRow._id as Id<'progressUpdates'>,
+                                                        });
+                                                    }}
+                                                    title={t('confirm.deleteTitle')}
+                                                    description={t('confirm.deleteDescription')}
+                                                    triggerLabel={t('table.columns.delete')}
+                                                    confirmLabel={t('confirm.deleteConfirm')}
+                                                    cancelLabel={t('confirm.cancel')}
+                                                    isLoading={isDeletingProgress}
+                                                    trigger={
+                                                        <Button
+                                                            data-testid="progress-delete-button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                        >
+                                                            {t('table.columns.delete')}
+                                                        </Button>
+                                                    }
+                                                />
+                                            </>
+                                        ) : null}
                                     </div>
                                 </CardContent>
                             </Card>

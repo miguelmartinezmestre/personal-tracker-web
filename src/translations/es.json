@@ -554,6 +554,37 @@
         "empty": {
             "noObjectivesFound": "No se encontraron objetivos"
         },
+        "visibility": {
+            "label": "Visibilidad",
+            "private": "Privado (solo propietario y colaboradores)",
+            "organization": "Organización (visible para todos los miembros)",
+            "description": "Los objetivos privados solo son visibles para ti y tus colaboradores. Los objetivos de organización son visibles para todos los miembros, pero solo los colaboradores pueden añadir progreso."
+        },
+        "collaborators": {
+            "manage": "Colaboradores",
+            "title": "Gestionar colaboradores",
+            "description": "Añade miembros que puedan ver o aportar progreso a este objetivo.",
+            "addMember": "Añadir miembro",
+            "selectMember": "Selecciona un miembro",
+            "add": "Añadir",
+            "current": "Colaboradores actuales",
+            "empty": "Aún no hay colaboradores.",
+            "remove": "Eliminar",
+            "makeOwner": "Hacer propietario",
+            "added": "Colaborador añadido",
+            "addFailed": "Error al añadir colaborador",
+            "removed": "Colaborador eliminado",
+            "removeFailed": "Error al eliminar colaborador",
+            "updateFailed": "Error al actualizar rol del colaborador",
+            "visibilityUpdated": "Visibilidad actualizada",
+            "visibilityUpdateFailed": "Error al actualizar visibilidad",
+            "ownershipTransferred": "Propiedad transferida",
+            "transferFailed": "Error al transferir propiedad",
+            "roles": {
+                "editor": "Editor",
+                "viewer": "Lector"
+            }
+        },
         "confirm": {
             "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
             "deleteObjectiveDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el objetivo y todos sus datos asociados.",

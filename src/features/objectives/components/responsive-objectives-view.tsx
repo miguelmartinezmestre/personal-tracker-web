@@ -9,7 +9,7 @@ import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { Doc, Id } from '@/convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -23,6 +23,8 @@ import { ObjectivesFilters } from './objective-filters';
 import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
 import { MobilePagination } from './mobile-pagination';
 import { useObjectiveListState } from '@/features/objectives/hooks/use-objective-list-state';
+import { ObjectiveCollaboratorsDialog } from '@/features/objectives/components/objective-collaborators-dialog';
+import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 
 export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>((_props, ref) => {
     const t = useTranslations('Objectives');
@@ -58,33 +60,47 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         overdue: t('statusOptions.overdue'),
     };
 
-    const renderObjectiveActions = (objective: Doc<'objectives'>) => (
+    const canManageObjective = (objective: ObjectiveWithCapabilities) =>
+        objective.capabilities.canEditDefinition;
+
+    const renderObjectiveActions = (objective: ObjectiveWithCapabilities) => (
         <div className="flex flex-wrap gap-2">
-            <Button
-                className="gap-2"
-                size="sm"
-                data-testid="objective-edit-open"
-                onClick={() => setEditingObjectiveId(objective._id)}
-            >
-                <Pencil className="h-4 w-4" />
-                {t('editObjective')}
-            </Button>
-            <DeleteConfirmationDialog
-                onConfirm={async () => {
-                    await deleteObjectiveMutation.mutateAsync({ id: objective._id });
-                }}
-                title={t('confirm.deleteObjective')}
-                description={t('confirm.deleteObjectiveDescription')}
-                triggerLabel={t('deleteObjective')}
-                confirmLabel={t('confirm.deleteConfirm')}
-                cancelLabel={t('confirm.cancel')}
-                isLoading={deleteObjectiveMutation.isPending}
-                trigger={
-                    <Button data-testid="objective-delete-button" variant="destructive" size="sm">
-                        {t('deleteObjective')}
+            {objective.capabilities.canManageCollaborators ? (
+                <ObjectiveCollaboratorsDialog objective={objective} />
+            ) : null}
+            {canManageObjective(objective) ? (
+                <>
+                    <Button
+                        className="gap-2"
+                        size="sm"
+                        data-testid="objective-edit-open"
+                        onClick={() => setEditingObjectiveId(objective._id)}
+                    >
+                        <Pencil className="h-4 w-4" />
+                        {t('editObjective')}
                     </Button>
-                }
-            />
+                    <DeleteConfirmationDialog
+                        onConfirm={async () => {
+                            await deleteObjectiveMutation.mutateAsync({ id: objective._id });
+                        }}
+                        title={t('confirm.deleteObjective')}
+                        description={t('confirm.deleteObjectiveDescription')}
+                        triggerLabel={t('deleteObjective')}
+                        confirmLabel={t('confirm.deleteConfirm')}
+                        cancelLabel={t('confirm.cancel')}
+                        isLoading={deleteObjectiveMutation.isPending}
+                        trigger={
+                            <Button
+                                data-testid="objective-delete-button"
+                                variant="destructive"
+                                size="sm"
+                            >
+                                {t('deleteObjective')}
+                            </Button>
+                        }
+                    />
+                </>
+            ) : null}
             <Link
                 href={`/dashboard/objectives/${objective._id}`}
                 prefetch={false}
@@ -98,7 +114,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         </div>
     );
 
-    const objectiveColumns: ColumnDef<Doc<'objectives'>>[] = [
+    const objectiveColumns: ColumnDef<ObjectiveWithCapabilities>[] = [
         {
             accessorKey: 'title',
             header: t('title'),
@@ -164,7 +180,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         },
     ];
 
-    const renderObjectiveCard = (objective: Doc<'objectives'>) => {
+    const renderObjectiveCard = (objective: ObjectiveWithCapabilities) => {
         const normalized = normalizeObjective(objective);
         const progress = computeObjectiveProgressPercent({
             currentValue: normalized.currentValue,
