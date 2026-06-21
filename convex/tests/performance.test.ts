@@ -60,7 +60,11 @@ describe('performance tests', async () => {
             await userIdentity.run(async ctx => {
                 for (let i = 0; i < 50; i++) {
                     const objectiveId = await ctx.db.insert('objectives', {
-                        userId: userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId: organizationId,
                         title: `Objective ${i}`,
                         targetValue: 100,
@@ -79,7 +83,7 @@ describe('performance tests', async () => {
                     for (let j = 0; j < 20; j++) {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
-                            userId: userId,
+                            createdBy: userId,
                             organizationId: organizationId,
                             updatedValue: 5,
                             updateDate: now - j * 24 * 60 * 60 * 1000,
@@ -103,7 +107,11 @@ describe('performance tests', async () => {
             await userIdentity.run(async ctx => {
                 for (let i = 0; i < 20; i++) {
                     const id = await ctx.db.insert('objectives', {
-                        userId: userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId: organizationId,
                         title: `Activity Objective ${i}`,
                         targetValue: 100,
@@ -122,7 +130,7 @@ describe('performance tests', async () => {
                     for (let j = 0; j < 50; j++) {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
-                            userId: userId,
+                            createdBy: userId,
                             organizationId: organizationId,
                             updatedValue: 2,
                             updateDate: now - j * 24 * 60 * 60 * 1000,
@@ -211,7 +219,11 @@ describe('performance tests', async () => {
             await userIdentity.run(async ctx => {
                 for (let i = 0; i < 50; i++) {
                     const id = await ctx.db.insert('objectives', {
-                        userId: userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId: organizationId,
                         title: `Achievement Objective ${i}`,
                         targetValue: 100,
@@ -230,7 +242,7 @@ describe('performance tests', async () => {
                     for (let j = 0; j < 2; j++) {
                         await ctx.db.insert('progressUpdates', {
                             objective: objectiveId,
-                            userId: userId,
+                            createdBy: userId,
                             organizationId: organizationId,
                             updatedValue: 5,
                             updateDate: now - j * 24 * 60 * 60 * 1000,
@@ -259,7 +271,11 @@ describe('performance tests', async () => {
             await userIdentity.run(async ctx => {
                 for (let i = 0; i < 50; i++) {
                     const id = await ctx.db.insert('objectives', {
-                        userId: userId,
+                        createdBy: userId,
+
+                        ownerId: userId,
+
+                        visibility: 'private',
                         organizationId: organizationId,
                         title: `Batch Objective ${i}`,
                         targetValue: 100,
@@ -277,7 +293,7 @@ describe('performance tests', async () => {
                 for (const objectiveId of objectiveIds) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userId,
+                        createdBy: userId,
                         organizationId: organizationId,
                         updatedValue: 10,
                         updateDate: now,

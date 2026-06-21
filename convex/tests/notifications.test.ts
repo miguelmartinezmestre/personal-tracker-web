@@ -469,7 +469,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Due Today',
                     targetValue: 100,
@@ -493,7 +497,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Overdue',
                     targetValue: 100,
@@ -520,7 +528,11 @@ describe('convex notifications', async () => {
             });
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Disabled Deadline Preference',
                     targetValue: 100,
@@ -553,7 +565,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Due Soon',
                     targetValue: 100,
@@ -577,7 +593,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Completed',
                     targetValue: 100,
@@ -601,7 +621,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Completed Again',
                     targetValue: 100,
@@ -625,7 +649,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'No Deadline',
                     targetValue: 100,
@@ -648,7 +676,11 @@ describe('convex notifications', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userId,
+                    createdBy: userId,
+
+                    ownerId: userId,
+
+                    visibility: 'private',
                     organizationId: userOrganizationId,
                     title: 'Due Today',
                     targetValue: 100,

@@ -120,8 +120,8 @@ describe('achievements multi-tenancy security', async () => {
             const progress = await t.run(async ctx => {
                 const objectivesInOrgA = await ctx.db
                     .query('objectives')
-                    .withIndex('by_user_organization', q =>
-                        q.eq('userId', userAId).eq('organizationId', orgAId)
+                    .withIndex('by_createdBy_organization', q =>
+                        q.eq('createdBy', userAId).eq('organizationId', orgAId)
                     )
                     .collect();
 
@@ -134,7 +134,11 @@ describe('achievements multi-tenancy security', async () => {
         test('lists every objective that belongs to the organization', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userAId,
+                    createdBy: userAId,
+
+                    ownerId: userAId,
+
+                    visibility: 'private',
                     organizationId: orgAId,
                     title: 'Objective One',
                     targetValue: 100,
@@ -147,7 +151,11 @@ describe('achievements multi-tenancy security', async () => {
 
             await t.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userAId,
+                    createdBy: userAId,
+
+                    ownerId: userAId,
+
+                    visibility: 'private',
                     organizationId: orgAId,
                     title: 'Objective Two',
                     targetValue: 100,
@@ -186,7 +194,7 @@ describe('achievements multi-tenancy security', async () => {
                 for (let i = 0; i < 3; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
-                        userId: userAId,
+                        createdBy: userAId,
                         organizationId: orgAId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
@@ -219,7 +227,7 @@ describe('achievements multi-tenancy security', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
-                    userId: userAId,
+                    createdBy: userAId,
                     organizationId: orgAId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -260,7 +268,7 @@ describe('achievements multi-tenancy security', async () => {
                 for (let i = 0; i < 2; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveAId,
-                        userId: userAId,
+                        createdBy: userAId,
                         organizationId: orgAId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
@@ -275,7 +283,7 @@ describe('achievements multi-tenancy security', async () => {
                 for (let i = 0; i < 5; i++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveBId,
-                        userId: userAId,
+                        createdBy: userAId,
                         organizationId: orgBId,
                         updatedValue: (i + 1) * 10,
                         updateDate: today.getTime() - i * DAY_MS,
@@ -355,8 +363,8 @@ describe('achievements multi-tenancy security', async () => {
             const orgAObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user_organization', q =>
-                        q.eq('userId', userAId).eq('organizationId', orgAId)
+                    .withIndex('by_createdBy_organization', q =>
+                        q.eq('createdBy', userAId).eq('organizationId', orgAId)
                     )
                     .collect();
             });
@@ -364,8 +372,8 @@ describe('achievements multi-tenancy security', async () => {
             const orgBObjectives = await t.run(async ctx => {
                 return await ctx.db
                     .query('objectives')
-                    .withIndex('by_user_organization', q =>
-                        q.eq('userId', userAId).eq('organizationId', orgBId)
+                    .withIndex('by_createdBy_organization', q =>
+                        q.eq('createdBy', userAId).eq('organizationId', orgBId)
                     )
                     .collect();
             });
@@ -400,7 +408,7 @@ describe('achievements multi-tenancy security', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: orgAObjectiveId,
-                    userId: userAId,
+                    createdBy: userAId,
                     organizationId: orgAId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -411,7 +419,7 @@ describe('achievements multi-tenancy security', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: orgAObjectiveId,
-                    userId: userAId,
+                    createdBy: userAId,
                     organizationId: orgAId,
                     updatedValue: 20,
                     updateDate: today.getTime() - 2 * DAY_MS,
@@ -424,7 +432,7 @@ describe('achievements multi-tenancy security', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('progressUpdates', {
                     objective: orgBObjectiveId,
-                    userId: userAId,
+                    createdBy: userAId,
                     organizationId: orgBId,
                     updatedValue: 10,
                     updateDate: today.getTime(),
@@ -435,7 +443,7 @@ describe('achievements multi-tenancy security', async () => {
 
                 await ctx.db.insert('progressUpdates', {
                     objective: orgBObjectiveId,
-                    userId: userAId,
+                    createdBy: userAId,
                     organizationId: orgBId,
                     updatedValue: 20,
                     updateDate: today.getTime() - DAY_MS,
@@ -462,7 +470,11 @@ describe('achievements multi-tenancy security', async () => {
         test('objectives are listed by organization', async () => {
             const objectiveId = await t.run(async ctx => {
                 return await ctx.db.insert('objectives', {
-                    userId: userAId,
+                    createdBy: userAId,
+
+                    ownerId: userAId,
+
+                    visibility: 'private',
                     organizationId: orgAId,
                     title: 'Org A Objective',
                     targetValue: 100,
@@ -487,7 +499,11 @@ describe('achievements multi-tenancy security', async () => {
         test('objectives from another organization are not listed', async () => {
             await t.run(async ctx => {
                 await ctx.db.insert('objectives', {
-                    userId: userAId,
+                    createdBy: userAId,
+
+                    ownerId: userAId,
+
+                    visibility: 'private',
                     organizationId: orgBId,
                     title: 'Org B Objective',
                     targetValue: 100,

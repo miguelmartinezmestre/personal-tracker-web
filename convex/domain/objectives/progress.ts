@@ -12,12 +12,42 @@ import {
     validateProgressDelta,
     validateUpdateDate,
 } from './metrics';
+import { assertObjectiveAction, resolveObjectivePermissionSubject } from './access';
+import { canEditProgress } from './permissions';
 
 const PROGRESS_SERIES_LIMIT = 500;
 
+type ProgressMutationCtx = MutationCtx & {
+    userId: Id<'user'>;
+    organizationId: Id<'organization'> | null;
+    role: string;
+    memberRole: string | null;
+};
+
+async function assertCanEditProgressEntry(
+    ctx: ProgressMutationCtx,
+    progressUpdate: { createdBy: Id<'user'>; objective: Id<'objectives'> }
+) {
+    const objective = await ctx.db.get('objectives', progressUpdate.objective);
+    if (!objective) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+    }
+
+    const subject = await resolveObjectivePermissionSubject(ctx, objective);
+    if (
+        !canEditProgress(subject, {
+            authorId: progressUpdate.createdBy,
+            ownerId: objective.ownerId,
+        })
+    ) {
+        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_PROGRESS);
+    }
+}
+
 export async function createProgressUpdate(
-    ctx: MutationCtx,
+    ctx: ProgressMutationCtx,
     args: {
+        actingUserId: Id<'user'>;
         objective: Id<'objectives'>;
         updatedValue: number;
         updateDate: number;
@@ -29,6 +59,12 @@ export async function createProgressUpdate(
         throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
     }
 
+    if (objective.deletedAt !== undefined) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+    }
+
+    await assertObjectiveAction(ctx, objective, 'contributeProgress');
+
     validateUpdateDate(args.updateDate);
     validateProgressDelta(args.updatedValue, objective.currentValue);
     validateObjectiveNotCompleted(objective.status);
@@ -36,7 +72,7 @@ export async function createProgressUpdate(
     const now = Date.now();
     const progressUpdateId = await ctx.db.insert('progressUpdates', {
         objective: args.objective,
-        userId: objective.userId,
+        createdBy: args.actingUserId,
         organizationId: objective.organizationId,
         updatedValue: args.updatedValue,
         updateDate: args.updateDate,
@@ -51,10 +87,10 @@ export async function createProgressUpdate(
         args.updatedValue
     );
 
-    const notifyProgress = await shouldSendProgressNotification(ctx, objective.userId);
+    const notifyProgress = await shouldSendProgressNotification(ctx, objective.ownerId);
     if (notifyProgress) {
         await ctx.db.insert('notifications', {
-            userId: objective.userId,
+            userId: objective.ownerId,
             organizationId: objective.organizationId,
             objective: args.objective,
             read: false,
@@ -70,7 +106,7 @@ export async function createProgressUpdate(
 
     if (completedNow) {
         await ctx.db.insert('notifications', {
-            userId: objective.userId,
+            userId: objective.ownerId,
             organizationId: objective.organizationId,
             objective: args.objective,
             read: false,
@@ -83,14 +119,14 @@ export async function createProgressUpdate(
     }
 
     await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-        userId: objective.userId,
+        userId: args.actingUserId,
         organizationId: objective.organizationId,
         trigger: 'progress_update',
     });
 
     if (completedNow) {
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-            userId: objective.userId,
+            userId: args.actingUserId,
             organizationId: objective.organizationId,
             trigger: 'objective_completed',
         });
@@ -136,7 +172,7 @@ export async function getProgressSeriesByObjective(
 }
 
 export async function updateProgressUpdate(
-    ctx: MutationCtx,
+    ctx: ProgressMutationCtx,
     args: {
         id: Id<'progressUpdates'>;
         updatedValue: number;
@@ -149,8 +185,14 @@ export async function updateProgressUpdate(
         throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
     }
 
+    await assertCanEditProgressEntry(ctx, existing);
+
     const objective = await ctx.db.get('objectives', existing.objective);
     if (!objective) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+    }
+
+    if (objective.deletedAt !== undefined) {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
     }
 
@@ -172,21 +214,21 @@ export async function updateProgressUpdate(
     );
 
     await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-        userId: objective.userId,
+        userId: ctx.userId,
         organizationId: objective.organizationId,
         trigger: 'progress_update',
     });
 
     if (completedNow) {
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-            userId: objective.userId,
+            userId: ctx.userId,
             organizationId: objective.organizationId,
             trigger: 'objective_completed',
         });
 
         const now = Date.now();
         await ctx.db.insert('notifications', {
-            userId: objective.userId,
+            userId: objective.ownerId,
             organizationId: objective.organizationId,
             objective: existing.objective,
             read: false,
@@ -201,11 +243,16 @@ export async function updateProgressUpdate(
     return await ctx.db.get('progressUpdates', args.id);
 }
 
-export async function deleteProgressUpdate(ctx: MutationCtx, args: { id: Id<'progressUpdates'> }) {
+export async function deleteProgressUpdate(
+    ctx: ProgressMutationCtx,
+    args: { id: Id<'progressUpdates'> }
+) {
     const existing = await ctx.db.get('progressUpdates', args.id);
     if (!existing) {
         throw new ConvexError(ERROR_CODES.PROGRESS_NOT_FOUND);
     }
+
+    await assertCanEditProgressEntry(ctx, existing);
 
     const objective = await ctx.db.get('objectives', existing.objective);
     if (!objective) {

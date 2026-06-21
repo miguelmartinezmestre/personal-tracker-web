@@ -1,6 +1,12 @@
 import type { Rules } from 'convex-helpers/server/rowLevelSecurity';
 import type { DataModel, Id } from '../../_generated/dataModel';
 import type { QueryCtx } from '../../_generated/server';
+import {
+    buildPermissionSubject,
+    canEditProgress,
+    canObjective,
+} from '../../domain/objectives/permissions';
+import { getCollaboratorRoleForUser } from '../../domain/objectives/collaborators';
 import { isGlobalAdminRole } from '../../../shared/platform-roles';
 
 export async function createRlsRules(
@@ -149,39 +155,118 @@ export async function createRlsRules(
             invitation => invitation.inviterId === normalizedUserId
         );
     };
-    const canAccessObjective = (objective: { organizationId: Id<'organization'> }) => {
+    const canAccessObjectiveOrg = (objective: { organizationId: Id<'organization'> }) => {
         if (isGlobalAdmin) return true;
-        // Tenant model: any member of the active organization can access its objectives.
         return isActiveOrganization(objective.organizationId);
     };
 
+    const collaboratorRoleCache = new Map<
+        string,
+        Awaited<ReturnType<typeof getCollaboratorRoleForUser>>
+    >();
+    const resolveCollaboratorRole = async (objectiveId: Id<'objectives'>) => {
+        const cacheKey = String(objectiveId);
+        if (!collaboratorRoleCache.has(cacheKey)) {
+            collaboratorRoleCache.set(
+                cacheKey,
+                await getCollaboratorRoleForUser(ctx, objectiveId, userId)
+            );
+        }
+        return collaboratorRoleCache.get(cacheKey) ?? null;
+    };
+
+    const buildSubject = async (objectiveId: Id<'objectives'>) =>
+        buildPermissionSubject({
+            userId,
+            platformRole: role,
+            memberRole,
+            collaboratorRole: await resolveCollaboratorRole(objectiveId),
+        });
+
     return {
         objectives: {
-            read: async (_, objective) => canAccessObjective(objective),
-            insert: async (_, objective) => canAccessObjective(objective),
-            modify: async (_, objective) => canAccessObjective(objective),
+            read: async (_, objective) => {
+                if (!canAccessObjectiveOrg(objective)) return false;
+                const subject = await buildSubject(objective._id);
+                return canObjective('view', subject, objective);
+            },
+            insert: async (_, objective) => canAccessObjectiveOrg(objective),
+            modify: async (_, objective) => {
+                if (!canAccessObjectiveOrg(objective)) return false;
+                const subject = await buildSubject(objective._id);
+                return (
+                    canObjective('editDefinition', subject, objective) ||
+                    canObjective('delete', subject, objective) ||
+                    canObjective('restore', subject, objective) ||
+                    canObjective('setVisibility', subject, objective) ||
+                    canObjective('transferOwnership', subject, objective) ||
+                    canObjective('contributeProgress', subject, objective)
+                );
+            },
+        },
+        objectiveCollaborators: {
+            read: async (_, collaborator) => {
+                if (isGlobalAdmin) return true;
+                if (!isActiveOrganization(collaborator.organizationId)) return false;
+                if (collaborator.userId === userId) return true;
+
+                const objective = await ctx.db.get('objectives', collaborator.objectiveId);
+                if (!objective) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('view', subject, objective);
+            },
+            insert: async (_, collaborator) => {
+                if (isGlobalAdmin) return true;
+                if (!isActiveOrganization(collaborator.organizationId)) return false;
+
+                const objective = await ctx.db.get('objectives', collaborator.objectiveId);
+                if (!objective) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('manageCollaborators', subject, objective);
+            },
+            modify: async (_, collaborator) => {
+                if (isGlobalAdmin) return true;
+                if (!isActiveOrganization(collaborator.organizationId)) return false;
+
+                const objective = await ctx.db.get('objectives', collaborator.objectiveId);
+                if (!objective) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('manageCollaborators', subject, objective);
+            },
         },
         progressUpdates: {
             read: async (_, progressUpdate) => {
                 if (isGlobalAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (!objective) return false;
-                return canAccessObjective(objective);
+                if (!objective || !canAccessObjectiveOrg(objective)) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('view', subject, objective);
             },
             insert: async (_, progressUpdate) => {
                 if (isGlobalAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (!objective) return false;
-                return canAccessObjective(objective);
+                if (!objective || !canAccessObjectiveOrg(objective)) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canObjective('contributeProgress', subject, objective);
             },
             modify: async (_, progressUpdate) => {
                 if (isGlobalAdmin) return true;
 
                 const objective = await ctx.db.get('objectives', progressUpdate.objective);
-                if (!objective) return false;
-                return canAccessObjective(objective);
+                if (!objective || !canAccessObjectiveOrg(objective)) return false;
+
+                const subject = await buildSubject(objective._id);
+                return canEditProgress(subject, {
+                    authorId: progressUpdate.createdBy,
+                    ownerId: objective.ownerId,
+                });
             },
         },
         notifications: {
@@ -206,8 +291,8 @@ export async function createRlsRules(
                 }
                 if (!notification.objective) return false;
                 const objective = await ctx.db.get('objectives', notification.objective);
-                if (!objective || notification.userId !== objective.userId) return false;
-                return canAccessObjective(objective);
+                if (!objective || notification.userId !== objective.ownerId) return false;
+                return canAccessObjectiveOrg(objective);
             },
             modify: async (_, notification) => {
                 if (isGlobalAdmin) return true;

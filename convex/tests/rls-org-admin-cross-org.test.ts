@@ -86,7 +86,7 @@ describe('organization admins cannot access another organization by id', () => {
         orgBProgressId = await t.run(async ctx => {
             return await ctx.db.insert('progressUpdates', {
                 objective: orgBObjectiveId,
-                userId: orgBUserId,
+                createdBy: orgBUserId,
                 organizationId: orgBId,
                 updatedValue: 5,
                 updateDate: now,

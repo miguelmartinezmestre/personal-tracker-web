@@ -4,6 +4,9 @@ import type { DatabaseReader } from '../../_generated/server';
 import type { ObjectiveStatus } from '../../utils/constants';
 import type { DeadlineRange } from './filters';
 import { getDeadlineRangeBounds, matchesDeadlineRange } from './filters';
+import { getCollaboratedObjectiveIdsForUser } from './collaborators';
+import { buildPermissionSubject, canObjective, isOrganizationAdminRole } from './permissions';
+import { isGlobalAdminRole } from '../../../shared/platform-roles';
 
 const SEARCH_LIMIT = 50;
 
@@ -25,6 +28,8 @@ type ObjectiveListCtx = {
     db: DatabaseReader;
     userId: Id<'user'>;
     organizationId: Id<'organization'> | null;
+    role: string;
+    memberRole: string | null;
 };
 
 type ObjectiveListArgs = ObjectiveListFilters & {
@@ -36,7 +41,10 @@ export type ObjectiveSearchArgs = ObjectiveListFilters & {
     limit?: number;
 };
 
-type SearchableObjective = Pick<Doc<'objectives'>, 'title' | 'categoryId' | 'deadline'>;
+type SearchableObjective = Pick<
+    Doc<'objectives'>,
+    '_id' | 'title' | 'categoryId' | 'deadline' | 'ownerId' | 'visibility' | 'deletedAt'
+>;
 
 export function normalizeObjectiveListFilters(
     filters: ObjectiveListFilters
@@ -65,6 +73,39 @@ function matchesObjectiveFilters(
     return true;
 }
 
+function isSoftDeleted(objective: Pick<Doc<'objectives'>, 'deletedAt'>) {
+    return objective.deletedAt !== undefined;
+}
+
+export function canUserViewObjectiveInList(
+    ctx: ObjectiveListCtx,
+    objective: Doc<'objectives'>,
+    collaboratedObjectiveIds: Set<Id<'objectives'>>
+): boolean {
+    if (isSoftDeleted(objective)) {
+        if (isGlobalAdminRole(ctx.role) || isOrganizationAdminRole(ctx.memberRole)) {
+            return true;
+        }
+        if (objective.ownerId === ctx.userId) {
+            return true;
+        }
+        return collaboratedObjectiveIds.has(objective._id);
+    }
+
+    const collaboratorRole = collaboratedObjectiveIds.has(objective._id)
+        ? ('viewer' as const)
+        : null;
+
+    const subject = buildPermissionSubject({
+        userId: ctx.userId,
+        platformRole: ctx.role,
+        memberRole: ctx.memberRole,
+        collaboratorRole,
+    });
+
+    return canObjective('view', subject, objective);
+}
+
 export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListArgs) {
     const organizationId = ctx.organizationId;
     if (!organizationId) {
@@ -73,6 +114,19 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
 
     const filters = normalizeObjectiveListFilters(args);
     const paginationOpts = args.paginationOpts;
+    const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
+        ctx,
+        ctx.userId,
+        organizationId
+    );
+
+    const filterPage = (page: Doc<'objectives'>[]) =>
+        page.filter(objective => {
+            if (!matchesObjectiveFilters(objective, filters)) {
+                return false;
+            }
+            return canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds);
+        });
 
     if (filters.deadlineRange) {
         const bounds = getDeadlineRangeBounds(filters.deadlineRange);
@@ -93,7 +147,11 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
             query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
         }
 
-        return await query.order('desc').paginate(paginationOpts);
+        const results = await query.order('desc').paginate(paginationOpts);
+        return {
+            ...results,
+            page: filterPage(results.page),
+        };
     }
 
     let query = ctx.db
@@ -110,7 +168,11 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
         query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
     }
 
-    return await query.order('desc').paginate(paginationOpts);
+    const results = await query.order('desc').paginate(paginationOpts);
+    return {
+        ...results,
+        page: filterPage(results.page),
+    };
 }
 
 export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSearchArgs) {
@@ -122,6 +184,11 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
 
     const filters = normalizeObjectiveListFilters(args);
     const limit = Math.min(Math.max(args.limit ?? SEARCH_LIMIT, 1), SEARCH_LIMIT);
+    const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
+        ctx,
+        ctx.userId,
+        organizationId
+    );
 
     const query = ctx.db
         .query('objectives')
@@ -132,5 +199,6 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
     return (await query.take(limit * 5))
         .filter(objective => matchesObjectiveFilters(objective, filters))
         .filter(objective => objective.title.toLowerCase().includes(search.toLowerCase()))
+        .filter(objective => canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds))
         .slice(0, limit);
 }

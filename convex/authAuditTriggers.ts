@@ -7,6 +7,7 @@ import {
     sanitizeAuditMetadata,
     toAuditPrimitive,
 } from './domain/audit/privacy';
+import { reassignObjectivesOnMemberLeave } from './domain/objectives/collaborators';
 
 type BetterAuthSchema = typeof schema;
 
@@ -179,6 +180,18 @@ const insertAuthAuditLog = async (
     });
 };
 
+const sanitizeMember = (
+    member: Record<string, unknown>
+): Record<string, string | number | boolean | null> => {
+    const result: Record<string, string | number | boolean | null> = {};
+    for (const key of ['_id', 'organizationId', 'userId', 'role', 'createdAt']) {
+        if (key in member) {
+            result[key] = toAuditPrimitive(member[key]);
+        }
+    }
+    return result;
+};
+
 export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx> = {
     session: {
         change: async (change, ctx) => {
@@ -270,4 +283,27 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
         },
     },
-};
+    member: {
+        change: async (change, ctx) => {
+            if (change.operation === 'delete') {
+                const organizationId = ctx.db.normalizeId(
+                    'organization',
+                    change.oldDoc.organizationId
+                );
+                const userId = ctx.db.normalizeId('user', change.oldDoc.userId);
+                if (organizationId && userId) {
+                    await reassignObjectivesOnMemberLeave(ctx, organizationId, userId);
+                }
+
+                await insertAuthAuditLog(ctx, {
+                    action: 'organization_member.deleted',
+                    resourceType: 'organization_member',
+                    resourceId: change.oldDoc._id,
+                    userId: change.oldDoc.userId,
+                    organizationId: change.oldDoc.organizationId,
+                    metadata: { before: sanitizeMember(change.oldDoc) },
+                });
+            }
+        },
+    },
+} as BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx>;

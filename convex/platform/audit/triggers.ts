@@ -13,6 +13,7 @@ type AuditTriggerCtx = {
 
 type AuditResourceType =
     | 'objective'
+    | 'objective_collaborator'
     | 'progress_update'
     | 'category'
     | 'organization'
@@ -30,15 +31,35 @@ function sanitizeObjective(
     return {
         _id: toAuditPrimitive(objectiveRecord._id),
         organizationId: toAuditPrimitive(objectiveRecord.organizationId),
-        userId: toAuditPrimitive(objectiveRecord.userId),
+        createdBy: toAuditPrimitive(objectiveRecord.createdBy),
+        ownerId: toAuditPrimitive(objectiveRecord.ownerId),
+        visibility: toAuditPrimitive(objectiveRecord.visibility),
         status: toAuditPrimitive(objectiveRecord.status),
         categoryId: toAuditPrimitive(objectiveRecord.categoryId),
         targetValue: toAuditPrimitive(objectiveRecord.targetValue),
         currentValue: toAuditPrimitive(objectiveRecord.currentValue),
         startValue: toAuditPrimitive(objectiveRecord.startValue),
         deadline: toAuditPrimitive(objectiveRecord.deadline),
+        deletedAt: toAuditPrimitive(objectiveRecord.deletedAt),
+        deletedBy: toAuditPrimitive(objectiveRecord.deletedBy),
         createdAt: toAuditPrimitive(objectiveRecord.createdAt),
         updatedAt: toAuditPrimitive(objectiveRecord.updatedAt),
+    };
+}
+
+function sanitizeObjectiveCollaborator(
+    doc: unknown
+): Record<string, string | number | boolean | null> | undefined {
+    if (!doc || typeof doc !== 'object') return undefined;
+    const collaboratorRecord = doc as Record<string, unknown>;
+    return {
+        _id: toAuditPrimitive(collaboratorRecord._id),
+        objectiveId: toAuditPrimitive(collaboratorRecord.objectiveId),
+        userId: toAuditPrimitive(collaboratorRecord.userId),
+        organizationId: toAuditPrimitive(collaboratorRecord.organizationId),
+        role: toAuditPrimitive(collaboratorRecord.role),
+        addedBy: toAuditPrimitive(collaboratorRecord.addedBy),
+        createdAt: toAuditPrimitive(collaboratorRecord.createdAt),
     };
 }
 
@@ -50,7 +71,7 @@ function sanitizeProgressUpdate(
     return {
         _id: toAuditPrimitive(progressUpdateRecord._id),
         objective: toAuditPrimitive(progressUpdateRecord.objective),
-        userId: toAuditPrimitive(progressUpdateRecord.userId),
+        createdBy: toAuditPrimitive(progressUpdateRecord.createdBy),
         updatedValue: toAuditPrimitive(progressUpdateRecord.updatedValue),
         updateDate: toAuditPrimitive(progressUpdateRecord.updateDate),
         createdAt: toAuditPrimitive(progressUpdateRecord.createdAt),
@@ -125,6 +146,7 @@ function sanitizePlatformSettings(
 
 type SanitizedTable =
     | 'objectives'
+    | 'objectiveCollaborators'
     | 'progressUpdates'
     | 'categories'
     | 'organization'
@@ -139,6 +161,8 @@ function sanitizeDoc(
     switch (table) {
         case 'objectives':
             return sanitizeObjective(doc);
+        case 'objectiveCollaborators':
+            return sanitizeObjectiveCollaborator(doc);
         case 'progressUpdates':
             return sanitizeProgressUpdate(doc);
         case 'categories':
@@ -194,6 +218,7 @@ const toAction = (
 const registerSimpleTrigger = <
     TableName extends
         | 'objectives'
+        | 'objectiveCollaborators'
         | 'categories'
         | 'organization'
         | 'member'
@@ -227,6 +252,10 @@ const registerSimpleTrigger = <
 };
 
 registerSimpleTrigger('objectives', 'objective', (_ctx, change) => {
+    return change.newDoc?.organizationId ?? change.oldDoc?.organizationId ?? null;
+});
+
+registerSimpleTrigger('objectiveCollaborators', 'objective_collaborator', (_ctx, change) => {
     return change.newDoc?.organizationId ?? change.oldDoc?.organizationId ?? null;
 });
 

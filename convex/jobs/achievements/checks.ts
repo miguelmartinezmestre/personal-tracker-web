@@ -86,7 +86,7 @@ async function countProgressUpdatesForObjectives(
     const objectiveIdsSet = new Set(objectiveIds);
     const updates = await ctx.db
         .query('progressUpdates')
-        .withIndex('by_user_date', q => q.eq('userId', userId))
+        .withIndex('by_createdBy_date', q => q.eq('createdBy', userId))
         .take(LIST_LIMIT);
 
     return updates.filter(update => objectiveIdsSet.has(update.objective)).length;
@@ -191,8 +191,8 @@ export async function checkUserAchievementsJob(
 
     const objectivesPage = await ctx.db
         .query('objectives')
-        .withIndex('by_user_organization', q =>
-            q.eq('userId', userId).eq('organizationId', organizationId)
+        .withIndex('by_createdBy_organization', q =>
+            q.eq('createdBy', userId).eq('organizationId', organizationId)
         )
         .paginate({
             numItems: ACHIEVEMENT_BATCH_SIZE,

@@ -113,7 +113,9 @@ objectives: {
 | objectives | |
 | --- | --- |
 | organizationId | id('organization') |
-| userId | id('user') |
+| createdBy | id('user') |
+| ownerId | id('user') |
+| visibility | private \| organization |
 | title | string |
 | categoryId | optional(id('categories')) |
 | completedAt | optional(number) |
@@ -122,6 +124,22 @@ objectives: {
 | deadline | optional(number) |
 | status | objectiveStatusValidator |
 | workflowId | optional(vWorkflowId) |
+| deletedAt | optional(number) |
+| deletedBy | optional(id('user')) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
+}
+
+objectiveCollaborators: {
+  shape: text
+  label: |`md
+| objectiveCollaborators | |
+| --- | --- |
+| objectiveId | id('objectives') |
+| userId | id('user') |
+| organizationId | id('organization') |
+| role | editor \| viewer |
+| addedBy | id('user') |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -132,7 +150,7 @@ progressUpdates: {
 | progressUpdates | |
 | --- | --- |
 | objective | id('objectives') |
-| userId | id('user') |
+| createdBy | id('user') |
 | organizationId | id('organization') |
 | updatedValue | number |
 | updateDate | number |
@@ -294,6 +312,7 @@ user -> account: { style: { stroke: "#1D4ED8"; stroke-width: 2; stroke-dash: 4 }
 user -> member: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> invitation: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> objectives: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
+user -> objectiveCollaborators: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> progressUpdates: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> categories: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> notifications: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
@@ -307,6 +326,7 @@ organization -> session: { style: { stroke: "#334155"; stroke-width: 2; stroke-d
 organization -> member: { style: { stroke: "#334155"; stroke-width: 2 } }
 organization -> invitation: { style: { stroke: "#334155"; stroke-width: 2 } }
 organization -> objectives: { style: { stroke: "#334155"; stroke-width: 2 } }
+organization -> objectiveCollaborators: { style: { stroke: "#334155"; stroke-width: 2 } }
 organization -> progressUpdates: { style: { stroke: "#334155"; stroke-width: 2 } }
 organization -> categories: { style: { stroke: "#334155"; stroke-width: 2 } }
 organization -> notifications: { style: { stroke: "#334155"; stroke-width: 2 } }
@@ -314,6 +334,7 @@ organization -> auditLogs: { style: { stroke: "#334155"; stroke-width: 2 } }
 organization -> organizationAchievements: { style: { stroke: "#334155"; stroke-width: 2 } }
 
 categories -> objectives: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
+objectives -> objectiveCollaborators: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
 objectives -> progressUpdates: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
 objectives -> notifications: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
 achievementDefinitions -> obtainedAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }

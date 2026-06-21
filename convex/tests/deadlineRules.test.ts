@@ -6,7 +6,7 @@ function objective(deadline?: number): Doc<'objectives'> {
     return {
         _id: 'objective-id',
         _creationTime: 0,
-        userId: 'user-id',
+        createdBy: 'user-id' as Doc<'objectives'>['createdBy'],
         organizationId: 'organization-id',
         title: 'Submit thesis',
         targetValue: 100,
