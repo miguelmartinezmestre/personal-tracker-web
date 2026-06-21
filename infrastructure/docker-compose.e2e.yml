@@ -16,7 +16,7 @@ services:
     mailhog:
         image: mailhog/mailhog:v1.0.1
         ports:
-            - '${MAILHOG_SMTP_PORT:-1026}:1025'
+            - '${MAILHOG_SMTP_PORT:-2026}:1025'
             - '${MAILHOG_UI_PORT:-8026}:8025'
         healthcheck:
             test: ['CMD-SHELL', 'wget -q -O- http://localhost:8025/api/v2/messages >/dev/null']

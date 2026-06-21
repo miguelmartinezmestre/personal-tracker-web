@@ -20,10 +20,7 @@ export default defineConfig({
     retries: 0,
     maxFailures: process.env.CI ? undefined : 1,
 
-    reporter: [
-        ['list'],
-        ['html', { open: 'never', outputFolder: 'test-results/playwright-report' }],
-    ],
+    reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
