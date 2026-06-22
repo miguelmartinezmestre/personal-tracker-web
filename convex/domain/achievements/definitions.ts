@@ -247,8 +247,3 @@ export const ACHIEVEMENT_RULES_BY_CODE = new Map(
 export function getAchievementRule(code: string) {
     return ACHIEVEMENT_RULES_BY_CODE.get(code);
 }
-
-export function toStoredAchievementDefinition(definition: AchievementDefinition) {
-    const { metricKey: _metricKey, trigger: _trigger, ...storedDefinition } = definition;
-    return storedDefinition;
-}

@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
 import FormModal from '@/components/forms/form-modal';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
-import { buildCreateObjectivePayload } from '@/features/objectives/lib/objective-form-payloads';
+import { toCategoryId } from '@/features/objectives/lib/objective-category-selection';
 
 const defaultValues: CreateObjective = {
     title: '',
@@ -32,7 +32,7 @@ export default function CreateObjectiveFormModal() {
     const createObjective = useConvexMutation(api.objectives.createObjective);
 
     const createObjectiveMutation = useMutation({
-        mutationFn: async (args: ReturnType<typeof buildCreateObjectivePayload>) =>
+        mutationFn: async (args: Parameters<typeof createObjective>[0]) =>
             await createObjective(args),
     });
 
@@ -56,7 +56,17 @@ export default function CreateObjectiveFormModal() {
                 },
             }}
             onSubmit={async (value: CreateObjective) => {
-                await createObjectiveMutation.mutateAsync(buildCreateObjectivePayload(value));
+                await createObjectiveMutation.mutateAsync({
+                    title: value.title,
+                    description: value.description ?? undefined,
+                    categoryId: toCategoryId(value.categoryId),
+                    targetValue: Number(value.targetValue),
+                    startValue: 0,
+                    currentValue: 0,
+                    deadline: value.deadline ?? undefined,
+                    unit: value.unit ?? undefined,
+                    visibility: value.visibility ?? 'private',
+                });
             }}
             submitLabel={t('saveObjective')}
             cancelLabel={t('cancel')}

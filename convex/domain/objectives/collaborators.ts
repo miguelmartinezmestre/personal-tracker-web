@@ -123,23 +123,6 @@ export async function removeObjectiveCollaborator(
     return { success: true as const };
 }
 
-async function findOrgAdminOrOwner(
-    ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    excludeUserId: Id<'user'>
-): Promise<Id<'user'> | null> {
-    const members = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-        .collect();
-
-    const admin = members.find(
-        member => member.userId !== excludeUserId && isOrganizationAdminRole(member.role)
-    );
-
-    return admin?.userId ?? null;
-}
-
 export async function reassignObjectivesOnMemberLeave(
     ctx: MutationCtx,
     organizationId: Id<'organization'>,
@@ -174,7 +157,19 @@ export async function reassignObjectivesOnMemberLeave(
 
         const nextOwnerId =
             editorCollaborators[0]?.userId ??
-            (await findOrgAdminOrOwner(ctx, organizationId, departingUserId));
+            (await (async (): Promise<Id<'user'> | null> => {
+                const members = await ctx.db
+                    .query('member')
+                    .withIndex('organizationId', q => q.eq('organizationId', organizationId))
+                    .collect();
+
+                const admin = members.find(
+                    member =>
+                        member.userId !== departingUserId && isOrganizationAdminRole(member.role)
+                );
+
+                return admin?.userId ?? null;
+            })());
 
         if (!nextOwnerId) {
             continue;

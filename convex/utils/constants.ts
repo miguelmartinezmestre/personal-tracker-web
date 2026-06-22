@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../../shared/pagination';
+import { DEFAULT_PAGE_SIZE } from '../../shared/pagination';
 
 export const TIME = {
     MINUTE_MS: 60 * 1000,
@@ -10,7 +10,6 @@ export const TIME = {
 
 export const PAGINATION = {
     DEFAULT_PAGE_SIZE,
-    MAX_PAGE_SIZE,
     DASHBOARD_LIMIT: 5,
 } as const;
 

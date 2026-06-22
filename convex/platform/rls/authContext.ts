@@ -12,26 +12,6 @@ export type AuthContext = {
     memberRole: string | null;
 };
 
-interface AuthSession {
-    activeOrganizationId?: string | null;
-    expiresAt?: number | null;
-    session?: {
-        activeOrganizationId?: string | null;
-        expiresAt?: number | null;
-    };
-}
-
-function isExpiredSession(session: unknown): boolean {
-    if (session === null || typeof session !== 'object') {
-        return false;
-    }
-
-    const authSession = session as AuthSession;
-    const expiresAt = authSession.session?.expiresAt ?? authSession.expiresAt ?? null;
-
-    return typeof expiresAt === 'number' && expiresAt < Date.now();
-}
-
 export async function resolveActiveMembership(
     ctx: QueryCtx | MutationCtx,
     userId: Id<'user'>,
@@ -68,7 +48,19 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
 
     const session = await getSession(ctx);
 
-    if (!session || isExpiredSession(session) || !session.activeOrganizationId) {
+    const expiresAt =
+        session && typeof session === 'object'
+            ? ((session as { session?: { expiresAt?: number | null }; expiresAt?: number | null })
+                  .session?.expiresAt ??
+              (session as { expiresAt?: number | null }).expiresAt ??
+              null)
+            : null;
+
+    if (
+        !session ||
+        (typeof expiresAt === 'number' && expiresAt < Date.now()) ||
+        !session.activeOrganizationId
+    ) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 

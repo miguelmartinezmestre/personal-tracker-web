@@ -149,7 +149,15 @@ export function sanitizeAuditMetadata(
     const sanitized: AuditMetadata = {};
     const before = sanitizeAuditSnapshot(resourceType, metadata.before);
     const after = sanitizeAuditSnapshot(resourceType, metadata.after);
-    const context = sanitizeAuditContext(metadata.context);
+    const rawContext = metadata.context;
+    const redactedContext =
+        rawContext === undefined ? undefined : redactPrimitiveString(rawContext).trim();
+    const context =
+        !redactedContext || redactedContext.includes('[redacted')
+            ? undefined
+            : /^[A-Za-z0-9_.:-]+$/.test(redactedContext)
+              ? redactedContext
+              : undefined;
 
     if (before !== undefined) sanitized.before = before;
     if (after !== undefined) sanitized.after = after;
@@ -207,19 +215,6 @@ export function sanitizeAuditSnapshot(
 
 function isPrimitive(value: unknown): value is AuditPrimitive {
     return value === null || ['string', 'number', 'boolean'].includes(typeof value);
-}
-
-function sanitizeAuditContext(context: string | undefined): string | undefined {
-    if (!context) {
-        return undefined;
-    }
-
-    const redacted = redactPrimitiveString(context).trim();
-    if (!redacted || redacted.includes('[redacted')) {
-        return undefined;
-    }
-
-    return /^[A-Za-z0-9_.:-]+$/.test(redacted) ? redacted : undefined;
 }
 
 function redactPrimitiveString(value: string): string {

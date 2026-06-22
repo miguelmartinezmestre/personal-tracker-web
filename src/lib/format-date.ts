@@ -7,7 +7,3 @@ export function formatDate(value: DateInput, locale: string): string {
 export function formatTime(value: DateInput, locale: string): string {
     return new Intl.DateTimeFormat(locale, { timeStyle: 'short' }).format(new Date(value));
 }
-
-export function formatMonth(value: DateInput, locale: string): string {
-    return new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(value));
-}

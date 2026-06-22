@@ -1,7 +1,7 @@
 export const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 export const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
-const PERSONAL_ORGANIZATION_METADATA_TYPE = 'personal';
+export const PERSONAL_ORGANIZATION_METADATA_TYPE = 'personal';
 
 export function buildDefaultOrganizationSlug(userId: string) {
     const normalizedSuffix = userId
@@ -10,10 +10,6 @@ export function buildDefaultOrganizationSlug(userId: string) {
         .slice(-12);
 
     return `${DEFAULT_ORGANIZATION_SLUG_BASE}-${normalizedSuffix || Date.now().toString(36)}`;
-}
-
-export function getDefaultOrganizationMetadata() {
-    return JSON.stringify({ type: PERSONAL_ORGANIZATION_METADATA_TYPE });
 }
 
 export function isPersonalOrganizationMetadata(metadata: string | null | undefined) {

@@ -12,7 +12,7 @@ import type { DataModel, Id } from '../_generated/dataModel';
 import type { TestConvexForDataModel } from 'convex-test';
 
 describe('convex objectives', () => {
-    const t = initConvexTest();
+    const t = initConvexTest({ workflow: false });
 
     let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;

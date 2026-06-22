@@ -18,7 +18,6 @@ import type * as categories from "../categories.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as domain_achievements_calculations from "../domain/achievements/calculations.js";
-import type * as domain_achievements_contributors from "../domain/achievements/contributors.js";
 import type * as domain_achievements_definitions from "../domain/achievements/definitions.js";
 import type * as domain_audit_privacy from "../domain/audit/privacy.js";
 import type * as domain_categories from "../domain/categories.js";
@@ -94,7 +93,6 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   dashboard: typeof dashboard;
   "domain/achievements/calculations": typeof domain_achievements_calculations;
-  "domain/achievements/contributors": typeof domain_achievements_contributors;
   "domain/achievements/definitions": typeof domain_achievements_definitions;
   "domain/audit/privacy": typeof domain_audit_privacy;
   "domain/categories": typeof domain_categories;

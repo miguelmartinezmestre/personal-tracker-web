@@ -35,27 +35,6 @@ function requireEnv(env: EnvSource, name: string): string {
     return value;
 }
 
-function parseSmtpPort(rawPort: string): number {
-    const port = Number.parseInt(rawPort, 10);
-    if (!Number.isInteger(port) || port < MIN_PORT || port > MAX_PORT) {
-        throw new Error('SMTP_PORT must be a valid port number');
-    }
-    return port;
-}
-
-function parseSmtpSecure(env: EnvSource, port: number): boolean {
-    const rawSecure = readEnv(env, 'SMTP_SECURE');
-    if (rawSecure === undefined) {
-        return port === 465;
-    }
-
-    const normalized = rawSecure.toLowerCase();
-    if (normalized === 'true') return true;
-    if (normalized === 'false') return false;
-
-    throw new Error('SMTP_SECURE must be true or false');
-}
-
 export function getEmailProvider(env: EnvSource = process.env): EmailProvider {
     const provider = (readEnv(env, 'EMAIL_PROVIDER') ?? DEFAULT_EMAIL_PROVIDER).toLowerCase();
 
@@ -75,14 +54,33 @@ export function getResendEmailConfig(env: EnvSource = process.env): ResendEmailC
 }
 
 export function getSmtpEmailConfig(env: EnvSource = process.env): SmtpEmailConfig {
-    const port = parseSmtpPort(requireEnv(env, 'SMTP_PORT'));
+    const rawPort = requireEnv(env, 'SMTP_PORT');
+    const port = Number.parseInt(rawPort, 10);
+    if (!Number.isInteger(port) || port < MIN_PORT || port > MAX_PORT) {
+        throw new Error('SMTP_PORT must be a valid port number');
+    }
+
+    const rawSecure = readEnv(env, 'SMTP_SECURE');
+    let secure: boolean;
+    if (rawSecure === undefined) {
+        secure = port === 465;
+    } else {
+        const normalized = rawSecure.toLowerCase();
+        if (normalized === 'true') {
+            secure = true;
+        } else if (normalized === 'false') {
+            secure = false;
+        } else {
+            throw new Error('SMTP_SECURE must be true or false');
+        }
+    }
 
     return {
         provider: 'smtp',
         from: requireEnv(env, 'EMAIL_FROM'),
         host: requireEnv(env, 'SMTP_HOST'),
         port,
-        secure: parseSmtpSecure(env, port),
+        secure,
         user: requireEnv(env, 'SMTP_USER'),
         password: requireEnv(env, 'SMTP_PASSWORD'),
     };

@@ -76,40 +76,6 @@ const sanitizeInvitation = (
     return result;
 };
 
-const resolveOrganizationId = async (
-    ctx: MutationCtx,
-    explicitOrganizationId?: string | null,
-    fallbackUserId?: string | null
-): Promise<Id<'organization'> | null> => {
-    if (explicitOrganizationId) {
-        const normalized = ctx.db.normalizeId('organization', explicitOrganizationId);
-        if (normalized) {
-            return normalized;
-        }
-    }
-
-    if (fallbackUserId) {
-        const normalizedUserId = ctx.db.normalizeId('user', fallbackUserId);
-        if (!normalizedUserId) {
-            return null;
-        }
-
-        const membership = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', normalizedUserId))
-            .first();
-
-        if (membership?.organizationId) {
-            const normalized = ctx.db.normalizeId('organization', membership.organizationId);
-            if (normalized) {
-                return normalized;
-            }
-        }
-    }
-
-    return null;
-};
-
 type AuthAuditMetadata = {
     before?: Record<string, string | number | boolean | null>;
     after?: Record<string, string | number | boolean | null>;
@@ -137,7 +103,25 @@ const insertAuthAuditLog = async (
         };
     }
 ) => {
-    const organizationId = await resolveOrganizationId(ctx, args.organizationId, args.userId);
+    let organizationId: Id<'organization'> | null = null;
+    if (args.organizationId) {
+        organizationId = ctx.db.normalizeId('organization', args.organizationId);
+    }
+
+    if (!organizationId && args.userId) {
+        const fallbackUserId = ctx.db.normalizeId('user', args.userId);
+        if (fallbackUserId) {
+            const membership = await ctx.db
+                .query('member')
+                .withIndex('userId', q => q.eq('userId', fallbackUserId))
+                .first();
+
+            if (membership?.organizationId) {
+                organizationId = ctx.db.normalizeId('organization', membership.organizationId);
+            }
+        }
+    }
+
     const normalizedUserId = ctx.db.normalizeId('user', args.userId);
 
     if (!organizationId || !normalizedUserId) {
@@ -178,18 +162,6 @@ const insertAuthAuditLog = async (
         severity: 'info',
         createdAt: Date.now(),
     });
-};
-
-const sanitizeMember = (
-    member: Record<string, unknown>
-): Record<string, string | number | boolean | null> => {
-    const result: Record<string, string | number | boolean | null> = {};
-    for (const key of ['_id', 'organizationId', 'userId', 'role', 'createdAt']) {
-        if (key in member) {
-            result[key] = toAuditPrimitive(member[key]);
-        }
-    }
-    return result;
 };
 
 export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx> = {
@@ -295,13 +267,21 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
                     await reassignObjectivesOnMemberLeave(ctx, organizationId, userId);
                 }
 
+                const memberDoc = change.oldDoc as Record<string, unknown>;
+                const sanitizedMember: Record<string, string | number | boolean | null> = {};
+                for (const key of ['_id', 'organizationId', 'userId', 'role', 'createdAt']) {
+                    if (key in memberDoc) {
+                        sanitizedMember[key] = toAuditPrimitive(memberDoc[key]);
+                    }
+                }
+
                 await insertAuthAuditLog(ctx, {
                     action: 'organization_member.deleted',
                     resourceType: 'organization_member',
                     resourceId: change.oldDoc._id,
                     userId: change.oldDoc.userId,
                     organizationId: change.oldDoc.organizationId,
-                    metadata: { before: sanitizeMember(change.oldDoc) },
+                    metadata: { before: sanitizedMember },
                 });
             }
         },

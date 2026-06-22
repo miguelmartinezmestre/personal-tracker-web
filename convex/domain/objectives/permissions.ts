@@ -29,13 +29,6 @@ export type ObjectivePermissionResource = {
     deletedAt?: number;
 };
 
-export function isObjectiveOwner(
-    subject: Pick<PermissionSubject, 'userId'>,
-    objective: Pick<ObjectivePermissionResource, 'ownerId'>
-): boolean {
-    return objective.ownerId === subject.userId;
-}
-
 export function canObjective(
     action: ObjectiveAction,
     subject: PermissionSubject,
@@ -45,7 +38,7 @@ export function canObjective(
         return true;
     }
 
-    const isOwner = isObjectiveOwner(subject, objective);
+    const isOwner = objective.ownerId === subject.userId;
     const isDeleted = objective.deletedAt !== undefined;
 
     if (isDeleted) {

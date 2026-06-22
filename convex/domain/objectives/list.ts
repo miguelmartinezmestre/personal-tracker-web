@@ -73,16 +73,12 @@ function matchesObjectiveFilters(
     return true;
 }
 
-function isSoftDeleted(objective: Pick<Doc<'objectives'>, 'deletedAt'>) {
-    return objective.deletedAt !== undefined;
-}
-
 export function canUserViewObjectiveInList(
     ctx: ObjectiveListCtx,
     objective: Doc<'objectives'>,
     collaboratedObjectiveIds: Set<Id<'objectives'>>
 ): boolean {
-    if (isSoftDeleted(objective)) {
+    if (objective.deletedAt !== undefined) {
         if (isGlobalAdminRole(ctx.role) || isOrganizationAdminRole(ctx.memberRole)) {
             return true;
         }
