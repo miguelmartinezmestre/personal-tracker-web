@@ -461,7 +461,7 @@
             "value": "Valor",
             "count": "Veces",
             "money": "Dinero",
-            "duration": "Duracion"
+            "duration": "Duración"
         },
         "direction": "Dirección",
         "directionDescription": "Elige si el objetivo progresa al subir o al bajar.",
@@ -494,8 +494,8 @@
         "initialValueDescription": "Tu punto de partida para este objetivo.",
         "periodStart": "Inicio del periodo",
         "periodStartDescription": "Fecha de inicio para el periodo personalizado.",
-        "periodLengthDays": "Duracion del periodo (dias)",
-        "periodLengthDaysDescription": "Longitud de cada periodo en dias.",
+        "periodLengthDays": "Duración del periodo (días)",
+        "periodLengthDaysDescription": "Longitud de cada periodo en días.",
         "editObjectiveDescription": "Llena el formulario a continuación para editar tu objetivo. Haz clic en guardar cuando hayas terminado.",
         "cancel": "Cancelar",
         "giveYourObjectiveAClearConciseTitle": "Dale a tu objetivo un título claro y conciso.",
@@ -814,7 +814,7 @@
         "dashboard": "Dashboard",
         "settings": "Configuracion",
         "account": "Cuenta",
-        "passwordSettingsDescription": "Edita tus configuraciones de contrasena aqui.",
+        "passwordSettingsDescription": "Edita tus configuraciones de contraseña aquí.",
         "notificationsPlaceholder": "Cambia tus notificaciones aquí.",
         "notifications": "Notificaciones",
         "notificationSettings": "Configuración de Notificaciones",
@@ -895,7 +895,7 @@
                 "user": "Usuario"
             },
             "defaults": {
-                "banReason": "Banned by administrator"
+                "banReason": "Bloqueado por el administrador"
             },
             "loading": "Cargando usuarios...",
             "errors": {
@@ -1032,15 +1032,15 @@
             "value": "Valor actualizado",
             "count": "Veces",
             "money": "Monto",
-            "duration": "Duracion"
+            "duration": "Duración"
         },
         "valuePlaceholders": {
             "value": "Ingresa el valor actualizado",
             "count": "Ingresa las veces",
             "money": "Ingresa el monto",
-            "duration": "Ingresa la duracion"
+            "duration": "Ingresa la duración"
         },
-        "valueDescription": "Valor de esta actualizacion{unit}",
+        "valueDescription": "Valor de esta actualización{unit}",
         "valueDescriptionCumulative": "Introduce el incremento desde el último registro{unit}.",
         "valueDescriptionSnapshot": "Introduce el valor actual{unit}. Los registros anteriores no cuentan.",
         "comment": "Comentario",
@@ -1219,7 +1219,12 @@
         "register": "Registrarse",
         "acceptTitle": "Aceptar Invitación",
         "acceptDescription": "Has sido invitado a unirte a una organización. Haz clic en aceptar para unirte.",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "orgSwitchNote": "Al aceptar, cambiarás tu organización activa a esta.",
+        "confirmAcceptTitle": "¿Cambiar de organización?",
+        "confirmAcceptDescription": "Estás a punto de unirte a «{orgName}» y establecerla como tu organización activa. Esto cambiará el contexto de tu espacio de trabajo actual. ¿Seguro que quieres continuar?",
+        "joining": "Uniéndote...",
+        "confirmJoin": "Sí, unirme a la organización"
     },
     "TextSelection": {
         "openIn": "Abrir en {provider}"

@@ -1219,7 +1219,12 @@
         "register": "Register",
         "acceptTitle": "Accept Invitation",
         "acceptDescription": "You've been invited to join an organization. Click accept to join.",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "orgSwitchNote": "Accepting will switch your active organization to this one.",
+        "confirmAcceptTitle": "Switch Organization?",
+        "confirmAcceptDescription": "You are about to join \"{orgName}\" and set it as your active organization. This will change your current workspace context. Are you sure you want to proceed?",
+        "joining": "Joining...",
+        "confirmJoin": "Yes, Join Organization"
     },
     "TextSelection": {
         "openIn": "Open in {provider}"
