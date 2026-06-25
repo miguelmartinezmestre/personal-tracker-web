@@ -94,7 +94,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const welcomeMessage = page.getByTestId('welcome-message');
             await expect(welcomeMessage).toContainText(username);
 
-            console.log('✅ Login smoke test completed successfully');
+            console.log('Login smoke test completed successfully');
         }
     );
 
@@ -287,7 +287,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
                 timeout: 10000,
             });
 
-            console.log('✅ Data persistence smoke test completed successfully');
+            console.log('Data persistence smoke test completed successfully');
         }
     );
 });
