@@ -11,7 +11,7 @@ import { useUsersTableColumns } from './users-table-columns';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
-import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
+import { ADMIN_PAGE_SIZE } from '@shared/pagination';
 
 export function UsersTable() {
     const t = useTranslations('Admin');

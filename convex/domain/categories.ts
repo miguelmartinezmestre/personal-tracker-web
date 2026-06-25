@@ -1,9 +1,21 @@
-import { ConvexError, ObjectType } from 'convex/values';
+import { ConvexError, ObjectType, v } from 'convex/values';
 import type { PaginationOptions } from 'convex/server';
 import type { Id } from '../_generated/dataModel';
 import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { ERROR_CODES } from '../utils/constants';
-import { categoryInputValidator, categoryPatchValidator } from './categories/validators';
+
+export const categoryInputValidator = {
+    name: v.string(),
+    color: v.string(),
+    icon: v.optional(v.string()),
+} as const;
+
+export const categoryPatchValidator = {
+    id: v.id('categories'),
+    name: v.optional(v.string()),
+    color: v.optional(v.string()),
+    icon: v.optional(v.string()),
+} as const;
 
 type CategoryQueryCtx = {
     db: DatabaseReader;

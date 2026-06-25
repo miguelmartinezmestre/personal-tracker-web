@@ -94,44 +94,40 @@ test.describe('Critical Paths - Smoke Tests', () => {
             const welcomeMessage = page.getByTestId('welcome-message');
             await expect(welcomeMessage).toContainText(username);
 
-            console.log('✅ Login smoke test completed successfully');
+            console.log('Login smoke test completed successfully');
         }
     );
 
-    test(
-        'navigation between main pages works',
-        { tag: ['@REQ-NF-021', '@cross-browser'] },
-        async ({ page }) => {
-            await createTestUser(page);
+    test('navigation between main pages works', { tag: ['@cross-browser'] }, async ({ page }) => {
+        await createTestUser(page);
 
-            const pages = [
-                { route: '/dashboard/home', check: /home/i },
-                { route: '/dashboard/objectives', check: /objectives|objetivos/i },
-                { route: '/dashboard/categories', check: /categories|categorías/i },
-                { route: '/dashboard/organizations', check: /organizations|organizaciones/i },
-                { route: '/dashboard/notifications', check: /notifications|notificaciones/i },
-                { route: '/dashboard/achievements', check: /achievements|logros/i },
-                { route: '/dashboard/sessions', check: /sessions|sesiones/i },
-                { route: '/dashboard/settings', check: /settings|configuración/i },
-            ];
+        const pages = [
+            { route: '/dashboard/home', check: /home/i },
+            { route: '/dashboard/objectives', check: /objectives|objetivos/i },
+            { route: '/dashboard/categories', check: /categories|categorías/i },
+            { route: '/dashboard/organizations', check: /organizations|organizaciones/i },
+            { route: '/dashboard/notifications', check: /notifications|notificaciones/i },
+            { route: '/dashboard/achievements', check: /achievements|logros/i },
+            { route: '/dashboard/sessions', check: /sessions|sesiones/i },
+            { route: '/dashboard/settings', check: /settings|configuración/i },
+        ];
 
-            for (const { route } of pages) {
-                await page.goto(route);
-                await page.waitForURL(new RegExp(`${route.replace('/', '\\/')}(\\?|$)`), {
-                    timeout: 10000,
-                });
+        for (const { route } of pages) {
+            await page.goto(route);
+            await page.waitForURL(new RegExp(`${route.replace('/', '\\/')}(\\?|$)`), {
+                timeout: 10000,
+            });
 
-                expect(page.url()).toContain('/dashboard/');
-                expect(page.url()).not.toContain('/login');
-            }
-
-            console.log('Navigation smoke test completed successfully');
+            expect(page.url()).toContain('/dashboard/');
+            expect(page.url()).not.toContain('/login');
         }
-    );
+
+        console.log('Navigation smoke test completed successfully');
+    });
 
     test(
         'CRUD operations work for objectives',
-        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-003', '@REQ-NF-025'] },
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-003', '@REQ-NF-012'] },
         async ({ page }) => {
             await createTestUser(page);
             await ensureAuthenticatedState(page);
@@ -234,7 +230,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
 
     test(
         'authentication protection works',
-        { tag: ['@REQ-ROLES-001', '@REQ-NF-006', '@cross-browser'] },
+        { tag: ['@REQ-ROLES-001', '@REQ-NF-003', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/dashboard/home');
             await expect(page).toHaveURL(/\/login(\?|$)/);
@@ -249,7 +245,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
         }
     );
 
-    test('form validation works', { tag: ['@REQ-NF-018', '@cross-browser'] }, async ({ page }) => {
+    test('form validation works', { tag: ['@REQ-NF-006', '@cross-browser'] }, async ({ page }) => {
         await createTestUser(page);
 
         await page.goto('/dashboard/objectives');
@@ -287,7 +283,7 @@ test.describe('Critical Paths - Smoke Tests', () => {
                 timeout: 10000,
             });
 
-            console.log('✅ Data persistence smoke test completed successfully');
+            console.log('Data persistence smoke test completed successfully');
         }
     );
 });

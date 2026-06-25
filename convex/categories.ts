@@ -3,13 +3,14 @@ import { paginationOptsValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { withInvalidCursorRetry } from './utils/pagination';
 import {
+    categoryInputValidator,
+    categoryPatchValidator,
     createCategoryForCurrentOrganization,
     createDefaultCategoriesForCurrentOrganization,
     deleteCategoryForCurrentOrganization,
     listCategoriesForCurrentUser,
     updateCategoryForCurrentOrganization,
 } from './domain/categories';
-import { categoryInputValidator, categoryPatchValidator } from './domain/categories/validators';
 
 export const getCategoriesByUser = queryWithRLS({
     args: {

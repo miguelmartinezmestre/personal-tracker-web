@@ -21,7 +21,7 @@ async function waitForAdminDashboardReady(page: Page): Promise<void> {
 async function completeSetupWizard(page: Page, userData: TestUserData): Promise<void> {
     await page.goto('/setup', { waitUntil: 'domcontentloaded' });
 
-    await page.getByTestId('setup-platform-name').fill('Test Platform');
+    await page.getByTestId('setup-platform-name').fill('Metrics App');
     await page.getByTestId('setup-next-button').click();
 
     await page.getByTestId('setup-username').fill(userData.username);
@@ -30,7 +30,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await page.getByTestId('setup-confirm-password').fill(userData.password);
     await page.getByTestId('setup-next-button').click();
 
-    await page.getByTestId('setup-org-name').fill(`${userData.username} Org`);
+    await page.getByTestId('setup-org-name').fill('Product Team');
     await page.getByTestId('setup-next-button').click();
 
     await page.getByTestId('setup-next-button').click();
@@ -42,7 +42,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
 }
 
 export async function createAdminSession(page: Page): Promise<TestUserData> {
-    const userData = generateTestUserData();
+    const userData = generateTestUserData({ customUsername: 'Ana Martínez' });
 
     await completeSetupWizard(page, userData);
     await waitForAdminDashboardReady(page);

@@ -117,7 +117,7 @@ test.describe('Sessions', () => {
 
     test(
         'can close all other sessions except current',
-        { tag: ['@REQ-AUTENTICACION-009'] },
+        { tag: ['@REQ-AUTENTICACION-008'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser, browser }) => {
             const secondContext = await browser.newContext();
             const secondPage = await secondContext.newPage();

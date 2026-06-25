@@ -41,7 +41,7 @@ async function switchLanguage(
 test.describe('Language Switching', () => {
     test(
         'switch to Spanish updates UI texts',
-        { tag: ['@REQ-NF-012'] },
+        { tag: ['@REQ-NF-008'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
@@ -52,7 +52,7 @@ test.describe('Language Switching', () => {
 
     test(
         'switch to English restores UI texts',
-        { tag: ['@REQ-NF-012'] },
+        { tag: ['@REQ-NF-008'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
@@ -64,7 +64,7 @@ test.describe('Language Switching', () => {
 
     test(
         'language preference persists after navigation',
-        { tag: ['@REQ-NF-012'] },
+        { tag: ['@REQ-NF-008'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
@@ -85,7 +85,7 @@ test.describe('Language Switching', () => {
 
     test(
         'language switcher shows active language',
-        { tag: ['@REQ-NF-012'] },
+        { tag: ['@REQ-NF-008'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');

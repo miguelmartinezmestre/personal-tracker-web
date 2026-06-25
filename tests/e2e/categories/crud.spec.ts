@@ -195,7 +195,7 @@ test.describe('Categories CRUD', () => {
         await saveButton.click();
     });
 
-    test('delete category', { tag: ['@REQ-CATEGORIAS-003', '@REQ-NF-025'] }, async ({ page }) => {
+    test('delete category', { tag: ['@REQ-CATEGORIAS-003', '@REQ-NF-012'] }, async ({ page }) => {
         const category = await createCategory(page, { name: `Delete Cat ${Date.now()}` });
 
         await page.goto('/dashboard/categories');
@@ -249,7 +249,7 @@ test.describe('Categories CRUD', () => {
         }
     });
 
-    test('assign category to objective', async ({ page }) => {
+    test('assign category to objective', { tag: ['@REQ-OBJETIVOS-004'] }, async ({ page }) => {
         const categoryName = `Objective Cat ${Date.now()}`;
         await createCategory(page, { name: categoryName });
 

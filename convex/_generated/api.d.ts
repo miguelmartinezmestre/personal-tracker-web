@@ -21,12 +21,10 @@ import type * as domain_achievements_calculations from "../domain/achievements/c
 import type * as domain_achievements_definitions from "../domain/achievements/definitions.js";
 import type * as domain_audit_privacy from "../domain/audit/privacy.js";
 import type * as domain_categories from "../domain/categories.js";
-import type * as domain_categories_validators from "../domain/categories/validators.js";
 import type * as domain_notifications_deadlineRules from "../domain/notifications/deadlineRules.js";
 import type * as domain_notifications_delivery from "../domain/notifications/delivery.js";
 import type * as domain_notifications_preferences from "../domain/notifications/preferences.js";
 import type * as domain_objectives_access from "../domain/objectives/access.js";
-import type * as domain_objectives_categoryResolution from "../domain/objectives/categoryResolution.js";
 import type * as domain_objectives_collaborators from "../domain/objectives/collaborators.js";
 import type * as domain_objectives_filters from "../domain/objectives/filters.js";
 import type * as domain_objectives_list from "../domain/objectives/list.js";
@@ -50,7 +48,6 @@ import type * as jobs_objectives_deleteObjective from "../jobs/objectives/delete
 import type * as jobs_objectives_lifecycleCompletion from "../jobs/objectives/lifecycleCompletion.js";
 import type * as jobs_objectives_lifecycleWorkflow from "../jobs/objectives/lifecycleWorkflow.js";
 import type * as jobs_objectives_syncObjectiveFromProgress from "../jobs/objectives/syncObjectiveFromProgress.js";
-import type * as lib_authEnv from "../lib/authEnv.js";
 import type * as lib_env from "../lib/env.js";
 import type * as notificationPreferences from "../notificationPreferences.js";
 import type * as notifications from "../notifications.js";
@@ -96,12 +93,10 @@ declare const fullApi: ApiFromModules<{
   "domain/achievements/definitions": typeof domain_achievements_definitions;
   "domain/audit/privacy": typeof domain_audit_privacy;
   "domain/categories": typeof domain_categories;
-  "domain/categories/validators": typeof domain_categories_validators;
   "domain/notifications/deadlineRules": typeof domain_notifications_deadlineRules;
   "domain/notifications/delivery": typeof domain_notifications_delivery;
   "domain/notifications/preferences": typeof domain_notifications_preferences;
   "domain/objectives/access": typeof domain_objectives_access;
-  "domain/objectives/categoryResolution": typeof domain_objectives_categoryResolution;
   "domain/objectives/collaborators": typeof domain_objectives_collaborators;
   "domain/objectives/filters": typeof domain_objectives_filters;
   "domain/objectives/list": typeof domain_objectives_list;
@@ -125,7 +120,6 @@ declare const fullApi: ApiFromModules<{
   "jobs/objectives/lifecycleCompletion": typeof jobs_objectives_lifecycleCompletion;
   "jobs/objectives/lifecycleWorkflow": typeof jobs_objectives_lifecycleWorkflow;
   "jobs/objectives/syncObjectiveFromProgress": typeof jobs_objectives_syncObjectiveFromProgress;
-  "lib/authEnv": typeof lib_authEnv;
   "lib/env": typeof lib_env;
   notificationPreferences: typeof notificationPreferences;
   notifications: typeof notifications;

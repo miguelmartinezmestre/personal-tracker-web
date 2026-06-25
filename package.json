@@ -32,6 +32,7 @@
     "prepare": "husky",
     "generate-jwks": "npx convex run generated/auth:getLatestJwks | npx convex env set JWKS",
     "generate:db-diagram": "d2 --layout=dagre --pad=20 --dagre-nodesep=30 --dagre-edgesep=10 figures/modelo-datos-er.d2 figures/modelo-datos-er-pdf.png",
+    "generate:states-diagram": "d2 --layout=elk --pad=20 figures/estados-objetivo.d2 figures/estados-objetivo.png",
     "install": "node scripts/install-playwright-browsers.mjs",
     "playwright:install": "pnpm exec playwright install",
     "doctor": "npx react-doctor@latest --verbose --full"

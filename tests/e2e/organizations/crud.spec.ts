@@ -91,7 +91,7 @@ test.describe('Organizations CRUD', () => {
         await expect(createdRow).toBeVisible({ timeout: 10000 });
     });
 
-    test('edit organization name', { tag: ['@REQ-EQUIPOS-009'] }, async ({ page }) => {
+    test('edit organization name', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
             name: `Edit Org ${Date.now()}`,
         });
@@ -127,7 +127,7 @@ test.describe('Organizations CRUD', () => {
         await expect(nameInput).toBeHidden({ timeout: 10000 });
     });
 
-    test('delete organization', { tag: ['@REQ-EQUIPOS-010', '@REQ-NF-025'] }, async ({ page }) => {
+    test('delete organization', { tag: ['@REQ-EQUIPOS-008', '@REQ-NF-012'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
             name: `Delete Org ${Date.now()}`,
         });
@@ -192,7 +192,7 @@ test.describe('Organizations CRUD', () => {
         });
     });
 
-    test('data isolation between organizations', async ({ page }) => {
+    test('data isolation between organizations', { tag: ['@REQ-NF-004'] }, async ({ page }) => {
         const obj1 = await createObjective(page, {
             title: `Org1 Objective ${Date.now()}`,
         });

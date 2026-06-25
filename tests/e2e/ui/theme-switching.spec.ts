@@ -35,7 +35,7 @@ async function clickThemeOption(page: Page, option: 'light' | 'dark'): Promise<v
 test.describe('Theme Switching', () => {
     test(
         'toggle dark mode applies dark class to html',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-010'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
@@ -50,7 +50,7 @@ test.describe('Theme Switching', () => {
 
     test(
         'toggle light mode removes dark class',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-010'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');
@@ -71,7 +71,7 @@ test.describe('Theme Switching', () => {
 
     test(
         'theme preference persists after page reload',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-010'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
             await authenticatedPage.waitForLoadState('domcontentloaded');

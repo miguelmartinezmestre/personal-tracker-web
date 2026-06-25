@@ -26,7 +26,7 @@ test.describe('Objective collaborators multi-user', () => {
 
     test(
         'editor collaborator can contribute progress',
-        { tag: ['@REQ-OBJETIVOS-013', '@REQ-PROGRESO-001'] },
+        { tag: ['@REQ-COLABORACION-005', '@REQ-PROGRESO-001'] },
         async ({ page }) => {
             const title = `Editor objective ${Date.now()}`;
             await createObjective(page, { title, targetValue: 100 });
@@ -48,7 +48,7 @@ test.describe('Objective collaborators multi-user', () => {
 
     test(
         'viewer collaborator cannot contribute progress',
-        { tag: ['@REQ-OBJETIVOS-013'] },
+        { tag: ['@REQ-COLABORACION-005'] },
         async ({ page }) => {
             const title = `Viewer objective ${Date.now()}`;
             await createObjective(page, { title, targetValue: 100 });
@@ -65,7 +65,7 @@ test.describe('Objective collaborators multi-user', () => {
 
     test(
         'owner can change collaborator role and remove collaborator',
-        { tag: ['@REQ-OBJETIVOS-013'] },
+        { tag: ['@REQ-COLABORACION-005'] },
         async ({ page }) => {
             const title = `Manage collaborators ${Date.now()}`;
             await createObjective(page, { title, targetValue: 100 });
@@ -84,7 +84,7 @@ test.describe('Objective collaborators multi-user', () => {
 
     test(
         'transfer ownership lets new owner manage collaborators',
-        { tag: ['@REQ-OBJETIVOS-013'] },
+        { tag: ['@REQ-COLABORACION-006'] },
         async ({ page }) => {
             const title = `Transfer ownership ${Date.now()}`;
             await createObjective(page, {
@@ -113,7 +113,7 @@ test.describe('Objective collaborators multi-user', () => {
 
     test(
         'organization-visible objective is visible to other members',
-        { tag: ['@REQ-OBJETIVOS-013'] },
+        { tag: ['@REQ-COLABORACION-004', '@REQ-COLABORACION-003'] },
         async ({ page }) => {
             const title = `Org-wide visible ${Date.now()}`;
             await createObjective(page, {

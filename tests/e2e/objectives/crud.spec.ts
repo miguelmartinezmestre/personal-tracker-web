@@ -67,7 +67,7 @@ test.describe('Objectives CRUD', () => {
 
     test(
         'create personal objective',
-        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-004'] },
         async ({ page }) => {
             const title = `Personal objective ${Date.now()}`;
             await openObjectivesPage(page);
@@ -84,7 +84,7 @@ test.describe('Objectives CRUD', () => {
 
     test(
         'create objective with custom metrics',
-        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-004'] },
         async ({ page }) => {
             const title = `Custom metrics objective ${Date.now()}`;
             await openObjectivesPage(page);
@@ -138,7 +138,7 @@ test.describe('Objectives CRUD', () => {
         await expect(objectiveRow(page, originalTitle)).toHaveCount(0);
     });
 
-    test('delete objective with confirmation', { tag: ['@REQ-NF-025'] }, async ({ page }) => {
+    test('delete objective with confirmation', { tag: ['@REQ-NF-012'] }, async ({ page }) => {
         const title = `Delete objective ${Date.now()}`;
         await openObjectivesPage(page);
         await createObjectiveFromModal(page, {
@@ -186,7 +186,7 @@ test.describe('Objectives CRUD', () => {
         expect(titleCount).toBe(0);
     });
 
-    test('filter objectives by search text', { tag: ['@REQ-OBJETIVOS-002'] }, async ({ page }) => {
+    test('filter objectives by search text', { tag: ['@REQ-OBJETIVOS-008'] }, async ({ page }) => {
         const firstTitle = `Search Alpha ${Date.now()}`;
         const secondTitle = `Search Beta ${Date.now()}`;
 

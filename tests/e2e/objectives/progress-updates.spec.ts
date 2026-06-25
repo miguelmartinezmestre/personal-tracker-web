@@ -51,7 +51,7 @@ async function createProgressUpdate(page: Page, value: string, comment: string):
 test.describe('Objectives Progress Updates', () => {
     test(
         'create progress update from objective detail',
-        { tag: ['@REQ-PROGRESO-001', '@REQ-OBJETIVOS-012'] },
+        { tag: ['@REQ-PROGRESO-001', '@REQ-OBJETIVOS-007'] },
         async ({ page }) => {
             await createObjective(page, {
                 title: `Progress create ${Date.now()}`,
@@ -126,7 +126,7 @@ test.describe('Objectives Progress Updates', () => {
 
     test(
         'objective auto-completes when progress reaches target',
-        { tag: ['@REQ-OBJETIVOS-007', '@REQ-PROGRESO-005'] },
+        { tag: ['@REQ-OBJETIVOS-006', '@REQ-PROGRESO-005'] },
         async ({ page }) => {
             const objective = await createObjective(page, {
                 title: `Auto complete ${Date.now()}`,

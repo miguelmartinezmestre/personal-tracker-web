@@ -1,0 +1,98 @@
+direction: down
+
+legend: {
+  shape: text
+  label: |`md
+| Estados de un objetivo (Convex) | |
+| --- | --- |
+| Estados persistidos | `active`, `completed` (campo `status`) |
+| Pseudo-estados | inicio y decision no se almacenan |
+| Borrado | logico (`deletedAt`/`deletedBy`, reversible con restore) y fisico (purge: cascada) |
+| Transicion automatica | `active` <-> `completed` segun `currentValue >= targetValue` (al crear/borrar progreso o editar) |
+| Deadline | NO transiciona: solo genera notificaciones (cron 8AM) |
+`|
+  style: { font-size: 10; font-color: "#111827" }
+}
+
+inicio: "" {
+  shape: circle
+  width: 28
+  height: 28
+  style: { fill: "#111827"; stroke: "#111827" }
+}
+
+crear: "startValue >= targetValue?" {
+  shape: diamond
+  style: { font-size: 10; fill: "#fef3c7"; stroke: "#d97706" }
+}
+
+active: {
+  shape: text
+  label: |`md
+| **active** | |
+| --- | --- |
+| status | `active` |
+| condicion | `currentValue < targetValue` |
+| completedAt | sin fijar |
+`|
+  style: { font-size: 10; font-color: "#111827"; fill: "#dbeafe"; stroke: "#2563eb"; border-radius: 8 }
+}
+
+completed: {
+  shape: text
+  label: |`md
+| **completed** | |
+| --- | --- |
+| status | `completed` |
+| condicion | `currentValue >= targetValue` |
+| completedAt | fijado (= now) |
+`|
+  style: { font-size: 10; font-color: "#111827"; fill: "#dcfce7"; stroke: "#16a34a"; border-radius: 8 }
+}
+
+soft_deleted: {
+  shape: text
+  label: |`md
+| **soft_deleted** (borrado logico) | |
+| --- | --- |
+| deletedAt / deletedBy | fijados |
+| visibilidad | oculto en consultas |
+| reversible | `restoreObjective` |
+`|
+  style: { font-size: 10; font-color: "#111827"; fill: "#fef9c3"; stroke: "#ca8a04"; border-radius: 8 }
+}
+
+eliminado: "Eliminado (purge)\n(cascada: progressUpdates + notifications)" {
+  shape: circle
+  style: { font-size: 10; fill: "#fee2e2"; stroke: "#dc2626"; double-border: true }
+}
+
+deadline: {
+  shape: text
+  label: |`md
+| _Efecto lateral_ | |
+| --- | --- |
+| cron 8AM | `runDeadlineNotificationsCron` |
+| accion | notificacion "deadline" |
+| estado | **no cambia** |
+`|
+  style: { font-size: 10; font-color: "#6b7280"; stroke-dash: 3 }
+}
+
+inicio -> crear: "createObjective"
+crear -> active: "startValue < targetValue"
+crear -> completed: "startValue >= targetValue"
+
+active -> active: "progreso (meta no alcanzada)"
+active -> completed: "alcanza la meta (o updateObjective)"
+completed -> active: "borra progreso (o updateObjective)"
+
+active -> soft_deleted: "deleteObjective (borrado logico)"
+completed -> soft_deleted: "deleteObjective (borrado logico)"
+soft_deleted -> active: "restoreObjective (recalcula: < target)"
+soft_deleted -> completed: "restoreObjective (recalcula: >= target)"
+soft_deleted -> eliminado: "purgeObjective"
+
+active -> deadline: "deadline proximo" {
+  style: { stroke-dash: 3; stroke: "#6b7280" }
+}

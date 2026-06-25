@@ -11,7 +11,7 @@ async function fillAndAssert(locator: Locator, value: string): Promise<void> {
 test.describe('User Registration', () => {
     test(
         'successful registration with email/password',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -29,7 +29,7 @@ test.describe('User Registration', () => {
 
     test(
         'validation: username is required',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -45,7 +45,7 @@ test.describe('User Registration', () => {
 
     test(
         'validation: email must be valid',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -62,7 +62,7 @@ test.describe('User Registration', () => {
 
     test(
         'validation: password must be at least 8 characters',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -79,7 +79,7 @@ test.describe('User Registration', () => {
 
     test(
         'validation: weak password is rejected',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -96,7 +96,7 @@ test.describe('User Registration', () => {
 
     test(
         'validation: passwords must match',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -113,7 +113,7 @@ test.describe('User Registration', () => {
 
     test(
         'duplicate email shows error',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -144,7 +144,7 @@ test.describe('User Registration', () => {
 
     test(
         'after registration navigates to dashboard',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
 
@@ -165,7 +165,7 @@ test.describe('User Registration', () => {
 
     test(
         'link to login page works',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-018', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             await page.goto('/register');
 

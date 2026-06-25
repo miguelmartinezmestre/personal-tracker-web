@@ -54,7 +54,7 @@ test.describe('Dashboard Home', () => {
 
     test(
         'upcoming deadlines section is visible',
-        { tag: ['@REQ-DASHBOARD-004', '@REQ-DASHBOARD-006'] },
+        { tag: ['@REQ-DASHBOARD-004', '@REQ-DASHBOARD-005'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
 
@@ -65,7 +65,7 @@ test.describe('Dashboard Home', () => {
 
     test(
         'recent activity section is visible',
-        { tag: ['@REQ-DASHBOARD-007'] },
+        { tag: ['@REQ-DASHBOARD-006'] },
         async ({ authenticatedPage }) => {
             await authenticatedPage.goto('/dashboard/home');
 
