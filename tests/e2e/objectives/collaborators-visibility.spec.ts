@@ -4,7 +4,7 @@ import { createObjective } from '../../helpers/test-helpers';
 test.describe('Objective visibility creation', () => {
     test(
         'create private objective by default',
-        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-COLABORACION-004'] },
         async ({ page }) => {
             const title = `Private objective ${Date.now()}`;
             await createObjective(page, {
@@ -20,7 +20,7 @@ test.describe('Objective visibility creation', () => {
 
     test(
         'create organization-visible objective',
-        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-005'] },
+        { tag: ['@REQ-OBJETIVOS-001', '@REQ-COLABORACION-004'] },
         async ({ page }) => {
             const title = `Org-wide objective ${Date.now()}`;
             await createObjective(page, {

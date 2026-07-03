@@ -3,7 +3,7 @@ import { createTestUser, createOrganization } from '../../helpers/test-helpers';
 import { UserFactory } from '../../helpers/factories';
 
 test.describe('Organization Invitations', () => {
-    test('invite member by email', { tag: ['@REQ-EQUIPOS-003'] }, async ({ page }) => {
+    test('invite member by email', { tag: ['@REQ-EQUIPOS-002'] }, async ({ page }) => {
         const organization = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
 
         await page.goto('/dashboard/organizations');
@@ -51,7 +51,7 @@ test.describe('Organization Invitations', () => {
         ).toBeTruthy();
     });
 
-    test('view pending invitations sent', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
+    test('view pending invitations sent', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
         const organization = await createOrganization(page);
 
         await page.goto('/dashboard/organizations');
@@ -119,7 +119,7 @@ test.describe('Organization Invitations', () => {
         }
     });
 
-    test('view pending invitations received', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
+    test('view pending invitations received', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
         await page.goto('/dashboard/invitations', { waitUntil: 'domcontentloaded' });
 
         await expect(page).toHaveURL(/\/dashboard\/invitations/);
@@ -128,7 +128,7 @@ test.describe('Organization Invitations', () => {
         ).toBeVisible({ timeout: 15_000 });
     });
 
-    test('accept invitation as existing user', { tag: ['@REQ-EQUIPOS-008'] }, async ({ page }) => {
+    test('accept invitation as existing user', { tag: ['@REQ-EQUIPOS-006'] }, async ({ page }) => {
         await createTestUser(page);
         const organization = await createOrganization(page, {
             name: `Accept Org ${Date.now()}`,
@@ -163,7 +163,7 @@ test.describe('Organization Invitations', () => {
         }
     });
 
-    test('decline invitation', { tag: ['@REQ-EQUIPOS-008'] }, async ({ page }) => {
+    test('decline invitation', { tag: ['@REQ-EQUIPOS-006'] }, async ({ page }) => {
         await page.goto('/dashboard/invitations');
         await page.waitForLoadState('domcontentloaded');
 

@@ -195,7 +195,7 @@ test.describe('Route Protection', () => {
 
     test(
         'session expires after logout',
-        { tag: ['@REQ-AUTENTICACION-005', '@REQ-NF-006', '@cross-browser'] },
+        { tag: ['@REQ-AUTENTICACION-005', '@REQ-NF-003', '@cross-browser'] },
         async ({ page }) => {
             await createTestUser(page);
             await expectOnDashboard(page);
@@ -267,7 +267,7 @@ test.describe('Route Protection', () => {
     test.describe('Security', () => {
         test(
             'user A cannot access user B objectives',
-            { tag: ['@REQ-SEGURIDAD-001', '@REQ-OBJETIVOS-004'] },
+            { tag: ['@REQ-NF-004'] },
             async ({ browser }) => {
                 const contextA = await browser.newContext();
                 const pageA = await contextA.newPage();
@@ -296,7 +296,7 @@ test.describe('Route Protection', () => {
 
         test(
             'member cannot access admin audit logs',
-            { tag: ['@REQ-SEGURIDAD-002', '@REQ-ADMIN-001'] },
+            { tag: ['@REQ-ROLES-002', '@REQ-NF-004'] },
             async ({ browser }) => {
                 const context = await browser.newContext();
                 const page = await context.newPage();
@@ -329,7 +329,7 @@ test.describe('Route Protection', () => {
 
         test(
             'member cannot access admin sessions',
-            { tag: ['@REQ-SEGURIDAD-002', '@REQ-ADMIN-001'] },
+            { tag: ['@REQ-ROLES-002', '@REQ-NF-004'] },
             async ({ browser }) => {
                 const context = await browser.newContext();
                 const page = await context.newPage();
@@ -362,7 +362,7 @@ test.describe('Route Protection', () => {
 
         test(
             'expired invitation should not work',
-            { tag: ['@REQ-SEGURIDAD-003', '@REQ-EQUIPOS-008'] },
+            { tag: ['@REQ-EQUIPOS-006', '@REQ-NF-004'] },
             async ({ page, browser }) => {
                 const adminContext = await browser.newContext({
                     storageState: 'tests/.auth/admin-user.json',

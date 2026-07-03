@@ -21,7 +21,7 @@ async function openOrganizationDetail(page: Page, organizationName?: string) {
 }
 
 test.describe('Organization Members', () => {
-    test('view organization members', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
+    test('view organization members', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
         await openOrganizationDetail(page);
 
         const membersSection = page.locator('text=/members|miembros/i');
@@ -38,7 +38,7 @@ test.describe('Organization Members', () => {
         expect(await memberList.count()).toBeGreaterThan(0);
     });
 
-    test('owner can see all members', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
+    test('owner can see all members', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
         const org = await createOrganization(page);
 
         await openOrganizationDetail(page, org.name);
@@ -54,7 +54,7 @@ test.describe('Organization Members', () => {
         expect(hasInviteButton || hasMemberList).toBeTruthy();
     });
 
-    test('remove member from organization', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
+    test('remove member from organization', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
         const org = await createOrganization(page);
 
         await openOrganizationDetail(page, org.name);
@@ -65,7 +65,7 @@ test.describe('Organization Members', () => {
         await removeButton.count();
     });
 
-    test('member role is displayed', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
+    test('member role is displayed', { tag: ['@REQ-EQUIPOS-003'] }, async ({ page }) => {
         await openOrganizationDetail(page);
 
         const membersTable = page.getByTestId('organization-members-table');
@@ -81,7 +81,7 @@ test.describe('Organization Members', () => {
         expect(await rows.count()).toBeGreaterThan(0);
     });
 
-    test('owner cannot be removed', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
+    test('owner cannot be removed', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
         await openOrganizationDetail(page);
 
         const ownerRow = page.getByTestId('table-row').filter({ hasText: /owner/i });
@@ -97,7 +97,7 @@ test.describe('Organization Members', () => {
         }
     });
 
-    test('member list shows email', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
+    test('member list shows email', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
         await openOrganizationDetail(page);
 
         const emailDisplay = page.getByText(/@.*\.com|@.*\.test/);
@@ -105,7 +105,7 @@ test.describe('Organization Members', () => {
         expect(hasEmail).toBeTruthy();
     });
 
-    test('member joined date is displayed', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
+    test('member joined date is displayed', { tag: ['@REQ-EQUIPOS-004'] }, async ({ page }) => {
         await openOrganizationDetail(page);
 
         const dateDisplay = page.getByText(/\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|ago|hace/);

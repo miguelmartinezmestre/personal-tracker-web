@@ -111,7 +111,7 @@ test.describe('Settings', () => {
 
     test(
         'password tab: change password successfully',
-        { tag: ['@REQ-AUTENTICACION-005'] },
+        { tag: ['@REQ-AUTENTICACION-004'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();
@@ -129,7 +129,7 @@ test.describe('Settings', () => {
 
     test(
         'password tab: wrong current password shows error',
-        { tag: ['@REQ-AUTENTICACION-005'] },
+        { tag: ['@REQ-AUTENTICACION-004'] },
         async ({ isolatedAuthenticatedPage }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();
@@ -146,7 +146,7 @@ test.describe('Settings', () => {
 
     test(
         'password tab: passwords do not match shows validation error',
-        { tag: ['@REQ-AUTENTICACION-005'] },
+        { tag: ['@REQ-AUTENTICACION-004'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();
@@ -168,7 +168,7 @@ test.describe('Settings', () => {
 
     test(
         'danger zone: delete button disabled until email confirmed',
-        { tag: ['@REQ-AUTENTICACION-008'] },
+        { tag: ['@REQ-AUTENTICACION-009'] },
         async ({ isolatedAuthenticatedPage }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();
@@ -182,7 +182,7 @@ test.describe('Settings', () => {
 
     test(
         'danger zone: delete button enabled after email and password filled',
-        { tag: ['@REQ-AUTENTICACION-008'] },
+        { tag: ['@REQ-AUTENTICACION-009'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();
@@ -198,7 +198,7 @@ test.describe('Settings', () => {
 
     test(
         'danger zone: delete account redirects to landing',
-        { tag: ['@REQ-AUTENTICACION-008'] },
+        { tag: ['@REQ-AUTENTICACION-009'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();

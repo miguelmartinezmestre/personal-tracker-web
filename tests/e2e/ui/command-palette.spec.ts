@@ -3,7 +3,7 @@ import { test, expect } from '../../fixtures/test-base';
 test.describe('Command Palette', () => {
     test(
         'Cmd+K opens the command palette',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-013'] },
         async ({ isolatedAuthenticatedPage }) => {
             await isolatedAuthenticatedPage.goto('/dashboard/home');
             await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
@@ -24,7 +24,7 @@ test.describe('Command Palette', () => {
 
     test(
         'typing filters command items',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-013'] },
         async ({ isolatedAuthenticatedPage }) => {
             await isolatedAuthenticatedPage.goto('/dashboard/home');
             await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
@@ -48,7 +48,7 @@ test.describe('Command Palette', () => {
 
     test(
         'selecting item navigates to the correct page',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-013'] },
         async ({ isolatedAuthenticatedPage }) => {
             await isolatedAuthenticatedPage.goto('/dashboard/home');
             await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
@@ -74,7 +74,7 @@ test.describe('Command Palette', () => {
 
     test(
         'Escape closes the command palette',
-        { tag: ['@REQ-NF-021'] },
+        { tag: ['@REQ-NF-013'] },
         async ({ isolatedAuthenticatedPage }) => {
             await isolatedAuthenticatedPage.goto('/dashboard/home');
             await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');

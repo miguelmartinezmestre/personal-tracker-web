@@ -120,7 +120,7 @@ test.describe('Double Submit Prevention', () => {
     test.describe('Account Settings Form', () => {
         test(
             'prevents double submit on account settings update',
-            { tag: ['@REQ-USUARIO-001', '@security'] },
+            { tag: ['@REQ-AUTENTICACION-004', '@security'] },
             async ({ page }) => {
                 const user = await loginUser(page);
 
@@ -146,7 +146,7 @@ test.describe('Double Submit Prevention', () => {
     test.describe('Organization Forms', () => {
         test(
             'prevents double submit on create organization modal',
-            { tag: ['@REQ-ORGANIZACION-001', '@security'] },
+            { tag: ['@REQ-EQUIPOS-001', '@security'] },
             async ({ page }) => {
                 await loginUser(page);
 
@@ -177,7 +177,7 @@ test.describe('Double Submit Prevention', () => {
 
         test(
             'prevents double submit on edit organization modal',
-            { tag: ['@REQ-ORGANIZACION-002', '@security'] },
+            { tag: ['@REQ-EQUIPOS-007', '@security'] },
             async ({ page }) => {
                 await loginUser(page);
 
@@ -216,7 +216,7 @@ test.describe('Double Submit Prevention', () => {
     test.describe('Organization Members Forms', () => {
         test(
             'prevents double submit on create organization member modal',
-            { tag: ['@REQ-ORGANIZACION-003', '@security'] },
+            { tag: ['@REQ-EQUIPOS-004', '@security'] },
             async ({ page }) => {
                 await loginUser(page);
 
@@ -249,7 +249,7 @@ test.describe('Double Submit Prevention', () => {
     test.describe('Progress Update Forms', () => {
         test(
             'prevents double submit on edit progress modal',
-            { tag: ['@REQ-OBJETIVO-004', '@security'] },
+            { tag: ['@REQ-PROGRESO-003', '@security'] },
             async ({ page }) => {
                 await loginUser(page);
 
