@@ -8,7 +8,7 @@ import { useAuditLogsTableColumns } from './audit-logs-table-columns';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
 import { Doc } from '@/convex/_generated/dataModel';
-import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 export function AuditLogsTable() {
     const t = useTranslations('Admin');

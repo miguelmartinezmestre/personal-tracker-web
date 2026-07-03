@@ -10,7 +10,7 @@ import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { FilterOptions } from '@/features/objectives/components/objective-filters';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
-import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',

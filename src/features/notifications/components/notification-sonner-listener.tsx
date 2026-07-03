@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
-import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 export function NotificationSonnerListener() {
     const { data } = useQuery(

@@ -1,5 +1,5 @@
 import { useReducer } from 'react';
-import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 type State = {
     currentPage: number;

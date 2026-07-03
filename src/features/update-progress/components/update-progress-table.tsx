@@ -25,7 +25,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { formatDate, formatTime } from '@/lib/format-date';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
+import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 const MOBILE_SKELETON_ITEMS = [1, 2, 3];
 

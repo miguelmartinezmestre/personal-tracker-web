@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import type { Id } from '@/convex/_generated/dataModel';
 import { FunctionReturnType } from 'convex/server';
-import { ADMIN_PAGE_SIZE } from '@/lib/pagination';
+import { ADMIN_PAGE_SIZE } from '@shared/pagination';
 
 type UserSessionsQueryResult = FunctionReturnType<typeof api.admin.listUserSessions>;
 
