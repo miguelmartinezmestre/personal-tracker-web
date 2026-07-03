@@ -12,7 +12,7 @@ import {
 import { ERROR_CODES, OBJECTIVE_VISIBILITY } from './utils/constants';
 import { withInvalidCursorRetry } from './utils/pagination';
 import { validateObjectiveMetrics } from './domain/objectives/metrics';
-import { getCategoryForObjective } from './domain/objectives/categoryResolution';
+import { getCategoryForObjective } from './domain/objectives/access';
 import { deadlineRangeValidator } from './domain/objectives/filters';
 import { runObjectiveSync } from './domain/objectives/workflowSync';
 import { workflow } from './workflow';

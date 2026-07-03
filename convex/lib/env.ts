@@ -1,4 +1,6 @@
-import { authEnv } from './authEnv';
+export const authEnv = {
+    JWKS: process.env['JWKS']?.trim() ? process.env['JWKS']?.trim() : undefined,
+} as const;
 
 const isLocalE2E =
     Boolean(process.env.E2E_SETUP_SECRET) &&
