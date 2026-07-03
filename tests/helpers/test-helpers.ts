@@ -62,12 +62,14 @@ export function generateTestUserData(options?: CreateTestUserOptions): TestUserD
         organizationSlug =
             options?.customOrganizationSlug ?? createSafeSlug(options.customUsername, shortId);
     } else if (options?.usePresentableName) {
-        const presentableNames = ['Miguel Garcia', 'Ana Martinez', 'Carlos Lopez'];
-        const randomName =
-            presentableNames[Math.floor(Math.random() * presentableNames.length)] ?? 'Test User';
-        username = randomName;
-        email = `${normalizeForEmail(randomName)}.${shortId}@example.com`;
-        organizationSlug = createSafeSlug(randomName, shortId);
+        const presentableNames = ['Miguel García', 'Ana Martínez', 'Carlos López'];
+        // Deterministic pick derived from the generated id (no Math.random) so screenshots
+        // and fixtures stay stable across runs while different calls still vary.
+        const presentableName =
+            presentableNames[shortId.charCodeAt(0) % presentableNames.length] ?? 'Test User';
+        username = presentableName;
+        email = `${normalizeForEmail(presentableName)}.${shortId}@example.com`;
+        organizationSlug = createSafeSlug(presentableName, shortId);
     } else {
         username = `testuser-${shortId}`;
         email = `testuser-${shortId}@test.com`;
@@ -184,7 +186,7 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
             }
         }
 
-        const organizationName = `Test Org ${Date.now()}`;
+        const organizationName = 'Personal Workspace';
         await createOrganization(page, {
             name: organizationName,
             description: 'Created from the Playwright UI setup flow',

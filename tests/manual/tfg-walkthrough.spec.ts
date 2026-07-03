@@ -157,7 +157,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForLoadState('networkidle');
         await takeTFGScreenshot(page, 'auth-reset-password', 'Reset password form');
 
-        const user = await createTestUser(page, { usePresentableName: true });
+        const user = await createTestUser(page, { customUsername: 'Miguel García' });
         console.log(`Created test user: ${user.username} (${user.email})`);
         await takeTFGScreenshot(
             page,

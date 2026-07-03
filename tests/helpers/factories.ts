@@ -14,9 +14,15 @@ export const UserFactory = {
 
     createPresentable(overrides?: Partial<UserData>): UserData {
         const shortId = randomUUID().substring(0, 8);
-        const names = ['Miguel Garcia', 'Ana Martinez', 'Carlos Lopez', 'Laura Sanchez'];
-        const name = names[Math.floor(Math.random() * names.length)] ?? 'Test User';
-        const normalizedName = name.toLowerCase().replace(/\s+/g, '.');
+        const names = ['Miguel García', 'Ana Martínez', 'Carlos López', 'Laura Sánchez'];
+        // Deterministic pick derived from the generated id (no Math.random) so fixtures
+        // stay stable across runs while different calls still vary.
+        const name = names[shortId.charCodeAt(0) % names.length] ?? 'Test User';
+        const normalizedName = name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[̀-ͯ]/g, '')
+            .replace(/\s+/g, '.');
 
         return {
             username: name,
