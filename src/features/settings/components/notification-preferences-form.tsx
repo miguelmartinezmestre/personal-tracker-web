@@ -43,7 +43,7 @@ export default function NotificationPreferencesForm() {
     ) => {
         if (!preferences) return;
 
-        const currentValue = preferences[field] ?? true;
+        const currentValue = preferences[field] ?? false;
         updateMutation.mutate({
             [field]: !currentValue,
         });
