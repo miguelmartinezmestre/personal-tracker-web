@@ -74,10 +74,10 @@ export class SettingsPage {
         await this.emailInput.fill(email);
     }
 
-    async fillPasswordForm(currentPassword: string, confirmPassword: string, newPassword: string) {
+    async fillPasswordForm(currentPassword: string, newPassword: string, confirmPassword: string) {
         await this.currentPasswordInput.fill(currentPassword);
-        await this.confirmPasswordInput.fill(confirmPassword);
         await this.newPasswordInput.fill(newPassword);
+        await this.confirmPasswordInput.fill(confirmPassword);
     }
 
     async fillDeleteAccountForm(email: string, password: string) {

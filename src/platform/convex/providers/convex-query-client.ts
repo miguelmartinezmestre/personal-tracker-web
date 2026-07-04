@@ -5,6 +5,7 @@ import { MutationCache, QueryClient } from '@tanstack/react-query';
 import { ConvexReactClient } from 'convex/react';
 import { toast } from 'sonner';
 import { env } from '@/lib/env';
+import { getErrorLocale, resolveErrorMessage } from '@/lib/error-messages';
 
 export const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
 
@@ -19,7 +20,9 @@ export const queryClient = new QueryClient({
     },
     mutationCache: new MutationCache({
         onError: error => {
-            toast(error.message, { className: 'bg-red-500 text-white' });
+            toast(resolveErrorMessage(error, getErrorLocale()), {
+                className: 'bg-red-500 text-white',
+            });
         },
     }),
 });

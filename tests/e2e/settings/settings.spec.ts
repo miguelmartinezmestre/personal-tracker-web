@@ -119,7 +119,7 @@ test.describe('Settings', () => {
             await settings.switchToPassword();
             await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-            const newPassword = 'newpassword123';
+            const newPassword = 'Newpassword123';
             await settings.fillPasswordForm(isolatedTestUser.password, newPassword, newPassword);
             await settings.passwordSaveButton.click();
 
@@ -137,7 +137,7 @@ test.describe('Settings', () => {
             await settings.switchToPassword();
             await expect(settings.currentPasswordInput).toBeVisible({ timeout: 10000 });
 
-            await settings.fillPasswordForm('wrongpassword', 'newpassword123', 'newpassword123');
+            await settings.fillPasswordForm('wrongpassword', 'Newpassword123', 'Newpassword123');
             await settings.passwordSaveButton.click();
 
             await expect(settings.passwordErrorMessage).toBeVisible({ timeout: 10000 });
@@ -156,7 +156,7 @@ test.describe('Settings', () => {
 
             await settings.currentPasswordInput.fill(isolatedTestUser.password);
             await settings.confirmPasswordInput.fill('doesnotmatch');
-            await settings.newPasswordInput.fill('newpassword123');
+            await settings.newPasswordInput.fill('Newpassword123');
             await settings.passwordSaveButton.click();
 
             const formError = isolatedAuthenticatedPage.locator(
