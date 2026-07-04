@@ -18,10 +18,11 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
 import { toast } from 'sonner';
-import { getMessageOrFallback, getErrorMessage } from '@/lib/error-utils';
+import { useErrorMessage } from '@/hooks/use-error-message';
 
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
+    const getErrorMessage = useErrorMessage();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -65,10 +66,7 @@ export default function PasswordFormEdit() {
             });
 
             if (result.error) {
-                const errorMessage = getMessageOrFallback(
-                    result.error.message,
-                    fallbackErrorMessage
-                );
+                const errorMessage = getErrorMessage(result.error, fallbackErrorMessage);
                 setError(errorMessage);
                 toast.error(errorMessage);
             } else {

@@ -21,30 +21,42 @@ export const getDashboardStats = queryWithRLS({
             return { totalObjectives: 0, completedObjectives: 0, pendingObjectives: 0 };
         }
 
-        const objectives = (
-            await ctx.db
-                .query('objectives')
-                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                .take(LIST_LIMIT)
-        ).filter(objective => objective.deletedAt === undefined);
-
         const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
             ctx,
             ctx.userId,
             organizationId
         );
-        const visibleObjectives = objectives.filter(objective =>
-            canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
-        );
 
-        return {
-            totalObjectives: visibleObjectives.length,
-            completedObjectives: visibleObjectives.filter(
-                objective => objective.status === 'completed'
-            ).length,
-            pendingObjectives: visibleObjectives.filter(objective => objective.status === 'active')
-                .length,
-        };
+        // Count across all pages so totals stay correct beyond LIST_LIMIT
+        // objectives (a single take(1000) silently truncated large organizations).
+        let totalObjectives = 0;
+        let completedObjectives = 0;
+        let pendingObjectives = 0;
+        let cursor: string | null = null;
+        let isDone = false;
+
+        while (!isDone) {
+            const page = await ctx.db
+                .query('objectives')
+                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                .paginate({ numItems: 200, cursor });
+
+            for (const objective of page.page) {
+                if (objective.deletedAt !== undefined) continue;
+                if (!canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)) continue;
+                totalObjectives += 1;
+                if (objective.status === 'completed') {
+                    completedObjectives += 1;
+                } else {
+                    pendingObjectives += 1;
+                }
+            }
+
+            isDone = page.isDone;
+            cursor = page.continueCursor;
+        }
+
+        return { totalObjectives, completedObjectives, pendingObjectives };
     },
 });
 
@@ -52,11 +64,14 @@ export const getMonthlyProgress = queryWithRLS({
     args: {
         months: v.optional(v.number()),
     },
-    returns: v.array(v.object({ month: v.string(), monthKey: v.string(), count: v.number() })),
+    returns: v.object({
+        items: v.array(v.object({ month: v.string(), monthKey: v.string(), count: v.number() })),
+        isTruncated: v.boolean(),
+    }),
     handler: async (ctx, args) => {
         const organizationId = ctx.organizationId;
         if (!organizationId) {
-            return [];
+            return { items: [], isTruncated: false };
         }
 
         const userId = ctx.userId;
@@ -66,7 +81,7 @@ export const getMonthlyProgress = queryWithRLS({
         const oldestDate = new Date(now.getFullYear(), now.getMonth() - (monthsToFetch - 1), 1);
         const startDate = oldestDate.getTime();
 
-        const userUpdates = await ctx.db
+        const userUpdatesRaw = await ctx.db
             .query('progressUpdates')
             .withIndex('by_createdBy_organization_date', q =>
                 q
@@ -74,7 +89,9 @@ export const getMonthlyProgress = queryWithRLS({
                     .eq('organizationId', organizationId)
                     .gte('updateDate', startDate)
             )
-            .take(LIST_LIMIT);
+            .take(LIST_LIMIT + 1);
+        const isTruncated = userUpdatesRaw.length > LIST_LIMIT;
+        const userUpdates = userUpdatesRaw.slice(0, LIST_LIMIT);
 
         const monthsData: { month: string; monthKey: string; count: number }[] = [];
 
@@ -96,7 +113,7 @@ export const getMonthlyProgress = queryWithRLS({
             });
         }
 
-        return monthsData;
+        return { items: monthsData, isTruncated };
     },
 });
 
@@ -104,21 +121,24 @@ export const getObjectivesWithMostProgress = queryWithRLS({
     args: {
         limit: v.optional(v.number()),
     },
-    returns: v.array(
-        v.object({
-            id: v.id('objectives'),
-            objective: v.string(),
-            progress: v.number(),
-            status: objectiveStatusValidator,
-        })
-    ),
+    returns: v.object({
+        items: v.array(
+            v.object({
+                id: v.id('objectives'),
+                objective: v.string(),
+                progress: v.number(),
+                status: objectiveStatusValidator,
+            })
+        ),
+        isTruncated: v.boolean(),
+    }),
     handler: async (ctx, args) => {
         const organizationId = ctx.organizationId;
         const MAX_QUERY_LIMIT = 100;
         const maxItems = Math.min(args.limit ?? PAGINATION.DASHBOARD_LIMIT, MAX_QUERY_LIMIT);
 
         if (!organizationId) {
-            return [];
+            return { items: [], isTruncated: false };
         }
 
         const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
@@ -127,16 +147,18 @@ export const getObjectivesWithMostProgress = queryWithRLS({
             organizationId
         );
 
-        const objectives = (
-            await ctx.db
-                .query('objectives')
-                .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                .take(LIST_LIMIT)
-        ).filter(
-            objective =>
-                objective.deletedAt === undefined &&
-                canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
-        );
+        const objectiveRows = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+            .take(LIST_LIMIT + 1);
+        const isTruncated = objectiveRows.length > LIST_LIMIT;
+        const objectives = objectiveRows
+            .slice(0, LIST_LIMIT)
+            .filter(
+                objective =>
+                    objective.deletedAt === undefined &&
+                    canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
+            );
 
         const objectivesWithProgress = objectives
             .filter(objective => objective.status === 'active')
@@ -156,7 +178,7 @@ export const getObjectivesWithMostProgress = queryWithRLS({
             .sort((a, b) => b.progress - a.progress)
             .slice(0, maxItems);
 
-        return objectivesWithProgress;
+        return { items: objectivesWithProgress, isTruncated };
     },
 });
 
@@ -164,15 +186,18 @@ export const getUpcomingDeadlines = queryWithRLS({
     args: {
         days: v.optional(v.number()),
     },
-    returns: v.array(
-        v.object({
-            id: v.id('objectives'),
-            title: v.string(),
-            deadline: v.number(),
-            daysRemaining: v.number(),
-            progress: v.number(),
-        })
-    ),
+    returns: v.object({
+        items: v.array(
+            v.object({
+                id: v.id('objectives'),
+                title: v.string(),
+                deadline: v.number(),
+                daysRemaining: v.number(),
+                progress: v.number(),
+            })
+        ),
+        isTruncated: v.boolean(),
+    }),
     handler: async (ctx, args) => {
         const organizationId = ctx.organizationId;
         const daysAhead = args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD;
@@ -180,7 +205,7 @@ export const getUpcomingDeadlines = queryWithRLS({
         const futureLimit = now + daysAhead * TIME.DAY_MS;
 
         if (!organizationId) {
-            return [];
+            return { items: [], isTruncated: false };
         }
 
         const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
@@ -189,21 +214,23 @@ export const getUpcomingDeadlines = queryWithRLS({
             organizationId
         );
 
-        const objectives = (
-            await ctx.db
-                .query('objectives')
-                .withIndex('by_organization_deadline', q =>
-                    q
-                        .eq('organizationId', organizationId)
-                        .gt('deadline', now - 1)
-                        .lt('deadline', futureLimit + 1)
-                )
-                .take(LIST_LIMIT)
-        ).filter(
-            objective =>
-                objective.deletedAt === undefined &&
-                canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
-        );
+        const objectiveRows = await ctx.db
+            .query('objectives')
+            .withIndex('by_organization_deadline', q =>
+                q
+                    .eq('organizationId', organizationId)
+                    .gt('deadline', now - 1)
+                    .lt('deadline', futureLimit + 1)
+            )
+            .take(LIST_LIMIT + 1);
+        const isTruncated = objectiveRows.length > LIST_LIMIT;
+        const objectives = objectiveRows
+            .slice(0, LIST_LIMIT)
+            .filter(
+                objective =>
+                    objective.deletedAt === undefined &&
+                    canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds)
+            );
 
         const upcomingDeadlines = objectives
             .filter(
@@ -226,7 +253,7 @@ export const getUpcomingDeadlines = queryWithRLS({
             })
             .sort((a, b) => a.deadline - b.deadline);
 
-        return upcomingDeadlines;
+        return { items: upcomingDeadlines, isTruncated };
     },
 });
 
@@ -239,6 +266,7 @@ export const getRecentActivity = queryWithRLS({
         objectivesCreatedCount: v.number(),
         objectivesCompletedCount: v.number(),
         periodDays: v.number(),
+        isTruncated: v.boolean(),
     }),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
@@ -252,6 +280,7 @@ export const getRecentActivity = queryWithRLS({
                 objectivesCreatedCount: 0,
                 objectivesCompletedCount: 0,
                 periodDays: daysBack,
+                isTruncated: false,
             };
         }
 
@@ -261,7 +290,7 @@ export const getRecentActivity = queryWithRLS({
             .query('objectives')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
             .order('desc')
-            .take(LIST_LIMIT);
+            .take(LIST_LIMIT + 1);
 
         const recentUpdatesPromise = ctx.db
             .query('progressUpdates')
@@ -271,12 +300,16 @@ export const getRecentActivity = queryWithRLS({
                     .eq('organizationId', organizationId)
                     .gte('updateDate', startDate)
             )
-            .take(100);
+            .take(101);
 
-        const [organizationObjectives, recentUpdates] = await Promise.all([
+        const [organizationObjectiveRows, recentUpdateRows] = await Promise.all([
             organizationObjectivesPromise,
             recentUpdatesPromise,
         ]);
+        const isTruncated =
+            organizationObjectiveRows.length > LIST_LIMIT || recentUpdateRows.length > 100;
+        const organizationObjectives = organizationObjectiveRows.slice(0, LIST_LIMIT);
+        const recentUpdates = recentUpdateRows.slice(0, 100);
 
         const recentObjectives = organizationObjectives.filter(
             objective => objective.deletedAt === undefined && objective.createdAt >= startDate
@@ -293,6 +326,7 @@ export const getRecentActivity = queryWithRLS({
             objectivesCreatedCount: recentObjectives.length,
             objectivesCompletedCount: recentlyCompleted.length,
             periodDays: daysBack,
+            isTruncated,
         };
     },
 });

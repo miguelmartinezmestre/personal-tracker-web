@@ -45,6 +45,10 @@ export async function runDeadlineNotificationsJob(
     const existingSet = new Set<string>();
 
     for (const objective of objectives) {
+        if (objective.deletedAt !== undefined) {
+            skipped += 1;
+            continue;
+        }
         if (!objective.deadline) continue;
 
         const message = buildDeadlineMessage(objective, now, dayStart, dayEnd);

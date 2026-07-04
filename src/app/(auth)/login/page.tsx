@@ -3,6 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Login({
     searchParams,
 }: {

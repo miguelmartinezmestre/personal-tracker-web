@@ -190,6 +190,16 @@ describe('objective layered permissions integration', () => {
         });
         expect(hidden).toBeNull();
 
+        const editorList = await editorIdentity.query(api.objectives.getObjectives, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
+        expect(editorList.page.some(objective => objective._id === privateObjectiveId)).toBe(false);
+
+        const editorSearch = await editorIdentity.query(api.objectives.searchObjectivesQuery, {
+            search: 'Private objective',
+        });
+        expect(editorSearch.some(objective => objective._id === privateObjectiveId)).toBe(false);
+
         const restored = await ownerIdentity.mutation(api.objectives.restoreObjective, {
             id: privateObjectiveId,
         });

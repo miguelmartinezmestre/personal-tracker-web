@@ -1,5 +1,12 @@
 import { v } from 'convex/values';
 
+export const setupDefaultLanguageValidator = v.union(v.literal('en'), v.literal('es'));
+
+export const setupRegistrationPolicyValidator = v.union(
+    v.literal('open'),
+    v.literal('invitation-only')
+);
+
 export const setupCategoryValidator = v.object({
     name: v.string(),
     color: v.string(),
@@ -8,8 +15,8 @@ export const setupCategoryValidator = v.object({
 
 export const completeSetupArgsValidator = {
     platformName: v.string(),
-    defaultLanguage: v.string(),
-    registrationPolicy: v.string(),
+    defaultLanguage: setupDefaultLanguageValidator,
+    registrationPolicy: setupRegistrationPolicyValidator,
     organizationName: v.string(),
     organizationLogo: v.optional(v.string()),
     categories: v.array(setupCategoryValidator),

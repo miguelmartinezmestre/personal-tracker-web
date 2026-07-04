@@ -6,7 +6,6 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = {
     deadlineNotifications: true,
     progressNotifications: true,
     organizationNotifications: true,
-    emailDigestEnabled: false,
 };
 
 export type NotificationPreferencePatch = Partial<typeof DEFAULT_NOTIFICATION_PREFERENCES>;
@@ -35,9 +34,6 @@ export async function getNotificationPreferencesForUser(
             organizationNotifications:
                 preferences.organizationNotifications ??
                 DEFAULT_NOTIFICATION_PREFERENCES.organizationNotifications,
-            emailDigestEnabled:
-                preferences.emailDigestEnabled ??
-                DEFAULT_NOTIFICATION_PREFERENCES.emailDigestEnabled,
         };
     }
 
@@ -78,9 +74,6 @@ export async function updateNotificationPreferencesForUser(
         if (patch.organizationNotifications !== undefined) {
             updateFields.organizationNotifications = patch.organizationNotifications;
         }
-        if (patch.emailDigestEnabled !== undefined) {
-            updateFields.emailDigestEnabled = patch.emailDigestEnabled;
-        }
 
         await ctx.db.patch(existing._id, updateFields);
 
@@ -102,8 +95,6 @@ export async function updateNotificationPreferencesForUser(
         organizationNotifications:
             patch.organizationNotifications ??
             DEFAULT_NOTIFICATION_PREFERENCES.organizationNotifications,
-        emailDigestEnabled:
-            patch.emailDigestEnabled ?? DEFAULT_NOTIFICATION_PREFERENCES.emailDigestEnabled,
         createdAt: now,
         updatedAt: now,
     });

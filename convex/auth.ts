@@ -175,6 +175,12 @@ export default defineAuth(
                 delete: {
                     before: async user => {
                         await assertUserIsNotPlatformSetupUser(ctx, user.id as Id<'user'>);
+                        // Cascade-clean the account's app data before the row is
+                        // removed so nothing is left pointing at a deleted user.
+                        await (ctx as RunnableCtx).runMutation(
+                            internal.admin.cascadeUserDeletionInternal,
+                            { userId: user.id as Id<'user'> }
+                        );
                         return true;
                     },
                 },
@@ -182,7 +188,11 @@ export default defineAuth(
         },
         hooks: {
             before: createAuthMiddleware(async ctx => {
-                const pathsWithStrongPassword = ['/sign-up/email', '/reset-password'];
+                const pathsWithStrongPassword = [
+                    '/sign-up/email',
+                    '/reset-password',
+                    '/change-password',
+                ];
                 if (!pathsWithStrongPassword.includes(ctx.path)) {
                     return;
                 }

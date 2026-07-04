@@ -7,6 +7,8 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
 
+export const dynamic = 'force-dynamic';
+
 export default async function RouteComponent() {
     if (!(await checkPlatformSetUp())) redirect('/setup');
 
@@ -99,9 +101,9 @@ export default async function RouteComponent() {
                             <Card className="h-full">
                                 <CardHeader>
                                     <Lightbulb className="h-8 w-8 text-primary" />
-                                    <CardTitle>{t('reports')}</CardTitle>
+                                    <CardTitle>{t('analytics')}</CardTitle>
                                 </CardHeader>
-                                <CardContent>{t('reportsDescription')}</CardContent>
+                                <CardContent>{t('analyticsDescription')}</CardContent>
                             </Card>
                         </div>
                     </div>

@@ -98,7 +98,7 @@ describe('performance tests', async () => {
             const result = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
             const duration = Date.now() - start;
 
-            expect(result).toHaveLength(6);
+            expect(result.items).toHaveLength(6);
             expect(duration).toBeLessThan(3000);
         });
 

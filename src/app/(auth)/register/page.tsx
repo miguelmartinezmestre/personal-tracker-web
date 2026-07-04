@@ -10,6 +10,8 @@ interface RegisterProps {
     searchParams: Promise<{ invitation?: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function Register({ searchParams }: RegisterProps) {
     if (!(await checkPlatformSetUp())) redirect('/setup');
 
@@ -21,8 +23,9 @@ export default async function Register({ searchParams }: RegisterProps) {
 
     const client = new ConvexHttpClient(env.NEXT_PUBLIC_CONVEX_URL);
     const settings = await client.query(api.setup.getPublicPlatformSettings);
+    const registrationRequiresInvitation = settings?.registrationPolicy !== 'open';
 
-    if (settings?.registrationPolicy === 'invitation-only' && !params.invitation) {
+    if (registrationRequiresInvitation && !params.invitation) {
         return (
             <div className="w-full max-w-md rounded-xl shadow-lg p-8 border text-center">
                 <h1 className="text-2xl font-bold mb-4 text-primary">

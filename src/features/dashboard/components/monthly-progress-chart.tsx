@@ -13,7 +13,7 @@ export default function MonthlyProgressChart() {
     const locale = useLocale();
     const { data: monthlyProgress } = useQuery(convexQuery(api.dashboard.getMonthlyProgress, {}));
 
-    const chartData = (monthlyProgress ?? []).map(item => ({
+    const chartData = (monthlyProgress?.items ?? []).map(item => ({
         month: formatMonthLabel(item.monthKey, locale),
         count: item.count,
     }));

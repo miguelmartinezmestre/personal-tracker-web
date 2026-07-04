@@ -187,11 +187,6 @@ describe('Domain Validation Tests', () => {
                 error: ERROR_CODES.FUTURE_DATE_NOT_ALLOWED,
                 description: 'next week',
             },
-            {
-                date: Date.now() - TIME.DAY_MS - 1,
-                error: ERROR_CODES.DATE_TOO_OLD,
-                description: 'more than 1 day ago',
-            },
         ])('rejects future date: $description', ({ date, error }) => {
             expect(() => validateUpdateDate(date)).toThrow(ConvexError);
 
@@ -209,8 +204,16 @@ describe('Domain Validation Tests', () => {
             expect(() => validateUpdateDate(Date.now())).not.toThrow();
         });
 
-        test('accepts recent past date', () => {
-            expect(() => validateUpdateDate(Date.now() - TIME.DAY_MS)).not.toThrow();
+        test('accepts historical date within retention window', () => {
+            expect(() =>
+                validateUpdateDate(Date.now() - TIME.FIVE_YEARS_MS + TIME.DAY_MS)
+            ).not.toThrow();
+        });
+
+        test('rejects date older than retention window', () => {
+            expect(() => validateUpdateDate(Date.now() - TIME.FIVE_YEARS_MS - TIME.DAY_MS)).toThrow(
+                ConvexError
+            );
         });
 
         test('accepts date within clock skew buffer', () => {
@@ -359,7 +362,7 @@ describe('Domain Validation Tests', () => {
     });
 
     describe('Integration: updateUpdateProgress', () => {
-        test('rejects update to completed objective', async () => {
+        test('allows editing a progress entry on a completed objective and re-opens it', async () => {
             const completedObjectiveId = await userIdentity.run(async ctx => {
                 return await ctx.db.insert('objectives', {
                     createdBy: userId,
@@ -373,6 +376,7 @@ describe('Domain Validation Tests', () => {
                     currentValue: 100,
                     startValue: 0,
                     status: 'completed',
+                    completedAt: Date.now(),
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
@@ -383,20 +387,27 @@ describe('Domain Validation Tests', () => {
                     objective: completedObjectiveId,
                     createdBy: userId,
                     organizationId: organizationId,
-                    updatedValue: 60,
+                    updatedValue: 100,
                     updateDate: Date.now(),
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
             });
 
-            await expect(
-                userIdentity.mutation(api.update_progress.updateUpdateProgress, {
-                    id: progressUpdateId,
-                    updatedValue: 85,
-                    updateDate: Date.now(),
-                })
-            ).rejects.toThrow(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
+            // Editing a past entry is allowed even once the objective is
+            // completed (consistent with delete); lowering it re-opens the
+            // objective via recompute.
+            const updated = await userIdentity.mutation(api.update_progress.updateUpdateProgress, {
+                id: progressUpdateId,
+                updatedValue: 50,
+                updateDate: Date.now(),
+            });
+            expect(updated?.updatedValue).toBe(50);
+
+            const objective = await userIdentity.run(async ctx =>
+                ctx.db.get('objectives', completedObjectiveId)
+            );
+            expect(objective?.status).toBe('active');
         });
 
         test.each([

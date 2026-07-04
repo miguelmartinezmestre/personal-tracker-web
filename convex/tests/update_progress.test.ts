@@ -99,6 +99,30 @@ describe('convex update_progress', () => {
         expect(progressUpdate?.createdBy).toBe(userId);
     });
 
+    test('does not create progress or completion notifications when progress notifications are disabled', async () => {
+        await userIdentity.mutation(api.notificationPreferences.updateUserPreferences, {
+            progressNotifications: false,
+        });
+
+        await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+            objective: objectiveId,
+            updatedValue: 50,
+            updateDate: Date.now(),
+            comment: 'Completes without notification',
+        });
+
+        const notifications = await userIdentity.run(async ctx => {
+            return await ctx.db
+                .query('notifications')
+                .withIndex('by_user_organization_date', q =>
+                    q.eq('userId', userId).eq('organizationId', organizationId)
+                )
+                .collect();
+        });
+
+        expect(notifications).toEqual([]);
+    });
+
     test('createUpdateProgress records the acting user as createdBy, not the objective creator', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const otherUser = await createTestUser(t, {

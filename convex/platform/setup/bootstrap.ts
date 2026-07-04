@@ -14,11 +14,78 @@ type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
 
 type EnsureTestOrganizationArgs = ObjectType<typeof ensureTestOrganizationInternalArgsValidator>;
 
+const SETUP_LIMITS = {
+    NAME_MAX: 100,
+    CATEGORY_NAME_MAX: 50,
+    CATEGORIES_MAX: 100,
+} as const;
+
+const CATEGORY_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+const CATEGORY_ICONS = new Set([
+    'tag',
+    'heart',
+    'briefcase',
+    'book',
+    'user',
+    'dollar-sign',
+    'users',
+    'palette',
+    'home',
+    'map',
+    'target',
+    'chart',
+    'check',
+    'calendar',
+    'lightbulb',
+    'trending-up',
+    'star',
+    'award',
+    'zap',
+    'coffee',
+    'music',
+    'camera',
+    'plane',
+]);
+
 const slugify = (value: string) =>
     value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
+
+function assertNonEmptyBoundedString(value: string, maxLength: number) {
+    if (value.trim().length === 0 || value.length > maxLength) {
+        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+    }
+}
+
+function assertSetupArgs(args: CompleteSetupArgs) {
+    assertNonEmptyBoundedString(args.platformName, SETUP_LIMITS.NAME_MAX);
+    assertNonEmptyBoundedString(args.organizationName, SETUP_LIMITS.NAME_MAX);
+
+    if (args.organizationLogo !== undefined) {
+        try {
+            new URL(args.organizationLogo);
+        } catch {
+            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+        }
+    }
+
+    if (args.categories.length > SETUP_LIMITS.CATEGORIES_MAX) {
+        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    for (const category of args.categories) {
+        assertNonEmptyBoundedString(category.name, SETUP_LIMITS.CATEGORY_NAME_MAX);
+        if (!CATEGORY_COLOR_RE.test(category.color)) {
+            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+        }
+        if (category.icon !== undefined && !CATEGORY_ICONS.has(category.icon)) {
+            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+        }
+    }
+}
 
 export async function isPlatformConfigured(ctx: { db: DatabaseReader }) {
     const settings = await ctx.db.query('platformSettings').first();
@@ -50,23 +117,26 @@ export async function completePlatformSetup(
     userId: Id<'user'>,
     args: CompleteSetupArgs
 ): Promise<{ success: true; organizationId: Id<'organization'> }> {
+    assertSetupArgs(args);
+
     const existingSettings = await ctx.db.query('platformSettings').first();
     if (existingSettings) {
         throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
     }
 
-    const users = await ctx.db.query('user').take(2);
     const currentUser = await ctx.db.get(userId);
 
     if (!currentUser) {
         throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
     }
 
-    if (users.length !== 1) {
-        throw new ConvexError(ERROR_CODES.SETUP_USER_COUNT);
-    }
+    // The platform admin is the first registered account. Requiring exactly one
+    // user here would permanently brick setup if a second account registered
+    // before setup completed; instead we bind setup to the earliest user, which
+    // also prevents a later registrant from hijacking the admin role.
+    const firstUser = await ctx.db.query('user').order('asc').first();
 
-    if (currentUser._id !== userId) {
+    if (!firstUser || firstUser._id !== userId) {
         throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
     }
 

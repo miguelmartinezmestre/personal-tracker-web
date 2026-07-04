@@ -157,10 +157,11 @@ describe('objectiveDomain', () => {
             }
         });
 
-        test('rejects timestamp too old (more than 1 day)', () => {
-            expect(() => validateUpdateDate(Date.now() - 2 * 86400000)).toThrow(ConvexError);
+        test('rejects timestamp too old (more than five years)', () => {
+            const tooOld = Date.now() - 5 * 365 * 86400000 - 86400000;
+            expect(() => validateUpdateDate(tooOld)).toThrow(ConvexError);
             try {
-                validateUpdateDate(Date.now() - 2 * 86400000);
+                validateUpdateDate(tooOld);
             } catch (e) {
                 expect(e).toBeInstanceOf(ConvexError);
                 if (e instanceof ConvexError) {

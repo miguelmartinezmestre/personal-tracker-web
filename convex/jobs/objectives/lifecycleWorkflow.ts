@@ -39,6 +39,11 @@ export const objectiveLifecycle = workflow.define({
                 organizationId: syncResult.organizationId,
                 trigger: 'objective_completed',
             });
+            await step.runMutation(internal.achievements.checkOrganizationAchievements, {
+                organizationId: syncResult.organizationId,
+                userId: args.userId,
+                trigger: 'objective_completed',
+            });
         }
 
         const status = syncResult.status === 'completed' ? 'completed' : 'active';

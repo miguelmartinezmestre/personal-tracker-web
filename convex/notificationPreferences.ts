@@ -23,7 +23,6 @@ export const updateUserPreferences = mutationWithRLS({
         deadlineNotifications: v.optional(v.boolean()),
         progressNotifications: v.optional(v.boolean()),
         organizationNotifications: v.optional(v.boolean()),
-        emailDigestEnabled: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
         return await updateNotificationPreferencesForUser(ctx, ctx.userId, args);
