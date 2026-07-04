@@ -226,19 +226,16 @@ export const getUserAchievementProgress = queryWithRLS({
         const completedOrganizationObjectives = organizationObjectives.filter(
             objective => objective.status === 'completed'
         );
-        let organizationProgressUpdates: Doc<'progressUpdates'>[] = [];
-
-        if (organizationObjectives.length > 0) {
-            const updatesByObjective = await Promise.all(
-                organizationObjectives.map(objective =>
-                    ctx.db
-                        .query('progressUpdates')
-                        .withIndex('by_objective_date', q => q.eq('objective', objective._id))
-                        .take(LIST_LIMIT)
-                )
-            );
-            organizationProgressUpdates = updatesByObjective.flat();
-        }
+        // Read the org's progress updates directly from the org-scoped index
+        // instead of fanning out one query per objective (previously up to
+        // ~1000 subqueries inside a single reactive query).
+        const organizationProgressUpdates = organizationId
+            ? await ctx.db
+                  .query('progressUpdates')
+                  .withIndex('by_organization_date', q => q.eq('organizationId', organizationId))
+                  .order('desc')
+                  .take(LIST_LIMIT)
+            : [];
 
         const metrics: AchievementMetricSnapshot = {
             objectivesCreated: objectivesCount.length,
