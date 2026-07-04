@@ -8,6 +8,7 @@ import {
     createTestUser,
 } from './test_helpers';
 import type { Id } from '../_generated/dataModel';
+import { revokeAllSessionsForUser } from '../admin';
 
 describe('convex admin', () => {
     const t = initConvexTest();
@@ -228,6 +229,36 @@ describe('convex admin', () => {
         expect(result).toEqual({ success: true });
         expect(revokedSession).toBeNull();
         expect(adminSession).not.toBeNull();
+    });
+
+    test('revokes sessions beyond one batch for a banned user cleanup', async () => {
+        await t.run(async ctx => {
+            const now = Date.now();
+            for (let i = 0; i < 1001; i++) {
+                await ctx.db.insert('session', {
+                    userId,
+                    token: `bulk-session-${i}`,
+                    expiresAt: now + 60_000,
+                    ipAddress: null,
+                    userAgent: null,
+                    activeOrganizationId: null,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            }
+        });
+
+        const revokedCount = await t.run(async ctx => revokeAllSessionsForUser(ctx, userId));
+
+        const remaining = await t.run(async ctx => {
+            return await ctx.db
+                .query('session')
+                .withIndex('userId', q => q.eq('userId', userId))
+                .collect();
+        });
+
+        expect(revokedCount).toBeGreaterThanOrEqual(1001);
+        expect(remaining).toHaveLength(0);
     });
 
     test('rejects deleting the platform setup user', async () => {

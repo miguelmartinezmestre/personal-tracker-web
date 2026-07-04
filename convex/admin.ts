@@ -1,14 +1,36 @@
 import { ConvexError, v } from 'convex/values';
 import { getAuth } from './generated/auth';
 import { paginationOptsValidator } from 'convex/server';
+import { internalMutation, type MutationCtx } from './_generated/server';
 import { requireAdmin } from './utils/requiredAdmin';
+import { cascadeUserDeletion } from './domain/objectives/collaborators';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { getHeaders } from 'kitcn/auth';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
 import { isPlatformSetupUser } from './platform/setup/bootstrap';
+import type { Id } from './_generated/dataModel';
 
-const SESSION_REVOKE_LIMIT = 1000;
+const SESSION_REVOKE_BATCH_SIZE = 1000;
+
+export async function revokeAllSessionsForUser(ctx: MutationCtx, userId: Id<'user'>) {
+    let revokedCount = 0;
+    let hasMoreSessions = true;
+    while (hasMoreSessions) {
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .take(SESSION_REVOKE_BATCH_SIZE);
+
+        hasMoreSessions = sessions.length === SESSION_REVOKE_BATCH_SIZE;
+        for (const session of sessions) {
+            await ctx.db.delete(session._id);
+            revokedCount += 1;
+        }
+    }
+
+    return revokedCount;
+}
 
 type AdminApi = {
     banUser: (args: {
@@ -52,11 +74,18 @@ export const banUser = mutationWithRLS({
     args: {
         userId: v.id('user'),
         banReason: v.optional(v.string()),
-        banExpires: v.optional(v.number()),
+        // Ban duration in **seconds from now** (better-auth `banExpiresIn`), not
+        // an absolute timestamp. Omit for a permanent ban.
+        banExpiresInSeconds: v.optional(v.number()),
     },
     returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
         await requireAdmin(ctx);
+
+        // The platform setup account must remain usable — mirror the delete guard.
+        if (await isPlatformSetupUser(ctx, args.userId)) {
+            throw new ConvexError(ERROR_CODES.SETUP_USER_BAN_FORBIDDEN);
+        }
 
         const headers = await getHeaders(ctx);
         const auth = getAuth(ctx);
@@ -66,19 +95,12 @@ export const banUser = mutationWithRLS({
             body: {
                 userId: args.userId,
                 banReason: args.banReason,
-                banExpiresIn: args.banExpires,
+                banExpiresIn: args.banExpiresInSeconds,
             },
             headers,
         });
 
-        const sessions = await ctx.db
-            .query('session')
-            .withIndex('userId', q => q.eq('userId', args.userId))
-            .take(SESSION_REVOKE_LIMIT);
-
-        for (const session of sessions) {
-            await ctx.db.delete(session._id);
-        }
+        await revokeAllSessionsForUser(ctx, args.userId);
 
         return { success: true };
     },
@@ -151,6 +173,22 @@ export const revokeUserSession = mutationWithRLS({
         await ctx.db.delete(args.sessionId);
 
         return { success: true };
+    },
+});
+
+/**
+ * Cleans up a deleted user's app data (owned objectives, collaborations,
+ * achievements, preferences, notifications). Invoked from the better-auth
+ * `user.delete` hook so nothing is left pointing at a removed account.
+ */
+export const cascadeUserDeletionInternal = internalMutation({
+    args: {
+        userId: v.id('user'),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        await cascadeUserDeletion(ctx, args.userId);
+        return null;
     },
 });
 

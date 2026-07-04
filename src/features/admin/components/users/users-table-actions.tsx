@@ -1,3 +1,6 @@
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { useConvexMutation } from '@convex-dev/react-query';
 import { authClient } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -5,10 +8,11 @@ import { toast } from 'sonner';
 
 export function useBanUser() {
     const t = useTranslations('Admin');
+    const banUserMutation = useConvexMutation(api.admin.banUser);
 
     const { mutate: banUser, isPending: isBanningUser } = useMutation({
-        mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
-            return await authClient.admin.banUser({
+        mutationFn: async ({ userId, reason }: { userId: Id<'user'>; reason?: string }) => {
+            return await banUserMutation({
                 userId,
                 banReason: reason || t('usersTable.defaults.banReason'),
             });
@@ -27,7 +31,7 @@ export function useUnBanUser() {
     const t = useTranslations('Admin');
 
     const { mutate: unbanUser, isPending: isUnbanningUser } = useMutation({
-        mutationFn: async ({ userId }: { userId: string }) => {
+        mutationFn: async ({ userId }: { userId: Id<'user'> }) => {
             return await authClient.admin.unbanUser({ userId });
         },
         onSuccess: () => {
@@ -42,10 +46,11 @@ export function useUnBanUser() {
 
 export function useDeleteUser() {
     const t = useTranslations('Admin');
+    const deleteUserMutation = useConvexMutation(api.admin.deleteUser);
 
     const { mutate: deleteUser, isPending: isDeletingUser } = useMutation({
-        mutationFn: async ({ userId }: { userId: string }) => {
-            return await authClient.admin.removeUser({ userId });
+        mutationFn: async ({ userId }: { userId: Id<'user'> }) => {
+            return await deleteUserMutation({ userId });
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.deletedSuccess'));

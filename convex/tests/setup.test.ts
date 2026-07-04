@@ -147,7 +147,7 @@ describe('convex setup', () => {
             ).rejects.toThrow();
         });
 
-        test('fails when more than one user exists', async () => {
+        test('binds setup to the first user even when more than one account exists', async () => {
             const t = initConvexTest({ workflow: false });
 
             const user1 = await createTestUser(t, {
@@ -156,31 +156,73 @@ describe('convex setup', () => {
                 name: 'User 1',
             });
 
-            await createTestUser(t, {
+            const user2 = await createTestUser(t, {
                 userId: 'user-2',
                 email: 'user2@test.com',
                 name: 'User 2',
             });
 
-            const asUser1 = t.withIdentity({
-                subject: user1.docId,
-                role: user1.role ?? null,
-                email: user1.email,
-                name: user1.name,
+            const buildIdentity = (user: typeof user1) => ({
+                subject: user.docId,
+                role: user.role ?? null,
+                email: user.email,
+                name: user.name,
                 emailVerified: true,
                 createdAt: Date.now(),
-                userId: user1.docId,
+                userId: user.docId,
                 image: 'https://example.com/image.png',
                 banExpires: null,
                 banReason: null,
                 banned: false,
             });
 
+            const setupArgs = {
+                platformName: 'Test Platform',
+                defaultLanguage: 'en' as const,
+                registrationPolicy: 'open' as const,
+                organizationName: 'Test Org',
+                categories: [],
+            };
+
+            // A later registrant cannot hijack the platform admin role.
+            const asUser2 = t.withIdentity(buildIdentity(user2));
+            await expect(asUser2.mutation(api.setup.completeSetup, setupArgs)).rejects.toThrow();
+
+            // The first user can still complete setup despite the extra account
+            // (previously this deadlocked with a "more than one user" error).
+            const asUser1 = t.withIdentity(buildIdentity(user1));
+            const result = await asUser1.mutation(api.setup.completeSetup, setupArgs);
+            expect(result.success).toBe(true);
+        });
+
+        test('rejects invalid setup enum values at the backend boundary', async () => {
+            const t = initConvexTest({ workflow: false });
+
+            const user = await createTestUser(t, {
+                userId: 'setup-invalid-enums',
+                email: 'setup-invalid-enums@test.com',
+                name: 'Setup Invalid Enums',
+            });
+
+            const asUser = t.withIdentity({
+                subject: user.docId,
+                role: user.role ?? null,
+                email: user.email,
+                name: user.name,
+                emailVerified: true,
+                createdAt: Date.now(),
+                userId: user.docId,
+                image: null,
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
             await expect(
-                asUser1.mutation(api.setup.completeSetup, {
+                asUser.mutation(api.setup.completeSetup, {
                     platformName: 'Test Platform',
-                    defaultLanguage: 'en',
-                    registrationPolicy: 'open',
+                    defaultLanguage: 'fr' as 'en',
+                    registrationPolicy: 'closed' as 'open',
                     organizationName: 'Test Org',
                     categories: [],
                 })

@@ -180,8 +180,8 @@ export default defineSchema({
 
     platformSettings: defineTable({
         platformName: v.string(),
-        defaultLanguage: v.string(),
-        registrationPolicy: v.string(),
+        defaultLanguage: v.union(v.literal('en'), v.literal('es')),
+        registrationPolicy: v.union(v.literal('open'), v.literal('invitation-only')),
         setupCompletedAt: v.optional(v.number()),
         setupCompletedBy: v.optional(v.id('user')),
     }),
@@ -192,7 +192,6 @@ export default defineSchema({
         deadlineNotifications: v.boolean(),
         progressNotifications: v.boolean(),
         organizationNotifications: v.boolean(),
-        emailDigestEnabled: v.optional(v.boolean()),
         createdAt: v.number(),
         updatedAt: v.number(),
     }).index('by_user', ['userId']),
