@@ -2,6 +2,9 @@ import type { Doc } from '../../_generated/dataModel';
 import { TIME } from '../../utils/constants';
 
 const DEADLINE_SOON_DAYS = 3;
+// Stop emitting daily "overdue" reminders after this many days so a
+// perpetually-overdue active objective doesn't accrue notifications forever.
+const OVERDUE_REMINDER_LIMIT_DAYS = 7;
 
 export function getDeadlineDayWindow(now: number) {
     const date = new Date(now);
@@ -31,6 +34,9 @@ export function buildDeadlineMessage(
 
     if (objective.deadline <= now) {
         const daysOverdue = Math.max(1, Math.ceil((now - objective.deadline) / TIME.DAY_MS));
+        if (daysOverdue > OVERDUE_REMINDER_LIMIT_DAYS) {
+            return null;
+        }
         return `Objective "${objective.title}" is overdue by ${daysOverdue} day${
             daysOverdue === 1 ? '' : 's'
         } (due on ${formatDate(objective.deadline)}).`;

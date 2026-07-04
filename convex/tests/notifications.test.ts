@@ -645,6 +645,42 @@ describe('convex notifications', async () => {
             expect(result.scanned).toBeGreaterThan(0);
         });
 
+        test('skips soft-deleted objectives in cron scan', async () => {
+            const now = Date.now();
+            await userIdentity.run(async ctx => {
+                await ctx.db.insert('objectives', {
+                    createdBy: userId,
+                    ownerId: userId,
+                    visibility: 'private',
+                    organizationId: userOrganizationId,
+                    title: 'Deleted deadline',
+                    targetValue: 100,
+                    currentValue: 50,
+                    status: 'active',
+                    deadline: now + DAY_MS,
+                    deletedAt: now,
+                    deletedBy: userId,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            });
+
+            const result = await t.mutation(
+                internal.notifications.runDeadlineNotificationsCron,
+                {}
+            );
+            const notifications = await userIdentity.query(
+                api.notifications.getNotificationsByUser,
+                {
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+
+            expect(result.scanned).toBeGreaterThan(0);
+            expect(result.created).toBe(0);
+            expect(notifications.page).toEqual([]);
+        });
+
         test('skips objectives without deadline', async () => {
             const now = Date.now();
             await userIdentity.run(async ctx => {

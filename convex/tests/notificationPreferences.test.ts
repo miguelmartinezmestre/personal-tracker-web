@@ -57,7 +57,6 @@ describe('convex notification preferences', () => {
             deadlineNotifications: true,
             progressNotifications: true,
             organizationNotifications: true,
-            emailDigestEnabled: false,
         });
         expect('_id' in preferences).toBe(false);
     });
@@ -85,7 +84,6 @@ describe('convex notification preferences', () => {
             deadlineNotifications: false,
             progressNotifications: true,
             organizationNotifications: true,
-            emailDigestEnabled: false,
         });
     });
 
@@ -95,14 +93,12 @@ describe('convex notification preferences', () => {
             deadlineNotifications: false,
             progressNotifications: false,
             organizationNotifications: true,
-            emailDigestEnabled: false,
         });
 
         const result = await userIdentity.mutation(
             api.notificationPreferences.updateUserPreferences,
             {
                 organizationNotifications: false,
-                emailDigestEnabled: true,
             }
         );
 
@@ -120,34 +116,6 @@ describe('convex notification preferences', () => {
             deadlineNotifications: false,
             progressNotifications: false,
             organizationNotifications: false,
-            emailDigestEnabled: true,
-        });
-    });
-
-    test('merges defaults for legacy rows missing optional email digest flag', async () => {
-        await t.run(async ctx => {
-            await ctx.db.insert('notificationPreferences', {
-                userId,
-                achievementNotifications: false,
-                deadlineNotifications: true,
-                progressNotifications: false,
-                organizationNotifications: true,
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-            });
-        });
-
-        const preferences = await userIdentity.query(
-            api.notificationPreferences.getUserPreferences,
-            {}
-        );
-
-        expect(preferences).toMatchObject({
-            achievementNotifications: false,
-            deadlineNotifications: true,
-            progressNotifications: false,
-            organizationNotifications: true,
-            emailDigestEnabled: false,
         });
     });
 });
