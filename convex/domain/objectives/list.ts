@@ -82,10 +82,7 @@ export function canUserViewObjectiveInList(
         if (isGlobalAdminRole(ctx.role) || isOrganizationAdminRole(ctx.memberRole)) {
             return true;
         }
-        if (objective.ownerId === ctx.userId) {
-            return true;
-        }
-        return collaboratedObjectiveIds.has(objective._id);
+        return objective.ownerId === ctx.userId;
     }
 
     const collaboratorRole = collaboratedObjectiveIds.has(objective._id)
@@ -143,10 +140,26 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
             query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
         }
 
-        const results = await query.order('desc').paginate(paginationOpts);
+        const visiblePage: Doc<'objectives'>[] = [];
+        let cursor = paginationOpts.cursor;
+        let continueCursor = '';
+        let isDone = false;
+
+        while (visiblePage.length < paginationOpts.numItems && !isDone) {
+            const results = await query.order('desc').paginate({
+                numItems: Math.max(1, paginationOpts.numItems - visiblePage.length),
+                cursor,
+            });
+            visiblePage.push(...filterPage(results.page));
+            continueCursor = results.continueCursor;
+            isDone = results.isDone;
+            cursor = results.continueCursor;
+        }
+
         return {
-            ...results,
-            page: filterPage(results.page),
+            page: visiblePage,
+            continueCursor,
+            isDone,
         };
     }
 
@@ -164,10 +177,26 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
         query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
     }
 
-    const results = await query.order('desc').paginate(paginationOpts);
+    const visiblePage: Doc<'objectives'>[] = [];
+    let cursor = paginationOpts.cursor;
+    let continueCursor = '';
+    let isDone = false;
+
+    while (visiblePage.length < paginationOpts.numItems && !isDone) {
+        const results = await query.order('desc').paginate({
+            numItems: Math.max(1, paginationOpts.numItems - visiblePage.length),
+            cursor,
+        });
+        visiblePage.push(...filterPage(results.page));
+        continueCursor = results.continueCursor;
+        isDone = results.isDone;
+        cursor = results.continueCursor;
+    }
+
     return {
-        ...results,
-        page: filterPage(results.page),
+        page: visiblePage,
+        continueCursor,
+        isDone,
     };
 }
 
