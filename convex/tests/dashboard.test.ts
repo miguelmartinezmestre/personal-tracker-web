@@ -129,10 +129,11 @@ describe('convex dashboard', async () => {
         test('returns empty counts when no progress updates exist', async () => {
             const monthlyProgress = await userIdentity.query(api.dashboard.getMonthlyProgress, {});
 
-            expect(monthlyProgress).toHaveLength(6);
-            expect(monthlyProgress.every(monthEntry => monthEntry.count === 0)).toBe(true);
+            expect(monthlyProgress.items).toHaveLength(6);
+            expect(monthlyProgress.isTruncated).toBe(false);
+            expect(monthlyProgress.items.every(monthEntry => monthEntry.count === 0)).toBe(true);
             expect(
-                monthlyProgress.every(monthEntry => monthEntry.month && monthEntry.monthKey)
+                monthlyProgress.items.every(monthEntry => monthEntry.month && monthEntry.monthKey)
             ).toBe(true);
         });
 
@@ -184,10 +185,10 @@ describe('convex dashboard', async () => {
             const currentMonthKey = `${currentMonth.getFullYear()}-${`${currentMonth.getMonth() + 1}`.padStart(2, '0')}`;
             const lastMonthKey = `${lastMonth.getFullYear()}-${`${lastMonth.getMonth() + 1}`.padStart(2, '0')}`;
 
-            const currentMonthData = monthlyProgress.find(
+            const currentMonthData = monthlyProgress.items.find(
                 monthEntry => monthEntry.monthKey === currentMonthKey
             );
-            const lastMonthData = monthlyProgress.find(
+            const lastMonthData = monthlyProgress.items.find(
                 monthEntry => monthEntry.monthKey === lastMonthKey
             );
 
@@ -203,7 +204,7 @@ describe('convex dashboard', async () => {
                 {}
             );
 
-            expect(topProgress).toEqual([]);
+            expect(topProgress).toEqual({ items: [], isTruncated: false });
         });
 
         test('sorts objectives by progress percentage', async () => {
@@ -259,13 +260,14 @@ describe('convex dashboard', async () => {
                 {}
             );
 
-            expect(topProgress).toHaveLength(3);
-            expect(topProgress[0]?.objective).toBe('High Progress');
-            expect(topProgress[0]?.progress).toBe(90);
-            expect(topProgress[1]?.objective).toBe('Medium Progress');
-            expect(topProgress[1]?.progress).toBe(50);
-            expect(topProgress[2]?.objective).toBe('Low Progress');
-            expect(topProgress[2]?.progress).toBe(20);
+            expect(topProgress.items).toHaveLength(3);
+            expect(topProgress.isTruncated).toBe(false);
+            expect(topProgress.items[0]?.objective).toBe('High Progress');
+            expect(topProgress.items[0]?.progress).toBe(90);
+            expect(topProgress.items[1]?.objective).toBe('Medium Progress');
+            expect(topProgress.items[1]?.progress).toBe(50);
+            expect(topProgress.items[2]?.objective).toBe('Low Progress');
+            expect(topProgress.items[2]?.progress).toBe(20);
         });
 
         test('includes completed objectives in ranking', async () => {
@@ -306,8 +308,8 @@ describe('convex dashboard', async () => {
                 {}
             );
 
-            expect(topProgress).toHaveLength(1);
-            expect(topProgress[0]?.objective).toBe('Active High Progress');
+            expect(topProgress.items).toHaveLength(1);
+            expect(topProgress.items[0]?.objective).toBe('Active High Progress');
         });
 
         test('limits results to top 5', async () => {
@@ -335,9 +337,9 @@ describe('convex dashboard', async () => {
                 {}
             );
 
-            expect(topProgress).toHaveLength(5);
-            expect(topProgress[0]?.progress).toBe(70);
-            expect(topProgress[4]?.progress).toBe(30);
+            expect(topProgress.items).toHaveLength(5);
+            expect(topProgress.items[0]?.progress).toBe(70);
+            expect(topProgress.items[4]?.progress).toBe(30);
         });
     });
 
@@ -362,7 +364,7 @@ describe('convex dashboard', async () => {
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
 
-            expect(upcoming).toEqual([]);
+            expect(upcoming).toEqual({ items: [], isTruncated: false });
         });
 
         test('returns objectives with deadlines in next 7 days', async () => {
@@ -421,11 +423,12 @@ describe('convex dashboard', async () => {
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
 
-            expect(upcoming).toHaveLength(2);
-            expect(upcoming[0]?.title).toBe('Deadline in 3 days');
-            expect(upcoming[0]?.daysRemaining).toBe(3);
-            expect(upcoming[1]?.title).toBe('Deadline in 6 days');
-            expect(upcoming[1]?.daysRemaining).toBe(6);
+            expect(upcoming.items).toHaveLength(2);
+            expect(upcoming.isTruncated).toBe(false);
+            expect(upcoming.items[0]?.title).toBe('Deadline in 3 days');
+            expect(upcoming.items[0]?.daysRemaining).toBe(3);
+            expect(upcoming.items[1]?.title).toBe('Deadline in 6 days');
+            expect(upcoming.items[1]?.daysRemaining).toBe(6);
         });
 
         test('excludes completed objectives', async () => {
@@ -468,8 +471,8 @@ describe('convex dashboard', async () => {
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
 
-            expect(upcoming).toHaveLength(1);
-            expect(upcoming[0]?.title).toBe('Active with deadline');
+            expect(upcoming.items).toHaveLength(1);
+            expect(upcoming.items[0]?.title).toBe('Active with deadline');
         });
 
         test('sorts deadlines by date ascending', async () => {
@@ -528,10 +531,10 @@ describe('convex dashboard', async () => {
 
             const upcoming = await userIdentity.query(api.dashboard.getUpcomingDeadlines, {});
 
-            expect(upcoming).toHaveLength(3);
-            expect(upcoming[0]?.title).toBe('Deadline 2 days');
-            expect(upcoming[1]?.title).toBe('Deadline 5 days');
-            expect(upcoming[2]?.title).toBe('Deadline 7 days');
+            expect(upcoming.items).toHaveLength(3);
+            expect(upcoming.items[0]?.title).toBe('Deadline 2 days');
+            expect(upcoming.items[1]?.title).toBe('Deadline 5 days');
+            expect(upcoming.items[2]?.title).toBe('Deadline 7 days');
         });
     });
 

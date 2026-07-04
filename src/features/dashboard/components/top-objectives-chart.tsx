@@ -23,7 +23,7 @@ export default function TopObjectivesChart() {
         convexQuery(api.dashboard.getObjectivesWithMostProgress, {})
     );
 
-    const chartData = (topObjectives ?? []).map(item => ({
+    const chartData = (topObjectives?.items ?? []).map(item => ({
         name: truncateText(item.objective, 20),
         progress: Math.round(item.progress),
         status: item.status,

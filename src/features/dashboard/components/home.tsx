@@ -29,6 +29,7 @@ export default function Home() {
     const { data: stats } = statsQuery;
     const { data: upcomingDeadlines } = deadlinesQuery;
     const { data: recentActivity } = activityQuery;
+    const upcomingDeadlineItems = upcomingDeadlines?.items ?? [];
 
     const t = useTranslations('DashboardHome');
 
@@ -86,13 +87,13 @@ export default function Home() {
                             <QueryErrorFallback onRetry={() => deadlinesQuery.refetch()} />
                         ) : !upcomingDeadlines ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : upcomingDeadlines.length === 0 ? (
+                        ) : upcomingDeadlineItems.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
                                 {t('noUpcomingDeadlines')}
                             </p>
                         ) : (
                             <ul className="space-y-2">
-                                {upcomingDeadlines.slice(0, 5).map(deadline => (
+                                {upcomingDeadlineItems.slice(0, 5).map(deadline => (
                                     <li key={deadline.id} className="flex justify-between text-sm">
                                         <span className="truncate mr-2">{deadline.title}</span>
                                         <span className="text-muted-foreground shrink-0">
@@ -123,6 +124,7 @@ export default function Home() {
                                     </span>
                                     <span className="font-medium">
                                         {recentActivity.progressUpdatesCount}
+                                        {recentActivity.isTruncated ? '+' : ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
@@ -131,6 +133,7 @@ export default function Home() {
                                     </span>
                                     <span className="font-medium">
                                         {recentActivity.objectivesCreatedCount}
+                                        {recentActivity.isTruncated ? '+' : ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
@@ -139,6 +142,7 @@ export default function Home() {
                                     </span>
                                     <span className="font-medium">
                                         {recentActivity.objectivesCompletedCount}
+                                        {recentActivity.isTruncated ? '+' : ''}
                                     </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
