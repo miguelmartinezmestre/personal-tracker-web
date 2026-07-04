@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const updateProgressSchema = z.object({
     updatedValue: z.number(),
-    updateDate: z.date(),
+    updateDate: z.number(),
     comment: z.string().nullable(),
 });
 

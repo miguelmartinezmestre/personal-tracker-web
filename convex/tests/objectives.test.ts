@@ -60,6 +60,52 @@ describe('convex objectives', () => {
         userIdentity = t.withIdentity(identityFor(user));
     });
 
+    describe('updateObjective completion (F2)', () => {
+        test('completes synchronously when the target is lowered below the current value', async () => {
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Sync completion',
+                targetValue: 100,
+            });
+
+            await userIdentity.mutation(api.update_progress.createUpdateProgress, {
+                objective: objectiveId,
+                updatedValue: 50,
+                updateDate: Date.now(),
+            });
+
+            const before = await t.run(async ctx => ctx.db.get(objectiveId));
+            expect(before?.status).toBe('active');
+
+            // Lowering the target below the current value must complete the
+            // objective immediately. This suite runs with the workflow component
+            // disabled, so completion cannot depend on the async lifecycle
+            // workflow — it must be recomputed synchronously in the mutation.
+            await userIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                targetValue: 40,
+            });
+
+            const after = await t.run(async ctx => ctx.db.get(objectiveId));
+            expect(after?.status).toBe('completed');
+            expect(after?.completedAt).toBeDefined();
+        });
+
+        test('rejects a partial update that would put the start above the target', async () => {
+            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+                title: 'Invalid partial bounds',
+                targetValue: 10,
+                startValue: 0,
+            });
+
+            await expect(
+                userIdentity.mutation(api.objectives.updateObjective, {
+                    id: objectiveId,
+                    startValue: 20,
+                })
+            ).rejects.toThrow();
+        });
+    });
+
     describe('createObjective', () => {
         test('creates an active objective with defaults', async () => {
             const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {

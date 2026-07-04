@@ -1,7 +1,7 @@
 import type { PaginationOptions } from 'convex/server';
 import { ConvexError } from 'convex/values';
 import { internal } from '../../_generated/api';
-import type { Id } from '../../_generated/dataModel';
+import type { Doc, Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { shouldSendProgressNotification } from '../notifications/preferences';
 import { ERROR_CODES } from '../../utils/constants';
@@ -16,6 +16,91 @@ import { assertObjectiveAction, resolveObjectivePermissionSubject } from './acce
 import { canEditProgress } from './permissions';
 
 const PROGRESS_SERIES_LIMIT = 500;
+
+type AchievementTrigger = 'objective_created' | 'objective_completed' | 'progress_update';
+
+async function insertObjectiveCompletedNotificationIfEnabled(
+    ctx: MutationCtx,
+    objective: Doc<'objectives'>,
+    now = Date.now()
+) {
+    const notifyProgress = await shouldSendProgressNotification(ctx, objective.ownerId);
+    if (!notifyProgress) {
+        return;
+    }
+
+    await ctx.db.insert('notifications', {
+        userId: objective.ownerId,
+        organizationId: objective.organizationId,
+        objective: objective._id,
+        read: false,
+        notificationType: 'status',
+        notificationDate: now,
+        message: `Objective "${objective.title}" completed.`,
+        createdAt: now,
+        updatedAt: now,
+    });
+}
+
+/**
+ * Schedules both the individual and the organization achievement evaluators for
+ * a given trigger. Both scopes must be checked together so that org-level
+ * achievements (org objectives created/completed, org streak) are actually
+ * awarded — previously only the individual scope was ever scheduled.
+ */
+export async function scheduleAchievementChecks(
+    ctx: MutationCtx,
+    args: {
+        userId: Id<'user'>;
+        organizationId: Id<'organization'>;
+        trigger: AchievementTrigger;
+    }
+) {
+    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+        userId: args.userId,
+        organizationId: args.organizationId,
+        trigger: args.trigger,
+    });
+    await ctx.scheduler.runAfter(0, internal.achievements.checkOrganizationAchievements, {
+        organizationId: args.organizationId,
+        userId: args.userId,
+        trigger: args.trigger,
+    });
+}
+
+/**
+ * Recomputes an objective's completion state from its progress history
+ * *synchronously* and emits the completion side effects (notification +
+ * achievement checks) when it transitions to completed. Used by objective
+ * definition changes (update/restore) so the status is never left stale if the
+ * asynchronous lifecycle workflow fails to start. Idempotent: a subsequent
+ * recompute observes the already-completed status and does nothing.
+ */
+export async function finalizeObjectiveCompletion(
+    ctx: MutationCtx,
+    objectiveId: Id<'objectives'>,
+    actingUserId: Id<'user'>
+): Promise<{ completedNow: boolean }> {
+    const { completedNow } = await recomputeObjectiveFromProgress(ctx, objectiveId);
+    if (!completedNow) {
+        return { completedNow };
+    }
+
+    const objective = await ctx.db.get('objectives', objectiveId);
+    if (!objective) {
+        return { completedNow };
+    }
+
+    await insertObjectiveCompletedNotificationIfEnabled(ctx, objective);
+
+    await scheduleAchievementChecks(ctx, {
+        userId: actingUserId,
+        organizationId: objective.organizationId,
+        trigger: 'objective_completed',
+    });
+
+    return { completedNow };
+}
 
 type ProgressMutationCtx = MutationCtx & {
     userId: Id<'user'>;
@@ -105,27 +190,17 @@ export async function createProgressUpdate(
     }
 
     if (completedNow) {
-        await ctx.db.insert('notifications', {
-            userId: objective.ownerId,
-            organizationId: objective.organizationId,
-            objective: args.objective,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Objective "${objective.title}" completed.`,
-            createdAt: now,
-            updatedAt: now,
-        });
+        await insertObjectiveCompletedNotificationIfEnabled(ctx, objective, now);
     }
 
-    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+    await scheduleAchievementChecks(ctx, {
         userId: args.actingUserId,
         organizationId: objective.organizationId,
         trigger: 'progress_update',
     });
 
     if (completedNow) {
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+        await scheduleAchievementChecks(ctx, {
             userId: args.actingUserId,
             organizationId: objective.organizationId,
             trigger: 'objective_completed',
@@ -197,8 +272,12 @@ export async function updateProgressUpdate(
     }
 
     validateUpdateDate(args.updateDate);
-    validateProgressDelta(args.updatedValue, objective.currentValue);
-    validateObjectiveNotCompleted(objective.status);
+    // Validate against the true resulting value: the objective's current value
+    // without this entry's previous contribution, plus its new contribution.
+    // (Editing/deleting a past entry is allowed even once the objective is
+    // completed — the recompute may legitimately re-open it — so unlike
+    // creating a new entry there is no "already completed" guard here.)
+    validateProgressDelta(args.updatedValue, objective.currentValue - existing.updatedValue);
 
     await ctx.db.patch('progressUpdates', args.id, {
         updatedValue: args.updatedValue,
@@ -213,31 +292,20 @@ export async function updateProgressUpdate(
         args.updatedValue - existing.updatedValue
     );
 
-    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+    await scheduleAchievementChecks(ctx, {
         userId: ctx.userId,
         organizationId: objective.organizationId,
         trigger: 'progress_update',
     });
 
     if (completedNow) {
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+        await scheduleAchievementChecks(ctx, {
             userId: ctx.userId,
             organizationId: objective.organizationId,
             trigger: 'objective_completed',
         });
 
-        const now = Date.now();
-        await ctx.db.insert('notifications', {
-            userId: objective.ownerId,
-            organizationId: objective.organizationId,
-            objective: existing.objective,
-            read: false,
-            notificationType: 'status',
-            notificationDate: now,
-            message: `Objective "${objective.title}" completed.`,
-            createdAt: now,
-            updatedAt: now,
-        });
+        await insertObjectiveCompletedNotificationIfEnabled(ctx, objective);
     }
 
     return await ctx.db.get('progressUpdates', args.id);

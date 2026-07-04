@@ -39,6 +39,16 @@ export function validateObjectiveMetrics(args: {
     assertFiniteMetric(args.currentValue);
     assertFiniteMetric(args.startValue);
 
+    // The starting value must not exceed the target whenever both bounds are
+    // known. Update callers pass the merged objective state, not only the patch.
+    if (
+        args.startValue !== undefined &&
+        args.targetValue !== undefined &&
+        args.startValue > args.targetValue
+    ) {
+        throw new ConvexError(ERROR_CODES.START_AFTER_TARGET);
+    }
+
     if (args.deadline !== undefined) {
         if (!Number.isFinite(args.deadline)) {
             throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
@@ -77,7 +87,7 @@ export function validateUpdateDate(updateDate: number): void {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
     }
 
-    if (updateDate < now - TIME.DAY_MS) {
+    if (updateDate < now - TIME.FIVE_YEARS_MS) {
         throw new ConvexError(ERROR_CODES.DATE_TOO_OLD);
     }
 }

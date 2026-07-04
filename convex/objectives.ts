@@ -1,6 +1,5 @@
 import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
-import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
@@ -33,6 +32,10 @@ import {
     removeObjectiveCollaborator,
     updateObjectiveCollaboratorRole,
 } from './domain/objectives/collaborators';
+import {
+    finalizeObjectiveCompletion,
+    scheduleAchievementChecks,
+} from './domain/objectives/progress';
 
 const objectiveCapabilitiesValidator = v.object({
     canView: v.boolean(),
@@ -229,14 +232,14 @@ export const createObjective = mutationWithRLS({
             updatedAt: now,
         });
 
-        await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+        await scheduleAchievementChecks(ctx, {
             userId,
             organizationId,
             trigger: 'objective_created',
         });
 
         if (isCompleted) {
-            await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
+            await scheduleAchievementChecks(ctx, {
                 userId,
                 organizationId,
                 trigger: 'objective_completed',
@@ -272,9 +275,9 @@ export const updateObjective = mutationWithRLS({
         }
 
         validateObjectiveMetrics({
-            targetValue: args.targetValue,
-            startValue: args.startValue,
-            deadline: args.deadline,
+            targetValue: args.targetValue ?? objective.targetValue,
+            startValue: args.startValue ?? objective.startValue ?? 0,
+            deadline: args.deadline ?? objective.deadline,
         });
 
         let resolvedCategoryId: Id<'categories'> | undefined;
@@ -309,6 +312,12 @@ export const updateObjective = mutationWithRLS({
         if (args.unit !== undefined) patch.unit = args.unit;
 
         await ctx.db.patch('objectives', args.id, patch);
+
+        // Recompute completion synchronously so a changed target/startValue is
+        // reflected immediately even if the async lifecycle workflow below fails
+        // to start (which would otherwise leave the status stale). The workflow
+        // remains as an idempotent safety net.
+        await finalizeObjectiveCompletion(ctx, args.id, ctx.userId);
 
         await runObjectiveSync(ctx, args.id, objective.createdBy, ctx.organizationId, 'objective');
         const updated = await ctx.db.get('objectives', args.id);
@@ -370,6 +379,10 @@ export const restoreObjective = mutationWithRLS({
             deletedBy: undefined,
             updatedAt: Date.now(),
         });
+
+        // Recompute completion synchronously after restoring so the status is
+        // correct immediately regardless of the async lifecycle workflow.
+        await finalizeObjectiveCompletion(ctx, args.id, ctx.userId);
 
         await runObjectiveSync(ctx, args.id, objective.createdBy, ctx.organizationId, 'objective');
         const restored = await ctx.db.get('objectives', args.id);

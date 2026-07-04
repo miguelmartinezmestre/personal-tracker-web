@@ -63,7 +63,7 @@ export default function UpdateProgressFormModal({
                 await updateUpdateProgress.mutateAsync({
                     id: value._id as Id<'progressUpdates'>,
                     updatedValue: value.updatedValue,
-                    updateDate: new Date(value.updateDate).getTime(),
+                    updateDate: value.updateDate,
                     comment: value.comment ?? undefined,
                 });
             }}
@@ -132,10 +132,8 @@ export default function UpdateProgressFormModal({
                                                     !field.value && 'text-muted-foreground'
                                                 )}
                                             >
-                                                {field.value &&
-                                                (typeof field.value === 'string' ||
-                                                    typeof field.value === 'number') ? (
-                                                    formatDate(field.value, locale)
+                                                {Number.isFinite(Number(field.value)) ? (
+                                                    formatDate(Number(field.value), locale)
                                                 ) : (
                                                     <span>{t('pickADate')}</span>
                                                 )}
@@ -147,13 +145,16 @@ export default function UpdateProgressFormModal({
                                         <Calendar
                                             mode="single"
                                             selected={
-                                                field.value &&
-                                                (typeof field.value === 'string' ||
-                                                    typeof field.value === 'number')
-                                                    ? new Date(field.value)
+                                                Number.isFinite(Number(field.value))
+                                                    ? new Date(Number(field.value))
                                                     : undefined
                                             }
-                                            onSelect={field.onChange}
+                                            onSelect={date =>
+                                                field.onChange(date ? date.getTime() : Date.now())
+                                            }
+                                            disabled={date =>
+                                                date.getTime() > Date.now() + 24 * 60 * 60 * 1000
+                                            }
                                         />
                                     </PopoverContent>
                                 </Popover>

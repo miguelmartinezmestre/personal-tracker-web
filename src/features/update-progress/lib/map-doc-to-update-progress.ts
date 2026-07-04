@@ -5,7 +5,7 @@ export function mapDocToUpdateProgress(progressUpdateDoc: Doc<'progressUpdates'>
     return {
         _id: progressUpdateDoc._id.toString(),
         updatedValue: progressUpdateDoc.updatedValue,
-        updateDate: new Date(progressUpdateDoc.updateDate),
+        updateDate: progressUpdateDoc.updateDate,
         comment: progressUpdateDoc.comment ?? null,
     };
 }
