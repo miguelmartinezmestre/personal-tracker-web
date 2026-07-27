@@ -29,7 +29,7 @@ const BUILD_FINGERPRINT_INPUTS = [
     'tsconfig.json',
     'tsconfig.playwright.json',
 ];
-const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'public'];
+const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'public', 'shared'];
 const BUILD_FINGERPRINT_FILE_PREFIXES = ['tsconfig'];
 const BUILD_FINGERPRINT_ENV_KEYS = [
     'BASE_URL',
@@ -37,6 +37,7 @@ const BUILD_FINGERPRINT_ENV_KEYS = [
     'CONVEX_SELF_HOSTED_URL',
     'NEXT_PUBLIC_CONVEX_SITE_URL',
     'NEXT_PUBLIC_CONVEX_URL',
+    'NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP',
     'NEXT_PUBLIC_SITE_URL',
     'SITE_URL',
     'EMAIL_PROVIDER',
@@ -529,6 +530,7 @@ async function main(): Promise<void> {
     const nextDistDir = E2E_NEXT_DIST_DIR;
     const baseEnv = sanitizeEnv(process.env);
     const e2eSetupSecret = baseEnv.E2E_SETUP_SECRET ?? 'metricas-tfg-local-e2e-setup-secret';
+    const setupSecret = baseEnv.SETUP_SECRET ?? 'metricas-tfg-local-e2e-bootstrap-secret';
     const commandEnv = buildConvexCommandEnv({
         adminKey,
         betterAuthSecret,
@@ -536,8 +538,10 @@ async function main(): Promise<void> {
         convexUrl: CONVEX_URL,
         convexSiteUrl: CONVEX_SITE_URL,
         siteUrl,
+        allowLocalHttp: true,
         extra: {
             E2E_SETUP_SECRET: e2eSetupSecret,
+            SETUP_SECRET: setupSecret,
             BASE_URL: baseUrl,
             NEXT_DIST_DIR: nextDistDir,
             PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
@@ -545,7 +549,7 @@ async function main(): Promise<void> {
     });
 
     console.log('Configuring Convex env vars for e2e...');
-    await configureConvexEnv(commandEnv, siteUrl, { e2eSetupSecret });
+    await configureConvexEnv(commandEnv, siteUrl, { e2eSetupSecret, setupSecret });
 
     console.log('Deploying Convex functions...');
     await deployConvexFunctions(commandEnv);
@@ -609,10 +613,15 @@ async function main(): Promise<void> {
     );
 
     console.log(`Running Playwright e2e suite${browserLabel}...`);
-    await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
-        env: commandEnv,
-        shell: USE_SHELL_FOR_PNPM,
-    });
+    try {
+        await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
+            env: commandEnv,
+            shell: USE_SHELL_FOR_PNPM,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`${message}${getFrontendFailureSuffix()}`);
+    }
 
     console.log(`E2E suite finished successfully${browserLabel}.`);
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import process from 'node:process';
 import { sanitizeEnv } from './lib/command';
@@ -29,6 +30,8 @@ const APP_URL =
     process.env.SITE_URL ??
     process.env.BETTER_AUTH_URL ??
     'http://localhost:3000';
+const MYSQL_ROOT_PASSWORD =
+    process.env.MYSQL_ROOT_PASSWORD ?? randomBytes(24).toString('base64url');
 
 function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     return {
@@ -41,6 +44,9 @@ function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
         CONVEX_CLOUD_ORIGIN: CONVEX_URL,
         CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
         NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
+        MYSQL_ROOT_PASSWORD,
+        DATABASE_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/convex_self_hosted`,
+        MYSQL_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306`,
         ...extraEnv,
     };
 }
@@ -127,7 +133,9 @@ async function main(): Promise<void> {
     });
 
     console.log('Configuring Convex env vars...');
-    await configureConvexEnv(commandEnv, APP_URL);
+    await configureConvexEnv(commandEnv, APP_URL, {
+        setupSecret: process.env.SETUP_SECRET,
+    });
 
     console.log('Deploying Convex functions...');
     await deployConvexFunctions(commandEnv);
@@ -137,6 +145,7 @@ async function main(): Promise<void> {
         CONVEX_SELF_HOSTED_URL: CONVEX_URL,
         NEXT_PUBLIC_CONVEX_SITE_URL: CONVEX_SITE_URL,
         NEXT_PUBLIC_CONVEX_URL: CONVEX_URL,
+        NEXT_PUBLIC_SITE_URL: APP_URL,
     });
 
     console.log('Local Convex stack is ready. Updated .env.local with local Convex settings.');

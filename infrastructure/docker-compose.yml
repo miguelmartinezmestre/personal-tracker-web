@@ -1,97 +1,93 @@
 services:
-  mysql:
-    container_name: convex-mysql-metricas
-    image: mysql:8.0
-    ports:
-      - "3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
-      - MYSQL_DATABASE=convex_self_hosted
-    volumes:
-      - ./mysql-data:/var/lib/mysql
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    mysql:
+        container_name: convex-mysql-metricas
+        image: mysql:8.0@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+        ports:
+            - '127.0.0.1:3306:3306'
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}
+            - MYSQL_DATABASE=convex_self_hosted
+        volumes:
+            - ./mysql-data:/var/lib/mysql
+        restart: unless-stopped
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
 
-  mailhog:
-    container_name: mailhog-metricas
-    image: mailhog/mailhog:v1.0.1
-    ports:
-      - "${MAILHOG_SMTP_PORT:-1025}:1025"
-      - "${MAILHOG_UI_PORT:-8025}:8025"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:8025/api/v2/messages >/dev/null"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+    mailhog:
+        container_name: mailhog-metricas
+        image: mailhog/mailhog:v1.0.1@sha256:8d76a3d4ffa32a3661311944007a415332c4bb855657f4f6c57996405c009bea
+        ports:
+            - '127.0.0.1:${MAILHOG_SMTP_PORT:-1025}:1025'
+            - '127.0.0.1:${MAILHOG_UI_PORT:-8025}:8025'
+        restart: unless-stopped
+        healthcheck:
+            test: ['CMD-SHELL', 'wget -q -O- http://localhost:8025/api/v2/messages >/dev/null']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
 
-  backend:
-    container_name: convex-backend-metricas
-    image: ghcr.io/get-convex/convex-backend:latest
-    depends_on:
-      mysql:
-        condition: service_healthy
-      mailhog:
-        condition: service_healthy
-    restart: on-failure
-    stop_grace_period: 10s
-    stop_signal: SIGINT
-    ports:
-      - "${PORT:-3210}:3210"
-      - "${SITE_PROXY_PORT:-3211}:3211"
-    volumes:
-      - ./data:/convex/data
-    environment:
-      - INSTANCE_NAME=${INSTANCE_NAME:-}
-      - INSTANCE_SECRET=${INSTANCE_SECRET:-}
-      - CONVEX_RELEASE_VERSION_DEV=${CONVEX_RELEASE_VERSION_DEV:-}
-      - ACTIONS_USER_TIMEOUT_SECS=${ACTIONS_USER_TIMEOUT_SECS:-}
-      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://127.0.0.1:${PORT:-3210}}
-      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://127.0.0.1:${SITE_PROXY_PORT:-3211}}
-      - DATABASE_URL=${DATABASE_URL:-mysql://root:root@mysql:3306/convex_self_hosted}
-      - DISABLE_BEACON=${DISABLE_BEACON:-1}
-      - REDACT_LOGS_TO_CLIENT=${REDACT_LOGS_TO_CLIENT:-}
-      - DO_NOT_REQUIRE_SSL=${DO_NOT_REQUIRE_SSL:-1}
-      - POSTGRES_URL=${POSTGRES_URL:-}
-      - MYSQL_URL=${MYSQL_URL:-mysql://root:root@mysql:3306}
-      - RUST_LOG=${RUST_LOG:-info}
-      - RUST_BACKTRACE=${RUST_BACKTRACE:-}
-      - AWS_REGION=${AWS_REGION:-}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - S3_STORAGE_EXPORTS_BUCKET=${S3_STORAGE_EXPORTS_BUCKET:-}
-      - S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET=${S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET:-}
-      - S3_STORAGE_MODULES_BUCKET=${S3_STORAGE_MODULES_BUCKET:-}
-      - S3_STORAGE_FILES_BUCKET=${S3_STORAGE_FILES_BUCKET:-}
-      - S3_STORAGE_SEARCH_BUCKET=${S3_STORAGE_SEARCH_BUCKET:-}
-      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3210/version"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+    backend:
+        container_name: convex-backend-metricas
+        image: ghcr.io/get-convex/convex-backend@sha256:1738f1673f8d63161043a7859710d2301b1e9d6271e06afbb7af31594ea3a58f
+        depends_on:
+            mysql:
+                condition: service_healthy
+            mailhog:
+                condition: service_healthy
+        restart: on-failure
+        stop_grace_period: 10s
+        stop_signal: SIGINT
+        ports:
+            - '127.0.0.1:${PORT:-3210}:3210'
+            - '127.0.0.1:${SITE_PROXY_PORT:-3211}:3211'
+        volumes:
+            - ./data:/convex/data
+        environment:
+            - INSTANCE_NAME=${INSTANCE_NAME:-}
+            - INSTANCE_SECRET=${INSTANCE_SECRET:-}
+            - CONVEX_RELEASE_VERSION_DEV=${CONVEX_RELEASE_VERSION_DEV:-}
+            - ACTIONS_USER_TIMEOUT_SECS=${ACTIONS_USER_TIMEOUT_SECS:-}
+            - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://127.0.0.1:${PORT:-3210}}
+            - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://127.0.0.1:${SITE_PROXY_PORT:-3211}}
+            - DATABASE_URL=${DATABASE_URL:?DATABASE_URL must be set}
+            - DISABLE_BEACON=${DISABLE_BEACON:-1}
+            - REDACT_LOGS_TO_CLIENT=${REDACT_LOGS_TO_CLIENT:-}
+            - DO_NOT_REQUIRE_SSL=${DO_NOT_REQUIRE_SSL:-1}
+            - POSTGRES_URL=${POSTGRES_URL:-}
+            - MYSQL_URL=${MYSQL_URL:?MYSQL_URL must be set}
+            - RUST_LOG=${RUST_LOG:-info}
+            - RUST_BACKTRACE=${RUST_BACKTRACE:-}
+            - AWS_REGION=${AWS_REGION:-}
+            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+            - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+            - S3_STORAGE_EXPORTS_BUCKET=${S3_STORAGE_EXPORTS_BUCKET:-}
+            - S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET=${S3_STORAGE_SNAPSHOT_IMPORTS_BUCKET:-}
+            - S3_STORAGE_MODULES_BUCKET=${S3_STORAGE_MODULES_BUCKET:-}
+            - S3_STORAGE_FILES_BUCKET=${S3_STORAGE_FILES_BUCKET:-}
+            - S3_STORAGE_SEARCH_BUCKET=${S3_STORAGE_SEARCH_BUCKET:-}
+            - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-}
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://localhost:3210/version']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 60s
 
-  dashboard:
-    container_name: convex-dashboard-metricas
-    image: ghcr.io/get-convex/convex-dashboard:latest
-    depends_on:
-      backend:
-        condition: service_healthy
-    stop_grace_period: 10s
-    stop_signal: SIGINT
-    ports:
-      - "${DASHBOARD_PORT:-6791}:6791"
-    environment:
-      - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://127.0.0.1:${PORT:-3210}}
-
-volumes:
-  mysql-data:
-  data:
+    dashboard:
+        container_name: convex-dashboard-metricas
+        image: ghcr.io/get-convex/convex-dashboard@sha256:5f4dca5615a408501ddce6e8d28f4444d9b60d2f5fc17de4c509fdf43191889d
+        depends_on:
+            backend:
+                condition: service_healthy
+        stop_grace_period: 10s
+        stop_signal: SIGINT
+        ports:
+            - '127.0.0.1:${DASHBOARD_PORT:-6791}:6791'
+        environment:
+            - NEXT_PUBLIC_DEPLOYMENT_URL=${NEXT_PUBLIC_DEPLOYMENT_URL:-http://127.0.0.1:${PORT:-3210}}

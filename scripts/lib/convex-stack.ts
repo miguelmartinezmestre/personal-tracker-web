@@ -87,6 +87,7 @@ export function buildConvexCommandEnv(params: {
     convexUrl: string;
     convexSiteUrl: string;
     siteUrl: string;
+    allowLocalHttp?: boolean;
     extra?: NodeJS.ProcessEnv;
 }): NodeJS.ProcessEnv {
     return buildMailhogConvexEnv({
@@ -99,6 +100,7 @@ export function buildConvexCommandEnv(params: {
         JWKS: params.jwks,
         NEXT_PUBLIC_CONVEX_SITE_URL: params.convexSiteUrl,
         NEXT_PUBLIC_CONVEX_URL: params.convexUrl,
+        ...(params.allowLocalHttp ? { NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: 'true' } : {}),
         NEXT_PUBLIC_SITE_URL: params.siteUrl,
         SITE_URL: params.siteUrl,
     });
@@ -118,7 +120,7 @@ export async function setConvexEnvVar(
 export async function configureConvexEnv(
     commandEnv: NodeJS.ProcessEnv,
     siteUrl: string,
-    options?: { e2eSetupSecret?: string }
+    options?: { e2eSetupSecret?: string; setupSecret?: string }
 ): Promise<void> {
     await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'SITE_URL', siteUrl], {
         env: commandEnv,
@@ -138,6 +140,10 @@ export async function configureConvexEnv(
                 shell: USE_SHELL_FOR_PNPM,
             }
         );
+    }
+
+    if (options?.setupSecret !== undefined) {
+        await setConvexEnvVar(commandEnv, 'SETUP_SECRET', options.setupSecret);
     }
 
     await runCommand(
