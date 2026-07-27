@@ -7,11 +7,17 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useReferenceNow } from '@/lib/reference-now';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 
 export default function MonthlyProgressChart() {
     const t = useTranslations('DashboardHome');
     const locale = useLocale();
-    const { data: monthlyProgress } = useQuery(convexQuery(api.dashboard.getMonthlyProgress, {}));
+    const referenceNow = useReferenceNow();
+    const monthlyProgressQuery = useQuery(
+        convexQuery(api.dashboard.getMonthlyProgress, { now: referenceNow })
+    );
+    const { data: monthlyProgress } = monthlyProgressQuery;
 
     const chartData = (monthlyProgress?.items ?? []).map(item => ({
         month: formatMonthLabel(item.monthKey, locale),
@@ -29,8 +35,10 @@ export default function MonthlyProgressChart() {
                 </div>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-                {!monthlyProgress ? (
+            <CardContent className="space-y-2">
+                {monthlyProgressQuery.isError ? (
+                    <QueryErrorFallback onRetry={() => monthlyProgressQuery.refetch()} />
+                ) : !monthlyProgress ? (
                     <div className="flex h-[200px] items-center justify-center">
                         <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
@@ -76,6 +84,11 @@ export default function MonthlyProgressChart() {
                         </BarChart>
                     </ResponsiveContainer>
                 )}
+                {monthlyProgress?.isTruncated ? (
+                    <p className="text-xs text-muted-foreground" role="status">
+                        {t('charts.partialData')}
+                    </p>
+                ) : null}
             </CardContent>
         </Card>
     );

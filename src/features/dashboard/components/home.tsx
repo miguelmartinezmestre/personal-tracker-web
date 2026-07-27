@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import StatCard from '@/features/dashboard/components/stat-card';
 import dynamic from 'next/dynamic';
+import { useReferenceNow } from '@/lib/reference-now';
 
 const MonthlyProgressChart = dynamic(
     () => import('@/features/dashboard/components/monthly-progress-chart'),
@@ -21,11 +22,16 @@ const TopObjectivesChart = dynamic(
 );
 
 export default function Home() {
+    const referenceNow = useReferenceNow();
     const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, {}));
     const { data: user } = userQuery;
     const statsQuery = useQuery(convexQuery(api.dashboard.getDashboardStats, {}));
-    const deadlinesQuery = useQuery(convexQuery(api.dashboard.getUpcomingDeadlines, {}));
-    const activityQuery = useQuery(convexQuery(api.dashboard.getRecentActivity, {}));
+    const deadlinesQuery = useQuery(
+        convexQuery(api.dashboard.getUpcomingDeadlines, { now: referenceNow })
+    );
+    const activityQuery = useQuery(
+        convexQuery(api.dashboard.getRecentActivity, { now: referenceNow })
+    );
     const { data: stats } = statsQuery;
     const { data: upcomingDeadlines } = deadlinesQuery;
     const { data: recentActivity } = activityQuery;
@@ -62,6 +68,11 @@ export default function Home() {
                         value={stats?.completedObjectives}
                         icon={CheckCircle}
                     />
+                    {stats?.isTruncated ? (
+                        <p className="col-span-2 text-xs text-muted-foreground" role="status">
+                            {t('partialData')}
+                        </p>
+                    ) : null}
                 </div>
             )}
 
@@ -97,12 +108,19 @@ export default function Home() {
                                     <li key={deadline.id} className="flex justify-between text-sm">
                                         <span className="truncate mr-2">{deadline.title}</span>
                                         <span className="text-muted-foreground shrink-0">
-                                            {deadline.daysRemaining}d
+                                            {t('deadlineDaysRemaining', {
+                                                days: deadline.daysRemaining,
+                                            })}
                                         </span>
                                     </li>
                                 ))}
                             </ul>
                         )}
+                        {upcomingDeadlines?.isTruncated ? (
+                            <p className="mt-2 text-xs text-muted-foreground" role="status">
+                                {t('partialData')}
+                            </p>
+                        ) : null}
                     </CardContent>
                 </Card>
 
@@ -124,7 +142,7 @@ export default function Home() {
                                     </span>
                                     <span className="font-medium">
                                         {recentActivity.progressUpdatesCount}
-                                        {recentActivity.isTruncated ? '+' : ''}
+                                        {recentActivity.progressUpdatesTruncated ? '+' : ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
@@ -133,7 +151,7 @@ export default function Home() {
                                     </span>
                                     <span className="font-medium">
                                         {recentActivity.objectivesCreatedCount}
-                                        {recentActivity.isTruncated ? '+' : ''}
+                                        {recentActivity.objectivesCreatedTruncated ? '+' : ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">
@@ -142,12 +160,17 @@ export default function Home() {
                                     </span>
                                     <span className="font-medium">
                                         {recentActivity.objectivesCompletedCount}
-                                        {recentActivity.isTruncated ? '+' : ''}
+                                        {recentActivity.objectivesCompletedTruncated ? '+' : ''}
                                     </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     {t('activity.period', { days: recentActivity.periodDays })}
                                 </p>
+                                {recentActivity.isTruncated ? (
+                                    <p className="text-xs text-muted-foreground" role="status">
+                                        {t('partialData')}
+                                    </p>
+                                ) : null}
                             </>
                         )}
                     </CardContent>
