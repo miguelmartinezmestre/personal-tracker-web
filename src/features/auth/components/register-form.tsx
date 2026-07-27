@@ -3,8 +3,7 @@
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Form } from '@/components/ui/form-tanstack';
-import { registerSchema } from '@/features/auth/schemas/register';
-import { z } from 'zod';
+import { createRegisterSchema, type RegisterFormValues } from '@/features/auth/schemas/register';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getErrorMessage } from '@/lib/error-utils';
+import { getInvitationCallbackPath } from '@shared/auth-security';
 import { RegisterFormInputField } from './register-form-input-field';
 
 interface RegisterFormProps {
@@ -26,7 +26,12 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
     const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
+    const registerSchema = createRegisterSchema({
+        weakPassword: t('errors.weakPassword'),
+        passwordsDontMatch: t('errors.passwordsDontMatch'),
+    });
     const [registerError, setRegisterError] = useState('');
+    const [verificationSent, setVerificationSent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const session = useSession();
 
@@ -43,18 +48,19 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
             password: '',
             confirmPassword: '',
             username: '',
-        } as z.infer<typeof registerSchema>,
+        } as RegisterFormValues,
         validators: {
             onChange: registerSchema,
             onSubmit: registerSchema,
         },
-        onSubmit: async ({ value }: { value: z.infer<typeof registerSchema> }) => {
+        onSubmit: async ({ value }: { value: RegisterFormValues }) => {
             await onSubmit(value);
         },
     });
 
-    async function onSubmit(values: z.infer<typeof registerSchema>) {
+    async function onSubmit(values: RegisterFormValues) {
         setRegisterError('');
+        setVerificationSent(false);
         setIsSubmitting(true);
 
         const hasExistingSession = Boolean(session.data?.user);
@@ -69,19 +75,25 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                     name: values.username,
                     email: values.email,
                     password: values.password,
+                    callbackURL: invitationToken
+                        ? getInvitationCallbackPath(invitationToken)
+                        : undefined,
                 },
                 {
                     onSuccess: async () => {
                         try {
                             if (invitationToken) {
-                                const acceptResult = await authClient.organization.acceptInvitation(
-                                    {
-                                        invitationId: invitationToken,
-                                    }
-                                );
-                                if (acceptResult.error) {
-                                    throw new Error(acceptResult.error.message);
+                                const verificationResult = await authClient.sendVerificationEmail({
+                                    email: values.email,
+                                    callbackURL: getInvitationCallbackPath(invitationToken),
+                                });
+                                if (verificationResult.error) {
+                                    throw new Error(verificationResult.error.message);
                                 }
+
+                                setVerificationSent(true);
+                                setIsSubmitting(false);
+                                return;
                             }
 
                             router.push('/dashboard/home');
@@ -117,6 +129,12 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{registerError}</AlertDescription>
+                    </Alert>
+                )}
+                {verificationSent && (
+                    <Alert className="mb-6">
+                        <AlertTitle>{t('verificationSentTitle')}</AlertTitle>
+                        <AlertDescription>{t('verificationSentDescription')}</AlertDescription>
                     </Alert>
                 )}
 

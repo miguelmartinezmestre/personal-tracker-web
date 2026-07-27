@@ -1,19 +1,71 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Mail } from 'lucide-react';
+import { AlertCircle, Mail, ShieldCheck } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
 import {
     usePendingInvitations,
     useAcceptInvitation,
     useRejectInvitation,
 } from '@/features/organizations/hooks/use-invitations';
+import { useSession } from '@/features/auth/hooks/use-session';
+import { authClient } from '@/features/auth/client';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { InvitationCard } from './invitation-card';
 
 export function InvitationsList() {
     const t = useTranslations('Invitations');
     const { data: invitations, isLoading } = usePendingInvitations();
+    const session = useSession();
     const acceptInvitation = useAcceptInvitation();
     const rejectInvitation = useRejectInvitation();
+    const [actionError, setActionError] = useState('');
+    const [verificationSent, setVerificationSent] = useState(false);
+    const currentUser = session.data?.user;
+    const requiresEmailVerification = Boolean(currentUser && !currentUser.emailVerified);
+
+    const sendVerificationEmail = useMutation({
+        mutationFn: async () => {
+            if (!currentUser?.email) {
+                throw new Error('Missing authenticated user email');
+            }
+
+            const result = await authClient.sendVerificationEmail({
+                email: currentUser.email,
+                callbackURL: '/dashboard/invitations',
+            });
+            throwIfAuthClientError(result);
+        },
+        onSuccess: () => {
+            setActionError('');
+            setVerificationSent(true);
+        },
+        onError: () => {
+            setVerificationSent(false);
+            setActionError(t('verificationEmailError'));
+        },
+    });
+
+    async function handleAccept(invitationId: string) {
+        setActionError('');
+        try {
+            await acceptInvitation.mutateAsync(invitationId);
+        } catch {
+            setActionError(t('errorAccepting'));
+        }
+    }
+
+    async function handleReject(invitationId: string) {
+        setActionError('');
+        try {
+            await rejectInvitation.mutateAsync(invitationId);
+        } catch {
+            setActionError(t('errorRejecting'));
+        }
+    }
 
     if (isLoading) {
         return (
@@ -37,17 +89,57 @@ export function InvitationsList() {
     }
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="invitations-list">
-            {pendingInvitations.map(invitation => (
-                <InvitationCard
-                    key={invitation.id}
-                    invitation={invitation}
-                    onAccept={() => acceptInvitation.mutate(invitation.id)}
-                    onReject={() => rejectInvitation.mutate(invitation.id)}
-                    isAccepting={acceptInvitation.isPending}
-                    isRejecting={rejectInvitation.isPending}
-                />
-            ))}
+        <div className="space-y-4">
+            {requiresEmailVerification ? (
+                <Alert data-testid="invitation-verification-required">
+                    <ShieldCheck className="h-4 w-4" />
+                    <AlertTitle>{t('verificationRequiredTitle')}</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                        <p>
+                            {verificationSent
+                                ? t('verificationEmailSent')
+                                : t('verificationRequiredDescription')}
+                        </p>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            data-testid="invitation-send-verification-email"
+                            disabled={sendVerificationEmail.isPending || verificationSent}
+                            onClick={() => sendVerificationEmail.mutate()}
+                        >
+                            {sendVerificationEmail.isPending
+                                ? t('sendingVerificationEmail')
+                                : t('sendVerificationEmail')}
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            ) : null}
+
+            {actionError ? (
+                <Alert variant="destructive" data-testid="invitation-action-error">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{t('errorTitle')}</AlertTitle>
+                    <AlertDescription>{actionError}</AlertDescription>
+                </Alert>
+            ) : null}
+
+            <div
+                className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                data-testid="invitations-list"
+            >
+                {pendingInvitations.map(invitation => (
+                    <InvitationCard
+                        key={invitation.id}
+                        invitation={invitation}
+                        onAccept={() => void handleAccept(invitation.id)}
+                        onReject={() => void handleReject(invitation.id)}
+                        isAccepting={acceptInvitation.isPending}
+                        isRejecting={rejectInvitation.isPending}
+                        isResponseDisabled={session.isPending || requiresEmailVerification}
+                    />
+                ))}
+            </div>
         </div>
     );
 }

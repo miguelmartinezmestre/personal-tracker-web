@@ -4,6 +4,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
+import { useReferenceNow } from '@/lib/reference-now';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 export type InvitationRole = 'owner' | 'admin' | 'member';
 
@@ -40,8 +42,9 @@ export interface Invitation {
 }
 
 export function usePendingInvitations() {
+    const referenceNow = useReferenceNow();
     const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getUserInvitations, {})
+        convexQuery(api.organizations.getUserInvitations, { now: referenceNow })
     );
 
     const invitations: Invitation[] | undefined = data?.map((rawInvitation: InvitationRaw) => {
@@ -80,9 +83,11 @@ export function usePendingInvitations() {
 export function useAcceptInvitation() {
     return useMutation({
         mutationFn: async (invitationId: string) => {
-            return await authClient.organization.acceptInvitation({
+            const result = await authClient.organization.acceptInvitation({
                 invitationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }
@@ -90,9 +95,11 @@ export function useAcceptInvitation() {
 export function useRejectInvitation() {
     return useMutation({
         mutationFn: async (invitationId: string) => {
-            return await authClient.organization.rejectInvitation({
+            const result = await authClient.organization.rejectInvitation({
                 invitationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }
