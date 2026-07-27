@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Loader2, AlertTriangle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import { useDeleteAccount } from '@/features/settings/hooks/use-delete-account';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useRouter } from 'next/navigation';
-import { useMountEffect } from '@/hooks/use-mount-effect';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
@@ -20,7 +19,6 @@ export default function AccountDeletionSection() {
     const sessionUser = sessionQuery?.data?.user;
     const deleteAccount = useDeleteAccount();
     const router = useRouter();
-    const redirectTimerRef = useRef<number | null>(null);
 
     const { data: isPlatformSetupUser, isPending: isSetupUserPending } = useQuery(
         convexQuery(api.setup.isCurrentUserPlatformSetupUser, {})
@@ -29,19 +27,10 @@ export default function AccountDeletionSection() {
     const [emailConfirmation, setEmailConfirmation] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
 
     const userEmail = sessionUser?.email ?? '';
     const isLoading = deleteAccount.isPending;
     const canDelete = emailConfirmation === userEmail && password.length > 0;
-
-    useMountEffect(() => {
-        return () => {
-            if (redirectTimerRef.current !== null) {
-                window.clearTimeout(redirectTimerRef.current);
-            }
-        };
-    });
 
     const handleDelete = async () => {
         setError('');
@@ -52,10 +41,7 @@ export default function AccountDeletionSection() {
 
         try {
             await deleteAccount.mutateAsync(password);
-            setSuccess(true);
-            redirectTimerRef.current = window.setTimeout(() => {
-                router.push('/');
-            }, 2000);
+            router.replace('/login');
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : tCommon('genericErrorDescription');
@@ -88,19 +74,6 @@ export default function AccountDeletionSection() {
                         </p>
                     </div>
                 </div>
-            </div>
-        );
-    }
-
-    if (success) {
-        return (
-            <div
-                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-6 text-center"
-                data-testid="delete-account-success"
-            >
-                <p className="text-emerald-700 dark:text-emerald-300">
-                    {t('deleteAccountSuccess')}
-                </p>
             </div>
         );
     }
