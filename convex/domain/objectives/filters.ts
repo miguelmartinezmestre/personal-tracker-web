@@ -1,5 +1,6 @@
 import { v, type Infer } from 'convex/values';
 import { TIME } from '../../utils/constants';
+import { currentUtcCivilDay } from '../../../shared/civil-date';
 
 export const deadlineRangeValidator = v.union(
     v.literal('today'),
@@ -11,15 +12,10 @@ export const deadlineRangeValidator = v.union(
 export type DeadlineRange = Infer<typeof deadlineRangeValidator>;
 
 export function getDeadlineRangeBounds(range: DeadlineRange, now = Date.now()) {
-    const startOfToday = new Date(now);
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayStart = startOfToday.getTime();
+    const todayStart = currentUtcCivilDay(now);
     const tomorrowStart = todayStart + TIME.DAY_MS;
-    const nextMonthStart = new Date(
-        startOfToday.getFullYear(),
-        startOfToday.getMonth() + 1,
-        1
-    ).getTime();
+    const today = new Date(todayStart);
+    const nextMonthStart = Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1);
 
     switch (range) {
         case 'today':

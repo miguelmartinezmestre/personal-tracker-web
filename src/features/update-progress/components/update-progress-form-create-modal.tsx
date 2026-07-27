@@ -22,17 +22,22 @@ import {
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { formatDate } from '@/lib/format-date';
+import { formatCivilDate } from '@/lib/format-date';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import FormModal from '@/components/forms/form-modal';
+import {
+    currentUtcCivilDay,
+    localDateToUtcCivilDay,
+    utcCivilDayToLocalDate,
+} from '@shared/civil-date';
 
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
     const { id: objectiveId } = useParams();
-    const [defaultUpdateDate] = useState(() => Date.now());
+    const [defaultUpdateDate] = useState(() => currentUtcCivilDay());
 
     const createUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.createUpdateProgress),
@@ -132,7 +137,7 @@ export default function CreateUpdateProgressFormModal() {
                                                 )}
                                             >
                                                 {Number.isFinite(Number(field.value)) ? (
-                                                    formatDate(Number(field.value), locale)
+                                                    formatCivilDate(Number(field.value), locale)
                                                 ) : (
                                                     <span>{t('pickADate')}</span>
                                                 )}
@@ -145,14 +150,18 @@ export default function CreateUpdateProgressFormModal() {
                                             mode="single"
                                             selected={
                                                 Number.isFinite(Number(field.value))
-                                                    ? new Date(Number(field.value))
+                                                    ? utcCivilDayToLocalDate(Number(field.value))
                                                     : undefined
                                             }
                                             onSelect={date =>
-                                                field.onChange(date ? date.getTime() : Date.now())
+                                                field.onChange(
+                                                    date
+                                                        ? localDateToUtcCivilDay(date)
+                                                        : currentUtcCivilDay()
+                                                )
                                             }
                                             disabled={date =>
-                                                date.getTime() > Date.now() + 24 * 60 * 60 * 1000
+                                                localDateToUtcCivilDay(date) > currentUtcCivilDay()
                                             }
                                         />
                                     </PopoverContent>

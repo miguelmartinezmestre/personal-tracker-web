@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { formatDate, formatTime } from '@/lib/format-date';
+import { formatCivilDate } from '@/lib/format-date';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
@@ -42,12 +42,7 @@ export function useUpdateProgressTableColumns({
             header: t('table.columns.date'),
             cell: ({ row }) => {
                 const progressRow = row.original;
-                return (
-                    <span>
-                        {formatDate(progressRow.updateDate, locale)} -{' '}
-                        {formatTime(progressRow.updateDate, locale)}
-                    </span>
-                );
+                return <span>{formatCivilDate(progressRow.updateDate, locale)}</span>;
             },
         },
         {
