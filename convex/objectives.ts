@@ -36,42 +36,25 @@ import {
     finalizeObjectiveCompletion,
     scheduleAchievementChecks,
 } from './domain/objectives/progress';
+import {
+    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
+    OBJECTIVE_TITLE_MAX_LENGTH,
+    OBJECTIVE_UNIT_MAX_LENGTH,
+} from '../shared/input-constraints';
+import { deadlineEndExclusive, toUtcCivilDay } from '../shared/civil-date';
+import {
+    assertOptionalBoundedString,
+    normalizeRequiredBoundedString,
+} from './utils/inputValidation';
 
-const objectiveCapabilitiesValidator = v.object({
-    canView: v.boolean(),
-    canEditDefinition: v.boolean(),
-    canDelete: v.boolean(),
-    canRestore: v.boolean(),
-    canManageCollaborators: v.boolean(),
-    canContribute: v.boolean(),
-    canSetVisibility: v.boolean(),
-    canTransfer: v.boolean(),
-});
-
-const objectiveWithCapabilitiesValidator = v.object({
-    _id: v.id('objectives'),
-    _creationTime: v.number(),
-    organizationId: v.id('organization'),
-    createdBy: v.id('user'),
-    ownerId: v.id('user'),
-    visibility: objectiveVisibilityValidator,
-    title: v.string(),
-    description: v.optional(v.string()),
-    categoryId: v.optional(v.id('categories')),
-    targetValue: v.number(),
-    currentValue: v.number(),
-    startValue: v.optional(v.number()),
-    deadline: v.optional(v.number()),
-    status: objectiveStatusValidator,
-    completedAt: v.optional(v.number()),
-    unit: v.optional(v.string()),
-    workflowId: v.optional(v.string()),
-    deletedAt: v.optional(v.number()),
-    deletedBy: v.optional(v.id('user')),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    capabilities: objectiveCapabilitiesValidator,
-});
+import {
+    collaboratorEnrichedValidator,
+    objectiveCollaboratorDocumentValidator,
+    objectiveWithCapabilitiesValidator,
+    paginatedObjectivesValidator,
+    paginatedObjectivesArrayValidator,
+    successResultValidator,
+} from './utils/apiReturnValidators';
 
 async function enrichObjective(ctx: AccessCtx, objective: Doc<'objectives'>) {
     const capabilities = await resolveObjectiveCapabilities(ctx, objective);
@@ -85,6 +68,7 @@ export const getObjectives = queryWithRLS({
         categoryId: v.optional(v.id('categories')),
         deadlineRange: v.optional(deadlineRangeValidator),
     },
+    returns: paginatedObjectivesValidator,
     handler: async (ctx, { paginationOpts, status, categoryId, deadlineRange }) => {
         const page = await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
             listObjectives(ctx, {
@@ -106,6 +90,26 @@ export const getObjectives = queryWithRLS({
     },
 });
 
+export const getDeletedObjectives = queryWithRLS({
+    args: {
+        paginationOpts: paginationOptsValidator,
+    },
+    returns: paginatedObjectivesValidator,
+    handler: async (ctx, { paginationOpts }) => {
+        const page = await withInvalidCursorRetry(paginationOpts, retryPaginationOpts =>
+            listObjectives(ctx, {
+                paginationOpts: retryPaginationOpts,
+                deletionState: 'deleted',
+            })
+        );
+
+        return {
+            ...page,
+            page: await Promise.all(page.page.map(objective => enrichObjective(ctx, objective))),
+        };
+    },
+});
+
 export const searchObjectivesQuery = queryWithRLS({
     args: {
         search: v.string(),
@@ -114,6 +118,7 @@ export const searchObjectivesQuery = queryWithRLS({
         categoryId: v.optional(v.id('categories')),
         deadlineRange: v.optional(deadlineRangeValidator),
     },
+    returns: paginatedObjectivesArrayValidator,
     handler: async (ctx, args) => {
         const results = await searchObjectives(ctx, args);
         return await Promise.all(results.map(objective => enrichObjective(ctx, objective)));
@@ -138,6 +143,7 @@ export const getObjectiveCollaborators = queryWithRLS({
     args: {
         objectiveId: v.id('objectives'),
     },
+    returns: v.array(collaboratorEnrichedValidator),
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.objectiveId);
         if (!objective) {
@@ -192,16 +198,25 @@ export const createObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
 
-        if (args.title.trim() === '') {
+        const title = normalizeRequiredBoundedString(args.title, OBJECTIVE_TITLE_MAX_LENGTH);
+        assertOptionalBoundedString(args.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH);
+        assertOptionalBoundedString(args.unit, OBJECTIVE_UNIT_MAX_LENGTH);
+
+        if (
+            args.startValue !== undefined &&
+            args.currentValue !== undefined &&
+            args.startValue !== args.currentValue
+        ) {
             throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
         }
 
         const startValue = args.startValue ?? args.currentValue ?? 0;
+        const deadline = args.deadline === undefined ? undefined : toUtcCivilDay(args.deadline);
         validateObjectiveMetrics({
             targetValue: args.targetValue,
             currentValue: startValue,
             startValue,
-            deadline: args.deadline,
+            deadline,
         });
 
         let resolvedCategoryId: Id<'categories'> | undefined;
@@ -218,35 +233,39 @@ export const createObjective = mutationWithRLS({
             ownerId: userId,
             visibility: args.visibility ?? OBJECTIVE_VISIBILITY.PRIVATE,
             organizationId,
-            title: args.title,
+            title,
             description: args.description,
             categoryId: resolvedCategoryId,
             targetValue: args.targetValue,
             currentValue: startValue,
             startValue,
-            deadline: args.deadline,
+            deadline,
             status: isCompleted ? 'completed' : 'active',
             completedAt: isCompleted ? now : undefined,
+            earlyBirdCompleted:
+                isCompleted && deadline !== undefined && now < deadlineEndExclusive(deadline),
             unit: args.unit,
             createdAt: now,
             updatedAt: now,
         });
 
         await scheduleAchievementChecks(ctx, {
-            userId,
+            individualUserId: userId,
+            organizationContributorUserId: userId,
             organizationId,
             trigger: 'objective_created',
         });
 
         if (isCompleted) {
             await scheduleAchievementChecks(ctx, {
-                userId,
+                individualUserId: userId,
+                organizationContributorUserId: userId,
                 organizationId,
                 trigger: 'objective_completed',
             });
         }
 
-        await runObjectiveSync(ctx, objectiveId, userId, organizationId, 'objective');
+        await runObjectiveSync(ctx, objectiveId, userId, userId, organizationId, 'objective');
         return objectiveId;
     },
 });
@@ -259,9 +278,10 @@ export const updateObjective = mutationWithRLS({
         categoryId: v.optional(v.union(v.id('categories'), v.null())),
         targetValue: v.optional(v.number()),
         startValue: v.optional(v.number()),
-        deadline: v.optional(v.number()),
+        deadline: v.optional(v.union(v.number(), v.null())),
         unit: v.optional(v.string()),
     },
+    returns: objectiveWithCapabilitiesValidator,
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {
@@ -270,14 +290,31 @@ export const updateObjective = mutationWithRLS({
 
         await assertObjectiveAction(ctx, objective, 'editDefinition');
 
-        if (args.title !== undefined && args.title.trim() === '') {
-            throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-        }
+        const title =
+            args.title === undefined
+                ? undefined
+                : normalizeRequiredBoundedString(args.title, OBJECTIVE_TITLE_MAX_LENGTH);
+        assertOptionalBoundedString(args.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH);
+        assertOptionalBoundedString(args.unit, OBJECTIVE_UNIT_MAX_LENGTH);
+
+        const previousStartValue = objective.startValue ?? 0;
+        const nextStartValue = args.startValue ?? previousStartValue;
+        // `currentValue - startValue` is the transactionally maintained sum of
+        // progress entries. Moving the baseline therefore shifts currentValue
+        // by the same amount without reading the history.
+        const nextCurrentValue = objective.currentValue + (nextStartValue - previousStartValue);
+        const nextDeadline =
+            args.deadline === undefined
+                ? objective.deadline
+                : args.deadline === null
+                  ? undefined
+                  : toUtcCivilDay(args.deadline);
 
         validateObjectiveMetrics({
             targetValue: args.targetValue ?? objective.targetValue,
-            startValue: args.startValue ?? objective.startValue ?? 0,
-            deadline: args.deadline ?? objective.deadline,
+            currentValue: nextCurrentValue,
+            startValue: nextStartValue,
+            deadline: nextDeadline,
         });
 
         let resolvedCategoryId: Id<'categories'> | undefined;
@@ -295,31 +332,42 @@ export const updateObjective = mutationWithRLS({
             description: string | undefined;
             categoryId: Id<'categories'> | undefined;
             targetValue: number;
+            currentValue: number;
             startValue: number;
-            deadline: number;
+            deadline: number | undefined;
             unit: string;
             updatedAt: number;
         }> = {
             updatedAt: Date.now(),
         };
 
-        if (args.title !== undefined) patch.title = args.title;
+        if (title !== undefined) patch.title = title;
         if (args.description !== undefined) patch.description = args.description;
         if (args.categoryId !== undefined) patch.categoryId = resolvedCategoryId;
         if (args.targetValue !== undefined) patch.targetValue = args.targetValue;
-        if (args.startValue !== undefined) patch.startValue = args.startValue;
-        if (args.deadline !== undefined) patch.deadline = args.deadline;
+        if (args.startValue !== undefined) {
+            patch.startValue = args.startValue;
+            patch.currentValue = nextCurrentValue;
+        }
+        if (args.deadline !== undefined) patch.deadline = nextDeadline;
         if (args.unit !== undefined) patch.unit = args.unit;
 
         await ctx.db.patch('objectives', args.id, patch);
 
-        // Recompute completion synchronously so a changed target/startValue is
+        // Reconcile completion synchronously so a changed target/startValue is
         // reflected immediately even if the async lifecycle workflow below fails
         // to start (which would otherwise leave the status stale). The workflow
         // remains as an idempotent safety net.
         await finalizeObjectiveCompletion(ctx, args.id, ctx.userId);
 
-        await runObjectiveSync(ctx, args.id, objective.createdBy, ctx.organizationId, 'objective');
+        await runObjectiveSync(
+            ctx,
+            args.id,
+            objective.createdBy,
+            ctx.userId,
+            ctx.organizationId,
+            'objective'
+        );
         const updated = await ctx.db.get('objectives', args.id);
         if (!updated) {
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
@@ -366,10 +414,17 @@ export const restoreObjective = mutationWithRLS({
     args: {
         id: v.id('objectives'),
     },
+    returns: objectiveWithCapabilitiesValidator,
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+        }
+        if (objective.deletedAt === undefined) {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_DELETED);
+        }
+        if (objective.purgeToken) {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_PURGE_IN_PROGRESS);
         }
 
         await assertObjectiveAction(ctx, objective, 'restore');
@@ -380,11 +435,18 @@ export const restoreObjective = mutationWithRLS({
             updatedAt: Date.now(),
         });
 
-        // Recompute completion synchronously after restoring so the status is
+        // Reconcile completion synchronously after restoring so the status is
         // correct immediately regardless of the async lifecycle workflow.
         await finalizeObjectiveCompletion(ctx, args.id, ctx.userId);
 
-        await runObjectiveSync(ctx, args.id, objective.createdBy, ctx.organizationId, 'objective');
+        await runObjectiveSync(
+            ctx,
+            args.id,
+            objective.createdBy,
+            ctx.userId,
+            ctx.organizationId,
+            'objective'
+        );
         const restored = await ctx.db.get('objectives', args.id);
         if (!restored) {
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
@@ -398,6 +460,7 @@ export const setObjectiveVisibility = mutationWithRLS({
         id: v.id('objectives'),
         visibility: objectiveVisibilityValidator,
     },
+    returns: objectiveWithCapabilitiesValidator,
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {
@@ -424,6 +487,7 @@ export const transferObjectiveOwnership = mutationWithRLS({
         id: v.id('objectives'),
         newOwnerId: v.id('user'),
     },
+    returns: objectiveWithCapabilitiesValidator,
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
         if (!objective) {
@@ -471,6 +535,7 @@ export const addCollaborator = mutationWithRLS({
         userId: v.id('user'),
         role: objectiveCollaboratorRoleValidator,
     },
+    returns: v.union(objectiveCollaboratorDocumentValidator, v.null()),
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.objectiveId);
         if (!objective) {
@@ -495,6 +560,7 @@ export const updateCollaboratorRole = mutationWithRLS({
         collaboratorId: v.id('objectiveCollaborators'),
         role: objectiveCollaboratorRoleValidator,
     },
+    returns: v.union(objectiveCollaboratorDocumentValidator, v.null()),
     handler: async (ctx, args) => {
         const collaborator = await ctx.db.get('objectiveCollaborators', args.collaboratorId);
         if (!collaborator) {
@@ -519,6 +585,7 @@ export const removeCollaborator = mutationWithRLS({
     args: {
         collaboratorId: v.id('objectiveCollaborators'),
     },
+    returns: successResultValidator,
     handler: async (ctx, args) => {
         const collaborator = await ctx.db.get('objectiveCollaborators', args.collaboratorId);
         if (!collaborator) {
@@ -555,6 +622,12 @@ export const purgeObjective = mutationWithRLS({
         if (!objective) {
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
+        if (objective.deletedAt === undefined) {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_DELETED);
+        }
+        if (objective.purgeToken) {
+            throw new ConvexError(ERROR_CODES.OBJECTIVE_PURGE_IN_PROGRESS);
+        }
 
         await assertObjectiveAction(ctx, objective, 'purge');
 
@@ -562,19 +635,25 @@ export const purgeObjective = mutationWithRLS({
             await workflow.cancel(ctx, objective.workflowId);
         }
 
-        const collaborators = await listCollaboratorsForObjective(ctx, args.id);
-        for (const collaborator of collaborators) {
-            await ctx.db.delete('objectiveCollaborators', collaborator._id);
-        }
+        const now = Date.now();
+        const purgeToken = `${now.toString(36)}-${Math.random().toString(36).slice(2)}`;
+        await ctx.db.patch('objectives', args.id, {
+            purgeToken,
+            purgeStartedAt: now,
+            updatedAt: now,
+        });
 
-        return await deleteObjectiveWithDependents(ctx, { objectiveId: args.id });
+        return await deleteObjectiveWithDependents(ctx, { objectiveId: args.id, purgeToken });
     },
 });
 
 export const deleteObjectiveContinue = internalMutation({
     args: {
         objectiveId: v.id('objectives'),
-        phase: v.optional(v.union(v.literal('progress'), v.literal('notifications'))),
+        purgeToken: v.string(),
+        phase: v.optional(
+            v.union(v.literal('collaborators'), v.literal('progress'), v.literal('notifications'))
+        ),
         cursor: v.optional(v.union(v.string(), v.null())),
         totalProgressDeleted: v.optional(v.number()),
         totalNotificationsDeleted: v.optional(v.number()),

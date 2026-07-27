@@ -4,10 +4,11 @@ import type { MutationCtx } from '../../_generated/server';
 
 const BATCH_SIZE = 50;
 
-type DeleteObjectivePhase = 'progress' | 'notifications';
+type DeleteObjectivePhase = 'collaborators' | 'progress' | 'notifications';
 
 type DeleteObjectiveContinueArgs = {
     objectiveId: Id<'objectives'>;
+    purgeToken: string;
     phase?: DeleteObjectivePhase;
     cursor?: string | null;
     totalProgressDeleted?: number;
@@ -18,7 +19,7 @@ export async function continueObjectiveDeletion(
     ctx: MutationCtx,
     args: DeleteObjectiveContinueArgs
 ) {
-    const phase = args.phase ?? 'progress';
+    const phase = args.phase ?? 'collaborators';
     const totalProgressDeleted = args.totalProgressDeleted ?? 0;
     const totalNotificationsDeleted = args.totalNotificationsDeleted ?? 0;
     const objective = await ctx.db.get(args.objectiveId);
@@ -27,6 +28,47 @@ export async function continueObjectiveDeletion(
         return {
             status: 'completed',
             noOp: true,
+            deleted: {
+                progress: totalProgressDeleted,
+                notifications: totalNotificationsDeleted,
+            },
+        };
+    }
+
+    if (objective.purgeToken !== args.purgeToken || objective.deletedAt === undefined) {
+        return {
+            status: 'cancelled',
+            noOp: true,
+            deleted: {
+                progress: totalProgressDeleted,
+                notifications: totalNotificationsDeleted,
+            },
+        };
+    }
+
+    if (phase === 'collaborators') {
+        const collaborators = await ctx.db
+            .query('objectiveCollaborators')
+            .withIndex('by_objective', q => q.eq('objectiveId', args.objectiveId))
+            .take(BATCH_SIZE);
+
+        for (const collaborator of collaborators) {
+            await ctx.db.delete('objectiveCollaborators', collaborator._id);
+        }
+
+        const nextPhase = collaborators.length === BATCH_SIZE ? 'collaborators' : 'progress';
+        await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+            objectiveId: args.objectiveId,
+            purgeToken: args.purgeToken,
+            phase: nextPhase,
+            cursor: null,
+            totalProgressDeleted,
+            totalNotificationsDeleted,
+        });
+
+        return {
+            status: 'in_progress',
+            phase: nextPhase,
             deleted: {
                 progress: totalProgressDeleted,
                 notifications: totalNotificationsDeleted,
@@ -52,6 +94,7 @@ export async function continueObjectiveDeletion(
         if (!page.isDone) {
             await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
                 objectiveId: args.objectiveId,
+                purgeToken: args.purgeToken,
                 phase: 'progress',
                 cursor: null,
                 totalProgressDeleted: newTotalProgress,
@@ -69,6 +112,7 @@ export async function continueObjectiveDeletion(
 
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.objectiveId,
+            purgeToken: args.purgeToken,
             phase: 'notifications',
             cursor: null,
             totalProgressDeleted: newTotalProgress,
@@ -98,6 +142,7 @@ export async function continueObjectiveDeletion(
     if (!page.isDone) {
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.objectiveId,
+            purgeToken: args.purgeToken,
             phase: 'notifications',
             cursor: null,
             totalProgressDeleted,
@@ -123,8 +168,39 @@ export async function continueObjectiveDeletion(
 
 export async function deleteObjectiveWithDependents(
     ctx: MutationCtx,
-    args: { objectiveId: Id<'objectives'> }
+    args: { objectiveId: Id<'objectives'>; purgeToken: string }
 ) {
+    const objective = await ctx.db.get('objectives', args.objectiveId);
+    if (
+        !objective ||
+        objective.deletedAt === undefined ||
+        objective.purgeToken !== args.purgeToken
+    ) {
+        return { status: 'cancelled', objectiveId: args.objectiveId };
+    }
+
+    const collaboratorsBatch = await ctx.db
+        .query('objectiveCollaborators')
+        .withIndex('by_objective', q => q.eq('objectiveId', args.objectiveId))
+        .take(BATCH_SIZE + 1);
+
+    if (collaboratorsBatch.length > BATCH_SIZE) {
+        await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
+            objectiveId: args.objectiveId,
+            purgeToken: args.purgeToken,
+            phase: 'collaborators',
+            cursor: null,
+            totalProgressDeleted: 0,
+            totalNotificationsDeleted: 0,
+        });
+
+        return { status: 'deletion_started', objectiveId: args.objectiveId };
+    }
+
+    for (const collaborator of collaboratorsBatch) {
+        await ctx.db.delete('objectiveCollaborators', collaborator._id);
+    }
+
     const progressBatch = await ctx.db
         .query('progressUpdates')
         .withIndex('by_objective_date', q => q.eq('objective', args.objectiveId))
@@ -133,6 +209,7 @@ export async function deleteObjectiveWithDependents(
     if (progressBatch.length > BATCH_SIZE) {
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.objectiveId,
+            purgeToken: args.purgeToken,
             phase: 'progress',
             cursor: null,
             totalProgressDeleted: 0,
@@ -154,6 +231,7 @@ export async function deleteObjectiveWithDependents(
     if (notificationsBatch.length > BATCH_SIZE) {
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.objectiveId,
+            purgeToken: args.purgeToken,
             phase: 'notifications',
             cursor: null,
             totalProgressDeleted: progressBatch.length,

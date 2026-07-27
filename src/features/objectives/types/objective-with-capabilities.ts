@@ -5,6 +5,7 @@ export type ObjectiveCapabilities = {
     canEditDefinition: boolean;
     canDelete: boolean;
     canRestore: boolean;
+    canPurge: boolean;
     canManageCollaborators: boolean;
     canContribute: boolean;
     canSetVisibility: boolean;

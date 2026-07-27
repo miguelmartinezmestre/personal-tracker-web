@@ -2,7 +2,7 @@
 
 import { CalendarIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { formatDate } from '@/lib/format-date';
+import { formatCivilDate } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
 import {
     FormControl,
@@ -30,6 +30,7 @@ import {
     type CategoryOption,
 } from '@/features/objectives/lib/objective-category-selection';
 import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
+import { localDateToUtcCivilDay, utcCivilDayToLocalDate } from '@shared/civil-date';
 
 type ObjectiveFormFieldsProps = {
     mode: 'create' | 'edit';
@@ -138,7 +139,12 @@ export function ObjectiveFormFields({
                 )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div
+                className={cn(
+                    'grid grid-cols-1 gap-4',
+                    mode === 'create' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+                )}
+            >
                 <FormField
                     name="targetValue"
                     render={({ field }) => (
@@ -158,6 +164,33 @@ export function ObjectiveFormFields({
                         </FormItem>
                     )}
                 />
+
+                {mode === 'create' ? (
+                    <FormField
+                        name="startValue"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>{t('initialValue')}</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        {...field}
+                                        value={
+                                            Number.isFinite(Number(field.value)) ? field.value : ''
+                                        }
+                                        onChange={event =>
+                                            field.onChange(Number.parseFloat(event.target.value))
+                                        }
+                                        data-testid={getTestId(mode, 'start-input')}
+                                    />
+                                </FormControl>
+                                <FormDescription>{t('initialValueDescription')}</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                ) : null}
 
                 <FormField
                     name="unit"
@@ -228,7 +261,7 @@ export function ObjectiveFormFields({
                                         data-testid={getTestId(mode, 'deadline-button')}
                                     >
                                         {field.value ? (
-                                            formatDate(field.value as number, locale)
+                                            formatCivilDate(field.value as number, locale)
                                         ) : (
                                             <span>{t('pickADate')}</span>
                                         )}
@@ -240,10 +273,12 @@ export function ObjectiveFormFields({
                                 <Calendar
                                     mode="single"
                                     selected={
-                                        field.value ? new Date(field.value as number) : undefined
+                                        field.value
+                                            ? utcCivilDayToLocalDate(field.value as number)
+                                            : undefined
                                     }
                                     onSelect={value =>
-                                        field.onChange(value ? value.getTime() : null)
+                                        field.onChange(value ? localDateToUtcCivilDay(value) : null)
                                     }
                                 />
                             </PopoverContent>
