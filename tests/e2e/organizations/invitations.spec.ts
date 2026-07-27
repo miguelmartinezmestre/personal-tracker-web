@@ -1,122 +1,63 @@
 import { test, expect } from '../../fixtures/test-base';
-import { createTestUser, createOrganization } from '../../helpers/test-helpers';
-import { UserFactory } from '../../helpers/factories';
+import { createOrganization } from '../../helpers/test-helpers';
+import { setupCollaboratorInOrganization } from '../../helpers/collaboration';
+import { ConvexHttpClient } from 'convex/browser';
+
+async function openOrganizationDetail(
+    page: import('@playwright/test').Page,
+    name: string
+): Promise<string> {
+    await page.goto('/dashboard/organizations', { waitUntil: 'domcontentloaded' });
+
+    const orgRow = page.getByTestId('table-row').filter({ hasText: name }).first();
+    await expect(orgRow).toBeVisible({ timeout: 15000 });
+    const detailLink = orgRow.getByTestId('organization-detail-link');
+    const href = await detailLink.getAttribute('href');
+    const organizationId = href?.split('/').pop() ?? '';
+    await detailLink.click();
+    await page.waitForLoadState('domcontentloaded');
+
+    return organizationId;
+}
 
 test.describe('Organization Invitations', () => {
     test('invite member by email', { tag: ['@REQ-EQUIPOS-002'] }, async ({ page }) => {
         const organization = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
+        const organizationId = await openOrganizationDetail(page, organization.name);
 
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
+        await page.getByTestId('organization-member-create-open').click();
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible();
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
-
-        const inviteButton = page.getByTestId('organization-member-create-open');
-        await expect(inviteButton).toBeVisible();
-        await inviteButton.click();
-
-        const emailInput = page
-            .locator('[data-testid="organization-member-email-input"], input[type="email"]')
-            .first();
-        await expect(emailInput).toBeVisible();
         const inviteEmail = `invite-${Date.now()}@example.com`;
-        await emailInput.fill(inviteEmail);
+        await page.getByTestId('organization-member-email-input').fill(inviteEmail);
+        await page.getByTestId('organization-member-save-button').click();
 
-        const roleSelect = page.locator('[data-testid*="role"], select:has-text("Role")');
-        if ((await roleSelect.count()) > 0) {
-            await roleSelect.first().click();
-            const memberOption = page.getByRole('option', { name: /member|miembro/i });
-            if ((await memberOption.count()) > 0) {
-                await memberOption.click();
-            }
+        await expect(page.getByTestId('organization-member-email-input')).toBeHidden({
+            timeout: 15000,
+        });
+
+        const cookies = await page.context().cookies();
+        const convexToken = cookies.find(c => c.name === 'better-auth.convex_jwt')?.value;
+        if (!convexToken) {
+            throw new Error('Missing Convex auth token after creating invitation');
         }
 
-        const sendButton = page.getByTestId('organization-member-save-button');
-        await expect(sendButton).toBeVisible();
-        await sendButton.click();
+        const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL ?? 'http://127.0.0.1:3210';
+        const client = new ConvexHttpClient(convexUrl);
+        client.setAuth(convexToken);
 
-        await page.waitForLoadState('domcontentloaded');
+        const invitations = (await client.query(
+            'organizations:getOrganizationInvitations' as unknown as Parameters<
+                typeof client.query
+            >[0],
+            { organizationId }
+        )) as Array<{ email: string; status: string }>;
 
-        const invitationsTable = page.getByTestId('table-row');
-        const successState = page.locator(
-            'text=/invited|invitation sent|invitacion enviada|pending invitation/i'
+        expect(invitations).toContainEqual(
+            expect.objectContaining({
+                email: inviteEmail,
+                status: 'pending',
+            })
         );
-        expect(
-            (await invitationsTable.count()) > 0 || (await successState.count()) > 0
-        ).toBeTruthy();
-    });
-
-    test('view pending invitations sent', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
-        const organization = await createOrganization(page);
-
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible();
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
-
-        const invitationsTab = page.locator(
-            'button:has-text("Invitations"), button:has-text("Invitaciones"), [data-testid*="invitations"]'
-        );
-
-        if ((await invitationsTab.count()) > 0) {
-            await invitationsTab.first().click();
-            await page.waitForLoadState('domcontentloaded');
-        }
-    });
-
-    test('cancel pending invitation', async ({ page }) => {
-        const organization = await createOrganization(page);
-
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible();
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
-
-        const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
-
-        if ((await inviteButton.count()) > 0) {
-            await inviteButton.first().click();
-
-            const emailInput = page.getByTestId('organization-member-email-input');
-            await expect(emailInput).toBeVisible();
-            await emailInput.fill(`cancel-test-${Date.now()}@example.com`);
-
-            const sendButton = page
-                .locator('button:has-text("Send"), button:has-text("Invite")')
-                .first();
-            await sendButton.click();
-            await page.waitForLoadState('domcontentloaded');
-
-            const cancelButton = page.locator(
-                'button:has-text("Cancel"), button:has-text("Revoke"), [data-testid*="cancel-invitation"]'
-            );
-
-            if ((await cancelButton.count()) > 0) {
-                await cancelButton.first().click();
-
-                const confirmButton = page.locator(
-                    '[role="dialog"] button:has-text("Confirm"), [role="dialog"] button:has-text("Yes")'
-                );
-                if ((await confirmButton.count()) > 0) {
-                    await confirmButton.click();
-                }
-            }
-        }
     });
 
     test('view pending invitations received', { tag: ['@REQ-EQUIPOS-005'] }, async ({ page }) => {
@@ -125,104 +66,26 @@ test.describe('Organization Invitations', () => {
         await expect(page).toHaveURL(/\/dashboard\/invitations/);
         await expect(
             page.getByTestId('invitations-empty').or(page.getByTestId('invitations-list'))
-        ).toBeVisible({ timeout: 15_000 });
+        ).toBeVisible({ timeout: 15000 });
     });
 
-    test('accept invitation as existing user', { tag: ['@REQ-EQUIPOS-006'] }, async ({ page }) => {
-        await createTestUser(page);
-        const organization = await createOrganization(page, {
-            name: `Accept Org ${Date.now()}`,
-        });
+    test(
+        'accepting an invitation adds the user as an organization member',
+        { tag: ['@REQ-EQUIPOS-006'] },
+        async ({ page, browser }) => {
+            const collaborator = await setupCollaboratorInOrganization(browser, page);
 
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
+            try {
+                await openOrganizationDetail(page, collaborator.organizationName);
 
-        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible();
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
-
-        const inviteButton = page.locator('button:has-text("Invite"), [data-testid*="invite"]');
-
-        if ((await inviteButton.count()) > 0) {
-            await inviteButton.first().click();
-
-            const newUserData = UserFactory.create();
-
-            const emailInput = page.getByTestId('organization-member-email-input');
-            await expect(emailInput).toBeVisible();
-            await emailInput.fill(newUserData.email);
-
-            const sendButton = page
-                .locator('button:has-text("Send"), button:has-text("Invite")')
-                .first();
-            await sendButton.click();
-            await page.waitForLoadState('domcontentloaded');
-        }
-    });
-
-    test('decline invitation', { tag: ['@REQ-EQUIPOS-006'] }, async ({ page }) => {
-        await page.goto('/dashboard/invitations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const declineButton = page.locator(
-            'button:has-text("Decline"), button:has-text("Reject"), button:has-text("Rechazar")'
-        );
-
-        if ((await declineButton.count()) > 0) {
-            await declineButton.first().click();
-
-            const confirmButton = page.locator(
-                '[role="dialog"] button:has-text("Confirm"), [role="dialog"] button:has-text("Yes")'
-            );
-            if ((await confirmButton.count()) > 0) {
-                await confirmButton.click();
+                const memberRow = page
+                    .getByTestId('table-row')
+                    .filter({ hasText: collaborator.user.email })
+                    .first();
+                await expect(memberRow).toBeVisible({ timeout: 15000 });
+            } finally {
+                await collaborator.context.close();
             }
         }
-    });
-
-    test('resend invitation', async ({ page }) => {
-        const organization = await createOrganization(page);
-
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible();
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
-
-        const resendButton = page.locator('button:has-text("Resend"), button:has-text("Reenviar")');
-
-        if ((await resendButton.count()) > 0) {
-            await resendButton.first().click();
-            await page.waitForLoadState('domcontentloaded');
-        }
-    });
-
-    test('invitation link shows in UI', async ({ page }) => {
-        const organization = await createOrganization(page);
-
-        await page.goto('/dashboard/organizations');
-        await page.waitForLoadState('domcontentloaded');
-
-        const orgRow = page.getByTestId('table-row').filter({ hasText: organization.name }).first();
-        const viewLink = orgRow.getByTestId('organization-detail-link');
-
-        await expect(viewLink).toBeVisible();
-        await viewLink.click();
-        await page.waitForLoadState('domcontentloaded');
-
-        const copyLinkButton = page.locator(
-            'button:has-text("Copy Link"), button:has-text("Copiar"), [data-testid*="copy-link"]'
-        );
-
-        if ((await copyLinkButton.count()) > 0) {
-            await expect(copyLinkButton.first()).toBeVisible();
-        }
-    });
+    );
 });

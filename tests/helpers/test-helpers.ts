@@ -619,17 +619,12 @@ export async function createOrganization(
     await page.getByTestId('organization-description-input').fill(description);
     await page.getByTestId('organization-save-button').click();
 
-    let nameCount = 0;
-    const maxTime = Date.now() + 15000;
-
-    while (Date.now() < maxTime && nameCount === 0) {
-        nameCount = await page.getByText(name).count();
-        if (nameCount === 0) {
-            await page.waitForTimeout(500);
-        }
-    }
-
-    expect(nameCount).toBeGreaterThan(0);
+    // The modal closes only after the Better Auth request succeeds. A table-row
+    // assertion then verifies that the reactive Convex result reached the UI.
+    await expect(page.getByTestId('organization-name-input')).toBeHidden({ timeout: 20000 });
+    await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
+        timeout: 20000,
+    });
     return { name, description };
 }
 

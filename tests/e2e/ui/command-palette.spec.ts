@@ -1,66 +1,37 @@
 import { test, expect } from '../../fixtures/test-base';
 
+async function openCommandPalette(page: import('@playwright/test').Page) {
+    await page.goto('/dashboard/home');
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 10000 });
+    await page.keyboard.press('Meta+k');
+    await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 });
+}
+
 test.describe('Command Palette', () => {
     test(
-        'Cmd+K opens the command palette',
+        'Cmd+K opens, filters and closes the command palette',
         { tag: ['@REQ-NF-013'] },
         async ({ isolatedAuthenticatedPage }) => {
-            await isolatedAuthenticatedPage.goto('/dashboard/home');
-            await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
-
-            await expect(isolatedAuthenticatedPage.getByTestId('command-menu-ready')).toBeAttached({
-                timeout: 10000,
-            });
-
-            await isolatedAuthenticatedPage.keyboard.press('Meta+k');
-
-            const dialog = isolatedAuthenticatedPage.locator('[role="dialog"]');
-            await expect(dialog).toBeVisible({ timeout: 5000 });
+            await openCommandPalette(isolatedAuthenticatedPage);
 
             const commandInput = isolatedAuthenticatedPage.getByTestId('command-input');
             await expect(commandInput).toBeVisible();
-        }
-    );
-
-    test(
-        'typing filters command items',
-        { tag: ['@REQ-NF-013'] },
-        async ({ isolatedAuthenticatedPage }) => {
-            await isolatedAuthenticatedPage.goto('/dashboard/home');
-            await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
-
-            await expect(isolatedAuthenticatedPage.getByTestId('command-menu-ready')).toBeAttached({
-                timeout: 10000,
-            });
-
-            await isolatedAuthenticatedPage.keyboard.press('Meta+k');
-
-            const dialog = isolatedAuthenticatedPage.locator('[role="dialog"]');
-            await expect(dialog).toBeVisible({ timeout: 5000 });
-
-            const commandInput = isolatedAuthenticatedPage.getByTestId('command-input');
             await commandInput.fill('home');
+            await expect(isolatedAuthenticatedPage.getByTestId('command-item-home')).toBeVisible();
 
-            const homeItem = isolatedAuthenticatedPage.getByTestId('command-item-home');
-            await expect(homeItem).toBeVisible();
+            await isolatedAuthenticatedPage.keyboard.press('Escape');
+            await expect(isolatedAuthenticatedPage.locator('[role="dialog"]')).toBeHidden({
+                timeout: 5000,
+            });
         }
     );
 
     test(
-        'selecting item navigates to the correct page',
+        'selecting a command navigates to its page',
         { tag: ['@REQ-NF-013'] },
         async ({ isolatedAuthenticatedPage }) => {
-            await isolatedAuthenticatedPage.goto('/dashboard/home');
-            await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
-
-            await expect(isolatedAuthenticatedPage.getByTestId('command-menu-ready')).toBeAttached({
-                timeout: 10000,
-            });
-
-            await isolatedAuthenticatedPage.keyboard.press('Meta+k');
-
-            const dialog = isolatedAuthenticatedPage.locator('[role="dialog"]');
-            await expect(dialog).toBeVisible({ timeout: 5000 });
+            await openCommandPalette(isolatedAuthenticatedPage);
 
             const objectivesItem = isolatedAuthenticatedPage.getByTestId('command-item-objectives');
             await expect(objectivesItem).toBeVisible();
@@ -69,28 +40,6 @@ test.describe('Command Palette', () => {
             await isolatedAuthenticatedPage.waitForURL(/\/dashboard\/objectives/, {
                 timeout: 10000,
             });
-        }
-    );
-
-    test(
-        'Escape closes the command palette',
-        { tag: ['@REQ-NF-013'] },
-        async ({ isolatedAuthenticatedPage }) => {
-            await isolatedAuthenticatedPage.goto('/dashboard/home');
-            await isolatedAuthenticatedPage.waitForLoadState('domcontentloaded');
-
-            await expect(isolatedAuthenticatedPage.getByTestId('command-menu-ready')).toBeAttached({
-                timeout: 10000,
-            });
-
-            await isolatedAuthenticatedPage.keyboard.press('Meta+k');
-
-            const dialog = isolatedAuthenticatedPage.locator('[role="dialog"]');
-            await expect(dialog).toBeVisible({ timeout: 5000 });
-
-            await isolatedAuthenticatedPage.keyboard.press('Escape');
-
-            await expect(dialog).toBeHidden({ timeout: 5000 });
         }
     );
 });

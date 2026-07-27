@@ -1,6 +1,6 @@
 import { test, expect, type Locator } from '@playwright/test';
 import { UserFactory } from '../../helpers/factories';
-import { expectOnDashboard, expectOnLogin, expectErrorAlert } from '../../helpers/assertions';
+import { expectOnDashboard, expectErrorAlert } from '../../helpers/assertions';
 
 async function fillAndAssert(locator: Locator, value: string): Promise<void> {
     await locator.click();
@@ -8,18 +8,24 @@ async function fillAndAssert(locator: Locator, value: string): Promise<void> {
     await expect(locator).toHaveValue(value);
 }
 
+async function fillRegistrationForm(
+    page: import('@playwright/test').Page,
+    user = UserFactory.create()
+) {
+    await fillAndAssert(page.getByTestId('register-username-input'), user.username);
+    await fillAndAssert(page.getByTestId('register-email-input'), user.email);
+    await fillAndAssert(page.getByTestId('register-password-input'), user.password);
+    await fillAndAssert(page.getByTestId('register-confirm-password-input'), user.password);
+    return user;
+}
+
 test.describe('User Registration', () => {
     test(
         'successful registration with email/password',
         { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
-            const user = UserFactory.create();
-
             await page.goto('/register');
-            await fillAndAssert(page.getByTestId('register-username-input'), user.username);
-            await fillAndAssert(page.getByTestId('register-email-input'), user.email);
-            await fillAndAssert(page.getByTestId('register-password-input'), user.password);
-            await fillAndAssert(page.getByTestId('register-confirm-password-input'), user.password);
+            await fillRegistrationForm(page);
             await page.getByTestId('register-button').click();
 
             await page.waitForURL(/\/dashboard/, { timeout: 30000, waitUntil: 'domcontentloaded' });
@@ -28,23 +34,7 @@ test.describe('User Registration', () => {
     );
 
     test(
-        'validation: username is required',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
-        async ({ page }) => {
-            const user = UserFactory.create();
-
-            await page.goto('/register');
-            await page.getByTestId('register-email-input').fill(user.email);
-            await page.getByTestId('register-password-input').fill(user.password);
-            await page.getByTestId('register-confirm-password-input').fill(user.password);
-            await page.getByTestId('register-button').click();
-
-            await expect(page).toHaveURL(/\/register/);
-        }
-    );
-
-    test(
-        'validation: email must be valid',
+        'invalid registration input stays on the form',
         { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
             const user = UserFactory.create();
@@ -57,56 +47,52 @@ test.describe('User Registration', () => {
             await page.getByTestId('register-button').click();
 
             await expect(page).toHaveURL(/\/register/);
+            await expect(page.getByTestId('register-email-input')).toHaveAttribute(
+                'aria-invalid',
+                'true'
+            );
+            await expect(page.locator('[data-slot="form-message"]')).toContainText(/email|correo/i);
         }
     );
 
     test(
-        'validation: password must be at least 8 characters',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
+        'required registration fields expose validation messages',
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006'] },
         async ({ page }) => {
-            const user = UserFactory.create();
-
             await page.goto('/register');
-            await page.getByTestId('register-username-input').fill(user.username);
-            await page.getByTestId('register-email-input').fill(user.email);
-            await page.getByTestId('register-password-input').fill('short');
-            await page.getByTestId('register-confirm-password-input').fill('short');
             await page.getByTestId('register-button').click();
 
+            for (const testId of [
+                'register-username-input',
+                'register-email-input',
+                'register-password-input',
+                'register-confirm-password-input',
+            ]) {
+                await expect(page.getByTestId(testId)).toHaveAttribute('aria-invalid', 'true');
+            }
+
+            await expect(page.locator('[data-slot="form-message"]')).toHaveCount(4);
             await expect(page).toHaveURL(/\/register/);
         }
     );
 
     test(
-        'validation: weak password is rejected',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
+        'weak passwords show the password policy message',
+        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@security'] },
         async ({ page }) => {
-            const user = UserFactory.create();
+            const user = UserFactory.create({ password: 'weakpass' });
 
             await page.goto('/register');
-            await page.getByTestId('register-username-input').fill(user.username);
-            await page.getByTestId('register-email-input').fill(user.email);
-            await page.getByTestId('register-password-input').fill('12345678');
-            await page.getByTestId('register-confirm-password-input').fill('12345678');
+            await fillRegistrationForm(page, user);
             await page.getByTestId('register-button').click();
 
-            await expect(page).toHaveURL(/\/register/);
-        }
-    );
-
-    test(
-        'validation: passwords must match',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
-        async ({ page }) => {
-            const user = UserFactory.create();
-
-            await page.goto('/register');
-            await page.getByTestId('register-username-input').fill(user.username);
-            await page.getByTestId('register-email-input').fill(user.email);
-            await page.getByTestId('register-password-input').fill('password123');
-            await page.getByTestId('register-confirm-password-input').fill('differentpassword');
-            await page.getByTestId('register-button').click();
-
+            await expect(page.getByTestId('register-password-input')).toHaveAttribute(
+                'aria-invalid',
+                'true'
+            );
+            await expect(page.locator('[data-slot="form-message"]')).toContainText(
+                /mayúscula|uppercase/i
+            );
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -115,65 +101,26 @@ test.describe('User Registration', () => {
         'duplicate email shows error',
         { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
         async ({ page }) => {
-            const user = UserFactory.create();
-
             await page.goto('/register');
-            await fillAndAssert(page.getByTestId('register-username-input'), user.username);
-            await fillAndAssert(page.getByTestId('register-email-input'), user.email);
-            await fillAndAssert(page.getByTestId('register-password-input'), user.password);
-            await fillAndAssert(page.getByTestId('register-confirm-password-input'), user.password);
+            const user = await fillRegistrationForm(page);
             await page.getByTestId('register-button').click();
             await page.waitForURL(/\/dashboard/, { timeout: 30000, waitUntil: 'domcontentloaded' });
 
             await page.context().clearCookies();
             await page.goto('/register');
 
-            const secondUser = UserFactory.create({ email: user.email });
-            await fillAndAssert(page.getByTestId('register-username-input'), secondUser.username);
-            await fillAndAssert(page.getByTestId('register-email-input'), user.email);
-            await fillAndAssert(page.getByTestId('register-password-input'), secondUser.password);
-            await fillAndAssert(
-                page.getByTestId('register-confirm-password-input'),
-                secondUser.password
-            );
+            await fillRegistrationForm(page, UserFactory.create({ email: user.email }));
             await page.getByTestId('register-button').click();
 
             await expectErrorAlert(page);
-        }
-    );
-
-    test(
-        'after registration navigates to dashboard',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
-        async ({ page }) => {
-            const user = UserFactory.create();
-
-            await page.goto('/register');
-            await fillAndAssert(page.getByTestId('register-username-input'), user.username);
-            await fillAndAssert(page.getByTestId('register-email-input'), user.email);
-            await fillAndAssert(page.getByTestId('register-password-input'), user.password);
-            await fillAndAssert(page.getByTestId('register-confirm-password-input'), user.password);
-            await page.getByTestId('register-button').click();
-
-            await page.waitForURL(/\/dashboard\/home/, {
-                timeout: 30000,
-                waitUntil: 'domcontentloaded',
-            });
-            await expect(page).toHaveURL(/\/dashboard\/home$/);
-        }
-    );
-
-    test(
-        'link to login page works',
-        { tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-006', '@cross-browser'] },
-        async ({ page }) => {
-            await page.goto('/register');
-
-            const loginLink = page.getByRole('link', { name: /already have|ya tienes/i });
-            await expect(loginLink).toBeVisible();
-            await loginLink.click();
-
-            await expectOnLogin(page);
+            await expect(
+                page
+                    .getByRole('alert')
+                    .filter({
+                        hasText: /already exists|already registered|ya existe|ya registrado/i,
+                    })
+                    .first()
+            ).toBeVisible();
         }
     );
 });

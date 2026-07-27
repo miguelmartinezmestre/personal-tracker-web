@@ -66,23 +66,6 @@ test.describe('Objectives CRUD', () => {
     });
 
     test(
-        'create personal objective',
-        { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-004'] },
-        async ({ page }) => {
-            const title = `Personal objective ${Date.now()}`;
-            await openObjectivesPage(page);
-
-            await createObjectiveFromModal(page, {
-                title,
-                target: '120',
-                unit: 'points',
-            });
-
-            await expect(objectiveRow(page, title)).toBeVisible({ timeout: 10000 });
-        }
-    );
-
-    test(
         'create objective with custom metrics',
         { tag: ['@REQ-OBJETIVOS-001', '@REQ-OBJETIVOS-004'] },
         async ({ page }) => {

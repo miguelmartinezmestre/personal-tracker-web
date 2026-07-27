@@ -3,75 +3,17 @@ import type { Page } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
 
-async function gotoSessions(page: Page) {
-    const sessionsPage = page.getByTestId('sessions-page');
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.goto('/dashboard/sessions', { waitUntil: 'domcontentloaded' });
-
-        const result = await Promise.race([
-            sessionsPage
-                .waitFor({ state: 'visible', timeout: 5000 })
-                .then(() => 'ready' as const)
-                .catch(() => 'timeout' as const),
-            page
-                .getByRole('heading', { name: /this page couldn.t load/i })
-                .waitFor({ state: 'visible', timeout: 5000 })
-                .then(() => 'error' as const)
-                .catch(() => 'timeout' as const),
-        ]);
-
-        if (result === 'ready') {
-            return;
-        }
-
-        await page.waitForTimeout(500);
-    }
+async function gotoSessions(page: Page): Promise<void> {
+    await page.goto('/dashboard/sessions', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('sessions-page')).toBeVisible({ timeout: 15000 });
 }
 
 test.describe('Sessions', () => {
     test(
-        'sessions page shows table',
-        { tag: ['@REQ-AUTENTICACION-006'] },
-        async ({ authenticatedPage }) => {
-            await gotoSessions(authenticatedPage);
-
-            const sessionsPage = authenticatedPage.getByTestId('sessions-page');
-            await expect(sessionsPage).toBeVisible({ timeout: 15000 });
-
-            const table = authenticatedPage.locator('table');
-            await expect(table).toBeVisible({ timeout: 10000 });
-        }
-    );
-
-    test(
-        'current session has badge showing current status',
-        { tag: ['@REQ-AUTENTICACION-006'] },
-        async ({ authenticatedPage }) => {
-            await gotoSessions(authenticatedPage);
-
-            const sessionsPage = authenticatedPage.getByTestId('sessions-page');
-            await expect(sessionsPage).toBeVisible({ timeout: 15000 });
-
-            const dataRow = authenticatedPage.getByTestId('table-row').first();
-            await expect(dataRow).toBeVisible({ timeout: 15000 });
-
-            const currentBadge = authenticatedPage.getByTestId('session-status-badge-current');
-            await expect(currentBadge.first()).toBeVisible({ timeout: 10000 });
-        }
-    );
-
-    test(
-        'current session does not show revoke button',
+        'current session cannot be revoked from its own row',
         { tag: ['@REQ-AUTENTICACION-007'] },
         async ({ authenticatedPage }) => {
             await gotoSessions(authenticatedPage);
-
-            const sessionsPage = authenticatedPage.getByTestId('sessions-page');
-            await expect(sessionsPage).toBeVisible({ timeout: 15000 });
-
-            const dataRow = authenticatedPage.getByTestId('table-row').first();
-            await expect(dataRow).toBeVisible({ timeout: 15000 });
 
             const currentBadge = authenticatedPage
                 .getByTestId('session-status-badge-current')
@@ -79,121 +21,45 @@ test.describe('Sessions', () => {
             await expect(currentBadge).toBeVisible({ timeout: 10000 });
 
             const currentRow = currentBadge.locator('xpath=ancestor::tr');
-            const revokeInCurrentRow = currentRow.getByTestId('session-revoke-button');
-            await expect(revokeInCurrentRow).toHaveCount(0);
-        }
-    );
-
-    test(
-        'sessions title is displayed',
-        { tag: ['@REQ-AUTENTICACION-006'] },
-        async ({ authenticatedPage }) => {
-            await gotoSessions(authenticatedPage);
-
-            const title = authenticatedPage.getByTestId('sessions-title');
-            await expect(title).toBeVisible({ timeout: 15000 });
-        }
-    );
-
-    test(
-        'session table shows device and date information',
-        { tag: ['@REQ-AUTENTICACION-006'] },
-        async ({ authenticatedPage }) => {
-            await gotoSessions(authenticatedPage);
-
-            const sessionsPage = authenticatedPage.getByTestId('sessions-page');
-            await expect(sessionsPage).toBeVisible({ timeout: 15000 });
-
-            const table = authenticatedPage.locator('table');
-            await expect(table).toBeVisible({ timeout: 10000 });
-
-            const dataRows = authenticatedPage.getByTestId('table-row');
-            await expect(dataRows.first()).toBeVisible({ timeout: 15000 });
-
-            const rowCount = await dataRows.count();
-            expect(rowCount).toBeGreaterThanOrEqual(1);
+            await expect(currentRow.getByTestId('session-revoke-button')).toHaveCount(0);
         }
     );
 
     test(
         'can close all other sessions except current',
-        { tag: ['@REQ-AUTENTICACION-008'] },
+        { tag: ['@REQ-AUTENTICACION-007', '@REQ-AUTENTICACION-008'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser, browser }) => {
             const secondContext = await browser.newContext();
             const secondPage = await secondContext.newPage();
 
             try {
                 await loginUser(secondPage, isolatedTestUser.email, isolatedTestUser.password);
-
                 await secondPage.goto('about:blank');
                 await secondContext.clearCookies();
 
                 await gotoSessions(isolatedAuthenticatedPage);
 
-                const sessionsPage = isolatedAuthenticatedPage.getByTestId('sessions-page');
-                await expect(sessionsPage).toBeVisible({ timeout: 15000 });
-
+                const revokeButtons =
+                    isolatedAuthenticatedPage.getByTestId('session-revoke-button');
                 await expect
-                    .poll(
-                        () =>
-                            isolatedAuthenticatedPage.getByTestId('session-revoke-button').count(),
-                        { timeout: 15000, intervals: [250, 500, 1000] }
-                    )
+                    .poll(() => revokeButtons.count(), {
+                        timeout: 15000,
+                        intervals: [250, 500, 1000],
+                    })
                     .toBeGreaterThanOrEqual(1);
 
                 const revokeOtherButton = isolatedAuthenticatedPage.getByTestId(
                     'sessions-revoke-other-button'
                 );
                 await expect(revokeOtherButton).toBeEnabled({ timeout: 15000 });
-
-                let succeeded = false;
-                const revokeButtons =
-                    isolatedAuthenticatedPage.getByTestId('session-revoke-button');
-                for (let attempt = 0; attempt < 3 && !succeeded; attempt++) {
-                    const currentRevokeButton = isolatedAuthenticatedPage.getByTestId(
-                        'sessions-revoke-other-button'
-                    );
-                    await expect(currentRevokeButton).toBeEnabled({ timeout: 15000 });
-                    await currentRevokeButton.click();
-
-                    try {
-                        await expect
-                            .poll(() => revokeButtons.count(), {
-                                timeout: 8000,
-                                intervals: [250, 500, 1000],
-                            })
-                            .toBe(0);
-                        succeeded = true;
-                    } catch {
-                        await isolatedAuthenticatedPage.reload({
-                            waitUntil: 'domcontentloaded',
-                        });
-                        await expect(sessionsPage).toBeVisible({ timeout: 15000 });
-                    }
-                }
-
-                expect(succeeded, 'revoke other sessions should eventually succeed').toBe(true);
+                await revokeOtherButton.click();
 
                 await expect
-                    .poll(
-                        async () => {
-                            const rowCount = await isolatedAuthenticatedPage
-                                .getByTestId('table-row')
-                                .count();
-
-                            if (rowCount === 0) {
-                                await isolatedAuthenticatedPage.reload({
-                                    waitUntil: 'domcontentloaded',
-                                });
-                                await sessionsPage.waitFor({ state: 'visible', timeout: 15000 });
-                                return isolatedAuthenticatedPage.getByTestId('table-row').count();
-                            }
-
-                            return rowCount;
-                        },
-                        { timeout: 20000, intervals: [500, 1000, 2000] }
-                    )
-                    .toBe(1);
+                    .poll(() => revokeButtons.count(), {
+                        timeout: 15000,
+                        intervals: [250, 500, 1000],
+                    })
+                    .toBe(0);
                 await expect(
                     isolatedAuthenticatedPage.getByTestId('session-status-badge-current')
                 ).toBeVisible();

@@ -4,6 +4,7 @@ export class SettingsPage {
     readonly page: Page;
     readonly settingsPage: Locator;
     readonly tabAccount: Locator;
+    readonly tabNotifications: Locator;
     readonly tabPassword: Locator;
     readonly tabDanger: Locator;
     readonly usernameInput: Locator;
@@ -22,13 +23,13 @@ export class SettingsPage {
     readonly deleteEmailInput: Locator;
     readonly deletePasswordInput: Locator;
     readonly deleteAccountButton: Locator;
-    readonly deleteAccountSuccess: Locator;
     readonly deleteAccountError: Locator;
 
     constructor(page: Page) {
         this.page = page;
         this.settingsPage = page.getByTestId('settings-page');
         this.tabAccount = page.getByTestId('settings-tab-account');
+        this.tabNotifications = page.getByTestId('settings-tab-notifications');
         this.tabPassword = page.getByTestId('settings-tab-password');
         this.tabDanger = page.getByTestId('settings-tab-danger');
         this.usernameInput = page.getByTestId('account-username-input');
@@ -47,7 +48,6 @@ export class SettingsPage {
         this.deleteEmailInput = page.getByTestId('delete-account-email-input');
         this.deletePasswordInput = page.getByTestId('delete-account-password-input');
         this.deleteAccountButton = page.getByTestId('delete-account-button');
-        this.deleteAccountSuccess = page.getByTestId('delete-account-success');
         this.deleteAccountError = page.getByTestId('delete-account-error');
     }
 

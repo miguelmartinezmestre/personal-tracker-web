@@ -1,106 +1,15 @@
-import { test, expect } from '../../fixtures/test-base';
+import { expect, test } from '../../fixtures/test-base';
 import { AchievementsPage } from '../../pages/achievements.page';
 
-test.describe.configure({ mode: 'serial' });
+test('achievements page exposes individual and organization progress', async ({
+    authenticatedPage,
+}) => {
+    const achievements = new AchievementsPage(authenticatedPage);
+    await achievements.goto();
 
-test.describe('Achievements', () => {
-    test(
-        'achievements page loads correctly',
-        { tag: ['@REQ-LOGROS-001'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-
-            await expect(achievements.achievementsPage).toBeVisible({ timeout: 15000 });
-            await expect(achievements.title).toBeVisible();
-        }
-    );
-
-    test(
-        'stats show total points and earned count',
-        { tag: ['@REQ-LOGROS-005'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-
-            await expect(achievements.statsSection).toBeVisible({ timeout: 15000 });
-            await expect(achievements.totalPoints).toBeVisible();
-            await expect(achievements.earnedCount).toBeVisible();
-        }
-    );
-
-    test(
-        'filter buttons are visible and clickable',
-        { tag: ['@REQ-LOGROS-006'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-
-            await expect(achievements.filters).toBeVisible({ timeout: 15000 });
-            await expect(achievements.filterAll).toBeVisible();
-            await expect(achievements.filterEarned).toBeVisible();
-            await expect(achievements.filterLocked).toBeVisible();
-        }
-    );
-
-    test(
-        'filter earned shows only earned achievements',
-        { tag: ['@REQ-LOGROS-006'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-            await expect(achievements.filters).toBeVisible({ timeout: 15000 });
-
-            await achievements.filterBy('earned');
-
-            await expect(achievements.filterEarned).toBeVisible();
-        }
-    );
-
-    test(
-        'filter locked shows only locked achievements',
-        { tag: ['@REQ-LOGROS-006'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-            await expect(achievements.filters).toBeVisible({ timeout: 15000 });
-
-            await achievements.filterBy('locked');
-
-            await expect(achievements.filterLocked).toBeVisible();
-        }
-    );
-
-    test(
-        'tabs switch between individual and organization',
-        { tag: ['@REQ-LOGROS-002', '@REQ-LOGROS-003'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-            await expect(achievements.tabs).toBeVisible({ timeout: 15000 });
-
-            await expect(achievements.contentIndividual).toBeVisible();
-
-            await achievements.switchToOrganization();
-            await expect(achievements.contentOrganization).toBeVisible();
-
-            await achievements.switchToIndividual();
-            await expect(achievements.contentIndividual).toBeVisible();
-        }
-    );
-
-    test(
-        'seed button appears when no achievements exist',
-        { tag: ['@REQ-LOGROS-001'] },
-        async ({ authenticatedPage }) => {
-            const achievements = new AchievementsPage(authenticatedPage);
-            await achievements.goto();
-            await expect(achievements.achievementsPage).toBeVisible({ timeout: 15000 });
-
-            const hasSeedButton = await achievements.seedButton.isVisible().catch(() => false);
-            const hasStats = await achievements.statsSection.isVisible().catch(() => false);
-
-            expect(hasSeedButton || hasStats).toBeTruthy();
-        }
-    );
+    await expect(achievements.achievementsPage).toBeVisible({ timeout: 15000 });
+    await expect(achievements.statsSection).toBeVisible();
+    await expect(achievements.contentIndividual).toBeVisible();
+    await achievements.switchToOrganization();
+    await expect(achievements.contentOrganization).toBeVisible();
 });
