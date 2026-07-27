@@ -1,8 +1,22 @@
 import { z } from 'zod';
 import { OBJECTIVE_STATUS, OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
 import { isCategorySelectPlaceholder } from '@/features/objectives/lib/objective-category-selection';
+import {
+    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
+    OBJECTIVE_TITLE_MAX_LENGTH,
+    OBJECTIVE_UNIT_MAX_LENGTH,
+} from '@shared/input-constraints';
 
 export const objectiveStatusSchema = z.enum([OBJECTIVE_STATUS.ACTIVE, OBJECTIVE_STATUS.COMPLETED]);
+
+const MAX_METRIC = 1_000_000_000;
+const MIN_TARGET = 0.001;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const FIVE_YEARS_MS = 5 * 365 * DAY_MS;
+
+const metricSchema = z.number().finite().min(0).max(MAX_METRIC);
+const targetMetricSchema = z.number().finite().min(MIN_TARGET).max(MAX_METRIC);
+const deadlineSchema = z.number().finite();
 
 const categorySelectionSchema = z
     .string()
@@ -12,21 +26,49 @@ const categorySelectionSchema = z
         message: 'Select a valid category',
     });
 
-export const objectiveSchema = z.object({
-    title: z.string().min(1),
-    description: z.string().optional().nullable(),
+export const objectiveSchema = z
+    .object({
+        title: z.string().trim().min(1).max(OBJECTIVE_TITLE_MAX_LENGTH),
+        description: z.string().max(OBJECTIVE_DESCRIPTION_MAX_LENGTH).optional().nullable(),
 
-    categoryId: categorySelectionSchema,
-    targetValue: z.number(),
-    currentValue: z.number(),
-    startValue: z.number().optional().nullable(),
-    deadline: z.number().optional().nullable(),
-    status: objectiveStatusSchema.optional().nullable(),
-    unit: z.string().optional().nullable(),
-    visibility: z
-        .enum([OBJECTIVE_VISIBILITY.PRIVATE, OBJECTIVE_VISIBILITY.ORGANIZATION])
-        .optional(),
-});
+        categoryId: categorySelectionSchema,
+        targetValue: targetMetricSchema,
+        currentValue: metricSchema,
+        startValue: metricSchema.optional().nullable(),
+        deadline: deadlineSchema.optional().nullable(),
+        status: objectiveStatusSchema.optional().nullable(),
+        unit: z.string().max(OBJECTIVE_UNIT_MAX_LENGTH).optional().nullable(),
+        visibility: z
+            .enum([OBJECTIVE_VISIBILITY.PRIVATE, OBJECTIVE_VISIBILITY.ORGANIZATION])
+            .optional(),
+    })
+    .superRefine((values, context) => {
+        if (values.startValue != null && values.startValue > values.targetValue) {
+            context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['startValue'],
+                message: 'Starting value cannot exceed the target value',
+            });
+        }
+
+        if (values.deadline == null) return;
+
+        const now = Date.now();
+        if (values.deadline < now - FIVE_YEARS_MS) {
+            context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['deadline'],
+                message: 'Deadline is too far in the past',
+            });
+        }
+        if (values.deadline > now + FIVE_YEARS_MS * 2) {
+            context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['deadline'],
+                message: 'Deadline is too far in the future',
+            });
+        }
+    });
 
 export const savedObjectiveSchema = objectiveSchema.extend({
     _id: z.string(),

@@ -1,38 +1,19 @@
 import { z } from 'zod';
 import { Id } from '@/convex/_generated/dataModel';
+import {
+    CATEGORY_COLOR_PATTERN,
+    CATEGORY_ICONS,
+    CATEGORY_NAME_MAX_LENGTH,
+} from '@shared/input-constraints';
 
 export const categoryColorSchema = z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex code (e.g. #FF5733)');
+    .regex(CATEGORY_COLOR_PATTERN, 'Color must be a valid hex code (e.g. #FF5733)');
 
-export const categoryIconSchema = z.enum([
-    'tag',
-    'heart',
-    'briefcase',
-    'book',
-    'user',
-    'dollar-sign',
-    'users',
-    'palette',
-    'home',
-    'map',
-    'target',
-    'chart',
-    'check',
-    'calendar',
-    'lightbulb',
-    'trending-up',
-    'star',
-    'award',
-    'zap',
-    'coffee',
-    'music',
-    'camera',
-    'plane',
-]);
+export const categoryIconSchema = z.enum(CATEGORY_ICONS);
 
 export const categorySchema = z.object({
-    name: z.string().min(1).max(50),
+    name: z.string().trim().min(1).max(CATEGORY_NAME_MAX_LENGTH),
     color: categoryColorSchema,
     icon: categoryIconSchema.optional(),
 });

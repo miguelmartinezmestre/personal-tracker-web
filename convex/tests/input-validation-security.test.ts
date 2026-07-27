@@ -10,6 +10,13 @@ import {
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { ERROR_CODES } from '../utils/constants';
+import {
+    CATEGORY_NAME_MAX_LENGTH,
+    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
+    OBJECTIVE_TITLE_MAX_LENGTH,
+    OBJECTIVE_UNIT_MAX_LENGTH,
+    PROGRESS_COMMENT_MAX_LENGTH,
+} from '../../shared/input-constraints';
 
 describe('input validation security', () => {
     const t = initConvexTest();
@@ -119,6 +126,74 @@ describe('input validation security', () => {
         expect(objectiveCountAfter).toHaveLength(0);
     });
 
+    test('enforces category semantic constraints on create and update', async () => {
+        for (const invalid of [
+            { name: 'x'.repeat(CATEGORY_NAME_MAX_LENGTH + 1), color: '#10b981' },
+            { name: 'Invalid color', color: 'blue' },
+            { name: 'Invalid icon', color: '#10b981', icon: 'not-an-icon' },
+        ]) {
+            await expect(
+                userIdentity.mutation(api.categories.createCategory, invalid)
+            ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        const categoryId = await userIdentity.mutation(api.categories.createCategory, {
+            name: 'Valid category',
+            color: '#10b981',
+            icon: 'tag',
+        });
+        await expect(
+            userIdentity.mutation(api.categories.updateCategory, {
+                id: categoryId,
+                color: '#xyzxyz',
+            })
+        ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+        await expect(
+            userIdentity.mutation(api.categories.updateCategory, {
+                id: categoryId,
+                icon: 'invalid',
+            })
+        ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+
+        const category = await userIdentity.run(ctx => ctx.db.get('categories', categoryId));
+        expect(category).toMatchObject({ name: 'Valid category', color: '#10b981', icon: 'tag' });
+    });
+
+    test('enforces bounded objective text on create and update', async () => {
+        const invalidCreates = [
+            { title: 'x'.repeat(OBJECTIVE_TITLE_MAX_LENGTH + 1), targetValue: 10 },
+            {
+                title: 'Valid title',
+                description: 'x'.repeat(OBJECTIVE_DESCRIPTION_MAX_LENGTH + 1),
+                targetValue: 10,
+            },
+            {
+                title: 'Valid title',
+                unit: 'x'.repeat(OBJECTIVE_UNIT_MAX_LENGTH + 1),
+                targetValue: 10,
+            },
+        ];
+        for (const invalid of invalidCreates) {
+            await expect(
+                userIdentity.mutation(api.objectives.createObjective, invalid)
+            ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            title: '  Trimmed title  ',
+            targetValue: 10,
+        });
+        await expect(
+            userIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                description: 'x'.repeat(OBJECTIVE_DESCRIPTION_MAX_LENGTH + 1),
+            })
+        ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+        const objective = await userIdentity.run(ctx => ctx.db.get('objectives', objectiveId));
+        expect(objective).toMatchObject({ title: 'Trimmed title' });
+        expect(objective?.description).toBeUndefined();
+    });
+
     test('does not create progress records when validation rejects the update', async () => {
         const objectiveId = await createTestObjective(t, {
             userId,
@@ -135,6 +210,14 @@ describe('input validation security', () => {
                 updateDate: Date.now(),
             })
         ).rejects.toThrow(ERROR_CODES.VALUE_NEGATIVE);
+        await expect(
+            userIdentity.mutation(api.update_progress.createUpdateProgress, {
+                objective: objectiveId,
+                updatedValue: 1,
+                updateDate: Date.now(),
+                comment: 'x'.repeat(PROGRESS_COMMENT_MAX_LENGTH + 1),
+            })
+        ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
 
         const progressUpdates = await userIdentity.run(async ctx => {
             return await ctx.db

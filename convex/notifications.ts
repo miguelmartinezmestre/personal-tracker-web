@@ -2,7 +2,6 @@ import { paginationOptsValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { internalMutation } from './_generated/server';
-import type { Doc } from './_generated/dataModel';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { runDeadlineNotificationsJob } from './jobs/notifications/deadlineNotifications';
 import { markAllReadBatchJob } from './jobs/notifications/markAllRead';
@@ -11,9 +10,16 @@ import {
     canReadObjectiveFromNotification,
 } from './domain/notifications/delivery';
 import { ERROR_CODES } from './utils/constants';
-import { isInvalidCursorError, withInvalidCursorRetry } from './utils/pagination';
+import {
+    objectivesArrayValidator,
+    paginatedNotificationsValidator,
+} from './utils/apiReturnValidators';
+import { notificationDocumentValidator } from './utils/documentValidators';
+import { withInvalidCursorRetry } from './utils/pagination';
+import { DEFAULT_PAGE_SIZE } from '../shared/pagination';
 
 const OBJECTIVE_ID_LIMIT = 50;
+const UNREAD_BADGE_LIMIT = 100;
 const EMPTY_NOTIFICATION_PAGE = {
     page: [],
     continueCursor: '',
@@ -24,6 +30,7 @@ export const getNotificationsByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
+    returns: paginatedNotificationsValidator,
     handler: async (ctx, { paginationOpts }) => {
         const organizationId = ctx.organizationId;
         if (!organizationId) {
@@ -41,9 +48,8 @@ export const getNotificationsByUser = queryWithRLS({
         );
 
         return {
+            ...results,
             page: results.page,
-            continueCursor: results.continueCursor,
-            isDone: results.isDone,
         };
     },
 });
@@ -52,6 +58,7 @@ export const getObjectivesForNotifications = queryWithRLS({
     args: {
         objectiveIds: v.array(v.id('objectives')),
     },
+    returns: objectivesArrayValidator,
     handler: async (ctx, args) => {
         if (args.objectiveIds.length > OBJECTIVE_ID_LIMIT) {
             throw new ConvexError(ERROR_CODES.OBJECTIVE_ID_LIMIT_EXCEEDED);
@@ -75,50 +82,66 @@ export const getObjectivesForNotifications = queryWithRLS({
     },
 });
 
-export const getUnreadNotificationCount = queryWithRLS({
+export const getNotificationOverview = queryWithRLS({
     args: {},
-    returns: v.object({ count: v.number() }),
+    returns: v.object({
+        notifications: v.array(notificationDocumentValidator),
+        unreadCount: v.number(),
+        isUnreadTruncated: v.boolean(),
+    }),
     handler: async ctx => {
         const organizationId = ctx.organizationId;
         if (!organizationId) {
-            return { count: 0 };
+            return { notifications: [], unreadCount: 0, isUnreadTruncated: false };
         }
 
-        let count = 0;
-        let cursor: string | null = null;
-        let isDone = false;
-        let retriedInvalidCursor = false;
-        const BATCH_SIZE = 1000;
+        const [notifications, unreadRows] = await Promise.all([
+            ctx.db
+                .query('notifications')
+                .withIndex('by_user_organization_date', q =>
+                    q.eq('userId', ctx.userId).eq('organizationId', organizationId)
+                )
+                .order('desc')
+                .take(DEFAULT_PAGE_SIZE),
+            ctx.db
+                .query('notifications')
+                .withIndex('by_user_organization_read', q =>
+                    q
+                        .eq('userId', ctx.userId)
+                        .eq('organizationId', organizationId)
+                        .eq('read', false)
+                )
+                .take(UNREAD_BADGE_LIMIT + 1),
+        ]);
 
-        while (!isDone) {
-            let page: { page: Doc<'notifications'>[]; continueCursor: string; isDone: boolean };
-            try {
-                page = await ctx.db
-                    .query('notifications')
-                    .withIndex('by_user_organization_read', q =>
-                        q
-                            .eq('userId', ctx.userId)
-                            .eq('organizationId', organizationId)
-                            .eq('read', false)
-                    )
-                    .paginate({ numItems: BATCH_SIZE, cursor });
-            } catch (error) {
-                if (!cursor || retriedInvalidCursor || !isInvalidCursorError(error)) {
-                    throw error;
-                }
+        return {
+            notifications,
+            unreadCount: Math.min(unreadRows.length, UNREAD_BADGE_LIMIT),
+            isUnreadTruncated: unreadRows.length > UNREAD_BADGE_LIMIT,
+        };
+    },
+});
 
-                count = 0;
-                cursor = null;
-                retriedInvalidCursor = true;
-                continue;
-            }
-
-            count += page.page.length;
-            isDone = page.isDone;
-            cursor = page.continueCursor;
+export const getUnreadNotificationCount = queryWithRLS({
+    args: {},
+    returns: v.object({ count: v.number(), isTruncated: v.boolean() }),
+    handler: async ctx => {
+        const organizationId = ctx.organizationId;
+        if (!organizationId) {
+            return { count: 0, isTruncated: false };
         }
 
-        return { count };
+        const unreadRows = await ctx.db
+            .query('notifications')
+            .withIndex('by_user_organization_read', q =>
+                q.eq('userId', ctx.userId).eq('organizationId', organizationId).eq('read', false)
+            )
+            .take(UNREAD_BADGE_LIMIT + 1);
+
+        return {
+            count: Math.min(unreadRows.length, UNREAD_BADGE_LIMIT),
+            isTruncated: unreadRows.length > UNREAD_BADGE_LIMIT,
+        };
     },
 });
 
@@ -127,6 +150,7 @@ export const setNotificationRead = mutationWithRLS({
         id: v.id('notifications'),
         read: v.boolean(),
     },
+    returns: v.union(notificationDocumentValidator, v.null()),
     handler: async (ctx, args) => {
         const notification = await ctx.db.get('notifications', args.id);
 
