@@ -1,47 +1,13 @@
 {
-    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "$schema": "https://unpkg.com/knip@6/schema.json",
     "entry": [
-        "next.config.ts",
-        "proxy.ts",
         "src/app/**/*.{ts,tsx}",
         "convex/**/*.ts",
         "scripts/**/*.{ts,mjs,js}",
-        "tests/**/*.ts",
-        "playwright.config.ts",
-        "tests/manual/playwright.manual.config.ts",
-        "vitest.config.ts"
+        "tests/**/*.ts"
     ],
-    "project": [
-        "src/**/*.{ts,tsx}",
-        "convex/**/*.ts",
-        "scripts/**/*.{ts,mjs,js}",
-        "tests/**/*.ts",
-        "playwright.config.ts"
-    ],
-    "ignore": [
-        "**/node_modules/**",
-        "**/.next/**",
-        "**/.next-e2e/**",
-        "**/dist/**",
-        "**/coverage/**",
-        "**/build/**",
-        "**/*.d.ts",
-        "**/_generated/**",
-        "**/test-results/**",
-        "**/playwright-report/**",
-        "mysql-data/**",
-        "data/**",
-        "**/*.d2",
-        "figures/**"
-    ],
+    "project": ["src/**/*.{ts,tsx}", "convex/**/*.ts", "scripts/**/*.{ts,mjs,js}", "tests/**/*.ts"],
     "ignoreBinaries": ["d2"],
-    "ignoreDependencies": [
-        "postcss",
-        "postcss-load-config",
-        "jsdom",
-        "tailwindcss",
-        "tw-animate-css",
-        "vite"
-    ],
+    "ignoreDependencies": ["tailwindcss", "tw-animate-css"],
     "ignoreExportsUsedInFile": true
 }

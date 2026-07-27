@@ -1,42 +1,77 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+    pull_request:
+    push:
+        branches:
+            - main
 
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    quality:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.0.8
+            - name: Setup pnpm
+              uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+              with:
+                  version: 11.0.8
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.21.1
-          cache: pnpm
+            - name: Setup Node
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              with:
+                  node-version: 22.21.1
+                  cache: pnpm
 
-      - name: Install dependencies
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-        run: pnpm install --frozen-lockfile
+            - name: Install dependencies
+              env:
+                  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+              run: pnpm install --frozen-lockfile
 
-      - name: Run non-mutating checks
-        run: pnpm run checks
+            - name: Run non-mutating checks
+              run: pnpm run checks
 
-      - name: Build
-        env:
-          NEXT_PUBLIC_SITE_URL: https://example.com
-          NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
-          NEXT_PUBLIC_CONVEX_SITE_URL: https://example.convex.site
-        run: pnpm run build
+            - name: Enforce coverage thresholds
+              run: pnpm run test:coverage
+
+            - name: Audit production dependencies
+              run: pnpm audit --prod --audit-level high
+
+            - name: Build
+              env:
+                  NEXT_PUBLIC_SITE_URL: https://example.com
+                  NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
+                  NEXT_PUBLIC_CONVEX_SITE_URL: https://example.convex.site
+              run: pnpm run build
+
+    e2e:
+        needs: quality
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+              with:
+                  version: 11.0.8
+
+            - name: Setup Node
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+              with:
+                  node-version: 22.21.1
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+            - name: Run end-to-end suite
+              run: pnpm run test:e2e
