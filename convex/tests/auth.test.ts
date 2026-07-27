@@ -147,7 +147,9 @@ describe('convex auth', () => {
         });
 
         const organization = await t.run(async ctx => await ctx.db.get(organizationId));
-        expect(organization?.metadata).toBe(JSON.stringify({ type: 'personal' }));
+        expect(organization?.metadata).toBe(
+            JSON.stringify({ type: 'personal', ownerUserId: user.docId })
+        );
 
         const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
             organizationId,
@@ -186,6 +188,41 @@ describe('convex auth', () => {
         });
 
         expect(isDefaultOrganization).toBe(false);
+    });
+
+    test('a reserved slug collision is not reused as another user personal organization', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const user = await createTestUser(t, {
+            userId: `personal-slug-collision-user-${randomSuffix}`,
+            email: `personal-slug-collision-${randomSuffix}@example.com`,
+            name: 'Personal Slug Collision User',
+        });
+        const collidingOrganizationId = await createTestOrganization(t, {
+            name: 'Unrelated organization',
+            slug: buildDefaultOrganizationSlug(user.docId),
+        });
+
+        const personalOrganizationId = await t.mutation(
+            internal.auth.ensureDefaultOrganizationForUser,
+            { userId: user.docId }
+        );
+
+        expect(personalOrganizationId).not.toBe(collidingOrganizationId);
+        await t.run(async ctx => {
+            const personal = await ctx.db.get('organization', personalOrganizationId);
+            const collidingMembership = await ctx.db
+                .query('member')
+                .withIndex('by_organizationId_and_userId', q =>
+                    q.eq('organizationId', collidingOrganizationId).eq('userId', user.docId)
+                )
+                .first();
+
+            expect(personal?.slug).not.toBe(buildDefaultOrganizationSlug(user.docId));
+            expect(personal?.metadata).toBe(
+                JSON.stringify({ type: 'personal', ownerUserId: user.docId })
+            );
+            expect(collidingMembership).toBeNull();
+        });
     });
 
     test('getOrganizationsByUser marks default organization as personal', async () => {

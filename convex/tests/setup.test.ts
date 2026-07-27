@@ -8,6 +8,8 @@ import {
     ensureTestUserAuth,
 } from './test_helpers';
 import type { Id } from '../_generated/dataModel';
+import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
+import { buildOrganizationSlug } from '../../shared/organization-slug';
 
 describe('convex setup', () => {
     describe('isPlatformSetUp', () => {
@@ -93,6 +95,43 @@ describe('convex setup', () => {
     });
 
     describe('completeSetup', () => {
+        test('creates a non-empty stable slug for an organization name without ASCII characters', async () => {
+            const t = initConvexTest({ workflow: false });
+            const user = await createTestUser(t, {
+                userId: 'setup-unicode-organization',
+                email: 'setup-unicode-organization@test.com',
+                name: 'Unicode Setup Admin',
+            });
+            const asUser = t.withIdentity({
+                subject: user.docId,
+                role: null,
+                email: user.email,
+                name: user.name,
+                emailVerified: true,
+                createdAt: Date.now(),
+                userId: user.docId,
+                image: null,
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+            const organizationName = '组织目标甲乙丙';
+
+            const result = await asUser.mutation(api.setup.completeSetup, {
+                platformName: 'Unicode Platform',
+                defaultLanguage: 'es',
+                registrationPolicy: 'open',
+                organizationName,
+                categories: [],
+            });
+
+            const organization = await t.run(async ctx =>
+                ctx.db.get('organization', result.organizationId)
+            );
+            expect(organization?.slug).toBe(buildOrganizationSlug(organizationName));
+            expect(organization?.slug).toMatch(/^organization-[a-z0-9]+$/);
+        });
+
         test('fails when platform is already configured', async () => {
             const t = initConvexTest({ workflow: false });
 
@@ -307,6 +346,70 @@ describe('convex setup', () => {
                 {}
             );
             expect(achievementProgress.length).toBeGreaterThan(0);
+        });
+
+        test('creates a team organization without converting the protected personal one', async () => {
+            const t = initConvexTest({ workflow: false });
+            const user = await createTestUser(t, {
+                userId: 'setup-personal-workspace-user',
+                email: 'personal-setup@example.com',
+                name: 'Personal Setup Admin',
+            });
+            const personalOrganizationId = await createTestOrganization(t, {
+                name: 'Personal Organization',
+                slug: buildDefaultOrganizationSlug(user.docId),
+                description: JSON.stringify({ type: 'personal' }),
+            });
+            await createTestMember(t, {
+                organizationId: personalOrganizationId,
+                userId: user.docId,
+                role: 'owner',
+            });
+
+            const userIdentity = t.withIdentity({
+                subject: user.docId,
+                userId: user.docId,
+                email: user.email,
+                name: user.name,
+                role: null,
+                emailVerified: true,
+                createdAt: Date.now(),
+                image: null,
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            });
+
+            const result = await userIdentity.mutation(api.setup.completeSetup, {
+                platformName: 'Separated workspaces',
+                defaultLanguage: 'en',
+                registrationPolicy: 'open',
+                organizationName: 'Real Team',
+                categories: [],
+            });
+
+            expect(result.organizationId).not.toBe(personalOrganizationId);
+            await t.run(async ctx => {
+                const personal = await ctx.db.get('organization', personalOrganizationId);
+                const team = await ctx.db.get('organization', result.organizationId);
+                const memberships = await ctx.db
+                    .query('member')
+                    .withIndex('userId', q => q.eq('userId', user.docId))
+                    .collect();
+                const session = await ctx.db
+                    .query('session')
+                    .withIndex('userId', q => q.eq('userId', user.docId))
+                    .first();
+
+                expect(personal?.name).toBe('Personal Organization');
+                expect(personal?.metadata).toBe(JSON.stringify({ type: 'personal' }));
+                expect(team?.name).toBe('Real Team');
+                expect(team?.metadata).toBeNull();
+                expect(memberships.map(membership => membership.organizationId)).toEqual(
+                    expect.arrayContaining([personalOrganizationId, result.organizationId])
+                );
+                expect(session?.activeOrganizationId).toBe(result.organizationId);
+            });
         });
     });
 

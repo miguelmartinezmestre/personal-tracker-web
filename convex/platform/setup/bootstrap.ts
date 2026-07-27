@@ -9,6 +9,13 @@ import {
     ensureTestOrganizationInternalArgsValidator,
 } from './validators';
 import { GLOBAL_ADMIN_ROLE, isGlobalAdminRole } from '../../../shared/platform-roles';
+import { isPersonalOrganizationForUser } from '../../domain/organizations/personalOrganization';
+import { buildOrganizationSlug } from '../../../shared/organization-slug';
+import {
+    CATEGORY_COLOR_PATTERN,
+    CATEGORY_ICONS,
+    CATEGORY_NAME_MAX_LENGTH,
+} from '../../../shared/input-constraints';
 
 type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
 
@@ -16,43 +23,13 @@ type EnsureTestOrganizationArgs = ObjectType<typeof ensureTestOrganizationIntern
 
 const SETUP_LIMITS = {
     NAME_MAX: 100,
-    CATEGORY_NAME_MAX: 50,
+    CATEGORY_NAME_MAX: CATEGORY_NAME_MAX_LENGTH,
     CATEGORIES_MAX: 100,
 } as const;
 
-const CATEGORY_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+const SETUP_MEMBERSHIP_LIMIT = 100;
 
-const CATEGORY_ICONS = new Set([
-    'tag',
-    'heart',
-    'briefcase',
-    'book',
-    'user',
-    'dollar-sign',
-    'users',
-    'palette',
-    'home',
-    'map',
-    'target',
-    'chart',
-    'check',
-    'calendar',
-    'lightbulb',
-    'trending-up',
-    'star',
-    'award',
-    'zap',
-    'coffee',
-    'music',
-    'camera',
-    'plane',
-]);
-
-const slugify = (value: string) =>
-    value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+const CATEGORY_ICON_SET = new Set<string>(CATEGORY_ICONS);
 
 function assertNonEmptyBoundedString(value: string, maxLength: number) {
     if (value.trim().length === 0 || value.length > maxLength) {
@@ -78,10 +55,10 @@ function assertSetupArgs(args: CompleteSetupArgs) {
 
     for (const category of args.categories) {
         assertNonEmptyBoundedString(category.name, SETUP_LIMITS.CATEGORY_NAME_MAX);
-        if (!CATEGORY_COLOR_RE.test(category.color)) {
+        if (!CATEGORY_COLOR_PATTERN.test(category.color)) {
             throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
         }
-        if (category.icon !== undefined && !CATEGORY_ICONS.has(category.icon)) {
+        if (category.icon !== undefined && !CATEGORY_ICON_SET.has(category.icon)) {
             throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
         }
     }
@@ -142,15 +119,39 @@ export async function completePlatformSetup(
 
     await ctx.db.patch(userId, { role: GLOBAL_ADMIN_ROLE });
 
-    const membership = await ctx.db
+    const memberships = await ctx.db
         .query('member')
         .withIndex('userId', q => q.eq('userId', userId))
-        .first();
+        .take(SETUP_MEMBERSHIP_LIMIT + 1);
+
+    if (memberships.length > SETUP_MEMBERSHIP_LIMIT) {
+        throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
+    }
+
+    let reusableOrganizationId: Id<'organization'> | null = null;
+    const personalOrganizationIds = new Set<Id<'organization'>>();
+
+    for (const membership of memberships) {
+        const organization = await ctx.db.get('organization', membership.organizationId);
+        if (!organization) continue;
+
+        if (
+            isPersonalOrganizationForUser({
+                metadata: organization.metadata,
+                slug: organization.slug,
+                userId,
+            })
+        ) {
+            personalOrganizationIds.add(organization._id);
+        } else if (!reusableOrganizationId) {
+            reusableOrganizationId = organization._id;
+        }
+    }
 
     let organizationId: Id<'organization'>;
 
-    if (membership) {
-        organizationId = membership.organizationId;
+    if (reusableOrganizationId) {
+        organizationId = reusableOrganizationId;
         await ctx.db.patch(organizationId, {
             name: args.organizationName,
             ...(args.organizationLogo ? { logo: args.organizationLogo } : {}),
@@ -159,7 +160,7 @@ export async function completePlatformSetup(
         const now = Date.now();
         organizationId = await ctx.db.insert('organization', {
             name: args.organizationName,
-            slug: slugify(args.organizationName),
+            slug: buildOrganizationSlug(args.organizationName),
             createdAt: now,
             metadata: null,
             logo: args.organizationLogo ?? null,
@@ -171,6 +172,26 @@ export async function completePlatformSetup(
             role: 'owner',
             createdAt: now,
         });
+    }
+
+    // The session hook creates a protected personal workspace before the setup
+    // wizard runs. Keep that workspace intact and activate the actual team
+    // organization created by setup instead of silently converting the personal
+    // organization into a team that still rejects invitations and members.
+    const sessions = await ctx.db
+        .query('session')
+        .withIndex('userId', q => q.eq('userId', userId))
+        .take(SETUP_MEMBERSHIP_LIMIT + 1);
+    if (sessions.length > SETUP_MEMBERSHIP_LIMIT) {
+        throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
+    }
+    for (const session of sessions) {
+        const currentOrganizationId = session.activeOrganizationId
+            ? ctx.db.normalizeId('organization', session.activeOrganizationId)
+            : null;
+        if (!currentOrganizationId || personalOrganizationIds.has(currentOrganizationId)) {
+            await ctx.db.patch('session', session._id, { activeOrganizationId: organizationId });
+        }
     }
 
     const now = Date.now();
@@ -238,7 +259,7 @@ export async function ensureTestOrganizationForUser(
         const organizationName = args.organizationName ?? `Test Org ${suffix}`;
         organizationId = await ctx.db.insert('organization', {
             name: organizationName,
-            slug: slugify(organizationName),
+            slug: buildOrganizationSlug(organizationName),
             createdAt: now,
             metadata: JSON.stringify({
                 description: 'Automatically created for E2E tests',
@@ -263,8 +284,9 @@ export async function ensureTestOrganizationForUser(
     if (args.createPersonalCategory !== false) {
         const existingPersonalCategory = await ctx.db
             .query('categories')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .filter(q => q.eq(q.field('name'), 'Personal'))
+            .withIndex('by_organization_name', q =>
+                q.eq('organizationId', organizationId).eq('name', 'Personal')
+            )
             .first();
 
         if (!existingPersonalCategory) {

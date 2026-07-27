@@ -17,6 +17,10 @@ export async function createRlsRules(
     organizationId?: Id<'organization'> | null,
     email?: string | null
 ) {
+    // Convex freezes Date.now() for the lifetime of one function execution. Keep
+    // authorization decisions on that trusted server timestamp instead of on a
+    // caller-provided reference time used only to refresh reactive queries.
+    const authorizationNow = Date.now();
     const isGlobalAdmin = isGlobalAdminRole(role);
     const isOrgAdmin =
         Boolean(organizationId) && (memberRole === 'admin' || memberRole === 'owner');
@@ -83,11 +87,10 @@ export async function createRlsRules(
     const pendingInvitationsForEmail = async () => {
         if (!email) return [];
         if (!pendingInvitationsForEmailPromise) {
-            const now = Date.now();
             pendingInvitationsForEmailPromise = ctx.db
                 .query('invitation')
                 .withIndex('by_email_status_expiresAt', q =>
-                    q.eq('email', email).eq('status', 'pending').gt('expiresAt', now)
+                    q.eq('email', email).eq('status', 'pending').gt('expiresAt', authorizationNow)
                 )
                 .take(1000)
                 .then(invitations =>
@@ -387,7 +390,7 @@ export async function createRlsRules(
                     Boolean(email) &&
                     invitation.email === email &&
                     invitation.status === 'pending' &&
-                    invitation.expiresAt > Date.now()
+                    invitation.expiresAt > authorizationNow
                 );
             },
             insert: async () => false,

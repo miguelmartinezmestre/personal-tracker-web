@@ -1,4 +1,7 @@
+import { requireSecureHttpUrl } from '../../shared/auth-security';
+
 const isProduction = process.env.NODE_ENV === 'production';
+const allowHttpLocalhost = !isProduction || process.env.NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP === 'true';
 
 const publicEnv = {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
@@ -14,16 +17,10 @@ function requirePublicUrl(name: keyof typeof publicEnv, fallback: string): strin
     }
 
     const resolved = value ?? fallback;
-    try {
-        const parsed = new URL(resolved);
-        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-            throw new Error('invalid protocol');
-        }
-    } catch {
-        throw new Error(`${name} must be a valid http(s) URL`);
-    }
-
-    return resolved;
+    return requireSecureHttpUrl(name, resolved, {
+        requireHttps: isProduction,
+        allowHttpLocalhost,
+    });
 }
 
 export const env = {
