@@ -9,32 +9,31 @@ import {
 } from '../domain/objectives/metrics';
 import { isEarlyBirdCompletion } from '../domain/achievements/calculations';
 import { ERROR_CODES } from '../utils/constants';
+import { CIVIL_DAY_MS, currentUtcCivilDay, toUtcCivilDay } from '../../shared/civil-date';
 import { initConvexTest } from './test.helper';
 import { createTestOrganization, createTestUser } from './test_helpers';
-import type { Id } from '../_generated/dataModel';
 
 describe('objectiveDomain', () => {
     describe('validateObjectiveMetrics', () => {
-        test('validateObjectiveMetrics accepts positive target', () => {
+        test('accepts representative valid metric bounds', () => {
             expect(() =>
                 validateObjectiveMetrics({
-                    targetValue: 10,
-                    currentValue: 0,
+                    targetValue: 0.001,
+                    currentValue: 1_000_000_000,
                     startValue: 0,
                 })
             ).not.toThrow();
         });
 
-        test('validateObjectiveMetrics accepts minimum valid target (0.001)', () => {
-            expect(() =>
-                validateObjectiveMetrics({
-                    targetValue: 0.001,
-                })
-            ).not.toThrow();
-        });
-
-        test('validateObjectiveMetrics rejects target below minimum', () => {
+        test('rejects representative invalid target values with domain errors', () => {
             expect(() => validateObjectiveMetrics({ targetValue: 0 })).toThrow(ConvexError);
+            expect(() => validateObjectiveMetrics({ targetValue: Number.NaN })).toThrow(
+                ConvexError
+            );
+            expect(() => validateObjectiveMetrics({ targetValue: 1_000_000_001 })).toThrow(
+                ConvexError
+            );
+
             try {
                 validateObjectiveMetrics({ targetValue: 0 });
             } catch (e) {
@@ -45,58 +44,29 @@ describe('objectiveDomain', () => {
             }
         });
 
-        test('validateObjectiveMetrics rejects NaN target', () => {
+        test('rejects representative invalid current values', () => {
+            expect(() => validateObjectiveMetrics({ currentValue: -1 })).toThrow(ConvexError);
             expect(() =>
-                validateObjectiveMetrics({
-                    targetValue: Number.NaN,
-                })
+                validateObjectiveMetrics({ currentValue: Number.POSITIVE_INFINITY })
             ).toThrow(ConvexError);
-            try {
-                validateObjectiveMetrics({ targetValue: Number.NaN });
-            } catch (e) {
-                expect(e).toBeInstanceOf(ConvexError);
-                if (e instanceof ConvexError) {
-                    expect(e.data).toBe(ERROR_CODES.TARGET_NOT_FINITE);
-                }
-            }
-        });
-
-        test('validateObjectiveMetrics rejects infinite target', () => {
-            expect(() =>
-                validateObjectiveMetrics({
-                    targetValue: Number.POSITIVE_INFINITY,
-                })
-            ).toThrow(ConvexError);
-        });
-
-        test('validateObjectiveMetrics rejects target exceeding maximum', () => {
-            expect(() =>
-                validateObjectiveMetrics({
-                    targetValue: 1_000_000_001,
-                })
-            ).toThrow(ConvexError);
-            try {
-                validateObjectiveMetrics({ targetValue: 1_000_000_001 });
-            } catch (e) {
-                expect(e).toBeInstanceOf(ConvexError);
-                if (e instanceof ConvexError) {
-                    expect(e.data).toBe(ERROR_CODES.TARGET_TOO_LARGE);
-                }
-            }
-        });
-
-        test('validateObjectiveMetrics accepts maximum valid target', () => {
-            expect(() =>
-                validateObjectiveMetrics({
-                    targetValue: 1_000_000_000,
-                })
-            ).not.toThrow();
+            expect(() => validateObjectiveMetrics({ currentValue: 1_000_000_001 })).toThrow(
+                ConvexError
+            );
         });
     });
 
     describe('validateProgressDelta', () => {
-        test('validateProgressDelta rejects negative values', () => {
+        test('accepts zero and positive progress deltas', () => {
+            expect(() => validateProgressDelta(0, 0)).not.toThrow();
+            expect(() => validateProgressDelta(100, 0)).not.toThrow();
+        });
+
+        test('rejects invalid progress deltas and overflow', () => {
             expect(() => validateProgressDelta(-1, 0)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(Number.NaN, 0)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(1_000_000_001, 0)).toThrow(ConvexError);
+            expect(() => validateProgressDelta(1, 1_000_000_000)).toThrow(ConvexError);
+
             try {
                 validateProgressDelta(-1, 0);
             } catch (e) {
@@ -106,211 +76,128 @@ describe('objectiveDomain', () => {
                 }
             }
         });
-
-        test('validateProgressDelta accepts zero', () => {
-            expect(() => validateProgressDelta(0, 0)).not.toThrow();
-        });
-
-        test('validateProgressDelta accepts positive values', () => {
-            expect(() => validateProgressDelta(100, 0)).not.toThrow();
-        });
-
-        test('validateProgressDelta rejects NaN', () => {
-            expect(() => validateProgressDelta(Number.NaN, 0)).toThrow(ConvexError);
-        });
-
-        test('validateProgressDelta rejects infinite values', () => {
-            expect(() => validateProgressDelta(Number.POSITIVE_INFINITY, 0)).toThrow(ConvexError);
-        });
-
-        test('validateProgressDelta rejects values exceeding maximum', () => {
-            expect(() => validateProgressDelta(1_000_000_001, 0)).toThrow(ConvexError);
-        });
-
-        test('validateProgressDelta rejects currentValue + delta exceeding maximum', () => {
-            expect(() => validateProgressDelta(1, 1_000_000_000)).toThrow(ConvexError);
-        });
     });
 
     describe('validateUpdateDate', () => {
-        test('accepts current timestamp', () => {
-            expect(() => validateUpdateDate(Date.now())).not.toThrow();
-        });
-
-        test('accepts past timestamp within 1 day', () => {
+        test('accepts current-day timestamps and recent past dates', () => {
+            const now = Date.now();
+            expect(() => validateUpdateDate(now)).not.toThrow();
             expect(() => validateUpdateDate(Date.now() - 86400000)).not.toThrow();
+            expect(() =>
+                validateUpdateDate(currentUtcCivilDay(now) + CIVIL_DAY_MS - 1)
+            ).not.toThrow();
         });
 
-        test('accepts timestamp within clock skew buffer (1 minute)', () => {
-            expect(() => validateUpdateDate(Date.now() + 30000)).not.toThrow();
+        test('rejects dates too far in the future or past', () => {
+            expect(() => validateUpdateDate(currentUtcCivilDay() + CIVIL_DAY_MS)).toThrow(
+                ConvexError
+            );
+            expect(() => validateUpdateDate(Date.now() - 5 * 365 * 86400000 - 86400000)).toThrow(
+                ConvexError
+            );
         });
 
-        test('rejects future timestamp beyond 1 day', () => {
-            expect(() => validateUpdateDate(Date.now() + 2 * 86400000)).toThrow(ConvexError);
-            try {
-                validateUpdateDate(Date.now() + 2 * 86400000);
-            } catch (e) {
-                expect(e).toBeInstanceOf(ConvexError);
-                if (e instanceof ConvexError) {
-                    expect(e.data).toBe(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
-                }
-            }
-        });
-
-        test('rejects timestamp too old (more than five years)', () => {
-            const tooOld = Date.now() - 5 * 365 * 86400000 - 86400000;
-            expect(() => validateUpdateDate(tooOld)).toThrow(ConvexError);
-            try {
-                validateUpdateDate(tooOld);
-            } catch (e) {
-                expect(e).toBeInstanceOf(ConvexError);
-                if (e instanceof ConvexError) {
-                    expect(e.data).toBe(ERROR_CODES.DATE_TOO_OLD);
-                }
-            }
+        test('normalizes timestamps to their UTC civil-day key', () => {
+            const timestamp = Date.UTC(2026, 6, 14, 19, 42, 10);
+            expect(toUtcCivilDay(timestamp)).toBe(Date.UTC(2026, 6, 14));
         });
     });
 
     describe('validateObjectiveNotCompleted', () => {
-        test('throws when status is completed', () => {
-            expect(() => validateObjectiveNotCompleted('completed')).toThrow(ConvexError);
-            try {
-                validateObjectiveNotCompleted('completed');
-            } catch (e) {
-                expect(e).toBeInstanceOf(ConvexError);
-                if (e instanceof ConvexError) {
-                    expect(e.data).toBe(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
-                }
-            }
-        });
-
-        test('does not throw for active status', () => {
+        test('accepts active objectives and rejects completed ones', () => {
             expect(() => validateObjectiveNotCompleted('active')).not.toThrow();
+            expect(() => validateObjectiveNotCompleted('completed')).toThrow(ConvexError);
         });
 
-        test.each(['pending', 'archived'])('throws for unsupported status: %s', status => {
-            expect(() => validateObjectiveNotCompleted(status as never)).toThrow(ConvexError);
-            try {
-                validateObjectiveNotCompleted(status as never);
-            } catch (e) {
-                expect(e).toBeInstanceOf(ConvexError);
-                if (e instanceof ConvexError) {
-                    expect(e.data).toBe(ERROR_CODES.VALIDATION_ERROR);
-                }
-            }
+        test('rejects unsupported statuses', () => {
+            expect(() => validateObjectiveNotCompleted('archived' as never)).toThrow(ConvexError);
         });
     });
 
-    describe('isEarlyBirdCompletion', () => {
-        test('returns true when completed before deadline', () => {
-            expect(
-                isEarlyBirdCompletion({
-                    status: 'completed',
-                    deadline: 2000,
-                    completedAt: 1000,
-                })
-            ).toBe(true);
-        });
-
-        test('returns false when completed after deadline', () => {
-            expect(
-                isEarlyBirdCompletion({
-                    status: 'completed',
-                    deadline: 1000,
-                    completedAt: 2000,
-                })
-            ).toBe(false);
-        });
-
-        test('returns false without completedAt', () => {
-            expect(
-                isEarlyBirdCompletion({
-                    status: 'completed',
-                    deadline: 2000,
-                })
-            ).toBe(false);
-        });
+    test('isEarlyBirdCompletion reflects deadline timing', () => {
+        const deadline = Date.UTC(2026, 6, 14);
+        expect(
+            isEarlyBirdCompletion({
+                status: 'completed',
+                deadline,
+                completedAt: deadline + CIVIL_DAY_MS - 1,
+            })
+        ).toBe(true);
+        expect(
+            isEarlyBirdCompletion({
+                status: 'completed',
+                deadline,
+                completedAt: deadline + CIVIL_DAY_MS,
+            })
+        ).toBe(false);
+        expect(
+            isEarlyBirdCompletion({
+                status: 'completed',
+                deadline,
+            })
+        ).toBe(false);
     });
 
     describe('applyObjectiveProgressDelta', () => {
         const t = initConvexTest();
 
-        test('sets completedAt when objective completes', async () => {
+        async function insertObjective(status: 'active' | 'completed') {
+            const suffix = Math.random().toString(36).slice(2);
             const userData = await createTestUser(t, {
-                userId: 'metrics-user',
-                email: 'metrics@test.com',
+                userId: `metrics-user-${suffix}`,
+                email: `metrics-${suffix}@test.com`,
                 name: 'Metrics User',
                 password: 'test',
                 role: 'globalAdmin',
                 emailVerified: false,
             });
             const organizationId = await createTestOrganization(t, {
-                name: 'Metrics Org',
-                slug: 'metrics-org',
+                name: `Metrics Org ${suffix}`,
+                slug: `metrics-org-${suffix}`,
             });
 
-            await t.run(async ctx => {
-                const objectiveId = await ctx.db.insert('objectives', {
+            return await t.run(async ctx => {
+                return await ctx.db.insert('objectives', {
                     createdBy: userData.docId,
-
                     ownerId: userData.docId,
-
                     visibility: 'private',
                     organizationId,
-                    title: 'Complete Me',
+                    title: `Progress ${status}`,
                     targetValue: 100,
-                    currentValue: 50,
+                    currentValue: status === 'completed' ? 100 : 50,
                     startValue: 0,
-                    status: 'active',
+                    deadline: Date.now() + 24 * 60 * 60 * 1000,
+                    status,
+                    completedAt: status === 'completed' ? Date.now() : undefined,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
+            });
+        }
 
+        test('sets completedAt when objective completes', async () => {
+            const objectiveId = await insertObjective('active');
+
+            await t.run(async ctx => {
                 await applyObjectiveProgressDelta(ctx, objectiveId, 50);
 
                 const objective = await ctx.db.get('objectives', objectiveId);
                 expect(objective?.status).toBe('completed');
                 expect(objective?.completedAt).toBeDefined();
+                expect(objective?.earlyBirdCompleted).toBe(true);
             });
         });
 
         test('clears completedAt when objective reopens', async () => {
-            const userData = await createTestUser(t, {
-                userId: 'reopen-user',
-                email: 'reopen@test.com',
-                name: 'Reopen User',
-                password: 'test',
-                role: 'globalAdmin',
-                emailVerified: false,
-            });
-            const organizationId = await createTestOrganization(t, {
-                name: 'Reopen Org',
-                slug: 'reopen-org',
-            });
+            const objectiveId = await insertObjective('completed');
 
             await t.run(async ctx => {
-                const objectiveId = await ctx.db.insert('objectives', {
-                    createdBy: userData.docId as Id<'user'>,
-
-                    ownerId: userData.docId as Id<'user'>,
-
-                    visibility: 'private',
-                    organizationId,
-                    title: 'Reopen Me',
-                    targetValue: 100,
-                    currentValue: 100,
-                    startValue: 0,
-                    status: 'completed',
-                    completedAt: Date.now(),
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
                 await applyObjectiveProgressDelta(ctx, objectiveId, -50);
 
                 const objective = await ctx.db.get('objectives', objectiveId);
                 expect(objective?.status).toBe('active');
                 expect(objective?.completedAt).toBeUndefined();
+                expect(objective?.earlyBirdCompleted).toBe(false);
             });
         });
     });

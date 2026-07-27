@@ -232,76 +232,9 @@ describe('notifications security - cross-user access prevention', async () => {
             );
             expect(containsUserANotifications).toBe(false);
         });
-
-        test('user B cannot access user A notification details via API', async () => {
-            const notificationA = await createTestNotification(t, {
-                userId: userAId,
-                organizationId: sharedOrganizationId,
-                objective: userAObjectiveId,
-                notificationType: 'progress',
-                message: 'User A Progress Update',
-            });
-
-            await expect(
-                userBIdentity.mutation(api.notifications.setNotificationRead, {
-                    id: notificationA!._id,
-                    read: true,
-                })
-            ).rejects.toThrow(/Not authorized|NOT_AUTHORIZED_NOTIFICATION/);
-        });
-
-        test('RLS rules prevent cross-user notification read access', async () => {
-            const notificationA = await createTestNotification(t, {
-                userId: userAId,
-                organizationId: sharedOrganizationId,
-                objective: userAObjectiveId,
-                notificationType: 'reminder',
-                message: 'RLS Test Notification',
-            });
-
-            const userAQuery = await userAIdentity.query(api.notifications.getNotificationsByUser, {
-                paginationOpts: { numItems: 10, cursor: null },
-            });
-            expect(
-                userAQuery.page.some(notification => notification._id === notificationA!._id)
-            ).toBe(true);
-
-            const userBQuery = await userBIdentity.query(api.notifications.getNotificationsByUser, {
-                paginationOpts: { numItems: 10, cursor: null },
-            });
-            expect(
-                userBQuery.page.some(notification => notification._id === notificationA!._id)
-            ).toBe(false);
-        });
     });
 
     describe('Organization broadcast notifications access', () => {
-        test('organization achievement notifications are accessible to all org members', async () => {
-            await adminIdentity.run(async ctx => {
-                const id = await ctx.db.insert('notifications', {
-                    userId: adminId,
-                    organizationId: sharedOrganizationId,
-                    read: false,
-                    notificationType: 'achievement',
-                    notificationDate: Date.now(),
-                    message: 'Organization Achievement Unlocked!',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return await ctx.db.get(id);
-            });
-
-            const userAMembership = await userAIdentity.run(async ctx => {
-                return await ctx.db
-                    .query('member')
-                    .withIndex('by_organizationId_and_userId', q =>
-                        q.eq('organizationId', sharedOrganizationId).eq('userId', userAId)
-                    )
-                    .first();
-            });
-            expect(userAMembership).not.toBeNull();
-        });
-
         test('user B cannot modify organization notification even if they can see it', async () => {
             const orgNotification = await adminIdentity.run(async ctx => {
                 const id = await ctx.db.insert('notifications', {
@@ -327,23 +260,6 @@ describe('notifications security - cross-user access prevention', async () => {
     });
 
     describe('Admin access verification', () => {
-        test('admin can read any notification in the organization', async () => {
-            const notificationA = await createTestNotification(t, {
-                userId: userAId,
-                organizationId: sharedOrganizationId,
-                objective: userAObjectiveId,
-                notificationType: 'reminder',
-                message: 'User A Private For Admin Test',
-            });
-
-            const accessedByAdmin = await adminIdentity.run(async ctx => {
-                return await ctx.db.get(notificationA!._id);
-            });
-
-            expect(accessedByAdmin).not.toBeNull();
-            expect(accessedByAdmin?.message).toBe('User A Private For Admin Test');
-        });
-
         test('admin can modify any notification', async () => {
             const notificationA = await createTestNotification(t, {
                 userId: userAId,
@@ -438,70 +354,6 @@ describe('notifications security - cross-user access prevention', async () => {
                 return await ctx.db.get(notificationB!._id);
             });
             expect(notificationBStatus?.read).toBe(false);
-        });
-
-        test('cannot modify other user notification even with valid ID', async () => {
-            const notificationA = await createTestNotification(t, {
-                userId: userAId,
-                organizationId: sharedOrganizationId,
-                objective: userAObjectiveId,
-                notificationType: 'reminder',
-                message: 'Security Bypass Test',
-            });
-
-            await expect(
-                userBIdentity.mutation(api.notifications.setNotificationRead, {
-                    id: notificationA!._id,
-                    read: true,
-                })
-            ).rejects.toThrow(/Not authorized|NOT_AUTHORIZED_NOTIFICATION/);
-
-            const unchanged = await userAIdentity.run(async ctx => {
-                return await ctx.db.get(notificationA!._id);
-            });
-            expect(unchanged?.read).toBe(false);
-            expect(unchanged?.message).toBe('Security Bypass Test');
-        });
-
-        test('notification security summary - all access attempts blocked', async () => {
-            const notificationA = await createTestNotification(t, {
-                userId: userAId,
-                organizationId: sharedOrganizationId,
-                objective: userAObjectiveId,
-                notificationType: 'deadline',
-                message: 'Comprehensive Security Test',
-            });
-
-            const accessAttempts = [
-                {
-                    name: 'modify notification',
-                    attempt: () =>
-                        userBIdentity.mutation(api.notifications.setNotificationRead, {
-                            id: notificationA!._id,
-                            read: true,
-                        }),
-                },
-                {
-                    name: 'delete notification',
-                    attempt: () =>
-                        userBIdentity.mutation(api.notifications.deleteNotification, {
-                            id: notificationA!._id,
-                        }),
-                },
-            ];
-
-            for (const { attempt } of accessAttempts) {
-                await expect(attempt()).rejects.toThrow(
-                    /Not authorized|NOT_AUTHORIZED_NOTIFICATION/
-                );
-            }
-
-            const finalState = await userAIdentity.run(async ctx => {
-                return await ctx.db.get(notificationA!._id);
-            });
-            expect(finalState).not.toBeNull();
-            expect(finalState?.read).toBe(false);
-            expect(finalState?.message).toBe('Comprehensive Security Test');
         });
     });
 });

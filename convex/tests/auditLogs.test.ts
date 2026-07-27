@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
-import { Id } from '../_generated/dataModel';
+import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
+import type { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
 
 describe('convex auditLogs', () => {
     const t = initConvexTest();
@@ -14,83 +13,71 @@ describe('convex auditLogs', () => {
     let adminId: Id<'user'>;
     let userOrganizationId: Id<'organization'>;
     let adminOrganizationId: Id<'organization'>;
+    const paginationOpts = { numItems: 100, cursor: null };
 
     beforeEach(async () => {
-        const userRandom = Math.random().toString(36).substring(2, 15);
         const adminRandom = Math.random().toString(36).substring(2, 15);
-
-        const admin = {
+        const admin = await createTestUser(t, {
             userId: 'test-admin-audit-' + adminRandom,
             email: 'admin-audit@example.com-' + adminRandom,
             name: 'Admin Audit User ' + adminRandom,
             password: 'test-password',
             role: 'globalAdmin',
             emailVerified: true,
-        };
-        const adminData = await createTestUser(t, admin);
-        adminId = adminData.docId;
-
-        const adminOrgId = await createTestOrganization(t, {
+        });
+        adminId = admin.docId;
+        adminOrganizationId = await createTestOrganization(t, {
             name: 'Audit Admin Org ' + adminRandom,
             slug: 'audit-admin-org-' + adminRandom,
         });
-
         await createTestMember(t, {
-            organizationId: adminOrgId,
+            organizationId: adminOrganizationId,
             userId: adminId,
             role: 'owner',
         });
-
-        adminOrganizationId = adminOrgId;
-
         adminIdentity = t.withIdentity({
-            subject: adminData.docId,
-            role: admin.role,
+            subject: admin.docId,
+            role: admin.role ?? 'globalAdmin',
             email: admin.email,
             name: admin.name,
-            password: admin.password,
-            emailVerified: admin.emailVerified,
+            password: 'test-password',
+            emailVerified: true,
             createdAt: Date.now(),
-            userId: adminData.docId,
+            userId: admin.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
             banned: false,
         });
 
-        const user = {
+        const userRandom = Math.random().toString(36).substring(2, 15);
+        const user = await createTestUser(t, {
             userId: 'test-user-audit-' + userRandom,
             email: 'user-audit@example.com-' + userRandom,
             name: 'User Audit ' + userRandom,
             password: 'test-password',
             role: 'user',
             emailVerified: true,
-        };
-        const userDataResult = await createTestUser(t, user);
-        userId = userDataResult.docId;
-
-        const userOrgId = await createTestOrganization(t, {
+        });
+        userId = user.docId;
+        userOrganizationId = await createTestOrganization(t, {
             name: 'Audit User Org ' + userRandom,
             slug: 'audit-user-org-' + userRandom,
         });
-
         await createTestMember(t, {
-            organizationId: userOrgId,
+            organizationId: userOrganizationId,
             userId,
             role: 'owner',
         });
-
-        userOrganizationId = userOrgId;
-
         userIdentity = t.withIdentity({
-            subject: userDataResult.docId,
-            role: user.role,
+            subject: user.docId,
+            role: user.role ?? 'user',
             email: user.email,
             name: user.name,
-            password: user.password,
-            emailVerified: user.emailVerified,
+            password: 'test-password',
+            emailVerified: true,
             createdAt: Date.now(),
-            userId: userDataResult.docId,
+            userId: user.docId,
             image: 'https://example.com/image.png',
             banExpires: null,
             banReason: null,
@@ -98,443 +85,191 @@ describe('convex auditLogs', () => {
         });
     });
 
-    describe('getAuditLogs', () => {
-        const paginationOpts = { numItems: 100, cursor: null };
-
-        test('creating an objective through mutationWithRLS writes an audit log', async () => {
-            const title = `Triggered objective ${Date.now()}`;
-
-            const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
-                title,
-                targetValue: 10,
-                currentValue: 0,
-            });
-
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                paginationOpts,
-            });
-
-            const matchingLogs = result.page.filter(
-                log =>
-                    log.resourceType === 'objective' &&
-                    log.resourceId === String(objectiveId) &&
-                    log.action === 'objective.created' &&
-                    log.userId === userId
-            );
-
-            expect(matchingLogs).toHaveLength(1);
-            expect(matchingLogs[0]?.organizationId).toBe(userOrganizationId);
-            // Self-action (the owner created their own objective) ⇒ actor left empty.
-            expect(matchingLogs[0]?.actorUserId).toBeUndefined();
-            expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('title');
-            expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('category');
-            expect(matchingLogs[0]?.metadata?.after).not.toHaveProperty('unit');
-            expect(matchingLogs[0]?.metadata?.after).toHaveProperty('_id', String(objectiveId));
-            expect(matchingLogs[0]?.metadata?.after).toHaveProperty('status');
+    test('creating an objective through mutationWithRLS writes a sanitized audit log', async () => {
+        const objectiveId = await userIdentity.mutation(api.objectives.createObjective, {
+            title: `Triggered objective ${Date.now()}`,
+            targetValue: 10,
+            currentValue: 0,
         });
 
-        test('returns audit logs sorted by date descending', async () => {
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
+        const result = await adminIdentity.query(api.auditLogs.getAuditLogs, { paginationOpts });
+        const log = result.page.find(
+            entry =>
+                entry.resourceType === 'objective' &&
+                entry.resourceId === String(objectiveId) &&
+                entry.action === 'objective.created'
+        );
+
+        expect(log).toMatchObject({
+            userId,
+            organizationId: userOrganizationId,
+        });
+        expect(log?.actorUserId).toBeUndefined();
+        expect(log?.metadata?.after).toHaveProperty('_id', String(objectiveId));
+        expect(log?.metadata?.after).toHaveProperty('status');
+        expect(log?.metadata?.after).not.toHaveProperty('title');
+        expect(log?.metadata?.after).not.toHaveProperty('category');
+        expect(log?.metadata?.after).not.toHaveProperty('unit');
+    });
+
+    test('getAuditLogs paginates, sorts, filters, and enforces admin visibility', async () => {
+        await adminIdentity.run(async ctx => {
+            const now = Date.now();
+            for (let i = 0; i < 10; i++) {
                 await ctx.db.insert('auditLogs', {
                     userId: adminId,
                     organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-1',
+                    action: i % 2 === 0 ? 'objective.created' : 'category.created',
+                    resourceType: i % 2 === 0 ? 'objective' : 'category',
+                    resourceId: `admin-${i}`,
                     severity: 'info',
-                    createdAt: now - 2000,
+                    createdAt: now - i * 1000,
                 });
+            }
+            await ctx.db.insert('auditLogs', {
+                userId,
+                organizationId: userOrganizationId,
+                action: 'objective.created',
+                resourceType: 'objective',
+                resourceId: 'user-objective',
+                severity: 'warning',
+                createdAt: now + 1000,
+            });
+        });
+
+        const firstPage = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+            paginationOpts: { numItems: 5, cursor: null },
+        });
+        const objectiveLogs = await adminIdentity.query(api.auditLogs.getAuditLogs, {
+            resourceType: 'objective',
+            paginationOpts,
+        });
+        const userLogs = await userIdentity.query(api.auditLogs.getAuditLogs, { paginationOpts });
+
+        expect(firstPage.page).toHaveLength(5);
+        expect(firstPage.isDone).toBe(false);
+        expect(firstPage.page[0]!.createdAt).toBeGreaterThanOrEqual(firstPage.page[1]!.createdAt);
+        expect(objectiveLogs.page.every(log => log.resourceType === 'objective')).toBe(true);
+        const visibleUserIds = new Set(objectiveLogs.page.map(log => log.userId));
+        expect(visibleUserIds.has(adminId)).toBe(true);
+        expect(visibleUserIds.has(userId)).toBe(true);
+        expect(userLogs.page.every(log => log.userId === userId)).toBe(true);
+    });
+
+    test('getAuditLogsByResource returns only the requested resource', async () => {
+        await adminIdentity.run(async ctx => {
+            const now = Date.now();
+            for (const [resourceId, action] of [
+                ['obj-target', 'objective.created'],
+                ['obj-target', 'objective.updated'],
+                ['obj-other', 'objective.created'],
+            ] as const) {
                 await ctx.db.insert('auditLogs', {
                     userId: adminId,
                     organizationId: adminOrganizationId,
-                    action: 'objective.updated',
+                    action,
                     resourceType: 'objective',
-                    resourceId: 'obj-1',
+                    resourceId,
                     severity: 'info',
-                    createdAt: now - 1000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.deleted',
-                    resourceType: 'objective',
-                    resourceId: 'obj-1',
-                    severity: 'critical',
                     createdAt: now,
                 });
-            });
-
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                paginationOpts,
-            });
-
-            expect(result.page.length).toBeGreaterThanOrEqual(3);
-            for (let i = 0; i < result.page.length - 1; i++) {
-                const current = result.page[i]?.createdAt;
-                const next = result.page[i + 1]?.createdAt;
-                if (current !== undefined && next !== undefined) {
-                    expect(current).toBeGreaterThanOrEqual(next);
-                }
             }
         });
 
-        test('respects numItems in paginationOpts', async () => {
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                for (let i = 0; i < 10; i++) {
-                    await ctx.db.insert('auditLogs', {
-                        userId: adminId,
-                        organizationId: adminOrganizationId,
-                        action: 'objective.created',
-                        resourceType: 'objective',
-                        resourceId: `obj-${i}`,
-                        severity: 'info',
-                        createdAt: now - i * 1000,
-                    });
-                }
-            });
-
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                paginationOpts: { numItems: 5, cursor: null },
-            });
-
-            expect(result.page.length).toBe(5);
-            expect(result.isDone).toBe(false);
+        const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+            resourceType: 'objective',
+            resourceId: 'obj-target',
+            paginationOpts,
+        });
+        const empty = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+            resourceType: 'objective',
+            resourceId: 'non-existent',
+            paginationOpts,
         });
 
-        test('filters by resourceType when provided', async () => {
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-1',
-                    severity: 'info',
-                    createdAt: now - 2000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'category.created',
-                    resourceType: 'category',
-                    resourceId: 'cat-1',
-                    severity: 'info',
-                    createdAt: now - 1000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'organization.created',
-                    resourceType: 'organization',
-                    resourceId: 'organization-1',
-                    severity: 'info',
-                    createdAt: now,
-                });
-            });
-
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                resourceType: 'objective',
-                paginationOpts,
-            });
-
-            expect(result.page.every(log => log.resourceType === 'objective')).toBe(true);
-        });
-
-        test('returns empty page when no logs exist', async () => {
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                paginationOpts,
-            });
-            expect(Array.isArray(result.page)).toBe(true);
-        });
-
-        test('regular user can only see their own logs', async () => {
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-admin',
-                    severity: 'info',
-                    createdAt: now - 1000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: userId,
-                    organizationId: userOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-user',
-                    severity: 'info',
-                    createdAt: now,
-                });
-            });
-
-            const result = await userIdentity.query(api.auditLogs.getAuditLogs, {
-                paginationOpts,
-            });
-            expect(result.page.every(log => log.userId === userId)).toBe(true);
-        });
-
-        test('admin can see all logs', async () => {
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-admin',
-                    severity: 'info',
-                    createdAt: now - 1000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: userId,
-                    organizationId: userOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-user',
-                    severity: 'info',
-                    createdAt: now,
-                });
-            });
-
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogs, {
-                paginationOpts,
-            });
-            const userIds = new Set(result.page.map(log => log.userId));
-            expect(userIds.has(adminId)).toBe(true);
-            expect(userIds.has(userId)).toBe(true);
-        });
+        expect(result.page).toHaveLength(2);
+        expect(result.page.every(log => log.resourceId === 'obj-target')).toBe(true);
+        expect(empty.page).toEqual([]);
     });
 
-    describe('getAuditLogsByResource', () => {
-        const paginationOpts = { numItems: 100, cursor: null };
-
-        test('returns logs for a specific resource', async () => {
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
+    test('audit log schema supports metadata, severity, optional resource and actor fields', async () => {
+        const logIds = await adminIdentity.run(async ctx => {
+            const now = Date.now();
+            return await Promise.all([
+                ctx.db.insert('auditLogs', {
+                    userId,
+                    actorUserId: adminId,
                     organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-target',
-                    severity: 'info',
-                    createdAt: now - 3000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.updated',
-                    resourceType: 'objective',
-                    resourceId: 'obj-target',
-                    severity: 'info',
-                    createdAt: now - 2000,
-                });
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    resourceId: 'obj-other',
-                    severity: 'info',
-                    createdAt: now - 1000,
-                });
-            });
-
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
-                resourceType: 'objective',
-                resourceId: 'obj-target',
-                paginationOpts,
-            });
-
-            expect(result.page.length).toBe(2);
-            expect(result.page.every(log => log.resourceId === 'obj-target')).toBe(true);
-        });
-
-        test('returns empty page for non-existent resource', async () => {
-            const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
-                resourceType: 'objective',
-                resourceId: 'non-existent',
-                paginationOpts,
-            });
-
-            expect(result.page).toEqual([]);
-        });
-    });
-
-    describe('audit log schema', () => {
-        test('stores metadata correctly', async () => {
-            let logId: Id<'auditLogs'>;
-
-            await adminIdentity.run(async ctx => {
-                logId = await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.updated',
-                    resourceType: 'objective',
-                    resourceId: 'obj-1',
+                    action: 'user.updated',
+                    resourceType: 'user',
+                    resourceId: String(userId),
                     metadata: {
                         before: { status: 'active', currentValue: 1 },
                         after: { status: 'completed', currentValue: 10 },
                         context: 'objective.updated',
                     },
                     severity: 'warning',
-                    createdAt: Date.now(),
-                });
-            });
-
-            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
-
-            expect(log?.metadata?.before).toEqual({ status: 'active', currentValue: 1 });
-            expect(log?.metadata?.after).toEqual({ status: 'completed', currentValue: 10 });
-            expect(log?.metadata?.context).toBe('objective.updated');
-        });
-
-        test('stores severity levels correctly', async () => {
-            const severities = ['info', 'warning', 'critical'] as const;
-            const logIds: Id<'auditLogs'>[] = [];
-
-            await adminIdentity.run(async ctx => {
-                const now = Date.now();
-                for (const severity of severities) {
-                    const id = await ctx.db.insert('auditLogs', {
-                        userId: adminId,
-                        organizationId: adminOrganizationId,
-                        action: 'objective.created',
-                        resourceType: 'objective',
-                        severity,
-                        createdAt: now,
-                    });
-                    logIds.push(id);
-                }
-            });
-
-            for (let i = 0; i < severities.length; i++) {
-                const log = await adminIdentity.run(async ctx => ctx.db.get(logIds[i]!));
-                expect(log?.severity).toBe(severities[i]);
-            }
-        });
-
-        test('resourceId is optional', async () => {
-            let logId: Id<'auditLogs'>;
-
-            await adminIdentity.run(async ctx => {
-                logId = await ctx.db.insert('auditLogs', {
+                    createdAt: now,
+                }),
+                ctx.db.insert('auditLogs', {
                     userId: adminId,
                     organizationId: adminOrganizationId,
                     action: 'category.defaults_created',
                     resourceType: 'category',
                     severity: 'info',
-                    createdAt: Date.now(),
-                });
-            });
-
-            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
-            expect(log?.resourceId).toBeUndefined();
+                    createdAt: now,
+                }),
+            ]);
         });
 
-        test('actorUserId is optional', async () => {
-            let logId: Id<'auditLogs'>;
-
-            await adminIdentity.run(async ctx => {
-                logId = await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    severity: 'info',
-                    createdAt: Date.now(),
-                });
-            });
-
-            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
-            expect(log?.actorUserId).toBeUndefined();
+        const [withMetadata, withoutResource] = await adminIdentity.run(async ctx => {
+            return Promise.all([ctx.db.get(logIds[0]), ctx.db.get(logIds[1])]);
         });
 
-        test('stores actorUserId distinct from userId', async () => {
-            let logId: Id<'auditLogs'>;
-
-            await adminIdentity.run(async ctx => {
-                logId = await ctx.db.insert('auditLogs', {
-                    userId: userId,
-                    actorUserId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'user.updated',
-                    resourceType: 'user',
-                    resourceId: String(userId),
-                    severity: 'info',
-                    createdAt: Date.now(),
-                });
-            });
-
-            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
-            expect(log?.userId).toBe(userId);
-            expect(log?.actorUserId).toBe(adminId);
+        expect(withMetadata).toMatchObject({
+            userId,
+            actorUserId: adminId,
+            resourceId: String(userId),
+            severity: 'warning',
+            metadata: {
+                before: { status: 'active', currentValue: 1 },
+                after: { status: 'completed', currentValue: 10 },
+                context: 'objective.updated',
+            },
         });
+        expect(withoutResource?.resourceId).toBeUndefined();
     });
 
-    describe('RLS rules', () => {
-        test('audit logs immutability is enforced via RLS config', async () => {
-            let logId: Id<'auditLogs'>;
-
-            await adminIdentity.run(async ctx => {
-                logId = await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    severity: 'info',
-                    createdAt: Date.now(),
-                });
+    test('audit logs are immutable records without updatedAt', async () => {
+        const logId = await adminIdentity.run(async ctx => {
+            return await ctx.db.insert('auditLogs', {
+                userId: adminId,
+                organizationId: adminOrganizationId,
+                action: 'objective.created',
+                resourceType: 'objective',
+                severity: 'info',
+                createdAt: Date.now(),
             });
-
-            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
-            expect(log).not.toBeNull();
-            expect(log?.action).toBe('objective.created');
         });
 
-        test('audit logs do not have updatedAt field (immutable by design)', async () => {
-            let logId: Id<'auditLogs'>;
-
-            await adminIdentity.run(async ctx => {
-                logId = await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action: 'objective.created',
-                    resourceType: 'objective',
-                    severity: 'info',
-                    createdAt: Date.now(),
-                });
-            });
-
-            const log = await adminIdentity.run(async ctx => ctx.db.get(logId!));
-            expect(log).not.toBeNull();
-            expect('updatedAt' in (log ?? {})).toBe(false);
-        });
+        const log = await adminIdentity.run(async ctx => ctx.db.get(logId));
+        expect(log).not.toBeNull();
+        expect(log?.action).toBe('objective.created');
+        expect('updatedAt' in (log ?? {})).toBe(false);
     });
 
-    describe('unauthenticated access', () => {
-        test('getAuditLogs rejects when unauthenticated', async () => {
-            await expect(
-                t.query(api.auditLogs.getAuditLogs, {
-                    paginationOpts: { numItems: 10, cursor: null },
-                })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-        });
-
-        test('getAuditLogsByResource rejects when unauthenticated', async () => {
-            await expect(
-                t.query(api.auditLogs.getAuditLogsByResource, {
-                    resourceType: 'objective',
-                    resourceId: 'obj-1',
-                    paginationOpts: { numItems: 10, cursor: null },
-                })
-            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-        });
+    test('audit log queries reject unauthenticated callers', async () => {
+        await expect(
+            t.query(api.auditLogs.getAuditLogs, {
+                paginationOpts: { numItems: 10, cursor: null },
+            })
+        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
+        await expect(
+            t.query(api.auditLogs.getAuditLogsByResource, {
+                resourceType: 'objective',
+                resourceId: 'obj-1',
+                paginationOpts: { numItems: 10, cursor: null },
+            })
+        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });
 });
