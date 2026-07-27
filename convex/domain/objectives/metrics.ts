@@ -2,10 +2,11 @@ import { ConvexError } from 'convex/values';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import { ERROR_CODES, OBJECTIVE_STATUS, TIME, type ObjectiveStatus } from '../../utils/constants';
+import { isEarlyBirdCompletion } from '../achievements/calculations';
+import { currentUtcCivilDay, toUtcCivilDay } from '../../../shared/civil-date';
 
 const MAX_METRIC = 1_000_000_000;
 const MIN_TARGET = 0.001;
-
 function assertFiniteMetric(value: number | undefined): void {
     if (value === undefined) return;
     if (!Number.isFinite(value)) {
@@ -81,15 +82,28 @@ export function validateProgressDelta(delta: number, currentValue: number): void
 }
 
 export function validateUpdateDate(updateDate: number): void {
-    const now = Date.now();
+    if (!Number.isFinite(updateDate)) {
+        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+    }
 
-    if (updateDate > now + TIME.DAY_MS) {
+    const day = toUtcCivilDay(updateDate);
+    const today = currentUtcCivilDay();
+
+    // `updateDate` is a civil date, not an event timestamp. Any timestamp on
+    // the current UTC day is accepted and normalized by mutation callers;
+    // tomorrow and later are rejected.
+    if (day > today) {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
     }
 
-    if (updateDate < now - TIME.FIVE_YEARS_MS) {
+    if (day < today - TIME.FIVE_YEARS_MS) {
         throw new ConvexError(ERROR_CODES.DATE_TOO_OLD);
     }
+}
+
+export function normalizeUpdateDate(updateDate: number): number {
+    validateUpdateDate(updateDate);
+    return toUtcCivilDay(updateDate);
 }
 
 export function validateObjectiveNotCompleted(status: ObjectiveStatus): void {
@@ -124,7 +138,12 @@ export async function applyObjectiveProgressDelta(
     ctx: MutationCtx,
     objectiveId: Id<'objectives'>,
     delta: number
-): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
+): Promise<{
+    currentValue: number;
+    status: 'active' | 'completed';
+    completedNow: boolean;
+    earlyBirdCompletedNow: boolean;
+}> {
     const objective = await ctx.db.get('objectives', objectiveId);
     if (!objective) {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
@@ -136,16 +155,30 @@ export async function applyObjectiveProgressDelta(
     const completedNow = objective.status !== 'completed' && status === 'completed';
     const reopened = objective.status === 'completed' && status === 'active';
     const now = Date.now();
+    const completedAt = completedNow
+        ? now
+        : status === 'completed'
+          ? objective.completedAt
+          : undefined;
+    const earlyBirdCompleted = isEarlyBirdCompletion({
+        status,
+        deadline: objective.deadline,
+        completedAt,
+    });
+    const wasEarlyBirdCompleted = objective.earlyBirdCompleted ?? isEarlyBirdCompletion(objective);
+    const earlyBirdCompletedNow = !wasEarlyBirdCompleted && earlyBirdCompleted;
 
     const patch: {
         currentValue: number;
         status: 'active' | 'completed';
         updatedAt: number;
         completedAt?: number;
+        earlyBirdCompleted: boolean;
     } = {
         currentValue,
         status,
         updatedAt: now,
+        earlyBirdCompleted,
     };
 
     if (completedNow) {
@@ -156,40 +189,23 @@ export async function applyObjectiveProgressDelta(
 
     await ctx.db.patch('objectives', objectiveId, patch);
 
-    return { currentValue, status, completedNow };
+    return { currentValue, status, completedNow, earlyBirdCompletedNow };
 }
 
-export async function recomputeObjectiveFromProgress(
+/**
+ * Reconciles completion metadata from the objective's denormalized current
+ * value. Progress mutations maintain `currentValue` transactionally, so a
+ * target change or restore only needs a zero-delta reconciliation. This keeps
+ * the mutation bounded regardless of the number of historical updates.
+ */
+export async function reconcileObjectiveMetrics(
     ctx: MutationCtx,
     objectiveId: Id<'objectives'>
-): Promise<{ currentValue: number; status: 'active' | 'completed'; completedNow: boolean }> {
-    const objective = await ctx.db.get('objectives', objectiveId);
-    if (!objective) {
-        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-    }
-
-    const baseValue = objective.startValue ?? 0;
-    let progressTotal = 0;
-    let cursor: string | null = null;
-    let isDone = false;
-
-    while (!isDone) {
-        const page = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
-            .paginate({ numItems: 500, cursor });
-
-        for (const update of page.page) {
-            progressTotal += update.updatedValue;
-        }
-
-        isDone = page.isDone;
-        cursor = page.continueCursor;
-    }
-
-    return await applyObjectiveProgressDelta(
-        ctx,
-        objectiveId,
-        baseValue + progressTotal - objective.currentValue
-    );
+): Promise<{
+    currentValue: number;
+    status: 'active' | 'completed';
+    completedNow: boolean;
+    earlyBirdCompletedNow: boolean;
+}> {
+    return await applyObjectiveProgressDelta(ctx, objectiveId, 0);
 }

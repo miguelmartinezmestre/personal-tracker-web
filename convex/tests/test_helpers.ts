@@ -181,6 +181,7 @@ export async function createTestObjective(
         startValue?: number;
         status?: 'active' | 'completed';
         completedAt?: number;
+        earlyBirdCompleted?: boolean;
         description?: string;
         categoryId?: Id<'categories'>;
         deadline?: number;
@@ -195,6 +196,12 @@ export async function createTestObjective(
     const startValue = options.startValue ?? options.currentValue ?? 0;
     const status = options.status ?? (startValue >= options.targetValue ? 'completed' : 'active');
     const completedAt = options.completedAt ?? (status === 'completed' ? now : undefined);
+    const earlyBirdCompleted =
+        options.earlyBirdCompleted ??
+        (status === 'completed' &&
+            options.deadline !== undefined &&
+            completedAt !== undefined &&
+            completedAt <= options.deadline);
     return t.run(async (ctx: MutationCtx) => {
         return await ctx.db.insert('objectives', {
             organizationId: options.organizationId,
@@ -210,6 +217,7 @@ export async function createTestObjective(
             deadline: options.deadline,
             status,
             completedAt,
+            earlyBirdCompleted,
             unit: options.unit,
             deletedAt: options.deletedAt,
             deletedBy: options.deletedBy,

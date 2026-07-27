@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel } from '../_generated/dataModel';
+import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
+import type { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
 import {
-    calculateUserStreak,
+    calculateGlobalUserStreak,
     calculateOrganizationStreak,
+    calculateUserStreak,
 } from '../domain/achievements/calculations';
 import { TIME } from '../utils/constants';
-import { Id } from '../_generated/dataModel';
 
 describe('achievements calculations', async () => {
     const t = initConvexTest();
@@ -19,7 +19,6 @@ describe('achievements calculations', async () => {
 
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
-
         const userData = await createTestUser(t, {
             userId: 'test-user-calcs-' + randomSuffix,
             email: 'calcs-test@example.com-' + randomSuffix,
@@ -29,19 +28,11 @@ describe('achievements calculations', async () => {
             emailVerified: false,
         });
         userId = userData.docId;
-
-        const orgId = await createTestOrganization(t, {
+        organizationId = await createTestOrganization(t, {
             name: 'Calcs Org ' + randomSuffix,
             slug: 'calcs-org-' + randomSuffix,
         });
-
-        await createTestMember(t, {
-            organizationId: orgId,
-            userId,
-            role: 'owner',
-        });
-
-        organizationId = orgId;
+        await createTestMember(t, { organizationId, userId, role: 'owner' });
 
         userIdentity = t.withIdentity({
             subject: userData.docId,
@@ -59,695 +50,228 @@ describe('achievements calculations', async () => {
         });
     });
 
-    describe('calculateUserStreak', () => {
-        test('returns 0 when user has no objectives', async () => {
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
+    async function createObjective(ownerId = userId) {
+        return await userIdentity.run(async ctx => {
+            return await ctx.db.insert('objectives', {
+                createdBy: ownerId,
+                ownerId,
+                visibility: 'private',
+                organizationId,
+                title: 'Streak Objective',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'active',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
             });
-
-            expect(streak).toBe(0);
         });
+    }
 
-        test('returns 0 when objectives exist but no progress updates', async () => {
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
+    async function addProgress(objectiveId: Id<'objectives'>, updateDate: number, actor = userId) {
+        await userIdentity.run(async ctx => {
+            await ctx.db.insert('progressUpdates', {
+                objective: objectiveId,
+                createdBy: actor,
+                organizationId,
+                updatedValue: 10,
+                updateDate,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
             });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(0);
         });
-
-        test('returns 1 for single day of activity today', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Today update',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(1);
-        });
-
-        test('returns 1 for activity yesterday (streak continues)', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const yesterday = new Date();
-            yesterday.setHours(12, 0, 0, 0);
-            yesterday.setTime(yesterday.getTime() - DAY_MS);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: yesterday.getTime(),
-                    comment: 'Yesterday update',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(1);
-        });
-
-        test('returns 0 when last activity is 2+ days ago (streak broken)', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const twoDaysAgo = new Date();
-            twoDaysAgo.setHours(12, 0, 0, 0);
-            twoDaysAgo.setTime(twoDaysAgo.getTime() - 2 * DAY_MS);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: twoDaysAgo.getTime(),
-                    comment: 'Two days ago update',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(0);
-        });
-
-        test('counts multiple updates on same day as 1', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Update 1',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 20,
-                    updateDate: today.getTime() + 3600000,
-                    comment: 'Update 2',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 30,
-                    updateDate: today.getTime() + 7200000,
-                    comment: 'Update 3',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(1);
-        });
-
-        test('counts the full streak even with thousands of same-window updates', async () => {
-            // 40 updates/day over 30 consecutive days = 1200 updates. A fixed
-            // .take(1000) would truncate to the most recent ~25 days; streaming
-            // until the first day-gap must still report the full 30-day streak.
-            const objectiveId = await userIdentity.run(async ctx => {
-                return ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'High volume objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-            const days = 30;
-            const updatesPerDay = 40;
-
-            await userIdentity.run(async ctx => {
-                for (let day = 0; day < days; day++) {
-                    const dayStart = today.getTime() - day * DAY_MS;
-                    for (let j = 0; j < updatesPerDay; j++) {
-                        await ctx.db.insert('progressUpdates', {
-                            objective: objectiveId,
-                            createdBy: userId,
-                            organizationId: organizationId,
-                            updatedValue: j,
-                            updateDate: dayStart + j * 1000,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                        });
-                    }
-                }
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(days);
-        });
-
-        test('returns correct streak for 3 consecutive days', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                for (let i = 0; i < 3; i++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveId,
-                        createdBy: userId,
-                        organizationId: organizationId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Day ${i + 1}`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(3);
-        });
-
-        test('returns correct streak for 7 consecutive days', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                for (let i = 0; i < 7; i++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveId,
-                        createdBy: userId,
-                        organizationId: organizationId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Day ${i + 1}`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(7);
-        });
-
-        test('breaks streak on gap in days', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Today',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 20,
-                    updateDate: today.getTime() - DAY_MS,
-                    comment: 'Yesterday',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 30,
-                    updateDate: today.getTime() - 3 * DAY_MS,
-                    comment: '3 days ago (gap)',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(2);
-        });
-
-        test('aggregates updates from multiple objectives', async () => {
-            const objectiveId1 = await userIdentity.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Objective 1',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const objectiveId2 = await userIdentity.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Objective 2',
-                    targetValue: 50,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId1,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Obj1 today',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId2,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 20,
-                    updateDate: today.getTime() - DAY_MS,
-                    comment: 'Obj2 yesterday',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(2);
-        });
+    }
+
+    function noonToday() {
+        const today = new Date();
+        return Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 12);
+    }
+
+    test('calculateUserStreak returns zero when there is no qualifying progress', async () => {
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(0);
+
+        await createObjective();
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(0);
     });
 
-    describe('calculateUserStreak', () => {
-        test('returns 0 when user has no objectives', async () => {
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
+    test('calculateUserStreak handles current activity and stale activity boundaries', async () => {
+        const objectiveId = await createObjective();
+        const today = noonToday();
 
-            expect(streak).toBe(0);
-        });
+        await addProgress(objectiveId, today);
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(1);
 
-        test('returns correct streak with mutation context', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                const id = await ctx.db.insert('objectives', {
-                    createdBy: userId,
+        await addProgress(objectiveId, today - DAY_MS);
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(2);
 
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Test Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-                return id;
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                for (let i = 0; i < 5; i++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveId,
-                        createdBy: userId,
-                        organizationId: organizationId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Day ${i + 1}`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateUserStreak(ctx, userId, organizationId);
-            });
-
-            expect(streak).toBe(5);
-        });
+        await addProgress(objectiveId, today - 4 * DAY_MS);
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(2);
     });
 
-    describe('calculateOrganizationStreak', () => {
-        test('returns 0 when org has no org-scoped objectives', async () => {
-            const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, organizationId);
-            });
+    test('calculateUserStreak ignores updates from a future UTC day', async () => {
+        const objectiveId = await createObjective();
+        const now = Date.now();
 
-            expect(streak).toBe(0);
-        });
+        await addProgress(objectiveId, now + 2 * DAY_MS);
+        await addProgress(objectiveId, now);
 
-        test('aggregates streak from multiple members', async () => {
-            const randomSuffix = Math.random().toString(36).substring(2, 15);
-            const user2 = {
-                userId: 'test-user-calcs2-' + randomSuffix,
-                email: 'calcs2-test@example.com-' + randomSuffix,
-                name: 'Calcs2 Test User',
-                password: 'test-password',
-                role: 'member',
-                emailVerified: false,
-            };
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(1);
+    });
 
-            const user2Data = await createTestUser(t, user2);
+    test('calculateUserStreak deduplicates same-day updates and aggregates objectives', async () => {
+        const firstObjectiveId = await createObjective();
+        const secondObjectiveId = await createObjective();
+        const today = noonToday();
 
-            await createTestMember(t, {
-                organizationId: organizationId,
-                userId: user2Data.docId,
-                role: 'member',
-            });
+        await addProgress(firstObjectiveId, today);
+        await addProgress(firstObjectiveId, today + 3600000);
+        await addProgress(secondObjectiveId, today - DAY_MS);
 
-            const objectiveId1 = await userIdentity.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    createdBy: userId,
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(2);
+    });
 
-                    ownerId: userId,
+    test('calculateUserStreak streams enough updates to avoid old scan-window truncation', async () => {
+        const objectiveId = await createObjective();
+        const today = noonToday();
+        const days = 30;
 
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'User1 Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const objectiveId2 = await userIdentity.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    createdBy: user2Data.docId,
-
-                    ownerId: user2Data.docId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'User2 Objective',
-                    targetValue: 50,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId1,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'User1 today',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId2,
-                    createdBy: userId,
-                    organizationId: organizationId,
-                    updatedValue: 20,
-                    updateDate: today.getTime() - DAY_MS,
-                    comment: 'User2 yesterday',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, organizationId);
-            });
-
-            expect(streak).toBe(2);
-        });
-
-        test('returns correct streak for organization with 7 day streak', async () => {
-            const objectiveId = await userIdentity.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    createdBy: userId,
-
-                    ownerId: userId,
-
-                    visibility: 'private',
-                    organizationId: organizationId,
-                    title: 'Org Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await userIdentity.run(async ctx => {
-                for (let i = 0; i < 7; i++) {
+        await userIdentity.run(async ctx => {
+            for (let day = 0; day < days; day++) {
+                const dayStart = today - day * DAY_MS;
+                for (let update = 0; update < 40; update++) {
                     await ctx.db.insert('progressUpdates', {
                         objective: objectiveId,
                         createdBy: userId,
-                        organizationId: organizationId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Day ${i + 1}`,
+                        organizationId,
+                        updatedValue: update,
+                        updateDate: dayStart + update * 1000,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
                 }
-            });
-
-            const streak = await userIdentity.run(async ctx => {
-                return calculateOrganizationStreak(ctx, organizationId);
-            });
-
-            expect(streak).toBe(7);
+            }
         });
+
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(days);
+    });
+
+    test('calculateUserStreak stops at the first day gap', async () => {
+        const objectiveId = await createObjective();
+        const today = noonToday();
+
+        await addProgress(objectiveId, today);
+        await addProgress(objectiveId, today - DAY_MS);
+        await addProgress(objectiveId, today - 3 * DAY_MS);
+
+        await expect(
+            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
+        ).resolves.toBe(2);
+    });
+
+    test('calculateGlobalUserStreak joins consecutive activity across organizations', async () => {
+        const firstObjectiveId = await createObjective();
+        const secondOrganizationId = await createTestOrganization(t, {
+            name: `Second streak org ${Math.random()}`,
+            slug: `second-streak-${Math.random().toString(36).slice(2)}`,
+        });
+        await createTestMember(t, {
+            organizationId: secondOrganizationId,
+            userId,
+            role: 'member',
+        });
+        const secondObjectiveId = await userIdentity.run(ctx =>
+            ctx.db.insert('objectives', {
+                createdBy: userId,
+                ownerId: userId,
+                visibility: 'private',
+                organizationId: secondOrganizationId,
+                title: 'Cross-organization streak objective',
+                targetValue: 100,
+                currentValue: 0,
+                status: 'active',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            })
+        );
+        const today = noonToday();
+
+        await addProgress(firstObjectiveId, today);
+        await userIdentity.run(ctx =>
+            ctx.db.insert('progressUpdates', {
+                objective: secondObjectiveId,
+                createdBy: userId,
+                organizationId: secondOrganizationId,
+                updatedValue: 10,
+                updateDate: today - DAY_MS,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            })
+        );
+
+        await expect(userIdentity.run(ctx => calculateGlobalUserStreak(ctx, userId))).resolves.toBe(
+            2
+        );
+    });
+
+    test('calculateOrganizationStreak returns zero when the organization has no progress', async () => {
+        await expect(
+            userIdentity.run(ctx => calculateOrganizationStreak(ctx, organizationId))
+        ).resolves.toBe(0);
+    });
+
+    test('calculateOrganizationStreak aggregates progress from multiple members', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const user2 = await createTestUser(t, {
+            userId: 'test-user-calcs2-' + randomSuffix,
+            email: 'calcs2-test@example.com-' + randomSuffix,
+            name: 'Calcs2 Test User',
+            password: 'test-password',
+            role: 'member',
+            emailVerified: false,
+        });
+        await createTestMember(t, {
+            organizationId,
+            userId: user2.docId,
+            role: 'member',
+        });
+
+        const firstObjectiveId = await createObjective(userId);
+        const secondObjectiveId = await createObjective(user2.docId);
+        const today = noonToday();
+
+        await addProgress(firstObjectiveId, today, userId);
+        await addProgress(secondObjectiveId, today - DAY_MS, user2.docId);
+
+        await expect(
+            userIdentity.run(ctx => calculateOrganizationStreak(ctx, organizationId))
+        ).resolves.toBe(2);
+    });
+
+    test('calculateOrganizationStreak counts a seven-day organization streak', async () => {
+        const objectiveId = await createObjective();
+        const today = noonToday();
+
+        for (let i = 0; i < 7; i++) {
+            await addProgress(objectiveId, today - i * DAY_MS);
+        }
+
+        await expect(
+            userIdentity.run(ctx => calculateOrganizationStreak(ctx, organizationId))
+        ).resolves.toBe(7);
     });
 });

@@ -1,10 +1,10 @@
-import { ConvexError, Infer } from 'convex/values';
+import { Infer } from 'convex/values';
 import { internal } from '../../_generated/api';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
 import {
+    calculateGlobalUserStreak,
     calculateOrganizationStreak,
-    calculateUserStreak,
     isEarlyBirdCompletion,
 } from '../../domain/achievements/calculations';
 import {
@@ -12,9 +12,11 @@ import {
     getAchievementRule,
     type AchievementMetricKey,
 } from '../../domain/achievements/definitions';
-import { shouldSendAchievementNotification } from '../../domain/notifications/preferences';
+import {
+    shouldSendAchievementNotification,
+    shouldSendOrganizationNotification,
+} from '../../domain/notifications/preferences';
 import { achievementTriggerValidator } from '../../utils/validators';
-import { ERROR_CODES } from '../../utils/constants';
 
 type AchievementTrigger = Infer<typeof achievementTriggerValidator>;
 type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
@@ -22,11 +24,19 @@ type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
 const LIST_LIMIT = 1000;
 const ACHIEVEMENT_BATCH_SIZE = 50;
 
+function canReceiveAchievement(
+    user: { deletedAt?: number; banned?: boolean | null; banExpires?: number | null } | null,
+    now: number
+) {
+    if (!user || user.deletedAt !== undefined) return false;
+    return user.banned !== true || (user.banExpires != null && user.banExpires <= now);
+}
+
 type EvaluateAndAwardParams = {
     ctx: MutationCtx;
     scopeType: 'individual' | 'organization';
     evaluate: (code: string) => Promise<boolean> | boolean;
-    award: (defId: Id<'achievementDefinitions'>, code: string, points: number) => Promise<void>;
+    award: (defId: Id<'achievementDefinitions'>, code: string, points: number) => Promise<boolean>;
 };
 
 async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
@@ -42,8 +52,7 @@ async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
 
     for (const definition of activeDefinitions) {
         const shouldAward = await evaluate(definition.code);
-        if (shouldAward) {
-            await award(definition._id, definition.code, definition.points);
+        if (shouldAward && (await award(definition._id, definition.code, definition.points))) {
             newAchievements.push(definition.code);
         }
     }
@@ -53,25 +62,54 @@ async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
 
 export async function seedAchievementDefinitionsJob(ctx: MutationCtx) {
     const now = Date.now();
+    const existingDefinitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
+    const existingByCode = new Map(
+        existingDefinitions.map(definition => [definition.code, definition])
+    );
+    let inserted = 0;
+    let updated = 0;
 
-    const existing = await ctx.db.query('achievementDefinitions').first();
-    if (existing) {
-        return { message: 'Achievements already seeded', count: 0 };
-    }
-
-    let count = 0;
     for (const definition of ACHIEVEMENT_DEFINITIONS) {
         const { metricKey: _metricKey, trigger: _trigger, ...storedDefinition } = definition;
-        await ctx.db.insert('achievementDefinitions', {
-            ...storedDefinition,
-            isActive: true,
-            createdAt: now,
-            updatedAt: now,
-        });
-        count++;
+        const existing = existingByCode.get(definition.code);
+        if (!existing) {
+            await ctx.db.insert('achievementDefinitions', {
+                ...storedDefinition,
+                isActive: true,
+                createdAt: now,
+                updatedAt: now,
+            });
+            inserted++;
+            continue;
+        }
+
+        const canonicalChanged =
+            existing.type !== storedDefinition.type ||
+            existing.category !== storedDefinition.category ||
+            existing.tier !== storedDefinition.tier ||
+            existing.threshold !== storedDefinition.threshold ||
+            existing.icon !== storedDefinition.icon ||
+            existing.points !== storedDefinition.points;
+        if (canonicalChanged) {
+            await ctx.db.patch('achievementDefinitions', existing._id, {
+                ...storedDefinition,
+                // Preserve an administrator's activation choice while repairing
+                // the canonical definition fields.
+                isActive: existing.isActive,
+                updatedAt: now,
+            });
+            updated++;
+        }
     }
 
-    return { message: 'Achievements seeded successfully', count };
+    const count = inserted + updated;
+    if (count === 0) {
+        return { message: 'Achievements already seeded', count };
+    }
+    if (existingDefinitions.length === 0 && updated === 0) {
+        return { message: 'Achievements seeded successfully', count };
+    }
+    return { message: 'Achievement definitions reconciled', count };
 }
 
 export async function checkUserAchievementsJob(
@@ -81,6 +119,9 @@ export async function checkUserAchievementsJob(
         organizationId: Id<'organization'>;
         trigger: AchievementTrigger;
         objectivesContinueCursor?: string | null;
+        progressUpdatesContinueCursor?: string | null;
+        objectivesDone?: boolean;
+        progressUpdatesDone?: boolean;
         progressUpdatesCount?: number;
         cumulativeObjectiveCount?: number;
         cumulativeCompletedCount?: number;
@@ -94,16 +135,24 @@ export async function checkUserAchievementsJob(
     let cumulativeCompletedCount = args.cumulativeCompletedCount ?? 0;
     let cumulativeEarlyBirdCount = args.cumulativeEarlyBirdCount ?? 0;
 
-    const membership = await ctx.db
-        .query('member')
-        .withIndex('by_organizationId_and_userId', q =>
-            q.eq('organizationId', organizationId).eq('userId', userId)
-        )
-        .first();
-
-    if (!membership) {
-        throw new ConvexError(ERROR_CODES.FORBIDDEN);
+    const user = await ctx.db.get('user', userId);
+    if (!canReceiveAchievement(user, now)) {
+        return { awarded: [], status: 'completed', aborted: true };
     }
+
+    // The organization only contextualizes the notification. The award and
+    // all of its metrics are global to the user, so a queued evaluator must
+    // remain valid after the user leaves the organization that triggered it.
+    const contextOrganization = await ctx.db.get('organization', organizationId);
+    const contextMembership = contextOrganization
+        ? await ctx.db
+              .query('member')
+              .withIndex('by_organizationId_and_userId', q =>
+                  q.eq('organizationId', organizationId).eq('userId', userId)
+              )
+              .first()
+        : null;
+    const canSendContextualNotification = Boolean(contextOrganization && contextMembership);
 
     const earnedAchievements = await ctx.db
         .query('obtainedAchievements')
@@ -120,38 +169,51 @@ export async function checkUserAchievementsJob(
             .filter(Boolean)
     );
 
-    const objectivesPage = await ctx.db
-        .query('objectives')
-        .withIndex('by_createdBy_organization', q =>
-            q.eq('createdBy', userId).eq('organizationId', organizationId)
-        )
-        .paginate({
-            numItems: ACHIEVEMENT_BATCH_SIZE,
-            cursor: args.objectivesContinueCursor ?? null,
-        });
+    let objectivesDone = args.objectivesDone ?? false;
+    let progressUpdatesDone = args.progressUpdatesDone ?? false;
+    let objectivesContinueCursor = args.objectivesContinueCursor ?? null;
+    let progressUpdatesContinueCursor = args.progressUpdatesContinueCursor ?? null;
+    let processedObjectives = 0;
+    let processedProgressUpdates = 0;
+    let didPaginate = false;
 
-    const objectivesBatch = objectivesPage.page;
-    cumulativeObjectiveCount += objectivesBatch.length;
-    cumulativeCompletedCount += objectivesBatch.filter(
-        objective => objective.status === 'completed'
-    ).length;
-    cumulativeEarlyBirdCount += objectivesBatch.filter(isEarlyBirdCompletion).length;
+    if (!objectivesDone) {
+        const objectivesPage = await ctx.db
+            .query('objectives')
+            .withIndex('by_createdBy_organization', q => q.eq('createdBy', userId))
+            .paginate({
+                numItems: ACHIEVEMENT_BATCH_SIZE,
+                cursor: objectivesContinueCursor,
+            });
 
-    const objectiveIds = objectivesBatch.map(objective => objective._id);
-
-    if (objectiveIds.length > 0) {
-        const objectiveIdsSet = new Set(objectiveIds);
-        const updates = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_createdBy_date', q => q.eq('createdBy', userId))
-            .take(LIST_LIMIT);
-
-        progressUpdatesCount += updates.filter(update =>
-            objectiveIdsSet.has(update.objective)
+        const objectivesBatch = objectivesPage.page;
+        processedObjectives = objectivesBatch.length;
+        cumulativeObjectiveCount += objectivesBatch.length;
+        cumulativeCompletedCount += objectivesBatch.filter(
+            objective => objective.status === 'completed'
         ).length;
+        cumulativeEarlyBirdCount += objectivesBatch.filter(isEarlyBirdCompletion).length;
+        objectivesDone = objectivesPage.isDone;
+        objectivesContinueCursor = objectivesPage.continueCursor;
+        didPaginate = true;
     }
 
-    const streak = await calculateUserStreak(ctx, userId, organizationId);
+    if (!didPaginate && !progressUpdatesDone) {
+        const updatesPage = await ctx.db
+            .query('progressUpdates')
+            .withIndex('by_createdBy_date', q => q.eq('createdBy', userId))
+            .paginate({
+                numItems: ACHIEVEMENT_BATCH_SIZE,
+                cursor: progressUpdatesContinueCursor,
+            });
+        processedProgressUpdates = updatesPage.page.length;
+        progressUpdatesCount += updatesPage.page.length;
+        progressUpdatesDone = updatesPage.isDone;
+        progressUpdatesContinueCursor = updatesPage.continueCursor;
+        didPaginate = true;
+    }
+
+    const streak = await calculateGlobalUserStreak(ctx, userId);
 
     const metrics: AchievementMetricSnapshot = {
         objectivesCreated: cumulativeObjectiveCount,
@@ -179,6 +241,10 @@ export async function checkUserAchievementsJob(
             );
         },
         async award(defId, code, points) {
+            if (!canReceiveAchievement(await ctx.db.get('user', userId), now)) {
+                return false;
+            }
+
             const alreadyAwarded = await ctx.db
                 .query('obtainedAchievements')
                 .withIndex('by_user_achievement', q =>
@@ -186,7 +252,7 @@ export async function checkUserAchievementsJob(
                 )
                 .first();
 
-            if (alreadyAwarded) return;
+            if (alreadyAwarded) return false;
 
             await ctx.db.insert('obtainedAchievements', {
                 userId: userId,
@@ -197,7 +263,7 @@ export async function checkUserAchievementsJob(
             });
 
             const shouldNotify = await shouldSendAchievementNotification(ctx, userId);
-            if (shouldNotify) {
+            if (shouldNotify && canSendContextualNotification) {
                 await ctx.db.insert('notifications', {
                     userId: userId,
                     organizationId,
@@ -210,15 +276,20 @@ export async function checkUserAchievementsJob(
                     updatedAt: now,
                 });
             }
+
+            return true;
         },
     });
 
-    if (!objectivesPage.isDone) {
+    if (!objectivesDone || !progressUpdatesDone) {
         await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
             userId,
             organizationId,
             trigger,
-            objectivesContinueCursor: objectivesPage.continueCursor,
+            objectivesContinueCursor,
+            progressUpdatesContinueCursor,
+            objectivesDone,
+            progressUpdatesDone,
             progressUpdatesCount,
             cumulativeObjectiveCount,
             cumulativeCompletedCount,
@@ -227,7 +298,7 @@ export async function checkUserAchievementsJob(
         return {
             ...result,
             status: 'in_progress',
-            processedBatch: objectivesBatch.length,
+            processedBatch: processedObjectives + processedProgressUpdates,
             cumulativeObjectiveCount,
             cumulativeCompletedCount,
         };
@@ -251,6 +322,25 @@ export async function checkOrganizationAchievementsJob(
     const now = Date.now();
     let orgScopedObjectivesCount = args.orgScopedObjectivesCount ?? 0;
     let orgScopedCompletedCount = args.orgScopedCompletedCount ?? 0;
+
+    const organization = await ctx.db.get('organization', organizationId);
+    const membership = organization
+        ? await ctx.db
+              .query('member')
+              .withIndex('by_organizationId_and_userId', q =>
+                  q.eq('organizationId', organizationId).eq('userId', userId)
+              )
+              .first()
+        : null;
+    if (!organization || !membership) {
+        return {
+            awarded: [],
+            status: 'completed',
+            aborted: true,
+            orgScopedObjectivesCount,
+            orgScopedCompletedCount,
+        };
+    }
 
     const earnedAchievements = await ctx.db
         .query('organizationAchievements')
@@ -309,6 +399,20 @@ export async function checkOrganizationAchievementsJob(
             );
         },
         async award(defId, code, points) {
+            // Re-read both rows immediately before the write. Convex tracks
+            // them in this transaction's read set, so a concurrent member or
+            // organization deletion conflicts and retries into the abort path.
+            const currentOrganization = await ctx.db.get('organization', organizationId);
+            const currentMembership = currentOrganization
+                ? await ctx.db
+                      .query('member')
+                      .withIndex('by_organizationId_and_userId', q =>
+                          q.eq('organizationId', organizationId).eq('userId', userId)
+                      )
+                      .first()
+                : null;
+            if (!currentOrganization || !currentMembership) return false;
+
             const alreadyAwarded = await ctx.db
                 .query('organizationAchievements')
                 .withIndex('by_organization_achievement', q =>
@@ -316,7 +420,7 @@ export async function checkOrganizationAchievementsJob(
                 )
                 .first();
 
-            if (alreadyAwarded) return;
+            if (alreadyAwarded) return false;
 
             const orgAchievementId = await ctx.db.insert('organizationAchievements', {
                 organization: organizationId,
@@ -342,47 +446,17 @@ export async function checkOrganizationAchievementsJob(
                 });
             }
 
-            const members = await ctx.db
-                .query('member')
-                .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-                .take(LIST_LIMIT);
-
-            const memberUserIds = members.map(member => member.userId);
-
-            const preferencesList = await Promise.all(
-                memberUserIds.map(uid =>
-                    ctx.db
-                        .query('notificationPreferences')
-                        .withIndex('by_user', q => q.eq('userId', uid))
-                        .first()
-                )
-            );
-
-            const preferencesMap = new Map<Id<'user'>, boolean>();
-            for (let i = 0; i < memberUserIds.length; i++) {
-                const uid = memberUserIds[i]!;
-                const pref = preferencesList[i];
-                const shouldNotify = pref ? (pref.organizationNotifications ?? true) : true;
-                preferencesMap.set(uid, shouldNotify);
-            }
-
-            for (const member of members) {
-                const uid = member.userId;
-                const shouldNotify = preferencesMap.get(uid) ?? true;
-                if (shouldNotify) {
-                    await ctx.db.insert('notifications', {
-                        userId: uid,
-                        organizationId,
-                        objective: undefined,
-                        read: false,
-                        notificationType: 'achievement',
-                        notificationDate: now,
-                        message: `Organization achievement unlocked: "${code}"! The organization earned ${points} points.`,
-                        createdAt: now,
-                        updatedAt: now,
-                    });
+            await ctx.scheduler.runAfter(
+                0,
+                internal.achievements.notifyOrganizationAchievementMembers,
+                {
+                    organizationId,
+                    code,
+                    points,
+                    cursor: null,
                 }
-            }
+            );
+            return true;
         },
     });
 
@@ -410,4 +484,57 @@ export async function checkOrganizationAchievementsJob(
         orgScopedObjectivesCount,
         orgScopedCompletedCount,
     };
+}
+
+export async function notifyOrganizationAchievementMembersJob(
+    ctx: MutationCtx,
+    args: {
+        organizationId: Id<'organization'>;
+        code: string;
+        points: number;
+        cursor?: string | null;
+    }
+) {
+    if (!(await ctx.db.get('organization', args.organizationId))) {
+        return { status: 'completed' as const, processed: 0, aborted: true };
+    }
+
+    const page = await ctx.db
+        .query('member')
+        .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
+        .paginate({
+            numItems: ACHIEVEMENT_BATCH_SIZE,
+            cursor: args.cursor ?? null,
+        });
+    const now = Date.now();
+
+    for (const member of page.page) {
+        if (!canReceiveAchievement(await ctx.db.get('user', member.userId), now)) continue;
+        if (!(await shouldSendOrganizationNotification(ctx, member.userId))) continue;
+        await ctx.db.insert('notifications', {
+            userId: member.userId,
+            organizationId: args.organizationId,
+            objective: undefined,
+            read: false,
+            notificationType: 'achievement',
+            notificationDate: now,
+            message: `Organization achievement unlocked: "${args.code}"! The organization earned ${args.points} points.`,
+            createdAt: now,
+            updatedAt: now,
+        });
+    }
+
+    if (!page.isDone) {
+        await ctx.scheduler.runAfter(
+            0,
+            internal.achievements.notifyOrganizationAchievementMembers,
+            {
+                ...args,
+                cursor: page.continueCursor,
+            }
+        );
+        return { status: 'in_progress' as const, processed: page.page.length };
+    }
+
+    return { status: 'completed' as const, processed: page.page.length };
 }

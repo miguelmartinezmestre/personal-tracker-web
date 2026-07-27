@@ -17,4 +17,11 @@ crons.cron(
     {}
 );
 
+crons.interval(
+    'backfill objective early bird facts',
+    { minutes: 10 },
+    internal.achievements.backfillObjectiveEarlyBirdFacts,
+    {}
+);
+
 export default crons;

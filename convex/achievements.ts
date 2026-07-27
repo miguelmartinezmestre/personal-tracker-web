@@ -1,23 +1,107 @@
 import { v } from 'convex/values';
-import { internalMutation } from './_generated/server';
+import { internalMutation, internalQuery } from './_generated/server';
 import { internal } from './_generated/api';
-import type { Doc } from './_generated/dataModel';
-import { countStreakFromUpdates, isEarlyBirdCompletion } from './domain/achievements/calculations';
+import {
+    calculateGlobalUserStreak,
+    calculateOrganizationStreak,
+    isEarlyBirdCompletion,
+} from './domain/achievements/calculations';
 import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
 import {
     checkOrganizationAchievementsJob,
     checkUserAchievementsJob,
+    notifyOrganizationAchievementMembersJob,
     seedAchievementDefinitionsJob,
 } from './jobs/achievements/checks';
 import { getAchievementRule, type AchievementMetricKey } from './domain/achievements/definitions';
+import {
+    achievementProgressItemValidator,
+    achievementStatsValidator,
+    organizationAchievementWithDefinitionValidator,
+    seedAchievementsResultValidator,
+    userAchievementWithDefinitionValidator,
+} from './utils/apiReturnValidators';
+import { achievementDefinitionDocumentValidator } from './utils/documentValidators';
 const LIST_LIMIT = 1000;
+const EARLY_BIRD_BACKFILL_BATCH_SIZE = 50;
 type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
+
+function getMetricThresholdLimit(
+    definitions: Array<{ threshold: number; code: string }>,
+    metricKey: AchievementMetricKey
+): number {
+    const thresholds = definitions
+        .filter(definition => getAchievementRule(definition.code)?.metricKey === metricKey)
+        .map(definition => definition.threshold)
+        .filter(threshold => Number.isFinite(threshold) && threshold > 0)
+        .map(Math.ceil);
+
+    return Math.max(1, ...thresholds);
+}
+
+const globalUserAchievementMetricsValidator = v.object({
+    objectivesCreated: v.number(),
+    objectivesCompleted: v.number(),
+    progressStreak: v.number(),
+    progressUpdates: v.number(),
+    earlyBirdCompletions: v.number(),
+});
+
+/**
+ * Reads only user-owned rows and intentionally bypasses active-organization
+ * RLS. Individual achievement awards are globally unique per user in the
+ * schema, so their measured progress must use the same global scope.
+ */
+export const getGlobalUserAchievementMetricsInternal = internalQuery({
+    args: {
+        userId: v.id('user'),
+        objectivesCreatedLimit: v.number(),
+        objectivesCompletedLimit: v.number(),
+        earlyBirdLimit: v.number(),
+        progressUpdatesLimit: v.number(),
+    },
+    returns: globalUserAchievementMetricsValidator,
+    handler: async (ctx, args) => {
+        const [objectivesCreated, completedObjectives, earlyBirdObjectives, progressUpdates] =
+            await Promise.all([
+                ctx.db
+                    .query('objectives')
+                    .withIndex('by_createdBy_organization', q => q.eq('createdBy', args.userId))
+                    .take(args.objectivesCreatedLimit),
+                ctx.db
+                    .query('objectives')
+                    .withIndex('by_createdBy_status', q =>
+                        q.eq('createdBy', args.userId).eq('status', 'completed')
+                    )
+                    .take(args.objectivesCompletedLimit),
+                ctx.db
+                    .query('objectives')
+                    .withIndex('by_createdBy_earlyBirdCompleted', q =>
+                        q.eq('createdBy', args.userId).eq('earlyBirdCompleted', true)
+                    )
+                    .take(args.earlyBirdLimit),
+                ctx.db
+                    .query('progressUpdates')
+                    .withIndex('by_createdBy_date', q => q.eq('createdBy', args.userId))
+                    .take(args.progressUpdatesLimit),
+            ]);
+
+        return {
+            objectivesCreated: objectivesCreated.length,
+            objectivesCompleted: completedObjectives.length,
+            progressStreak: await calculateGlobalUserStreak(ctx, args.userId),
+            progressUpdates: progressUpdates.length,
+            earlyBirdCompletions: earlyBirdObjectives.length,
+        };
+    },
+});
 
 export const getAchievementDefinitions = queryWithRLS({
     args: {
         type: v.optional(achievementTypeValidator),
     },
+    returns: v.array(achievementDefinitionDocumentValidator),
     handler: async (ctx, args) => {
         const typeFilter = args.type;
         const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
@@ -34,6 +118,7 @@ export const getAchievementDefinitions = queryWithRLS({
 
 export const getUserAchievements = queryWithRLS({
     args: {},
+    returns: v.array(userAchievementWithDefinitionValidator),
     handler: async ctx => {
         const userId = ctx.userId;
 
@@ -59,6 +144,7 @@ export const getOrganizationAchievements = queryWithRLS({
     args: {
         organizationId: v.id('organization'),
     },
+    returns: v.array(organizationAchievementWithDefinitionValidator),
     handler: async (ctx, args) => {
         const organizationAchievements = await ctx.db
             .query('organizationAchievements')
@@ -81,6 +167,7 @@ export const getOrganizationAchievements = queryWithRLS({
 
 export const getUserAchievementStats = queryWithRLS({
     args: {},
+    returns: achievementStatsValidator,
     handler: async ctx => {
         const userId = ctx.userId;
 
@@ -118,6 +205,7 @@ export const getRecentAchievements = queryWithRLS({
     args: {
         limit: v.optional(v.number()),
     },
+    returns: v.array(achievementDefinitionDocumentValidator),
     handler: async (ctx, args) => {
         const userId = ctx.userId;
         const MAX_QUERY_LIMIT = 100;
@@ -135,7 +223,8 @@ export const getRecentAchievements = queryWithRLS({
         const achievementsWithDetails = obtainedAchievements
             .map(obtainedAchievement => definitionById.get(obtainedAchievement.achievement))
             .filter(
-                (definition): definition is NonNullable<typeof definition> => definition !== null
+                (definition): definition is NonNullable<typeof definition> =>
+                    definition !== undefined
             );
 
         return achievementsWithDetails;
@@ -144,6 +233,7 @@ export const getRecentAchievements = queryWithRLS({
 
 export const getUserAchievementProgress = queryWithRLS({
     args: {},
+    returns: v.array(achievementProgressItemValidator),
     handler: async ctx => {
         const userId = ctx.userId;
         const organizationId = ctx.organizationId;
@@ -156,9 +246,16 @@ export const getUserAchievementProgress = queryWithRLS({
             ? definitions.filter(definition => definition.type === 'organization')
             : [];
 
-        const activeDefinitions = [...individualDefinitions, ...organizationDefinitions].filter(
+        const activeIndividualDefinitions = individualDefinitions.filter(
             definition => definition.isActive
         );
+        const activeOrganizationDefinitions = organizationDefinitions.filter(
+            definition => definition.isActive
+        );
+        const activeDefinitions = [
+            ...activeIndividualDefinitions,
+            ...activeOrganizationDefinitions,
+        ];
 
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
@@ -184,68 +281,69 @@ export const getUserAchievementProgress = queryWithRLS({
             )
         );
 
-        const objectivesCount = organizationId
-            ? await ctx.db
-                  .query('objectives')
-                  .withIndex('by_createdBy_organization', q =>
-                      q.eq('createdBy', userId).eq('organizationId', organizationId)
-                  )
-                  .take(LIST_LIMIT)
-            : await ctx.db
-                  .query('objectives')
-                  .withIndex('by_createdBy_organization', q => q.eq('createdBy', userId))
-                  .take(LIST_LIMIT);
-
-        const completedObjectives = objectivesCount.filter(
-            objective => objective.status === 'completed'
+        // Achievement progress only needs to be exact until the largest active
+        // threshold for a metric. Once that threshold is reached, a saturated
+        // count is equivalent for every achievement card and keeps each read
+        // bounded even for organizations with a long history.
+        const objectivesCreatedLimit = getMetricThresholdLimit(
+            activeIndividualDefinitions,
+            'objectivesCreated'
         );
-        let progressUpdatesCount = 0;
-        let progressUpdatesForObjectives: Doc<'progressUpdates'>[] = [];
+        const objectivesCompletedLimit = getMetricThresholdLimit(
+            activeIndividualDefinitions,
+            'objectivesCompleted'
+        );
+        const earlyBirdLimit = getMetricThresholdLimit(
+            activeIndividualDefinitions,
+            'earlyBirdCompletions'
+        );
+        const progressUpdatesLimit = getMetricThresholdLimit(
+            activeIndividualDefinitions,
+            'progressUpdates'
+        );
+        const organizationObjectivesCreatedLimit = getMetricThresholdLimit(
+            activeOrganizationDefinitions,
+            'organizationObjectivesCreated'
+        );
+        const organizationObjectivesCompletedLimit = getMetricThresholdLimit(
+            activeOrganizationDefinitions,
+            'organizationObjectivesCompleted'
+        );
 
-        if (objectivesCount.length > 0) {
-            const objectiveIdsSet = new Set(objectivesCount.map(objective => objective._id));
-            const userProgressUpdates = await ctx.db
-                .query('progressUpdates')
-                .withIndex('by_createdBy_date', q => q.eq('createdBy', userId))
-                .take(LIST_LIMIT);
+        const globalUserMetrics = await ctx.runQuery(
+            internal.achievements.getGlobalUserAchievementMetricsInternal,
+            {
+                userId,
+                objectivesCreatedLimit,
+                objectivesCompletedLimit,
+                earlyBirdLimit,
+                progressUpdatesLimit,
+            }
+        );
 
-            progressUpdatesForObjectives = userProgressUpdates.filter(update =>
-                objectiveIdsSet.has(update.objective)
-            );
-            progressUpdatesCount = progressUpdatesForObjectives.length;
-        }
-
-        const streak = organizationId ? countStreakFromUpdates(progressUpdatesForObjectives) : 0;
-
-        const organizationObjectives = organizationId
+        const organizationObjectivesCreated = organizationId
             ? await ctx.db
                   .query('objectives')
                   .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                  .take(LIST_LIMIT)
+                  .take(organizationObjectivesCreatedLimit)
             : [];
-        const completedOrganizationObjectives = organizationObjectives.filter(
-            objective => objective.status === 'completed'
-        );
-        // Read the org's progress updates directly from the org-scoped index
-        // instead of fanning out one query per objective (previously up to
-        // ~1000 subqueries inside a single reactive query).
-        const organizationProgressUpdates = organizationId
+        const completedOrganizationObjectives = organizationId
             ? await ctx.db
-                  .query('progressUpdates')
-                  .withIndex('by_organization_date', q => q.eq('organizationId', organizationId))
-                  .order('desc')
-                  .take(LIST_LIMIT)
+                  .query('objectives')
+                  .withIndex('by_organization_status', q =>
+                      q.eq('organizationId', organizationId).eq('status', 'completed')
+                  )
+                  .take(organizationObjectivesCompletedLimit)
             : [];
+        const organizationProgressStreak = organizationId
+            ? await calculateOrganizationStreak(ctx, organizationId)
+            : 0;
 
         const metrics: AchievementMetricSnapshot = {
-            objectivesCreated: objectivesCount.length,
-            objectivesCompleted: completedObjectives.length,
-            progressStreak: streak,
-            progressUpdates: progressUpdatesCount,
-            earlyBirdCompletions: completedObjectives.filter(isEarlyBirdCompletion).length,
-            organizationObjectivesCreated: organizationObjectives.length,
+            ...globalUserMetrics,
+            organizationObjectivesCreated: organizationObjectivesCreated.length,
             organizationObjectivesCompleted: completedOrganizationObjectives.length,
-            organizationProgressStreak: countStreakFromUpdates(organizationProgressUpdates),
+            organizationProgressStreak,
         };
 
         const progressList = activeDefinitions.map(definition => {
@@ -263,7 +361,13 @@ export const getUserAchievementProgress = queryWithRLS({
                     ? organizationEarnedIds.has(definition._id)
                     : earnedIds.has(definition._id);
             const rule = getAchievementRule(definition.code);
-            const currentProgress = rule ? metrics[rule.metricKey] : 0;
+            const measuredProgress = rule ? metrics[rule.metricKey] : 0;
+            // Award records are authoritative. A completed batched evaluator
+            // must never be paired with progress below its own threshold while
+            // a reactive metrics query catches up.
+            const currentProgress = isEarned
+                ? Math.max(measuredProgress, definition.threshold)
+                : measuredProgress;
 
             return {
                 definition,
@@ -279,6 +383,7 @@ export const getUserAchievementProgress = queryWithRLS({
 
 export const getUnviewedAchievementsCount = queryWithRLS({
     args: {},
+    returns: v.number(),
     handler: async ctx => {
         const userId = ctx.userId;
         const organizationId = ctx.organizationId;
@@ -289,10 +394,13 @@ export const getUnviewedAchievementsCount = queryWithRLS({
 
         const notifications = await ctx.db
             .query('notifications')
-            .withIndex('by_user_organization_read', q =>
-                q.eq('userId', userId).eq('organizationId', organizationId).eq('read', false)
+            .withIndex('by_user_organization_read_type', q =>
+                q
+                    .eq('userId', userId)
+                    .eq('organizationId', organizationId)
+                    .eq('read', false)
+                    .eq('notificationType', 'achievement')
             )
-            .filter(q => q.eq(q.field('notificationType'), 'achievement'))
             .take(100);
 
         return notifications.length;
@@ -306,8 +414,41 @@ export const seedAchievementDefinitionsInternal = internalMutation({
     },
 });
 
+/**
+ * Migrates objectives created before `earlyBirdCompleted` was materialized.
+ * The indexed undefined bucket shrinks after every patch, so each invocation
+ * is bounded and no cursor can be invalidated by the writes.
+ */
+export const backfillObjectiveEarlyBirdFacts = internalMutation({
+    args: {},
+    handler: async ctx => {
+        const objectives = await ctx.db
+            .query('objectives')
+            .withIndex('by_earlyBirdCompleted', q => q.eq('earlyBirdCompleted', undefined))
+            .take(EARLY_BIRD_BACKFILL_BATCH_SIZE);
+
+        for (const objective of objectives) {
+            await ctx.db.patch('objectives', objective._id, {
+                earlyBirdCompleted: isEarlyBirdCompletion(objective),
+            });
+        }
+
+        if (objectives.length === EARLY_BIRD_BACKFILL_BATCH_SIZE) {
+            await ctx.scheduler.runAfter(
+                0,
+                internal.achievements.backfillObjectiveEarlyBirdFacts,
+                {}
+            );
+            return { status: 'in_progress' as const, processed: objectives.length };
+        }
+
+        return { status: 'completed' as const, processed: objectives.length };
+    },
+});
+
 export const seedAchievementDefinitions = mutationWithRLS({
     args: {},
+    returns: seedAchievementsResultValidator,
     handler: async (ctx): Promise<{ message: string; count: number }> => {
         await ctx.runQuery(internal.setup.requireAdminInternal, { userId: ctx.userId });
 
@@ -321,6 +462,9 @@ export const checkUserAchievements = internalMutation({
         organizationId: v.id('organization'),
         trigger: achievementTriggerValidator,
         objectivesContinueCursor: v.optional(v.union(v.string(), v.null())),
+        progressUpdatesContinueCursor: v.optional(v.union(v.string(), v.null())),
+        objectivesDone: v.optional(v.boolean()),
+        progressUpdatesDone: v.optional(v.boolean()),
         progressUpdatesCount: v.optional(v.number()),
         cumulativeObjectiveCount: v.optional(v.number()),
         cumulativeCompletedCount: v.optional(v.number()),
@@ -328,6 +472,18 @@ export const checkUserAchievements = internalMutation({
     },
     handler: async (ctx, args) => {
         return await checkUserAchievementsJob(ctx, args);
+    },
+});
+
+export const notifyOrganizationAchievementMembers = internalMutation({
+    args: {
+        organizationId: v.id('organization'),
+        code: v.string(),
+        points: v.number(),
+        cursor: v.optional(v.union(v.string(), v.null())),
+    },
+    handler: async (ctx, args) => {
+        return await notifyOrganizationAchievementMembersJob(ctx, args);
     },
 });
 

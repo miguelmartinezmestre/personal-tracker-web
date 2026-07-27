@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
@@ -10,6 +10,7 @@ import { DataModel, Id } from '../_generated/dataModel';
 describe('organization achievements are awarded (F1)', () => {
     const t = initConvexTest();
     let userIdentity: TestConvexForDataModel<DataModel>;
+    let userId: Id<'user'>;
     let organizationId: Id<'organization'>;
 
     beforeEach(async () => {
@@ -20,6 +21,7 @@ describe('organization achievements are awarded (F1)', () => {
             name: 'Org Achievements User',
             role: 'globalAdmin',
         });
+        userId = user.docId;
         organizationId = await createTestOrganization(t, {
             name: `Org Achievements ${suffix}`,
             slug: `org-achv-${suffix}`,
@@ -63,5 +65,45 @@ describe('organization achievements are awarded (F1)', () => {
                 achievement => achievement.definition?.code === 'organization_first_objective'
             )
         ).toBe(true);
+    });
+
+    test('stale jobs cannot recreate achievements or notifications after organization deletion', async () => {
+        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+        await t.run(ctx => ctx.db.delete('organization', organizationId));
+
+        const awardResult = await t.mutation(internal.achievements.checkOrganizationAchievements, {
+            organizationId,
+            userId,
+            trigger: 'objective_created',
+            orgScopedObjectivesCount: 1,
+        });
+        const notificationResult = await t.mutation(
+            internal.achievements.notifyOrganizationAchievementMembers,
+            {
+                organizationId,
+                code: 'organization_first_objective',
+                points: 15,
+                cursor: null,
+            }
+        );
+
+        expect(awardResult).toMatchObject({ status: 'completed', aborted: true, awarded: [] });
+        expect(notificationResult).toMatchObject({ status: 'completed', aborted: true });
+        await t.run(async ctx => {
+            expect(
+                await ctx.db
+                    .query('organizationAchievements')
+                    .withIndex('by_organization_achievement', q =>
+                        q.eq('organization', organizationId)
+                    )
+                    .collect()
+            ).toHaveLength(0);
+            expect(
+                await ctx.db
+                    .query('notifications')
+                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                    .collect()
+            ).toHaveLength(0);
+        });
     });
 });
