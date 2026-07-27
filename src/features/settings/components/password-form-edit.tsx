@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
     Form,
@@ -13,7 +12,10 @@ import {
     FormMessage,
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
-import { updatePasswordSchema } from '@/features/settings/schemas/update-password';
+import {
+    createUpdatePasswordSchema,
+    type UpdatePasswordFormValues,
+} from '@/features/settings/schemas/update-password';
 import { DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
@@ -23,6 +25,10 @@ import { useErrorMessage } from '@/hooks/use-error-message';
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
     const getErrorMessage = useErrorMessage();
+    const updatePasswordSchema = createUpdatePasswordSchema({
+        weakPassword: t('weakPassword'),
+        passwordsDontMatch: t('passwordMismatch'),
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -31,17 +37,17 @@ export default function PasswordFormEdit() {
             currentPassword: '',
             confirmPassword: '',
             newPassword: '',
-        } as z.infer<typeof updatePasswordSchema>,
+        } as UpdatePasswordFormValues,
         validators: {
             onChange: updatePasswordSchema,
             onSubmit: updatePasswordSchema,
         },
-        onSubmit: async ({ value }: { value: z.infer<typeof updatePasswordSchema> }) => {
+        onSubmit: async ({ value }: { value: UpdatePasswordFormValues }) => {
             await onSubmit(value);
         },
     });
 
-    const onSubmit = async (values: z.infer<typeof updatePasswordSchema>) => {
+    const onSubmit = async (values: UpdatePasswordFormValues) => {
         if (values.newPassword !== values.confirmPassword) {
             setError(t('passwordMismatch'));
             return;
