@@ -19,17 +19,13 @@ export default function NotificationPreferencesForm() {
     const updateMutation = useMutation({
         mutationFn: useConvexMutation(api.notificationPreferences.updateUserPreferences),
         onSuccess: () => {
-            toast.success(t('preferencesSaved') || 'Preferences saved', {
-                description:
-                    t('preferencesSavedDescription') ||
-                    'Your notification preferences have been updated.',
+            toast.success(t('preferencesSaved'), {
+                description: t('preferencesSavedDescription'),
             });
         },
         onError: () => {
-            toast.error(t('preferencesError') || 'Error', {
-                description:
-                    t('preferencesErrorDescription') ||
-                    'Failed to update preferences. Please try again.',
+            toast.error(t('preferencesError'), {
+                description: t('preferencesErrorDescription'),
             });
         },
     });
@@ -55,12 +51,9 @@ export default function NotificationPreferencesForm() {
                 <CardHeader className="border-b pb-6">
                     <CardTitle className="flex items-center gap-2">
                         <Bell className="size-5 text-primary" />
-                        {t('notifications') || 'Notifications'}
+                        {t('notifications')}
                     </CardTitle>
-                    <CardDescription>
-                        {t('notificationsDescription') ||
-                            'Manage how and when you receive notifications.'}
-                    </CardDescription>
+                    <CardDescription>{t('notificationsDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center py-8">
                     <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -74,12 +67,9 @@ export default function NotificationPreferencesForm() {
             <CardHeader className="border-b pb-6">
                 <CardTitle className="flex items-center gap-2 text-xl">
                     <Bell className="size-5 text-primary" />
-                    {t('notifications') || 'Notifications'}
+                    {t('notifications')}
                 </CardTitle>
-                <CardDescription>
-                    {t('notificationsDescription') ||
-                        'Manage how and when you receive notifications. You can disable any type of notification at any time.'}
-                </CardDescription>
+                <CardDescription>{t('notificationsDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
@@ -87,12 +77,11 @@ export default function NotificationPreferencesForm() {
                         <div className="flex items-center gap-2">
                             <Trophy className="size-4 text-yellow-500" />
                             <Label htmlFor="achievement-notifications" className="font-medium">
-                                {t('achievementNotifications') || 'Achievement Notifications'}
+                                {t('achievementNotifications')}
                             </Label>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            {t('achievementNotificationsDescription') ||
-                                'Receive notifications when you unlock achievements and earn points. (Gamification)'}
+                            {t('achievementNotificationsDescription')}
                         </p>
                     </div>
                     <Switch
@@ -108,12 +97,11 @@ export default function NotificationPreferencesForm() {
                         <div className="flex items-center gap-2">
                             <Clock className="size-4 text-blue-500" />
                             <Label htmlFor="deadline-notifications" className="font-medium">
-                                {t('deadlineNotifications') || 'Deadline Reminders'}
+                                {t('deadlineNotifications')}
                             </Label>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            {t('deadlineNotificationsDescription') ||
-                                'Get reminded when your objectives have upcoming deadlines.'}
+                            {t('deadlineNotificationsDescription')}
                         </p>
                     </div>
                     <Switch
@@ -129,12 +117,11 @@ export default function NotificationPreferencesForm() {
                         <div className="flex items-center gap-2">
                             <Clock className="size-4 text-green-500" />
                             <Label htmlFor="progress-notifications" className="font-medium">
-                                {t('progressNotifications') || 'Progress & Streak Alerts'}
+                                {t('progressNotifications')}
                             </Label>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            {t('progressNotificationsDescription') ||
-                                'Receive notifications about your progress updates and streak milestones.'}
+                            {t('progressNotificationsDescription')}
                         </p>
                     </div>
                     <Switch
@@ -150,12 +137,11 @@ export default function NotificationPreferencesForm() {
                         <div className="flex items-center gap-2">
                             <Users className="size-4 text-purple-500" />
                             <Label htmlFor="organization-notifications" className="font-medium">
-                                {t('organizationNotifications') || 'Organization Notifications'}
+                                {t('organizationNotifications')}
                             </Label>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            {t('organizationNotificationsDescription') ||
-                                'Receive notifications about organization-wide achievements and member activities.'}
+                            {t('organizationNotificationsDescription')}
                         </p>
                     </div>
                     <Switch

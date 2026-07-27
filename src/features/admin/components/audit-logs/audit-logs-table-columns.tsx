@@ -1,10 +1,11 @@
 import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Doc } from '@/convex/_generated/dataModel';
+import { formatDate, formatTime } from '@/lib/format-date';
 
 export function useAuditLogsTableColumns() {
     const t = useTranslations('Admin');
+    const locale = useLocale();
 
     const columns: ColumnDef<Doc<'auditLogs'>>[] = [
         {
@@ -36,7 +37,7 @@ export function useAuditLogsTableColumns() {
             header: t('auditLogsTable.columns.date'),
             cell: ({ row }) => {
                 const date = row.original.createdAt;
-                return format(new Date(date), 'PPp');
+                return `${formatDate(date, locale)} ${formatTime(date, locale)}`;
             },
         },
     ];

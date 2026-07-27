@@ -11,6 +11,7 @@ import {
     Users,
     Activity,
     Tag,
+    Mail,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -66,6 +67,11 @@ const baseProjects: ProjectNavItem[] = [
         name: 'notifications',
         url: '/dashboard/notifications',
         icon: Bell,
+    },
+    {
+        name: 'invitations',
+        url: '/dashboard/invitations',
+        icon: Mail,
     },
     {
         name: 'sessions',
@@ -133,35 +139,37 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-                    <SidebarMenu data-testid="sidebar-menu">
-                        {projects.map(item => {
-                            const isActive = pathname === item.url;
-                            return (
-                                <SidebarMenuItem key={item.name}>
-                                    <SidebarMenuButton asChild>
-                                        <Link
-                                            href={item.url}
-                                            prefetch={false}
-                                            className={cn(
-                                                'relative transition-all duration-200',
-                                                isActive
-                                                    ? 'bg-accent text-accent-foreground font-medium'
-                                                    : 'hover:bg-accent/50 hover:text-accent-foreground'
-                                            )}
-                                        >
-                                            <item.icon
+                    <nav aria-label={t('navigationLabel')}>
+                        <SidebarMenu data-testid="sidebar-menu">
+                            {projects.map(item => {
+                                const isActive = pathname === item.url;
+                                return (
+                                    <SidebarMenuItem key={item.name}>
+                                        <SidebarMenuButton asChild>
+                                            <Link
+                                                href={item.url}
+                                                prefetch={false}
                                                 className={cn(
-                                                    'h-4 w-4 transition-all',
-                                                    isActive && 'text-primary'
+                                                    'relative transition-all duration-200',
+                                                    isActive
+                                                        ? 'bg-accent text-accent-foreground font-medium'
+                                                        : 'hover:bg-accent/50 hover:text-accent-foreground'
                                                 )}
-                                            />
-                                            {t(item.name)}
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            );
-                        })}
-                    </SidebarMenu>
+                                            >
+                                                <item.icon
+                                                    className={cn(
+                                                        'h-4 w-4 transition-all',
+                                                        isActive && 'text-primary'
+                                                    )}
+                                                />
+                                                {t(item.name)}
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
+                        </SidebarMenu>
+                    </nav>
                 </SidebarGroup>
             </SidebarContent>
         </Sidebar>

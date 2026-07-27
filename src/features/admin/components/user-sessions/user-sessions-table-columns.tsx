@@ -1,23 +1,24 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { format } from 'date-fns';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRevokeSession } from './user-sessions-table-actions';
 import { api } from '@/convex/_generated/api';
 import { FunctionReturnType } from 'convex/server';
 import type { Id } from '@/convex/_generated/dataModel';
+import { formatDate, formatTime } from '@/lib/format-date';
+import { useReferenceNow } from '@/lib/reference-now';
 
 type AdminSessionRow = FunctionReturnType<typeof api.admin.listUserSessions>['page'][number];
 
 export function useUserSessionsTableColumns(targetUserId: Id<'user'> | undefined) {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
+    const locale = useLocale();
 
     const { revokeSession, isRevokingSession } = useRevokeSession();
-    const [now] = useState(Date.now);
+    const now = useReferenceNow();
 
     const columns: ColumnDef<AdminSessionRow>[] = [
         {
@@ -35,7 +36,7 @@ export function useUserSessionsTableColumns(targetUserId: Id<'user'> | undefined
                 return (
                     <div>
                         <div className={isExpired ? 'text-red-500' : ''}>
-                            {format(expiresAtDate, 'PPp')}
+                            {formatDate(expiresAt, locale)} {formatTime(expiresAt, locale)}
                         </div>
                         {isExpired && (
                             <Badge className="mt-1 bg-red-500 text-white">
@@ -72,6 +73,7 @@ export function useUserSessionsTableColumns(targetUserId: Id<'user'> | undefined
                         revokeSession({ userId: targetUserId, sessionId: row.original._id });
                     }}
                     disabled={isRevokingSession || !targetUserId}
+                    aria-label={t('userSessions.buttons.revoke')}
                     data-testid="session-terminate-button"
                 >
                     <Trash2 className="h-4 w-4" />

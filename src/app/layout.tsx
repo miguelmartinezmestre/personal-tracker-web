@@ -29,13 +29,13 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <main>
+                    <div className="contents">
                         <NextIntlClientProvider locale={locale} messages={messages}>
                             <BetterConvexProvider token={token ?? ''}>
                                 {children}
                             </BetterConvexProvider>
                         </NextIntlClientProvider>
-                    </main>
+                    </div>
                     <Toaster position="bottom-right" richColors closeButton />
                 </ThemeProvider>
             </body>

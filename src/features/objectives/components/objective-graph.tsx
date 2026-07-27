@@ -1,7 +1,7 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,8 +37,9 @@ export function ObjectiveProgressGraph({
 }: ObjectiveProgressGraphProps) {
     const tObjectives = useTranslations('Objectives');
     const tUpdateProgress = useTranslations('UpdateProgress');
-    const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
-    const longDateFormatter = new Intl.DateTimeFormat(undefined, {
+    const locale = useLocale();
+    const numberFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+    const longDateFormatter = new Intl.DateTimeFormat(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',

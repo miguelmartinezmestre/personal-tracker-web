@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { format } from 'date-fns';
+import { useLocale, useTranslations } from 'next-intl';
 import { ColumnDef } from '@tanstack/react-table';
 import type { Doc } from '@/convex/_generated/dataModel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { useSetNotificationRead, useDeleteNotification } from './notifications-table-actions';
+import { formatDate, formatTime } from '@/lib/format-date';
 
 const typeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     reminder: 'secondary',
@@ -27,6 +27,7 @@ export function useNotificationsTableColumns({
     onMutationSuccess,
 }: UseNotificationsTableColumnsProps) {
     const t = useTranslations('Notifications');
+    const locale = useLocale();
 
     const { setNotificationRead, isSettingRead } = useSetNotificationRead(onMutationSuccess);
     const { deleteNotificationAsync, isDeletingNotification } =
@@ -86,7 +87,10 @@ export function useNotificationsTableColumns({
             accessorKey: 'notificationDate',
             header: t('table.columns.date'),
             cell: ({ row }) => {
-                return format(new Date(row.original.notificationDate), 'PPp');
+                return `${formatDate(row.original.notificationDate, locale)} ${formatTime(
+                    row.original.notificationDate,
+                    locale
+                )}`;
             },
         },
         {
