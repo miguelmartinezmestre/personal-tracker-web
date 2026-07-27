@@ -7,7 +7,7 @@ legend: {
 | --- | --- |
 | Omitidos | `_id`, `_creationTime`, timestamps y campos secundarios |
 | Tipos | `string`, `number`, `boolean`, `id('tabla')`, `optional(...)` |
-| Relaciones | solida = referencia fuerte; discontinua = logica o externa |
+| Relaciones | sólida = referencia tipada; discontinua = lógica o externa |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -20,6 +20,7 @@ user: {
 | name | string |
 | email | string |
 | role | optional(string \| null) |
+| deletedAt | optional(number) |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -199,7 +200,6 @@ notificationPreferences: {
 | deadlineNotifications | boolean |
 | progressNotifications | boolean |
 | organizationNotifications | boolean |
-| emailDigestEnabled | optional(boolean) |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -300,9 +300,9 @@ workflow: {
 resourcePointer: {
   shape: text
   label: |`md
-| Recurso polimorfico | |
+| Recurso polimórfico | |
 | --- | --- |
-| resourceType + resourceId | relacion polimorfica |
+| resourceType + resourceId | relación polimórfica |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }

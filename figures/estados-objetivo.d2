@@ -6,10 +6,10 @@ legend: {
 | Estados de un objetivo (Convex) | |
 | --- | --- |
 | Estados persistidos | `active`, `completed` (campo `status`) |
-| Pseudo-estados | inicio y decision no se almacenan |
-| Borrado | logico (`deletedAt`/`deletedBy`, reversible con restore) y fisico (purge: cascada) |
-| Transicion automatica | `active` <-> `completed` segun `currentValue >= targetValue` (al crear/borrar progreso o editar) |
-| Deadline | NO transiciona: solo genera notificaciones (cron 8AM) |
+| Pseudo-estados | inicio y decisión no se almacenan |
+| Borrado | lógico (`deletedAt`/`deletedBy`, reversible con restore) y físico (purge: cascada) |
+| Transición automática | `active` <-> `completed` según `currentValue >= targetValue` (al crear/borrar progreso o editar) |
+| Deadline | NO transiciona: solo genera notificaciones (cron 8:00) |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -21,7 +21,7 @@ inicio: "" {
   style: { fill: "#111827"; stroke: "#111827" }
 }
 
-crear: "startValue >= targetValue?" {
+crear: "startValue == targetValue?" {
   shape: diamond
   style: { font-size: 10; fill: "#fef3c7"; stroke: "#d97706" }
 }
@@ -32,7 +32,7 @@ active: {
 | **active** | |
 | --- | --- |
 | status | `active` |
-| condicion | `currentValue < targetValue` |
+| condición | `currentValue < targetValue` |
 | completedAt | sin fijar |
 `|
   style: { font-size: 10; font-color: "#111827"; fill: "#dbeafe"; stroke: "#2563eb"; border-radius: 8 }
@@ -44,7 +44,7 @@ completed: {
 | **completed** | |
 | --- | --- |
 | status | `completed` |
-| condicion | `currentValue >= targetValue` |
+| condición | `currentValue >= targetValue` |
 | completedAt | fijado (= now) |
 `|
   style: { font-size: 10; font-color: "#111827"; fill: "#dcfce7"; stroke: "#16a34a"; border-radius: 8 }
@@ -53,7 +53,7 @@ completed: {
 soft_deleted: {
   shape: text
   label: |`md
-| **soft_deleted** (borrado logico) | |
+| **soft_deleted** (borrado lógico) | |
 | --- | --- |
 | deletedAt / deletedBy | fijados |
 | visibilidad | oculto en consultas |
@@ -62,7 +62,12 @@ soft_deleted: {
   style: { font-size: 10; font-color: "#111827"; fill: "#fef9c3"; stroke: "#ca8a04"; border-radius: 8 }
 }
 
-eliminado: "Eliminado (purge)\n(cascada: progressUpdates + notifications)" {
+restaurar: "currentValue >= targetValue?" {
+  shape: diamond
+  style: { font-size: 10; fill: "#fef3c7"; stroke: "#d97706" }
+}
+
+eliminado: "Eliminado (purge)\n(cascada: progressUpdates + objectiveCollaborators + notifications)" {
   shape: circle
   style: { font-size: 10; fill: "#fee2e2"; stroke: "#dc2626"; double-border: true }
 }
@@ -73,7 +78,7 @@ deadline: {
 | _Efecto lateral_ | |
 | --- | --- |
 | cron 8AM | `runDeadlineNotificationsCron` |
-| accion | notificacion "deadline" |
+| acción | notificación "deadline" |
 | estado | **no cambia** |
 `|
   style: { font-size: 10; font-color: "#6b7280"; stroke-dash: 3 }
@@ -81,18 +86,19 @@ deadline: {
 
 inicio -> crear: "createObjective"
 crear -> active: "startValue < targetValue"
-crear -> completed: "startValue >= targetValue"
+crear -> completed: "startValue == targetValue"
 
 active -> active: "progreso (meta no alcanzada)"
 active -> completed: "alcanza la meta (o updateObjective)"
 completed -> active: "borra progreso (o updateObjective)"
 
-active -> soft_deleted: "deleteObjective (borrado logico)"
-completed -> soft_deleted: "deleteObjective (borrado logico)"
-soft_deleted -> active: "restoreObjective (recalcula: < target)"
-soft_deleted -> completed: "restoreObjective (recalcula: >= target)"
+active -> soft_deleted: "deleteObjective (borrado lógico)"
+completed -> soft_deleted: "deleteObjective (borrado lógico)"
+soft_deleted -> restaurar: "restoreObjective (recalcula)"
+restaurar -> active: "< target"
+restaurar -> completed: ">= target"
 soft_deleted -> eliminado: "purgeObjective"
 
-active -> deadline: "deadline proximo" {
+active -> deadline: "deadline próximo" {
   style: { stroke-dash: 3; stroke: "#6b7280" }
 }
