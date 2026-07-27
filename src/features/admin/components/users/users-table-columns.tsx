@@ -21,6 +21,7 @@ export function useUsersTableColumns() {
     const { unbanUser, isUnbanningUser } = useUnBanUser();
     const { deleteUser, isDeletingUser } = useDeleteUser();
     const { data: setupUserId } = useQuery(convexQuery(api.setup.getPlatformSetupUserId, {}));
+    const { data: currentUser } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
 
     const getRoleLabel = (role: string | null | undefined) => {
         if (role === GLOBAL_ADMIN_ROLE) return t('usersTable.roles.globalAdmin');
@@ -88,7 +89,10 @@ export function useUsersTableColumns() {
 
                 return (
                     <div className="flex gap-2">
-                        <EditUserModal user={user} />
+                        <EditUserModal
+                            user={user}
+                            roleLocked={isSetupUser || currentUser?._id === user._id}
+                        />
                         {user.banned ? (
                             <Button
                                 size="sm"

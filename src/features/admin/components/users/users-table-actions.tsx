@@ -5,6 +5,7 @@ import { authClient } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 export function useBanUser() {
     const t = useTranslations('Admin');
@@ -32,7 +33,9 @@ export function useUnBanUser() {
 
     const { mutate: unbanUser, isPending: isUnbanningUser } = useMutation({
         mutationFn: async ({ userId }: { userId: Id<'user'> }) => {
-            return await authClient.admin.unbanUser({ userId });
+            const result = await authClient.admin.unbanUser({ userId });
+            throwIfAuthClientError(result);
+            return result.data;
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.unbannedSuccess'));

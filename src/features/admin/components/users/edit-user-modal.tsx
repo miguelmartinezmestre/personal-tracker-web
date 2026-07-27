@@ -21,18 +21,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { authClient } from '@/features/auth/client';
 import { Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { Doc } from '@/convex/_generated/dataModel';
 import { GLOBAL_ADMIN_ROLE, USER_ROLE } from '@shared/platform-roles';
+import { api } from '@/convex/_generated/api';
+import { useConvexMutation } from '@convex-dev/react-query';
 
 export function EditUserModal({
     user,
+    roleLocked = false,
     onSuccessAction,
 }: {
     user: Doc<'user'>;
+    roleLocked?: boolean;
     onSuccessAction?: () => void;
 }) {
     const t = useTranslations('Admin');
@@ -44,16 +47,15 @@ export function EditUserModal({
     const [role, setRole] = useState(
         user.role === 'ADMIN' ? GLOBAL_ADMIN_ROLE : user.role || USER_ROLE
     );
+    const updateUserMutation = useConvexMutation(api.admin.updateUser);
 
     const updateUser = useMutation({
         mutationFn: async () => {
-            return await authClient.admin.updateUser({
+            return await updateUserMutation({
                 userId: user._id,
-                data: {
-                    email,
-                    name,
-                    role,
-                },
+                email,
+                name,
+                role: role === GLOBAL_ADMIN_ROLE ? GLOBAL_ADMIN_ROLE : USER_ROLE,
             });
         },
         onSuccess: () => {
@@ -99,7 +101,7 @@ export function EditUserModal({
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="role">{tCommon('fields.role')}</Label>
-                        <Select value={role} onValueChange={setRole}>
+                        <Select value={role} onValueChange={setRole} disabled={roleLocked}>
                             <SelectTrigger data-testid="user-edit-role-select">
                                 <SelectValue />
                             </SelectTrigger>
