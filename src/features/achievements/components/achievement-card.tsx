@@ -51,18 +51,23 @@ export function AchievementCard({
     return (
         <Card
             className={cn(
-                'transition-all hover:shadow-md cursor-pointer',
+                'transition-all hover:shadow-md',
+                onClick && 'cursor-pointer',
                 isEarned ? 'border-primary/50' : 'opacity-75'
             )}
-            tabIndex={0}
-            role="button"
+            tabIndex={onClick ? 0 : undefined}
+            role={onClick ? 'button' : undefined}
             onClick={onClick}
-            onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onClick?.();
-                }
-            }}
+            onKeyDown={
+                onClick
+                    ? e => {
+                          if (e.key !== 'Enter' && e.key !== ' ') return;
+
+                          e.preventDefault();
+                          onClick();
+                      }
+                    : undefined
+            }
             data-testid={`achievement-card-${definition.code}`}
         >
             <CardHeader className="flex flex-row items-center gap-4 pb-2">

@@ -1,10 +1,6 @@
 import { Browser, BrowserContext, Page, expect } from '@playwright/test';
-import {
-    createOrganization,
-    createTestUser,
-    selectOrganizationByName,
-    type TestUserData,
-} from './test-helpers';
+import { createOrganization, createTestUser, type TestUserData } from './test-helpers';
+import { verifyEmailFromInvitationPage } from './email-verification';
 
 export type CollaboratorSession = {
     context: BrowserContext;
@@ -27,9 +23,11 @@ export async function setupCollaboratorInOrganization(
     const collaboratorUser = await createTestUser(page, {
         usePresentableName: true,
     });
+    // Keep the secondary session alive without leaving a full dashboard worth of
+    // reactive queries subscribed while the owner creates and sends the invite.
+    await page.goto('about:blank');
 
     await createOrganization(ownerPage, { name: organizationName });
-    await selectOrganizationByName(ownerPage, organizationName);
 
     await ownerPage.goto('/dashboard/organizations');
     await ownerPage.waitForURL(/\/dashboard\/organizations(?:\?|$)/, { timeout: 15000 });
@@ -45,8 +43,11 @@ export async function setupCollaboratorInOrganization(
     });
     await ownerPage.getByTestId('organization-member-email-input').fill(collaboratorUser.email);
     await ownerPage.getByTestId('organization-member-save-button').click();
-
-    await ownerPage.waitForLoadState('networkidle');
+    // FormModal only closes after the invite mutation succeeds. Checking this at
+    // the source gives a useful failure instead of timing out on the recipient page.
+    await expect(ownerPage.getByTestId('organization-member-email-input')).toBeHidden({
+        timeout: 20000,
+    });
 
     await page.goto('/dashboard/invitations');
     await page.waitForURL(/\/dashboard\/invitations(?:\?|$)/, { timeout: 15000 });
@@ -54,6 +55,7 @@ export async function setupCollaboratorInOrganization(
     await expect(
         page.getByTestId('invitations-list').or(page.getByTestId('invitations-empty'))
     ).toBeVisible({ timeout: 20000 });
+    await verifyEmailFromInvitationPage(page, collaboratorUser.email);
 
     const acceptButton = page.getByTestId('invitation-accept-button').first();
     await expect(acceptButton).toBeVisible({ timeout: 20000 });
@@ -61,9 +63,7 @@ export async function setupCollaboratorInOrganization(
 
     await page.getByTestId('invitation-accept-confirm-button').click();
 
-    await expect(page.getByTestId('invitations-empty'))
-        .toBeVisible({ timeout: 20000 })
-        .catch(() => undefined);
+    await expect(acceptButton).toBeHidden({ timeout: 20000 });
 
     await page.goto('/dashboard/home');
     await page.waitForURL(/\/dashboard\/home(?:\?|$)/, { timeout: 15000 });

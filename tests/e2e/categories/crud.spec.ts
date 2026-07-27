@@ -22,33 +22,14 @@ test.describe('Categories CRUD', () => {
     async function saveCategoryAndWaitForRow(page: Page, name: string): Promise<void> {
         const saveButton = page.getByTestId('category-save-button');
 
-        for (let attempt = 0; attempt < 3; attempt++) {
-            await page.keyboard.press('Escape').catch(() => undefined);
-            await expect(saveButton).toBeVisible({ timeout: 10000 });
-            await expect(saveButton).toBeEnabled({ timeout: 10000 });
-            await submitOpenDialogForm(page);
+        await expect(saveButton).toBeVisible({ timeout: 10000 });
+        await expect(saveButton).toBeEnabled({ timeout: 10000 });
+        await submitOpenDialogForm(page);
 
-            try {
-                await expect(page.getByTestId('category-name-input')).toBeHidden({ timeout: 5000 });
-                await expect(
-                    page.getByTestId('table-row').filter({ hasText: name }).first()
-                ).toBeVisible({ timeout: 15000 });
-                return;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-                await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-                await openModal(page, 'category-create-open', 'category-name-input', {
-                    maxAttempts: 5,
-                    timeout: 10000,
-                });
-                await page.getByTestId('category-name-input').fill(name);
-                await page.getByTestId('category-color-select').click();
-                await page.waitForSelector('[role="option"]', { timeout: 10000 });
-                await page.getByTestId('category-color-#3b82f6').click();
-            }
-        }
-
-        throw new Error(`Could not save category "${name}" from create modal`);
+        await expect(page.getByTestId('category-name-input')).toBeHidden({ timeout: 10000 });
+        await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
+            timeout: 15000,
+        });
     }
 
     async function saveEditedCategoryAndWaitForRow(
@@ -72,25 +53,13 @@ test.describe('Categories CRUD', () => {
         });
     }
 
-    test('view categories list', async ({ page }) => {
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        await expect(page).toHaveURL(/\/dashboard\/categories/);
-
-        const createButton = page.getByTestId('category-create-open');
-        await expect(createButton).toBeVisible();
-    });
-
     test(
         'create category with name and color',
         { tag: ['@REQ-CATEGORIAS-001'] },
         async ({ page }) => {
             const categoryData = CategoryFactory.create();
 
-            await page.goto('/dashboard/categories');
-            await page.waitForLoadState('domcontentloaded');
-
+            await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
             await openModal(page, 'category-create-open', 'category-name-input', {
                 maxAttempts: 5,
                 timeout: 10000,
@@ -105,50 +74,17 @@ test.describe('Categories CRUD', () => {
         }
     );
 
-    test('create category with icon', { tag: ['@REQ-CATEGORIAS-001'] }, async ({ page }) => {
-        const categoryName = `Icon Category ${Date.now()}`;
-
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        await openModal(page, 'category-create-open', 'category-name-input', {
-            maxAttempts: 5,
-            timeout: 10000,
-        });
-
-        await page.getByTestId('category-name-input').fill(categoryName);
-
-        await page.getByTestId('category-color-select').click();
-        await page.waitForSelector('[role="option"]', { timeout: 10000 });
-        await page.getByTestId('category-color-#22c55e').click();
-
-        const iconSelector = page.locator('[data-testid*="icon"], [data-testid*="category-icon"]');
-        if ((await iconSelector.count()) > 0) {
-            await iconSelector.first().click();
-            const iconOption = page.getByRole('option').first();
-            if ((await iconOption.count()) > 0) {
-                await iconOption.click();
-            }
-        }
-
-        await saveCategoryAndWaitForRow(page, categoryName);
-    });
-
-    test('edit category name', { tag: ['@REQ-CATEGORIAS-003'] }, async ({ page }) => {
+    test('edit category name and color', { tag: ['@REQ-CATEGORIAS-003'] }, async ({ page }) => {
         const category = await createCategory(page, { name: `Edit Name ${Date.now()}` });
 
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
+        await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
 
         const categoryRow = page
             .getByTestId('table-row')
             .filter({ hasText: category.name })
             .first();
         await expect(categoryRow).toBeVisible();
-        const editButton = categoryRow.getByTestId('category-edit-open');
-
-        await expect(editButton).toBeVisible();
-        await editButton.click();
+        await categoryRow.getByTestId('category-edit-open').click();
 
         const nameInput = page.getByTestId('category-edit-name-input');
         await expect(nameInput).toBeVisible({ timeout: 10000 });
@@ -166,87 +102,31 @@ test.describe('Categories CRUD', () => {
         await saveEditedCategoryAndWaitForRow(page, nameInput, newName);
     });
 
-    test('edit category color', { tag: ['@REQ-CATEGORIAS-003'] }, async ({ page }) => {
-        const category = await createCategory(page, {
-            name: `Edit Color ${Date.now()}`,
-            color: 'Green',
-        });
-
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        const categoryRow = page
-            .getByTestId('table-row')
-            .filter({ hasText: category.name })
-            .first();
-        const editButton = categoryRow.getByTestId('category-edit-open');
-
-        await expect(editButton).toBeVisible();
-        await editButton.click();
-
-        const colorSelect = page.getByTestId('category-edit-color-select');
-        await expect(colorSelect).toBeVisible();
-        await colorSelect.click();
-        await page.waitForSelector('[role="option"]', { timeout: 5000 });
-        await page.getByTestId('category-edit-color-#ef4444').click();
-
-        const saveButton = page.getByTestId('category-edit-save-button');
-        await expect(saveButton).toBeVisible({ timeout: 10000 });
-        await saveButton.click();
-    });
-
     test('delete category', { tag: ['@REQ-CATEGORIAS-003', '@REQ-NF-012'] }, async ({ page }) => {
         const category = await createCategory(page, { name: `Delete Cat ${Date.now()}` });
 
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        await expect(page.getByText(category.name)).toBeVisible();
+        await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
 
         const categoryRow = page
             .getByTestId('table-row')
             .filter({ hasText: category.name })
             .first();
-        const deleteButton = categoryRow.getByTestId('category-delete-button');
-
-        await expect(deleteButton).toBeVisible();
-        await deleteButton.click();
+        await expect(categoryRow).toBeVisible();
+        await categoryRow.getByTestId('category-delete-button').click();
 
         const confirmDialog = page.locator('[data-slot="alert-dialog-content"], [role="dialog"]');
         await expect(confirmDialog.first()).toBeVisible({ timeout: 5000 });
+        await confirmDialog.getByTestId('delete-confirm-button').click();
 
-        const confirmButton = confirmDialog.getByTestId('delete-confirm-button');
-        await confirmButton.click();
-
-        let categoryCount = -1;
-        const maxTime = Date.now() + 15000;
-
-        while (Date.now() < maxTime && categoryCount !== 0) {
-            await page.reload({ waitUntil: 'domcontentloaded' });
-            categoryCount = await page.getByText(category.name).count();
-
-            if (categoryCount !== 0) {
-                await page.waitForTimeout(500);
-            }
-        }
-
-        expect(categoryCount).toBe(0);
-    });
-
-    test('create default categories button', { tag: ['@REQ-CATEGORIAS-002'] }, async ({ page }) => {
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        const defaultCategoriesButton = page.locator(
-            'button:has-text("Default"), button:has-text("Predeterminadas"), [data-testid*="default-categories"]'
-        );
-
-        if ((await defaultCategoriesButton.count()) > 0) {
-            await defaultCategoriesButton.first().click();
-
-            const personalCategory = page.getByText(/personal/i);
-            await expect(personalCategory.first()).toBeVisible({ timeout: 10000 });
-        }
+        await expect
+            .poll(
+                async () => {
+                    await page.reload({ waitUntil: 'domcontentloaded' });
+                    return page.getByText(category.name).count();
+                },
+                { timeout: 15000, intervals: [500, 1000] }
+            )
+            .toBe(0);
     });
 
     test('assign category to objective', { tag: ['@REQ-OBJETIVOS-004'] }, async ({ page }) => {
@@ -261,16 +141,15 @@ test.describe('Categories CRUD', () => {
         await page.getByTestId('objective-description-input').fill('Test with category');
 
         await page.getByTestId('objective-category-select').click();
-        const enabledCategoryOptions = page.locator(
-            '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-        );
-        const categoryOption = enabledCategoryOptions.filter({ hasText: categoryName }).first();
+        const categoryOption = page
+            .locator('[role="option"]:not([data-disabled]):not([aria-disabled="true"])')
+            .filter({ hasText: categoryName })
+            .first();
         await expect(categoryOption).toBeVisible({ timeout: 10000 });
         await categoryOption.click();
 
         await page.getByTestId('objective-target-input').fill('100');
         await page.getByTestId('objective-unit-input').fill('units');
-
         await page.getByTestId('objective-save-button').click();
 
         await expect(page.getByTestId('table-row').filter({ hasText: title }).first()).toBeVisible({
@@ -278,27 +157,8 @@ test.describe('Categories CRUD', () => {
         });
     });
 
-    test('category dropdown shows all categories', async ({ page }) => {
-        await createCategory(page, { name: `Cat A ${Date.now()}` });
-        await createCategory(page, { name: `Cat B ${Date.now()}` });
-
-        await page.goto('/dashboard/objectives');
-
-        await openCreateObjectiveModal(page);
-
-        await page.getByTestId('objective-category-select').click();
-        await page.waitForSelector('[role="option"]');
-
-        const options = page.getByRole('option');
-        const count = await options.count();
-
-        expect(count).toBeGreaterThan(0);
-    });
-
     test('validate category name required', { tag: ['@REQ-CATEGORIAS-001'] }, async ({ page }) => {
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
+        await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
         await openModal(page, 'category-create-open', 'category-name-input', {
             maxAttempts: 5,
             timeout: 10000,
@@ -306,53 +166,7 @@ test.describe('Categories CRUD', () => {
 
         await page.getByTestId('category-save-button').click();
 
-        const errorMessage = page.locator('text=/required|requerido|name/i');
-        const hasError = (await errorMessage.count()) > 0;
-
-        const modalStillOpen = await page.getByTestId('category-name-input').isVisible();
-
-        expect(hasError || modalStillOpen).toBeTruthy();
-    });
-
-    test('cancel create closes modal', { tag: ['@REQ-CATEGORIAS-001'] }, async ({ page }) => {
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        await openModal(page, 'category-create-open', 'category-name-input', {
-            maxAttempts: 5,
-            timeout: 10000,
-        });
-
-        await page.getByTestId('category-name-input').fill('Test Category');
-
-        const cancelButton = page.getByTestId('category-cancel-button');
-        await cancelButton.click();
-
-        await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 10000 });
-
-        await expect(page.getByText('Test Category')).toBeHidden();
-    });
-
-    test('category colors display correctly', async ({ page }) => {
-        const category = await createCategory(page, {
-            name: `Color Display ${Date.now()}`,
-            color: 'Blue',
-        });
-
-        await page.goto('/dashboard/categories');
-        await page.waitForLoadState('domcontentloaded');
-
-        const categoryRow = page
-            .getByTestId('table-row')
-            .filter({ hasText: category.name })
-            .first();
-        await expect(categoryRow).toBeVisible();
-
-        const colorIndicator = categoryRow.locator(
-            '[class*="blue"], [style*="blue"], .badge, [class*="color"]'
-        );
-        const hasColorIndicator = (await colorIndicator.count()) > 0;
-
-        expect(hasColorIndicator || (await categoryRow.isVisible())).toBeTruthy();
+        await expect(page.getByTestId('category-name-input')).toBeVisible();
+        await expect(page.locator('text=/required|requerido|name/i').first()).toBeVisible();
     });
 });

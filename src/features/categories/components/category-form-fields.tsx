@@ -21,16 +21,16 @@ import { getLucideIcon } from '@/lib/icons';
 import { useTranslations } from 'next-intl';
 
 const colorOptions = [
-    { value: '#ef4444', label: 'Red' },
-    { value: '#f97316', label: 'Orange' },
-    { value: '#eab308', label: 'Yellow' },
-    { value: '#22c55e', label: 'Green' },
-    { value: '#14b8a6', label: 'Teal' },
-    { value: '#3b82f6', label: 'Blue' },
-    { value: '#a855f7', label: 'Purple' },
-    { value: '#ec4899', label: 'Pink' },
-    { value: '#6b7280', label: 'Gray' },
-];
+    { value: '#ef4444', labelKey: 'red' },
+    { value: '#f97316', labelKey: 'orange' },
+    { value: '#eab308', labelKey: 'yellow' },
+    { value: '#22c55e', labelKey: 'green' },
+    { value: '#14b8a6', labelKey: 'teal' },
+    { value: '#3b82f6', labelKey: 'blue' },
+    { value: '#a855f7', labelKey: 'purple' },
+    { value: '#ec4899', labelKey: 'pink' },
+    { value: '#6b7280', labelKey: 'gray' },
+] as const;
 
 const iconOptions = categoryIconSchema.options;
 
@@ -93,7 +93,7 @@ export function CategoryFormFields({
                                                     backgroundColor: option.value,
                                                 }}
                                             />
-                                            {option.label}
+                                            {tCommon(`colors.${option.labelKey}`)}
                                         </div>
                                     </SelectItem>
                                 ))}
@@ -102,10 +102,11 @@ export function CategoryFormFields({
                         {showColorDescription && (
                             <FormDescription>
                                 {tCommon(
-                                    'colors.' +
-                                        colorOptions
-                                            .find(colorOption => colorOption.value === field.value)
-                                            ?.label.toLowerCase()
+                                    `colors.${
+                                        colorOptions.find(
+                                            colorOption => colorOption.value === field.value
+                                        )?.labelKey ?? 'blue'
+                                    }`
                                 )}
                             </FormDescription>
                         )}

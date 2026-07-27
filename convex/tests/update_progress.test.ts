@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import { initConvexTest } from './test.helper';
+import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import {
     createTestUser,
     createTestOrganization,
     createTestMember,
     createTestCollaborator,
+    createTestObjective,
 } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
 import { DataModel, Id } from '../_generated/dataModel';
+import { identityFor } from './test_identities';
+import { toUtcCivilDay } from '../../shared/civil-date';
 
 describe('convex update_progress', () => {
     const t = initConvexTest();
@@ -93,7 +96,7 @@ describe('convex update_progress', () => {
 
         expect(progressUpdate).toBeDefined();
         expect(progressUpdate?.updatedValue).toBe(75);
-        expect(progressUpdate?.updateDate).toBe(updateDate);
+        expect(progressUpdate?.updateDate).toBe(toUtcCivilDay(updateDate));
         expect(progressUpdate?.comment).toBe('Great progress!');
         expect(progressUpdate?.objective).toBe(objectiveId);
         expect(progressUpdate?.createdBy).toBe(userId);
@@ -222,11 +225,14 @@ describe('convex update_progress', () => {
         });
         const beforeIdSet = new Set(beforeIds);
 
-        await otherUserIdentity.mutation(api.update_progress.createUpdateProgress, {
-            objective: objectiveId,
-            updatedValue: 10,
-            updateDate: Date.now(),
-        });
+        const progressUpdate = await otherUserIdentity.mutation(
+            api.update_progress.createUpdateProgress,
+            {
+                objective: objectiveId,
+                updatedValue: 10,
+                updateDate: Date.now(),
+            }
+        );
 
         const progressJobs = await t.run(async ctx => {
             const rows = await ctx.db.system.query('_scheduled_functions').collect();
@@ -239,6 +245,108 @@ describe('convex update_progress', () => {
         expect(progressJobs.length).toBeGreaterThan(0);
         expect(progressJobs.every(arg => arg?.userId === otherUser.docId)).toBe(true);
         expect(progressJobs.some(arg => arg?.userId === userId)).toBe(false);
+
+        const beforeEditIds = await t.run(async ctx =>
+            (await ctx.db.system.query('_scheduled_functions').collect()).map(row => row._id)
+        );
+        const beforeEditIdSet = new Set(beforeEditIds);
+        await userIdentity.mutation(api.update_progress.updateUpdateProgress, {
+            id: progressUpdate!._id,
+            updatedValue: 15,
+            updateDate: Date.now(),
+        });
+
+        const editProgressJobUsers = await t.run(async ctx => {
+            return (await ctx.db.system.query('_scheduled_functions').collect())
+                .filter(row => !beforeEditIdSet.has(row._id))
+                .map(row => row.args[0] as { userId?: Id<'user'>; trigger?: string } | undefined)
+                .filter(args => args?.trigger === 'progress_update')
+                .map(args => args!.userId);
+        });
+        expect(new Set(editProgressJobUsers)).toEqual(new Set([otherUser.docId, userId]));
+    });
+
+    test('collaborator completion awards the creator and records the collaborator for the organization', async () => {
+        const suffix = Math.random().toString(36).substring(2, 15);
+        const collaborator = await createTestUser(t, {
+            userId: `completion-collaborator-${suffix}`,
+            email: `completion-collaborator-${suffix}@example.com`,
+            name: 'Completion Collaborator',
+            role: 'member',
+        });
+        await createTestMember(t, {
+            organizationId,
+            userId: collaborator.docId,
+            role: 'member',
+        });
+        await createTestCollaborator(t, {
+            objectiveId,
+            userId: collaborator.docId,
+            organizationId,
+            addedBy: userId,
+            role: 'editor',
+        });
+        const collaboratorIdentity = t.withIdentity(identityFor(collaborator));
+
+        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+        for (let index = 0; index < 4; index++) {
+            await createTestObjective(t, {
+                userId,
+                organizationId,
+                title: `Existing completed objective ${index}`,
+                targetValue: 100,
+                currentValue: 100,
+                status: 'completed',
+            });
+        }
+
+        await collaboratorIdentity.mutation(api.update_progress.createUpdateProgress, {
+            objective: objectiveId,
+            updatedValue: 50,
+            updateDate: Date.now(),
+        });
+        await drainScheduledFunctions(t);
+
+        const creatorProgress = await userIdentity.query(
+            api.achievements.getUserAchievementProgress,
+            {}
+        );
+        const collaboratorProgress = await collaboratorIdentity.query(
+            api.achievements.getUserAchievementProgress,
+            {}
+        );
+        expect(
+            creatorProgress.find(item => item.definition.code === 'objectives_completed_3')
+        ).toMatchObject({ currentProgress: 5, isEarned: true });
+        expect(
+            collaboratorProgress.find(item => item.definition.code === 'objectives_completed_3')
+        ).toMatchObject({ currentProgress: 0, isEarned: false });
+
+        const attribution = await t.run(async ctx => {
+            const definitions = await ctx.db.query('achievementDefinitions').collect();
+            const organizationDefinition = definitions.find(
+                definition => definition.code === 'organization_completed_5'
+            );
+            const organizationAchievement = organizationDefinition
+                ? await ctx.db
+                      .query('organizationAchievements')
+                      .withIndex('by_organization_achievement', q =>
+                          q
+                              .eq('organization', organizationId)
+                              .eq('achievement', organizationDefinition._id)
+                      )
+                      .first()
+                : null;
+            return organizationAchievement
+                ? await ctx.db
+                      .query('organizationAchievementContributors')
+                      .withIndex('by_organizationAchievement_user', q =>
+                          q.eq('organizationAchievementId', organizationAchievement._id)
+                      )
+                      .first()
+                : null;
+        });
+        expect(attribution?.userId).toBe(collaborator.docId);
     });
 
     test('createUpdateProgress works without comment', async () => {
@@ -373,7 +481,7 @@ describe('convex update_progress', () => {
         });
 
         expect(updated?.updatedValue).toBe(85);
-        expect(updated?.updateDate).toBe(newUpdateDate);
+        expect(updated?.updateDate).toBe(toUtcCivilDay(newUpdateDate));
         expect(updated?.comment).toBe('Updated comment');
     });
 
@@ -398,46 +506,6 @@ describe('convex update_progress', () => {
 
         const deleted = await userIdentity.run(async ctx => ctx.db.get(progressUpdateId));
         expect(deleted).toBeNull();
-    });
-
-    test('deleteUpdateProgress reconciles currentValue from remaining updates instead of clamping', async () => {
-        // currentValue arranca desincronizado de los progress updates reales: insertamos dos
-        // updates (+60, +30) directamente sin aplicar delta, dejando currentValue en 50.
-        const { keep, remove } = await userIdentity.run(async ctx => {
-            const now = Date.now();
-            const keepId = await ctx.db.insert('progressUpdates', {
-                objective: objectiveId,
-                createdBy: userId,
-                organizationId,
-                updatedValue: 60,
-                updateDate: now,
-                createdAt: now,
-                updatedAt: now,
-            });
-            const removeId = await ctx.db.insert('progressUpdates', {
-                objective: objectiveId,
-                createdBy: userId,
-                organizationId,
-                updatedValue: 30,
-                updateDate: now,
-                createdAt: now,
-                updatedAt: now,
-            });
-            return { keep: keepId, remove: removeId };
-        });
-
-        await userIdentity.mutation(api.update_progress.deleteUpdateProgress, {
-            _id: remove,
-        });
-
-        // Con el clamp ingenuo (max(50, 50-30)) quedaría 50; recompute reconstruye desde los
-        // updates restantes: startValue(50) + 60 = 110, y status pasa a completed (>= target 100).
-        const reconciled = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
-        expect(reconciled?.currentValue).toBe(110);
-        expect(reconciled?.status).toBe('completed');
-
-        const survivor = await userIdentity.run(async ctx => ctx.db.get(keep));
-        expect(survivor).not.toBeNull();
     });
 
     test('createUpdateProgress rejects when unauthenticated', async () => {

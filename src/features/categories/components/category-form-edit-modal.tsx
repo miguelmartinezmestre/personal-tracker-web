@@ -45,7 +45,7 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
                     id: values.id,
                     name: values.name,
                     color: values.color,
-                    icon: values.icon,
+                    icon: values.icon ?? null,
                 });
             }}
             submitLabel={t('buttons.update')}

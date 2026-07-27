@@ -6,7 +6,7 @@ Guia para levantar el proyecto en modo self-hosted en local.
 
 - Docker Desktop activo
 - Node.js >=22.21.1
-- pnpm 10.11.0
+- pnpm 11.0.8
 
 ## 1) Instalar dependencias
 
@@ -24,7 +24,16 @@ pnpm run convex:local
 
 Este script levanta MySQL, Convex backend, Convex dashboard y MailHog. Tambien genera la admin key,
 configura las variables de Convex, despliega las funciones y actualiza `/.env.local` con las URLs
-locales.
+locales, incluida `NEXT_PUBLIC_SITE_URL`.
+
+> ⚠️ **Destructivo:** `pnpm run convex:local` borra la base de datos local en cada ejecucion
+> (`docker compose down -v` + limpieza de `infrastructure/mysql-data*`) y regenera un
+> `BETTER_AUTH_SECRET` nuevo, lo que invalida todas las sesiones. No lo uses para reiniciar un stack
+> con datos que quieras conservar.
+>
+> Ademas, el script **fuerza el proveedor de correo a MailHog** (sobrescribe
+> `EMAIL_PROVIDER`/`SMTP_*` en el deployment), asi que la ruta de Resend no se puede probar con este
+> script.
 
 Comprobacion rapida:
 
@@ -43,6 +52,19 @@ MailHog queda disponible en:
 
 Solo necesitas estos pasos manuales si decides levantar el stack con `docker compose` en lugar de
 `pnpm run convex:local`:
+
+Genera una contraseña local y pásala tanto a MySQL como al backend. El compose no contiene
+credenciales por defecto y todos los puertos publicados se enlazan exclusivamente a `127.0.0.1`:
+
+```bash
+export MYSQL_ROOT_PASSWORD="$(node --input-type=module -e "import { randomBytes } from 'node:crypto'; console.log(randomBytes(24).toString('hex'))")"
+export DATABASE_URL="mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/convex_self_hosted"
+export MYSQL_URL="mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306"
+docker compose -f infrastructure/docker-compose.yml up -d mysql mailhog backend dashboard
+```
+
+Estas variables solo viven en la terminal actual. No reutilices esta configuración HTTP local para
+un despliegue expuesto a Internet.
 
 ```bash
 pnpm run generate-admin-key
@@ -72,12 +94,27 @@ Notas:
 
 - Usa `.env.local` (no `.env`) para desarrollo local en Next.js.
 - Si tienes `CONVEX_DEPLOYMENT` de cloud en `.env.local`, comentalo o eliminalo.
+- El stack local usa HTTP y `DO_NOT_REQUIRE_SSL=1`; una instalación de producción debe usar TLS y
+  `DO_NOT_REQUIRE_SSL=0`.
 
 ## 5) Primer acceso — Setup Wizard
 
 Al acceder a la app por primera vez (sin usuarios), seras redirigido automaticamente a `/setup`. El
 wizard guia la configuracion inicial: nombre de la plataforma, cuenta admin, organizacion,
-categorias y politica de registro.
+categorias y politica de registro. Con `SITE_URL` en `localhost`, el campo `SETUP_SECRET` se puede
+dejar vacio.
+
+Si expones la instalacion en un host que no sea loopback, antes de desplegar las funciones debes
+configurar un secreto de bootstrap independiente. No reutilices `BETTER_AUTH_SECRET`:
+
+```bash
+SETUP_SECRET="$(node --input-type=module -e "import { randomBytes } from 'node:crypto'; console.log(randomBytes(32).toString('base64url'))")"
+pnpm exec convex env set SETUP_SECRET "$SETUP_SECRET"
+```
+
+Introduce ese mismo valor en el campo `SETUP_SECRET` del wizard. El backend exige la cabecera
+durante el primer registro y deja de usarla cuando ya existen los ajustes de plataforma. No guardes
+el valor en una variable `NEXT_PUBLIC_*`.
 
 ## 6) Configurar variables del backend (Convex)
 

@@ -16,7 +16,7 @@ export default function SetupProgress({ currentStep, isStepValid }: SetupProgres
     const stepLabels = SETUP_STEPS.map(step => t(`steps.${step}`));
 
     return (
-        <nav aria-label="Setup progress" className="mb-8">
+        <nav aria-label={t('progressLabel')} className="mb-8">
             <ol className="flex items-center justify-between">
                 {stepLabels.map((label, index) => {
                     const stepName = SETUP_STEPS[index]!;

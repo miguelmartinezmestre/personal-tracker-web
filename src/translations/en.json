@@ -128,6 +128,8 @@
         },
         "upcomingDeadlines": "Upcoming Deadlines",
         "noUpcomingDeadlines": "No deadlines in the next 7 days",
+        "deadlineDaysRemaining": "{days}d",
+        "partialData": "Showing a partial result because there is more data than can be processed at once.",
         "recentActivity": "Recent Activity",
         "activity": {
             "progressUpdates": "Progress updates",
@@ -142,7 +144,8 @@
             "topObjectivesDescription": "Top 5 objectives by progress completion",
             "noDataAvailable": "No data available",
             "updates": "Updates",
-            "progress": "Progress"
+            "progress": "Progress",
+            "partialData": "This chart shows a partial data set."
         }
     },
     "HomePage": {
@@ -173,19 +176,24 @@
         "noAccount": "Don't have an account?",
         "alreadyHaveAccount": "Already have an account?",
         "createAccount": "Create Account",
+        "verificationSentTitle": "Verify your email",
+        "verificationSentDescription": "We sent you a verification link. Open it to return to the invitation and accept it.",
         "errors": {
             "passwordsDontMatch": "Passwords do not match",
+            "weakPassword": "Password must include at least one uppercase letter, one lowercase letter, and one number.",
             "registerFallback": "Error registering user. Please try again."
         }
     },
     "Sidebar": {
         "appName": "Metricas",
+        "navigationLabel": "Main navigation",
         "home": "Home",
         "dashboard": "Dashboard",
         "objectives": "Objectives",
         "categories": "Categories",
         "achievements": "Achievements",
         "notifications": "Notifications",
+        "invitations": "Invitations",
         "sessions": "Sessions",
         "settings": "Settings",
         "users": "Users",
@@ -336,6 +344,7 @@
         "markAllRead": "Mark all as read",
         "allCaughtUp": "You're all caught up.",
         "unreadCount": "You have {count} unread notifications.",
+        "unreadCountAtLeast": "You have at least {count} unread notifications.",
         "table": {
             "columns": {
                 "message": "Message",
@@ -410,7 +419,7 @@
     "DeleteAccount": {
         "trigger": "Delete account",
         "title": "Are you sure?",
-        "description": "This action cannot be undone. This will permanently delete your account and remove your data from our servers.",
+        "description": "This action cannot be undone. Credentials, sessions, private data, and personal workspaces are deleted; contributions in shared organizations are retained only as anonymized history.",
         "confirm": "Delete account"
     },
     "ForgotPassword": {
@@ -541,7 +550,8 @@
             "button": "Filters",
             "activeTitle": "Active Filters",
             "clearAll": "Clear All",
-            "noActive": "No active filters"
+            "noActive": "No active filters",
+            "remove": "Remove {filter} filter"
         },
         "filters": {
             "search": "Search objectives...",
@@ -557,9 +567,9 @@
         },
         "visibility": {
             "label": "Visibility",
-            "private": "Private (owner and collaborators only)",
+            "private": "Private (owner, collaborators, and administrators)",
             "organization": "Organization (visible to all members)",
-            "description": "Private objectives are only visible to you and collaborators. Organization objectives are visible to all members, but only collaborators can add progress."
+            "description": "Private objectives are visible to their owner, collaborators, and administrators. Organization objectives are visible to all members; the owner, editors, and administrators can add progress."
         },
         "collaborators": {
             "manage": "Collaborators",
@@ -586,9 +596,18 @@
                 "viewer": "Viewer"
             }
         },
+        "trash": {
+            "title": "Trash",
+            "loading": "Loading deleted objectives...",
+            "empty": "The trash is empty.",
+            "restore": "Restore",
+            "purge": "Delete permanently",
+            "purgeTitle": "Permanently delete objective?",
+            "purgeDescription": "This permanently removes the objective and its related progress and notifications. It cannot be undone."
+        },
         "confirm": {
             "deleteObjective": "Are you sure you want to delete this objective?",
-            "deleteObjectiveDescription": "This action cannot be undone. This will permanently delete the objective and all associated data.",
+            "deleteObjectiveDescription": "The objective will be moved to the trash, where it can be restored or permanently deleted.",
             "deleteConfirm": "Delete",
             "cancel": "Cancel"
         },
@@ -850,13 +869,19 @@
         "savePassword": "Save Password",
         "confirmPassword": "Confirm Password",
         "newPassword": "New Password",
+        "saving": "Saving...",
+        "passwordMismatch": "Passwords do not match.",
+        "passwordSameAsOld": "The new password must be different from the current password.",
+        "weakPassword": "Password must include at least one uppercase letter, one lowercase letter, and one number.",
+        "passwordUpdateFailed": "We couldn't update your password. Please try again.",
+        "passwordUpdated": "Password updated.",
         "accountUpdated": "Account updated.",
         "emailChangeRequested": "We sent a verification email to confirm your new address.",
         "dangerZone": "Danger Zone",
         "dangerZoneSettings": "Danger Zone",
         "dangerZoneSettingsDescription": "Irreversible actions for your account.",
         "deleteAccountTitle": "Delete Account",
-        "deleteAccountDescription": "Once you delete your account, there is no going back. All your data will be permanently deleted.",
+        "deleteAccountDescription": "Once deleted, your account cannot be recovered. Credentials, sessions, private data, and personal workspaces are removed; shared contributions remain only as anonymized history.",
         "deleteAccountConfirmLabel": "Confirm by entering your email",
         "deleteAccountPlaceholder": "Enter your email address",
         "deleteAccountHelpText": "Type {email} to confirm deletion",
@@ -923,7 +948,7 @@
             },
             "confirm": {
                 "deleteUser": "Are you sure you want to delete this user?",
-                "deleteUserDescription": "This action cannot be undone. This will permanently delete the user and all associated data.",
+                "deleteUserDescription": "This action cannot be undone. Credentials, sessions, private data, and personal workspaces are deleted; shared contributions remain only as anonymized history.",
                 "deleteConfirm": "Delete",
                 "cancel": "Cancel",
                 "banReasonPrompt": "Ban reason (optional):"
@@ -965,6 +990,7 @@
             "emptyWithUser": "No sessions found for this user",
             "emptyNoUser": "Enter a user ID to view sessions",
             "buttons": {
+                "revoke": "Revoke session",
                 "revokeAll": "Revoke all"
             },
             "confirm": {
@@ -1179,6 +1205,7 @@
         "edit": "Edit",
         "delete": "Delete",
         "personalOrgInviteRestricted": "Personal organizations cannot invite members.",
+        "organizationNotFound": "Organization not found.",
         "title": "Organization Members",
         "editOrganizationMemberDescription": "Fill out the form below to edit your organization member. Click save when you're done.",
         "editOrganizationMember": "Edit Organization Member",
@@ -1204,12 +1231,20 @@
         "noPendingTitle": "No pending invitations",
         "noPendingDescription": "You don't have any pending invitations at the moment.",
         "invitedBy": "Invited by",
+        "unknownInviter": "Unknown",
         "accept": "Accept",
         "reject": "Reject",
         "accepting": "Accepting...",
         "errorTitle": "Error",
         "errorDescription": "An error occurred while processing the invitation.",
         "errorAccepting": "Failed to accept the invitation. It may have been cancelled or expired.",
+        "errorRejecting": "Failed to reject the invitation. It may have been cancelled or expired.",
+        "verificationRequiredTitle": "Verify your email before responding",
+        "verificationRequiredDescription": "For security, you must prove ownership of this email address before accepting or rejecting an invitation.",
+        "sendVerificationEmail": "Send verification email",
+        "sendingVerificationEmail": "Sending verification email...",
+        "verificationEmailSent": "Verification email sent. Open its link, then return here to respond to the invitation.",
+        "verificationEmailError": "We could not send the verification email. Please try again.",
         "acceptedTitle": "Invitation Accepted!",
         "acceptedDescription": "You have successfully joined the organization.",
         "redirecting": "Redirecting to dashboard...",
@@ -1235,6 +1270,7 @@
         "title": "Platform Setup",
         "subtitle": "Configure your platform before getting started",
         "footer": "Step {step} of {total}",
+        "progressLabel": "Setup progress",
         "steps": {
             "platform": "Platform",
             "admin": "Admin Account",
@@ -1258,7 +1294,11 @@
         },
         "adminAccount": {
             "title": "Admin Account",
-            "description": "Create the administrator account for this platform."
+            "description": "Create the administrator account for this platform.",
+            "setupSecretLabel": "Setup secret",
+            "setupSecretPlaceholder": "Paste SETUP_SECRET",
+            "setupSecretHint": "Required when the platform is not running on localhost. This is the one-time SETUP_SECRET configured in Convex, not BETTER_AUTH_SECRET.",
+            "setupSecretInvalidLength": "When provided, SETUP_SECRET must contain between {min} and {max} characters."
         },
         "organization": {
             "title": "Organization",
@@ -1274,7 +1314,11 @@
             "description": "Customize the default objective categories. You can edit, add, or remove them.",
             "addNew": "New Category",
             "newPlaceholder": "Category name",
-            "add": "Add"
+            "add": "Add",
+            "nameLabel": "Category {index} name",
+            "colorLabel": "Color for {name}",
+            "iconLabel": "Icon for {name}",
+            "removeLabel": "Remove {name}"
         },
         "registrationPolicy": {
             "title": "Registration Policy",
@@ -1284,7 +1328,9 @@
             "invitationLabel": "Invitation Only",
             "invitationDescription": "Only users with an invitation link can register.",
             "invitationOnly": "Registration by Invitation Only",
-            "invitationOnlyMessage": "This platform requires an invitation to register. Please contact an administrator for access."
+            "invitationOnlyMessage": "This platform requires an invitation to register. Please contact an administrator for access.",
+            "invalidInvitation": "Invalid invitation",
+            "invalidInvitationMessage": "This invitation does not exist, has expired, or has already been used. Request a new invitation from an administrator."
         },
         "summary": {
             "title": "Review Configuration",

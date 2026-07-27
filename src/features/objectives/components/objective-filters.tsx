@@ -96,6 +96,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         value={filters.search}
                         onChange={e => handleFilterChange('search', e.target.value)}
                         className="pl-10"
+                        aria-label={t('filters.search')}
                         data-testid="objectives-search-input"
                     />
                 </div>
@@ -105,7 +106,11 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                         value={filters.status}
                         onValueChange={value => handleFilterChange('status', value)}
                     >
-                        <SelectTrigger className="w-[140px]" data-testid="objectives-status-filter">
+                        <SelectTrigger
+                            className="w-[140px]"
+                            aria-label={t('filters.status')}
+                            data-testid="objectives-status-filter"
+                        >
                             <SelectValue placeholder={t('filters.status')} />
                         </SelectTrigger>
                         <SelectContent>
@@ -127,6 +132,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                     >
                         <SelectTrigger
                             className="w-[140px]"
+                            aria-label={t('filters.category')}
                             data-testid="objectives-category-filter"
                         >
                             <SelectValue placeholder={t('filters.category')} />
@@ -153,6 +159,7 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                     >
                         <SelectTrigger
                             className="w-[140px]"
+                            aria-label={t('filters.deadline')}
                             data-testid="objectives-deadline-filter"
                         >
                             <SelectValue placeholder={t('filters.deadline')} />
@@ -217,6 +224,9 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => removeFilter('search')}
+                                                    aria-label={t('filtersUi.remove', {
+                                                        filter: tCommon('search'),
+                                                    })}
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </Button>
@@ -238,6 +248,9 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => removeFilter('status')}
+                                                    aria-label={t('filtersUi.remove', {
+                                                        filter: t('filters.status'),
+                                                    })}
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </Button>
@@ -255,6 +268,9 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => removeFilter('category')}
+                                                    aria-label={t('filtersUi.remove', {
+                                                        filter: t('filters.category'),
+                                                    })}
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </Button>
@@ -276,6 +292,9 @@ const ObjectivesFilters = React.forwardRef<HTMLDivElement, ObjectivesFiltersProp
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => removeFilter('deadlineRange')}
+                                                    aria-label={t('filtersUi.remove', {
+                                                        filter: t('filters.deadline'),
+                                                    })}
                                                 >
                                                     <X className="h-3 w-3" />
                                                 </Button>

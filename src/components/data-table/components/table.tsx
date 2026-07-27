@@ -48,7 +48,6 @@ export function DataTable<TData extends RowData, TValue>({
     const t = useTranslations('Table');
     const [sorting, setSorting] = useState<SortingState>([]);
     // TanStack Table returns non-memoizable functions; React Compiler skips this hook by design.
-    /* eslint-disable react-hooks/incompatible-library -- useReactTable */
     // react-doctor-disable-next-line react-hooks-js/incompatible-library -- useReactTable
     const table = useReactTable<TData>({
         data,
@@ -63,7 +62,6 @@ export function DataTable<TData extends RowData, TValue>({
               }
             : {}),
     });
-    /* eslint-enable react-hooks/incompatible-library -- useReactTable */
 
     if (isLoading) {
         return (

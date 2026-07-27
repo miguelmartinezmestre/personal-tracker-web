@@ -13,23 +13,25 @@ export async function expectOnRegister(page: Page): Promise<void> {
 }
 
 export async function expectErrorAlert(page: Page, message?: string | RegExp): Promise<void> {
-    const alert = page
+    const applicationAlert = page
         .locator(
-            '[role="alert"], .alert-destructive, [data-slot="alert"], [class*="error"], [class*="destructive"]'
+            '[data-slot="alert"], .alert-destructive, [data-testid*="error-message"], [class*="destructive"]'
         )
         .first();
 
     const errorText = page
-        .getByText(/error|invalid|incorrect|wrong|failed|inválido|incorrecto|falló/i)
+        .getByText(
+            /error|invalid|incorrect|wrong|failed|already exists|already registered|inválido|incorrecto|falló|ya existe|ya registrado/i
+        )
         .first();
 
     const timeout = Date.now() + 5000;
     let foundError = false;
 
     while (Date.now() < timeout && !foundError) {
-        const hasAlert = await alert.isVisible().catch(() => false);
+        const hasApplicationAlert = await applicationAlert.isVisible().catch(() => false);
         const hasErrorText = await errorText.isVisible().catch(() => false);
-        foundError = hasAlert || hasErrorText;
+        foundError = hasApplicationAlert || hasErrorText;
 
         if (!foundError) {
             await page.waitForTimeout(100);
@@ -39,9 +41,8 @@ export async function expectErrorAlert(page: Page, message?: string | RegExp): P
     expect(foundError).toBe(true);
 
     if (message) {
-        const hasAlert = await alert.isVisible().catch(() => false);
-        if (hasAlert) {
-            await expect(alert).toContainText(message);
+        if (await applicationAlert.isVisible().catch(() => false)) {
+            await expect(applicationAlert).toContainText(message);
         }
     }
 }

@@ -128,6 +128,8 @@
         },
         "upcomingDeadlines": "Próximos vencimientos",
         "noUpcomingDeadlines": "Sin vencimientos en los próximos 7 días",
+        "deadlineDaysRemaining": "{days} d",
+        "partialData": "Se muestra un resultado parcial porque hay más datos de los que se pueden procesar a la vez.",
         "recentActivity": "Actividad reciente",
         "activity": {
             "progressUpdates": "Actualizaciones de progreso",
@@ -142,7 +144,8 @@
             "topObjectivesDescription": "Top 5 objetivos por avance completado",
             "noDataAvailable": "Sin datos disponibles",
             "updates": "Actualizaciones",
-            "progress": "Progreso"
+            "progress": "Progreso",
+            "partialData": "Este gráfico muestra un conjunto parcial de datos."
         }
     },
     "HomePage": {
@@ -173,19 +176,24 @@
         "noAccount": "¿No tienes una cuenta?",
         "alreadyHaveAccount": "¿Ya tienes una cuenta?",
         "createAccount": "Crear cuenta",
+        "verificationSentTitle": "Verifica tu correo",
+        "verificationSentDescription": "Te hemos enviado un enlace de verificación. Ábrelo para volver a la invitación y aceptarla.",
         "errors": {
             "passwordsDontMatch": "Las contraseñas no coinciden",
+            "weakPassword": "La contraseña debe incluir al menos una mayúscula, una minúscula y un número.",
             "registerFallback": "Error al registrar usuario. Por favor, intenta de nuevo."
         }
     },
     "Sidebar": {
         "appName": "Métricas",
+        "navigationLabel": "Navegación principal",
         "home": "Inicio",
         "dashboard": "Dashboard",
         "objectives": "Objetivos",
         "categories": "Categorías",
         "achievements": "Logros",
         "notifications": "Notificaciones",
+        "invitations": "Invitaciones",
         "sessions": "Sesiones",
         "settings": "Configuración",
         "users": "Usuarios",
@@ -336,6 +344,7 @@
         "markAllRead": "Marcar todas como leídas",
         "allCaughtUp": "No tienes notificaciones pendientes.",
         "unreadCount": "Tienes {count} notificaciones sin leer.",
+        "unreadCountAtLeast": "Tienes al menos {count} notificaciones sin leer.",
         "table": {
             "columns": {
                 "message": "Mensaje",
@@ -410,7 +419,7 @@
     "DeleteAccount": {
         "trigger": "Borrar cuenta",
         "title": "¿Estás seguro?",
-        "description": "Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta y eliminará tus datos de nuestros servidores.",
+        "description": "Esta acción no se puede deshacer. Se eliminan credenciales, sesiones, datos privados y espacios personales; las contribuciones compartidas solo se conservan como historial anonimizado.",
         "confirm": "Eliminar cuenta"
     },
     "ForgotPassword": {
@@ -541,7 +550,8 @@
             "button": "Filtros",
             "activeTitle": "Filtros activos",
             "clearAll": "Limpiar todo",
-            "noActive": "Sin filtros activos"
+            "noActive": "Sin filtros activos",
+            "remove": "Quitar filtro de {filter}"
         },
         "filters": {
             "search": "Buscar objetivos...",
@@ -557,9 +567,9 @@
         },
         "visibility": {
             "label": "Visibilidad",
-            "private": "Privado (solo propietario y colaboradores)",
+            "private": "Privado (propietario, colaboradores y administradores)",
             "organization": "Organización (visible para todos los miembros)",
-            "description": "Los objetivos privados solo son visibles para ti y tus colaboradores. Los objetivos de organización son visibles para todos los miembros, pero solo los colaboradores pueden añadir progreso."
+            "description": "Los objetivos privados son visibles para su propietario, sus colaboradores y los administradores. Los objetivos de organización son visibles para todos; el propietario, los editores y los administradores pueden añadir progreso."
         },
         "collaborators": {
             "manage": "Colaboradores",
@@ -586,9 +596,18 @@
                 "viewer": "Lector"
             }
         },
+        "trash": {
+            "title": "Papelera",
+            "loading": "Cargando objetivos eliminados...",
+            "empty": "La papelera está vacía.",
+            "restore": "Restaurar",
+            "purge": "Eliminar definitivamente",
+            "purgeTitle": "¿Eliminar el objetivo definitivamente?",
+            "purgeDescription": "Esto elimina para siempre el objetivo y sus progresos y notificaciones relacionados. No se puede deshacer."
+        },
         "confirm": {
             "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
-            "deleteObjectiveDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el objetivo y todos sus datos asociados.",
+            "deleteObjectiveDescription": "El objetivo se moverá a la papelera, donde podrá restaurarse o eliminarse definitivamente.",
             "deleteConfirm": "Eliminar",
             "cancel": "Cancelar"
         },
@@ -850,13 +869,19 @@
         "savePassword": "Guardar contraseña",
         "confirmPassword": "Confirmar contraseña",
         "newPassword": "Nueva contraseña",
+        "saving": "Guardando...",
+        "passwordMismatch": "Las contraseñas no coinciden.",
+        "passwordSameAsOld": "La nueva contraseña debe ser diferente de la contraseña actual.",
+        "weakPassword": "La contraseña debe incluir al menos una mayúscula, una minúscula y un número.",
+        "passwordUpdateFailed": "No hemos podido actualizar tu contraseña. Inténtalo de nuevo.",
+        "passwordUpdated": "Contraseña actualizada.",
         "accountUpdated": "Cuenta actualizada.",
         "emailChangeRequested": "Te hemos enviado un email de verificación para confirmar tu nueva dirección.",
         "dangerZone": "Zona de Peligro",
         "dangerZoneSettings": "Zona de Peligro",
         "dangerZoneSettingsDescription": "Acciones irreversibles para tu cuenta.",
         "deleteAccountTitle": "Eliminar Cuenta",
-        "deleteAccountDescription": "Una vez que elimines tu cuenta, no hay vuelta atrás. Todos tus datos serán eliminados permanentemente.",
+        "deleteAccountDescription": "La cuenta no se podrá recuperar. Se eliminan credenciales, sesiones, datos privados y espacios personales; las contribuciones compartidas solo permanecen como historial anonimizado.",
         "deleteAccountConfirmLabel": "Confirma ingresando tu correo electrónico",
         "deleteAccountPlaceholder": "Ingresa tu correo electrónico",
         "deleteAccountHelpText": "Escribe {email} para confirmar la eliminación",
@@ -923,7 +948,7 @@
             },
             "confirm": {
                 "deleteUser": "¿Estás seguro de que quieres eliminar este usuario?",
-                "deleteUserDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente el usuario y todos sus datos asociados.",
+                "deleteUserDescription": "Esta acción no se puede deshacer. Se eliminan credenciales, sesiones, datos privados y espacios personales; las contribuciones compartidas solo permanecen como historial anonimizado.",
                 "deleteConfirm": "Eliminar",
                 "cancel": "Cancelar",
                 "banReasonPrompt": "Razón del ban (opcional):"
@@ -965,6 +990,7 @@
             "emptyWithUser": "No se encontraron sesiones para este usuario",
             "emptyNoUser": "Ingresa un ID de usuario para ver sus sesiones",
             "buttons": {
+                "revoke": "Revocar sesión",
                 "revokeAll": "Revocar todas"
             },
             "confirm": {
@@ -1179,6 +1205,7 @@
         "edit": "Editar",
         "delete": "Eliminar",
         "personalOrgInviteRestricted": "Las organizaciones personales no pueden invitar miembros.",
+        "organizationNotFound": "No se ha encontrado la organización.",
         "title": "Miembros de la organización",
         "editOrganizationMemberDescription": "Llena el formulario a continuación para editar tu miembro de la organización. Haz clic en guardar cuando hayas terminado.",
         "editOrganizationMember": "Editar miembro de la organización",
@@ -1204,12 +1231,20 @@
         "noPendingTitle": "No hay invitaciones pendientes",
         "noPendingDescription": "No tienes invitaciones pendientes en este momento.",
         "invitedBy": "Invitado por",
+        "unknownInviter": "Desconocido",
         "accept": "Aceptar",
         "reject": "Rechazar",
         "accepting": "Aceptando...",
         "errorTitle": "Error",
         "errorDescription": "Ocurrió un error al procesar la invitación.",
         "errorAccepting": "Error al aceptar la invitación. Puede haber sido cancelada o expirada.",
+        "errorRejecting": "Error al rechazar la invitación. Puede haber sido cancelada o expirada.",
+        "verificationRequiredTitle": "Verifica tu correo antes de responder",
+        "verificationRequiredDescription": "Por seguridad, debes demostrar que esta dirección de correo te pertenece antes de aceptar o rechazar una invitación.",
+        "sendVerificationEmail": "Enviar correo de verificación",
+        "sendingVerificationEmail": "Enviando correo de verificación...",
+        "verificationEmailSent": "Correo de verificación enviado. Abre su enlace y vuelve aquí para responder a la invitación.",
+        "verificationEmailError": "No hemos podido enviar el correo de verificación. Inténtalo de nuevo.",
         "acceptedTitle": "¡Invitación Aceptada!",
         "acceptedDescription": "Te has unido exitosamente a la organización.",
         "redirecting": "Redirigiendo al panel...",
@@ -1235,6 +1270,7 @@
         "title": "Configuración de la Plataforma",
         "subtitle": "Configura tu plataforma antes de comenzar",
         "footer": "Paso {step} de {total}",
+        "progressLabel": "Progreso de la configuración",
         "steps": {
             "platform": "Plataforma",
             "admin": "Cuenta Admin",
@@ -1258,7 +1294,11 @@
         },
         "adminAccount": {
             "title": "Cuenta de Administrador",
-            "description": "Crea la cuenta de administrador para esta plataforma."
+            "description": "Crea la cuenta de administrador para esta plataforma.",
+            "setupSecretLabel": "Secreto de configuración",
+            "setupSecretPlaceholder": "Pega SETUP_SECRET",
+            "setupSecretHint": "Obligatorio cuando la plataforma no se ejecuta en localhost. Es el SETUP_SECRET de un solo uso configurado en Convex, no BETTER_AUTH_SECRET.",
+            "setupSecretInvalidLength": "Si se proporciona, SETUP_SECRET debe contener entre {min} y {max} caracteres."
         },
         "organization": {
             "title": "Organización",
@@ -1274,7 +1314,11 @@
             "description": "Personaliza las categorías predefinidas para objetivos. Puedes editarlas, añadir nuevas o eliminarlas.",
             "addNew": "Nueva Categoría",
             "newPlaceholder": "Nombre de la categoría",
-            "add": "Añadir"
+            "add": "Añadir",
+            "nameLabel": "Nombre de la categoría {index}",
+            "colorLabel": "Color de {name}",
+            "iconLabel": "Icono de {name}",
+            "removeLabel": "Eliminar {name}"
         },
         "registrationPolicy": {
             "title": "Política de Registro",
@@ -1284,7 +1328,9 @@
             "invitationLabel": "Solo por Invitación",
             "invitationDescription": "Solo los usuarios con un enlace de invitación pueden registrarse.",
             "invitationOnly": "Registro Solo por Invitación",
-            "invitationOnlyMessage": "Esta plataforma requiere una invitación para registrarse. Contacta con un administrador para obtener acceso."
+            "invitationOnlyMessage": "Esta plataforma requiere una invitación para registrarse. Contacta con un administrador para obtener acceso.",
+            "invalidInvitation": "Invitación no válida",
+            "invalidInvitationMessage": "Esta invitación no existe, ha caducado o ya se ha utilizado. Solicita una nueva invitación a un administrador."
         },
         "summary": {
             "title": "Revisar Configuración",

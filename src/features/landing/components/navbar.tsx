@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/platform/theme/theme-switcher';
-import { useState } from 'react';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';
 import { useSession } from '@/features/auth/hooks/use-session';
@@ -12,11 +11,10 @@ type LinkArray = LinkItem[];
 
 export default function NavBar() {
     const t = useTranslations('HomePage');
-
-    const [links] = useState<LinkArray>([
+    const links: LinkArray = [
         { name: t('register'), href: '/register' },
         { name: t('login'), href: '/login' },
-    ]);
+    ];
 
     const sessionQuery = useSession();
     const isAuthenticated = Boolean(sessionQuery?.data?.user);
