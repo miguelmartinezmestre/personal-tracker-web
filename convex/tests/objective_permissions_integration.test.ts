@@ -151,6 +151,42 @@ describe('objective layered permissions integration', () => {
         ).rejects.toThrow();
     });
 
+    test('objective pagination returns a safe short page and advances past RLS-hidden rows', async () => {
+        const visibleObjectiveId = await createTestObjective(t, {
+            userId: ownerUser.docId,
+            ownerId: ownerUser.docId,
+            organizationId,
+            title: 'Visible after private page',
+            targetValue: 100,
+            visibility: 'organization',
+        });
+
+        for (let index = 0; index < 3; index += 1) {
+            await createTestObjective(t, {
+                userId: ownerUser.docId,
+                ownerId: ownerUser.docId,
+                organizationId,
+                title: `Hidden private objective ${index}`,
+                targetValue: 100,
+                visibility: 'private',
+            });
+        }
+
+        const firstPage = await outsiderIdentity.query(api.objectives.getObjectives, {
+            paginationOpts: { numItems: 2, cursor: null },
+        });
+
+        expect(firstPage.page).toEqual([]);
+        expect(firstPage.isDone).toBe(false);
+        expect(firstPage.continueCursor).toBeTruthy();
+
+        const secondPage = await outsiderIdentity.query(api.objectives.getObjectives, {
+            paginationOpts: { numItems: 2, cursor: firstPage.continueCursor },
+        });
+
+        expect(secondPage.page.some(objective => objective._id === visibleObjectiveId)).toBe(true);
+    });
+
     test('editor can contribute to private objective', async () => {
         const progress = await editorIdentity.mutation(api.update_progress.createUpdateProgress, {
             objective: privateObjectiveId,
@@ -200,10 +236,26 @@ describe('objective layered permissions integration', () => {
         });
         expect(editorSearch.some(objective => objective._id === privateObjectiveId)).toBe(false);
 
+        const ownerList = await ownerIdentity.query(api.objectives.getObjectives, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
+        expect(ownerList.page.some(objective => objective._id === privateObjectiveId)).toBe(false);
+
+        const trash = await ownerIdentity.query(api.objectives.getDeletedObjectives, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
+        expect(trash.page.some(objective => objective._id === privateObjectiveId)).toBe(true);
+
         const restored = await ownerIdentity.mutation(api.objectives.restoreObjective, {
             id: privateObjectiveId,
         });
         expect(restored?.deletedAt).toBeUndefined();
+
+        await expect(
+            ownerIdentity.mutation(api.objectives.purgeObjective, {
+                id: privateObjectiveId,
+            })
+        ).rejects.toThrow();
     });
 
     test('admin can manage collaborators and transfer ownership', async () => {
@@ -226,9 +278,26 @@ describe('objective layered permissions integration', () => {
 
     test('reassigns ownership when owner leaves organization', async () => {
         await t.run(async ctx => {
-            const { reassignObjectivesOnMemberLeave } =
-                await import('../domain/objectives/collaborators');
-            await reassignObjectivesOnMemberLeave(ctx, organizationId, ownerUser.docId);
+            const membership = await ctx.db
+                .query('member')
+                .withIndex('by_organizationId_and_userId', q =>
+                    q.eq('organizationId', organizationId).eq('userId', ownerUser.docId)
+                )
+                .first();
+            if (membership) await ctx.db.delete('member', membership._id);
+
+            const { continueMemberLeaveCleanup } =
+                await import('../jobs/organizations/memberLeaveCleanup');
+            await continueMemberLeaveCleanup(ctx, {
+                organizationId,
+                userId: ownerUser.docId,
+                phase: 'collaborators',
+            });
+            await continueMemberLeaveCleanup(ctx, {
+                organizationId,
+                userId: ownerUser.docId,
+                phase: 'objectives',
+            });
         });
 
         const objective = await t.run(async ctx => ctx.db.get('objectives', privateObjectiveId));

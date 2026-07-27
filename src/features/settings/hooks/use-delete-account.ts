@@ -12,9 +12,10 @@ export function useDeleteAccount() {
 
     const deleteAccountMutation = useMutation({
         mutationFn: async (password: string) => {
-            await authClient.deleteUser({
-                password: password,
-            });
+            const result = await authClient.softDeleteUser({ password });
+            if (result.error) {
+                throw new Error(result.error.message || t('deleteAccountFailed'));
+            }
         },
         onSuccess: () => {
             toast.success(t('deleteAccountSuccess'));

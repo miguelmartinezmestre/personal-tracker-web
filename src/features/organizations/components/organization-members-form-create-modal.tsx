@@ -25,22 +25,25 @@ import {
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
-import { OrganizationRole } from '../types/roles';
+import { OrganizationRole, type OrganizationRoleValue } from '../types/roles';
 import FormModal from '@/components/forms/form-modal';
 
 interface CreateOrganizationMemberFormModalProps {
     organizationId: string;
+    canAssignOwner: boolean;
 }
 
 export default function CreateOrganizationMemberFormModal({
     organizationId,
+    canAssignOwner,
 }: CreateOrganizationMemberFormModalProps) {
     const t = useTranslations('OrganizationMembers');
     const tCommon = useTranslationsCommon('Common');
     const createOrganizationMember = useCreateOrganizationMember();
 
     const roleOptions = [
-        { value: OrganizationRole.OWNER, label: t('roles.owner') },
+        ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
+        { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
 
@@ -69,7 +72,7 @@ export default function CreateOrganizationMemberFormModal({
                 await createOrganizationMember.mutateAsync({
                     organizationId: organizationId,
                     email: values.email,
-                    role: values.role as OrganizationRole,
+                    role: values.role as OrganizationRoleValue,
                 });
             }}
             submitLabel={t('saveOrganizationMember')}

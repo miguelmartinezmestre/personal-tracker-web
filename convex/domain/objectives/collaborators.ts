@@ -8,6 +8,15 @@ import {
 } from '../../utils/constants';
 import { isOrganizationAdminRole } from './permissions';
 
+const MAX_COLLABORATORS_PER_SCOPE = 1000;
+const SUCCESSOR_CANDIDATE_LIMIT = 100;
+
+function assertWithinCollaboratorLimit(rows: readonly unknown[]) {
+    if (rows.length > MAX_COLLABORATORS_PER_SCOPE) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_ID_LIMIT_EXCEEDED);
+    }
+}
+
 export async function getCollaboratorRoleForUser(
     ctx: { db: QueryCtx['db'] },
     objectiveId: Id<'objectives'>,
@@ -21,29 +30,17 @@ export async function getCollaboratorRoleForUser(
     return row?.role ?? null;
 }
 
-export async function getCollaboratedObjectiveIdsForUser(
-    ctx: { db: QueryCtx['db'] },
-    userId: Id<'user'>,
-    organizationId: Id<'organization'>
-): Promise<Set<Id<'objectives'>>> {
-    const rows = await ctx.db
-        .query('objectiveCollaborators')
-        .withIndex('by_user_organization', q =>
-            q.eq('userId', userId).eq('organizationId', organizationId)
-        )
-        .collect();
-
-    return new Set(rows.map(row => row.objectiveId));
-}
-
 export async function listCollaboratorsForObjective(
     ctx: { db: QueryCtx['db'] },
     objectiveId: Id<'objectives'>
 ) {
-    return await ctx.db
+    const rows = await ctx.db
         .query('objectiveCollaborators')
         .withIndex('by_objective', q => q.eq('objectiveId', objectiveId))
-        .collect();
+        .take(MAX_COLLABORATORS_PER_SCOPE + 1);
+
+    assertWithinCollaboratorLimit(rows);
+    return rows;
 }
 
 export async function addObjectiveCollaborator(
@@ -133,32 +130,56 @@ export async function findObjectiveSuccessorOwner(
     objective: Pick<Doc<'objectives'>, '_id' | 'organizationId'>,
     excludeUserId: Id<'user'>
 ): Promise<Id<'user'> | null> {
-    const collaborators = await listCollaboratorsForObjective(ctx, objective._id);
-    const editorCollaborators = collaborators
-        .filter(
-            collaborator =>
-                collaborator.role === OBJECTIVE_COLLABORATOR_ROLE.EDITOR &&
-                collaborator.userId !== excludeUserId
+    const editorCollaborators = await ctx.db
+        .query('objectiveCollaborators')
+        .withIndex('by_objective_role_createdAt', q =>
+            q.eq('objectiveId', objective._id).eq('role', OBJECTIVE_COLLABORATOR_ROLE.EDITOR)
         )
-        .sort((a, b) => a.createdAt - b.createdAt);
+        .order('asc')
+        .take(SUCCESSOR_CANDIDATE_LIMIT);
 
-    if (editorCollaborators[0]) {
-        return editorCollaborators[0].userId;
+    for (const editor of editorCollaborators) {
+        if (editor.userId === excludeUserId) continue;
+
+        // Collaborator cleanup is asynchronous. A stale editor row can still
+        // exist briefly after that user has left the organization, so never
+        // promote it without re-validating the membership invariant.
+        const membership = await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', objective.organizationId).eq('userId', editor.userId)
+            )
+            .first();
+        if (membership) {
+            return editor.userId;
+        }
     }
 
-    const members = await ctx.db
-        .query('member')
-        .withIndex('organizationId', q => q.eq('organizationId', objective.organizationId))
-        .collect();
+    const [owners, admins] = await Promise.all([
+        ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_role_createdAt', q =>
+                q.eq('organizationId', objective.organizationId).eq('role', 'owner')
+            )
+            .order('asc')
+            .take(SUCCESSOR_CANDIDATE_LIMIT),
+        ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_role_createdAt', q =>
+                q.eq('organizationId', objective.organizationId).eq('role', 'admin')
+            )
+            .order('asc')
+            .take(SUCCESSOR_CANDIDATE_LIMIT),
+    ]);
 
-    const admin = members.find(
-        member => member.userId !== excludeUserId && isOrganizationAdminRole(member.role)
-    );
+    const admin = [...owners, ...admins]
+        .filter(member => member.userId !== excludeUserId && isOrganizationAdminRole(member.role))
+        .sort((left, right) => left.createdAt - right.createdAt)[0];
 
     return admin?.userId ?? null;
 }
 
-async function reassignOwnedObjective(
+export async function reassignOwnedObjective(
     ctx: MutationCtx,
     objective: Pick<Doc<'objectives'>, '_id'>,
     nextOwnerId: Id<'user'>
@@ -177,182 +198,5 @@ async function reassignOwnedObjective(
         .first();
     if (promotedCollaborator) {
         await ctx.db.delete('objectiveCollaborators', promotedCollaborator._id);
-    }
-}
-
-export async function reassignObjectivesOnMemberLeave(
-    ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    departingUserId: Id<'user'>
-) {
-    const collaboratorRows = await ctx.db
-        .query('objectiveCollaborators')
-        .withIndex('by_user_organization', q =>
-            q.eq('userId', departingUserId).eq('organizationId', organizationId)
-        )
-        .collect();
-
-    for (const collaborator of collaboratorRows) {
-        await ctx.db.delete('objectiveCollaborators', collaborator._id);
-    }
-
-    const ownedObjectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_owner', q => q.eq('ownerId', departingUserId))
-        .collect();
-
-    const objectivesToReassign = ownedObjectives.filter(
-        objective =>
-            objective.organizationId === organizationId && objective.deletedAt === undefined
-    );
-
-    for (const objective of objectivesToReassign) {
-        const nextOwnerId = await findObjectiveSuccessorOwner(ctx, objective, departingUserId);
-        if (!nextOwnerId) {
-            continue;
-        }
-        await reassignOwnedObjective(ctx, objective, nextOwnerId);
-    }
-}
-
-const CASCADE_BATCH_SIZE = 1000;
-
-/**
- * Cleans up a user's data when their account is deleted so nothing is left
- * pointing at a non-existent user. Owned objectives are reassigned to a
- * successor across every organization; when none exists they are soft-deleted
- * (tombstoned) rather than left visible. The user's memberships, collaborator
- * rows, achievements, notification preferences and notifications are removed.
- */
-export async function cascadeUserDeletion(ctx: MutationCtx, userId: Id<'user'>) {
-    const now = Date.now();
-
-    const organizationIds = new Set<Id<'organization'>>();
-
-    let membershipCursor: string | null = null;
-    let membershipsDone = false;
-    while (!membershipsDone) {
-        const page = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .paginate({ numItems: CASCADE_BATCH_SIZE, cursor: membershipCursor });
-
-        for (const membership of page.page) {
-            organizationIds.add(membership.organizationId);
-        }
-
-        membershipsDone = page.isDone;
-        membershipCursor = page.continueCursor;
-    }
-
-    let objectiveCursor: string | null = null;
-    let objectivesDone = false;
-    while (!objectivesDone) {
-        const page = await ctx.db
-            .query('objectives')
-            .withIndex('by_owner', q => q.eq('ownerId', userId))
-            .paginate({ numItems: CASCADE_BATCH_SIZE, cursor: objectiveCursor });
-
-        for (const objective of page.page) {
-            organizationIds.add(objective.organizationId);
-            if (objective.deletedAt !== undefined) {
-                continue;
-            }
-            const nextOwnerId = await findObjectiveSuccessorOwner(ctx, objective, userId);
-            if (nextOwnerId) {
-                await reassignOwnedObjective(ctx, objective, nextOwnerId);
-            } else {
-                await ctx.db.patch('objectives', objective._id, {
-                    deletedAt: now,
-                    deletedBy: userId,
-                    updatedAt: now,
-                });
-            }
-        }
-
-        objectivesDone = page.isDone;
-        objectiveCursor = page.continueCursor;
-    }
-
-    let collaborations = await ctx.db
-        .query('objectiveCollaborators')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(CASCADE_BATCH_SIZE);
-    while (collaborations.length > 0) {
-        for (const collaboration of collaborations) {
-            organizationIds.add(collaboration.organizationId);
-            await ctx.db.delete('objectiveCollaborators', collaboration._id);
-        }
-
-        collaborations = await ctx.db
-            .query('objectiveCollaborators')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .take(CASCADE_BATCH_SIZE);
-    }
-
-    let achievements = await ctx.db
-        .query('obtainedAchievements')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(CASCADE_BATCH_SIZE);
-    while (achievements.length > 0) {
-        for (const achievement of achievements) {
-            await ctx.db.delete('obtainedAchievements', achievement._id);
-        }
-
-        achievements = await ctx.db
-            .query('obtainedAchievements')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .take(CASCADE_BATCH_SIZE);
-    }
-
-    let preferences = await ctx.db
-        .query('notificationPreferences')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(CASCADE_BATCH_SIZE);
-    while (preferences.length > 0) {
-        for (const preference of preferences) {
-            await ctx.db.delete('notificationPreferences', preference._id);
-        }
-
-        preferences = await ctx.db
-            .query('notificationPreferences')
-            .withIndex('by_user', q => q.eq('userId', userId))
-            .take(CASCADE_BATCH_SIZE);
-    }
-
-    for (const organizationId of organizationIds) {
-        let notifications = await ctx.db
-            .query('notifications')
-            .withIndex('by_user_organization_date', q =>
-                q.eq('userId', userId).eq('organizationId', organizationId)
-            )
-            .take(CASCADE_BATCH_SIZE);
-        while (notifications.length > 0) {
-            for (const notification of notifications) {
-                await ctx.db.delete('notifications', notification._id);
-            }
-
-            notifications = await ctx.db
-                .query('notifications')
-                .withIndex('by_user_organization_date', q =>
-                    q.eq('userId', userId).eq('organizationId', organizationId)
-                )
-                .take(CASCADE_BATCH_SIZE);
-        }
-    }
-
-    let membershipsToDelete = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(CASCADE_BATCH_SIZE);
-    while (membershipsToDelete.length > 0) {
-        for (const membership of membershipsToDelete) {
-            await ctx.db.delete('member', membership._id);
-        }
-
-        membershipsToDelete = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .take(CASCADE_BATCH_SIZE);
     }
 }

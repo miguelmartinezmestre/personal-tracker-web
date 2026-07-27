@@ -13,7 +13,8 @@ const objectiveLifecycleResultValidator = v.object({
 export const objectiveLifecycle = workflow.define({
     args: {
         objectiveId: v.id('objectives'),
-        userId: v.id('user'),
+        individualUserId: v.id('user'),
+        organizationContributorUserId: v.id('user'),
     },
     returns: objectiveLifecycleResultValidator,
     handler: async (
@@ -33,15 +34,17 @@ export const objectiveLifecycle = workflow.define({
             }
         );
 
-        if (syncResult.found && syncResult.completedNow) {
+        if (syncResult.found && (syncResult.completedNow || syncResult.earlyBirdCompletedNow)) {
             await step.runMutation(internal.achievements.checkUserAchievements, {
-                userId: args.userId,
+                userId: args.individualUserId,
                 organizationId: syncResult.organizationId,
                 trigger: 'objective_completed',
             });
+        }
+        if (syncResult.found && syncResult.completedNow) {
             await step.runMutation(internal.achievements.checkOrganizationAchievements, {
                 organizationId: syncResult.organizationId,
-                userId: args.userId,
+                userId: args.organizationContributorUserId,
                 trigger: 'objective_completed',
             });
         }

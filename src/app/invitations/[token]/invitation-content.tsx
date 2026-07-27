@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { getInvitationCallbackPath } from '@shared/auth-security';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
@@ -23,6 +25,10 @@ export default function InvitationContent({ token }: InvitationContentProps) {
 
     const [status, setStatus] = useState<InvitationStatus>('ready');
     const [errorMessage, setErrorMessage] = useState('');
+    const loginSearchParams = new URLSearchParams({
+        callbackUrl: getInvitationCallbackPath(token),
+    });
+    const registerSearchParams = new URLSearchParams({ invitation: token });
 
     useEffect(() => {
         if (status === 'accepted') {
@@ -38,9 +44,10 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         setErrorMessage('');
 
         try {
-            await authClient.organization.acceptInvitation({
+            const result = await authClient.organization.acceptInvitation({
                 invitationId: token,
             });
+            throwIfAuthClientError(result);
             setStatus('accepted');
         } catch {
             setStatus('error');
@@ -69,9 +76,9 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         <CardDescription>{errorMessage || t('errorDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Link href="/dashboard/home">
-                            <Button className="w-full">{t('goToDashboard')}</Button>
-                        </Link>
+                        <Button asChild className="w-full">
+                            <Link href="/dashboard/home">{t('goToDashboard')}</Link>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
@@ -105,7 +112,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Button
-                            onClick={() => router.push(`/login?callbackURL=/invitations/${token}`)}
+                            onClick={() => router.push(`/login?${loginSearchParams.toString()}`)}
                             className="w-full"
                         >
                             {t('login')}
@@ -115,7 +122,9 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                             <Button
                                 variant="link"
                                 className="h-auto p-0"
-                                onClick={() => router.push(`/register?invitation=${token}`)}
+                                onClick={() =>
+                                    router.push(`/register?${registerSearchParams.toString()}`)
+                                }
                             >
                                 {t('register')}
                             </Button>
@@ -148,11 +157,9 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                             t('accept')
                         )}
                     </Button>
-                    <Link href="/dashboard/home">
-                        <Button variant="ghost" className="w-full">
-                            {t('cancel')}
-                        </Button>
-                    </Link>
+                    <Button asChild variant="ghost" className="w-full">
+                        <Link href="/dashboard/home">{t('cancel')}</Link>
+                    </Button>
                 </CardContent>
             </Card>
         </div>

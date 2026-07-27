@@ -1,5 +1,6 @@
 import type { Doc } from '../../_generated/dataModel';
 import { TIME } from '../../utils/constants';
+import { toUtcCivilDay } from '../../../shared/civil-date';
 
 const DEADLINE_SOON_DAYS = 3;
 // Stop emitting daily "overdue" reminders after this many days so a
@@ -22,35 +23,37 @@ export function getDeadlineDayWindow(now: number) {
     };
 }
 
-const formatDate = (timestamp: number) => new Date(timestamp).toLocaleDateString();
+const formatDate = (timestamp: number) =>
+    new Intl.DateTimeFormat('en', { timeZone: 'UTC' }).format(new Date(timestamp));
 
 export function buildDeadlineMessage(
     objective: Doc<'objectives'>,
-    now: number,
+    _now: number,
     dayStart: number,
     dayEnd: number
 ) {
     if (!objective.deadline) return null;
+    const deadlineDay = toUtcCivilDay(objective.deadline);
 
-    if (objective.deadline <= now) {
-        const daysOverdue = Math.max(1, Math.ceil((now - objective.deadline) / TIME.DAY_MS));
+    if (deadlineDay < dayStart) {
+        const daysOverdue = Math.max(1, Math.round((dayStart - deadlineDay) / TIME.DAY_MS));
         if (daysOverdue > OVERDUE_REMINDER_LIMIT_DAYS) {
             return null;
         }
         return `Objective "${objective.title}" is overdue by ${daysOverdue} day${
             daysOverdue === 1 ? '' : 's'
-        } (due on ${formatDate(objective.deadline)}).`;
+        } (due on ${formatDate(deadlineDay)}).`;
     }
 
-    const isDueToday = objective.deadline >= dayStart && objective.deadline < dayEnd;
+    const isDueToday = deadlineDay >= dayStart && deadlineDay < dayEnd;
     if (isDueToday) {
-        return `Objective "${objective.title}" is due today (${formatDate(objective.deadline)}).`;
+        return `Objective "${objective.title}" is due today (${formatDate(deadlineDay)}).`;
     }
 
-    const daysUntil = Math.ceil((objective.deadline - now) / TIME.DAY_MS);
+    const daysUntil = Math.round((deadlineDay - dayStart) / TIME.DAY_MS);
     if (daysUntil > DEADLINE_SOON_DAYS) return null;
 
     return `Objective "${objective.title}" is due in ${daysUntil} day${
         daysUntil === 1 ? '' : 's'
-    } (${formatDate(objective.deadline)}).`;
+    } (${formatDate(deadlineDay)}).`;
 }

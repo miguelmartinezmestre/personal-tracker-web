@@ -16,42 +16,42 @@ export async function markAllReadBatchJob(
     const now = Date.now();
     const totalProcessed = args.totalProcessed ?? 0;
 
-    const page = await ctx.db
+    // Do not advance a cursor over `read=false` while patching that same index
+    // field. Process the current prefix repeatedly; each patched row leaves the
+    // index, so the next invocation cannot skip unread notifications.
+    const notifications = await ctx.db
         .query('notifications')
         .withIndex('by_user_organization_read', q =>
             q.eq('userId', args.userId).eq('organizationId', args.organizationId).eq('read', false)
         )
-        .paginate({
-            numItems: BATCH_SIZE,
-            cursor: args.cursor ?? null,
-        });
+        .take(BATCH_SIZE);
 
-    for (const notification of page.page) {
+    for (const notification of notifications) {
         await ctx.db.patch('notifications', notification._id, {
             read: true,
             updatedAt: now,
         });
     }
 
-    const newTotal = totalProcessed + page.page.length;
+    const newTotal = totalProcessed + notifications.length;
 
-    if (!page.isDone) {
+    if (notifications.length === BATCH_SIZE) {
         await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
             userId: args.userId,
             organizationId: args.organizationId,
-            cursor: page.continueCursor,
+            cursor: null,
             totalProcessed: newTotal,
         });
         return {
             status: 'in_progress',
-            processedInBatch: page.page.length,
+            processedInBatch: notifications.length,
             totalProcessed: newTotal,
         };
     }
 
     return {
         status: 'completed',
-        processedInBatch: page.page.length,
+        processedInBatch: notifications.length,
         totalProcessed: newTotal,
     };
 }

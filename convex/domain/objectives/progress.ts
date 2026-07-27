@@ -7,13 +7,15 @@ import { shouldSendProgressNotification } from '../notifications/preferences';
 import { ERROR_CODES } from '../../utils/constants';
 import {
     applyObjectiveProgressDelta,
-    recomputeObjectiveFromProgress,
+    normalizeUpdateDate,
+    reconcileObjectiveMetrics,
     validateObjectiveNotCompleted,
     validateProgressDelta,
-    validateUpdateDate,
 } from './metrics';
 import { assertObjectiveAction, resolveObjectivePermissionSubject } from './access';
 import { canEditProgress } from './permissions';
+import { PROGRESS_COMMENT_MAX_LENGTH } from '../../../shared/input-constraints';
+import { assertOptionalBoundedString } from '../../utils/inputValidation';
 
 const PROGRESS_SERIES_LIMIT = 500;
 
@@ -43,63 +45,71 @@ async function insertObjectiveCompletedNotificationIfEnabled(
 }
 
 /**
- * Schedules both the individual and the organization achievement evaluators for
- * a given trigger. Both scopes must be checked together so that org-level
- * achievements (org objectives created/completed, org streak) are actually
- * awarded — previously only the individual scope was ever scheduled.
+ * Schedules achievement evaluators while preserving their distinct attribution:
+ * individual metrics belong to the user whose data is counted, while an
+ * organization award records the user who caused the organization event.
  */
 export async function scheduleAchievementChecks(
     ctx: MutationCtx,
     args: {
-        userId: Id<'user'>;
+        individualUserId: Id<'user'>;
+        organizationContributorUserId?: Id<'user'>;
         organizationId: Id<'organization'>;
         trigger: AchievementTrigger;
     }
 ) {
     await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-        userId: args.userId,
+        userId: args.individualUserId,
         organizationId: args.organizationId,
         trigger: args.trigger,
     });
-    await ctx.scheduler.runAfter(0, internal.achievements.checkOrganizationAchievements, {
-        organizationId: args.organizationId,
-        userId: args.userId,
-        trigger: args.trigger,
-    });
+    if (args.organizationContributorUserId) {
+        await ctx.scheduler.runAfter(0, internal.achievements.checkOrganizationAchievements, {
+            organizationId: args.organizationId,
+            userId: args.organizationContributorUserId,
+            trigger: args.trigger,
+        });
+    }
 }
 
 /**
- * Recomputes an objective's completion state from its progress history
- * *synchronously* and emits the completion side effects (notification +
- * achievement checks) when it transitions to completed. Used by objective
- * definition changes (update/restore) so the status is never left stale if the
- * asynchronous lifecycle workflow fails to start. Idempotent: a subsequent
- * recompute observes the already-completed status and does nothing.
+ * Reconciles an objective's completion state from its maintained current value
+ * *synchronously* and emits the relevant side effects when it transitions to
+ * completed or first qualifies as an early bird after a deadline edit. Used by
+ * objective definition changes (update/restore) so status and achievements do
+ * not depend on the asynchronous lifecycle workflow. Idempotent: a subsequent
+ * reconciliation observes the materialized state and does nothing.
  */
 export async function finalizeObjectiveCompletion(
     ctx: MutationCtx,
     objectiveId: Id<'objectives'>,
     actingUserId: Id<'user'>
-): Promise<{ completedNow: boolean }> {
-    const { completedNow } = await recomputeObjectiveFromProgress(ctx, objectiveId);
-    if (!completedNow) {
-        return { completedNow };
+): Promise<{ completedNow: boolean; earlyBirdCompletedNow: boolean }> {
+    const { completedNow, earlyBirdCompletedNow } = await reconcileObjectiveMetrics(
+        ctx,
+        objectiveId
+    );
+    if (!completedNow && !earlyBirdCompletedNow) {
+        return { completedNow, earlyBirdCompletedNow };
     }
 
     const objective = await ctx.db.get('objectives', objectiveId);
     if (!objective) {
-        return { completedNow };
+        return { completedNow, earlyBirdCompletedNow };
     }
 
-    await insertObjectiveCompletedNotificationIfEnabled(ctx, objective);
+    if (completedNow) {
+        await insertObjectiveCompletedNotificationIfEnabled(ctx, objective);
+    }
 
     await scheduleAchievementChecks(ctx, {
-        userId: actingUserId,
+        individualUserId: objective.createdBy,
+        organizationContributorUserId: completedNow ? actingUserId : undefined,
         organizationId: objective.organizationId,
         trigger: 'objective_completed',
     });
 
-    return { completedNow };
+    return { completedNow, earlyBirdCompletedNow };
 }
 
 type ProgressMutationCtx = MutationCtx & {
@@ -150,9 +160,10 @@ export async function createProgressUpdate(
 
     await assertObjectiveAction(ctx, objective, 'contributeProgress');
 
-    validateUpdateDate(args.updateDate);
+    const updateDate = normalizeUpdateDate(args.updateDate);
     validateProgressDelta(args.updatedValue, objective.currentValue);
     validateObjectiveNotCompleted(objective.status);
+    assertOptionalBoundedString(args.comment, PROGRESS_COMMENT_MAX_LENGTH);
 
     const now = Date.now();
     const progressUpdateId = await ctx.db.insert('progressUpdates', {
@@ -160,7 +171,7 @@ export async function createProgressUpdate(
         createdBy: args.actingUserId,
         organizationId: objective.organizationId,
         updatedValue: args.updatedValue,
-        updateDate: args.updateDate,
+        updateDate,
         comment: args.comment,
         createdAt: now,
         updatedAt: now,
@@ -194,14 +205,16 @@ export async function createProgressUpdate(
     }
 
     await scheduleAchievementChecks(ctx, {
-        userId: args.actingUserId,
+        individualUserId: args.actingUserId,
+        organizationContributorUserId: args.actingUserId,
         organizationId: objective.organizationId,
         trigger: 'progress_update',
     });
 
     if (completedNow) {
         await scheduleAchievementChecks(ctx, {
-            userId: args.actingUserId,
+            individualUserId: objective.createdBy,
+            organizationContributorUserId: args.actingUserId,
             organizationId: objective.organizationId,
             trigger: 'objective_completed',
         });
@@ -223,11 +236,7 @@ export async function listProgressUpdatesByObjective(
         .order('desc')
         .paginate(args.paginationOpts);
 
-    return {
-        page: results.page,
-        continueCursor: results.continueCursor,
-        isDone: results.isDone,
-    };
+    return results;
 }
 
 export async function getProgressSeriesByObjective(
@@ -271,17 +280,18 @@ export async function updateProgressUpdate(
         throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
     }
 
-    validateUpdateDate(args.updateDate);
+    const updateDate = normalizeUpdateDate(args.updateDate);
+    assertOptionalBoundedString(args.comment, PROGRESS_COMMENT_MAX_LENGTH);
     // Validate against the true resulting value: the objective's current value
     // without this entry's previous contribution, plus its new contribution.
     // (Editing/deleting a past entry is allowed even once the objective is
-    // completed — the recompute may legitimately re-open it — so unlike
+    // completed — the delta may legitimately re-open it — so unlike
     // creating a new entry there is no "already completed" guard here.)
     validateProgressDelta(args.updatedValue, objective.currentValue - existing.updatedValue);
 
     await ctx.db.patch('progressUpdates', args.id, {
         updatedValue: args.updatedValue,
-        updateDate: args.updateDate,
+        updateDate,
         comment: args.comment,
         updatedAt: Date.now(),
     });
@@ -293,14 +303,16 @@ export async function updateProgressUpdate(
     );
 
     await scheduleAchievementChecks(ctx, {
-        userId: ctx.userId,
+        individualUserId: existing.createdBy,
+        organizationContributorUserId: ctx.userId,
         organizationId: objective.organizationId,
         trigger: 'progress_update',
     });
 
     if (completedNow) {
         await scheduleAchievementChecks(ctx, {
-            userId: ctx.userId,
+            individualUserId: objective.createdBy,
+            organizationContributorUserId: ctx.userId,
             organizationId: objective.organizationId,
             trigger: 'objective_completed',
         });
@@ -327,10 +339,12 @@ export async function deleteProgressUpdate(
         await ctx.db.delete('progressUpdates', args.id);
         return { success: true } as const;
     }
+    if (objective.deletedAt !== undefined) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_DELETED);
+    }
 
     await ctx.db.delete('progressUpdates', args.id);
-
-    await recomputeObjectiveFromProgress(ctx, objective._id);
+    await applyObjectiveProgressDelta(ctx, objective._id, -existing.updatedValue);
 
     return { success: true } as const;
 }

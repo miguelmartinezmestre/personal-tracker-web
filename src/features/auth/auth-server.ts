@@ -21,6 +21,10 @@ const createRSCContext = cache(async () =>
 const caller = createCaller(createRSCContext);
 const AUTH_REQUIRED_ERROR = 'AUTH_REQUIRED';
 
+export function isAuthRequiredError(error: unknown): boolean {
+    return error instanceof Error && error.message.includes(AUTH_REQUIRED_ERROR);
+}
+
 async function withAuthOptions<Func extends FunctionReference<'query' | 'mutation'>>(
     args: ArgsAndOptions<Func, NextjsOptions>
 ): Promise<ArgsAndOptions<Func, NextjsOptions>> {

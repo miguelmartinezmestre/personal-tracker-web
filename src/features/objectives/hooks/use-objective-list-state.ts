@@ -33,6 +33,8 @@ export function useObjectiveListState() {
 
     const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts, reset: resetPagination } = pagination;
+    const trashPagination = useServerPagination(DEFAULT_PAGE_SIZE);
+    const { paginationOpts: trashPaginationOpts, reset: resetTrashPagination } = trashPagination;
 
     const listQuery = useQuery(
         convexQuery(
@@ -62,12 +64,20 @@ export function useObjectiveListState() {
                 : 'skip'
         )
     );
+    const trashQuery = useQuery(
+        convexQuery(api.objectives.getDeletedObjectives, {
+            paginationOpts: trashPaginationOpts,
+        })
+    );
 
     const { categoryOptions, categoryNameById } = useObjectiveCategoryOptions();
 
     const continueCursor = listQuery.data?.continueCursor ?? null;
     const pageIsDone = listQuery.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
+    const trashContinueCursor = trashQuery.data?.continueCursor ?? null;
+    const trashPageIsDone = trashQuery.data?.isDone ?? false;
+    const trashHasNextPage = Boolean(trashContinueCursor) && !trashPageIsDone;
 
     const objectives: ObjectiveWithCapabilities[] = hasSearch
         ? (searchQuery.data ?? [])
@@ -94,10 +104,17 @@ export function useObjectiveListState() {
         categoryNameById,
         handleFiltersChange,
         objectives,
+        deletedObjectives: trashQuery.data?.page ?? [],
         pagination,
+        trashPagination,
         hasNextPage,
+        trashHasNextPage,
         isLoading: hasSearch ? searchQuery.isLoading : listQuery.isLoading,
         isFetching: listQuery.isFetching,
+        isTrashLoading: trashQuery.isLoading,
+        isTrashFetching: trashQuery.isFetching,
         onNextPage: () => pagination.nextPage(continueCursor, pageIsDone),
+        onNextTrashPage: () => trashPagination.nextPage(trashContinueCursor, trashPageIsDone),
+        resetTrashPagination,
     };
 }

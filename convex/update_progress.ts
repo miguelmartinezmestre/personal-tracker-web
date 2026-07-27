@@ -1,4 +1,4 @@
-import { paginationOptsValidator } from 'convex/server';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { v } from 'convex/values';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import {
@@ -8,6 +8,8 @@ import {
     listProgressUpdatesByObjective,
     updateProgressUpdate,
 } from './domain/objectives/progress';
+import { progressUpdateDocumentValidator } from './utils/documentValidators';
+import { withInvalidCursorRetry } from './utils/pagination';
 
 export const createUpdateProgress = mutationWithRLS({
     args: {
@@ -16,6 +18,7 @@ export const createUpdateProgress = mutationWithRLS({
         updateDate: v.number(),
         comment: v.optional(v.string()),
     },
+    returns: v.union(progressUpdateDocumentValidator, v.null()),
     handler: async (ctx, args) => {
         return await createProgressUpdate(ctx, { ...args, actingUserId: ctx.userId });
     },
@@ -26,8 +29,11 @@ export const getUpdateProgressByObjectiveId = queryWithRLS({
         objectiveId: v.id('objectives'),
         paginationOpts: paginationOptsValidator,
     },
+    returns: paginationResultValidator(progressUpdateDocumentValidator),
     handler: async (ctx, args) => {
-        return await listProgressUpdatesByObjective(ctx, args);
+        return await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
+            listProgressUpdatesByObjective(ctx, { ...args, paginationOpts })
+        );
     },
 });
 
@@ -64,6 +70,7 @@ export const updateUpdateProgress = mutationWithRLS({
         updateDate: v.number(),
         comment: v.optional(v.string()),
     },
+    returns: v.union(progressUpdateDocumentValidator, v.null()),
     handler: async (ctx, args) => {
         return await updateProgressUpdate(ctx, args);
     },

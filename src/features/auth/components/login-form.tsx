@@ -19,17 +19,23 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useFormSubmit } from '@/hooks/use-form-submit';
+import { getSafeCallbackPath } from '@shared/auth-security';
 
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
+    callbackUrl?: string;
 }
 
-export default function LoginForm({ showPasswordResetSuccess = false }: LoginFormProps) {
+export default function LoginForm({
+    showPasswordResetSuccess = false,
+    callbackUrl,
+}: LoginFormProps) {
     const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
@@ -71,7 +77,7 @@ export default function LoginForm({ showPasswordResetSuccess = false }: LoginFor
             },
             {
                 onSuccess: () => {
-                    router.push('/dashboard/home');
+                    router.push(getSafeCallbackPath(callbackUrl) as Route);
                 },
                 onError: ctx => {
                     setLoginError(ctx.error.message);

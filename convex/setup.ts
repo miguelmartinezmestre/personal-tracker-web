@@ -20,6 +20,7 @@ import { isGlobalAdminRole } from '../shared/platform-roles';
 
 export const isPlatformSetUp = query({
     args: {},
+    returns: v.boolean(),
     handler: async ctx => {
         return await isPlatformConfigured(ctx);
     },
@@ -27,6 +28,14 @@ export const isPlatformSetUp = query({
 
 export const getPublicPlatformSettings = query({
     args: {},
+    returns: v.union(
+        v.object({
+            platformName: v.string(),
+            defaultLanguage: v.union(v.literal('en'), v.literal('es')),
+            registrationPolicy: v.union(v.literal('open'), v.literal('invitation-only')),
+        }),
+        v.null()
+    ),
     handler: async ctx => {
         return await getPublicSettings(ctx);
     },

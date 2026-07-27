@@ -19,7 +19,11 @@ export const queryClient = new QueryClient({
         },
     },
     mutationCache: new MutationCache({
-        onError: error => {
+        onError: (error, _variables, _context, mutation) => {
+            if (mutation.options.onError || mutation.meta?.handlesErrorsLocally === true) {
+                return;
+            }
+
             toast(resolveErrorMessage(error, getErrorLocale()), {
                 className: 'bg-red-500 text-white',
             });

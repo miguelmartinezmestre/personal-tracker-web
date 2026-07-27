@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { currentUtcCivilDay, toUtcCivilDay } from '@shared/civil-date';
 
 interface StatusLabels {
     active?: string;
@@ -29,7 +30,9 @@ const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
         const mergedLabels: Required<StatusLabels> = { ...DEFAULT_LABELS, ...labels };
         const normalizedStatus = status.toLowerCase();
         const isOverdue =
-            normalizedStatus === 'active' && typeof deadline === 'number' && deadline < now;
+            normalizedStatus === 'active' &&
+            typeof deadline === 'number' &&
+            toUtcCivilDay(deadline) < currentUtcCivilDay(now);
 
         const resolved = isOverdue
             ? {

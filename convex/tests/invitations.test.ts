@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test_helpers';
-import { TIME } from '../utils/constants';
+import { ERROR_CODES, TIME } from '../utils/constants';
 import type { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';
 
@@ -68,6 +68,52 @@ describe('convex invitations (better-auth)', () => {
         expect(record.status).toBe('pending');
         expect(record.email).toBe('invitee@example.com');
         expect(record.organizationId).toBe(organizationId);
+    });
+
+    test('public invitation status exposes only validity', async () => {
+        const now = Date.now();
+        const inviter = await createTestUser(t, {
+            userId: `public-inviter-${now}`,
+            email: `public-inviter-${now}@example.com`,
+            name: 'Public invitation inviter',
+        });
+        const organizationId = await createTestOrganization(t, {
+            name: `Public invitation org ${now}`,
+            slug: `public-invitation-org-${now}`,
+        });
+        const invitationId = await t.run(async ctx => {
+            return await ctx.db.insert('invitation', {
+                organizationId,
+                email: 'private-invitee@example.com',
+                role: 'member',
+                status: 'pending',
+                expiresAt: now + TIME.DAY_MS,
+                createdAt: now,
+                inviterId: inviter.docId,
+            });
+        });
+
+        await expect(
+            t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId,
+                now,
+            })
+        ).resolves.toEqual({ isValid: true });
+        await expect(
+            t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId: 'not-a-convex-id',
+                now,
+            })
+        ).resolves.toEqual({ isValid: false });
+        await t.run(async ctx => {
+            await ctx.db.patch('invitation', invitationId, { expiresAt: Date.now() - 1 });
+        });
+        await expect(
+            t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId,
+                now: Date.now(),
+            })
+        ).resolves.toEqual({ isValid: false });
     });
 
     test('accepting invitation creates member and updates status', async () => {
@@ -218,6 +264,64 @@ describe('convex invitations (better-auth)', () => {
         expect(record.expiresAt).toBeLessThan(Date.now());
     });
 
+    test('getUserInvitations does not trust a stale client timestamp to revive an expired invitation', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const targetEmail = `expired-target-${randomSuffix}@example.com`;
+        const serverNow = Date.now();
+
+        const inviter = await createTestUser(t, {
+            userId: `expired-inviter-${randomSuffix}`,
+            email: `expired-inviter-${randomSuffix}@example.com`,
+            name: 'Expired invitation inviter',
+            role: 'globalAdmin',
+        });
+        const target = await createTestUser(t, {
+            userId: `expired-target-${randomSuffix}`,
+            email: targetEmail,
+            name: 'Expired invitation target',
+            role: 'user',
+        });
+        const organizationId = await createTestOrganization(t, {
+            name: `Expired Client Time Org ${randomSuffix}`,
+            slug: `expired-client-time-org-${randomSuffix}`,
+        });
+
+        await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
+            await ctx.db.insert('invitation', {
+                organizationId,
+                email: targetEmail,
+                role: 'member',
+                status: 'pending',
+                expiresAt: serverNow - TIME.DAY_MS,
+                createdAt: serverNow - TIME.DAY_MS * 2,
+                inviterId: inviter.docId,
+            });
+        });
+
+        await ensureTestUserAuth(t, target.docId);
+        const targetIdentity = t.withIdentity({
+            subject: target.docId,
+            role: 'user',
+            email: target.email,
+            name: target.name,
+            emailVerified: true,
+            createdAt: serverNow,
+            userId: target.docId,
+        });
+
+        await expect(
+            targetIdentity.query(api.organizations.getUserInvitations, {
+                now: serverNow - TIME.DAY_MS * 2,
+            })
+        ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+
+        const invitations = await targetIdentity.query(api.organizations.getUserInvitations, {
+            now: serverNow,
+        });
+
+        expect(invitations).toEqual([]);
+    });
+
     test('getUserInvitations finds matching email beyond 1000 unrelated pending invitations', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const targetEmail = `target-${randomSuffix}@example.com`;
@@ -287,7 +391,9 @@ describe('convex invitations (better-auth)', () => {
             banned: false,
         });
 
-        const invitations = await targetIdentity.query(api.organizations.getUserInvitations, {});
+        const invitations = await targetIdentity.query(api.organizations.getUserInvitations, {
+            now: Date.now(),
+        });
 
         expect(invitations).toHaveLength(1);
         expect(invitations[0]?.email).toBe(targetEmail);

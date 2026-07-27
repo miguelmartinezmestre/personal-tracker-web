@@ -16,12 +16,14 @@ import {
     Tooltip,
     Cell,
 } from 'recharts';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 
 export default function TopObjectivesChart() {
     const t = useTranslations('DashboardHome');
-    const { data: topObjectives } = useQuery(
+    const topObjectivesQuery = useQuery(
         convexQuery(api.dashboard.getObjectivesWithMostProgress, {})
     );
+    const { data: topObjectives } = topObjectivesQuery;
 
     const chartData = (topObjectives?.items ?? []).map(item => ({
         name: truncateText(item.objective, 20),
@@ -40,8 +42,10 @@ export default function TopObjectivesChart() {
                 </div>
                 <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-                {!topObjectives ? (
+            <CardContent className="space-y-2">
+                {topObjectivesQuery.isError ? (
+                    <QueryErrorFallback onRetry={() => topObjectivesQuery.refetch()} />
+                ) : !topObjectives ? (
                     <div className="flex h-[200px] items-center justify-center">
                         <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
@@ -104,6 +108,11 @@ export default function TopObjectivesChart() {
                         </BarChart>
                     </ResponsiveContainer>
                 )}
+                {topObjectives?.isTruncated ? (
+                    <p className="text-xs text-muted-foreground" role="status">
+                        {t('charts.partialData')}
+                    </p>
+                ) : null}
             </CardContent>
         </Card>
     );

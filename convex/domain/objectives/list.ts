@@ -4,9 +4,6 @@ import type { DatabaseReader } from '../../_generated/server';
 import type { ObjectiveStatus } from '../../utils/constants';
 import type { DeadlineRange } from './filters';
 import { getDeadlineRangeBounds, matchesDeadlineRange } from './filters';
-import { getCollaboratedObjectiveIdsForUser } from './collaborators';
-import { buildPermissionSubject, canObjective, isOrganizationAdminRole } from './permissions';
-import { isGlobalAdminRole } from '../../../shared/platform-roles';
 
 const SEARCH_LIMIT = 50;
 
@@ -34,6 +31,7 @@ type ObjectiveListCtx = {
 
 type ObjectiveListArgs = ObjectiveListFilters & {
     paginationOpts: PaginationOptions;
+    deletionState?: 'active' | 'deleted';
 };
 
 export type ObjectiveSearchArgs = ObjectiveListFilters & {
@@ -73,32 +71,6 @@ function matchesObjectiveFilters(
     return true;
 }
 
-export function canUserViewObjectiveInList(
-    ctx: ObjectiveListCtx,
-    objective: Doc<'objectives'>,
-    collaboratedObjectiveIds: Set<Id<'objectives'>>
-): boolean {
-    if (objective.deletedAt !== undefined) {
-        if (isGlobalAdminRole(ctx.role) || isOrganizationAdminRole(ctx.memberRole)) {
-            return true;
-        }
-        return objective.ownerId === ctx.userId;
-    }
-
-    const collaboratorRole = collaboratedObjectiveIds.has(objective._id)
-        ? ('viewer' as const)
-        : null;
-
-    const subject = buildPermissionSubject({
-        userId: ctx.userId,
-        platformRole: ctx.role,
-        memberRole: ctx.memberRole,
-        collaboratorRole,
-    });
-
-    return canObjective('view', subject, objective);
-}
-
 export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListArgs) {
     const organizationId = ctx.organizationId;
     if (!organizationId) {
@@ -107,96 +79,143 @@ export async function listObjectives(ctx: ObjectiveListCtx, args: ObjectiveListA
 
     const filters = normalizeObjectiveListFilters(args);
     const paginationOpts = args.paginationOpts;
-    const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
-        ctx,
-        ctx.userId,
-        organizationId
-    );
+    const deletionState = args.deletionState ?? 'active';
 
     const filterPage = (page: Doc<'objectives'>[]) =>
         page.filter(objective => {
+            const isDeleted = objective.deletedAt !== undefined;
+            if ((deletionState === 'deleted') !== isDeleted) {
+                return false;
+            }
             if (!matchesObjectiveFilters(objective, filters)) {
                 return false;
             }
-            return canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds);
+            // `ctx.db` is already wrapped with the objective RLS policy. Rows
+            // reaching this point are visible to the caller, including
+            // collaborator-only private objectives, without preloading every
+            // collaboration the user has ever accumulated.
+            return true;
         });
 
     if (filters.deadlineRange) {
         const bounds = getDeadlineRangeBounds(filters.deadlineRange);
-        let query = ctx.db.query('objectives').withIndex('by_organization_deadline', q => {
-            const indexed = q.eq('organizationId', organizationId);
-            return bounds.gte !== undefined
-                ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
-                : indexed.lt('deadline', bounds.lt);
-        });
-
         const status = filters.status;
-        if (status) {
-            query = query.filter(q => q.eq(q.field('status'), status));
-        }
-
         const categoryId = filters.categoryId;
-        if (categoryId) {
-            query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
-        }
+        const query =
+            deletionState === 'deleted'
+                ? ctx.db.query('objectives').withIndex('by_organization_deadline', q => {
+                      const indexed = q.eq('organizationId', organizationId);
+                      return bounds.gte !== undefined
+                          ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
+                          : indexed.lt('deadline', bounds.lt);
+                  })
+                : status && categoryId
+                  ? ctx.db
+                        .query('objectives')
+                        .withIndex('by_organization_deletedAt_status_categoryId_deadline', q => {
+                            const indexed = q
+                                .eq('organizationId', organizationId)
+                                .eq('deletedAt', undefined)
+                                .eq('status', status)
+                                .eq('categoryId', categoryId);
+                            return bounds.gte !== undefined
+                                ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
+                                : indexed.lt('deadline', bounds.lt);
+                        })
+                  : status
+                    ? ctx.db
+                          .query('objectives')
+                          .withIndex('by_organization_deletedAt_status_deadline', q => {
+                              const indexed = q
+                                  .eq('organizationId', organizationId)
+                                  .eq('deletedAt', undefined)
+                                  .eq('status', status);
+                              return bounds.gte !== undefined
+                                  ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
+                                  : indexed.lt('deadline', bounds.lt);
+                          })
+                    : categoryId
+                      ? ctx.db
+                            .query('objectives')
+                            .withIndex('by_organization_deletedAt_categoryId_deadline', q => {
+                                const indexed = q
+                                    .eq('organizationId', organizationId)
+                                    .eq('deletedAt', undefined)
+                                    .eq('categoryId', categoryId);
+                                return bounds.gte !== undefined
+                                    ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
+                                    : indexed.lt('deadline', bounds.lt);
+                            })
+                      : ctx.db
+                            .query('objectives')
+                            .withIndex('by_organization_deletedAt_deadline', q => {
+                                const indexed = q
+                                    .eq('organizationId', organizationId)
+                                    .eq('deletedAt', undefined);
+                                return bounds.gte !== undefined
+                                    ? indexed.gte('deadline', bounds.gte).lt('deadline', bounds.lt)
+                                    : indexed.lt('deadline', bounds.lt);
+                            });
 
-        const visiblePage: Doc<'objectives'>[] = [];
-        let cursor = paginationOpts.cursor;
-        let continueCursor = '';
-        let isDone = false;
-
-        while (visiblePage.length < paginationOpts.numItems && !isDone) {
-            const results = await query.order('desc').paginate({
-                numItems: Math.max(1, paginationOpts.numItems - visiblePage.length),
-                cursor,
-            });
-            visiblePage.push(...filterPage(results.page));
-            continueCursor = results.continueCursor;
-            isDone = results.isDone;
-            cursor = results.continueCursor;
-        }
+        // Convex permits only one paginated query per function execution. RLS
+        // can remove rows from the underlying page, so a safe page may be short
+        // (or empty) while its continuation cursor still advances the caller.
+        const results = await query.order('desc').paginate(paginationOpts);
 
         return {
-            page: visiblePage,
-            continueCursor,
-            isDone,
+            ...results,
+            page: filterPage(results.page),
         };
     }
 
-    let query = ctx.db
-        .query('objectives')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId));
-
     const status = filters.status;
-    if (status) {
-        query = query.filter(q => q.eq(q.field('status'), status));
-    }
-
     const categoryId = filters.categoryId;
-    if (categoryId) {
-        query = query.filter(q => q.eq(q.field('categoryId'), categoryId));
-    }
+    const query =
+        deletionState === 'deleted'
+            ? ctx.db
+                  .query('objectives')
+                  .withIndex('by_organization_deletedAt', q =>
+                      q.eq('organizationId', organizationId).gt('deletedAt', 0)
+                  )
+            : status && categoryId
+              ? ctx.db
+                    .query('objectives')
+                    .withIndex('by_organization_deletedAt_status_categoryId', q =>
+                        q
+                            .eq('organizationId', organizationId)
+                            .eq('deletedAt', undefined)
+                            .eq('status', status)
+                            .eq('categoryId', categoryId)
+                    )
+              : status
+                ? ctx.db
+                      .query('objectives')
+                      .withIndex('by_organization_deletedAt_status', q =>
+                          q
+                              .eq('organizationId', organizationId)
+                              .eq('deletedAt', undefined)
+                              .eq('status', status)
+                      )
+                : categoryId
+                  ? ctx.db
+                        .query('objectives')
+                        .withIndex('by_organization_deletedAt_categoryId', q =>
+                            q
+                                .eq('organizationId', organizationId)
+                                .eq('deletedAt', undefined)
+                                .eq('categoryId', categoryId)
+                        )
+                  : ctx.db
+                        .query('objectives')
+                        .withIndex('by_organization_deletedAt', q =>
+                            q.eq('organizationId', organizationId).eq('deletedAt', undefined)
+                        );
 
-    const visiblePage: Doc<'objectives'>[] = [];
-    let cursor = paginationOpts.cursor;
-    let continueCursor = '';
-    let isDone = false;
-
-    while (visiblePage.length < paginationOpts.numItems && !isDone) {
-        const results = await query.order('desc').paginate({
-            numItems: Math.max(1, paginationOpts.numItems - visiblePage.length),
-            cursor,
-        });
-        visiblePage.push(...filterPage(results.page));
-        continueCursor = results.continueCursor;
-        isDone = results.isDone;
-        cursor = results.continueCursor;
-    }
+    const results = await query.order('desc').paginate(paginationOpts);
 
     return {
-        page: visiblePage,
-        continueCursor,
-        isDone,
+        ...results,
+        page: filterPage(results.page),
     };
 }
 
@@ -209,21 +228,38 @@ export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSea
 
     const filters = normalizeObjectiveListFilters(args);
     const limit = Math.min(Math.max(args.limit ?? SEARCH_LIMIT, 1), SEARCH_LIMIT);
-    const collaboratedObjectiveIds = await getCollaboratedObjectiveIdsForUser(
-        ctx,
-        ctx.userId,
-        organizationId
-    );
 
     const query = ctx.db
         .query('objectives')
-        .withSearchIndex('search_title_by_organization_status_categoryId', q =>
-            q.search('title', search).eq('organizationId', organizationId)
-        );
+        .withSearchIndex('search_title_by_organization_status_categoryId', q => {
+            let searchFilter = q
+                .search('title', search)
+                .eq('organizationId', organizationId)
+                .eq('deletedAt', undefined);
 
-    return (await query.take(limit * 5))
-        .filter(objective => matchesObjectiveFilters(objective, filters))
-        .filter(objective => objective.title.toLowerCase().includes(search.toLowerCase()))
-        .filter(objective => canUserViewObjectiveInList(ctx, objective, collaboratedObjectiveIds))
-        .slice(0, limit);
+            if (filters.status) {
+                searchFilter = searchFilter.eq('status', filters.status);
+            }
+            if (filters.categoryId) {
+                searchFilter = searchFilter.eq('categoryId', filters.categoryId);
+            }
+
+            return searchFilter;
+        });
+
+    // Equality filters belong to the search index and deadline ranges are a
+    // database-side query filter. Both therefore run before `take(limit)`;
+    // irrelevant or deleted rows can no longer consume the bounded result set.
+    if (filters.deadlineRange) {
+        const bounds = getDeadlineRangeBounds(filters.deadlineRange);
+        const deadlineQuery = query.filter(q => {
+            const beforeUpperBound = q.lt(q.field('deadline'), bounds.lt);
+            return bounds.gte === undefined
+                ? beforeUpperBound
+                : q.and(q.gte(q.field('deadline'), bounds.gte), beforeUpperBound);
+        });
+        return await deadlineQuery.take(limit);
+    }
+
+    return await query.take(limit);
 }

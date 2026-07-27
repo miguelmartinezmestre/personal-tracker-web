@@ -1,4 +1,11 @@
 import { v } from 'convex/values';
+import { ORGANIZATION_ROLE } from '../../shared/organization-roles';
+
+export const organizationRoleValidator = v.union(
+    v.literal(ORGANIZATION_ROLE.OWNER),
+    v.literal(ORGANIZATION_ROLE.ADMIN),
+    v.literal(ORGANIZATION_ROLE.MEMBER)
+);
 import {
     OBJECTIVE_STATUS,
     OBJECTIVE_VISIBILITY,

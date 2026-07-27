@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from 'next-intl';
 import type { AdminAccount } from '../schemas/setup-schema';
-import { adminAccountSchema } from '../schemas/setup-schema';
+import { createAdminAccountSchema } from '../schemas/setup-schema';
+import { MAX_SETUP_SECRET_LENGTH, MIN_SETUP_SECRET_LENGTH } from '@shared/auth-security';
 
 interface StepAdminAccountProps {
     data: AdminAccount;
@@ -15,7 +16,12 @@ export default function StepAdminAccount({ data, onChange }: StepAdminAccountPro
     const t = useTranslations('Setup');
     const tCommon = useTranslations('Common');
 
-    const validation = adminAccountSchema.safeParse(data);
+    const validation = createAdminAccountSchema({
+        setupSecretInvalidLength: t('adminAccount.setupSecretInvalidLength', {
+            min: MIN_SETUP_SECRET_LENGTH,
+            max: MAX_SETUP_SECRET_LENGTH,
+        }),
+    }).safeParse(data);
     const fieldErrors = !validation.success
         ? Object.fromEntries(
               validation.error.issues.map(issue => [issue.path.join('.'), issue.message])
@@ -88,6 +94,26 @@ export default function StepAdminAccount({ data, onChange }: StepAdminAccountPro
                     />
                     {data.confirmPassword && fieldErrors['confirmPassword'] && (
                         <p className="text-sm text-destructive">{fieldErrors['confirmPassword']}</p>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="setupSecret">{t('adminAccount.setupSecretLabel')}</Label>
+                    <Input
+                        id="setupSecret"
+                        type="password"
+                        autoComplete="off"
+                        value={data.setupSecret}
+                        onChange={e => onChange({ setupSecret: e.target.value })}
+                        placeholder={t('adminAccount.setupSecretPlaceholder')}
+                        aria-describedby="setup-secret-hint"
+                        data-testid="setup-secret"
+                    />
+                    <p id="setup-secret-hint" className="text-sm text-muted-foreground">
+                        {t('adminAccount.setupSecretHint')}
+                    </p>
+                    {data.setupSecret && fieldErrors['setupSecret'] && (
+                        <p className="text-sm text-destructive">{fieldErrors['setupSecret']}</p>
                     )}
                 </div>
             </div>

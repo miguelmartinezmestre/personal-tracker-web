@@ -23,6 +23,9 @@ import StepCategories from './step-categories';
 import StepRegistrationPolicy from './step-registration-policy';
 import StepSummary from './step-summary';
 import { ErrorContext } from 'better-auth/client';
+import { setLocaleCookie } from '@/lib/locale-cookie';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { SETUP_SECRET_HEADER } from '@shared/auth-security';
 
 export default function SetupWizard() {
     const router = useRouter();
@@ -62,6 +65,13 @@ export default function SetupWizard() {
                     name: data.admin.username,
                     email: data.admin.email,
                     password: data.admin.password,
+                    fetchOptions: data.admin.setupSecret
+                        ? {
+                              headers: {
+                                  [SETUP_SECRET_HEADER]: data.admin.setupSecret,
+                              },
+                          }
+                        : undefined,
                 },
                 {
                     onSuccess: async () => {
@@ -89,10 +99,14 @@ export default function SetupWizard() {
                         });
 
                         if (setupResult.organizationId) {
-                            await authClient.organization.setActive({
-                                organizationId: setupResult.organizationId,
-                            });
+                            const activeOrganizationResult =
+                                await authClient.organization.setActive({
+                                    organizationId: setupResult.organizationId,
+                                });
+                            throwIfAuthClientError(activeOrganizationResult);
                         }
+
+                        setLocaleCookie(data.platform.defaultLanguage);
 
                         router.push('/dashboard/home');
                     },

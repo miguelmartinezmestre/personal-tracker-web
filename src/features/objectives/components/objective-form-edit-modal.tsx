@@ -82,7 +82,7 @@ export default function EditObjectiveFormModal({
                     description: value.description ?? undefined,
                     categoryId: toCategoryId(value.categoryId) ?? null,
                     targetValue: value.targetValue,
-                    deadline: value.deadline ?? undefined,
+                    deadline: value.deadline,
                     unit: value.unit ?? undefined,
                 });
             }}

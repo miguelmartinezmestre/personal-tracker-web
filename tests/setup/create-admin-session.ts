@@ -21,6 +21,18 @@ async function waitForAdminDashboardReady(page: Page): Promise<void> {
 async function completeSetupWizard(page: Page, userData: TestUserData): Promise<void> {
     await page.goto('/setup', { waitUntil: 'domcontentloaded' });
 
+    const setupSecret = process.env.SETUP_SECRET;
+    if (setupSecret) {
+        const unauthorizedSignUp = await page.request.post('/api/auth/sign-up/email', {
+            data: {
+                name: userData.username,
+                email: userData.email,
+                password: userData.password,
+            },
+        });
+        expect(unauthorizedSignUp.status()).toBe(403);
+    }
+
     await page.getByTestId('setup-platform-name').fill('Metrics App');
     await page.getByTestId('setup-next-button').click();
 
@@ -28,6 +40,9 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await page.getByTestId('setup-email').fill(userData.email);
     await page.getByTestId('setup-password').fill(userData.password);
     await page.getByTestId('setup-confirm-password').fill(userData.password);
+    if (setupSecret) {
+        await page.getByTestId('setup-secret').fill(setupSecret);
+    }
     await page.getByTestId('setup-next-button').click();
 
     await page.getByTestId('setup-org-name').fill('Product Team');

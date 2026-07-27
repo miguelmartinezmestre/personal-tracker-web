@@ -140,7 +140,7 @@ describe('convex sessions', () => {
             currentSessionId: sessionId,
         });
 
-        expect(result).toEqual({ success: true, revokedCount: 1 });
+        expect(result).toEqual({ success: true, status: 'completed', revokedCount: 1 });
 
         const sessions = await t.run(async ctx => {
             return {
@@ -153,6 +153,40 @@ describe('convex sessions', () => {
         expect(sessions.current).not.toBeNull();
         expect(sessions.ownOther).toBeNull();
         expect(sessions.otherUser).not.toBeNull();
+    });
+
+    test.each([
+        ['banned', { banned: true }],
+        ['deleted', { deletedAt: Date.now() }],
+    ] as const)('rejects a %s account even while its session still exists', async (_, patch) => {
+        await t.run(async ctx => {
+            await ctx.db.patch('user', userId, patch);
+        });
+
+        await expect(
+            _userIdentity.query(api.sessions.getSessionsByUser, {
+                paginationOpts: { numItems: 10, cursor: null },
+            })
+        ).rejects.toThrow(/AUTH_REQUIRED/);
+
+        const retainedSession = await t.run(async ctx => ctx.db.get(sessionId));
+        expect(retainedSession).not.toBeNull();
+    });
+
+    test('allows an account again after a temporary ban has expired', async () => {
+        await t.run(async ctx => {
+            await ctx.db.patch('user', userId, {
+                banned: true,
+                banReason: 'Temporary ban',
+                banExpires: Date.now() - 1,
+            });
+        });
+
+        const result = await _userIdentity.query(api.sessions.getSessionsByUser, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
+
+        expect(result.page.map(session => session._id)).toContain(sessionId);
     });
 
     test('session can be retrieved after creation', async () => {

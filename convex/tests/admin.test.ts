@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
@@ -8,7 +8,6 @@ import {
     createTestUser,
 } from './test_helpers';
 import type { Id } from '../_generated/dataModel';
-import { revokeAllSessionsForUser } from '../admin';
 
 describe('convex admin', () => {
     const t = initConvexTest();
@@ -17,6 +16,7 @@ describe('convex admin', () => {
     let orgAdminIdentity: ReturnType<typeof t.withIdentity>;
     let adminId: Id<'user'>;
     let userId: Id<'user'>;
+    let organizationId: Id<'organization'>;
     let adminName: string;
     let userEmail: string;
 
@@ -45,7 +45,7 @@ describe('convex admin', () => {
         adminName = admin.name;
         userEmail = user.email;
 
-        const organizationId = await createTestOrganization(t, {
+        organizationId = await createTestOrganization(t, {
             name: `Admin Test Org ${random}`,
             slug: `admin-test-org-${random}`,
         });
@@ -165,6 +165,16 @@ describe('convex admin', () => {
         ).rejects.toThrow(/FORBIDDEN|Unauthorized|Unauthenticated|AUTH_REQUIRED/);
     });
 
+    test('rejects non-admin bans and prevents an admin from banning itself', async () => {
+        await expect(userIdentity.mutation(api.admin.banUser, { userId: adminId })).rejects.toThrow(
+            /FORBIDDEN/
+        );
+
+        await expect(
+            adminIdentity.mutation(api.admin.banUser, { userId: adminId })
+        ).rejects.toThrow(/FORBIDDEN/);
+    });
+
     test('lists user sessions as non-current admin session items', async () => {
         const sessionId = await createTestSession(t, {
             userId,
@@ -231,37 +241,313 @@ describe('convex admin', () => {
         expect(adminSession).not.toBeNull();
     });
 
-    test('revokes sessions beyond one batch for a banned user cleanup', async () => {
-        await t.run(async ctx => {
+    test('banUser gates access immediately and finishes a large session cleanup asynchronously', async () => {
+        vi.useFakeTimers();
+        try {
+            const extraSessionCount = 101;
             const now = Date.now();
-            for (let i = 0; i < 1001; i++) {
-                await ctx.db.insert('session', {
+            let retainedSessionId: Id<'session'> | null = null;
+
+            for (let start = 0; start < extraSessionCount; start += 50) {
+                const insertedIds = await t.run(async ctx => {
+                    const ids: Id<'session'>[] = [];
+                    for (let i = start; i < Math.min(start + 50, extraSessionCount); i++) {
+                        ids.push(
+                            await ctx.db.insert('session', {
+                                userId,
+                                token: `ban-session-${String(userId)}-${i}`,
+                                expiresAt: now + 60_000,
+                                ipAddress: null,
+                                userAgent: null,
+                                activeOrganizationId: organizationId,
+                                createdAt: now + i,
+                                updatedAt: now + i,
+                            })
+                        );
+                    }
+                    return ids;
+                });
+                retainedSessionId = insertedIds[insertedIds.length - 1] ?? retainedSessionId;
+            }
+
+            if (!retainedSessionId) throw new Error('Expected a retained session');
+
+            const bannedIdentity = t.withIdentity({
+                subject: userId,
+                userId,
+                sessionId: retainedSessionId,
+                email: userEmail,
+                name: 'Banned test user',
+                role: 'user',
+                emailVerified: true,
+            });
+
+            const result = await adminIdentity.mutation(api.admin.banUser, { userId });
+            const stateAfterMutation = await t.run(async ctx => ({
+                user: await ctx.db.get('user', userId),
+                retainedSession: await ctx.db.get('session', retainedSessionId),
+                remainingSessions: await ctx.db
+                    .query('session')
+                    .withIndex('userId', q => q.eq('userId', userId))
+                    .collect(),
+                auditLogs: await ctx.db
+                    .query('auditLogs')
+                    .withIndex('by_resourceType_resourceId', q =>
+                        q.eq('resourceType', 'user').eq('resourceId', String(userId))
+                    )
+                    .collect(),
+            }));
+
+            expect(result).toEqual({ success: true });
+            expect(stateAfterMutation.user).toMatchObject({
+                banned: true,
+                banReason: 'No reason',
+                banExpires: null,
+            });
+            expect(stateAfterMutation.user?.updatedAt).toBeGreaterThanOrEqual(now);
+            expect(stateAfterMutation.retainedSession).not.toBeNull();
+            expect(stateAfterMutation.remainingSessions.length).toBeGreaterThan(0);
+            expect(stateAfterMutation.auditLogs).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        userId: adminId,
+                        action: 'user.updated',
+                        resourceType: 'user',
+                        resourceId: String(userId),
+                        metadata: expect.objectContaining({
+                            after: expect.objectContaining({ banned: true }),
+                        }),
+                    }),
+                ])
+            );
+
+            await expect(
+                bannedIdentity.query(api.sessions.getSessionsByUser, {
+                    paginationOpts: { numItems: 10, cursor: null },
+                })
+            ).rejects.toThrow(/AUTH_REQUIRED/);
+
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+            const remainingSessions = await t.run(async ctx =>
+                ctx.db
+                    .query('session')
+                    .withIndex('userId', q => q.eq('userId', userId))
+                    .collect()
+            );
+            expect(remainingSessions).toHaveLength(0);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('stores a bounded temporary ban and clears every ban field when unbanned', async () => {
+        vi.useFakeTimers();
+        try {
+            const now = Date.now();
+            const banExpiresInSeconds = 3_600;
+
+            await adminIdentity.mutation(api.admin.banUser, {
+                userId,
+                banReason: 'Temporary review',
+                banExpiresInSeconds,
+            });
+
+            const bannedUser = await t.run(async ctx => ctx.db.get('user', userId));
+            expect(bannedUser).toMatchObject({
+                banned: true,
+                banReason: 'Temporary review',
+                banExpires: now + banExpiresInSeconds * 1000,
+            });
+            expect(bannedUser?.updatedAt).toBeGreaterThanOrEqual(now);
+
+            await adminIdentity.mutation(api.admin.unbanUser, { userId });
+
+            const unbannedUser = await t.run(async ctx => ctx.db.get('user', userId));
+            expect(unbannedUser).toMatchObject({
+                banned: false,
+                banReason: null,
+                banExpires: null,
+            });
+            expect(unbannedUser?.updatedAt).toBeGreaterThan(bannedUser?.updatedAt ?? 0);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test.each([0, Number.MAX_SAFE_INTEGER])(
+        'rejects an invalid ban duration (%s)',
+        async banExpiresInSeconds => {
+            await expect(
+                adminIdentity.mutation(api.admin.banUser, {
                     userId,
-                    token: `bulk-session-${i}`,
-                    expiresAt: now + 60_000,
-                    ipAddress: null,
-                    userAgent: null,
-                    activeOrganizationId: null,
+                    banExpiresInSeconds,
+                })
+            ).rejects.toThrow(/VALIDATION_ERROR/);
+
+            const user = await t.run(async ctx => ctx.db.get('user', userId));
+            expect(user?.banned).toBe(false);
+        }
+    );
+
+    test('soft-deletes a user through the public admin API and preserves an audited tombstone', async () => {
+        vi.useFakeTimers();
+        try {
+            const now = Date.now();
+            await t.run(async ctx => {
+                await ctx.db.insert('account', {
+                    accountId: String(userId),
+                    providerId: 'credential',
+                    userId,
+                    password: 'test-password-hash',
                     createdAt: now,
                     updatedAt: now,
                 });
-            }
-        });
+            });
 
-        const revokedCount = await t.run(async ctx => revokeAllSessionsForUser(ctx, userId));
+            await expect(
+                adminIdentity.mutation(api.admin.deleteUser, { userId: adminId })
+            ).rejects.toThrow(/FORBIDDEN/);
 
-        const remaining = await t.run(async ctx => {
-            return await ctx.db
-                .query('session')
-                .withIndex('userId', q => q.eq('userId', userId))
-                .collect();
-        });
+            const result = await adminIdentity.mutation(api.admin.deleteUser, { userId });
+            const immediate = await t.run(async ctx => ({
+                user: await ctx.db.get('user', userId),
+                auditLogs: await ctx.db
+                    .query('auditLogs')
+                    .withIndex('by_resourceType_resourceId', q =>
+                        q.eq('resourceType', 'user').eq('resourceId', String(userId))
+                    )
+                    .collect(),
+            }));
 
-        expect(revokedCount).toBeGreaterThanOrEqual(1001);
-        expect(remaining).toHaveLength(0);
+            expect(result).toEqual({ success: true });
+            expect(immediate.user).toMatchObject({
+                name: 'Deleted account',
+                banned: true,
+                banReason: 'Account deleted',
+            });
+            expect(immediate.user?.deletedAt).toBeDefined();
+            expect(immediate.auditLogs).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        action: 'user.deleted',
+                        userId,
+                        actorUserId: adminId,
+                        metadata: expect.objectContaining({ context: 'soft_delete' }),
+                    }),
+                ])
+            );
+
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+            const finalState = await t.run(async ctx => ({
+                user: await ctx.db.get('user', userId),
+                sessions: await ctx.db
+                    .query('session')
+                    .withIndex('userId', q => q.eq('userId', userId))
+                    .collect(),
+                accounts: await ctx.db
+                    .query('account')
+                    .withIndex('userId', q => q.eq('userId', userId))
+                    .collect(),
+            }));
+            expect(finalState.user?.deletedAt).toBeDefined();
+            expect(finalState.sessions).toHaveLength(0);
+            expect(finalState.accounts).toHaveLength(0);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
-    test('rejects deleting the platform setup user', async () => {
+    test('updates user profile fields and role through the guarded admin mutation', async () => {
+        const result = await adminIdentity.mutation(api.admin.updateUser, {
+            userId,
+            name: '  Updated User  ',
+            email: 'UPDATED.USER@EXAMPLE.COM',
+            role: 'globalAdmin',
+        });
+
+        const updated = await t.run(async ctx => await ctx.db.get('user', userId));
+        expect(result).toEqual({ success: true });
+        expect(updated).toMatchObject({
+            name: 'Updated User',
+            email: 'updated.user@example.com',
+            role: 'globalAdmin',
+        });
+    });
+
+    test('allows an admin to edit its own profile but not its own role', async () => {
+        await expect(
+            adminIdentity.mutation(api.admin.updateUser, {
+                userId: adminId,
+                name: 'Renamed Administrator',
+                email: 'renamed.admin@example.com',
+                role: 'globalAdmin',
+            })
+        ).resolves.toEqual({ success: true });
+
+        await expect(
+            adminIdentity.mutation(api.admin.updateUser, {
+                userId: adminId,
+                name: 'Renamed Administrator',
+                email: 'renamed.admin@example.com',
+                role: 'user',
+            })
+        ).rejects.toThrow(/FORBIDDEN/);
+    });
+
+    test('rejects duplicate or malformed emails in admin user updates', async () => {
+        await expect(
+            adminIdentity.mutation(api.admin.updateUser, {
+                userId,
+                name: 'User',
+                email: userEmail.replace(/^user-/, 'admin-'),
+                role: 'user',
+            })
+        ).rejects.toThrow(/VALIDATION_ERROR/);
+
+        await expect(
+            adminIdentity.mutation(api.admin.updateUser, {
+                userId,
+                name: 'User',
+                email: 'not-an-email',
+                role: 'user',
+            })
+        ).rejects.toThrow(/VALIDATION_ERROR/);
+    });
+
+    test('prevents an administrator from demoting the platform setup user', async () => {
+        await adminIdentity.mutation(api.admin.updateUser, {
+            userId,
+            name: 'Setup Administrator',
+            email: userEmail,
+            role: 'globalAdmin',
+        });
+        const settingsId = await t.run(async ctx =>
+            ctx.db.insert('platformSettings', {
+                platformName: 'Test Platform',
+                defaultLanguage: 'en',
+                registrationPolicy: 'open',
+                setupCompletedAt: Date.now(),
+                setupCompletedBy: userId,
+            })
+        );
+
+        try {
+            await expect(
+                adminIdentity.mutation(api.admin.updateUser, {
+                    userId,
+                    name: 'Setup Administrator',
+                    email: userEmail,
+                    role: 'user',
+                })
+            ).rejects.toThrow(/FORBIDDEN/);
+        } finally {
+            await t.run(async ctx => ctx.db.delete(settingsId));
+        }
+    });
+
+    test('rejects banning or deleting the platform setup user', async () => {
         await t.run(async ctx => {
             await ctx.db.insert('platformSettings', {
                 platformName: 'Test Platform',
@@ -271,6 +557,10 @@ describe('convex admin', () => {
                 setupCompletedBy: adminId,
             });
         });
+
+        await expect(
+            adminIdentity.mutation(api.admin.banUser, { userId: adminId })
+        ).rejects.toThrow(/SETUP_USER_BAN_FORBIDDEN/);
 
         await expect(
             adminIdentity.mutation(api.admin.deleteUser, {

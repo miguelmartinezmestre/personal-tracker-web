@@ -51,7 +51,13 @@ const initialState: SetupState = {
     currentStep: 0,
     data: {
         platform: { platformName: '', defaultLanguage: 'en' },
-        admin: { username: '', email: '', password: '', confirmPassword: '' },
+        admin: {
+            username: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            setupSecret: '',
+        },
         organization: { name: '', logo: '' },
         categories: DEFAULT_CATEGORIES,
         registration: { policy: 'invitation-only' },

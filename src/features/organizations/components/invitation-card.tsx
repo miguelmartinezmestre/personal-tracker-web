@@ -24,6 +24,7 @@ interface InvitationCardProps {
     onReject: () => void;
     isAccepting?: boolean;
     isRejecting?: boolean;
+    isResponseDisabled?: boolean;
 }
 
 export function InvitationCard({
@@ -32,6 +33,7 @@ export function InvitationCard({
     onReject,
     isAccepting = false,
     isRejecting = false,
+    isResponseDisabled = false,
 }: InvitationCardProps) {
     const t = useTranslations('Invitations');
     const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -77,14 +79,14 @@ export function InvitationCard({
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <User className="h-4 w-4" />
                             <span>
-                                {t('invitedBy')}: {invitation.inviter?.name ?? 'Unknown'}
+                                {t('invitedBy')}: {invitation.inviter?.name ?? t('unknownInviter')}
                             </span>
                         </div>
                         <p className="text-xs text-muted-foreground">{t('orgSwitchNote')}</p>
                         <div className="flex gap-2">
                             <Button
                                 onClick={() => setShowAcceptConfirm(true)}
-                                disabled={isAccepting || isRejecting}
+                                disabled={isAccepting || isRejecting || isResponseDisabled}
                                 className="flex-1"
                                 data-testid="invitation-accept-button"
                             >
@@ -93,7 +95,7 @@ export function InvitationCard({
                             </Button>
                             <Button
                                 onClick={onReject}
-                                disabled={isAccepting || isRejecting}
+                                disabled={isAccepting || isRejecting || isResponseDisabled}
                                 variant="outline"
                                 className="flex-1"
                                 data-testid="invitation-reject-button"
@@ -123,7 +125,7 @@ export function InvitationCard({
                         <AlertDialogCancel disabled={isAccepting}>{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmAccept}
-                            disabled={isAccepting}
+                            disabled={isAccepting || isResponseDisabled}
                             className="bg-primary"
                             data-testid="invitation-accept-confirm-button"
                         >

@@ -42,7 +42,12 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
     }
 
     const currentUser = await ctx.db.get('user', identity.userId);
-    if (!currentUser) {
+    // Session deletion after a ban/account deletion is intentionally batched.
+    // The durable user status is therefore the immediate authorization gate.
+    const activeBan =
+        currentUser?.banned === true &&
+        (currentUser.banExpires == null || currentUser.banExpires > Date.now());
+    if (!currentUser || activeBan || currentUser.deletedAt !== undefined) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 

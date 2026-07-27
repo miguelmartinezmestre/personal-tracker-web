@@ -1,9 +1,8 @@
 import type { Id } from '../../_generated/dataModel';
 import type { ObjectiveCollaboratorRole, ObjectiveVisibility } from '../../utils/constants';
+import { isOrganizationAdminRole } from '../../../shared/organization-roles';
 
-export function isOrganizationAdminRole(memberRole: string | null | undefined): boolean {
-    return memberRole === 'admin' || memberRole === 'owner';
-}
+export { isOrganizationAdminRole };
 
 export type ObjectiveAction =
     | 'view'
@@ -34,24 +33,22 @@ export function canObjective(
     subject: PermissionSubject,
     objective: ObjectivePermissionResource
 ): boolean {
-    if (subject.isGlobalAdmin || subject.isOrgAdmin) {
-        return true;
-    }
-
     const isOwner = objective.ownerId === subject.userId;
     const isDeleted = objective.deletedAt !== undefined;
 
     if (isDeleted) {
-        if (action === 'restore') {
-            return isOwner;
+        if (action !== 'view' && action !== 'restore' && action !== 'purge') {
+            return false;
         }
-        if (action === 'purge') {
-            return isOwner;
-        }
-        if (action === 'view') {
-            return isOwner;
-        }
+        return subject.isGlobalAdmin || subject.isOrgAdmin || isOwner;
+    }
+
+    if (action === 'restore' || action === 'purge') {
         return false;
+    }
+
+    if (subject.isGlobalAdmin || subject.isOrgAdmin) {
+        return true;
     }
 
     if (isOwner) {
@@ -68,8 +65,6 @@ export function canObjective(
             return subject.collaboratorRole === 'editor';
         case 'editDefinition':
         case 'delete':
-        case 'purge':
-        case 'restore':
         case 'manageCollaborators':
         case 'setVisibility':
         case 'transferOwnership':
@@ -99,6 +94,7 @@ export type ObjectiveCapabilities = {
     canEditDefinition: boolean;
     canDelete: boolean;
     canRestore: boolean;
+    canPurge: boolean;
     canManageCollaborators: boolean;
     canContribute: boolean;
     canSetVisibility: boolean;
@@ -114,6 +110,7 @@ export function buildObjectiveCapabilities(
         canEditDefinition: canObjective('editDefinition', subject, objective),
         canDelete: canObjective('delete', subject, objective),
         canRestore: canObjective('restore', subject, objective),
+        canPurge: canObjective('purge', subject, objective),
         canManageCollaborators: canObjective('manageCollaborators', subject, objective),
         canContribute: canObjective('contributeProgress', subject, objective),
         canSetVisibility: canObjective('setVisibility', subject, objective),

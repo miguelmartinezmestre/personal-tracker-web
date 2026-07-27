@@ -102,7 +102,7 @@ describe('active organization tenant boundary', () => {
         expect(notifications.page.map(notification => notification.message)).toEqual([
             'Org A notification',
         ]);
-        expect(unreadCount).toEqual({ count: 1 });
+        expect(unreadCount).toEqual({ count: 1, isTruncated: false });
     });
 
     test('mark all read only changes notifications in the active organization', async () => {

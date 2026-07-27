@@ -8,7 +8,8 @@ type ObjectiveWorkflowResource = 'objective' | 'progress_update';
 export const runObjectiveSync = async (
     ctx: MutationCtx,
     objectiveId: Id<'objectives'>,
-    userId: Id<'user'>,
+    individualUserId: Id<'user'>,
+    organizationContributorUserId: Id<'user'>,
     organizationId: Id<'organization'> | null | undefined,
     resourceType: ObjectiveWorkflowResource
 ) => {
@@ -26,14 +27,15 @@ export const runObjectiveSync = async (
             internal.jobs.objectives.lifecycleWorkflow.objectiveLifecycle,
             {
                 objectiveId,
-                userId,
+                individualUserId,
+                organizationContributorUserId,
             },
             {
                 onComplete:
                     internal.jobs.objectives.lifecycleCompletion.handleObjectiveLifecycleComplete,
                 context: {
                     objectiveId,
-                    userId,
+                    userId: organizationContributorUserId,
                     organizationId: organizationId ?? null,
                     resourceType,
                 },
@@ -52,8 +54,8 @@ export const runObjectiveSync = async (
 
         if (organizationId) {
             await ctx.runMutation(internal.auditLogs.recordAuditLog, {
-                userId,
-                actorUserId: userId,
+                userId: organizationContributorUserId,
+                actorUserId: organizationContributorUserId,
                 organizationId,
                 action: 'WORKFLOW_ERROR',
                 resourceType,

@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { authClient } from '@/features/auth/client';
 import type { Id } from '@/convex/_generated/dataModel';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 type RevokeSessionVariables = {
     userId: Id<'user'>;
@@ -41,7 +42,9 @@ export function useConfirmRevokeAllSessions() {
             if (!confirm(t('userSessions.confirm.revokeAll'))) {
                 return;
             }
-            return await authClient.admin.revokeUserSessions({ userId });
+            const result = await authClient.admin.revokeUserSessions({ userId });
+            throwIfAuthClientError(result);
+            return result.data;
         },
         onSuccess: _data => {
             toast.success(t('userSessions.toast.revokeAllSuccess'));

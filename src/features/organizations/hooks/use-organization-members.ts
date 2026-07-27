@@ -2,12 +2,13 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/client';
-import { OrganizationRole } from '../types/roles';
+import { type OrganizationRoleValue } from '../types/roles';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 export interface CreateOrganizationMemberParams {
     organizationId: string;
     email: string;
-    role: OrganizationRole;
+    role: OrganizationRoleValue;
 }
 
 export interface UpdateOrganizationMemberParams {
@@ -24,11 +25,13 @@ export interface DeleteOrganizationMemberParams {
 export function useCreateOrganizationMember() {
     return useMutation({
         mutationFn: async (values: CreateOrganizationMemberParams) => {
-            return await authClient.organization.inviteMember({
+            const result = await authClient.organization.inviteMember({
                 email: values.email,
                 role: values.role,
                 organizationId: values.organizationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }
@@ -36,22 +39,27 @@ export function useCreateOrganizationMember() {
 export function useUpdateOrganizationMember() {
     return useMutation({
         mutationFn: async (values: UpdateOrganizationMemberParams) => {
-            return await authClient.organization.updateMemberRole({
+            const result = await authClient.organization.updateMemberRole({
                 memberId: values.memberId,
                 role: values.role,
                 organizationId: values.organizationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }
 
 export function useDeleteOrganizationMember() {
     return useMutation({
+        meta: { handlesErrorsLocally: true },
         mutationFn: async (values: DeleteOrganizationMemberParams) => {
-            return await authClient.organization.removeMember({
+            const result = await authClient.organization.removeMember({
                 memberIdOrEmail: values.memberId,
                 organizationId: values.organizationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }

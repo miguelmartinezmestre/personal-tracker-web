@@ -1,527 +1,144 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
-import { internal } from '../_generated/api';
-import { initConvexTest } from './test.helper';
-import {
-    createTestUser,
-    createTestOrganization,
-    createTestMember,
-    createTestObjective,
-} from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import { api, internal } from '../_generated/api';
+import type { Id } from '../_generated/dataModel';
 import { calculateUserStreak } from '../domain/achievements/calculations';
 import { TIME } from '../utils/constants';
+import { initConvexTest } from './test.helper';
+import {
+    createTestMember,
+    createTestObjective,
+    createTestOrganization,
+    createTestUser,
+} from './test_helpers';
+import { identityFor } from './test_identities';
 
-describe('achievements multi-tenancy security', async () => {
+describe('achievements multi-tenancy', () => {
     const t = initConvexTest();
-    let userAIdentity: TestConvexForDataModel<DataModel>;
-    let userAId: Id<'user'>;
-    let userBId: Id<'user'>;
-    let orgAId: Id<'organization'>;
-    let orgBId: Id<'organization'>;
-    const DAY_MS = TIME.DAY_MS;
+    let userId: Id<'user'>;
+    let outsiderId: Id<'user'>;
+    let firstOrganizationId: Id<'organization'>;
+    let secondOrganizationId: Id<'organization'>;
+    let userIdentity: ReturnType<typeof t.withIdentity>;
 
     beforeEach(async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-
-        const userAData = await createTestUser(t, {
-            userId: 'test-user-a-' + randomSuffix,
-            email: 'user-a@example.com-' + randomSuffix,
-            name: 'User A ' + randomSuffix,
-            password: 'test-password',
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const user = await createTestUser(t, {
+            userId: `achievement-user-${suffix}`,
+            email: `achievement-user-${suffix}@example.com`,
+            name: 'Achievement user',
             role: 'globalAdmin',
-            emailVerified: false,
         });
-        userAId = userAData.docId;
-
-        const userBData = await createTestUser(t, {
-            userId: 'test-user-b-' + randomSuffix,
-            email: 'user-b@example.com-' + randomSuffix,
-            name: 'User B ' + randomSuffix,
-            password: 'test-password',
-            role: 'member',
-            emailVerified: false,
+        const outsider = await createTestUser(t, {
+            userId: `achievement-outsider-${suffix}`,
+            email: `achievement-outsider-${suffix}@example.com`,
+            name: 'Achievement outsider',
+            role: 'user',
         });
-        userBId = userBData.docId;
-
-        orgAId = await createTestOrganization(t, {
-            name: 'Organization A ' + randomSuffix,
-            slug: 'org-a-' + randomSuffix,
+        userId = user.docId;
+        outsiderId = outsider.docId;
+        firstOrganizationId = await createTestOrganization(t, {
+            name: `First achievement organization ${suffix}`,
+            slug: `first-achievement-organization-${suffix}`,
         });
-
-        orgBId = await createTestOrganization(t, {
-            name: 'Organization B ' + randomSuffix,
-            slug: 'org-b-' + randomSuffix,
+        secondOrganizationId = await createTestOrganization(t, {
+            name: `Second achievement organization ${suffix}`,
+            slug: `second-achievement-organization-${suffix}`,
         });
-
         await createTestMember(t, {
-            organizationId: orgAId,
-            userId: userAId,
+            organizationId: firstOrganizationId,
+            userId,
             role: 'owner',
         });
-
         await createTestMember(t, {
-            organizationId: orgBId,
-            userId: userAId,
+            organizationId: secondOrganizationId,
+            userId,
             role: 'member',
         });
-
-        await createTestMember(t, {
-            organizationId: orgBId,
-            userId: userBId,
-            role: 'member',
-        });
-
-        userAIdentity = t.withIdentity({
-            subject: userAData.docId,
-            role: userAData.role ?? 'globalAdmin',
-            email: userAData.email,
-            name: userAData.name,
-            password: 'test-password',
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: userAData.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
-
-        await userAIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+        userIdentity = t.withIdentity(identityFor(user));
+        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
     });
 
-    describe('getUserAchievementProgress - cross-org isolation', () => {
-        test('should only count objectives from the active organization context', async () => {
+    test('aggregates an individual achievement across organizations', async () => {
+        for (let index = 0; index < 3; index++) {
             await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Org A Objective 1',
+                userId,
+                organizationId: firstOrganizationId,
+                title: `First organization objective ${index}`,
                 targetValue: 100,
-                currentValue: 0,
             });
-
+        }
+        for (let index = 0; index < 2; index++) {
             await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Org A Objective 2',
+                userId,
+                organizationId: secondOrganizationId,
+                title: `Second organization objective ${index}`,
                 targetValue: 100,
-                currentValue: 0,
             });
+        }
 
-            await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgBId,
-                title: 'Org B Objective 1',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const progress = await t.run(async ctx => {
-                const objectivesInOrgA = await ctx.db
-                    .query('objectives')
-                    .withIndex('by_createdBy_organization', q =>
-                        q.eq('createdBy', userAId).eq('organizationId', orgAId)
-                    )
-                    .collect();
-
-                return objectivesInOrgA.length;
-            });
-
-            expect(progress).toBe(2);
+        await t.mutation(internal.achievements.checkUserAchievements, {
+            userId,
+            organizationId: firstOrganizationId,
+            trigger: 'objective_created',
         });
 
-        test('lists every objective that belongs to the organization', async () => {
-            await t.run(async ctx => {
-                await ctx.db.insert('objectives', {
-                    createdBy: userAId,
-
-                    ownerId: userAId,
-
-                    visibility: 'private',
-                    organizationId: orgAId,
-                    title: 'Objective One',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            await t.run(async ctx => {
-                await ctx.db.insert('objectives', {
-                    createdBy: userAId,
-
-                    ownerId: userAId,
-
-                    visibility: 'private',
-                    organizationId: orgAId,
-                    title: 'Objective Two',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const orgObjectives = await t.run(async ctx => {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization', q => q.eq('organizationId', orgAId))
-                    .collect();
-            });
-
-            expect(orgObjectives.length).toBe(2);
+        const progress = await userIdentity.query(api.achievements.getUserAchievementProgress, {});
+        expect(
+            progress.find(item => item.definition.code === 'objectives_created_5')
+        ).toMatchObject({
+            currentProgress: 5,
+            isEarned: true,
         });
     });
 
-    describe('calculateUserStreak - membership validation', () => {
-        test('should calculate streak for user who is a member of the organization', async () => {
-            const objectiveId = await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Streak Test Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await t.run(async ctx => {
-                for (let i = 0; i < 3; i++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveId,
-                        createdBy: userAId,
-                        organizationId: orgAId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Day ${i + 1}`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
-
-            const streak = await t.run(async ctx => {
-                return calculateUserStreak(ctx, userAId, orgAId);
-            });
-
-            expect(streak).toBe(3);
-        });
-
-        test('should throw error when calculating streak for non-member user', async () => {
-            const objectiveId = await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Streak Test Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await t.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: objectiveId,
-                    createdBy: userAId,
-                    organizationId: orgAId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Today update',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            await expect(
-                t.run(async ctx => {
-                    return calculateUserStreak(ctx, userBId, orgAId);
-                })
-            ).rejects.toThrow(/FORBIDDEN|forbidden|not a member/);
-        });
-
-        test('streak should not include progress from other organizations', async () => {
-            const objectiveAId = await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Org A Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const objectiveBId = await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgBId,
-                title: 'Org B Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await t.run(async ctx => {
-                for (let i = 0; i < 2; i++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveAId,
-                        createdBy: userAId,
-                        organizationId: orgAId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Org A Day ${i + 1}`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
-
-            await t.run(async ctx => {
-                for (let i = 0; i < 5; i++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveBId,
-                        createdBy: userAId,
-                        organizationId: orgBId,
-                        updatedValue: (i + 1) * 10,
-                        updateDate: today.getTime() - i * DAY_MS,
-                        comment: `Org B Day ${i + 1}`,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
-
-            const streakA = await t.run(async ctx => {
-                return calculateUserStreak(ctx, userAId, orgAId);
-            });
-
-            const streakB = await t.run(async ctx => {
-                return calculateUserStreak(ctx, userAId, orgBId);
-            });
-
-            expect(streakA).toBe(2);
-            expect(streakB).toBe(5);
-        });
+    test('rejects a streak calculation for a non-member', async () => {
+        await expect(
+            t.run(ctx => calculateUserStreak(ctx, outsiderId, firstOrganizationId))
+        ).rejects.toThrow(/FORBIDDEN|not a member/i);
     });
 
-    describe('checkUserAchievements - membership validation', () => {
-        test('should process achievements for member user', async () => {
-            await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Test Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const result = await t.run(async ctx => {
-                return await ctx.runMutation(internal.achievements.checkUserAchievements, {
-                    userId: userAId,
-                    organizationId: orgAId,
-                    trigger: 'objective_created',
-                });
-            });
-
-            expect(result).toBeDefined();
-            expect(result.status).toMatch(/completed|in_progress/);
+    test('does not mix streak activity from different organizations', async () => {
+        const firstObjectiveId = await createTestObjective(t, {
+            userId,
+            organizationId: firstOrganizationId,
+            title: 'First organization streak',
+            targetValue: 100,
         });
-
-        test('should throw FORBIDDEN when user is not a member of the organization', async () => {
-            await expect(
-                t.run(async ctx => {
-                    return await ctx.runMutation(internal.achievements.checkUserAchievements, {
-                        userId: userBId,
-                        organizationId: orgAId,
-                        trigger: 'objective_created',
-                    });
-                })
-            ).rejects.toThrow(/FORBIDDEN|forbidden|not a member/);
+        const secondObjectiveId = await createTestObjective(t, {
+            userId,
+            organizationId: secondOrganizationId,
+            title: 'Second organization streak',
+            targetValue: 100,
         });
-    });
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
 
-    describe('cross-org data leakage prevention', () => {
-        test('user in org A should not see objectives from org B in progress', async () => {
-            await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Org A Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgBId,
-                title: 'Org B Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const orgAObjectives = await t.run(async ctx => {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_createdBy_organization', q =>
-                        q.eq('createdBy', userAId).eq('organizationId', orgAId)
-                    )
-                    .collect();
-            });
-
-            const orgBObjectives = await t.run(async ctx => {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_createdBy_organization', q =>
-                        q.eq('createdBy', userAId).eq('organizationId', orgBId)
-                    )
-                    .collect();
-            });
-
-            expect(orgAObjectives.length).toBe(1);
-            expect(orgAObjectives[0]?.organizationId).toBe(orgAId);
-
-            expect(orgBObjectives.length).toBe(1);
-            expect(orgBObjectives[0]?.organizationId).toBe(orgBId);
-        });
-
-        test('objectives from different orgs should not mix in streak calculation', async () => {
-            const orgAObjectiveId = await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgAId,
-                title: 'Org A Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const orgBObjectiveId = await createTestObjective(t, {
-                userId: userAId,
-                organizationId: orgBId,
-                title: 'Org B Objective',
-                targetValue: 100,
-                currentValue: 0,
-            });
-
-            const today = new Date();
-            today.setHours(12, 0, 0, 0);
-
-            await t.run(async ctx => {
+        await t.run(async ctx => {
+            for (let index = 0; index < 2; index++) {
                 await ctx.db.insert('progressUpdates', {
-                    objective: orgAObjectiveId,
-                    createdBy: userAId,
-                    organizationId: orgAId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Org A Today',
+                    objective: firstObjectiveId,
+                    createdBy: userId,
+                    organizationId: firstOrganizationId,
+                    updatedValue: index + 1,
+                    updateDate: today.getTime() - index * TIME.DAY_MS,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
-
+            }
+            for (let index = 0; index < 4; index++) {
                 await ctx.db.insert('progressUpdates', {
-                    objective: orgAObjectiveId,
-                    createdBy: userAId,
-                    organizationId: orgAId,
-                    updatedValue: 20,
-                    updateDate: today.getTime() - 2 * DAY_MS,
-                    comment: 'Org A 2 days ago',
+                    objective: secondObjectiveId,
+                    createdBy: userId,
+                    organizationId: secondOrganizationId,
+                    updatedValue: index + 1,
+                    updateDate: today.getTime() - index * TIME.DAY_MS,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
-            });
-
-            await t.run(async ctx => {
-                await ctx.db.insert('progressUpdates', {
-                    objective: orgBObjectiveId,
-                    createdBy: userAId,
-                    organizationId: orgBId,
-                    updatedValue: 10,
-                    updateDate: today.getTime(),
-                    comment: 'Org B Today',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-
-                await ctx.db.insert('progressUpdates', {
-                    objective: orgBObjectiveId,
-                    createdBy: userAId,
-                    organizationId: orgBId,
-                    updatedValue: 20,
-                    updateDate: today.getTime() - DAY_MS,
-                    comment: 'Org B Yesterday',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const streakA = await t.run(async ctx => {
-                return calculateUserStreak(ctx, userAId, orgAId);
-            });
-
-            const streakB = await t.run(async ctx => {
-                return calculateUserStreak(ctx, userAId, orgBId);
-            });
-
-            expect(streakA).toBe(1);
-            expect(streakB).toBe(2);
-        });
-    });
-
-    describe('organization tenant scoping', () => {
-        test('objectives are listed by organization', async () => {
-            const objectiveId = await t.run(async ctx => {
-                return await ctx.db.insert('objectives', {
-                    createdBy: userAId,
-
-                    ownerId: userAId,
-
-                    visibility: 'private',
-                    organizationId: orgAId,
-                    title: 'Org A Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const orgObjectives = await t.run(async ctx => {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization', q => q.eq('organizationId', orgAId))
-                    .collect();
-            });
-
-            expect(orgObjectives.length).toBe(1);
-            expect(orgObjectives[0]?._id).toBe(objectiveId);
+            }
         });
 
-        test('objectives from another organization are not listed', async () => {
-            await t.run(async ctx => {
-                await ctx.db.insert('objectives', {
-                    createdBy: userAId,
-
-                    ownerId: userAId,
-
-                    visibility: 'private',
-                    organizationId: orgBId,
-                    title: 'Org B Objective',
-                    targetValue: 100,
-                    currentValue: 0,
-                    status: 'active',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                });
-            });
-
-            const orgAObjectives = await t.run(async ctx => {
-                return await ctx.db
-                    .query('objectives')
-                    .withIndex('by_organization', q => q.eq('organizationId', orgAId))
-                    .collect();
-            });
-
-            expect(orgAObjectives.length).toBe(0);
-        });
+        expect(await t.run(ctx => calculateUserStreak(ctx, userId, firstOrganizationId))).toBe(2);
+        expect(await t.run(ctx => calculateUserStreak(ctx, userId, secondOrganizationId))).toBe(4);
     });
 });

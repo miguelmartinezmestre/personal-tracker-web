@@ -4,7 +4,9 @@ import { queryWithRLS } from './platform/rls/wrappers';
 import { internalMutation } from './_generated/server';
 import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
 import { resolveActorUserId, sanitizeAuditMetadata } from './domain/audit/privacy';
+import { paginatedAuditLogsValidator } from './utils/apiReturnValidators';
 import { auditSeverityValidator } from './utils/validators';
+import { withPaginationLimits } from './utils/pagination';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
 
@@ -25,22 +27,24 @@ export const getAuditLogs = queryWithRLS({
         resourceType: v.optional(v.string()),
         paginationOpts: paginationOptsValidator,
     },
+    returns: paginatedAuditLogsValidator,
     handler: async (ctx, args) => {
         const resourceType = args.resourceType;
+        const paginationOpts = withPaginationLimits(args.paginationOpts);
 
         if (resourceType !== undefined) {
             return await ctx.db
                 .query('auditLogs')
                 .withIndex('by_resourceType_createdAt', q => q.eq('resourceType', resourceType))
                 .order('desc')
-                .paginate(args.paginationOpts);
+                .paginate(paginationOpts);
         }
 
         return await ctx.db
             .query('auditLogs')
             .withIndex('by_createdAt', q => q.gte('createdAt', 0))
             .order('desc')
-            .paginate(args.paginationOpts);
+            .paginate(paginationOpts);
     },
 });
 
@@ -50,14 +54,16 @@ export const getAuditLogsByResource = queryWithRLS({
         resourceId: v.string(),
         paginationOpts: paginationOptsValidator,
     },
+    returns: paginatedAuditLogsValidator,
     handler: async (ctx, args) => {
+        const paginationOpts = withPaginationLimits(args.paginationOpts);
         return await ctx.db
             .query('auditLogs')
             .withIndex('by_resourceType_resourceId', q =>
                 q.eq('resourceType', args.resourceType).eq('resourceId', args.resourceId)
             )
             .order('desc')
-            .paginate(args.paginationOpts);
+            .paginate(paginationOpts);
     },
 });
 

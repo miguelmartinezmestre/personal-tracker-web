@@ -4,14 +4,14 @@ import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { formatDate } from '@/lib/format-date';
+import { formatCivilDate, formatDate } from '@/lib/format-date';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import { Pencil, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CircularProgress } from '@/components/ui/circular-progress';
@@ -36,17 +36,29 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         categoryNameById,
         handleFiltersChange,
         objectives,
+        deletedObjectives,
         pagination,
+        trashPagination,
         hasNextPage,
+        trashHasNextPage,
         isLoading,
         isFetching,
+        isTrashLoading,
+        isTrashFetching,
         onNextPage,
+        onNextTrashPage,
     } = useObjectiveListState();
 
     const [editingObjectiveId, setEditingObjectiveId] = useState<Id<'objectives'> | null>(null);
 
     const deleteObjectiveMutation = useMutation({
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
+    });
+    const restoreObjectiveMutation = useMutation({
+        mutationFn: useConvexMutation(api.objectives.restoreObjective),
+    });
+    const purgeObjectiveMutation = useMutation({
+        mutationFn: useConvexMutation(api.objectives.purgeObjective),
     });
 
     const editingObjective =
@@ -101,16 +113,15 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
                     />
                 </>
             ) : null}
-            <Link
-                href={`/dashboard/objectives/${objective._id}`}
-                prefetch={false}
-                data-testid="objective-progress-link"
-                className="inline-flex"
-            >
-                <Button variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm">
+                <Link
+                    href={`/dashboard/objectives/${objective._id}`}
+                    prefetch={false}
+                    data-testid="objective-progress-link"
+                >
                     {t('goToProgress')}
-                </Button>
-            </Link>
+                </Link>
+            </Button>
         </div>
     );
 
@@ -138,7 +149,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
             accessorKey: 'deadline',
             header: t('deadline'),
             cell: ({ row }) =>
-                row.original.deadline ? formatDate(row.original.deadline, locale) : '-',
+                row.original.deadline ? formatCivilDate(row.original.deadline, locale) : '-',
         },
         {
             id: 'status',
@@ -223,7 +234,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
                         ) : null}
                         {objective.deadline ? (
                             <Badge variant="outline">
-                                {formatDate(objective.deadline, locale)}
+                                {formatCivilDate(objective.deadline, locale)}
                             </Badge>
                         ) : null}
                     </div>
@@ -298,6 +309,76 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
                         }
                     />
                 </div>
+            </section>
+
+            <section className="space-y-3" aria-labelledby="objective-trash-heading">
+                <div className="flex items-center justify-between">
+                    <h2 id="objective-trash-heading" className="text-xl font-semibold">
+                        {t('trash.title')}
+                    </h2>
+                    <Badge variant="secondary">{deletedObjectives.length}</Badge>
+                </div>
+                {isTrashLoading ? (
+                    <p className="text-sm text-muted-foreground">{t('trash.loading')}</p>
+                ) : deletedObjectives.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t('trash.empty')}</p>
+                ) : (
+                    <div className="grid gap-3">
+                        {deletedObjectives.map(objective => (
+                            <Card key={objective._id}>
+                                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="min-w-0">
+                                        <p className="truncate font-medium">{objective.title}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {objective.deletedAt
+                                                ? formatDate(objective.deletedAt, locale)
+                                                : ''}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {objective.capabilities.canRestore ? (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={restoreObjectiveMutation.isPending}
+                                                onClick={() =>
+                                                    restoreObjectiveMutation.mutate({
+                                                        id: objective._id,
+                                                    })
+                                                }
+                                            >
+                                                <RotateCcw className="h-4 w-4" />
+                                                {t('trash.restore')}
+                                            </Button>
+                                        ) : null}
+                                        {objective.capabilities.canPurge ? (
+                                            <DeleteConfirmationDialog
+                                                onConfirm={async () => {
+                                                    await purgeObjectiveMutation.mutateAsync({
+                                                        id: objective._id,
+                                                    });
+                                                }}
+                                                title={t('trash.purgeTitle')}
+                                                description={t('trash.purgeDescription')}
+                                                triggerLabel={t('trash.purge')}
+                                                confirmLabel={t('trash.purge')}
+                                                cancelLabel={t('confirm.cancel')}
+                                                isLoading={purgeObjectiveMutation.isPending}
+                                            />
+                                        ) : null}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+                <MobilePagination
+                    pagination={trashPagination}
+                    rowCount={deletedObjectives.length}
+                    hasNextPage={trashHasNextPage}
+                    isLoading={isTrashFetching}
+                    onNextPage={onNextTrashPage}
+                />
             </section>
         </div>
     );

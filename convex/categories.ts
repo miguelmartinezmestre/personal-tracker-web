@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { paginationOptsValidator } from 'convex/server';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
 import { withInvalidCursorRetry } from './utils/pagination';
 import {
@@ -11,11 +11,13 @@ import {
     listCategoriesForCurrentUser,
     updateCategoryForCurrentOrganization,
 } from './domain/categories';
+import { categoryDocumentValidator } from './utils/documentValidators';
 
 export const getCategoriesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
+    returns: paginationResultValidator(categoryDocumentValidator),
     handler: async (ctx, args) => {
         return await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
             listCategoriesForCurrentUser(ctx, { ...args, paginationOpts })
@@ -51,6 +53,7 @@ export const deleteCategory = mutationWithRLS({
 
 export const createDefaultCategories = mutationWithRLS({
     args: {},
+    returns: v.array(v.union(categoryDocumentValidator, v.null())),
     handler: async ctx => {
         return await createDefaultCategoriesForCurrentOrganization(ctx);
     },

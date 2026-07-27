@@ -3,6 +3,12 @@ import type { PaginationOptions } from 'convex/server';
 import type { Id } from '../_generated/dataModel';
 import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
 import { ERROR_CODES } from '../utils/constants';
+import { CATEGORY_NAME_MAX_LENGTH } from '../../shared/input-constraints';
+import {
+    assertValidCategoryColor,
+    assertValidCategoryIcon,
+    normalizeRequiredBoundedString,
+} from '../utils/inputValidation';
 
 export const categoryInputValidator = {
     name: v.string(),
@@ -14,7 +20,7 @@ export const categoryPatchValidator = {
     id: v.id('categories'),
     name: v.optional(v.string()),
     color: v.optional(v.string()),
-    icon: v.optional(v.string()),
+    icon: v.optional(v.union(v.string(), v.null())),
 } as const;
 
 type CategoryQueryCtx = {
@@ -54,12 +60,7 @@ function requireActiveOrganization(ctx: CategoryQueryCtx): Id<'organization'> {
 }
 
 function normalizeCategoryName(name: string) {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
-    }
-
-    return trimmedName;
+    return normalizeRequiredBoundedString(name, CATEGORY_NAME_MAX_LENGTH);
 }
 
 async function findCategoryByOrganizationAndName(
@@ -95,6 +96,8 @@ export async function createCategoryForCurrentOrganization(
     const now = Date.now();
     const organizationId = requireActiveOrganization(ctx);
     const trimmedName = normalizeCategoryName(args.name);
+    assertValidCategoryColor(args.color);
+    assertValidCategoryIcon(args.icon);
 
     const existingCategory = await findCategoryByOrganizationAndName(
         ctx,
@@ -121,14 +124,21 @@ export async function updateCategoryForCurrentOrganization(
     ctx: CategoryMutationCtx,
     args: CategoryPatch
 ) {
-    const { id: categoryId, ...patch } = args;
+    const { id: categoryId } = args;
     const existing = await ctx.db.get('categories', categoryId);
     if (!existing) {
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
 
-    if (patch.name !== undefined) {
-        const trimmedName = normalizeCategoryName(patch.name);
+    const patch: {
+        name?: string;
+        color?: string;
+        icon?: string | undefined;
+        updatedAt: number;
+    } = { updatedAt: Date.now() };
+
+    if (args.name !== undefined) {
+        const trimmedName = normalizeCategoryName(args.name);
 
         const matchingCategories = await ctx.db
             .query('categories')
@@ -144,7 +154,16 @@ export async function updateCategoryForCurrentOrganization(
         patch.name = trimmedName;
     }
 
-    return await ctx.db.patch('categories', categoryId, { ...patch, updatedAt: Date.now() });
+    if (args.color !== undefined) {
+        assertValidCategoryColor(args.color);
+        patch.color = args.color;
+    }
+    if (args.icon !== undefined) {
+        assertValidCategoryIcon(args.icon);
+        patch.icon = args.icon ?? undefined;
+    }
+
+    return await ctx.db.patch('categories', categoryId, patch);
 }
 
 export async function deleteCategoryForCurrentOrganization(

@@ -2,27 +2,19 @@ import { describe, expect, test } from 'vitest';
 import { validatePasswordPolicy } from '../../shared/password-policy';
 
 describe('password policy', () => {
-    test('rejects non-string passwords', () => {
-        const result = validatePasswordPolicy(undefined);
+    test('rejects missing, short, and weak passwords', () => {
+        const cases: Array<[unknown, string]> = [
+            [undefined, 'PASSWORD_TOO_SHORT'],
+            ['Short1', 'PASSWORD_TOO_SHORT'],
+            ['password', 'WEAK_PASSWORD'],
+        ];
 
-        expect(result).toMatchObject({ ok: false, code: 'PASSWORD_TOO_SHORT' });
-    });
-
-    test('rejects passwords shorter than eight characters', () => {
-        const result = validatePasswordPolicy('Short1');
-
-        expect(result).toMatchObject({ ok: false, code: 'PASSWORD_TOO_SHORT' });
-    });
-
-    test('rejects weak passwords with eight or more characters', () => {
-        const result = validatePasswordPolicy('password');
-
-        expect(result).toMatchObject({ ok: false, code: 'WEAK_PASSWORD' });
+        for (const [password, code] of cases) {
+            expect(validatePasswordPolicy(password)).toMatchObject({ ok: false, code });
+        }
     });
 
     test('accepts passwords with lowercase uppercase and number', () => {
-        const result = validatePasswordPolicy('Password123');
-
-        expect(result.ok).toBe(true);
+        expect(validatePasswordPolicy('Password123').ok).toBe(true);
     });
 });

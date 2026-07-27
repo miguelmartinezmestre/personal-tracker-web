@@ -43,25 +43,82 @@ export default defineSchema({
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
         completedAt: v.optional(v.number()),
+        // Optional during rollout so the bounded backfill can migrate existing rows.
+        earlyBirdCompleted: v.optional(v.boolean()),
         unit: v.optional(v.string()),
         workflowId: v.optional(vWorkflowId),
         deletedAt: v.optional(v.number()),
         deletedBy: v.optional(v.id('user')),
+        purgeToken: v.optional(v.string()),
+        purgeStartedAt: v.optional(v.number()),
+        ownerDeletionProcessedAt: v.optional(v.number()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
         // Creator/org scoped metrics; prefix `createdBy` supports creator-wide reads.
         .index('by_createdBy_organization', ['createdBy', 'organizationId'])
+        .index('by_createdBy_status', ['createdBy', 'status'])
+        .index('by_createdBy_organization_status', ['createdBy', 'organizationId', 'status'])
+        .index('by_createdBy_earlyBirdCompleted', ['createdBy', 'earlyBirdCompleted'])
+        .index('by_createdBy_organization_earlyBirdCompleted', [
+            'createdBy',
+            'organizationId',
+            'earlyBirdCompleted',
+        ])
+        .index('by_earlyBirdCompleted', ['earlyBirdCompleted'])
         .index('by_owner', ['ownerId'])
-        // Listings stay scoped by organization; optional filters are applied after this index.
+        .index('by_owner_organization_deletedAt', ['ownerId', 'organizationId', 'deletedAt'])
+        .index('by_owner_organization_ownerDeletionProcessedAt', [
+            'ownerId',
+            'organizationId',
+            'ownerDeletionProcessedAt',
+        ])
+        .index('by_owner_ownerDeletionProcessedAt', ['ownerId', 'ownerDeletionProcessedAt'])
+        // Listings stay scoped by organization; composite indexes keep optional filters bounded.
         .index('by_organization', ['organizationId'])
+        .index('by_organization_status', ['organizationId', 'status'])
+        .index('by_organization_createdAt', ['organizationId', 'createdAt'])
+        .index('by_organization_completedAt', ['organizationId', 'completedAt'])
+        .index('by_organization_deletedAt', ['organizationId', 'deletedAt'])
+        .index('by_organization_deletedAt_status', ['organizationId', 'deletedAt', 'status'])
+        .index('by_organization_deletedAt_categoryId', [
+            'organizationId',
+            'deletedAt',
+            'categoryId',
+        ])
+        .index('by_organization_deletedAt_status_categoryId', [
+            'organizationId',
+            'deletedAt',
+            'status',
+            'categoryId',
+        ])
         .index('by_organization_visibility', ['organizationId', 'visibility'])
         .index('by_organization_deadline', ['organizationId', 'deadline'])
+        .index('by_organization_deletedAt_deadline', ['organizationId', 'deletedAt', 'deadline'])
+        .index('by_organization_deletedAt_status_deadline', [
+            'organizationId',
+            'deletedAt',
+            'status',
+            'deadline',
+        ])
+        .index('by_organization_deletedAt_categoryId_deadline', [
+            'organizationId',
+            'deletedAt',
+            'categoryId',
+            'deadline',
+        ])
+        .index('by_organization_deletedAt_status_categoryId_deadline', [
+            'organizationId',
+            'deletedAt',
+            'status',
+            'categoryId',
+            'deadline',
+        ])
         .index('by_status_deadline', ['status', 'deadline'])
         .index('by_categoryId', ['categoryId'])
         .searchIndex('search_title_by_organization_status_categoryId', {
             searchField: 'title',
-            filterFields: ['organizationId', 'status', 'categoryId'],
+            filterFields: ['organizationId', 'deletedAt', 'status', 'categoryId'],
         }),
 
     objectiveCollaborators: defineTable({
@@ -73,7 +130,9 @@ export default defineSchema({
         createdAt: v.number(),
     })
         .index('by_objective', ['objectiveId'])
+        .index('by_objective_role_createdAt', ['objectiveId', 'role', 'createdAt'])
         .index('by_user', ['userId'])
+        .index('by_organization', ['organizationId'])
         .index('by_objective_user', ['objectiveId', 'userId'])
         .index('by_user_organization', ['userId', 'organizationId']),
 
@@ -103,8 +162,16 @@ export default defineSchema({
         createdAt: v.number(),
         updatedAt: v.number(),
     })
+        .index('by_user', ['userId'])
+        .index('by_organization', ['organizationId'])
         .index('by_user_organization_date', ['userId', 'organizationId', 'notificationDate'])
         .index('by_user_organization_read', ['userId', 'organizationId', 'read'])
+        .index('by_user_organization_read_type', [
+            'userId',
+            'organizationId',
+            'read',
+            'notificationType',
+        ])
         .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate']),
 
     auditLogs: defineTable({
@@ -125,6 +192,7 @@ export default defineSchema({
         createdAt: v.number(),
     })
         .index('by_createdAt', ['createdAt'])
+        .index('by_organization', ['organizationId'])
         .index('by_resourceType_resourceId', ['resourceType', 'resourceId'])
         .index('by_resourceType_createdAt', ['resourceType', 'createdAt']),
 
@@ -208,12 +276,32 @@ export default defineSchema({
         banned: v.optional(v.union(v.null(), v.boolean())),
         banReason: v.optional(v.union(v.null(), v.string())),
         banExpires: v.optional(v.union(v.null(), v.number())),
+        deletedAt: v.optional(v.number()),
     })
         .index('email_name', ['email', 'name'])
         .index('name', ['name'])
         .index('userId', ['userId'])
+        .index('by_role', ['role'])
         .searchIndex('search_user_name', { searchField: 'name' })
         .searchIndex('search_user_email', { searchField: 'email' }),
+
+    session: defineTable({
+        expiresAt: v.number(),
+        token: v.string(),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+        ipAddress: v.optional(v.union(v.null(), v.string())),
+        userAgent: v.optional(v.union(v.null(), v.string())),
+        userId: v.string(),
+        impersonatedBy: v.optional(v.union(v.null(), v.string())),
+        activeOrganizationId: v.optional(v.union(v.null(), v.string())),
+    })
+        .index('expiresAt', ['expiresAt'])
+        .index('expiresAt_userId', ['expiresAt', 'userId'])
+        .index('token', ['token'])
+        .index('userId', ['userId'])
+        .index('activeOrganizationId', ['activeOrganizationId'])
+        .index('by_userId_and_activeOrganizationId', ['userId', 'activeOrganizationId']),
 
     member: defineTable({
         organizationId: v.id('organization'),
@@ -224,12 +312,16 @@ export default defineSchema({
         .index('organizationId', ['organizationId'])
         .index('userId', ['userId'])
         .index('role', ['role'])
+        .index('by_organizationId_and_role_createdAt', ['organizationId', 'role', 'createdAt'])
         .index('by_organizationId_and_userId', ['organizationId', 'userId']),
 
     invitation: defineTable({
         organizationId: v.id('organization'),
         email: v.string(),
-        role: v.optional(v.string()),
+        // Keep the Better Auth table contract: the adapter may persist null
+        // for an optional role even though organization invitations normally
+        // supply the default `member` value.
+        role: v.optional(v.union(v.null(), v.string())),
         status: v.string(),
         expiresAt: v.number(),
         createdAt: v.number(),

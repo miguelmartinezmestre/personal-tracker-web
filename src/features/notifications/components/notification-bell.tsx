@@ -7,13 +7,14 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
+import { useTranslations } from 'next-intl';
 
 export function NotificationBell() {
-    const { data: unreadCountData } = useQuery(
-        convexQuery(api.notifications.getUnreadNotificationCount, {})
-    );
+    const t = useTranslations('Notifications');
+    const { data: overview } = useQuery(convexQuery(api.notifications.getNotificationOverview, {}));
 
-    const count = unreadCountData?.count ?? 0;
+    const count = overview?.unreadCount ?? 0;
+    const isTruncated = overview?.isUnreadTruncated ?? false;
 
     return (
         <Button variant="ghost" size="icon" className="relative" asChild>
@@ -28,7 +29,11 @@ export function NotificationBell() {
                     </Badge>
                 )}
                 <span className="sr-only">
-                    {count > 0 ? `${count} unread notifications` : 'No unread notifications'}
+                    {count > 0
+                        ? isTruncated
+                            ? t('unreadCountAtLeast', { count })
+                            : t('unreadCount', { count })
+                        : t('allCaughtUp')}
                 </span>
             </Link>
         </Button>

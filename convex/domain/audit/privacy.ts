@@ -79,6 +79,7 @@ const RESOURCE_ALLOWED_AUDIT_FIELDS: Record<string, Set<string>> = {
         'role',
         'banned',
         'banExpires',
+        'deletedAt',
     ]),
     invitation: new Set([
         '_id',

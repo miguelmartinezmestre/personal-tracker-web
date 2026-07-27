@@ -5,31 +5,42 @@ import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
-import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
-export function NotificationSonnerListener() {
-    const { data } = useQuery(
-        convexQuery(api.notifications.getNotificationsByUser, {
-            paginationOpts: { numItems: DEFAULT_PAGE_SIZE, cursor: null },
-        })
-    );
+interface NotificationSonnerListenerProps {
+    organizationId: string | null;
+}
 
-    const previousNotificationsRef = useRef<Set<string>>(new Set());
+export function NotificationSonnerListener({ organizationId }: NotificationSonnerListenerProps) {
+    const { data: overview } = useQuery(convexQuery(api.notifications.getNotificationOverview, {}));
 
-    const notificationPage = data?.page;
+    const scopeRef = useRef<string | null | undefined>(undefined);
+    const latestCreationTimeRef = useRef(0);
+
+    const notificationPage = overview?.notifications;
 
     useEffect(() => {
         if (!notificationPage) return;
-        const currentIds = new Set(notificationPage.map(notification => notification._id));
-        const previousIds = previousNotificationsRef.current;
+        const latestCreationTime = notificationPage.reduce(
+            (latest, notification) => Math.max(latest, notification._creationTime),
+            0
+        );
+
+        // Initial data and a tenant switch are history, not new delivery.
+        // A time watermark also prevents older rows re-entering the top page
+        // after deletions from being announced as fresh notifications.
+        if (scopeRef.current !== organizationId) {
+            scopeRef.current = organizationId;
+            latestCreationTimeRef.current = latestCreationTime;
+            return;
+        }
 
         const newNotifications = notificationPage.filter(
-            notification => !previousIds.has(notification._id)
+            notification => notification._creationTime > latestCreationTimeRef.current
         );
         newNotifications.slice(0, 3).forEach(notification => toast.info(notification.message));
 
-        previousNotificationsRef.current = currentIds;
-    }, [notificationPage]);
+        latestCreationTimeRef.current = Math.max(latestCreationTimeRef.current, latestCreationTime);
+    }, [notificationPage, organizationId]);
 
     return null;
 }

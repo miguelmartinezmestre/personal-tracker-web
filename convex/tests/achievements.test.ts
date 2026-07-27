@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- integration coverage is intentionally kept in one fixture */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { api } from '../_generated/api';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
@@ -81,6 +82,53 @@ describe('convex achievements', async () => {
 
             expect(result.count).toBe(0);
             expect(result.message).toBe('Achievements already seeded');
+        });
+
+        test('reconciles missing and stale canonical definitions', async () => {
+            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
+            await userIdentity.run(async ctx => {
+                const definitions = await ctx.db.query('achievementDefinitions').collect();
+                const missing = definitions.find(
+                    definition => definition.code === 'first_objective'
+                );
+                const stale = definitions.find(
+                    definition => definition.code === 'objectives_created_5'
+                );
+                if (!missing || !stale) throw new Error('Expected seeded definitions');
+                await ctx.db.delete('achievementDefinitions', missing._id);
+                await ctx.db.patch('achievementDefinitions', stale._id, {
+                    points: -1,
+                    isActive: false,
+                });
+            });
+
+            const result = await userIdentity.mutation(
+                api.achievements.seedAchievementDefinitions,
+                {}
+            );
+            expect(result).toEqual({ message: 'Achievement definitions reconciled', count: 2 });
+
+            const definitions = await userIdentity.run(ctx =>
+                ctx.db.query('achievementDefinitions').collect()
+            );
+            expect(
+                definitions.find(definition => definition.code === 'first_objective')
+            ).toBeDefined();
+            expect(
+                definitions.find(definition => definition.code === 'objectives_created_5')
+            ).toMatchObject({ points: 25, isActive: false });
+
+            // This file intentionally shares one Convex fixture across tests.
+            // Restore the canonical definition so the deactivation exercised
+            // above does not hide it from later progress assertions.
+            const reconciled = definitions.find(
+                definition => definition.code === 'objectives_created_5'
+            );
+            if (reconciled) {
+                await userIdentity.run(ctx =>
+                    ctx.db.patch('achievementDefinitions', reconciled._id, { isActive: true })
+                );
+            }
         });
 
         test('rejects non-admin users with FORBIDDEN', async () => {
@@ -373,6 +421,7 @@ describe('convex achievements', async () => {
                     status: 'completed',
                     deadline: futureDeadline,
                     completedAt: now,
+                    earlyBirdCompleted: true,
                     createdAt: now - 1000,
                     updatedAt: now,
                 });
@@ -406,6 +455,7 @@ describe('convex achievements', async () => {
                     targetValue: 100,
                     currentValue: 100,
                     status: 'completed',
+                    earlyBirdCompleted: false,
                     createdAt: Date.now() - 1000,
                     updatedAt: Date.now(),
                 });
@@ -443,6 +493,7 @@ describe('convex achievements', async () => {
                     status: 'completed',
                     deadline: pastDeadline,
                     completedAt: now,
+                    earlyBirdCompleted: false,
                     createdAt: pastDeadline - 7 * 24 * 60 * 60 * 1000,
                     updatedAt: now,
                 });
@@ -481,6 +532,7 @@ describe('convex achievements', async () => {
                     status: 'completed',
                     deadline: pastDeadline,
                     completedAt: now,
+                    earlyBirdCompleted: false,
                     createdAt: createdBeforeDeadline,
                     updatedAt: now,
                 });

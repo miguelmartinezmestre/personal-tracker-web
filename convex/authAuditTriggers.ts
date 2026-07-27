@@ -7,7 +7,7 @@ import {
     sanitizeAuditMetadata,
     toAuditPrimitive,
 } from './domain/audit/privacy';
-import { reassignObjectivesOnMemberLeave } from './domain/objectives/collaborators';
+import { startMemberLeaveCleanup } from './jobs/organizations/memberLeaveCleanup';
 
 type BetterAuthSchema = typeof schema;
 
@@ -28,6 +28,7 @@ const ALLOWED_USER_FIELDS = new Set([
     'role',
     'banned',
     'banExpires',
+    'deletedAt',
 ]);
 
 const ALLOWED_INVITATION_FIELDS = new Set([
@@ -264,7 +265,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
                 );
                 const userId = ctx.db.normalizeId('user', change.oldDoc.userId);
                 if (organizationId && userId) {
-                    await reassignObjectivesOnMemberLeave(ctx, organizationId, userId);
+                    await startMemberLeaveCleanup(ctx, organizationId, userId);
                 }
 
                 const memberDoc = change.oldDoc as Record<string, unknown>;

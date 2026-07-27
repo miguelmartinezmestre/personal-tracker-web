@@ -2,6 +2,7 @@ import { getRequestConfig } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { routing } from './routing';
 import { cache } from 'react';
+import { fetchPlatformDefaultLocale } from '@/lib/platform-locale';
 
 const getValidLocale = cache(async () => {
     type AppLocale = (typeof routing.locales)[number];
@@ -14,12 +15,19 @@ const getValidLocale = cache(async () => {
         const cookieStore = await cookies();
         locale = cookieStore.get('locale')?.value;
     } catch {
-        locale = routing.defaultLocale;
+        locale = undefined;
     }
 
-    const validLocale: AppLocale = locale && isAppLocale(locale) ? locale : routing.defaultLocale;
+    if (locale && isAppLocale(locale)) {
+        return locale;
+    }
 
-    return validLocale;
+    const platformDefault = await fetchPlatformDefaultLocale();
+    if (platformDefault) {
+        return platformDefault;
+    }
+
+    return routing.defaultLocale;
 });
 
 export default getRequestConfig(async () => {

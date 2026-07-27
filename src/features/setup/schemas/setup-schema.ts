@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { categoryColorSchema, categoryIconSchema } from '@/features/categories/schemas/category';
+import {
+    isSetupSecretLengthValid,
+    MAX_SETUP_SECRET_LENGTH,
+    MIN_SETUP_SECRET_LENGTH,
+} from '@shared/auth-security';
 
 const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 
@@ -8,31 +13,47 @@ export const platformConfigSchema = z.object({
     defaultLanguage: z.enum(['en', 'es']),
 });
 
-export const adminAccountSchema = z
-    .object({
-        username: z.string().min(3),
-        email: z.string().email(),
-        password: z.string().min(8),
-        confirmPassword: z.string().min(8),
-    })
-    .superRefine((values, ctx) => {
-        if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['password'],
-                message:
-                    'Password must include at least one uppercase letter, one lowercase letter, and one number',
-            });
-        }
+type AdminAccountSchemaMessages = {
+    setupSecretInvalidLength: string;
+};
 
-        if (values.password !== values.confirmPassword) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['confirmPassword'],
-                message: 'Passwords do not match',
-            });
-        }
-    });
+export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMessages>) {
+    return z
+        .object({
+            username: z.string().min(3),
+            email: z.string().email(),
+            password: z.string().min(8),
+            confirmPassword: z.string().min(8),
+            setupSecret: z
+                .string()
+                .max(MAX_SETUP_SECRET_LENGTH)
+                .refine(isSetupSecretLengthValid, {
+                    message:
+                        messages?.setupSecretInvalidLength ??
+                        `SETUP_SECRET must contain between ${MIN_SETUP_SECRET_LENGTH} and ${MAX_SETUP_SECRET_LENGTH} characters when provided`,
+                }),
+        })
+        .superRefine((values, ctx) => {
+            if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ['password'],
+                    message:
+                        'Password must include at least one uppercase letter, one lowercase letter, and one number',
+                });
+            }
+
+            if (values.password !== values.confirmPassword) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ['confirmPassword'],
+                    message: 'Passwords do not match',
+                });
+            }
+        });
+}
+
+export const adminAccountSchema = createAdminAccountSchema();
 
 export const organizationSchema = z.object({
     name: z.string().min(1).max(100),

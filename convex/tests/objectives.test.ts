@@ -158,6 +158,17 @@ describe('convex objectives', () => {
             ).rejects.toThrow();
         });
 
+        test('rejects conflicting current and start baselines', async () => {
+            await expect(
+                userIdentity.mutation(api.objectives.createObjective, {
+                    title: 'Ambiguous baseline',
+                    targetValue: 100,
+                    currentValue: 10,
+                    startValue: 20,
+                })
+            ).rejects.toThrow(/VALIDATION_ERROR/);
+        });
+
         test('rejects unauthenticated callers', async () => {
             await expect(
                 t.mutation(api.objectives.createObjective, {
@@ -283,6 +294,57 @@ describe('convex objectives', () => {
             expect(updated?.title).toBe('New title');
             expect(updated?.unit).toBe('km');
             expect(updated?.targetValue).toBe(100);
+        });
+
+        test('can clear a deadline and recomputes early-bird progress on deadline changes', async () => {
+            const now = Date.now();
+            const today = new Date(now);
+            const todayCivilDay = Date.UTC(
+                today.getUTCFullYear(),
+                today.getUTCMonth(),
+                today.getUTCDate()
+            );
+            const objectiveId = await createTestObjective(t, {
+                userId,
+                organizationId,
+                title: 'Completed after original deadline',
+                targetValue: 100,
+                currentValue: 100,
+                status: 'completed',
+                deadline: todayCivilDay - 24 * 60 * 60 * 1000,
+                completedAt: now,
+                earlyBirdCompleted: false,
+            });
+
+            const beforeScheduledIds = await t.run(async ctx =>
+                (await ctx.db.system.query('_scheduled_functions').collect()).map(row => row._id)
+            );
+            const beforeScheduledIdSet = new Set(beforeScheduledIds);
+
+            const extended = await userIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                deadline: todayCivilDay,
+            });
+            expect(extended.earlyBirdCompleted).toBe(true);
+
+            const completionEvaluations = await t.run(async ctx => {
+                return (await ctx.db.system.query('_scheduled_functions').collect())
+                    .filter(row => !beforeScheduledIdSet.has(row._id))
+                    .map(
+                        row => row.args[0] as { trigger?: string; userId?: Id<'user'> } | undefined
+                    )
+                    .filter(args => args?.trigger === 'objective_completed');
+            });
+            expect(completionEvaluations).toEqual([
+                expect.objectContaining({ userId, trigger: 'objective_completed' }),
+            ]);
+
+            const cleared = await userIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                deadline: null,
+            });
+            expect(cleared.deadline).toBeUndefined();
+            expect(cleared.earlyBirdCompleted).toBe(false);
         });
 
         test('rejects an empty title', async () => {

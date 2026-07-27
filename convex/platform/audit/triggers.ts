@@ -125,6 +125,7 @@ function sanitizeUser(doc: unknown): Record<string, string | number | boolean | 
         _id: toAuditPrimitive(userRecord._id),
         role: toAuditPrimitive(userRecord.role),
         banned: toAuditPrimitive(userRecord.banned),
+        deletedAt: toAuditPrimitive(userRecord.deletedAt),
         createdAt: toAuditPrimitive(userRecord.createdAt),
         updatedAt: toAuditPrimitive(userRecord.updatedAt),
     };
