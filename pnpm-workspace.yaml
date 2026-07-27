@@ -1,10 +1,27 @@
 # Only resolve versions published at least this many minutes ago (7 days).
 minimumReleaseAge: 10080
 
+# Security patches are allowed through the seven-day release cooldown.
+minimumReleaseAgeExclude:
+    - brace-expansion@5.0.6
+    - js-yaml@4.3.0
+
 overrides:
+    'brace-expansion@>=5.0.0 <5.0.6': 5.0.6
     glob: ^11.1.0
-    js-yaml: ^4.1.1
+    js-yaml: 4.3.0
+    '@babel/core': '>=7.29.1'
+    esbuild: '>=0.28.1'
+    postcss: '>=8.5.10'
     tmp: '>=0.2.4'
+    vite: 8.0.16
+    ws: '>=8.21.0'
+
+# kitcn 0.15.14 pins an exact, vulnerable Hono peer. Hono follows semver and
+# 4.12.25+ contains the upstream CORS security fix (GHSA-88fw-hqm2-52qc).
+peerDependencyRules:
+    allowedVersions:
+        'kitcn@0.15.14>hono': '>=4.12.25 <5'
 
 allowBuilds:
     '@parcel/watcher': true

@@ -22,6 +22,9 @@ convex/.env.*.local
 .pnpm-debug.log*
 *.log
 
+# test-capture logs (scripts/capture-tests.sh)
+/logs/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
