@@ -1,4 +1,4 @@
-import { fetchAuthQuery } from '@/features/auth/server';
+import { fetchAuthQuery, isAuthRequiredError } from '@/features/auth/server';
 import { api } from '@/convex/_generated/api';
 import { AppSidebar } from '@/features/dashboard';
 import { ThemeToggle } from '@/platform/theme/theme-switcher';
@@ -20,13 +20,17 @@ export default async function Layout({ children }: { children: React.ReactNode }
         redirect('/setup');
     }
 
-    const [initialUser, activeOrganizationId] = await Promise.all([
-        fetchAuthQuery(api.auth.getCurrentUser).catch(() => null),
-        fetchAuthQuery(api.auth.getCurrentOrganization).catch(() => null),
-    ]);
-    if (!initialUser) {
-        redirect('/login');
+    let dashboardContext: Awaited<ReturnType<typeof fetchDashboardContext>>;
+    try {
+        dashboardContext = await fetchDashboardContext();
+    } catch (error) {
+        if (isAuthRequiredError(error)) {
+            redirect('/login');
+        }
+        throw error;
     }
+
+    const { user: initialUser, organizationId: activeOrganizationId } = dashboardContext;
 
     const dashboardScopeKey = activeOrganizationId ?? 'no-active-organization';
 
@@ -39,7 +43,10 @@ export default async function Layout({ children }: { children: React.ReactNode }
                         <SidebarTrigger className="-ml-1" />
                     </div>
                     <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
-                        <OrganizationSwitcher />
+                        <OrganizationSwitcher
+                            key={activeOrganizationId ?? 'no-active-organization'}
+                            initialActiveOrganizationId={activeOrganizationId}
+                        />
                         <NotificationBell />
                         <ThemeToggle testId="dashboard-theme-toggle" />
                         <LanguageSwitcher />
@@ -47,14 +54,18 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     </div>
                 </header>
                 <CommandMenu />
-                <NotificationSonnerListener />
-                <div
+                <NotificationSonnerListener organizationId={activeOrganizationId} />
+                <main
                     key={dashboardScopeKey}
                     className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4 pt-0 [&>*]:min-w-0"
                 >
                     {children}
-                </div>
+                </main>
             </SidebarInset>
         </SidebarProvider>
     );
+}
+
+async function fetchDashboardContext() {
+    return await fetchAuthQuery(api.auth.getDashboardContext);
 }

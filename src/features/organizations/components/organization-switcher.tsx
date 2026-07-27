@@ -12,54 +12,44 @@ import {
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-    useActiveOrganization,
-    useActiveMember,
-} from '@/features/organizations/hooks/use-active-organization';
+import { useMutation } from '@tanstack/react-query';
 import { useOrganizations } from '@/features/organizations/hooks/use-organizations';
-import { useSession } from '@/features/auth/hooks/use-session';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { useState } from 'react';
 
-export function OrganizationSwitcher() {
+interface OrganizationSwitcherProps {
+    initialActiveOrganizationId: string | null;
+}
+
+export function OrganizationSwitcher({ initialActiveOrganizationId }: OrganizationSwitcherProps) {
     const t = useTranslations('OrganizationSwitcher');
     const router = useRouter();
-    const queryClient = useQueryClient();
-    const activeOrganizationQuery = useActiveOrganization();
-    const activeMemberQuery = useActiveMember();
     const organizationsQuery = useOrganizations();
-    const sessionQuery = useSession();
-
-    const sessionActiveOrganizationId =
-        sessionQuery.data?.session?.activeOrganizationId ?? undefined;
-    const activeOrganization = activeOrganizationQuery.data ?? null;
+    const [activeOrganizationId, setActiveOrganizationId] = useState<string | null>(
+        initialActiveOrganizationId
+    );
     const organizations = organizationsQuery.data ?? [];
-    const activeOrganizationId =
-        activeOrganization?.id ??
-        activeMemberQuery.data?.organizationId ??
-        sessionActiveOrganizationId;
-    const isLoadingData =
-        activeOrganizationQuery.isPending ||
-        activeMemberQuery.isPending ||
-        organizationsQuery.isPending;
+    const isLoadingData = organizationsQuery.isPending;
 
     const setActiveMutation = useMutation({
         mutationFn: async (organizationId: string) => {
-            return await authClient.organization.setActive({
+            const result = await authClient.organization.setActive({
                 organizationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
-        onSuccess: () => {
-            queryClient.removeQueries();
+        onSuccess: (_data, organizationId) => {
+            setActiveOrganizationId(organizationId);
             router.refresh();
         },
     });
 
-    const activeOrganizationFromList = organizations.find(
+    const activeOrganization = organizations.find(
         organization => organization.id === activeOrganizationId
     );
-    const displayName =
-        activeOrganization?.name || activeOrganizationFromList?.name || t('noOrganization');
-    const activeIsPersonal = Boolean(activeOrganizationFromList?.isPersonal);
+    const displayName = activeOrganization?.name || t('noOrganization');
+    const activeIsPersonal = Boolean(activeOrganization?.isPersonal);
 
     const handleOrganizationChange = (organizationId: string) => {
         if (!organizationId || organizationId === activeOrganizationId) {
@@ -89,7 +79,7 @@ export function OrganizationSwitcher() {
                             </span>
                             <div
                                 className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
-                                title={t('activeOrganization') || 'Active organization'}
+                                title={t('activeOrganization')}
                             />
                         </>
                     )}
@@ -99,7 +89,7 @@ export function OrganizationSwitcher() {
             <DropdownMenuContent align="end" className="w-72">
                 <div className="border-b px-3 py-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        {t('activeOrganization') || 'Active Organization'}
+                        {t('activeOrganization')}
                     </p>
                     <p className="mt-1 flex items-center gap-2 truncate text-sm font-semibold">
                         <span className="truncate">{displayName}</span>
@@ -111,7 +101,7 @@ export function OrganizationSwitcher() {
                     </p>
                 </div>
                 <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                    {t('switchOrganization') || 'Switch to:'}
+                    {t('switchOrganization')}
                 </div>
                 <div className="max-h-60 overflow-y-auto">
                     {isLoadingData ? (
@@ -139,7 +129,7 @@ export function OrganizationSwitcher() {
                                 ) : null}
                                 {organization.id === activeOrganizationId ? (
                                     <span className="text-xs text-primary font-medium">
-                                        {t('current') || 'Current'}
+                                        {t('current')}
                                     </span>
                                 ) : null}
                                 {organization.id === activeOrganizationId && (
