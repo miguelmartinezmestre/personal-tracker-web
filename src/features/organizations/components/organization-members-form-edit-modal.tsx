@@ -29,14 +29,17 @@ import FormModal from '@/components/forms/form-modal';
 
 export default function OrganizationMemberEditFormModal({
     defaultValues,
+    canAssignOwner,
 }: {
     defaultValues: OrganizationMember;
+    canAssignOwner: boolean;
 }) {
     const t = useTranslations('OrganizationMembers');
     const tCommon = useTranslationsCommon('Common');
 
     const roleOptions = [
-        { value: OrganizationRole.OWNER, label: t('roles.owner') },
+        ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
+        { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
     const updateOrganizationMember = useUpdateOrganizationMember();

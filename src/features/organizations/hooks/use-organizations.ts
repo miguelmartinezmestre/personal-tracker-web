@@ -9,6 +9,12 @@ import type {
     Organization,
 } from '@/features/organizations/schemas/organization';
 import { convexQuery } from '@convex-dev/react-query';
+import {
+    ORGANIZATION_ROLES,
+    type OrganizationRoleValue,
+} from '@/features/organizations/types/roles';
+import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { buildOrganizationSlug } from '@shared/organization-slug';
 
 export interface CreateOrganizationParams {
     name: string;
@@ -27,6 +33,24 @@ interface OrganizationRaw {
     slug: string;
     description?: string;
     isPersonal?: boolean;
+    role: string;
+}
+
+function normalizeOrganizationRole(role: string): OrganizationRoleValue {
+    return ORGANIZATION_ROLES.includes(role as OrganizationRoleValue)
+        ? (role as OrganizationRoleValue)
+        : 'member';
+}
+
+function mapOrganization(rawOrganization: OrganizationRaw): Organization {
+    return {
+        id: rawOrganization.id,
+        name: rawOrganization.name,
+        slug: rawOrganization.slug,
+        description: rawOrganization.description ?? '',
+        isPersonal: rawOrganization.isPersonal ?? false,
+        role: normalizeOrganizationRole(rawOrganization.role),
+    };
 }
 
 export function useOrganizations() {
@@ -34,15 +58,7 @@ export function useOrganizations() {
         convexQuery(api.organizations.getOrganizationsByUser, {})
     );
 
-    const organizations: Organization[] | undefined = data?.map(
-        (rawOrganization: OrganizationRaw) => ({
-            id: rawOrganization.id,
-            name: rawOrganization.name,
-            slug: rawOrganization.slug,
-            description: rawOrganization.description ?? '',
-            isPersonal: rawOrganization.isPersonal ?? false,
-        })
-    );
+    const organizations: Organization[] | undefined = data?.map(mapOrganization);
 
     return {
         data: organizations,
@@ -75,13 +91,7 @@ export function useOrganizationByIdentifier(identifier: string | null) {
     }
 
     const organization: Organization | null = matchedOrganization
-        ? {
-              id: matchedOrganization.id,
-              name: matchedOrganization.name,
-              slug: matchedOrganization.slug,
-              description: matchedOrganization.description ?? '',
-              isPersonal: matchedOrganization.isPersonal ?? false,
-          }
+        ? mapOrganization(matchedOrganization)
         : null;
 
     return {
@@ -94,15 +104,14 @@ export function useOrganizationByIdentifier(identifier: string | null) {
 export function useCreateOrganization() {
     return useMutation({
         mutationFn: async (values: CreateOrganizationParams | CreateOrganization) => {
-            return await authClient.organization.create({
+            const result = await authClient.organization.create({
                 name: values.name,
-                description: values.description,
                 logo: '',
-                slug: values.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, ''),
+                metadata: values.description ? { description: values.description } : undefined,
+                slug: buildOrganizationSlug(values.name),
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }
@@ -110,23 +119,28 @@ export function useCreateOrganization() {
 export function useUpdateOrganization() {
     return useMutation({
         mutationFn: async (values: UpdateOrganizationParams | Organization) => {
-            return await authClient.organization.update({
+            const result = await authClient.organization.update({
                 data: {
                     name: values.name,
-                    description: values.description ?? undefined,
+                    metadata: { description: values.description ?? '' },
                 },
                 organizationId: values.id,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }
 
 export function useDeleteOrganization() {
     return useMutation({
+        meta: { handlesErrorsLocally: true },
         mutationFn: async (values: { id: string }) => {
-            return await authClient.organization.delete({
+            const result = await authClient.organization.delete({
                 organizationId: values.id,
             });
+            throwIfAuthClientError(result);
+            return result.data;
         },
     });
 }

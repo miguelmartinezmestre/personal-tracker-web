@@ -5,6 +5,10 @@ import CreateOrganizationMemberFormModal from '@/features/organizations/componen
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import {
+    isOrganizationAdminRole,
+    isOrganizationOwnerRole,
+} from '@/features/organizations/types/roles';
 
 interface OrganizationDetailClientProps {
     organizationId: string;
@@ -31,7 +35,7 @@ export default function OrganizationDetailClient({
     if (!organization) {
         return (
             <div className="text-center py-8" data-testid="organization-detail-empty">
-                <p className="text-muted-foreground">Organization not found</p>
+                <p className="text-muted-foreground">{tMembers('organizationNotFound')}</p>
             </div>
         );
     }
@@ -51,16 +55,23 @@ export default function OrganizationDetailClient({
                         >
                             {tMembers('personalOrgInviteRestricted')}
                         </p>
-                    ) : (
-                        <CreateOrganizationMemberFormModal organizationId={organization.id} />
-                    )}
+                    ) : isOrganizationAdminRole(organization.role) ? (
+                        <CreateOrganizationMemberFormModal
+                            organizationId={organization.id}
+                            canAssignOwner={isOrganizationOwnerRole(organization.role)}
+                        />
+                    ) : null}
                 </div>
             </div>
             <section className="space-y-3" aria-labelledby="organization-members-heading">
                 <h2 id="organization-members-heading" className="text-xl font-semibold">
                     {tMembers('title')}
                 </h2>
-                <OrganizationMembersTable key={organization.id} organizationId={organization.id} />
+                <OrganizationMembersTable
+                    key={organization.id}
+                    organizationId={organization.id}
+                    actorRole={organization.role}
+                />
             </section>
         </>
     );

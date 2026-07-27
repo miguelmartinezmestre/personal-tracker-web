@@ -15,125 +15,113 @@ const ownerId = uid('owner1');
 const otherUserId = uid('other1');
 
 describe('objective permissions', () => {
-    test('global admin can perform all objective actions', () => {
-        const subject = buildPermissionSubject({
-            userId: otherUserId,
-            platformRole: 'globalAdmin',
-            memberRole: 'member',
-            collaboratorRole: null,
-        });
-        const objective = {
-            ownerId,
-            visibility: 'private' as const,
-        };
+    test('role matrix grants and denies core objective actions', () => {
+        const objective = { ownerId, visibility: 'private' as const };
+        const cases = [
+            {
+                subject: buildPermissionSubject({
+                    userId: otherUserId,
+                    platformRole: 'globalAdmin',
+                    memberRole: 'member',
+                    collaboratorRole: null,
+                }),
+                expected: {
+                    view: true,
+                    editDefinition: true,
+                    delete: true,
+                    contributeProgress: true,
+                },
+            },
+            {
+                subject: buildPermissionSubject({
+                    userId: otherUserId,
+                    platformRole: 'user',
+                    memberRole: 'admin',
+                    collaboratorRole: null,
+                }),
+                expected: {
+                    view: true,
+                    editDefinition: true,
+                    delete: true,
+                    contributeProgress: true,
+                },
+            },
+            {
+                subject: buildPermissionSubject({
+                    userId: ownerId,
+                    platformRole: 'user',
+                    memberRole: 'member',
+                    collaboratorRole: null,
+                }),
+                expected: {
+                    view: true,
+                    editDefinition: true,
+                    manageCollaborators: true,
+                    contributeProgress: true,
+                },
+            },
+            {
+                subject: buildPermissionSubject({
+                    userId: otherUserId,
+                    platformRole: 'user',
+                    memberRole: 'member',
+                    collaboratorRole: 'editor',
+                }),
+                expected: {
+                    view: true,
+                    contributeProgress: true,
+                    editDefinition: false,
+                    delete: false,
+                },
+            },
+            {
+                subject: buildPermissionSubject({
+                    userId: otherUserId,
+                    platformRole: 'user',
+                    memberRole: 'member',
+                    collaboratorRole: 'viewer',
+                }),
+                expected: {
+                    view: true,
+                    contributeProgress: false,
+                    editDefinition: false,
+                },
+            },
+            {
+                subject: buildPermissionSubject({
+                    userId: otherUserId,
+                    platformRole: 'user',
+                    memberRole: 'member',
+                    collaboratorRole: null,
+                }),
+                expected: {
+                    view: false,
+                    contributeProgress: false,
+                    editDefinition: false,
+                },
+            },
+        ];
 
-        expect(canObjective('view', subject, objective)).toBe(true);
-        expect(canObjective('editDefinition', subject, objective)).toBe(true);
-        expect(canObjective('delete', subject, objective)).toBe(true);
-        expect(canObjective('contributeProgress', subject, objective)).toBe(true);
-    });
+        for (const { subject, expected } of cases) {
+            for (const [action, allowed] of Object.entries(expected)) {
+                expect(
+                    canObjective(action as Parameters<typeof canObjective>[0], subject, objective)
+                ).toBe(allowed);
+            }
+        }
 
-    test('org admin can manage any objective in org', () => {
-        const subject = buildPermissionSubject({
-            userId: otherUserId,
-            platformRole: 'user',
-            memberRole: 'admin',
-            collaboratorRole: null,
-        });
-        const objective = {
-            ownerId,
-            visibility: 'private' as const,
-        };
-
-        expect(canObjective('view', subject, objective)).toBe(true);
-        expect(canObjective('editDefinition', subject, objective)).toBe(true);
-        expect(canObjective('delete', subject, objective)).toBe(true);
-    });
-
-    test('owner can manage their objective', () => {
-        const subject = buildPermissionSubject({
-            userId: ownerId,
-            platformRole: 'user',
-            memberRole: 'member',
-            collaboratorRole: null,
-        });
-        const objective = {
-            ownerId,
-            visibility: 'private' as const,
-        };
-
-        expect(canObjective('editDefinition', subject, objective)).toBe(true);
-        expect(canObjective('manageCollaborators', subject, objective)).toBe(true);
-        expect(canObjective('contributeProgress', subject, objective)).toBe(true);
-    });
-
-    test('editor collaborator can view and contribute but not edit definition', () => {
-        const subject = buildPermissionSubject({
-            userId: otherUserId,
-            platformRole: 'user',
-            memberRole: 'member',
-            collaboratorRole: 'editor',
-        });
-        const objective = {
-            ownerId,
-            visibility: 'private' as const,
-        };
-
-        expect(canObjective('view', subject, objective)).toBe(true);
-        expect(canObjective('contributeProgress', subject, objective)).toBe(true);
-        expect(canObjective('editDefinition', subject, objective)).toBe(false);
-        expect(canObjective('delete', subject, objective)).toBe(false);
-    });
-
-    test('viewer collaborator can only view', () => {
-        const subject = buildPermissionSubject({
-            userId: otherUserId,
-            platformRole: 'user',
-            memberRole: 'member',
-            collaboratorRole: 'viewer',
-        });
-        const objective = {
-            ownerId,
-            visibility: 'private' as const,
-        };
-
-        expect(canObjective('view', subject, objective)).toBe(true);
-        expect(canObjective('contributeProgress', subject, objective)).toBe(false);
-    });
-
-    test('member without relationship cannot view private objective', () => {
-        const subject = buildPermissionSubject({
-            userId: otherUserId,
-            platformRole: 'user',
-            memberRole: 'member',
-            collaboratorRole: null,
-        });
-        const objective = {
-            ownerId,
-            visibility: 'private' as const,
-        };
-
-        expect(canObjective('view', subject, objective)).toBe(false);
-        expect(canObjective('contributeProgress', subject, objective)).toBe(false);
-    });
-
-    test('member without relationship can view organization-wide objective', () => {
-        const subject = buildPermissionSubject({
+        const unrelatedMember = buildPermissionSubject({
             userId: otherUserId,
             platformRole: 'user',
             memberRole: 'member',
             collaboratorRole: null,
         });
-        const objective = {
-            ownerId,
-            visibility: 'organization' as const,
-        };
-
-        expect(canObjective('view', subject, objective)).toBe(true);
-        expect(canObjective('contributeProgress', subject, objective)).toBe(false);
+        expect(canObjective('view', unrelatedMember, { ownerId, visibility: 'organization' })).toBe(
+            true
+        );
     });
 
-    test('soft-deleted objective is hidden except for owner restore', () => {
+    test('soft-deleted objectives are immutable and active objectives cannot be purged', () => {
         const subject = buildPermissionSubject({
             userId: ownerId,
             platformRole: 'user',
@@ -148,10 +136,30 @@ describe('objective permissions', () => {
 
         expect(canObjective('view', subject, objective)).toBe(true);
         expect(canObjective('restore', subject, objective)).toBe(true);
+        expect(canObjective('purge', subject, objective)).toBe(true);
         expect(canObjective('editDefinition', subject, objective)).toBe(false);
+        expect(canObjective('contributeProgress', subject, objective)).toBe(false);
+        expect(canObjective('purge', subject, { ...objective, deletedAt: undefined })).toBe(false);
+        expect(canObjective('restore', subject, { ...objective, deletedAt: undefined })).toBe(
+            false
+        );
+
+        const adminSubject = buildPermissionSubject({
+            userId: otherUserId,
+            platformRole: 'globalAdmin',
+            memberRole: 'member',
+            collaboratorRole: null,
+        });
+        expect(canObjective('view', adminSubject, objective)).toBe(true);
+        expect(canObjective('restore', adminSubject, objective)).toBe(true);
+        expect(canObjective('purge', adminSubject, objective)).toBe(true);
+        expect(canObjective('editDefinition', adminSubject, objective)).toBe(false);
+        expect(canObjective('purge', adminSubject, { ...objective, deletedAt: undefined })).toBe(
+            false
+        );
     });
 
-    test('author can edit own progress; owner can edit any progress', () => {
+    test('progress editing and exposed capabilities match collaborator permissions', () => {
         const authorSubject = buildPermissionSubject({
             userId: otherUserId,
             platformRole: 'user',
@@ -168,23 +176,17 @@ describe('objective permissions', () => {
         expect(canEditProgress(authorSubject, { authorId: otherUserId, ownerId })).toBe(true);
         expect(canEditProgress(authorSubject, { authorId: ownerId, ownerId })).toBe(false);
         expect(canEditProgress(ownerSubject, { authorId: otherUserId, ownerId })).toBe(true);
-    });
 
-    test('buildObjectiveCapabilities reflects role matrix', () => {
-        const subject = buildPermissionSubject({
-            userId: otherUserId,
-            platformRole: 'user',
-            memberRole: 'member',
-            collaboratorRole: 'editor',
+        expect(
+            buildObjectiveCapabilities(authorSubject, {
+                ownerId,
+                visibility: 'private',
+            })
+        ).toMatchObject({
+            canView: true,
+            canContribute: true,
+            canEditDefinition: false,
+            canManageCollaborators: false,
         });
-        const capabilities = buildObjectiveCapabilities(subject, {
-            ownerId,
-            visibility: 'private',
-        });
-
-        expect(capabilities.canView).toBe(true);
-        expect(capabilities.canContribute).toBe(true);
-        expect(capabilities.canEditDefinition).toBe(false);
-        expect(capabilities.canManageCollaborators).toBe(false);
     });
 });

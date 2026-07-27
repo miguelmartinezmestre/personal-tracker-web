@@ -13,6 +13,10 @@ import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import type { Organization } from '@/features/organizations/schemas/organization';
+import {
+    isOrganizationAdminRole,
+    isOrganizationOwnerRole,
+} from '@/features/organizations/types/roles';
 
 export default function OrganizationsTable() {
     const t = useTranslations('Organizations');
@@ -33,6 +37,10 @@ export default function OrganizationsTable() {
             id: 'update-organization',
             cell: ({ row }) => {
                 const organizationRow = row.original;
+                if (organizationRow.isPersonal || !isOrganizationAdminRole(organizationRow.role)) {
+                    return null;
+                }
+
                 return <EditOrganizationFormModal defaultValues={organizationRow} />;
             },
         },
@@ -41,7 +49,7 @@ export default function OrganizationsTable() {
             id: 'delete',
             cell: ({ row }) => {
                 const organizationRow = row.original;
-                if (organizationRow.isPersonal) {
+                if (organizationRow.isPersonal || !isOrganizationOwnerRole(organizationRow.role)) {
                     return null;
                 }
 

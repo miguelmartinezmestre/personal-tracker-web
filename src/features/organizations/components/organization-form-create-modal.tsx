@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
+import { useRouter } from 'next/navigation';
 
 const defaultValues: CreateOrganization = {
     name: '',
@@ -31,6 +32,7 @@ export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const createOrganization = useCreateOrganization();
+    const router = useRouter();
 
     return (
         <FormModal<z.infer<typeof organizationSchema>>
@@ -51,6 +53,7 @@ export default function CreateOrganizationFormModal() {
             }}
             onSubmit={async (values: CreateOrganization) => {
                 await createOrganization.mutateAsync(values);
+                router.refresh();
             }}
             submitLabel={t('saveOrganization')}
             pendingLabel={tCommon('loading')}

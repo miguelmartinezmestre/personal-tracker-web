@@ -8,6 +8,25 @@ import { ERROR_CODES } from './utils/constants';
 import { resolveActiveMembership } from './platform/rls/authContext';
 import { isPersonalOrganizationForUser } from './domain/organizations/personalOrganization';
 import { queryWithRLS } from './platform/rls/wrappers';
+import {
+    activeMemberValidator,
+    activeOrganizationValidator,
+    currentSessionValidator,
+    organizationInvitationValidator,
+    organizationSummaryValidator,
+    paginatedOrganizationMembersValidator,
+    userInvitationValidator,
+} from './utils/apiReturnValidators';
+import { assertValidReferenceTimestamp, isInvitationActive } from './utils/queryTime';
+import { ORGANIZATION_ROLE, type OrganizationRole } from '../shared/organization-roles';
+import { withInvalidCursorRetry } from './utils/pagination';
+
+function normalizeOrganizationRole(role: string): OrganizationRole {
+    if (role === ORGANIZATION_ROLE.OWNER || role === ORGANIZATION_ROLE.ADMIN) {
+        return role;
+    }
+    return ORGANIZATION_ROLE.MEMBER;
+}
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
     if (!metadata) {
@@ -26,8 +45,26 @@ function getOrganizationDescription(metadata: string | null | undefined): string
     return '';
 }
 
+export const getPublicInvitationStatus = query({
+    args: {
+        invitationId: v.string(),
+        now: v.number(),
+    },
+    returns: v.object({ isValid: v.boolean() }),
+    handler: async (ctx, args) => {
+        assertValidReferenceTimestamp(args.now);
+        const serverNow = Date.now();
+        const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
+        if (!invitationId) return { isValid: false };
+
+        const invitation = await ctx.db.get('invitation', invitationId);
+        return { isValid: invitation ? isInvitationActive(invitation, serverNow) : false };
+    },
+});
+
 export const getCurrentSession = query({
     args: {},
+    returns: v.union(currentSessionValidator, v.null()),
     handler: async ctx => {
         const currentSession = await getSession(ctx);
         if (!currentSession) return null;
@@ -68,6 +105,7 @@ export const getCurrentSession = query({
 
 export const getOrganizationsByUser = queryWithRLS({
     args: {},
+    returns: v.array(organizationSummaryValidator),
     handler: async ctx => {
         const memberships = await ctx.db
             .query('member')
@@ -99,7 +137,7 @@ export const getOrganizationsByUser = queryWithRLS({
                     description: getOrganizationDescription(org.metadata),
                     logo: org.logo,
                     createdAt: org.createdAt,
-                    role: member.role,
+                    role: normalizeOrganizationRole(member.role),
                     isPersonal: isPersonalOrganizationForUser({
                         metadata: org.metadata,
                         slug: org.slug,
@@ -115,6 +153,7 @@ export const getOrganizationsByUser = queryWithRLS({
 
 export const getActiveOrganization = queryWithRLS({
     args: {},
+    returns: v.union(activeOrganizationValidator, v.null()),
     handler: async ctx => {
         const organizationId = ctx.organizationId;
         if (!organizationId) return null;
@@ -136,6 +175,7 @@ export const getActiveOrganization = queryWithRLS({
 
 export const getActiveMember = queryWithRLS({
     args: {},
+    returns: v.union(activeMemberValidator, v.null()),
     handler: async ctx => {
         const organizationId = ctx.organizationId;
         if (!organizationId) return null;
@@ -153,7 +193,7 @@ export const getActiveMember = queryWithRLS({
             id: member._id,
             organizationId: member.organizationId,
             userId: member.userId,
-            role: member.role,
+            role: normalizeOrganizationRole(member.role),
             createdAt: member.createdAt,
         };
     },
@@ -164,6 +204,7 @@ export const getOrganizationMembers = queryWithRLS({
         organizationId: v.id('organization'),
         paginationOpts: paginationOptsValidator,
     },
+    returns: paginatedOrganizationMembersValidator,
     handler: async (ctx, args) => {
         const userMembership = await ctx.db
             .query('member')
@@ -176,11 +217,13 @@ export const getOrganizationMembers = queryWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
-        const paginatedMembers = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .order('desc')
-            .paginate(args.paginationOpts);
+        const paginatedMembers = await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
+            ctx.db
+                .query('member')
+                .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
+                .order('desc')
+                .paginate(paginationOpts)
+        );
 
         const userIds = [...new Set(paginatedMembers.page.map(member => member.userId))];
         const users = await Promise.all(userIds.map(id => ctx.db.get('user', id)));
@@ -197,7 +240,7 @@ export const getOrganizationMembers = queryWithRLS({
                 id: member._id,
                 organizationId: member.organizationId,
                 userId: member.userId,
-                role: member.role,
+                role: normalizeOrganizationRole(member.role),
                 createdAt: member.createdAt,
                 user: user
                     ? {
@@ -210,28 +253,38 @@ export const getOrganizationMembers = queryWithRLS({
         });
 
         return {
+            ...paginatedMembers,
             page: enrichedPage,
-            continueCursor: paginatedMembers.continueCursor,
-            isDone: paginatedMembers.isDone,
         };
     },
 });
 
 export const getUserInvitations = queryWithRLS({
-    args: {},
-    handler: async ctx => {
-        const now = Date.now();
+    args: {
+        now: v.number(),
+    },
+    returns: v.array(userInvitationValidator),
+    handler: async (ctx, args) => {
+        // `now` remains part of the API so clients can refresh this reactive
+        // query periodically, but it is never trusted to decide authorization
+        // or invitation validity.
+        assertValidReferenceTimestamp(args.now);
+        const serverNow = Date.now();
         const invitations = await ctx.db
             .query('invitation')
             .withIndex('by_email_status_expiresAt', q =>
-                q.eq('email', ctx.email).eq('status', 'pending').gt('expiresAt', now)
+                q.eq('email', ctx.email).eq('status', 'pending').gt('expiresAt', serverNow)
             )
             .take(LIST_LIMIT);
 
-        if (invitations.length === 0) return [];
+        const activeInvitations = invitations.filter(invitation =>
+            isInvitationActive(invitation, serverNow)
+        );
 
-        const orgIds = [...new Set(invitations.map(invitation => invitation.organizationId))];
-        const inviterIds = [...new Set(invitations.map(invitation => invitation.inviterId))];
+        if (activeInvitations.length === 0) return [];
+
+        const orgIds = [...new Set(activeInvitations.map(invitation => invitation.organizationId))];
+        const inviterIds = [...new Set(activeInvitations.map(invitation => invitation.inviterId))];
 
         const [orgs, inviters] = await Promise.all([
             Promise.all(orgIds.map(id => ctx.db.get('organization', id))),
@@ -252,7 +305,7 @@ export const getUserInvitations = queryWithRLS({
                 .map(user => [user._id, user])
         );
 
-        const invitationsWithDetails = invitations.map(invitation => {
+        const invitationsWithDetails = activeInvitations.map(invitation => {
             const org = orgMap.get(invitation.organizationId);
             const inviter = userMap.get(invitation.inviterId);
 
@@ -287,6 +340,7 @@ export const getUserInvitations = queryWithRLS({
 
 export const getOrganizationInvitations = queryWithRLS({
     args: { organizationId: v.id('organization') },
+    returns: v.array(organizationInvitationValidator),
     handler: async (ctx, args) => {
         const userMembership = await ctx.db
             .query('member')
