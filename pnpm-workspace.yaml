@@ -10,6 +10,12 @@ minimumReleaseAgeExclude:
     - react@19.2.8
     - react-dom@19.2.8
     - convex-test@0.0.55
+    - hono@4.13.1
+    - next-intl@4.13.5
+    - use-intl@4.13.5
+    - icu-minify@4.13.5
+    - next-intl-swc-plugin-extractor@4.13.5
+    - nodemailer@9.0.5
     - sharp@0.35.0
     - postcss@8.5.18
 
