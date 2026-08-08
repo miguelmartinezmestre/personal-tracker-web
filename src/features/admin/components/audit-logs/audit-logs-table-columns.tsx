@@ -1,4 +1,5 @@
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { useLocale, useTranslations } from 'next-intl';
 import { Doc } from '@/convex/_generated/dataModel';
 import { formatDate, formatTime } from '@/lib/format-date';
@@ -7,7 +8,7 @@ export function useAuditLogsTableColumns() {
     const t = useTranslations('Admin');
     const locale = useLocale();
 
-    const columns: ColumnDef<Doc<'auditLogs'>>[] = [
+    const columns: ColumnDef<DataTableFeatures, Doc<'auditLogs'>>[] = [
         {
             accessorKey: 'user',
             header: t('auditLogsTable.columns.userId'),

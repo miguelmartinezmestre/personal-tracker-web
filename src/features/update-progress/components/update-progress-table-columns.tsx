@@ -2,7 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { formatCivilDate } from '@/lib/format-date';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import UpdateProgressFormModal from '@/features/update-progress/components/update-progress-form-edit-modal';
@@ -32,7 +33,7 @@ export function useUpdateProgressTableColumns({
         return objective.capabilities.canEditDefinition;
     };
 
-    const columns: ColumnDef<Doc<'progressUpdates'>>[] = [
+    const columns: ColumnDef<DataTableFeatures, Doc<'progressUpdates'>>[] = [
         {
             accessorKey: 'updatedValue',
             header: t('table.columns.currentValue'),
