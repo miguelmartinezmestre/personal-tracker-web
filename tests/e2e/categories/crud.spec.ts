@@ -102,7 +102,7 @@ test.describe('Categories CRUD', () => {
         await saveEditedCategoryAndWaitForRow(page, nameInput, newName);
     });
 
-    test('delete category', { tag: ['@REQ-CATEGORIAS-003', '@REQ-NF-012'] }, async ({ page }) => {
+    test('delete category', { tag: ['@REQ-CATEGORIAS-003', '@REQ-NF-011'] }, async ({ page }) => {
         const category = await createCategory(page, { name: `Delete Cat ${Date.now()}` });
 
         await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });

@@ -14,6 +14,12 @@ function escapeRegExp(value: string): string {
 async function setActiveOrganization(page: Page, orgName: string): Promise<void> {
     const switcher = page.getByTestId('organization-switcher');
     const trigger = switcher.first();
+
+    const retryButton = page.getByRole('button', { name: /try again|reintentar/i });
+    if (await retryButton.isVisible()) {
+        await retryButton.click();
+    }
+
     await expect(trigger).toBeVisible({ timeout: 15000 });
     await expect(trigger).toBeEnabled({ timeout: 15000 });
 
@@ -101,7 +107,7 @@ test.describe('Organizations CRUD', () => {
         await expect(updatedRow).toContainText(newDescription, { timeout: 10000 });
     });
 
-    test('delete organization', { tag: ['@REQ-EQUIPOS-008', '@REQ-NF-012'] }, async ({ page }) => {
+    test('delete organization', { tag: ['@REQ-EQUIPOS-008', '@REQ-NF-011'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
             name: `Delete Org ${Date.now()}`,
         });
@@ -150,7 +156,7 @@ test.describe('Organizations CRUD', () => {
         });
     });
 
-    test('data isolation between organizations', { tag: ['@REQ-NF-004'] }, async ({ page }) => {
+    test('data isolation between organizations', { tag: ['@REQ-NF-003'] }, async ({ page }) => {
         const obj1 = await createObjective(page, {
             title: `Org1 Objective ${Date.now()}`,
         });

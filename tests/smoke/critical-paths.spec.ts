@@ -11,7 +11,15 @@ import {
 
 test(
     'critical user journey works end to end',
-    { tag: ['@cross-browser-critical'] },
+    {
+        tag: [
+            '@cross-browser-critical',
+            '@REQ-AUTENTICACION-002',
+            '@REQ-OBJETIVOS-001',
+            '@REQ-LOGROS-001',
+            '@REQ-NF-002',
+        ],
+    },
     async ({ page }) => {
         const suffix = randomUUID().substring(0, 8);
         const username = `smoketest-${suffix}`;

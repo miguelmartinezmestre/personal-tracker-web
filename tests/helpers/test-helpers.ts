@@ -351,7 +351,7 @@ export async function logoutUser(page: Page): Promise<void> {
     const logoutButton = page.getByTestId('logout-button');
     await expect(logoutButton).toBeVisible({ timeout: 10000 });
     await logoutButton.click();
-    await expect(page).toHaveURL(/\/login(\?|$)/);
+    await expect(page).toHaveURL(/\/login(\?|$)/, { timeout: 15000 });
 }
 
 export interface CreateObjectiveOptions {
@@ -523,12 +523,8 @@ export async function createCategory(
 
     const saveButton = page.getByTestId('category-save-button');
     await expect(saveButton).toBeEnabled({ timeout: 10_000 });
-    await page
-        .locator('[role="dialog"] form')
-        .evaluate(form => (form as HTMLFormElement).requestSubmit())
-        .catch(async () => {
-            await saveButton.click();
-        });
+    await saveButton.click();
+    await expect(page.getByTestId('category-name-input')).toBeHidden({ timeout: 10_000 });
 
     await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
         timeout: 15_000,

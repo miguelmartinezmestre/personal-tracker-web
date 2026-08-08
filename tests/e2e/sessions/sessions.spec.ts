@@ -11,7 +11,7 @@ async function gotoSessions(page: Page): Promise<void> {
 test.describe('Sessions', () => {
     test(
         'current session cannot be revoked from its own row',
-        { tag: ['@REQ-AUTENTICACION-007'] },
+        { tag: ['@REQ-AUTENTICACION-006', '@REQ-AUTENTICACION-007'] },
         async ({ authenticatedPage }) => {
             await gotoSessions(authenticatedPage);
 
@@ -27,7 +27,7 @@ test.describe('Sessions', () => {
 
     test(
         'can close all other sessions except current',
-        { tag: ['@REQ-AUTENTICACION-007', '@REQ-AUTENTICACION-008'] },
+        { tag: ['@REQ-AUTENTICACION-006', '@REQ-AUTENTICACION-007', '@REQ-AUTENTICACION-008'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser, browser }) => {
             const secondContext = await browser.newContext();
             const secondPage = await secondContext.newPage();

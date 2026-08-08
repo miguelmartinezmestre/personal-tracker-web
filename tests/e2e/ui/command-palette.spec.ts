@@ -11,7 +11,7 @@ async function openCommandPalette(page: import('@playwright/test').Page) {
 test.describe('Command Palette', () => {
     test(
         'Cmd+K opens, filters and closes the command palette',
-        { tag: ['@REQ-NF-013'] },
+        { tag: ['@REQ-NF-012'] },
         async ({ isolatedAuthenticatedPage }) => {
             await openCommandPalette(isolatedAuthenticatedPage);
 
@@ -29,7 +29,7 @@ test.describe('Command Palette', () => {
 
     test(
         'selecting a command navigates to its page',
-        { tag: ['@REQ-NF-013'] },
+        { tag: ['@REQ-NF-012'] },
         async ({ isolatedAuthenticatedPage }) => {
             await openCommandPalette(isolatedAuthenticatedPage);
 

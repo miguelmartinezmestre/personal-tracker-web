@@ -10,17 +10,27 @@ async function switchLanguage(page: Page, locale: 'es' | 'en'): Promise<void> {
 }
 
 test.describe('Language Switching', () => {
-    test('language preference persists after navigation', async ({ page }) => {
-        await page.goto('/dashboard/home');
-        await switchLanguage(page, 'es');
-        await page.goto('/dashboard/objectives');
-        await expect(page.getByTestId('language-switcher')).toContainText(/español|spanish|es/i);
-    });
+    test(
+        'language preference persists after navigation',
+        { tag: ['@REQ-NF-007'] },
+        async ({ page }) => {
+            await page.goto('/dashboard/home');
+            await switchLanguage(page, 'es');
+            await page.goto('/dashboard/objectives');
+            await expect(page.getByTestId('language-switcher')).toContainText(
+                /español|spanish|es/i
+            );
+        }
+    );
 
-    test('landing navigation is translated after changing locale', async ({ page }) => {
-        await page.goto('/');
-        await switchLanguage(page, 'es');
-        await expect(page.getByTestId('navbar-register-link')).toHaveText('Registrarse');
-        await expect(page.getByTestId('navbar-login-link')).toHaveText('Iniciar sesión');
-    });
+    test(
+        'landing navigation is translated after changing locale',
+        { tag: ['@REQ-NF-007'] },
+        async ({ page }) => {
+            await page.goto('/');
+            await switchLanguage(page, 'es');
+            await expect(page.getByTestId('navbar-register-link')).toHaveText('Registrarse');
+            await expect(page.getByTestId('navbar-login-link')).toHaveText('Iniciar sesión');
+        }
+    );
 });

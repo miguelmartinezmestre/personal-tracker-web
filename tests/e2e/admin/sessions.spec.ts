@@ -1,6 +1,6 @@
 import { expect, test } from '../../fixtures/admin-test-base';
 
-test('admin can inspect sessions for a user', async ({ page }) => {
+test('admin can inspect sessions for a user', { tag: ['@REQ-ADMIN-004'] }, async ({ page }) => {
     await page.goto('/dashboard/admin/users');
     const usersTable = page.getByTestId('admin-users-table');
     await expect(usersTable).toBeVisible({ timeout: 15000 });

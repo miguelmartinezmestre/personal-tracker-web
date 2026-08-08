@@ -77,7 +77,7 @@ test.describe('Settings', () => {
 
     test(
         'password tab rejects mismatched and weak new passwords before submission',
-        { tag: ['@REQ-AUTENTICACION-004', '@REQ-NF-006', '@security'] },
+        { tag: ['@REQ-AUTENTICACION-004', '@REQ-NF-005', '@security'] },
         async ({ isolatedAuthenticatedPage, isolatedTestUser }) => {
             const settings = new SettingsPage(isolatedAuthenticatedPage);
             await settings.goto();

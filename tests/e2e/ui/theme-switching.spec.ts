@@ -8,14 +8,18 @@ async function selectTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
     await option.click();
 }
 
-test('theme preference changes and persists after reload', async ({ page }) => {
-    await page.goto('/dashboard/home');
-    await selectTheme(page, 'dark');
-    await expect(page.locator('html')).toHaveAttribute('class', /dark/);
+test(
+    'theme preference changes and persists after reload',
+    { tag: ['@REQ-NF-009'] },
+    async ({ page }) => {
+        await page.goto('/dashboard/home');
+        await selectTheme(page, 'dark');
+        await expect(page.locator('html')).toHaveAttribute('class', /dark/);
 
-    await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('class', /dark/);
+        await page.reload();
+        await expect(page.locator('html')).toHaveAttribute('class', /dark/);
 
-    await selectTheme(page, 'light');
-    await expect.poll(() => page.locator('html').getAttribute('class')).not.toContain('dark');
-});
+        await selectTheme(page, 'light');
+        await expect.poll(() => page.locator('html').getAttribute('class')).not.toContain('dark');
+    }
+);

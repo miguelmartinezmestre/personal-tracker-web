@@ -48,18 +48,22 @@ async function seedSystemNotification(page: Page): Promise<{ objectiveTitle: str
 }
 
 test.describe('Notifications', () => {
-    test('mark notification as read', { tag: ['@REQ-NOTIFICACIONES-002'] }, async ({ page }) => {
-        const { objectiveTitle } = await seedSystemNotification(page);
+    test(
+        'mark notification as read',
+        { tag: ['@REQ-NOTIFICACIONES-002', '@REQ-NOTIFICACIONES-003'] },
+        async ({ page }) => {
+            const { objectiveTitle } = await seedSystemNotification(page);
 
-        const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
-        const markReadButton = row.getByTestId('notification-mark-read-button');
-        await expect(markReadButton).toBeVisible();
-        await markReadButton.click();
+            const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
+            const markReadButton = row.getByTestId('notification-mark-read-button');
+            await expect(markReadButton).toBeVisible();
+            await markReadButton.click();
 
-        await expect(markReadButton).toContainText(/unread|no leída/i, { timeout: 10000 });
-    });
+            await expect(markReadButton).toContainText(/unread|no leída/i, { timeout: 10000 });
+        }
+    );
 
-    test('delete notification', async ({ page }) => {
+    test('delete notification', { tag: ['@REQ-NOTIFICACIONES-003'] }, async ({ page }) => {
         const { objectiveTitle } = await seedSystemNotification(page);
 
         const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
@@ -72,16 +76,20 @@ test.describe('Notifications', () => {
         await expect(row).toBeHidden({ timeout: 10000 });
     });
 
-    test('notification links to related objective', async ({ page }) => {
-        const { objectiveTitle } = await seedSystemNotification(page);
+    test(
+        'notification links to related objective',
+        { tag: ['@REQ-NOTIFICACIONES-003'] },
+        async ({ page }) => {
+            const { objectiveTitle } = await seedSystemNotification(page);
 
-        const notificationRow = page
-            .getByTestId('table-row')
-            .filter({ hasText: objectiveTitle })
-            .first();
-        await expect(notificationRow).toBeVisible();
-        await notificationRow.locator('a, [role="button"]').first().click();
+            const notificationRow = page
+                .getByTestId('table-row')
+                .filter({ hasText: objectiveTitle })
+                .first();
+            await expect(notificationRow).toBeVisible();
+            await notificationRow.locator('a, [role="button"]').first().click();
 
-        await expect(page).toHaveURL(/\/dashboard\/objectives\//);
-    });
+            await expect(page).toHaveURL(/\/dashboard\/objectives\//);
+        }
+    );
 });
