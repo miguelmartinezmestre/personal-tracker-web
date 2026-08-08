@@ -105,7 +105,7 @@
         "globals": "^17.8.0",
         "husky": "^9.1.7",
         "jiti": "^2.7.0",
-        "knip": "^6.14.1",
+        "knip": "^6.31.0",
         "prettier": "^3.9.6",
         "react-doctor": "^0.2.1",
         "tailwindcss": "4.3.3",
