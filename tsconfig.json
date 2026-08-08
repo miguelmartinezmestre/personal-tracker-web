@@ -1,79 +1,69 @@
 {
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/convex/*": [
-        "./convex/*"
-      ],
-      "@shared/*": [
-        "./shared/*"
-      ]
+    "compilerOptions": {
+        "target": "ES2017",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "react-jsx",
+        "incremental": true,
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "paths": {
+            "@/*": ["./src/*"],
+            "@/convex/*": ["./convex/*"],
+            "@shared/*": ["./shared/*"]
+        },
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "forceConsistentCasingInFileNames": true
     },
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": [
-    "next-env.d.ts",
-    "next.config.ts",
-    "proxy.ts",
-    "shared/**/*.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    ".next-e2e/types/**/*.ts",
-    ".next-e2e/dev/types/**/*.ts",
-    ".next-e2e-webkit/types/**/*.ts",
-    ".next-e2e-webkit/dev/types/**/*.ts",
-    ".next-e2e-chromium/types/**/*.ts",
-    ".next-e2e-chromium/dev/types/**/*.ts",
-    ".next-e2e-authenticated/types/**/*.ts",
-    ".next-e2e-authenticated/dev/types/**/*.ts",
-    ".next-e2e-setup/types/**/*.ts",
-    ".next-e2e-setup/dev/types/**/*.ts",
-    ".next-e2e-admin/types/**/*.ts",
-    ".next-e2e-admin/dev/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "convex",
-    "tests",
-    "convex/tests",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "test.setup.ts",
-    "test_helpers.ts",
-    "vitest.config.ts",
-    "vitest.setup.ts",
-    "playwright.config.ts"
-  ]
+    "include": [
+        "next-env.d.ts",
+        "next.config.ts",
+        "proxy.ts",
+        "shared/**/*.ts",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        ".next/types/**/*.ts",
+        ".next/dev/types/**/*.ts",
+        ".next-e2e/types/**/*.ts",
+        ".next-e2e/dev/types/**/*.ts",
+        ".next-e2e-webkit/types/**/*.ts",
+        ".next-e2e-webkit/dev/types/**/*.ts",
+        ".next-e2e-chromium/types/**/*.ts",
+        ".next-e2e-chromium/dev/types/**/*.ts",
+        ".next-e2e-authenticated/types/**/*.ts",
+        ".next-e2e-authenticated/dev/types/**/*.ts",
+        ".next-e2e-setup/types/**/*.ts",
+        ".next-e2e-setup/dev/types/**/*.ts",
+        ".next-e2e-admin/types/**/*.ts",
+        ".next-e2e-admin/dev/types/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "convex",
+        "tests",
+        "convex/tests",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "test.setup.ts",
+        "test_helpers.ts",
+        "vitest.config.ts",
+        "vitest.setup.ts",
+        "playwright.config.ts"
+    ]
 }

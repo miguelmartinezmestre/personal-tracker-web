@@ -1,5 +1,13 @@
 **/components/ui/**/*.tsx
 .agents/
+.cursor/
+.next/
+.next-e2e-*/
+coverage/
+dist/
+node_modules/
+pnpm-lock.yaml
+skills-lock.json
 convex/_generated/
 infrastructure/data/
 infrastructure/data-dev/
