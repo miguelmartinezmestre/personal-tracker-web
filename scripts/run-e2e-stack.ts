@@ -625,7 +625,7 @@ async function main(): Promise<void> {
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`${message}${getFrontendFailureSuffix()}`);
+        throw new Error(`${message}${getFrontendFailureSuffix()}`, { cause: error });
     }
 
     console.log(`E2E suite finished successfully${browserLabel}.`);
