@@ -99,8 +99,7 @@ export default function ObjectiveProgressTimeline({
                             itemStyle={{ color: 'var(--popover-foreground)' }}
                             labelFormatter={(_label, payload) => {
                                 const item = payload[0]?.payload as
-                                    | { fullLabel: string }
-                                    | undefined;
+                                    { fullLabel: string } | undefined;
                                 return item?.fullLabel ?? String(_label);
                             }}
                             formatter={value => [

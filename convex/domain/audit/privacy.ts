@@ -15,9 +15,7 @@ export type AuditPrimitive = string | number | boolean | null;
 type AuditRecord = Record<string, AuditPrimitive>;
 type AuditValueLevel1 = AuditPrimitive | AuditPrimitive[] | AuditRecord;
 export type AuditMetadataSnapshot =
-    | AuditValueLevel1
-    | AuditValueLevel1[]
-    | Record<string, AuditValueLevel1>;
+    AuditValueLevel1 | AuditValueLevel1[] | Record<string, AuditValueLevel1>;
 
 type AuditMetadataInput = {
     before?: unknown;

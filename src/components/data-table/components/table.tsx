@@ -1,11 +1,9 @@
 import {
-    ColumnDef,
+    type ColumnDef,
     type RowData,
     type SortingState,
-    useReactTable,
-    getCoreRowModel,
+    useTable,
     flexRender,
-    getSortedRowModel,
 } from '@tanstack/react-table';
 import {
     TableHeader,
@@ -20,9 +18,10 @@ import { useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { DataTablePagination } from './data-table-pagination';
+import { dataTableFeatures, type DataTableFeatures } from '../data-table-features';
 
-interface DataTableProps<TData extends RowData, TValue> {
-    columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+    columns: ColumnDef<DataTableFeatures, TData, unknown>[];
     data: TData[];
     isLoading?: boolean;
     enableSorting?: boolean;
@@ -36,28 +35,28 @@ interface DataTableProps<TData extends RowData, TValue> {
     };
 }
 
-export function DataTable<TData extends RowData, TValue>({
+export function DataTable<TData extends RowData>({
     columns,
     data,
     isLoading = false,
     enableSorting = false,
     pagination,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
     'use no memo';
 
     const t = useTranslations('Table');
     const [sorting, setSorting] = useState<SortingState>([]);
     // TanStack Table returns non-memoizable functions; React Compiler skips this hook by design.
-    // react-doctor-disable-next-line react-hooks-js/incompatible-library -- useReactTable
-    const table = useReactTable<TData>({
+    // react-doctor-disable-next-line react-hooks-js/incompatible-library -- useTable
+    const table = useTable({
+        features: dataTableFeatures,
         data,
         columns,
-        getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
+        enableSorting,
         ...(enableSorting
             ? {
                   onSortingChange: setSorting,
-                  getSortedRowModel: getSortedRowModel(),
                   state: { sorting },
               }
             : {}),
@@ -145,12 +144,8 @@ export function DataTable<TData extends RowData, TValue>({
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map(row => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && 'selected'}
-                                    data-testid="table-row"
-                                >
-                                    {row.getVisibleCells().map(cell => (
+                                <TableRow key={row.id} data-testid="table-row">
+                                    {row.getAllCells().map(cell => (
                                         <TableCell key={cell.id} data-testid="table-cell">
                                             {flexRender(
                                                 cell.column.columnDef.cell,

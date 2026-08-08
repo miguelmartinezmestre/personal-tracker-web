@@ -2,7 +2,8 @@ import { DeleteConfirmationDialog } from '@/components/data-table/components/del
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { UserCheck, Ban, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
@@ -28,7 +29,7 @@ export function useUsersTableColumns() {
         return role || t('usersTable.roles.user');
     };
 
-    const columns: ColumnDef<Doc<'user'>>[] = [
+    const columns: ColumnDef<DataTableFeatures, Doc<'user'>>[] = [
         {
             accessorKey: 'id',
             header: t('usersTable.columns.id'),

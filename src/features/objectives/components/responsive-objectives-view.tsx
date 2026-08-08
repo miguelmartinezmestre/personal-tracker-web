@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatCivilDate, formatDate } from '@/lib/format-date';
 import { useMutation } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
@@ -125,7 +126,7 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
         </div>
     );
 
-    const objectiveColumns: ColumnDef<ObjectiveWithCapabilities>[] = [
+    const objectiveColumns: ColumnDef<DataTableFeatures, ObjectiveWithCapabilities>[] = [
         {
             accessorKey: 'title',
             header: t('title'),

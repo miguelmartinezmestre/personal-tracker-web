@@ -1,9 +1,7 @@
 export {
-    ORGANIZATION_ROLE,
     ORGANIZATION_ROLES,
     isOrganizationAdminRole,
     isOrganizationOwnerRole,
-    type OrganizationRole as OrganizationMemberRole,
 } from '@shared/organization-roles';
 
 export const OrganizationRole = {

@@ -5,8 +5,25 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
     - brace-expansion@5.0.6
     - js-yaml@4.3.0
-    - next@16.2.11
+    - next@16.3.0
     - '@next/*'
+    - react@19.2.8
+    - react-dom@19.2.8
+    - convex-test@0.0.55
+    - hono@4.13.1
+    - next-intl@4.13.5
+    - use-intl@4.13.5
+    - icu-minify@4.13.5
+    - next-intl-swc-plugin-extractor@4.13.5
+    - nodemailer@9.0.5
+    - lucide-react@1.30.0
+    - nanoid@3.3.17
+    - '@tanstack/react-table@9.1.0'
+    - '@tanstack/table-core@9.1.0'
+    - eslint@10.8.1
+    - '@eslint/js@10.0.1'
+    - typescript-eslint@8.66.0
+    - '@typescript-eslint/*'
     - sharp@0.35.0
     - postcss@8.5.18
 
@@ -21,12 +38,15 @@ overrides:
     tmp: '>=0.2.4'
     vite: 8.0.16
     ws: '>=8.21.0'
+    'nanoid@<3.3.17': 3.3.17
 
 # kitcn 0.15.14 pins an exact, vulnerable Hono peer. Hono follows semver and
 # 4.12.25+ contains the upstream CORS security fix (GHSA-88fw-hqm2-52qc).
 peerDependencyRules:
     allowedVersions:
         'kitcn@0.15.14>hono': '>=4.12.25 <5'
+        # eslint-plugin-react has not declared ESLint 10 yet; flat config still works.
+        'eslint-plugin-react>eslint': '>=9.7.0 <11'
 
 allowBuilds:
     '@parcel/watcher': true

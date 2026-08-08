@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/components/data-table/components/table';
 import { useDeleteOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Button } from '@/components/ui/button';
 import { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
@@ -76,7 +77,7 @@ export default function OrganizationMembersTable({
         })
     );
 
-    const columns: ColumnDef<OrganizationMember>[] = [
+    const columns: ColumnDef<DataTableFeatures, OrganizationMember>[] = [
         {
             accessorKey: 'email',
             header: t('email'),

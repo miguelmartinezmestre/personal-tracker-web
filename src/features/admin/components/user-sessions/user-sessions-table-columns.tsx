@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRevokeSession } from './user-sessions-table-actions';
@@ -20,7 +21,7 @@ export function useUserSessionsTableColumns(targetUserId: Id<'user'> | undefined
     const { revokeSession, isRevokingSession } = useRevokeSession();
     const now = useReferenceNow();
 
-    const columns: ColumnDef<AdminSessionRow>[] = [
+    const columns: ColumnDef<DataTableFeatures, AdminSessionRow>[] = [
         {
             accessorKey: '_id',
             header: t('userSessions.columns.id'),
