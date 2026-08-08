@@ -143,12 +143,25 @@ export async function changeCollaboratorRole(
     role: 'editor' | 'viewer'
 ): Promise<void> {
     const row = collaboratorRowFilter(page, member);
-    await row.getByTestId('collaborator-row-role-select').click();
-    await page
-        .getByRole('option', { name: new RegExp(role, 'i') })
-        .first()
-        .click();
-    await page.waitForTimeout(300);
+    const roleSelect = row.getByTestId('collaborator-row-role-select');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await roleSelect.click();
+        await page
+            .getByRole('option', { name: new RegExp(role, 'i') })
+            .first()
+            .click();
+
+        try {
+            await expect(roleSelect).toContainText(new RegExp(role, 'i'), { timeout: 10000 });
+            return;
+        } catch {
+            // Convex may reject an isolated mutation when its one-second execution budget is
+            // exhausted. Retrying the same idempotent role assignment keeps this helper stable.
+        }
+    }
+
+    throw new Error(`Could not change collaborator role to "${role}"`);
 }
 
 export async function removeCollaboratorFromDialog(
@@ -156,10 +169,21 @@ export async function removeCollaboratorFromDialog(
     member: TestUserData
 ): Promise<void> {
     const row = collaboratorRowFilter(page, member);
-    await row.getByTestId('collaborator-remove-button').click();
-    await expect(row)
-        .toBeHidden({ timeout: 10000 })
-        .catch(() => undefined);
+    const removeButton = row.getByTestId('collaborator-remove-button');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await expect(removeButton).toBeEnabled({ timeout: 10000 });
+        await removeButton.click();
+
+        try {
+            await expect(row).toBeHidden({ timeout: 10000 });
+            return;
+        } catch {
+            // Retry the idempotent removal after a transient Convex execution timeout.
+        }
+    }
+
+    throw new Error(`Could not remove collaborator "${member.email}"`);
 }
 
 export async function transferOwnershipToCollaborator(

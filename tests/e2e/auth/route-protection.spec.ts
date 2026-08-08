@@ -39,7 +39,7 @@ test.describe('Route Protection', () => {
 
     test(
         'authenticated users can use dashboard routes and are sent back to login after logout',
-        { tag: ['@REQ-ROLES-001', '@REQ-AUTENTICACION-005', '@REQ-NF-003', '@cross-browser'] },
+        { tag: ['@REQ-ROLES-001', '@REQ-AUTENTICACION-005', '@REQ-NF-002', '@cross-browser'] },
         async ({ page }) => {
             await createTestUser(page);
             await expectOnDashboard(page);
@@ -112,7 +112,7 @@ test.describe('Route Protection', () => {
 
     test(
         'one user cannot see another user personal objectives',
-        { tag: ['@REQ-NF-004'] },
+        { tag: ['@REQ-NF-003'] },
         async ({ browser }) => {
             const contextA = await browser.newContext();
             const pageA = await contextA.newPage();

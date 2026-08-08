@@ -121,7 +121,7 @@ test.describe('Objectives CRUD', () => {
         await expect(objectiveRow(page, originalTitle)).toHaveCount(0);
     });
 
-    test('delete objective with confirmation', { tag: ['@REQ-NF-012'] }, async ({ page }) => {
+    test('delete objective with confirmation', { tag: ['@REQ-NF-011'] }, async ({ page }) => {
         const title = `Delete objective ${Date.now()}`;
         await openObjectivesPage(page);
         await createObjectiveFromModal(page, {
