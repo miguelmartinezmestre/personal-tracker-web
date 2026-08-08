@@ -12,32 +12,44 @@ async function findUserRow(page: Page, email: string) {
 }
 
 test.describe('Admin Users', () => {
-    test('non-admin users cannot access global administration', async ({ browser }) => {
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        try {
-            await createTestUser(page);
-            await page.goto('/dashboard/admin/users');
-            await expect
-                .poll(() => page.url(), { timeout: 10000 })
-                .not.toContain('/dashboard/admin/users');
-        } finally {
-            await context.close();
+    test(
+        'non-admin users cannot access global administration',
+        { tag: ['@REQ-ADMIN-001'] },
+        async ({ browser }) => {
+            const context = await browser.newContext();
+            const page = await context.newPage();
+            try {
+                await createTestUser(page);
+                await page.goto('/dashboard/admin/users');
+                await expect
+                    .poll(() => page.url(), { timeout: 10000 })
+                    .not.toContain('/dashboard/admin/users');
+            } finally {
+                await context.close();
+            }
         }
-    });
+    );
 
-    test('admin can change a user role', async ({ page, browser }) => {
-        const userContext = await browser.newContext();
-        const userPage = await userContext.newPage();
-        const user = await createTestUser(userPage);
-        await userContext.close();
+    test(
+        'admin can change a user role',
+        { tag: ['@REQ-ADMIN-001', '@REQ-ADMIN-003'] },
+        async ({ page, browser }) => {
+            const userContext = await browser.newContext();
+            const userPage = await userContext.newPage();
+            const user = await createTestUser(userPage);
+            await userContext.close();
 
-        const row = await findUserRow(page, user.email);
-        await row.getByTestId('user-edit-open').click();
-        await page.getByTestId('user-edit-role-select').click();
-        await page.getByRole('option', { name: /^(global admin|administrador global)$/i }).click();
-        await page.getByTestId('user-edit-save-button').click();
+            const row = await findUserRow(page, user.email);
+            await row.getByTestId('user-edit-open').click();
+            await page.getByTestId('user-edit-role-select').click();
+            await page
+                .getByRole('option', { name: /^(global admin|administrador global)$/i })
+                .click();
+            await page.getByTestId('user-edit-save-button').click();
 
-        await expect(row).toContainText(/Global admin|Administrador global/, { timeout: 10000 });
-    });
+            await expect(row).toContainText(/Global admin|Administrador global/, {
+                timeout: 10000,
+            });
+        }
+    );
 });
