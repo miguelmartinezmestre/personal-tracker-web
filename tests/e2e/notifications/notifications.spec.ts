@@ -63,22 +63,18 @@ test.describe('Notifications', () => {
         }
     );
 
-    test(
-        'delete notification',
-        { tag: ['@REQ-NOTIFICACIONES-003'] },
-        async ({ page }) => {
-            const { objectiveTitle } = await seedSystemNotification(page);
+    test('delete notification', { tag: ['@REQ-NOTIFICACIONES-003'] }, async ({ page }) => {
+        const { objectiveTitle } = await seedSystemNotification(page);
 
-            const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
-            await row.getByTestId('notification-delete-button').click();
+        const row = page.getByTestId('table-row').filter({ hasText: objectiveTitle }).first();
+        await row.getByTestId('notification-delete-button').click();
 
-            const confirmButton = page.getByTestId('delete-confirm-button');
-            await expect(confirmButton.first()).toBeVisible({ timeout: 5000 });
-            await confirmButton.first().click();
+        const confirmButton = page.getByTestId('delete-confirm-button');
+        await expect(confirmButton.first()).toBeVisible({ timeout: 5000 });
+        await confirmButton.first().click();
 
-            await expect(row).toBeHidden({ timeout: 10000 });
-        }
-    );
+        await expect(row).toBeHidden({ timeout: 10000 });
+    });
 
     test(
         'notification links to related objective',

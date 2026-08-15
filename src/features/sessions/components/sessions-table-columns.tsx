@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatDate } from '@/lib/format-date';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserAgentIcon } from '@/features/sessions/components/user-agent';
@@ -31,7 +32,7 @@ export function useSessionsTableColumns() {
         return { status: 'active', label: t('active'), variant: 'outline' as const };
     };
 
-    const columns: ColumnDef<SessionListItem>[] = [
+    const columns: ColumnDef<DataTableFeatures, SessionListItem>[] = [
         {
             accessorKey: 'userAgent',
             header: t('device'),

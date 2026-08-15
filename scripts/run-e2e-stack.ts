@@ -119,9 +119,14 @@ const E2E_NEXT_DIST_DIR =
     (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
 const E2E_FRONTEND_MODE = process.env.E2E_FRONTEND_MODE ?? 'production';
 
-const CONVEX_URL = process.env.CONVEX_SELF_HOSTED_URL ?? `http://127.0.0.1:${E2E_CONVEX_PORT}`;
+// Prefer E2E-specific overrides so ambient NEXT_PUBLIC_* / cloud URLs from the
+// developer shell or .env.local cannot point the isolated stack at the wrong host.
+const CONVEX_URL =
+    process.env.E2E_CONVEX_URL ??
+    process.env.CONVEX_SELF_HOSTED_URL ??
+    `http://127.0.0.1:${E2E_CONVEX_PORT}`;
 const CONVEX_SITE_URL =
-    process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? `http://127.0.0.1:${E2E_CONVEX_SITE_PORT}`;
+    process.env.E2E_CONVEX_SITE_URL ?? `http://127.0.0.1:${E2E_CONVEX_SITE_PORT}`;
 
 const FRONTEND_START_TIMEOUT_MS = 180_000;
 const FRONTEND_STOP_TIMEOUT_MS = 10_000;
@@ -620,7 +625,7 @@ async function main(): Promise<void> {
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`${message}${getFrontendFailureSuffix()}`);
+        throw new Error(`${message}${getFrontendFailureSuffix()}`, { cause: error });
     }
 
     console.log(`E2E suite finished successfully${browserLabel}.`);

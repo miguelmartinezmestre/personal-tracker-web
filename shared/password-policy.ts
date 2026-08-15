@@ -4,8 +4,7 @@ export const PASSWORD_MIN_LENGTH = 8;
 export type PasswordPolicyCode = 'PASSWORD_TOO_SHORT' | 'WEAK_PASSWORD';
 
 export type PasswordPolicyResult =
-    | { ok: true }
-    | { ok: false; code: PasswordPolicyCode; message: string };
+    { ok: true } | { ok: false; code: PasswordPolicyCode; message: string };
 
 export const STRONG_PASSWORD_MESSAGE_EN =
     'Password must include at least one uppercase letter, one lowercase letter, and one number';

@@ -20,8 +20,6 @@ test(
         await expect(page.locator('html')).toHaveAttribute('class', /dark/);
 
         await selectTheme(page, 'light');
-        await expect
-            .poll(() => page.locator('html').getAttribute('class'))
-            .not.toContain('dark');
+        await expect.poll(() => page.locator('html').getAttribute('class')).not.toContain('dark');
     }
 );

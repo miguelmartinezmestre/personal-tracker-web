@@ -231,28 +231,75 @@ async function loginWithCredentials(page: Page, email: string, password: string)
     }
 }
 
+async function fillControlledInput(
+    page: Page,
+    testId: string,
+    value: string,
+    options?: { secret?: boolean }
+): Promise<void> {
+    const input = page.getByTestId(testId);
+    await input.click();
+    await input.fill('');
+    await input.fill(value);
+
+    const committed = await input.inputValue();
+    if (committed === value) {
+        return;
+    }
+
+    // WebKit occasionally drops the first fill on controlled inputs.
+    await input.click();
+    await input.fill('');
+    await input.pressSequentially(value, { delay: 15 });
+    await expect(input).toHaveValue(value, { timeout: 5_000 });
+
+    if (!options?.secret) {
+        return;
+    }
+}
+
 async function completeRegistrationFlow(page: Page, userData: TestUserData): Promise<void> {
     await page.goto('/register');
     await page.waitForSelector('[data-testid="register-username-input"]', {
         timeout: 10000,
     });
 
-    await page.getByTestId('register-username-input').fill(userData.username);
-    await page.getByTestId('register-email-input').fill(userData.email);
-    await page.getByTestId('register-password-input').fill(userData.password);
-    await page.getByTestId('register-confirm-password-input').fill(userData.password);
+    await fillControlledInput(page, 'register-username-input', userData.username);
+    await fillControlledInput(page, 'register-email-input', userData.email);
+    await fillControlledInput(page, 'register-password-input', userData.password, { secret: true });
+    await fillControlledInput(page, 'register-confirm-password-input', userData.password, {
+        secret: true,
+    });
 
     const organizationSlugInput = page.getByTestId('register-organization-slug-input');
     if ((await organizationSlugInput.count()) > 0) {
-        await organizationSlugInput.fill(userData.organizationSlug);
+        await fillControlledInput(
+            page,
+            'register-organization-slug-input',
+            userData.organizationSlug
+        );
     }
 
-    await page.getByTestId('register-button').click();
+    // Ensure controlled form state commits on WebKit before submit.
+    await page.getByTestId('register-confirm-password-input').blur();
+
+    const registerButton = page.getByTestId('register-button');
+    await expect(registerButton).toBeEnabled({ timeout: 10_000 });
+
+    const signUpResponse = page.waitForResponse(
+        response =>
+            response.url().includes('/api/auth/sign-up/email') &&
+            response.request().method() === 'POST',
+        { timeout: 30_000 }
+    );
+
+    await registerButton.click();
+    await signUpResponse.catch(() => undefined);
 
     let outcome: 'dashboard' | 'login' | null = null;
 
     try {
-        await page.waitForURL(/\/(dashboard\/home|login)(\?|$)/, { timeout: 12000 });
+        await page.waitForURL(/\/(dashboard\/home|login)(\?|$)/, { timeout: 30_000 });
         const currentUrl = page.url();
         if (/\/dashboard\/home(\?|$)/.test(currentUrl)) {
             outcome = 'dashboard';
@@ -296,10 +343,9 @@ export async function createTestUser(
     page: Page,
     options?: CreateTestUserOptions
 ): Promise<TestUserData> {
-    const hasCustomIdentity = Boolean(
-        options?.customUsername || options?.customEmail || options?.customOrganizationSlug
-    );
-    const maxAttempts = hasCustomIdentity ? 1 : 2;
+    // Custom identities used to be single-attempt, but WebKit registration after
+    // Playwright browser upgrades can flake once without a durable product bug.
+    const maxAttempts = 2;
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {

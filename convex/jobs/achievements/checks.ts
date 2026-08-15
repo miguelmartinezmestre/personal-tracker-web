@@ -210,7 +210,6 @@ export async function checkUserAchievementsJob(
         progressUpdatesCount += updatesPage.page.length;
         progressUpdatesDone = updatesPage.isDone;
         progressUpdatesContinueCursor = updatesPage.continueCursor;
-        didPaginate = true;
     }
 
     const streak = await calculateGlobalUserStreak(ctx, userId);

@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import EditCategoryFormModal from '@/features/categories/components/category-form-edit-modal';
@@ -18,7 +19,7 @@ export function useCategoriesTableColumns() {
     const t = useTranslations('Objectives.categories');
     const { deleteCategoryAsync, isDeletingCategory } = useDeleteCategory();
 
-    const columns: ColumnDef<Category>[] = [
+    const columns: ColumnDef<DataTableFeatures, Category>[] = [
         {
             accessorKey: 'color',
             header: t('fields.color'),

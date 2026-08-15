@@ -42,6 +42,9 @@ const eslintConfig = [
                 ...globals.serviceworker,
             },
         },
+        // Pin React version: eslint-plugin-react@7.37 auto-detect calls
+        // context.getFilename(), removed in ESLint 10.
+        settings: { react: { version: '19.2' } },
     },
     {
         plugins: {
@@ -56,7 +59,7 @@ const eslintConfig = [
         plugins: {
             'react-hooks': pluginReactHooks,
         },
-        settings: { react: { version: 'detect' } },
+        settings: { react: { version: '19.2' } },
         rules: {
             ...pluginReactHooks.configs.recommended.rules,
             'react/react-in-jsx-scope': 'off',

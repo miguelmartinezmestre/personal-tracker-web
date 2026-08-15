@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import type { Doc } from '@/convex/_generated/dataModel';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ export function useNotificationsTableColumns({
         status: t('typeOptions.status'),
     };
 
-    const columns: ColumnDef<Doc<'notifications'>>[] = [
+    const columns: ColumnDef<DataTableFeatures, Doc<'notifications'>>[] = [
         {
             accessorKey: 'message',
             header: t('table.columns.message'),

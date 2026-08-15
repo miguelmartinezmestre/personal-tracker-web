@@ -5,7 +5,8 @@ import {
     useOrganizations,
     useDeleteOrganization,
 } from '@/features/organizations/hooks/use-organizations';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import EditOrganizationFormModal from '@/features/organizations/components/organization-form-edit-modal';
@@ -23,7 +24,7 @@ export default function OrganizationsTable() {
     const organizations = useOrganizations();
     const deleteOrganization = useDeleteOrganization();
 
-    const columns: ColumnDef<Organization>[] = [
+    const columns: ColumnDef<DataTableFeatures, Organization>[] = [
         {
             accessorKey: 'name',
             header: t('name'),
