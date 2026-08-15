@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
 import type { DataModel, Id } from '../_generated/dataModel';
@@ -196,7 +196,7 @@ describe('convex categories', async () => {
     });
 
     test('creates the default category set for the caller', async () => {
-        const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
+        const result = await userIdentity.mutation(internal.categories.createDefaultCategories, {});
         const names = result.map(category => category?.name);
 
         expect(result).toHaveLength(9);
@@ -240,7 +240,7 @@ describe('convex categories', async () => {
         await expect(t.mutation(api.categories.deleteCategory, { id: categoryId })).rejects.toThrow(
             /Unauthenticated|User not authenticated|AUTH_REQUIRED/
         );
-        await expect(t.mutation(api.categories.createDefaultCategories, {})).rejects.toThrow(
+        await expect(t.mutation(internal.categories.createDefaultCategories, {})).rejects.toThrow(
             /Unauthenticated|User not authenticated|AUTH_REQUIRED/
         );
     });

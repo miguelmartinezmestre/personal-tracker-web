@@ -4,7 +4,16 @@ import {
     wrapDatabaseReader,
     wrapDatabaseWriter,
 } from 'convex-helpers/server/rowLevelSecurity';
-import { mutation, query, type DatabaseReader, type DatabaseWriter } from '../../_generated/server';
+import {
+    internalMutation,
+    internalQuery,
+    mutation,
+    query,
+    type DatabaseReader,
+    type DatabaseWriter,
+    type MutationCtx,
+    type QueryCtx,
+} from '../../_generated/server';
 import type { Id } from '../../_generated/dataModel';
 import { auditLogTriggers } from '../audit/triggers';
 import { resolveAuthContext } from './authContext';
@@ -30,52 +39,74 @@ type MutationRlsCtx = {
     memberRole: string | null;
 };
 
+async function buildQueryRlsCtx(ctx: QueryCtx): Promise<QueryRlsCtx> {
+    const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
+
+    return {
+        db: wrapDatabaseReader(
+            ctx,
+            ctx.db,
+            await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
+            config
+        ),
+        userId,
+        email,
+        organizationId,
+        role,
+        memberRole,
+    };
+}
+
+async function buildMutationRlsCtx(ctx: MutationCtx): Promise<MutationRlsCtx> {
+    const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
+    const triggerDb = auditLogTriggers.wrapDB({
+        db: ctx.db,
+        userId,
+        organizationId,
+        role,
+    }).db;
+
+    const rlsDb = wrapDatabaseWriter(
+        ctx,
+        triggerDb,
+        await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
+        config
+    );
+
+    return {
+        db: rlsDb,
+        userId,
+        email,
+        organizationId,
+        role,
+        memberRole,
+    };
+}
+
 export const queryWithRLS = customQuery(
     query,
     customCtx(async (ctx): Promise<QueryRlsCtx> => {
-        const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
-
-        return {
-            db: wrapDatabaseReader(
-                ctx,
-                ctx.db,
-                await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
-                config
-            ),
-            userId,
-            email,
-            organizationId,
-            role,
-            memberRole,
-        };
+        return await buildQueryRlsCtx(ctx);
     })
 );
 
 export const mutationWithRLS = customMutation(
     mutation,
     customCtx(async (ctx): Promise<MutationRlsCtx> => {
-        const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
-        const triggerDb = auditLogTriggers.wrapDB({
-            db: ctx.db,
-            userId,
-            organizationId,
-            role,
-        }).db;
+        return await buildMutationRlsCtx(ctx);
+    })
+);
 
-        const rlsDb = wrapDatabaseWriter(
-            ctx,
-            triggerDb,
-            await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
-            config
-        );
+export const internalQueryWithRLS = customQuery(
+    internalQuery,
+    customCtx(async (ctx): Promise<QueryRlsCtx> => {
+        return await buildQueryRlsCtx(ctx);
+    })
+);
 
-        return {
-            db: rlsDb,
-            userId,
-            email,
-            organizationId,
-            role,
-            memberRole,
-        };
+export const internalMutationWithRLS = customMutation(
+    internalMutation,
+    customCtx(async (ctx): Promise<MutationRlsCtx> => {
+        return await buildMutationRlsCtx(ctx);
     })
 );

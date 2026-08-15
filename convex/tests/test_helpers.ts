@@ -136,7 +136,6 @@ export async function createTestMember(
     return memberId;
 }
 
-/** Ensures the user has membership and a default session with activeOrganizationId for RLS APIs. */
 export async function ensureTestUserAuth(
     t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
     userId: Id<'user'>,

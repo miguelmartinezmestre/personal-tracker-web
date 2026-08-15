@@ -10,7 +10,6 @@ import { isPersonalOrganizationForUser } from './domain/organizations/personalOr
 import { queryWithRLS } from './platform/rls/wrappers';
 import {
     activeMemberValidator,
-    activeOrganizationValidator,
     currentSessionValidator,
     organizationInvitationValidator,
     organizationSummaryValidator,
@@ -148,28 +147,6 @@ export const getOrganizationsByUser = queryWithRLS({
             .filter(org => org !== null);
 
         return organizations;
-    },
-});
-
-export const getActiveOrganization = queryWithRLS({
-    args: {},
-    returns: v.union(activeOrganizationValidator, v.null()),
-    handler: async ctx => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) return null;
-
-        const org = await ctx.db.get('organization', organizationId);
-
-        if (!org) return null;
-
-        return {
-            id: org._id,
-            name: org.name,
-            slug: org.slug,
-            description: getOrganizationDescription(org.metadata),
-            logo: org.logo,
-            createdAt: org.createdAt,
-        };
     },
 });
 

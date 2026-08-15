@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import { TestConvexForDataModel } from 'convex-test';
@@ -284,13 +284,13 @@ describe('categories integrity', async () => {
     describe('createDefaultCategories idempotency', () => {
         test('running createDefaultCategories twice does not create duplicates', async () => {
             const firstRun = await userIdentity.mutation(
-                api.categories.createDefaultCategories,
+                internal.categories.createDefaultCategories,
                 {}
             );
             expect(firstRun).toHaveLength(9);
 
             const secondRun = await userIdentity.mutation(
-                api.categories.createDefaultCategories,
+                internal.categories.createDefaultCategories,
                 {}
             );
 
@@ -319,7 +319,10 @@ describe('categories integrity', async () => {
                 icon: 'briefcase',
             });
 
-            const result = await userIdentity.mutation(api.categories.createDefaultCategories, {});
+            const result = await userIdentity.mutation(
+                internal.categories.createDefaultCategories,
+                {}
+            );
 
             expect(result).toHaveLength(7);
 

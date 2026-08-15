@@ -660,14 +660,6 @@ export const getCurrentUser = queryWithRLS({
     },
 });
 
-export const getCurrentOrganization = queryWithRLS({
-    args: {},
-    returns: v.union(v.id('organization'), v.null()),
-    handler: async ctx => {
-        return ctx.organizationId;
-    },
-});
-
 export const getDashboardContext = queryWithRLS({
     args: {},
     returns: v.object({

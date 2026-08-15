@@ -94,15 +94,16 @@ describe('active organization tenant boundary', () => {
                 paginationOpts: { numItems: 10, cursor: null },
             }
         );
-        const unreadCount = await activeOrgAIdentity.query(
-            api.notifications.getUnreadNotificationCount,
+        const overview = await activeOrgAIdentity.query(
+            api.notifications.getNotificationOverview,
             {}
         );
 
         expect(notifications.page.map(notification => notification.message)).toEqual([
             'Org A notification',
         ]);
-        expect(unreadCount).toEqual({ count: 1, isTruncated: false });
+        expect(overview.unreadCount).toBe(1);
+        expect(overview.isUnreadTruncated).toBe(false);
     });
 
     test('mark all read only changes notifications in the active organization', async () => {
@@ -166,16 +167,16 @@ describe('active organization tenant boundary', () => {
             currentValue: 0,
         });
 
-        const [activeOrganization, currentOrganization, objectives] = await Promise.all([
-            invalidActiveOrgIdentity.query(api.organizations.getActiveOrganization, {}),
-            invalidActiveOrgIdentity.query(api.auth.getCurrentOrganization, {}),
+        const [activeMember, dashboardContext, objectives] = await Promise.all([
+            invalidActiveOrgIdentity.query(api.organizations.getActiveMember, {}),
+            invalidActiveOrgIdentity.query(api.auth.getDashboardContext, {}),
             invalidActiveOrgIdentity.query(api.objectives.getObjectives, {
                 paginationOpts: { numItems: 10, cursor: null },
             }),
         ]);
 
-        expect(activeOrganization).toBeNull();
-        expect(currentOrganization).toBeNull();
+        expect(activeMember).toBeNull();
+        expect(dashboardContext.organizationId).toBeNull();
         expect(objectives.page).toHaveLength(0);
     });
 

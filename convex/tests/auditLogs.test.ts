@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
 import type { DataModel, Id } from '../_generated/dataModel';
@@ -176,12 +176,12 @@ describe('convex auditLogs', () => {
             }
         });
 
-        const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        const result = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
             resourceType: 'objective',
             resourceId: 'obj-target',
             paginationOpts,
         });
-        const empty = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        const empty = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
             resourceType: 'objective',
             resourceId: 'non-existent',
             paginationOpts,
@@ -265,7 +265,7 @@ describe('convex auditLogs', () => {
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         await expect(
-            t.query(api.auditLogs.getAuditLogsByResource, {
+            t.query(internal.auditLogs.getAuditLogsByResource, {
                 resourceType: 'objective',
                 resourceId: 'obj-1',
                 paginationOpts: { numItems: 10, cursor: null },

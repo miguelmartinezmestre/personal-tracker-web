@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- integration coverage is intentionally kept in one fixture */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -173,7 +173,7 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             const definitions = await userIdentity.query(
-                api.achievements.getAchievementDefinitions,
+                internal.achievements.getAchievementDefinitions,
                 {}
             );
 
@@ -188,14 +188,14 @@ describe('convex achievements', async () => {
             await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             const individualDefs = await userIdentity.query(
-                api.achievements.getAchievementDefinitions,
+                internal.achievements.getAchievementDefinitions,
                 {
                     type: 'individual',
                 }
             );
 
             const organizationDefs = await userIdentity.query(
-                api.achievements.getAchievementDefinitions,
+                internal.achievements.getAchievementDefinitions,
                 {
                     type: 'organization',
                 }
@@ -210,7 +210,10 @@ describe('convex achievements', async () => {
 
     describe('getUserAchievements', () => {
         test('returns empty array when user has no achievements', async () => {
-            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
+            const achievements = await userIdentity.query(
+                internal.achievements.getUserAchievements,
+                {}
+            );
 
             expect(achievements).toEqual([]);
         });
@@ -232,7 +235,10 @@ describe('convex achievements', async () => {
                 }
             });
 
-            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
+            const achievements = await userIdentity.query(
+                internal.achievements.getUserAchievements,
+                {}
+            );
 
             expect(achievements.length).toBe(1);
             expect(achievements[0]?.definition).toBeDefined();
@@ -577,7 +583,7 @@ describe('convex achievements', async () => {
                 await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
                 const achievements = await userIdentity.query(
-                    api.achievements.getUserAchievements,
+                    internal.achievements.getUserAchievements,
                     {}
                 );
 
@@ -609,7 +615,7 @@ describe('convex achievements', async () => {
             });
 
             const count = await userIdentity.query(
-                api.achievements.getUnviewedAchievementsCount,
+                internal.achievements.getUnviewedAchievementsCount,
                 {}
             );
 
@@ -632,7 +638,7 @@ describe('convex achievements', async () => {
             });
 
             const count = await userIdentity.query(
-                api.achievements.getUnviewedAchievementsCount,
+                internal.achievements.getUnviewedAchievementsCount,
                 {}
             );
 
@@ -654,7 +660,10 @@ describe('convex achievements', async () => {
 
             await drainScheduledFunctions(t);
 
-            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
+            const achievements = await userIdentity.query(
+                internal.achievements.getUserAchievements,
+                {}
+            );
 
             expect(achievements).toBeDefined();
         });
@@ -685,7 +694,10 @@ describe('convex achievements', async () => {
                 currentValue: 0,
             });
 
-            const achievements = await userIdentity.query(api.achievements.getUserAchievements, {});
+            const achievements = await userIdentity.query(
+                internal.achievements.getUserAchievements,
+                {}
+            );
 
             const firstObjectiveCount = achievements.filter(
                 a => a.definition?.code === 'first_objective'
@@ -789,13 +801,13 @@ describe('convex achievements', async () => {
 
     describe('authentication', () => {
         test('getAchievementDefinitions rejects unauthenticated users', async () => {
-            await expect(t.query(api.achievements.getAchievementDefinitions, {})).rejects.toThrow(
-                /Unauthenticated|User not authenticated|AUTH_REQUIRED/
-            );
+            await expect(
+                t.query(internal.achievements.getAchievementDefinitions, {})
+            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
 
         test('getUserAchievements rejects unauthenticated users', async () => {
-            await expect(t.query(api.achievements.getUserAchievements, {})).rejects.toThrow(
+            await expect(t.query(internal.achievements.getUserAchievements, {})).rejects.toThrow(
                 /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });
@@ -829,7 +841,7 @@ describe('convex achievements', async () => {
             const organizationId = orgId;
 
             const organizationAchievements = await userIdentity.query(
-                api.achievements.getOrganizationAchievements,
+                internal.achievements.getOrganizationAchievements,
                 { organizationId }
             );
 

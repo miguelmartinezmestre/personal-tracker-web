@@ -123,7 +123,7 @@ describe('convex notifications', async () => {
         expect(result.page.every(notification => notification.userId === userId)).toBe(true);
     });
 
-    test('getUnreadNotificationCount caps work at the badge limit and reports truncation', async () => {
+    test('getNotificationOverview caps unread badge count and reports truncation', async () => {
         const now = Date.now();
         await t.run(async ctx => {
             for (let index = 0; index < 101; index += 1) {
@@ -140,10 +140,6 @@ describe('convex notifications', async () => {
                 });
             }
         });
-
-        await expect(
-            userIdentity.query(api.notifications.getUnreadNotificationCount, {})
-        ).resolves.toEqual({ count: 100, isTruncated: true });
 
         const overview = await userIdentity.query(api.notifications.getNotificationOverview, {});
         expect(overview.notifications).toHaveLength(20);
