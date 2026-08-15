@@ -76,7 +76,7 @@ describe('auditLogs security', () => {
             });
         });
 
-        const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        const result = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
             resourceType: 'user',
             resourceId: String(userId),
             paginationOpts: { numItems: 10, cursor: null },
@@ -119,12 +119,12 @@ describe('auditLogs security', () => {
             });
         });
 
-        const actorLog = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        const actorLog = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
             resourceType: 'internal',
             resourceId: 'actor-123',
             paginationOpts: { numItems: 10, cursor: null },
         });
-        const selfLog = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        const selfLog = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
             resourceType: 'internal',
             resourceId: 'self-123',
             paginationOpts: { numItems: 10, cursor: null },
@@ -156,7 +156,7 @@ describe('auditLogs security', () => {
             });
         });
 
-        const result = await adminIdentity.query(api.auditLogs.getAuditLogsByResource, {
+        const result = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
             resourceType: 'invitation',
             resourceId: 'invite-123',
             paginationOpts: { numItems: 10, cursor: null },

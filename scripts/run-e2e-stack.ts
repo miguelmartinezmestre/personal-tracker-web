@@ -585,10 +585,12 @@ async function main(): Promise<void> {
     console.log('Starting frontend...');
     frontendLogTail = [];
 
+    // Use `next dev` directly (not `pnpm dev`, which wraps `convex dev --start`
+    // and does not accept `--port`). Production mode still uses `next start`.
     const frontendArgs =
         E2E_FRONTEND_MODE === 'production'
             ? ['exec', 'next', 'start', '--port', frontendPort]
-            : ['dev', '--port', frontendPort];
+            : ['exec', 'next', 'dev', '--port', frontendPort];
 
     frontendProcess = spawn(PNPM_COMMAND, frontendArgs, {
         cwd: process.cwd(),

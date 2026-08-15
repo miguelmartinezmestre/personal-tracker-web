@@ -122,29 +122,6 @@ export const getNotificationOverview = queryWithRLS({
     },
 });
 
-export const getUnreadNotificationCount = queryWithRLS({
-    args: {},
-    returns: v.object({ count: v.number(), isTruncated: v.boolean() }),
-    handler: async ctx => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return { count: 0, isTruncated: false };
-        }
-
-        const unreadRows = await ctx.db
-            .query('notifications')
-            .withIndex('by_user_organization_read', q =>
-                q.eq('userId', ctx.userId).eq('organizationId', organizationId).eq('read', false)
-            )
-            .take(UNREAD_BADGE_LIMIT + 1);
-
-        return {
-            count: Math.min(unreadRows.length, UNREAD_BADGE_LIMIT),
-            isTruncated: unreadRows.length > UNREAD_BADGE_LIMIT,
-        };
-    },
-});
-
 export const setNotificationRead = mutationWithRLS({
     args: {
         id: v.id('notifications'),

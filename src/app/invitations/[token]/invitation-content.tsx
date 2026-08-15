@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { authClient } from '@/features/auth/client';
 import { useSession } from '@/features/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getInvitationCallbackPath } from '@shared/auth-security';
-import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
 
 type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
@@ -44,10 +43,10 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         setErrorMessage('');
 
         try {
-            const result = await authClient.organization.acceptInvitation({
+            await acceptInvitationAndActivateOrganization({
                 invitationId: token,
             });
-            throwIfAuthClientError(result);
+            router.refresh();
             setStatus('accepted');
         } catch {
             setStatus('error');

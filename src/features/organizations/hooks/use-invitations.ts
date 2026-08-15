@@ -1,11 +1,13 @@
 'use client';
 
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
 import { useReferenceNow } from '@/lib/reference-now';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
 
 export type InvitationRole = 'owner' | 'admin' | 'member';
 
@@ -81,13 +83,14 @@ export function usePendingInvitations() {
 }
 
 export function useAcceptInvitation() {
+    const router = useRouter();
+
     return useMutation({
-        mutationFn: async (invitationId: string) => {
-            const result = await authClient.organization.acceptInvitation({
-                invitationId,
-            });
-            throwIfAuthClientError(result);
-            return result.data;
+        mutationFn: async (params: { invitationId: string; organizationId: string }) => {
+            return await acceptInvitationAndActivateOrganization(params);
+        },
+        onSuccess: () => {
+            router.refresh();
         },
     });
 }

@@ -9,6 +9,8 @@ const REGISTERED_FUNCTIONS = new Set([
     'action',
     'queryWithRLS',
     'mutationWithRLS',
+    'internalQueryWithRLS',
+    'internalMutationWithRLS',
 ]);
 const IGNORED_DIRECTORIES = new Set(['_generated', 'generated', 'tests']);
 

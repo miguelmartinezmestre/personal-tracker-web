@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -196,7 +196,7 @@ describe('organization admins cannot access another organization by id', () => {
 
     test('does not reveal organization achievements or contributors from another organization', async () => {
         await expectEmptyListOrDenied(
-            orgAOwnerIdentity.query(api.achievements.getOrganizationAchievements, {
+            orgAOwnerIdentity.query(internal.achievements.getOrganizationAchievements, {
                 organizationId: orgBId,
             })
         );

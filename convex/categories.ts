@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
-import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
+import { internalMutationWithRLS, mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { withInvalidCursorRetry } from './utils/pagination';
 import {
     categoryInputValidator,
@@ -51,7 +51,7 @@ export const deleteCategory = mutationWithRLS({
     },
 });
 
-export const createDefaultCategories = mutationWithRLS({
+export const createDefaultCategories = internalMutationWithRLS({
     args: {},
     returns: v.array(v.union(categoryDocumentValidator, v.null())),
     handler: async ctx => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api } from '../_generated/api';
+import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
     createTestUser,
@@ -422,13 +422,13 @@ describe('convex RLS (Row-Level Security)', async () => {
             await adminIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
 
             const user1Defs = await user1Identity.query(
-                api.achievements.getAchievementDefinitions,
+                internal.achievements.getAchievementDefinitions,
                 {}
             );
             expect(user1Defs.length).toBeGreaterThan(0);
 
             const user2Defs = await user2Identity.query(
-                api.achievements.getAchievementDefinitions,
+                internal.achievements.getAchievementDefinitions,
                 {}
             );
             expect(user2Defs.length).toBeGreaterThan(0);
@@ -450,13 +450,13 @@ describe('convex RLS (Row-Level Security)', async () => {
             });
 
             const user1Achievements = await user1Identity.query(
-                api.achievements.getUserAchievements,
+                internal.achievements.getUserAchievements,
                 {}
             );
             expect(user1Achievements.length).toBeGreaterThan(0);
 
             const user2Achievements = await user2Identity.query(
-                api.achievements.getUserAchievements,
+                internal.achievements.getUserAchievements,
                 {}
             );
             expect(user2Achievements).toHaveLength(0);
@@ -489,7 +489,7 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('unauthenticated user cannot access achievements', async () => {
-            await expect(t.query(api.achievements.getUserAchievements, {})).rejects.toThrow(
+            await expect(t.query(internal.achievements.getUserAchievements, {})).rejects.toThrow(
                 /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });

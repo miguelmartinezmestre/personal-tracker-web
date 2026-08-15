@@ -56,7 +56,7 @@ describe('organization achievements are awarded (F1)', () => {
         await drainScheduledFunctions(t);
 
         const organizationAchievements = await userIdentity.query(
-            api.achievements.getOrganizationAchievements,
+            internal.achievements.getOrganizationAchievements,
             { organizationId }
         );
 

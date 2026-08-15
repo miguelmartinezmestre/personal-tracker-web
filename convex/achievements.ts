@@ -6,7 +6,7 @@ import {
     calculateOrganizationStreak,
     isEarlyBirdCompletion,
 } from './domain/achievements/calculations';
-import { queryWithRLS, mutationWithRLS } from './platform/rls/wrappers';
+import { internalQueryWithRLS, mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
 import {
     checkOrganizationAchievementsJob,
@@ -97,7 +97,7 @@ export const getGlobalUserAchievementMetricsInternal = internalQuery({
     },
 });
 
-export const getAchievementDefinitions = queryWithRLS({
+export const getAchievementDefinitions = internalQueryWithRLS({
     args: {
         type: v.optional(achievementTypeValidator),
     },
@@ -116,7 +116,7 @@ export const getAchievementDefinitions = queryWithRLS({
     },
 });
 
-export const getUserAchievements = queryWithRLS({
+export const getUserAchievements = internalQueryWithRLS({
     args: {},
     returns: v.array(userAchievementWithDefinitionValidator),
     handler: async ctx => {
@@ -140,7 +140,7 @@ export const getUserAchievements = queryWithRLS({
     },
 });
 
-export const getOrganizationAchievements = queryWithRLS({
+export const getOrganizationAchievements = internalQueryWithRLS({
     args: {
         organizationId: v.id('organization'),
     },
@@ -381,7 +381,7 @@ export const getUserAchievementProgress = queryWithRLS({
     },
 });
 
-export const getUnviewedAchievementsCount = queryWithRLS({
+export const getUnviewedAchievementsCount = internalQueryWithRLS({
     args: {},
     returns: v.number(),
     handler: async ctx => {

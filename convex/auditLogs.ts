@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
-import { queryWithRLS } from './platform/rls/wrappers';
+import { internalQueryWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { internalMutation } from './_generated/server';
 import { pruneAuditLogsOlderThanRetentionJob } from './jobs/audit/pruneAuditLogs';
 import { resolveActorUserId, sanitizeAuditMetadata } from './domain/audit/privacy';
@@ -48,7 +48,7 @@ export const getAuditLogs = queryWithRLS({
     },
 });
 
-export const getAuditLogsByResource = queryWithRLS({
+export const getAuditLogsByResource = internalQueryWithRLS({
     args: {
         resourceType: v.string(),
         resourceId: v.string(),
