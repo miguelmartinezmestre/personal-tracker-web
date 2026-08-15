@@ -1,11 +1,9 @@
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useConvexMutation } from '@convex-dev/react-query';
-import { authClient } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 export function useBanUser() {
     const t = useTranslations('Admin');
@@ -30,12 +28,11 @@ export function useBanUser() {
 
 export function useUnBanUser() {
     const t = useTranslations('Admin');
+    const unbanUserMutation = useConvexMutation(api.admin.unbanUser);
 
     const { mutate: unbanUser, isPending: isUnbanningUser } = useMutation({
         mutationFn: async ({ userId }: { userId: Id<'user'> }) => {
-            const result = await authClient.admin.unbanUser({ userId });
-            throwIfAuthClientError(result);
-            return result.data;
+            return await unbanUserMutation({ userId });
         },
         onSuccess: () => {
             toast.success(t('usersTable.toast.unbannedSuccess'));

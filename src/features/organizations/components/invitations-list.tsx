@@ -49,10 +49,10 @@ export function InvitationsList() {
         },
     });
 
-    async function handleAccept(invitationId: string) {
+    async function handleAccept(invitationId: string, organizationId: string) {
         setActionError('');
         try {
-            await acceptInvitation.mutateAsync(invitationId);
+            await acceptInvitation.mutateAsync({ invitationId, organizationId });
         } catch {
             setActionError(t('errorAccepting'));
         }
@@ -132,7 +132,7 @@ export function InvitationsList() {
                     <InvitationCard
                         key={invitation.id}
                         invitation={invitation}
-                        onAccept={() => void handleAccept(invitation.id)}
+                        onAccept={() => void handleAccept(invitation.id, invitation.organizationId)}
                         onReject={() => void handleReject(invitation.id)}
                         isAccepting={acceptInvitation.isPending}
                         isRejecting={rejectInvitation.isPending}

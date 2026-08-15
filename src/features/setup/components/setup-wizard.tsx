@@ -171,11 +171,6 @@ export default function SetupWizard() {
 
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-8">
-            <div className="mb-6 text-center">
-                <h1 className="text-3xl font-bold">{t('title')}</h1>
-                <p className="text-muted-foreground mt-2">{t('subtitle')}</p>
-            </div>
-
             <SetupProgress currentStep={currentStep} isStepValid={isStepValid} />
 
             <Card>

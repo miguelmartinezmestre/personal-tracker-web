@@ -135,7 +135,6 @@ const ES: ErrorDictionary = {
 
 const DICTIONARIES: Record<ErrorLocale, ErrorDictionary> = { en: EN, es: ES };
 
-/** Extracts a stable error code from a thrown value (ConvexError, Error, or string). */
 export function extractErrorCode(error: unknown): string | undefined {
     if (typeof error === 'string') return error;
     if (!error || typeof error !== 'object') return undefined;
@@ -162,7 +161,6 @@ export function extractErrorCode(error: unknown): string | undefined {
     return undefined;
 }
 
-/** Resolves a thrown value to a localized, human-friendly message. */
 export function resolveErrorMessage(
     error: unknown,
     locale: ErrorLocale = 'en',
@@ -177,7 +175,6 @@ export function resolveErrorMessage(
     return fallback ?? dictionary.generic ?? EN.generic ?? 'Something went wrong.';
 }
 
-/** Best-effort locale detection for non-React contexts (reads the `locale` cookie). */
 export function getErrorLocale(): ErrorLocale {
     if (typeof document === 'undefined') return 'en';
     const match = document.cookie.match(/(?:^|;\s*)locale=(en|es)/);
