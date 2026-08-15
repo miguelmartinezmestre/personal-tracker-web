@@ -68,6 +68,11 @@ export async function setupCollaboratorInOrganization(
     await page.goto('/dashboard/home');
     await page.waitForURL(/\/dashboard\/home(?:\?|$)/, { timeout: 15000 });
 
+    // Accept auto-switches the active organization to the invited org.
+    await expect(page.getByTestId('organization-switcher')).toContainText(organizationName, {
+        timeout: 15000,
+    });
+
     return { context, page, user: collaboratorUser, organizationName };
 }
 
