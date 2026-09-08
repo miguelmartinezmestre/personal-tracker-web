@@ -8,8 +8,8 @@ import {
     createTestObjective,
     createTestNotification,
 } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 
 describe('convex RLS (Row-Level Security)', async () => {
     const t = initConvexTest();
@@ -22,7 +22,6 @@ describe('convex RLS (Row-Level Security)', async () => {
     let adminId: Id<'user'>;
     let _user1OrganizationId: Id<'organization'>;
     let _user2OrganizationId: Id<'organization'>;
-    let _adminOrganizationId: Id<'organization'>;
 
     beforeEach(async () => {
         const user1Random = Math.random().toString(36).substring(2, 15);
@@ -128,8 +127,6 @@ describe('convex RLS (Row-Level Security)', async () => {
             userId: adminId,
             role: 'owner',
         });
-
-        _adminOrganizationId = adminOrgId;
 
         adminIdentity = t.withIdentity({
             subject: adminData.docId,
@@ -368,7 +365,7 @@ describe('convex RLS (Row-Level Security)', async () => {
 
             try {
                 await user2Identity.mutation(api.notifications.setNotificationRead, {
-                    id: notification!._id,
+                    id: notification._id,
                     read: true,
                 });
                 const notifications = await user1Identity.query(
@@ -402,7 +399,7 @@ describe('convex RLS (Row-Level Security)', async () => {
 
             try {
                 await user2Identity.mutation(api.notifications.deleteNotification, {
-                    id: notification!._id,
+                    id: notification._id,
                 });
                 const notifications = await user1Identity.query(
                     api.notifications.getNotificationsByUser,

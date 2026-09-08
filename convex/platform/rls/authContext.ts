@@ -1,3 +1,4 @@
+import { isActiveAccount } from '../../domain/organizations/operational';
 import { ConvexError } from 'convex/values';
 import { getAuthUserIdentity, getSession } from 'kitcn/auth';
 import type { Id } from '../../_generated/dataModel';
@@ -17,7 +18,7 @@ export async function resolveActiveMembership(
     userId: Id<'user'>,
     organizationId: Id<'organization'> | null
 ): Promise<{ role: string | null; organizationId: Id<'organization'> | null }> {
-    if (!organizationId) {
+    if (!organizationId || !(await ctx.db.get('organization', organizationId))) {
         return { role: null, organizationId: null };
     }
 
@@ -42,34 +43,16 @@ export async function resolveAuthContext(ctx: QueryCtx | MutationCtx): Promise<A
     }
 
     const currentUser = await ctx.db.get('user', identity.userId);
-    // Session deletion after a ban/account deletion is intentionally batched.
-    // The durable user status is therefore the immediate authorization gate.
-    const activeBan =
-        currentUser?.banned === true &&
-        (currentUser.banExpires == null || currentUser.banExpires > Date.now());
-    if (!currentUser || activeBan || currentUser.deletedAt !== undefined) {
+    if (!isActiveAccount(currentUser, Date.now()) || !currentUser) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
     const session = await getSession(ctx);
-
-    const expiresAt =
-        session && typeof session === 'object'
-            ? ((session as { session?: { expiresAt?: number | null }; expiresAt?: number | null })
-                  .session?.expiresAt ??
-              (session as { expiresAt?: number | null }).expiresAt ??
-              null)
-            : null;
-
-    if (
-        !session ||
-        (typeof expiresAt === 'number' && expiresAt < Date.now()) ||
-        !session.activeOrganizationId
-    ) {
+    if (!session || session.expiresAt < Date.now() || !session.activeOrganizationId) {
         throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
     }
 
-    const activeOrganizationId = ctx.db.normalizeId('organization', session?.activeOrganizationId);
+    const activeOrganizationId = ctx.db.normalizeId('organization', session.activeOrganizationId);
 
     const { role: memberRole, organizationId } = await resolveActiveMembership(
         ctx,

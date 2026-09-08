@@ -2,7 +2,8 @@
 
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CreateObjective, objectiveSchema } from '@/features/objectives/schemas/objective';
+import type { CreateObjective } from '@/features/objectives/schemas/objective';
+import { objectiveSchema } from '@/features/objectives/schemas/objective';
 import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
@@ -60,8 +61,8 @@ export default function CreateObjectiveFormModal() {
                     title: value.title,
                     description: value.description ?? undefined,
                     categoryId: toCategoryId(value.categoryId),
-                    targetValue: Number(value.targetValue),
-                    startValue: Number(value.startValue ?? 0),
+                    targetValue: value.targetValue,
+                    startValue: value.startValue ?? 0,
                     deadline: value.deadline ?? undefined,
                     unit: value.unit ?? undefined,
                     visibility: value.visibility ?? 'private',

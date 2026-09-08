@@ -57,6 +57,7 @@ export const getProgressSeriesByObjectiveId = queryWithRLS({
             })
         ),
         isTruncated: v.boolean(),
+        seriesStartValue: v.number(),
     }),
     handler: async (ctx, args) => {
         return await getProgressSeriesByObjective(ctx, args);

@@ -1,4 +1,11 @@
-import { test as base, Page, BrowserContext, expect } from '@playwright/test';
+import type { Page, BrowserContext } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
+import type {
+    TestUserData,
+    ObjectiveData,
+    CategoryData,
+    OrganizationData,
+} from '../helpers/test-helpers';
 import {
     createTestUser,
     createObjective,
@@ -7,10 +14,6 @@ import {
     ensureDefaultCategories,
     loginUser,
     logoutUser,
-    TestUserData,
-    ObjectiveData,
-    CategoryData,
-    OrganizationData,
 } from '../helpers/test-helpers';
 import { attachPageDiagnostics } from '../helpers/page-diagnostics';
 
@@ -41,8 +44,32 @@ export interface TestFixtures {
 }
 
 export const test = base.extend<TestFixtures>({
-    isolatedSession: async ({ browser }, use) => {
-        const context = await browser.newContext();
+    isolatedSession: async (
+        {
+            browser,
+            contextOptions,
+            viewport,
+            isMobile,
+            hasTouch,
+            deviceScaleFactor,
+            userAgent,
+            locale,
+            colorScheme,
+            baseURL,
+        },
+        use
+    ) => {
+        const context = await browser.newContext({
+            ...contextOptions,
+            viewport,
+            isMobile,
+            hasTouch,
+            deviceScaleFactor,
+            userAgent,
+            locale,
+            colorScheme,
+            baseURL,
+        });
         const page = await context.newPage();
         attachPageDiagnostics(page, 'isolated-session');
         const user = await createTestUser(page);

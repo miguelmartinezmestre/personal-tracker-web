@@ -8,6 +8,7 @@ import {
     createTestUser,
 } from './test_helpers';
 import type { Id } from '../_generated/dataModel';
+import { isJsonObject } from '../../shared/boundary-values';
 
 describe('convex admin', () => {
     const t = initConvexTest();
@@ -199,14 +200,7 @@ describe('convex admin', () => {
                 }),
             ])
         );
-        expect(result.page).not.toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    _id: expect.any(String),
-                    isCurrent: true,
-                }),
-            ])
-        );
+        expect(result.page.some(session => session.isCurrent)).toBe(false);
     });
 
     test('allows admins to revoke only sessions belonging to the target user', async () => {
@@ -233,8 +227,8 @@ describe('convex admin', () => {
             sessionId: userSessionId,
         });
 
-        const revokedSession = await t.run(async ctx => await ctx.db.get(userSessionId));
-        const adminSession = await t.run(async ctx => await ctx.db.get(adminSessionId));
+        const revokedSession = await t.run(async ctx => await ctx.db.get('session', userSessionId));
+        const adminSession = await t.run(async ctx => await ctx.db.get('session', adminSessionId));
 
         expect(result).toEqual({ success: true });
         expect(revokedSession).toBeNull();
@@ -307,19 +301,19 @@ describe('convex admin', () => {
             expect(stateAfterMutation.user?.updatedAt).toBeGreaterThanOrEqual(now);
             expect(stateAfterMutation.retainedSession).not.toBeNull();
             expect(stateAfterMutation.remainingSessions.length).toBeGreaterThan(0);
-            expect(stateAfterMutation.auditLogs).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        userId: adminId,
-                        action: 'user.updated',
-                        resourceType: 'user',
-                        resourceId: String(userId),
-                        metadata: expect.objectContaining({
-                            after: expect.objectContaining({ banned: true }),
-                        }),
-                    }),
-                ])
-            );
+            expect(
+                stateAfterMutation.auditLogs.some(log => {
+                    const after = log.metadata?.after;
+                    return (
+                        log.userId === adminId &&
+                        log.action === 'user.updated' &&
+                        log.resourceType === 'user' &&
+                        log.resourceId === String(userId) &&
+                        isJsonObject(after) &&
+                        after.banned === true
+                    );
+                })
+            ).toBe(true);
 
             await expect(
                 bannedIdentity.query(api.sessions.getSessionsByUser, {
@@ -427,16 +421,15 @@ describe('convex admin', () => {
                 banReason: 'Account deleted',
             });
             expect(immediate.user?.deletedAt).toBeDefined();
-            expect(immediate.auditLogs).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        action: 'user.deleted',
-                        userId,
-                        actorUserId: adminId,
-                        metadata: expect.objectContaining({ context: 'soft_delete' }),
-                    }),
-                ])
-            );
+            expect(
+                immediate.auditLogs.some(
+                    log =>
+                        log.action === 'user.deleted' &&
+                        log.userId === userId &&
+                        log.actorUserId === adminId &&
+                        log.metadata?.context === 'soft_delete'
+                )
+            ).toBe(true);
 
             await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
@@ -543,7 +536,7 @@ describe('convex admin', () => {
                 })
             ).rejects.toThrow(/FORBIDDEN/);
         } finally {
-            await t.run(async ctx => ctx.db.delete(settingsId));
+            await t.run(async ctx => ctx.db.delete('platformSettings', settingsId));
         }
     });
 

@@ -1,24 +1,29 @@
+import { assertUniqueTranslationKeys } from './lib/translation-validation';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { categoryIconSchema } from '../src/features/categories/schemas/category';
 import { routing } from '../src/i18n/routing';
-
-type TranslationTree = Record<string, unknown>;
+import {
+    isJsonObject,
+    parseJsonValue,
+    type JsonObject,
+    type JsonValue,
+} from '../shared/boundary-values';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = dirname(currentFile);
 const translationsDirectory = join(currentDirectory, '..', 'src', 'translations');
 const configuredLocales = [...routing.locales].sort();
-const configuredLocaleSet = new Set(configuredLocales);
+const configuredLocaleSet = new Set<string>(configuredLocales);
 
-function getAllKeys(value: unknown, prefix = ''): string[] {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+function getAllKeys(value: JsonValue, prefix = ''): string[] {
+    if (!isJsonObject(value)) {
         return prefix ? [prefix] : [];
     }
 
     const keys: string[] = [];
-    for (const [key, childValue] of Object.entries(value as TranslationTree)) {
+    for (const [key, childValue] of Object.entries(value)) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
         keys.push(...getAllKeys(childValue, fullKey));
     }
@@ -26,13 +31,20 @@ function getAllKeys(value: unknown, prefix = ''): string[] {
     return keys;
 }
 
-function loadTranslations(locale: string): TranslationTree {
+function loadTranslations(locale: string): JsonObject {
     const filePath = join(translationsDirectory, `${locale}.json`);
     if (!existsSync(filePath)) {
         throw new Error(`Missing translation file for configured locale "${locale}": ${filePath}`);
     }
 
-    return JSON.parse(readFileSync(filePath, 'utf8')) as TranslationTree;
+    const source = readFileSync(filePath, 'utf8');
+    assertUniqueTranslationKeys(source, filePath);
+    const parsed = parseJsonValue(source);
+    if (!isJsonObject(parsed)) {
+        throw new Error(`Invalid translation file for configured locale "${locale}": ${filePath}`);
+    }
+
+    return parsed;
 }
 
 function getTranslationFileLocales(): string[] {

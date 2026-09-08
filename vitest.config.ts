@@ -10,6 +10,7 @@ export default defineConfig({
     },
     test: {
         maxWorkers: 1,
+        pool: 'threads',
         environment: 'edge-runtime',
         reporters: ['tree'],
         include: ['convex/tests/**/*.test.ts'],
@@ -20,6 +21,7 @@ export default defineConfig({
         hookTimeout: 20000,
         coverage: {
             provider: 'v8',
+            reportsDirectory: 'coverage/backend',
             reporter: ['text', 'html', 'lcov'],
             include: ['convex/**/*.ts'],
             exclude: [
@@ -33,7 +35,7 @@ export default defineConfig({
             ],
             thresholds: {
                 statements: 70,
-                branches: 55,
+                branches: 65,
                 functions: 70,
                 lines: 70,
             },

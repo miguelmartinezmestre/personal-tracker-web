@@ -17,5 +17,5 @@ export function identityFor(user: TestUserData, sessionId?: Id<'session'>): Part
         banExpires: null,
         banReason: null,
         banned: false,
-    } as Partial<UserIdentity>;
+    };
 }

@@ -24,7 +24,11 @@ export default function StepRegistrationPolicy({ data, onChange }: StepRegistrat
 
             <RadioGroup
                 value={data.policy}
-                onValueChange={value => onChange({ policy: value as 'open' | 'invitation-only' })}
+                onValueChange={value => {
+                    if (value === 'open' || value === 'invitation-only') {
+                        onChange({ policy: value });
+                    }
+                }}
                 className="space-y-4"
                 data-testid="setup-registration-policy"
             >

@@ -69,3 +69,10 @@ error-handling-audit-report.md
 *.tar.gz
 *.tgz
 *.rar
+
+# Private local stack credentials and generated release evidence
+/.local-stack/
+/artifacts/
+/reports/quality/
+/reports/e2e/
+/reports/evidence-manifest.json

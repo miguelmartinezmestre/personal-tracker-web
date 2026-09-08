@@ -13,9 +13,76 @@ import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
-import { useOrganizations } from '@/features/organizations/hooks/use-organizations';
+import {
+    useOrganizations,
+    useOrganizationByIdentifier,
+} from '@/features/organizations/hooks/use-organizations';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
+import { useSession } from '@/features/auth/hooks/use-session';
 import { useState } from 'react';
+
+function OrganizationSwitcherMenuItems({
+    isLoadingData,
+    organizations,
+    activeOrganizationId,
+    loadingLabel,
+    emptyLabel,
+    personalLabel,
+    currentLabel,
+    onSelect,
+}: {
+    isLoadingData: boolean;
+    organizations: { id: string; name: string; isPersonal?: boolean }[];
+    activeOrganizationId: string | null;
+    loadingLabel: string;
+    emptyLabel: string;
+    personalLabel: string;
+    currentLabel: string;
+    onSelect: (organizationId: string) => void;
+}) {
+    if (isLoadingData) {
+        return (
+            <DropdownMenuItem disabled>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                {loadingLabel}
+            </DropdownMenuItem>
+        );
+    }
+
+    if (organizations.length === 0) {
+        return (
+            <DropdownMenuItem disabled>
+                <span className="text-muted-foreground">{emptyLabel}</span>
+            </DropdownMenuItem>
+        );
+    }
+
+    return organizations.map(organization => (
+        <DropdownMenuItem
+            key={organization.id}
+            onClick={() => onSelect(organization.id)}
+            data-testid={`organization-option-${organization.id}`}
+            className="flex items-center gap-3 cursor-pointer"
+            disabled={organization.id === activeOrganizationId}
+        >
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+                <Building className="h-3 w-3" />
+            </div>
+            <span className="flex-1 truncate">{organization.name}</span>
+            {organization.isPersonal ? (
+                <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {personalLabel}
+                </span>
+            ) : null}
+            {organization.id === activeOrganizationId ? (
+                <span className="text-xs text-primary font-medium">{currentLabel}</span>
+            ) : null}
+            {organization.id === activeOrganizationId && (
+                <Check className="h-4 w-4 text-primary flex-shrink-0" />
+            )}
+        </DropdownMenuItem>
+    ));
+}
 
 interface OrganizationSwitcherProps {
     initialActiveOrganizationId: string | null;
@@ -23,12 +90,17 @@ interface OrganizationSwitcherProps {
 
 export function OrganizationSwitcher({ initialActiveOrganizationId }: OrganizationSwitcherProps) {
     const t = useTranslations('OrganizationSwitcher');
+    const common = useTranslations('Common');
     const router = useRouter();
     const organizationsQuery = useOrganizations();
-    const [activeOrganizationId, setActiveOrganizationId] = useState<string | null>(
-        initialActiveOrganizationId
-    );
-    const organizations = organizationsQuery.data ?? [];
+    const sessionQuery = useSession();
+    const [optimisticOrganizationId, setOptimisticOrganizationId] = useState<string | null>(null);
+    const sessionActiveOrganizationId = sessionQuery.data?.session.activeOrganizationId ?? null;
+    const activeOrganizationId =
+        optimisticOrganizationId ??
+        (sessionQuery.data ? sessionActiveOrganizationId : initialActiveOrganizationId);
+    const activeQuery = useOrganizationByIdentifier(activeOrganizationId ?? '');
+    const organizations = organizationsQuery.isError ? [] : (organizationsQuery.data ?? []);
     const isLoadingData = organizationsQuery.isPending;
 
     const setActiveMutation = useMutation({
@@ -40,14 +112,14 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
             return result.data;
         },
         onSuccess: (_data, organizationId) => {
-            setActiveOrganizationId(organizationId);
+            setOptimisticOrganizationId(organizationId);
             router.refresh();
         },
     });
 
-    const activeOrganization = organizations.find(
-        organization => organization.id === activeOrganizationId
-    );
+    const activeOrganization =
+        organizations.find(organization => organization.id === activeOrganizationId) ??
+        activeQuery.data;
     const displayName = activeOrganization?.name || t('noOrganization');
     const activeIsPersonal = Boolean(activeOrganization?.isPersonal);
 
@@ -104,45 +176,40 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                     {t('switchOrganization')}
                 </div>
                 <div className="max-h-60 overflow-y-auto">
-                    {isLoadingData ? (
-                        <DropdownMenuItem disabled>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            {t('loading')}
-                        </DropdownMenuItem>
-                    ) : organizations.length > 0 ? (
-                        organizations.map(organization => (
-                            <DropdownMenuItem
-                                key={organization.id}
-                                onClick={() => handleOrganizationChange(organization.id)}
-                                data-testid={`organization-option-${organization.id}`}
-                                className="flex items-center gap-3 cursor-pointer"
-                                disabled={organization.id === activeOrganizationId}
-                            >
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
-                                    <Building className="h-3 w-3" />
-                                </div>
-                                <span className="flex-1 truncate">{organization.name}</span>
-                                {organization.isPersonal ? (
-                                    <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                        {t('personal')}
-                                    </span>
-                                ) : null}
-                                {organization.id === activeOrganizationId ? (
-                                    <span className="text-xs text-primary font-medium">
-                                        {t('current')}
-                                    </span>
-                                ) : null}
-                                {organization.id === activeOrganizationId && (
-                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                )}
-                            </DropdownMenuItem>
-                        ))
-                    ) : (
-                        <DropdownMenuItem disabled>
-                            <span className="text-muted-foreground">{t('noOrganizations')}</span>
-                        </DropdownMenuItem>
-                    )}
+                    <OrganizationSwitcherMenuItems
+                        isLoadingData={isLoadingData}
+                        organizations={organizations}
+                        activeOrganizationId={activeOrganizationId}
+                        loadingLabel={t('loading')}
+                        emptyLabel={
+                            organizationsQuery.isError ? common('queryError') : t('noOrganizations')
+                        }
+                        personalLabel={t('personal')}
+                        currentLabel={t('current')}
+                        onSelect={handleOrganizationChange}
+                    />
                 </div>
+                {organizationsQuery.isError ? (
+                    <DropdownMenuItem
+                        onSelect={event => {
+                            event.preventDefault();
+                            void organizationsQuery.refetch();
+                        }}
+                    >
+                        {common('actions.retry')}
+                    </DropdownMenuItem>
+                ) : null}
+                {organizationsQuery.hasMore ? (
+                    <DropdownMenuItem
+                        disabled={organizationsQuery.isFetching}
+                        onSelect={event => {
+                            event.preventDefault();
+                            organizationsQuery.loadMore();
+                        }}
+                    >
+                        {common('actions.loadMore')}
+                    </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => router.push('/dashboard/organizations')}

@@ -1,36 +1,11 @@
 'use client';
 
-import { CalendarIcon } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
-import { formatCivilDate } from '@/lib/format-date';
-import { Button } from '@/components/ui/button';
-import {
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-tanstack';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import {
-    CATEGORY_EMPTY_VALUE,
-    CATEGORY_LOADING_VALUE,
-    type CategoryOption,
-} from '@/features/objectives/lib/objective-category-selection';
-import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
-import { localDateToUtcCivilDay, utcCivilDayToLocalDate } from '@shared/civil-date';
+import { useTranslations } from 'next-intl';
+import type { CategoryOption } from '@/features/objectives/lib/objective-category-selection';
+import { ObjectiveTextFields } from './objective-text-fields';
+import { ObjectiveCategoryField } from './objective-category-field';
+import { ObjectiveMetricsFields } from './objective-metrics-fields';
+import { ObjectiveVisibilityAndDeadlineFields } from './objective-visibility-deadline-fields';
 
 type ObjectiveFormFieldsProps = {
     mode: 'create' | 'edit';
@@ -49,7 +24,6 @@ export function ObjectiveFormFields({
 }: ObjectiveFormFieldsProps) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
-    const locale = useLocale();
     const titleLabel = mode === 'create' ? t('smartForm.fields.titleRequired') : t('title');
     const descriptionLabel =
         mode === 'create' ? t('smartForm.fields.description') : t('description');
@@ -59,233 +33,45 @@ export function ObjectiveFormFields({
     const unitLabel = mode === 'create' ? t('smartForm.fields.unit') : t('unit');
     const unitPlaceholder = mode === 'create' ? t('unitExample') : t('enterUnit');
     const deadlineLabel = mode === 'create' ? t('smartForm.fields.deadline') : t('deadline');
-    const visibilityLabel = t('visibility.label');
 
     return (
         <>
-            <FormField
-                name="title"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{titleLabel}</FormLabel>
-                        <FormControl>
-                            <Input
-                                placeholder={t('enterObjectiveTitle')}
-                                {...field}
-                                data-testid={getTestId(mode, 'title-input')}
-                            />
-                        </FormControl>
-                        <FormDescription>
-                            {t('giveYourObjectiveAClearConciseTitle')}
-                        </FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )}
+            <ObjectiveTextFields
+                titleLabel={titleLabel}
+                descriptionLabel={descriptionLabel}
+                titlePlaceholder={t('enterObjectiveTitle')}
+                descriptionPlaceholder={t('describeObjectiveInDetail')}
+                titleDescription={t('giveYourObjectiveAClearConciseTitle')}
+                titleTestId={getTestId(mode, 'title-input')}
+                descriptionTestId={getTestId(mode, 'description-input')}
             />
-
-            <FormField
-                name="description"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{descriptionLabel}</FormLabel>
-                        <FormControl>
-                            <Textarea
-                                placeholder={t('describeObjectiveInDetail')}
-                                className="resize-none min-h-[80px]"
-                                {...field}
-                                value={(field.value as string) || ''}
-                                data-testid={getTestId(mode, 'description-input')}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
+            <ObjectiveCategoryField
+                label={categoryLabel}
+                placeholder={t('selectACategory')}
+                loadingLabel={tCommon('loading')}
+                emptyLabel={t('categories.emptyTitle')}
+                testId={getTestId(mode, 'category-select')}
+                categoryOptions={categoryOptions}
+                categoriesLoading={categoriesLoading}
             />
-
-            <FormField
-                name="categoryId"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{categoryLabel}</FormLabel>
-                        <Select
-                            onValueChange={field.onChange}
-                            value={(field.value as string) || ''}
-                        >
-                            <FormControl>
-                                <SelectTrigger data-testid={getTestId(mode, 'category-select')}>
-                                    <SelectValue placeholder={t('selectACategory')} />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {categoriesLoading ? (
-                                    <SelectItem value={CATEGORY_LOADING_VALUE} disabled>
-                                        {tCommon('loading')}
-                                    </SelectItem>
-                                ) : categoryOptions.length === 0 ? (
-                                    <SelectItem value={CATEGORY_EMPTY_VALUE} disabled>
-                                        {t('categories.emptyTitle')}
-                                    </SelectItem>
-                                ) : (
-                                    categoryOptions.map(category => (
-                                        <SelectItem key={category.id} value={category.id}>
-                                            {category.label}
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )}
+            <ObjectiveMetricsFields
+                mode={mode}
+                targetValueLabel={targetValueLabel}
+                unitLabel={unitLabel}
+                unitPlaceholder={unitPlaceholder}
+                initialValueLabel={t('initialValue')}
+                initialValueDescription={t('initialValueDescription')}
+                targetTestId={getTestId(mode, 'target-input')}
+                startTestId={getTestId(mode, 'start-input')}
+                unitTestId={getTestId(mode, 'unit-input')}
             />
-
-            <div
-                className={cn(
-                    'grid grid-cols-1 gap-4',
-                    mode === 'create' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
-                )}
-            >
-                <FormField
-                    name="targetValue"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{targetValueLabel}</FormLabel>
-                            <FormControl>
-                                <Input
-                                    type="number"
-                                    {...field}
-                                    onChange={event =>
-                                        field.onChange(Number.parseFloat(event.target.value))
-                                    }
-                                    data-testid={getTestId(mode, 'target-input')}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                {mode === 'create' ? (
-                    <FormField
-                        name="startValue"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('initialValue')}</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="number"
-                                        min={0}
-                                        {...field}
-                                        value={
-                                            Number.isFinite(Number(field.value)) ? field.value : ''
-                                        }
-                                        onChange={event =>
-                                            field.onChange(Number.parseFloat(event.target.value))
-                                        }
-                                        data-testid={getTestId(mode, 'start-input')}
-                                    />
-                                </FormControl>
-                                <FormDescription>{t('initialValueDescription')}</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                ) : null}
-
-                <FormField
-                    name="unit"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{unitLabel}</FormLabel>
-                            <FormControl>
-                                <Input
-                                    placeholder={unitPlaceholder}
-                                    {...field}
-                                    value={(field.value as string) || ''}
-                                    data-testid={getTestId(mode, 'unit-input')}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-
-            {mode === 'create' ? (
-                <FormField
-                    name="visibility"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{visibilityLabel}</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                value={(field.value as string) || OBJECTIVE_VISIBILITY.PRIVATE}
-                            >
-                                <FormControl>
-                                    <SelectTrigger
-                                        data-testid={getTestId(mode, 'visibility-select')}
-                                    >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value={OBJECTIVE_VISIBILITY.PRIVATE}>
-                                        {t('visibility.private')}
-                                    </SelectItem>
-                                    <SelectItem value={OBJECTIVE_VISIBILITY.ORGANIZATION}>
-                                        {t('visibility.organization')}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormDescription>{t('visibility.description')}</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            ) : null}
-
-            <FormField
-                name="deadline"
-                render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel>{deadlineLabel}</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            'w-full pl-3 text-left font-normal',
-                                            !field.value && 'text-muted-foreground'
-                                        )}
-                                        data-testid={getTestId(mode, 'deadline-button')}
-                                    >
-                                        {field.value ? (
-                                            formatCivilDate(field.value as number, locale)
-                                        ) : (
-                                            <span>{t('pickADate')}</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={
-                                        field.value
-                                            ? utcCivilDayToLocalDate(field.value as number)
-                                            : undefined
-                                    }
-                                    onSelect={value =>
-                                        field.onChange(value ? localDateToUtcCivilDay(value) : null)
-                                    }
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                    </FormItem>
-                )}
+            <ObjectiveVisibilityAndDeadlineFields
+                mode={mode}
+                visibilityLabel={t('visibility.label')}
+                visibilityDescription={t('visibility.description')}
+                deadlineLabel={deadlineLabel}
+                visibilityTestId={getTestId(mode, 'visibility-select')}
+                deadlineTestId={getTestId(mode, 'deadline-button')}
             />
         </>
     );

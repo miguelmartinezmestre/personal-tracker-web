@@ -1,14 +1,16 @@
 import { ConvexError } from 'convex/values';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
-import { ERROR_CODES, OBJECTIVE_STATUS, TIME, type ObjectiveStatus } from '../../utils/constants';
+import { ERROR_CODES, OBJECTIVE_STATUS, TIME } from '../../utils/constants';
 import { isEarlyBirdCompletion } from '../achievements/calculations';
 import { currentUtcCivilDay, toUtcCivilDay } from '../../../shared/civil-date';
 
 const MAX_METRIC = 1_000_000_000;
 const MIN_TARGET = 0.001;
 function assertFiniteMetric(value: number | undefined): void {
-    if (value === undefined) return;
+    if (value === undefined) {
+        return;
+    }
     if (!Number.isFinite(value)) {
         throw new ConvexError(ERROR_CODES.VALUE_NOT_FINITE);
     }
@@ -106,11 +108,10 @@ export function normalizeUpdateDate(updateDate: number): number {
     return toUtcCivilDay(updateDate);
 }
 
-export function validateObjectiveNotCompleted(status: ObjectiveStatus): void {
+export function validateObjectiveNotCompleted(status: string): void {
     if (status === OBJECTIVE_STATUS.COMPLETED) {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_ALREADY_COMPLETED);
     }
-
     if (status !== OBJECTIVE_STATUS.ACTIVE) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
@@ -121,8 +122,8 @@ export const computeProgressPercent = (objective: {
     targetValue: number;
     startValue?: number | null;
 }): number => {
-    const current = objective.currentValue ?? 0;
-    const target = objective.targetValue ?? 0;
+    const current = objective.currentValue;
+    const target = objective.targetValue;
     const start = objective.startValue ?? 0;
     const denominator = target - start;
 
@@ -155,11 +156,12 @@ export async function applyObjectiveProgressDelta(
     const completedNow = objective.status !== 'completed' && status === 'completed';
     const reopened = objective.status === 'completed' && status === 'active';
     const now = Date.now();
-    const completedAt = completedNow
-        ? now
-        : status === 'completed'
-          ? objective.completedAt
-          : undefined;
+    let completedAt: number | undefined;
+    if (completedNow) {
+        completedAt = now;
+    } else if (status === 'completed') {
+        completedAt = objective.completedAt;
+    }
     const earlyBirdCompleted = isEarlyBirdCompletion({
         status,
         deadline: objective.deadline,
@@ -190,22 +192,4 @@ export async function applyObjectiveProgressDelta(
     await ctx.db.patch('objectives', objectiveId, patch);
 
     return { currentValue, status, completedNow, earlyBirdCompletedNow };
-}
-
-/**
- * Reconciles completion metadata from the objective's denormalized current
- * value. Progress mutations maintain `currentValue` transactionally, so a
- * target change or restore only needs a zero-delta reconciliation. This keeps
- * the mutation bounded regardless of the number of historical updates.
- */
-export async function reconcileObjectiveMetrics(
-    ctx: MutationCtx,
-    objectiveId: Id<'objectives'>
-): Promise<{
-    currentValue: number;
-    status: 'active' | 'completed';
-    completedNow: boolean;
-    earlyBirdCompletedNow: boolean;
-}> {
-    return await applyObjectiveProgressDelta(ctx, objectiveId, 0);
 }

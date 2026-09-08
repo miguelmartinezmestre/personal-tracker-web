@@ -1,5 +1,5 @@
 import { InvitationsLayout } from '@/features/organizations';
 
-export default async function InvitationsPage() {
+export default function InvitationsPage() {
     return <InvitationsLayout />;
 }

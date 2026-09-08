@@ -54,9 +54,10 @@ export const objectiveWithCapabilitiesValidator = v.object({
     capabilities: objectiveCapabilitiesValidator,
 });
 
-export const paginatedObjectivesValidator = paginationResultValidator(
-    objectiveWithCapabilitiesValidator
-);
+export const paginatedObjectivesValidator = v.object({
+    ...paginationResultValidator(objectiveWithCapabilitiesValidator).fields,
+    needsContinuation: v.optional(v.boolean()),
+});
 
 export const paginatedUsersValidator = paginationResultValidator(userDocumentValidator);
 

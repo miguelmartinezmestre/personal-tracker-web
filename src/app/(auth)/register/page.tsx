@@ -14,7 +14,9 @@ interface RegisterProps {
 export const dynamic = 'force-dynamic';
 
 export default async function Register({ searchParams }: RegisterProps) {
-    if (!(await checkPlatformSetUp())) redirect('/setup');
+    if (!(await checkPlatformSetUp())) {
+        redirect('/setup');
+    }
 
     const [params, t, tSetup] = await Promise.all([
         searchParams,

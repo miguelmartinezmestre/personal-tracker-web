@@ -1,5 +1,5 @@
 import { SettingsLayout } from '@/features/settings';
 
-export default async function SettingsPage() {
+export default function SettingsPage() {
     return <SettingsLayout />;
 }

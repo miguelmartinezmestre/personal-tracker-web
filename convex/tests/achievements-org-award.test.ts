@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 
 // Regression test for F1: organization-level achievements are now awarded
 // (previously the org-achievement evaluator was never scheduled by any action).

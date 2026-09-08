@@ -65,6 +65,11 @@ export default function NotificationsTable() {
                 </Button>
             </div>
             <DataTable
+                isError={notifications.isError}
+                error={notifications.error}
+                onRetry={() => {
+                    void notifications.refetch();
+                }}
                 columns={columns}
                 data={tableNotifications}
                 isLoading={notifications.isLoading}

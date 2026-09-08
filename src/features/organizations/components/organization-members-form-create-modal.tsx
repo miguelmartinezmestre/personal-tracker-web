@@ -1,5 +1,4 @@
 'use client';
-
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,10 +10,8 @@ import {
     FormMessage,
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
-import {
-    CreateOrganizationMember,
-    organizationMemberSchema,
-} from '@/features/organizations/schemas/organization-member';
+import type { CreateOrganizationMember } from '@/features/organizations/schemas/organization-member';
+import { organizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -25,14 +22,12 @@ import {
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
-import { OrganizationRole, type OrganizationRoleValue } from '../types/roles';
+import { OrganizationRole, isOrganizationRoleValue } from '../types/roles';
 import FormModal from '@/components/forms/form-modal';
-
 interface CreateOrganizationMemberFormModalProps {
     organizationId: string;
     canAssignOwner: boolean;
 }
-
 export default function CreateOrganizationMemberFormModal({
     organizationId,
     canAssignOwner,
@@ -40,13 +35,11 @@ export default function CreateOrganizationMemberFormModal({
     const t = useTranslations('OrganizationMembers');
     const tCommon = useTranslationsCommon('Common');
     const createOrganizationMember = useCreateOrganizationMember();
-
     const roleOptions = [
         ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
         { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
-
     return (
         <FormModal<CreateOrganizationMember>
             trigger={
@@ -69,10 +62,13 @@ export default function CreateOrganizationMemberFormModal({
                 },
             }}
             onSubmit={async (values: CreateOrganizationMember) => {
+                if (!isOrganizationRoleValue(values.role)) {
+                    return;
+                }
                 await createOrganizationMember.mutateAsync({
                     organizationId: organizationId,
                     email: values.email,
-                    role: values.role as OrganizationRoleValue,
+                    role: values.role,
                 });
             }}
             submitLabel={t('saveOrganizationMember')}
@@ -94,7 +90,7 @@ export default function CreateOrganizationMemberFormModal({
                                         placeholder={t('enterEmail')}
                                         type="email"
                                         {...field}
-                                        value={(field.value as string) || ''}
+                                        value={typeof field.value === 'string' ? field.value : ''}
                                         onChange={e => field.onChange(e.target.value)}
                                         data-testid="organization-member-email-input"
                                     />
@@ -114,7 +110,7 @@ export default function CreateOrganizationMemberFormModal({
                                 <FormLabel>{t('role')}</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
-                                    value={(field.value as string) || 'member'}
+                                    value={typeof field.value === 'string' ? field.value : 'member'}
                                 >
                                     <FormControl>
                                         <SelectTrigger data-testid="organization-member-role-select">

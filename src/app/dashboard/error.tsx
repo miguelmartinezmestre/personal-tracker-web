@@ -5,10 +5,10 @@ import { useErrorMessage } from '@/hooks/use-error-message';
 
 export default function DashboardError({
     error,
-    reset,
+    retry,
 }: {
     error: Error & { digest?: string };
-    reset: () => void;
+    retry: () => void;
 }) {
     const t = useTranslations('Common');
     const getErrorMessage = useErrorMessage();
@@ -20,7 +20,7 @@ export default function DashboardError({
                 {getErrorMessage(error, t('genericErrorDescription'))}
             </p>
             <button
-                onClick={reset}
+                onClick={retry}
                 className="mt-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
                 {t('actions.retry')}

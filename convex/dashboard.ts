@@ -1,12 +1,24 @@
 import { queryWithRLS } from './platform/rls/wrappers';
+import { internalMutation } from './platform/db/internalMutation';
 import { v } from 'convex/values';
+import { internal } from './_generated/api';
 import { TIME, DASHBOARD, PAGINATION } from './utils/constants';
 import { assertBoundedInteger, assertValidReferenceTimestamp } from './utils/queryTime';
 import { computeProgressPercent } from './domain/objectives/metrics';
 import { objectiveStatusValidator } from './utils/validators';
 import { currentUtcCivilDay, toUtcCivilDay } from '../shared/civil-date';
-
-const LIST_LIMIT = 1000;
+import {
+    countObjectives,
+    countProgress,
+    dashboardScope,
+    rankedObjectives,
+} from './domain/dashboard/read';
+import {
+    runDashboardBackfillBatch,
+    resyncProgressBatch,
+    startDashboardRebuild,
+    cleanupDashboardGenerationsBatch,
+} from './domain/dashboard/migration';
 
 export const getDashboardStats = queryWithRLS({
     args: {},
@@ -17,8 +29,8 @@ export const getDashboardStats = queryWithRLS({
         isTruncated: v.boolean(),
     }),
     handler: async ctx => {
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
+        const scope = await dashboardScope(ctx);
+        if (!scope) {
             return {
                 totalObjectives: 0,
                 completedObjectives: 0,
@@ -26,102 +38,66 @@ export const getDashboardStats = queryWithRLS({
                 isTruncated: false,
             };
         }
-
-        // Keep one query transaction bounded. Callers can explicitly signal the
-        // approximation rather than failing after Convex's transaction read cap.
-        let totalObjectives = 0;
-        let completedObjectives = 0;
-        let pendingObjectives = 0;
-        const objectiveRows = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .take(LIST_LIMIT + 1);
-        const isTruncated = objectiveRows.length > LIST_LIMIT;
-
-        for (const objective of objectiveRows.slice(0, LIST_LIMIT)) {
-            if (objective.deletedAt !== undefined) continue;
-            totalObjectives += 1;
-            if (objective.status === 'completed') {
-                completedObjectives += 1;
-            } else {
-                pendingObjectives += 1;
-            }
-        }
-
-        return { totalObjectives, completedObjectives, pendingObjectives, isTruncated };
+        const [pendingObjectives, completedObjectives] = await Promise.all([
+            countObjectives(ctx, scope.namespaces, {
+                kind: 'status',
+                lower: 0,
+                upper: 1,
+                status: 'active',
+            }),
+            countObjectives(ctx, scope.namespaces, {
+                kind: 'status',
+                lower: 0,
+                upper: 1,
+                status: 'completed',
+            }),
+        ]);
+        return {
+            totalObjectives: pendingObjectives + completedObjectives,
+            completedObjectives,
+            pendingObjectives,
+            isTruncated: false,
+        };
     },
 });
 
 export const getMonthlyProgress = queryWithRLS({
-    args: {
-        months: v.optional(v.number()),
-        now: v.number(),
-    },
+    args: { months: v.optional(v.number()), now: v.number() },
     returns: v.object({
         items: v.array(v.object({ month: v.string(), monthKey: v.string(), count: v.number() })),
         isTruncated: v.boolean(),
     }),
     handler: async (ctx, args) => {
         assertValidReferenceTimestamp(args.now);
-        const organizationId = ctx.organizationId;
-        if (!organizationId) {
-            return { items: [], isTruncated: false };
-        }
-
-        const userId = ctx.userId;
-        const monthsToFetch = assertBoundedInteger(args.months ?? DASHBOARD.MONTHS_TO_SHOW, {
+        const months = assertBoundedInteger(args.months ?? DASHBOARD.MONTHS_TO_SHOW, {
             min: DASHBOARD.MIN_MONTHS,
             max: DASHBOARD.MAX_MONTHS,
         });
-
-        // The client timestamp exists only to refresh this reactive query. Use
-        // the trusted server clock for all date windows.
-        const referenceDate = new Date(Date.now());
-        const referenceYear = referenceDate.getUTCFullYear();
-        const referenceMonth = referenceDate.getUTCMonth();
-        const startDate = Date.UTC(referenceYear, referenceMonth - (monthsToFetch - 1), 1);
-
-        const userUpdatesRaw = await ctx.db
-            .query('progressUpdates')
-            .withIndex('by_createdBy_organization_date', q =>
-                q
-                    .eq('createdBy', userId)
-                    .eq('organizationId', organizationId)
-                    .gte('updateDate', startDate)
-            )
-            .order('desc')
-            .take(LIST_LIMIT + 1);
-        const isTruncated = userUpdatesRaw.length > LIST_LIMIT;
-        const userUpdates = userUpdatesRaw.slice(0, LIST_LIMIT);
-
-        const monthsData: { month: string; monthKey: string; count: number }[] = [];
-
-        for (let i = monthsToFetch - 1; i >= 0; i--) {
-            const monthStart = Date.UTC(referenceYear, referenceMonth - i, 1);
-            const monthEnd = Date.UTC(referenceYear, referenceMonth - i + 1, 1);
-            const date = new Date(monthStart);
-
-            const count = userUpdates.filter(
-                update => update.updateDate >= monthStart && update.updateDate < monthEnd
-            ).length;
-
-            const monthKey = `${date.getUTCFullYear()}-${`${date.getUTCMonth() + 1}`.padStart(2, '0')}`;
-
-            monthsData.push({
-                month: monthKey,
-                monthKey,
-                count,
-            });
+        const scope = await dashboardScope(ctx);
+        if (!scope) {
+            return { items: [], isTruncated: false };
         }
-
-        return { items: monthsData, isTruncated };
+        const now = new Date(Date.now());
+        const items = await Promise.all(
+            Array.from({ length: months }, async (_, index) => {
+                const month = now.getUTCMonth() - months + 1 + index;
+                const start = Date.UTC(now.getUTCFullYear(), month, 1);
+                const end = Date.UTC(now.getUTCFullYear(), month + 1, 1);
+                const date = new Date(start);
+                const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+                return {
+                    month: monthKey,
+                    monthKey,
+                    count: await countProgress(ctx, scope.progressNamespace, start, end),
+                };
+            })
+        );
+        return { items, isTruncated: false };
     },
 });
 
 export const getObjectivesWithMostProgress = queryWithRLS({
-    args: {
-        limit: v.optional(v.number()),
-    },
+    args: { limit: v.optional(v.number()) },
     returns: v.object({
         items: v.array(
             v.object({
@@ -134,53 +110,34 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         isTruncated: v.boolean(),
     }),
     handler: async (ctx, args) => {
-        const organizationId = ctx.organizationId;
-        const MAX_QUERY_LIMIT = 100;
-        const maxItems = assertBoundedInteger(args.limit ?? PAGINATION.DASHBOARD_LIMIT, {
+        const limit = assertBoundedInteger(args.limit ?? PAGINATION.DASHBOARD_LIMIT, {
             min: 1,
-            max: MAX_QUERY_LIMIT,
+            max: 100,
         });
-
-        if (!organizationId) {
+        const scope = await dashboardScope(ctx);
+        if (!scope) {
             return { items: [], isTruncated: false };
         }
-
-        const objectiveRows = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .take(LIST_LIMIT + 1);
-        const isTruncated = objectiveRows.length > LIST_LIMIT;
-        const objectives = objectiveRows
-            .slice(0, LIST_LIMIT)
-            .filter(objective => objective.deletedAt === undefined);
-
-        const objectivesWithProgress = objectives
-            .filter(objective => objective.status === 'active')
-            .map(objective => {
-                const progress = computeProgressPercent({
-                    currentValue: objective.currentValue,
-                    targetValue: objective.targetValue,
-                    startValue: objective.startValue,
-                });
-                return {
-                    id: objective._id,
-                    objective: objective.title,
-                    progress,
-                    status: objective.status,
-                };
-            })
-            .sort((a, b) => b.progress - a.progress)
-            .slice(0, maxItems);
-
-        return { items: objectivesWithProgress, isTruncated };
+        const result = await rankedObjectives(ctx, scope.namespaces, {
+            kind: 'progress',
+            limit,
+            lower: 0,
+            upper: 101,
+        });
+        return {
+            items: result.documents.map(doc => ({
+                id: doc._id,
+                objective: doc.title,
+                progress: computeProgressPercent(doc),
+                status: doc.status,
+            })),
+            isTruncated: false,
+        };
     },
 });
 
 export const getUpcomingDeadlines = queryWithRLS({
-    args: {
-        days: v.optional(v.number()),
-        now: v.number(),
-    },
+    args: { days: v.optional(v.number()), now: v.number(), limit: v.optional(v.number()) },
     returns: v.object({
         items: v.array(
             v.object({
@@ -195,63 +152,46 @@ export const getUpcomingDeadlines = queryWithRLS({
     }),
     handler: async (ctx, args) => {
         assertValidReferenceTimestamp(args.now);
-        const organizationId = ctx.organizationId;
-        const daysAhead = assertBoundedInteger(args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD, {
+        const days = assertBoundedInteger(args.days ?? DASHBOARD.DEADLINE_DAYS_AHEAD, {
             min: DASHBOARD.MIN_DAYS,
             max: DASHBOARD.MAX_DEADLINE_DAYS,
         });
-        const today = currentUtcCivilDay();
-        const futureLimit = today + daysAhead * TIME.DAY_MS;
-
-        if (!organizationId) {
+        const limit = assertBoundedInteger(args.limit ?? PAGINATION.DASHBOARD_LIMIT, {
+            min: 1,
+            max: 100,
+        });
+        const scope = await dashboardScope(ctx);
+        if (!scope) {
             return { items: [], isTruncated: false };
         }
-
-        const objectiveRows = await ctx.db
-            .query('objectives')
-            .withIndex('by_organization_deadline', q =>
-                q
-                    .eq('organizationId', organizationId)
-                    .gte('deadline', today)
-                    .lt('deadline', futureLimit)
-            )
-            .take(LIST_LIMIT + 1);
-        const isTruncated = objectiveRows.length > LIST_LIMIT;
-        const objectives = objectiveRows
-            .slice(0, LIST_LIMIT)
-            .filter(objective => objective.deletedAt === undefined);
-
-        const upcomingDeadlines = objectives
-            .filter(
-                (objective): objective is typeof objective & { deadline: number } =>
-                    objective.status === 'active' && Boolean(objective.deadline)
-            )
-            .map(objective => {
-                const deadline = toUtcCivilDay(objective.deadline);
-                const daysRemaining = Math.round((deadline - today) / TIME.DAY_MS);
-                return {
-                    id: objective._id,
-                    title: objective.title,
-                    deadline,
-                    daysRemaining,
-                    progress: computeProgressPercent({
-                        currentValue: objective.currentValue,
-                        targetValue: objective.targetValue,
-                        startValue: objective.startValue,
-                    }),
-                };
-            })
-            .sort((a, b) => a.deadline - b.deadline);
-
-        return { items: upcomingDeadlines, isTruncated };
+        const today = currentUtcCivilDay();
+        const result = await rankedObjectives(ctx, scope.namespaces, {
+            kind: 'deadline',
+            limit,
+            lower: today,
+            upper: today + days * TIME.DAY_MS,
+        });
+        const items = result.documents.flatMap(doc =>
+            doc.deadline === undefined
+                ? []
+                : [
+                      {
+                          id: doc._id,
+                          title: doc.title,
+                          deadline: toUtcCivilDay(doc.deadline),
+                          daysRemaining: Math.round(
+                              (toUtcCivilDay(doc.deadline) - today) / TIME.DAY_MS
+                          ),
+                          progress: computeProgressPercent(doc),
+                      },
+                  ]
+        );
+        return { items, isTruncated: result.hasMore };
     },
 });
 
 export const getRecentActivity = queryWithRLS({
-    args: {
-        days: v.optional(v.number()),
-        now: v.number(),
-    },
+    args: { days: v.optional(v.number()), now: v.number() },
     returns: v.object({
         progressUpdatesCount: v.number(),
         objectivesCreatedCount: v.number(),
@@ -264,86 +204,85 @@ export const getRecentActivity = queryWithRLS({
     }),
     handler: async (ctx, args) => {
         assertValidReferenceTimestamp(args.now);
-        const userId = ctx.userId;
-        const organizationId = ctx.organizationId;
-        const daysBack = assertBoundedInteger(args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK, {
+        const periodDays = assertBoundedInteger(args.days ?? DASHBOARD.ACTIVITY_DAYS_BACK, {
             min: DASHBOARD.MIN_DAYS,
             max: DASHBOARD.MAX_ACTIVITY_DAYS,
         });
-        const startDate = Date.now() - daysBack * TIME.DAY_MS;
-
-        if (!organizationId) {
-            return {
-                progressUpdatesCount: 0,
-                objectivesCreatedCount: 0,
-                objectivesCompletedCount: 0,
-                periodDays: daysBack,
-                progressUpdatesTruncated: false,
-                objectivesCreatedTruncated: false,
-                objectivesCompletedTruncated: false,
-                isTruncated: false,
-            };
-        }
-
-        const recentCreatedPromise = ctx.db
-            .query('objectives')
-            .withIndex('by_organization_createdAt', q =>
-                q.eq('organizationId', organizationId).gte('createdAt', startDate)
-            )
-            .order('desc')
-            .take(LIST_LIMIT + 1);
-
-        const recentCompletedPromise = ctx.db
-            .query('objectives')
-            .withIndex('by_organization_completedAt', q =>
-                q.eq('organizationId', organizationId).gte('completedAt', startDate)
-            )
-            .order('desc')
-            .take(LIST_LIMIT + 1);
-
-        const recentUpdatesPromise = ctx.db
-            .query('progressUpdates')
-            .withIndex('by_createdBy_organization_date', q =>
-                q
-                    .eq('createdBy', userId)
-                    .eq('organizationId', organizationId)
-                    .gte('updateDate', startDate)
-            )
-            .take(101);
-
-        const [recentCreatedRows, recentCompletedRows, recentUpdateRows] = await Promise.all([
-            recentCreatedPromise,
-            recentCompletedPromise,
-            recentUpdatesPromise,
-        ]);
-        const objectivesCreatedTruncated = recentCreatedRows.length > LIST_LIMIT;
-        const objectivesCompletedTruncated = recentCompletedRows.length > LIST_LIMIT;
-        const progressUpdatesTruncated = recentUpdateRows.length > 100;
-        const isTruncated =
-            objectivesCreatedTruncated || objectivesCompletedTruncated || progressUpdatesTruncated;
-        const recentUpdates = recentUpdateRows.slice(0, 100);
-
-        const recentObjectives = recentCreatedRows
-            .slice(0, LIST_LIMIT)
-            .filter(objective => objective.deletedAt === undefined);
-        const recentlyCompleted = recentCompletedRows
-            .slice(0, LIST_LIMIT)
-            .filter(
-                objective =>
-                    objective.deletedAt === undefined &&
-                    objective.status === 'completed' &&
-                    objective.completedAt !== undefined
-            );
-
+        const scope = await dashboardScope(ctx);
+        const start = Date.now() - periodDays * TIME.DAY_MS;
+        const [progressUpdatesCount, objectivesCreatedCount, objectivesCompletedCount] = scope
+            ? await Promise.all([
+                  countProgress(ctx, scope.progressNamespace, start, Number.MAX_SAFE_INTEGER),
+                  countObjectives(ctx, scope.namespaces, {
+                      kind: 'created',
+                      lower: start,
+                      upper: Number.MAX_SAFE_INTEGER,
+                  }),
+                  countObjectives(ctx, scope.namespaces, {
+                      kind: 'completed',
+                      lower: start,
+                      upper: Number.MAX_SAFE_INTEGER,
+                  }),
+              ])
+            : [0, 0, 0];
         return {
-            progressUpdatesCount: recentUpdates.length,
-            objectivesCreatedCount: recentObjectives.length,
-            objectivesCompletedCount: recentlyCompleted.length,
-            periodDays: daysBack,
-            progressUpdatesTruncated,
-            objectivesCreatedTruncated,
-            objectivesCompletedTruncated,
-            isTruncated,
+            progressUpdatesCount,
+            objectivesCreatedCount,
+            objectivesCompletedCount,
+            periodDays,
+            progressUpdatesTruncated: false,
+            objectivesCreatedTruncated: false,
+            objectivesCompletedTruncated: false,
+            isTruncated: false,
         };
+    },
+});
+
+export const runDashboardBackfill = internalMutation({
+    args: { migrationId: v.id('dashboardMigrations'), generation: v.number() },
+    returns: v.null(),
+    handler: runDashboardBackfillBatch,
+});
+export const cleanupDashboardGenerations = internalMutation({
+    args: {
+        organizationId: v.id('organization'),
+        cursor: v.optional(v.union(v.string(), v.null())),
+    },
+    returns: v.null(),
+    handler: cleanupDashboardGenerationsBatch,
+});
+export const resyncObjectiveProgress = internalMutation({
+    args: {
+        resyncId: v.id('dashboardResyncs'),
+        revision: v.number(),
+        cursor: v.optional(v.union(v.string(), v.null())),
+    },
+    returns: v.null(),
+    handler: resyncProgressBatch,
+});
+export const rebuildDashboard = internalMutation({
+    args: { organizationId: v.id('organization') },
+    returns: v.null(),
+    handler: async (ctx, args): Promise<null> => {
+        await startDashboardRebuild(ctx, args.organizationId);
+        return null;
+    },
+});
+export const rebuildAllDashboards = internalMutation({
+    args: { cursor: v.optional(v.union(v.string(), v.null())) },
+    returns: v.null(),
+    handler: async (ctx, args): Promise<null> => {
+        const page = await ctx.db
+            .query('organization')
+            .paginate({ numItems: 25, cursor: args.cursor ?? null });
+        for (const organization of page.page) {
+            await startDashboardRebuild(ctx, organization._id);
+        }
+        if (!page.isDone) {
+            await ctx.scheduler.runAfter(0, internal.dashboard.rebuildAllDashboards, {
+                cursor: page.continueCursor,
+            });
+        }
+        return null;
     },
 });

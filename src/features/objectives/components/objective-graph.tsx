@@ -16,6 +16,7 @@ type ObjectiveProgressPoint = {
 
 interface ObjectiveProgressGraphProps {
     data: ObjectiveProgressPoint[];
+    currentValue: number;
     unit?: string | null;
     targetValue?: number | null;
     startValue?: number | null;
@@ -28,6 +29,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 export function ObjectiveProgressGraph({
     data,
+    currentValue,
     unit,
     targetValue,
     startValue,
@@ -43,9 +45,10 @@ export function ObjectiveProgressGraph({
         year: 'numeric',
         month: 'short',
         day: 'numeric',
+        timeZone: 'UTC',
     });
 
-    const latestValue = data.length > 0 ? (data[data.length - 1]?.currentValue ?? 0) : 0;
+    const latestValue = currentValue;
     const objectiveValue = targetValue ?? data[data.length - 1]?.objective ?? 0;
     const progressPercent = Math.round(
         computeObjectiveProgressPercent({
@@ -76,7 +79,11 @@ export function ObjectiveProgressGraph({
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
-                    <ProgressBar value={progressBarValue} className="h-2" />
+                    <ProgressBar
+                        aria-label={tObjectives('progress')}
+                        value={progressBarValue}
+                        className="h-2"
+                    />
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                         <span>
                             {tObjectives('currentValue')}: {formatValue(latestValue)}

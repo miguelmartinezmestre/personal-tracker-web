@@ -8,10 +8,11 @@ import {
     validateObjectiveNotCompleted,
 } from '../domain/objectives/metrics';
 import { isEarlyBirdCompletion } from '../domain/achievements/calculations';
-import { ERROR_CODES } from '../utils/constants';
+import { ERROR_CODES, type ObjectiveStatus } from '../utils/constants';
 import { CIVIL_DAY_MS, currentUtcCivilDay, toUtcCivilDay } from '../../shared/civil-date';
 import { initConvexTest } from './test.helper';
 import { createTestOrganization, createTestUser } from './test_helpers';
+import { asInvalidArg } from './testCasts';
 
 describe('objectiveDomain', () => {
     describe('validateObjectiveMetrics', () => {
@@ -110,7 +111,9 @@ describe('objectiveDomain', () => {
         });
 
         test('rejects unsupported statuses', () => {
-            expect(() => validateObjectiveNotCompleted('archived' as never)).toThrow(ConvexError);
+            expect(() =>
+                validateObjectiveNotCompleted(asInvalidArg<ObjectiveStatus>('archived'))
+            ).toThrow(ConvexError);
         });
     });
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 export const organizationMemberSchema = z.object({
-    email: z.string().email(),
+    email: z.email(),
     role: z.enum(['owner', 'admin', 'member']),
     organizationId: z.string(),
 });

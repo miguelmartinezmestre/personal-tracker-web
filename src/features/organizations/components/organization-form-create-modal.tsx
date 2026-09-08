@@ -1,6 +1,5 @@
 'use client';
-
-import { z } from 'zod';
+import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,27 +12,22 @@ import {
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    CreateOrganization,
-    organizationSchema,
-} from '@/features/organizations/schemas/organization';
+import type { CreateOrganization } from '@/features/organizations/schemas/organization';
+import { organizationSchema } from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
 import { useRouter } from 'next/navigation';
-
 const defaultValues: CreateOrganization = {
     name: '',
     description: '',
 };
-
 export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const createOrganization = useCreateOrganization();
     const router = useRouter();
-
     return (
         <FormModal<z.infer<typeof organizationSchema>>
             trigger={
@@ -94,7 +88,7 @@ export default function CreateOrganizationFormModal() {
                                         placeholder={t('describeOrganizationInDetail')}
                                         className="resize-none min-h-[80px]"
                                         {...field}
-                                        value={(field.value as string) || ''}
+                                        value={typeof field.value === 'string' ? field.value : ''}
                                         data-testid="organization-description-input"
                                     />
                                 </FormControl>

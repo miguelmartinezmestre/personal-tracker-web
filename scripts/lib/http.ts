@@ -10,26 +10,21 @@ export function sleep(milliseconds: number): Promise<void> {
 
 export async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
     const abortController = new AbortController();
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
-            abortController.abort();
-            reject(new Error(`Request timeout after ${timeoutMs}ms`));
-        }, timeoutMs);
-    });
+    const timeoutId = setTimeout(() => {
+        abortController.abort();
+    }, timeoutMs);
 
     try {
-        return await Promise.race([
-            fetch(url, {
-                signal: abortController.signal,
-            }),
-            timeoutPromise,
-        ]);
-    } finally {
-        if (timeoutId !== null) {
-            clearTimeout(timeoutId);
+        return await fetch(url, {
+            signal: abortController.signal,
+        });
+    } catch (error) {
+        if (abortController.signal.aborted) {
+            throw new Error(`Request timeout after ${timeoutMs}ms`, { cause: error });
         }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
 

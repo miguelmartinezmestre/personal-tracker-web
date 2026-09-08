@@ -32,7 +32,9 @@ export function buildDeadlineMessage(
     dayStart: number,
     dayEnd: number
 ) {
-    if (!objective.deadline) return null;
+    if (!objective.deadline) {
+        return null;
+    }
     const deadlineDay = toUtcCivilDay(objective.deadline);
 
     if (deadlineDay < dayStart) {
@@ -51,7 +53,9 @@ export function buildDeadlineMessage(
     }
 
     const daysUntil = Math.round((deadlineDay - dayStart) / TIME.DAY_MS);
-    if (daysUntil > DEADLINE_SOON_DAYS) return null;
+    if (daysUntil > DEADLINE_SOON_DAYS) {
+        return null;
+    }
 
     return `Objective "${objective.title}" is due in ${daysUntil} day${
         daysUntil === 1 ? '' : 's'

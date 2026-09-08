@@ -170,7 +170,7 @@ describe('organization admins cannot access another organization by id', () => {
             })
         ).rejects.toThrow(/RLS|FORBIDDEN|PROGRESS_NOT_FOUND|Unauthorized/i);
 
-        const progress = await t.run(async ctx => ctx.db.get(orgBProgressId));
+        const progress = await t.run(async ctx => ctx.db.get('progressUpdates', orgBProgressId));
         expect(progress).not.toBeNull();
         expect(progress?.updatedValue).toBe(5);
     });
@@ -189,7 +189,9 @@ describe('organization admins cannot access another organization by id', () => {
             })
         ).rejects.toThrow(/RLS|FORBIDDEN|NOT_AUTHORIZED_NOTIFICATION|Unauthorized/i);
 
-        const notification = await t.run(async ctx => ctx.db.get(orgBNotificationId));
+        const notification = await t.run(async ctx =>
+            ctx.db.get('notifications', orgBNotificationId)
+        );
         expect(notification).not.toBeNull();
         expect(notification?.read).toBe(false);
     });

@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
 import { toast } from 'sonner';
 import { useErrorMessage } from '@/hooks/use-error-message';
-
 export default function PasswordFormEdit() {
     const t = useTranslations('Settings');
     const getErrorMessage = useErrorMessage();
@@ -32,12 +30,13 @@ export default function PasswordFormEdit() {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const passwordDefaultValues: UpdatePasswordFormValues = {
+        currentPassword: '',
+        confirmPassword: '',
+        newPassword: '',
+    };
     const form = useForm({
-        defaultValues: {
-            currentPassword: '',
-            confirmPassword: '',
-            newPassword: '',
-        } as UpdatePasswordFormValues,
+        defaultValues: passwordDefaultValues,
         validators: {
             onChange: updatePasswordSchema,
             onSubmit: updatePasswordSchema,
@@ -46,31 +45,25 @@ export default function PasswordFormEdit() {
             await onSubmit(value);
         },
     });
-
     const onSubmit = async (values: UpdatePasswordFormValues) => {
         if (values.newPassword !== values.confirmPassword) {
             setError(t('passwordMismatch'));
             return;
         }
-
         if (values.currentPassword === values.newPassword) {
             setError(t('passwordSameAsOld'));
             return;
         }
-
         setIsLoading(true);
         setError('');
         setMessage('');
-
         const fallbackErrorMessage = t('passwordUpdateFailed');
-
         try {
             const result = await authClient.changePassword({
                 currentPassword: values.currentPassword,
                 newPassword: values.newPassword,
                 revokeOtherSessions: false,
             });
-
             if (result.error) {
                 const errorMessage = getErrorMessage(result.error, fallbackErrorMessage);
                 setError(errorMessage);
@@ -80,19 +73,18 @@ export default function PasswordFormEdit() {
                 toast.success(t('passwordUpdated'));
                 form.reset();
             }
-        } catch (error) {
-            const errorMessage = getErrorMessage(error, fallbackErrorMessage);
+        } catch (caughtError) {
+            const errorMessage = getErrorMessage(caughtError, fallbackErrorMessage);
             setError(errorMessage);
             toast.error(errorMessage);
         }
         setIsLoading(false);
     };
-
     return (
-        <Form {...form}>
+        <Form form={form}>
             <form
                 action={() => {
-                    form.handleSubmit();
+                    void form.handleSubmit();
                 }}
                 className="space-y-5 py-4"
             >

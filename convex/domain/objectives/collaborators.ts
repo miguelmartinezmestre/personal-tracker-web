@@ -11,7 +11,7 @@ import { isOrganizationAdminRole } from './permissions';
 const MAX_COLLABORATORS_PER_SCOPE = 1000;
 const SUCCESSOR_CANDIDATE_LIMIT = 100;
 
-function assertWithinCollaboratorLimit(rows: readonly unknown[]) {
+function assertWithinCollaboratorLimit(rows: readonly object[]) {
     if (rows.length > MAX_COLLABORATORS_PER_SCOPE) {
         throw new ConvexError(ERROR_CODES.OBJECTIVE_ID_LIMIT_EXCEEDED);
     }
@@ -139,7 +139,9 @@ export async function findObjectiveSuccessorOwner(
         .take(SUCCESSOR_CANDIDATE_LIMIT);
 
     for (const editor of editorCollaborators) {
-        if (editor.userId === excludeUserId) continue;
+        if (editor.userId === excludeUserId) {
+            continue;
+        }
 
         // Collaborator cleanup is asynchronous. A stale editor row can still
         // exist briefly after that user has left the organization, so never
@@ -172,11 +174,15 @@ export async function findObjectiveSuccessorOwner(
             .take(SUCCESSOR_CANDIDATE_LIMIT),
     ]);
 
-    const admin = [...owners, ...admins]
+    const adminCandidates = [...owners, ...admins]
         .filter(member => member.userId !== excludeUserId && isOrganizationAdminRole(member.role))
-        .sort((left, right) => left.createdAt - right.createdAt)[0];
+        .sort((left, right) => left.createdAt - right.createdAt);
 
-    return admin?.userId ?? null;
+    for (const admin of adminCandidates) {
+        return admin.userId;
+    }
+
+    return null;
 }
 
 export async function reassignOwnedObjective(

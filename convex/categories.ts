@@ -17,7 +17,12 @@ export const getCategoriesByUser = queryWithRLS({
     args: {
         paginationOpts: paginationOptsValidator,
     },
-    returns: paginationResultValidator(categoryDocumentValidator),
+    returns: paginationResultValidator(
+        v.object({
+            ...categoryDocumentValidator.fields,
+            capabilities: v.object({ canEdit: v.boolean(), canDelete: v.boolean() }),
+        })
+    ),
     handler: async (ctx, args) => {
         return await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
             listCategoriesForCurrentUser(ctx, { ...args, paginationOpts })
@@ -37,7 +42,7 @@ export const updateCategory = mutationWithRLS({
     args: categoryPatchValidator,
     returns: v.nullable(v.id('categories')),
     handler: async (ctx, args) => {
-        return await updateCategoryForCurrentOrganization(ctx, args);
+        await updateCategoryForCurrentOrganization(ctx, args);
     },
 });
 
@@ -47,7 +52,7 @@ export const deleteCategory = mutationWithRLS({
     },
     returns: v.nullable(v.id('categories')),
     handler: async (ctx, args) => {
-        return await deleteCategoryForCurrentOrganization(ctx, args);
+        await deleteCategoryForCurrentOrganization(ctx, args);
     },
 });
 

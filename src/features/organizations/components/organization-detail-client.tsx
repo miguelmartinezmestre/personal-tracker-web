@@ -3,12 +3,44 @@
 import { useOrganizationByIdentifier } from '@/features/organizations/hooks/use-organizations';
 import CreateOrganizationMemberFormModal from '@/features/organizations/components/organization-members-form-create-modal';
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import {
     isOrganizationAdminRole,
     isOrganizationOwnerRole,
 } from '@/features/organizations/types/roles';
+
+function OrganizationInviteAction({
+    organization,
+}: {
+    organization: {
+        id: string;
+        isPersonal?: boolean;
+        role?: string;
+    };
+}) {
+    const tMembers = useTranslations('OrganizationMembers');
+    if (organization.isPersonal) {
+        return (
+            <p
+                className="text-sm text-muted-foreground"
+                data-testid="organization-personal-invite-restricted"
+            >
+                {tMembers('personalOrgInviteRestricted')}
+            </p>
+        );
+    }
+    if (isOrganizationAdminRole(organization.role ?? '')) {
+        return (
+            <CreateOrganizationMemberFormModal
+                organizationId={organization.id}
+                canAssignOwner={isOrganizationOwnerRole(organization.role ?? '')}
+            />
+        );
+    }
+    return null;
+}
 
 interface OrganizationDetailClientProps {
     organizationId: string;
@@ -18,8 +50,22 @@ export default function OrganizationDetailClient({
     organizationId,
 }: OrganizationDetailClientProps) {
     const tMembers = useTranslations('OrganizationMembers');
-    const { data: organization, isLoading } = useOrganizationByIdentifier(organizationId);
+    const {
+        data: organization,
+        isLoading,
+        isError,
+        refetch,
+    } = useOrganizationByIdentifier(organizationId);
 
+    if (isError) {
+        return (
+            <QueryErrorFallback
+                onRetry={() => {
+                    void refetch();
+                }}
+            />
+        );
+    }
     if (isLoading) {
         return (
             <>
@@ -48,19 +94,7 @@ export default function OrganizationDetailClient({
                     <span className="text-sm text-muted-foreground">({organization.slug})</span>
                 </h1>
                 <div className="w-full sm:w-auto">
-                    {organization.isPersonal ? (
-                        <p
-                            className="text-sm text-muted-foreground"
-                            data-testid="organization-personal-invite-restricted"
-                        >
-                            {tMembers('personalOrgInviteRestricted')}
-                        </p>
-                    ) : isOrganizationAdminRole(organization.role) ? (
-                        <CreateOrganizationMemberFormModal
-                            organizationId={organization.id}
-                            canAssignOwner={isOrganizationOwnerRole(organization.role)}
-                        />
-                    ) : null}
+                    <OrganizationInviteAction organization={organization} />
                 </div>
             </div>
             <section className="space-y-3" aria-labelledby="organization-members-heading">

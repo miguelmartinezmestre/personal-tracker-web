@@ -12,7 +12,8 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface DeleteConfirmationDialogProps {
@@ -81,7 +82,9 @@ export function DeleteConfirmationDialog({
                         {resolvedCancelLabel}
                     </AlertDialogCancel>
                     <AlertDialogAction
-                        onClick={handleConfirm}
+                        onClick={event => {
+                            void handleConfirm(event);
+                        }}
                         disabled={isLoading}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         data-testid="delete-confirm-button"

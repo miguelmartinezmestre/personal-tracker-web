@@ -9,6 +9,7 @@ import { BarChart3, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useReferenceNow } from '@/lib/reference-now';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
+import { ChartDataTable } from '@/components/chart-data-table';
 
 export default function MonthlyProgressChart() {
     const t = useTranslations('DashboardHome');
@@ -36,54 +37,31 @@ export default function MonthlyProgressChart() {
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="space-y-2">
-                {monthlyProgressQuery.isError ? (
-                    <QueryErrorFallback onRetry={() => monthlyProgressQuery.refetch()} />
-                ) : !monthlyProgress ? (
-                    <div className="flex h-[200px] items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                ) : chartData.length === 0 ||
-                  chartData.every(monthEntry => monthEntry.count === 0) ? (
-                    <div className="flex h-[200px] items-center justify-center">
-                        <p className="text-sm text-muted-foreground">
-                            {t('charts.noDataAvailable')}
-                        </p>
-                    </div>
-                ) : (
-                    <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                            <XAxis
-                                dataKey="month"
-                                className="text-xs fill-muted-foreground"
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <YAxis
-                                className="text-xs fill-muted-foreground"
-                                tickLine={false}
-                                axisLine={false}
-                                allowDecimals={false}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'var(--popover)',
-                                    borderColor: 'var(--border)',
-                                    borderRadius: '0.5rem',
-                                    color: 'var(--popover-foreground)',
-                                }}
-                                labelStyle={{ color: 'var(--popover-foreground)' }}
-                                itemStyle={{ color: 'var(--popover-foreground)' }}
-                            />
-                            <Bar
-                                dataKey="count"
-                                name={t('charts.updates')}
-                                fill="var(--primary)"
-                                radius={[4, 4, 0, 0]}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
-                )}
+                <MonthlyProgressChartBody
+                    isError={monthlyProgressQuery.isError}
+                    error={monthlyProgressQuery.error}
+                    isLoading={!monthlyProgress}
+                    isEmpty={
+                        chartData.length === 0 ||
+                        chartData.every(monthEntry => monthEntry.count === 0)
+                    }
+                    onRetry={() => {
+                        void monthlyProgressQuery.refetch();
+                    }}
+                    emptyLabel={t('charts.noDataAvailable')}
+                    chartData={chartData}
+                    updatesLabel={t('charts.updates')}
+                />
+                {monthlyProgress && !monthlyProgressQuery.isError ? (
+                    <ChartDataTable
+                        caption={t('charts.monthlyProgress')}
+                        columns={[t('charts.month'), t('charts.updates')]}
+                        rows={monthlyProgress.items.map(item => ({
+                            id: item.monthKey,
+                            values: [formatMonthLabel(item.monthKey, locale), item.count],
+                        }))}
+                    />
+                ) : null}
                 {monthlyProgress?.isTruncated ? (
                     <p className="text-xs text-muted-foreground" role="status">
                         {t('charts.partialData')}
@@ -94,9 +72,84 @@ export default function MonthlyProgressChart() {
     );
 }
 
+function MonthlyProgressChartBody({
+    isError,
+    error,
+    isLoading,
+    isEmpty,
+    onRetry,
+    emptyLabel,
+    chartData,
+    updatesLabel,
+}: {
+    isError: boolean;
+    error: unknown;
+    isLoading: boolean;
+    isEmpty: boolean;
+    onRetry: () => void;
+    emptyLabel: string;
+    chartData: Array<{ month: string; count: number }>;
+    updatesLabel: string;
+}) {
+    if (isError) {
+        return <QueryErrorFallback error={error} onRetry={onRetry} />;
+    }
+    if (isLoading) {
+        return (
+            <div className="flex h-[200px] items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+        );
+    }
+    if (isEmpty) {
+        return (
+            <div className="flex h-[200px] items-center justify-center">
+                <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+            </div>
+        );
+    }
+    return (
+        <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis
+                    dataKey="month"
+                    className="text-xs fill-muted-foreground"
+                    tickLine={false}
+                    axisLine={false}
+                />
+                <YAxis
+                    className="text-xs fill-muted-foreground"
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                />
+                <Tooltip
+                    contentStyle={{
+                        backgroundColor: 'var(--popover)',
+                        borderColor: 'var(--border)',
+                        borderRadius: '0.5rem',
+                        color: 'var(--popover-foreground)',
+                    }}
+                    labelStyle={{ color: 'var(--popover-foreground)' }}
+                    itemStyle={{ color: 'var(--popover-foreground)' }}
+                />
+                <Bar
+                    dataKey="count"
+                    name={updatesLabel}
+                    fill="var(--primary)"
+                    radius={[4, 4, 0, 0]}
+                />
+            </BarChart>
+        </ResponsiveContainer>
+    );
+}
+
 function formatMonthLabel(monthKey: string, locale: string): string {
     const [year, month] = monthKey.split('-');
-    if (!year || !month) return monthKey;
+    if (!year || !month) {
+        return monthKey;
+    }
     return new Intl.DateTimeFormat(locale, { month: 'short' }).format(
         new Date(Number(year), Number(month) - 1)
     );

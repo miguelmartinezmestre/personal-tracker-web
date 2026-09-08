@@ -6,6 +6,7 @@ import {
 } from '../platform/email/config';
 import { sendWithConfiguredProvider } from '../jobs/email/transactional';
 import type { MutationCtx } from '../_generated/server';
+import { asInvalidArg } from './testCasts';
 
 describe('email provider configuration', () => {
     afterEach(() => {
@@ -144,9 +145,9 @@ describe('email provider configuration', () => {
 
     test('queues SMTP email through the configured internal action', async () => {
         const runAfter = vi.fn();
-        const ctx = {
+        const ctx = asInvalidArg<MutationCtx>({
             scheduler: { runAfter },
-        } as unknown as MutationCtx;
+        });
 
         vi.stubEnv('EMAIL_PROVIDER', 'smtp');
         vi.stubEnv('EMAIL_FROM', 'Metricas <noreply@example.com>');

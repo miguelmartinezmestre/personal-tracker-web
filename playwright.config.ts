@@ -77,6 +77,13 @@ export default defineConfig({
             use: webkitProjectUse,
             testMatch: ['**/e2e/**', '**/smoke/**'],
         },
+        {
+            name: 'mobile-webkit',
+            dependencies: ['setup'],
+            use: { ...devices['iPhone 13'] },
+            grep: /@mobile-critical/,
+            testMatch: ['**/e2e/**', '**/smoke/**'],
+        },
     ],
 
     globalSetup: './tests/config/global-setup.ts',

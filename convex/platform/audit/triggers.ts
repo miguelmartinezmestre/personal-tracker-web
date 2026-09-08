@@ -1,11 +1,16 @@
+import {
+    syncCollaboratorEntries,
+    syncObjectiveEntries,
+    syncProgressEntries,
+} from '../../domain/dashboard/sync';
 import { Triggers, type Change } from 'convex-helpers/server/triggers';
 import type { TableNamesInDataModel } from 'convex/server';
-import type { DatabaseWriter } from '../../_generated/server';
+import type { MutationCtx } from '../../_generated/server';
 import type { DataModel, Id } from '../../_generated/dataModel';
 import { toAuditPrimitive } from '../../domain/audit/privacy';
+import { isJsonObject } from '../../../shared/boundary-values';
 
-type AuditTriggerCtx = {
-    db: DatabaseWriter;
+type AuditTriggerCtx = MutationCtx & {
     userId: Id<'user'>;
     organizationId: Id<'organization'> | null;
     role: string;
@@ -21,130 +26,6 @@ type AuditResourceType =
     | 'user'
     | 'platform_settings';
 
-const triggers = new Triggers<DataModel, AuditTriggerCtx>();
-
-function sanitizeObjective(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const objectiveRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(objectiveRecord._id),
-        organizationId: toAuditPrimitive(objectiveRecord.organizationId),
-        createdBy: toAuditPrimitive(objectiveRecord.createdBy),
-        ownerId: toAuditPrimitive(objectiveRecord.ownerId),
-        visibility: toAuditPrimitive(objectiveRecord.visibility),
-        status: toAuditPrimitive(objectiveRecord.status),
-        categoryId: toAuditPrimitive(objectiveRecord.categoryId),
-        targetValue: toAuditPrimitive(objectiveRecord.targetValue),
-        currentValue: toAuditPrimitive(objectiveRecord.currentValue),
-        startValue: toAuditPrimitive(objectiveRecord.startValue),
-        deadline: toAuditPrimitive(objectiveRecord.deadline),
-        deletedAt: toAuditPrimitive(objectiveRecord.deletedAt),
-        deletedBy: toAuditPrimitive(objectiveRecord.deletedBy),
-        createdAt: toAuditPrimitive(objectiveRecord.createdAt),
-        updatedAt: toAuditPrimitive(objectiveRecord.updatedAt),
-    };
-}
-
-function sanitizeObjectiveCollaborator(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const collaboratorRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(collaboratorRecord._id),
-        objectiveId: toAuditPrimitive(collaboratorRecord.objectiveId),
-        userId: toAuditPrimitive(collaboratorRecord.userId),
-        organizationId: toAuditPrimitive(collaboratorRecord.organizationId),
-        role: toAuditPrimitive(collaboratorRecord.role),
-        addedBy: toAuditPrimitive(collaboratorRecord.addedBy),
-        createdAt: toAuditPrimitive(collaboratorRecord.createdAt),
-    };
-}
-
-function sanitizeProgressUpdate(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const progressUpdateRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(progressUpdateRecord._id),
-        objective: toAuditPrimitive(progressUpdateRecord.objective),
-        createdBy: toAuditPrimitive(progressUpdateRecord.createdBy),
-        updatedValue: toAuditPrimitive(progressUpdateRecord.updatedValue),
-        updateDate: toAuditPrimitive(progressUpdateRecord.updateDate),
-        createdAt: toAuditPrimitive(progressUpdateRecord.createdAt),
-        updatedAt: toAuditPrimitive(progressUpdateRecord.updatedAt),
-    };
-}
-
-function sanitizeCategory(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const categoryRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(categoryRecord._id),
-        userId: toAuditPrimitive(categoryRecord.userId),
-        organizationId: toAuditPrimitive(categoryRecord.organizationId),
-        createdAt: toAuditPrimitive(categoryRecord.createdAt),
-        updatedAt: toAuditPrimitive(categoryRecord.updatedAt),
-    };
-}
-
-function sanitizeOrganization(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const organizationRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(organizationRecord._id),
-        createdAt: toAuditPrimitive(organizationRecord.createdAt),
-    };
-}
-
-function sanitizeMember(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const memberRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(memberRecord._id),
-        organizationId: toAuditPrimitive(memberRecord.organizationId),
-        userId: toAuditPrimitive(memberRecord.userId),
-        role: toAuditPrimitive(memberRecord.role),
-        createdAt: toAuditPrimitive(memberRecord.createdAt),
-    };
-}
-
-function sanitizeUser(doc: unknown): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const userRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(userRecord._id),
-        role: toAuditPrimitive(userRecord.role),
-        banned: toAuditPrimitive(userRecord.banned),
-        deletedAt: toAuditPrimitive(userRecord.deletedAt),
-        createdAt: toAuditPrimitive(userRecord.createdAt),
-        updatedAt: toAuditPrimitive(userRecord.updatedAt),
-    };
-}
-
-function sanitizePlatformSettings(
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
-    if (!doc || typeof doc !== 'object') return undefined;
-    const platformSettingsRecord = doc as Record<string, unknown>;
-    return {
-        _id: toAuditPrimitive(platformSettingsRecord._id),
-        defaultLanguage: toAuditPrimitive(platformSettingsRecord.defaultLanguage),
-        registrationPolicy: toAuditPrimitive(platformSettingsRecord.registrationPolicy),
-        setupCompletedAt: toAuditPrimitive(platformSettingsRecord.setupCompletedAt),
-        setupCompletedBy: toAuditPrimitive(platformSettingsRecord.setupCompletedBy),
-    };
-}
-
 type SanitizedTable =
     | 'objectives'
     | 'objectiveCollaborators'
@@ -155,10 +36,148 @@ type SanitizedTable =
     | 'user'
     | 'platformSettings';
 
+type AuditFieldRecord = Record<string, string | number | boolean | null>;
+
+const OPERATION_ACTION_SUFFIX = {
+    insert: 'created',
+    update: 'updated',
+    delete: 'deleted',
+} as const;
+
+const triggers = new Triggers<DataModel, AuditTriggerCtx>();
+triggers.register('objectives', (ctx, change) =>
+    syncObjectiveEntries({ ...ctx, db: ctx.innerDb }, change.oldDoc, change.newDoc)
+);
+triggers.register('objectiveCollaborators', (ctx, change) =>
+    syncCollaboratorEntries({ ...ctx, db: ctx.innerDb }, change.oldDoc, change.newDoc)
+);
+triggers.register('progressUpdates', (ctx, change) =>
+    syncProgressEntries({ ...ctx, db: ctx.innerDb }, change.oldDoc, change.newDoc)
+);
+
+function sanitizeObjective(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        organizationId: toAuditPrimitive(doc.organizationId),
+        createdBy: toAuditPrimitive(doc.createdBy),
+        ownerId: toAuditPrimitive(doc.ownerId),
+        visibility: toAuditPrimitive(doc.visibility),
+        status: toAuditPrimitive(doc.status),
+        categoryId: toAuditPrimitive(doc.categoryId),
+        targetValue: toAuditPrimitive(doc.targetValue),
+        currentValue: toAuditPrimitive(doc.currentValue),
+        startValue: toAuditPrimitive(doc.startValue),
+        deadline: toAuditPrimitive(doc.deadline),
+        deletedAt: toAuditPrimitive(doc.deletedAt),
+        deletedBy: toAuditPrimitive(doc.deletedBy),
+        createdAt: toAuditPrimitive(doc.createdAt),
+        updatedAt: toAuditPrimitive(doc.updatedAt),
+    };
+}
+
+function sanitizeObjectiveCollaborator(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        objectiveId: toAuditPrimitive(doc.objectiveId),
+        userId: toAuditPrimitive(doc.userId),
+        organizationId: toAuditPrimitive(doc.organizationId),
+        role: toAuditPrimitive(doc.role),
+        addedBy: toAuditPrimitive(doc.addedBy),
+        createdAt: toAuditPrimitive(doc.createdAt),
+    };
+}
+
+function sanitizeProgressUpdate(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        objective: toAuditPrimitive(doc.objective),
+        createdBy: toAuditPrimitive(doc.createdBy),
+        updatedValue: toAuditPrimitive(doc.updatedValue),
+        updateDate: toAuditPrimitive(doc.updateDate),
+        createdAt: toAuditPrimitive(doc.createdAt),
+        updatedAt: toAuditPrimitive(doc.updatedAt),
+    };
+}
+
+function sanitizeCategory(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        userId: toAuditPrimitive(doc.userId),
+        organizationId: toAuditPrimitive(doc.organizationId),
+        createdAt: toAuditPrimitive(doc.createdAt),
+        updatedAt: toAuditPrimitive(doc.updatedAt),
+    };
+}
+
+function sanitizeOrganization(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        createdAt: toAuditPrimitive(doc.createdAt),
+    };
+}
+
+function sanitizeMember(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        organizationId: toAuditPrimitive(doc.organizationId),
+        userId: toAuditPrimitive(doc.userId),
+        role: toAuditPrimitive(doc.role),
+        createdAt: toAuditPrimitive(doc.createdAt),
+    };
+}
+
+function sanitizeUser(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        role: toAuditPrimitive(doc.role),
+        banned: toAuditPrimitive(doc.banned),
+        deletedAt: toAuditPrimitive(doc.deletedAt),
+        createdAt: toAuditPrimitive(doc.createdAt),
+        updatedAt: toAuditPrimitive(doc.updatedAt),
+    };
+}
+
+function sanitizePlatformSettings(doc: object): AuditFieldRecord {
+    if (!isJsonObject(doc)) {
+        return {};
+    }
+    return {
+        _id: toAuditPrimitive(doc._id),
+        defaultLanguage: toAuditPrimitive(doc.defaultLanguage),
+        registrationPolicy: toAuditPrimitive(doc.registrationPolicy),
+        setupCompletedAt: toAuditPrimitive(doc.setupCompletedAt),
+        setupCompletedBy: toAuditPrimitive(doc.setupCompletedBy),
+    };
+}
+
 function sanitizeDoc(
     table: SanitizedTable,
-    doc: unknown
-): Record<string, string | number | boolean | null> | undefined {
+    doc: object | null | undefined
+): AuditFieldRecord | undefined {
+    if (!doc) {
+        return undefined;
+    }
     switch (table) {
         case 'objectives':
             return sanitizeObjective(doc);
@@ -176,21 +195,17 @@ function sanitizeDoc(
             return sanitizeUser(doc);
         case 'platformSettings':
             return sanitizePlatformSettings(doc);
-        default: {
-            const _exhaustive: never = table;
-            return _exhaustive;
-        }
     }
 }
 
 type AuditMetadata = {
-    before?: Record<string, string | number | boolean | null>;
-    after?: Record<string, string | number | boolean | null>;
+    before?: AuditFieldRecord;
+    after?: AuditFieldRecord;
     context?: string;
 };
 
-const toMetadata = <TableName extends TableNamesInDataModel<DataModel>>(
-    table: SanitizedTable,
+const toMetadata = <TableName extends SanitizedTable>(
+    table: TableName,
     change: Change<DataModel, TableName>
 ): AuditMetadata => {
     switch (change.operation) {
@@ -213,8 +228,7 @@ const toMetadata = <TableName extends TableNamesInDataModel<DataModel>>(
 const toAction = (
     resourceType: AuditResourceType,
     operation: Change<DataModel, TableNamesInDataModel<DataModel>>['operation']
-) =>
-    `${resourceType}.${operation === 'insert' ? 'created' : operation === 'update' ? 'updated' : 'deleted'}`;
+) => `${resourceType}.${OPERATION_ACTION_SUFFIX[operation]}`;
 
 const registerSimpleTrigger = <
     TableName extends
@@ -283,7 +297,7 @@ triggers.register('progressUpdates', async (ctx, change) => {
         return;
     }
 
-    const objective = await ctx.innerDb.get(objectiveId);
+    const objective = await ctx.innerDb.get('objectives', objectiveId);
     if (!objective) {
         return;
     }

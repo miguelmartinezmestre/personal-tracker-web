@@ -1,4 +1,7 @@
 'use client';
+import { useNotificationMessage } from '../use-notification-message';
+
+import type { Route } from 'next';
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
@@ -10,37 +13,32 @@ import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { useSetNotificationRead, useDeleteNotification } from './notifications-table-actions';
 import { formatDate, formatTime } from '@/lib/format-date';
-
 const typeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     reminder: 'secondary',
     deadline: 'destructive',
     progress: 'default',
     status: 'outline',
 };
-
 interface UseNotificationsTableColumnsProps {
     objectiveMap: Map<string, Doc<'objectives'>>;
     onMutationSuccess?: () => void;
 }
-
 export function useNotificationsTableColumns({
     objectiveMap,
     onMutationSuccess,
 }: UseNotificationsTableColumnsProps) {
+    const message = useNotificationMessage();
     const t = useTranslations('Notifications');
     const locale = useLocale();
-
     const { setNotificationRead, isSettingRead } = useSetNotificationRead(onMutationSuccess);
     const { deleteNotificationAsync, isDeletingNotification } =
         useDeleteNotification(onMutationSuccess);
-
     const typeLabels: Record<string, string> = {
         reminder: t('typeOptions.reminder'),
         deadline: t('typeOptions.deadline'),
         progress: t('typeOptions.progress'),
         status: t('typeOptions.status'),
     };
-
     const columns: ColumnDef<DataTableFeatures, Doc<'notifications'>>[] = [
         {
             accessorKey: 'message',
@@ -49,7 +47,7 @@ export function useNotificationsTableColumns({
                 const notification = row.original;
                 return (
                     <span className={notification.read ? 'text-muted-foreground' : 'font-semibold'}>
-                        {notification.message}
+                        {message(notification)}
                     </span>
                 );
             },
@@ -59,18 +57,24 @@ export function useNotificationsTableColumns({
             header: t('table.columns.objective'),
             cell: ({ row }) => {
                 const objectiveId = row.original.objective;
-                const objective = objectiveId ? objectiveMap.get(objectiveId) : undefined;
-                const label = objective?.title ?? t('table.unknownObjective');
-                return objective ? (
+                if (!(typeof objectiveId === 'string')) {
+                    return (
+                        <span className="text-muted-foreground">{t('table.unknownObjective')}</span>
+                    );
+                }
+                const objective = objectiveMap.get(objectiveId);
+                const label = objective ? objective.title : t('table.unknownObjective');
+                if (!objective) {
+                    return <span className="text-muted-foreground">{label}</span>;
+                }
+                return (
                     <Link
-                        href={`/dashboard/objectives/${row.original.objective}`}
+                        href={`/dashboard/objectives/${objectiveId}` as Route}
                         prefetch={false}
                         className="text-primary hover:underline"
                     >
                         {label}
                     </Link>
-                ) : (
-                    <span className="text-muted-foreground">{label}</span>
                 );
             },
         },
@@ -88,10 +92,7 @@ export function useNotificationsTableColumns({
             accessorKey: 'notificationDate',
             header: t('table.columns.date'),
             cell: ({ row }) => {
-                return `${formatDate(row.original.notificationDate, locale)} ${formatTime(
-                    row.original.notificationDate,
-                    locale
-                )}`;
+                return `${formatDate(row.original.notificationDate, locale)} ${formatTime(row.original.notificationDate, locale)}`;
             },
         },
         {
@@ -117,7 +118,6 @@ export function useNotificationsTableColumns({
                         read: !notification.read,
                     });
                 };
-
                 return (
                     <div className="flex items-center gap-2">
                         <Button
@@ -155,6 +155,5 @@ export function useNotificationsTableColumns({
             },
         },
     ];
-
     return columns;
 }

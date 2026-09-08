@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { Loader2, AlertTriangle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,52 +10,59 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-
+import { resolveErrorMessage, getErrorLocale } from '@/lib/error-messages';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 export default function AccountDeletionSection() {
     const t = useTranslations('Settings');
     const tCommon = useTranslations('Common');
     const sessionQuery = useSession();
-    const sessionUser = sessionQuery?.data?.user;
+    const sessionUser = sessionQuery.data?.user;
     const deleteAccount = useDeleteAccount();
     const router = useRouter();
-
-    const { data: isPlatformSetupUser, isPending: isSetupUserPending } = useQuery(
-        convexQuery(api.setup.isCurrentUserPlatformSetupUser, {})
-    );
-
+    const setupQuery = useQuery(convexQuery(api.setup.isCurrentUserPlatformSetupUser, {}));
+    const { data: isPlatformSetupUser, isPending: isSetupUserPending } = setupQuery;
     const [emailConfirmation, setEmailConfirmation] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-
     const userEmail = sessionUser?.email ?? '';
     const isLoading = deleteAccount.isPending;
     const canDelete = emailConfirmation === userEmail && password.length > 0;
-
     const handleDelete = async () => {
         setError('');
-
         if (!canDelete) {
             return;
         }
-
         try {
             await deleteAccount.mutateAsync(password);
             router.replace('/login');
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : tCommon('genericErrorDescription');
-            setError(errorMessage);
+        } catch (caughtError) {
+            setError(
+                resolveErrorMessage(
+                    caughtError,
+                    getErrorLocale(),
+                    tCommon('genericErrorDescription')
+                )
+            );
         }
     };
-
-    if (sessionQuery?.isPending || isSetupUserPending) {
+    if (sessionQuery.isError || setupQuery.isError) {
+        return (
+            <QueryErrorFallback
+                error={sessionQuery.error ?? setupQuery.error}
+                onRetry={() => {
+                    void sessionQuery.refetch();
+                    void setupQuery.refetch();
+                }}
+            />
+        );
+    }
+    if (sessionQuery.isPending || isSetupUserPending) {
         return (
             <div className="flex justify-center items-center py-8">
                 <Loader2 className="size-8 animate-spin text-primary" />
             </div>
         );
     }
-
     if (isPlatformSetupUser) {
         return (
             <div
@@ -77,7 +83,6 @@ export default function AccountDeletionSection() {
             </div>
         );
     }
-
     return (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6">
             <div className="flex items-start gap-4">
@@ -133,7 +138,9 @@ export default function AccountDeletionSection() {
 
                     <Button
                         variant="destructive"
-                        onClick={handleDelete}
+                        onClick={() => {
+                            void handleDelete();
+                        }}
                         disabled={isLoading || !canDelete}
                         className="w-full sm:w-auto"
                         data-testid="delete-account-button"

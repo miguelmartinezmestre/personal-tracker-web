@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import '@/styles/globals.css';
 
 import { BetterConvexProvider } from '@/platform/convex/providers/convex-provider';
@@ -18,12 +19,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
+    const nonce = (await headers()).get('x-nonce') ?? undefined;
     const [locale, messages, token] = await Promise.all([getLocale(), getMessages(), getToken()]);
 
     return (
         <html lang={locale} suppressHydrationWarning>
             <body>
                 <ThemeProvider
+                    nonce={nonce}
                     attribute="class"
                     defaultTheme="system"
                     enableSystem

@@ -5,8 +5,8 @@ import type { DataTableFeatures } from '@/components/data-table/data-table-featu
 import { Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRevokeSession } from './user-sessions-table-actions';
-import { api } from '@/convex/_generated/api';
-import { FunctionReturnType } from 'convex/server';
+import type { api } from '@/convex/_generated/api';
+import type { FunctionReturnType } from 'convex/server';
 import type { Id } from '@/convex/_generated/dataModel';
 import { formatDate, formatTime } from '@/lib/format-date';
 import { useReferenceNow } from '@/lib/reference-now';
@@ -70,7 +70,9 @@ export function useUserSessionsTableColumns(targetUserId: Id<'user'> | undefined
                     size="sm"
                     variant="destructive"
                     onClick={() => {
-                        if (!targetUserId) return;
+                        if (!targetUserId) {
+                            return;
+                        }
                         revokeSession({ userId: targetUserId, sessionId: row.original._id });
                     }}
                     disabled={isRevokingSession || !targetUserId}

@@ -1,3 +1,4 @@
+import { domainTriggers } from '../platform/db/domainTriggers';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
@@ -105,7 +106,8 @@ describe('convex dashboard', async () => {
         const currentMonth = new Date(now.getFullYear(), now.getMonth(), 15);
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 15);
 
-        await userIdentity.run(async ctx => {
+        await userIdentity.run(async rawCtx => {
+            const ctx = { ...rawCtx, ...domainTriggers.wrapDB(rawCtx) };
             for (const updateDate of [
                 currentMonth.getTime(),
                 currentMonth.getTime() + 1000,
@@ -138,7 +140,8 @@ describe('convex dashboard', async () => {
     });
 
     test('getObjectivesWithMostProgress sorts active objectives and limits to top five', async () => {
-        await userIdentity.run(async ctx => {
+        await userIdentity.run(async rawCtx => {
+            const ctx = { ...rawCtx, ...domainTriggers.wrapDB(rawCtx) };
             for (let i = 1; i <= 7; i++) {
                 await ctx.db.insert('objectives', {
                     createdBy: userId,
@@ -237,7 +240,8 @@ describe('convex dashboard', async () => {
         const now = Date.now();
         const DAY_MS = 24 * 60 * 60 * 1000;
 
-        await userIdentity.run(async ctx => {
+        await userIdentity.run(async rawCtx => {
+            const ctx = { ...rawCtx, ...domainTriggers.wrapDB(rawCtx) };
             await ctx.db.insert('progressUpdates', {
                 objective: objectiveId,
                 createdBy: userId,
@@ -294,10 +298,10 @@ describe('convex dashboard', async () => {
         });
     });
 
-    test('getRecentActivity reports truncation per metric', async () => {
+    test('getRecentActivity counts beyond the former 100 update limit', async () => {
         const now = Date.now();
         const objectiveId = await userIdentity.run(ctx =>
-            ctx.db.insert('objectives', {
+            domainTriggers.wrapDB(ctx).db.insert('objectives', {
                 createdBy: userId,
                 ownerId: userId,
                 visibility: 'private',
@@ -310,7 +314,8 @@ describe('convex dashboard', async () => {
                 updatedAt: now,
             })
         );
-        await userIdentity.run(async ctx => {
+        await userIdentity.run(async rawCtx => {
+            const ctx = { ...rawCtx, ...domainTriggers.wrapDB(rawCtx) };
             for (let index = 0; index < 101; index++) {
                 await ctx.db.insert('progressUpdates', {
                     objective: objectiveId,
@@ -327,13 +332,13 @@ describe('convex dashboard', async () => {
         const activity = await userIdentity.query(api.dashboard.getRecentActivity, { now });
 
         expect(activity).toMatchObject({
-            progressUpdatesCount: 100,
+            progressUpdatesCount: 101,
             objectivesCreatedCount: 0,
             objectivesCompletedCount: 0,
-            progressUpdatesTruncated: true,
+            progressUpdatesTruncated: false,
             objectivesCreatedTruncated: false,
             objectivesCompletedTruncated: false,
-            isTruncated: true,
+            isTruncated: false,
         });
     });
 

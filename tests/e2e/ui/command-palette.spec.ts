@@ -1,6 +1,7 @@
+import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 
-async function openCommandPalette(page: import('@playwright/test').Page) {
+async function openCommandPalette(page: Page) {
     await page.goto('/dashboard/home');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.getByTestId('command-menu-ready')).toBeAttached({ timeout: 10000 });

@@ -1,4 +1,5 @@
 'use client';
+import { useNotificationMessage } from '../use-notification-message';
 
 import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ interface NotificationSonnerListenerProps {
 }
 
 export function NotificationSonnerListener({ organizationId }: NotificationSonnerListenerProps) {
+    const message = useNotificationMessage();
     const { data: overview } = useQuery(convexQuery(api.notifications.getNotificationOverview, {}));
 
     const scopeRef = useRef<string | null | undefined>(undefined);
@@ -19,7 +21,9 @@ export function NotificationSonnerListener({ organizationId }: NotificationSonne
     const notificationPage = overview?.notifications;
 
     useEffect(() => {
-        if (!notificationPage) return;
+        if (!notificationPage) {
+            return;
+        }
         const latestCreationTime = notificationPage.reduce(
             (latest, notification) => Math.max(latest, notification._creationTime),
             0
@@ -37,10 +41,10 @@ export function NotificationSonnerListener({ organizationId }: NotificationSonne
         const newNotifications = notificationPage.filter(
             notification => notification._creationTime > latestCreationTimeRef.current
         );
-        newNotifications.slice(0, 3).forEach(notification => toast.info(notification.message));
+        newNotifications.slice(0, 3).forEach(notification => toast.info(message(notification)));
 
         latestCreationTimeRef.current = Math.max(latestCreationTimeRef.current, latestCreationTime);
-    }, [notificationPage, organizationId]);
+    }, [notificationPage, organizationId, message]);
 
     return null;
 }

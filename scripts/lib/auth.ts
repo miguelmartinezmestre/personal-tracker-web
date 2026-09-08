@@ -23,7 +23,7 @@ export function stripAnsi(value: string): string {
             continue;
         }
 
-        result += value[index];
+        result += value.charAt(index);
         index += 1;
     }
 
@@ -62,9 +62,7 @@ export function extractAdminKey(rawOutput: string): string {
     const match = normalizedOutput.match(/convex-self-hosted\|[^\s'"`]+/);
 
     if (!match) {
-        throw new Error(
-            `Could not extract CONVEX_SELF_HOSTED_ADMIN_KEY from output:\n${rawOutput}`
-        );
+        throw new Error('Could not extract the local Convex admin key');
     }
 
     return match[0];

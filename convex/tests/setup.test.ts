@@ -7,7 +7,7 @@ import {
     createTestMember,
     ensureTestUserAuth,
 } from './test_helpers';
-import type { Id } from '../_generated/dataModel';
+import { asInvalidArg } from './testCasts';
 import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
 import { buildOrganizationSlug } from '../../shared/organization-slug';
 
@@ -260,8 +260,8 @@ describe('convex setup', () => {
             await expect(
                 asUser.mutation(api.setup.completeSetup, {
                     platformName: 'Test Platform',
-                    defaultLanguage: 'fr' as 'en',
-                    registrationPolicy: 'closed' as 'open',
+                    defaultLanguage: asInvalidArg<'en'>('fr'),
+                    registrationPolicy: asInvalidArg<'open'>('closed'),
                     organizationName: 'Test Org',
                     categories: [],
                 })
@@ -317,12 +317,12 @@ describe('convex setup', () => {
             expect(result.organizationId).toBeDefined();
 
             const updatedUser = await t.run(async ctx => {
-                return await ctx.db.get(user.docId);
+                return await ctx.db.get('user', user.docId);
             });
             expect(updatedUser?.role).toBe('globalAdmin');
 
             const organization = await t.run(async ctx => {
-                return await ctx.db.get(result.organizationId as Id<'organization'>);
+                return await ctx.db.get('organization', result.organizationId);
             });
             expect(organization?.name).toBe('My Company');
 

@@ -7,15 +7,15 @@ achievements.
 
 ## Requirements
 
-- Node `>=22.21.1`
-- pnpm `11.0.8` (`corepack enable` recommended)
+- Node `24.19.0` for reproducible verification (see `.nvmrc`)
+- pnpm `12.3.4` (`packageManager` field)
 - Docker (for the local self-hosted Convex + MySQL + MailHog stack)
 
 ## Quick start
 
 ```bash
-pnpm install          # installs project dependencies
-pnpm run convex:local # brings up the local self-hosted stack (see self-host.md) ⚠️ wipes local data
+pnpm install --frozen-lockfile
+pnpm run convex:local # starts or resumes the persistent local development stack
 pnpm dev:front        # starts Next after the local Convex deployment is ready
 ```
 
@@ -34,18 +34,78 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 
 ## Common commands
 
-- `pnpm dev` — Convex + Next in dev.
+- `pnpm dev` — Convex + Next in dev (`convex dev` starts the frontend via `dev:front`).
+- `pnpm dev:front` / `pnpm dev:convex` — Next or Convex alone.
 - `pnpm checks` — full pre-merge gate: format, types, lint, tests, knip, translations, Convex
   contract checks, and peer-dependency compatibility.
-- `pnpm test` / `pnpm exec vitest run convex/tests/<file>.test.ts` — backend tests.
-- `pnpm test:e2e` — Playwright against the Docker e2e stack.
-- `pnpm run convex:local` — local self-hosted stack (**destructive**, see `self-host.md`).
+- `pnpm test` runs backend and frontend suites; `pnpm test:backend` and `pnpm test:frontend` run
+  them separately.
+- `pnpm test:coverage` — Vitest with coverage thresholds.
+- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailHog SMTP).
+- `pnpm run convex:local` starts development services and preserves data. `convex:local:stop` stops
+  them; only `convex:local:reset` deletes the managed local data. See
+  [self-host.md](./self-host.md).
+- `pnpm build` / `pnpm start` — production Next build and serve (needs a configured Convex
+  deployment).
 
 ## Documentation
 
-- `AGENTS.md` — project structure, coding style, and the full command reference.
-- `self-host.md` — the local Docker stack and its environment variables.
+- [Current implementation inventory](docs/estado-proyecto.md) and [versioned wiki](wiki/README.md).
+- [Local operation and recovery](docs/operacion-local.md).
+
+- [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.
+- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailHog) and
+  environment variables.
 - `convex/_generated/ai/guidelines.md` — Convex conventions (read before editing backend code).
+
+## Deployment design (Convex Cloud + Vercel)
+
+The intended production architecture, not validated by the local delivery rehearsal, is: **Vercel**
+hosts Next.js; **Convex Cloud** hosts the reactive backend. Use `npx convex dev` while developing
+against a personal/dev deployment. Use `npx convex deploy` **only** for production (or CI with
+`CONVEX_DEPLOY_KEY`).
+
+### 1) Convex Cloud
+
+1. Create/link the project (`npx convex dev` once, or the Convex dashboard).
+2. Set backend environment variables (dashboard or `npx convex env set …`):
+
+| Variable                                                                  | Where  | Notes                                                              |
+| ------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------ |
+| `SITE_URL`                                                                | Convex | Public app origin (`https://…`), no trailing slash                 |
+| `BETTER_AUTH_URL`                                                         | Convex | Usually the Convex site URL used by Better Auth                    |
+| `BETTER_AUTH_SECRET`                                                      | Convex | Long random secret; not a `NEXT_PUBLIC_*` value                    |
+| `SETUP_SECRET`                                                            | Convex | 32–256 chars; required before first `/setup` on non-loopback hosts |
+| `EMAIL_PROVIDER`                                                          | Convex | `resend` (typical prod) or `smtp`                                  |
+| `EMAIL_FROM` / `RESEND_API_KEY`                                           | Convex | When `EMAIL_PROVIDER=resend`                                       |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASSWORD` | Convex | When `EMAIL_PROVIDER=smtp`                                         |
+| `JWKS`                                                                    | Convex | Generate after auth secret changes (`pnpm run generate-jwks`)      |
+
+3. Deploy functions: `npx convex deploy` (or `CONVEX_DEPLOY_KEY=… npx convex deploy` in CI).
+4. Open the app URL, complete `/setup` once with `SETUP_SECRET`, then treat that secret as
+   bootstrap-only (the API rejects it after `platformSettings` exists).
+
+### 2) Vercel (Next.js)
+
+1. Import the repo and set the build command to `pnpm build` (or the Vercel preset for Next).
+2. Configure frontend env:
+
+| Variable                      | Where  | Notes                               |
+| ----------------------------- | ------ | ----------------------------------- |
+| `NEXT_PUBLIC_CONVEX_URL`      | Vercel | Convex cloud URL from the dashboard |
+| `NEXT_PUBLIC_CONVEX_SITE_URL` | Vercel | Convex HTTP actions / site URL      |
+| `NEXT_PUBLIC_SITE_URL`        | Vercel | Same public origin as `SITE_URL`    |
+
+3. Redeploy after Convex URL or site URL changes so the client bundle picks them up.
+
+### 3) Sanity checks
+
+- Auth redirects and CORS: `SITE_URL` and `NEXT_PUBLIC_SITE_URL` must match the browser origin.
+- Mail: send a password-reset or invitation and confirm delivery (Resend dashboard or SMTP inbox).
+- Do **not** set `E2E_SETUP_SECRET` in a real deployment (local e2e runner flag only).
+
+Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailHog (`:8025`) is for
+dev/e2e SMTP capture, not production.
 
 ## Testing note
 

@@ -8,7 +8,7 @@
  *
  * Optional: MEMORIA_FIGURES_DIR=../metricas-memoria/figures
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -23,14 +23,19 @@ const FIGURES_DIR = process.env.MEMORIA_FIGURES_DIR
 
 const FALLBACK_DIR = path.join(process.cwd(), 'test-results/screenshots/memoria');
 
+async function isVisibleNow(locator: Locator): Promise<boolean> {
+    return locator.isVisible().catch(() => false);
+}
+
 async function hideTransientUi(page: Page): Promise<void> {
     await page.evaluate(() => {
-        document.querySelectorAll('[data-sonner-toaster]').forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-        });
-        document.querySelectorAll('[data-loading]').forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-        });
+        const hide = (element: Element) => {
+            if (element instanceof HTMLElement) {
+                element.style.display = 'none';
+            }
+        };
+        document.querySelectorAll('[data-sonner-toaster]').forEach(hide);
+        document.querySelectorAll('[data-loading]').forEach(hide);
         document
             .querySelectorAll(
                 [
@@ -42,20 +47,19 @@ async function hideTransientUi(page: Page): Promise<void> {
                     '#__next-build-watcher',
                 ].join(', ')
             )
-            .forEach(element => {
-                (element as HTMLElement).style.display = 'none';
-            });
+            .forEach(hide);
         document
             .querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]')
-            .forEach(element => {
-                (element as HTMLElement).style.display = 'none';
-            });
+            .forEach(hide);
         document
             .querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]')
             .forEach(element => {
+                if (!(element instanceof HTMLElement)) {
+                    return;
+                }
                 const text = element.textContent || '';
                 if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
-                    (element as HTMLElement).style.display = 'none';
+                    element.style.display = 'none';
                 }
             });
     });
@@ -214,19 +218,14 @@ test.describe('Memoria setup + UI screenshots', () => {
         const filterToggle = page
             .getByTestId('objectives-filter-toggle')
             .or(page.getByRole('button', { name: /filter|filtr/i }));
-        if (
-            await filterToggle
-                .first()
-                .isVisible({ timeout: 3000 })
-                .catch(() => false)
-        ) {
+        if (await isVisibleNow(filterToggle.first())) {
             await filterToggle.first().click();
             await page.waitForTimeout(400);
             await captureFigure(page, 'objetivos-filtros.png');
         }
 
         const firstObjectiveLink = page.locator('a[href*="/dashboard/objectives/"]').first();
-        if (await firstObjectiveLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await isVisibleNow(firstObjectiveLink)) {
             await firstObjectiveLink.click();
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(800);
@@ -235,12 +234,7 @@ test.describe('Memoria setup + UI screenshots', () => {
             const addProgress = page
                 .getByTestId('add-progress-button')
                 .or(page.getByRole('button', { name: /progress|progreso/i }));
-            if (
-                await addProgress
-                    .first()
-                    .isVisible({ timeout: 3000 })
-                    .catch(() => false)
-            ) {
+            if (await isVisibleNow(addProgress.first())) {
                 await addProgress.first().click();
                 await page.waitForTimeout(500);
                 await captureFigure(page, 'progreso-formulario.png');
@@ -254,7 +248,7 @@ test.describe('Memoria setup + UI screenshots', () => {
         await captureFigure(page, 'organizaciones-lista.png');
 
         const orgLink = page.locator('a[href*="/dashboard/organizations/"]').first();
-        if (await orgLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await isVisibleNow(orgLink)) {
             await orgLink.click();
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(800);
@@ -277,31 +271,21 @@ test.describe('Memoria setup + UI screenshots', () => {
         await captureFigure(page, 'logros-overview.png');
 
         const adminLink = page.locator('a[href*="/dashboard/admin"]').first();
-        if (await adminLink.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await isVisibleNow(adminLink)) {
             await page.goto('/dashboard/admin');
             await page.waitForLoadState('networkidle');
             await page.waitForTimeout(800);
             await captureFigure(page, 'admin-panel-usuarios.png');
 
             const sessionsTab = page.getByRole('tab', { name: /session/i });
-            if (
-                await sessionsTab
-                    .first()
-                    .isVisible({ timeout: 3000 })
-                    .catch(() => false)
-            ) {
+            if (await isVisibleNow(sessionsTab.first())) {
                 await sessionsTab.first().click();
                 await page.waitForTimeout(500);
                 await captureFigure(page, 'admin-panel-sesiones.png');
             }
 
             const auditTab = page.getByRole('tab', { name: /audit|auditor/i });
-            if (
-                await auditTab
-                    .first()
-                    .isVisible({ timeout: 3000 })
-                    .catch(() => false)
-            ) {
+            if (await isVisibleNow(auditTab.first())) {
                 await auditTab.first().click();
                 await page.waitForTimeout(500);
                 await captureFigure(page, 'admin-panel-auditoria.png');

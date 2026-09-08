@@ -7,7 +7,7 @@ import type { DataTableFeatures } from '@/components/data-table/data-table-featu
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import UpdateProgressFormModal from '@/features/update-progress/components/update-progress-form-edit-modal';
-import { Doc, Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { mapDocToUpdateProgress } from '@/features/update-progress/lib/map-doc-to-update-progress';
 import { useDeleteUpdateProgress } from './update-progress-table-actions';
 import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
@@ -28,8 +28,12 @@ export function useUpdateProgressTableColumns({
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
 
     const canEditProgressRow = (authorId: Id<'user'>) => {
-        if (!objective || !currentUserId) return false;
-        if (authorId === currentUserId) return true;
+        if (!objective || !currentUserId) {
+            return false;
+        }
+        if (authorId === currentUserId) {
+            return true;
+        }
         return objective.capabilities.canEditDefinition;
     };
 

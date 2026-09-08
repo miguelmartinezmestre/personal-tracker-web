@@ -6,26 +6,29 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { UserCheck, Ban, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
 import { EditUserModal } from './edit-user-modal';
-import { Doc } from '@/convex/_generated/dataModel';
-import { api } from '@/convex/_generated/api';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { useBanUser, useDeleteUser, useUnBanUser } from './users-table-actions';
 import { GLOBAL_ADMIN_ROLE } from '@shared/platform-roles';
 
-export function useUsersTableColumns() {
+export function useUsersTableColumns({
+    setupUserId,
+    currentUser,
+}: {
+    setupUserId?: Id<'user'> | null;
+    currentUser?: Doc<'user'>;
+}) {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
 
     const { banUser, isBanningUser } = useBanUser();
     const { unbanUser, isUnbanningUser } = useUnBanUser();
-    const { deleteUser, isDeletingUser } = useDeleteUser();
-    const { data: setupUserId } = useQuery(convexQuery(api.setup.getPlatformSetupUserId, {}));
-    const { data: currentUser } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const { deleteUserAsync, isDeletingUser } = useDeleteUser();
 
     const getRoleLabel = (role: string | null | undefined) => {
-        if (role === GLOBAL_ADMIN_ROLE) return t('usersTable.roles.globalAdmin');
+        if (role === GLOBAL_ADMIN_ROLE) {
+            return t('usersTable.roles.globalAdmin');
+        }
         return role || t('usersTable.roles.user');
     };
 
@@ -49,17 +52,7 @@ export function useUsersTableColumns() {
             accessorKey: 'role',
             header: t('usersTable.columns.role'),
             cell: ({ row }) => {
-                const role = row.original.role;
-                if (Array.isArray(role)) {
-                    return (
-                        <div className="flex gap-1">
-                            {role.map(roleName => (
-                                <Badge key={roleName}>{getRoleLabel(roleName)}</Badge>
-                            ))}
-                        </div>
-                    );
-                }
-                return <Badge>{getRoleLabel(role)}</Badge>;
+                return <Badge>{getRoleLabel(row.original.role)}</Badge>;
             },
         },
         {
@@ -138,7 +131,7 @@ export function useUsersTableColumns() {
                         ) : (
                             <DeleteConfirmationDialog
                                 onConfirm={async () => {
-                                    await deleteUser({ userId: user._id });
+                                    await deleteUserAsync({ userId: user._id });
                                 }}
                                 title={t('usersTable.confirm.deleteUser')}
                                 description={t('usersTable.confirm.deleteUserDescription')}

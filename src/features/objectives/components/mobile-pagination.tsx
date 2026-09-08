@@ -18,7 +18,9 @@ export function MobilePagination({
 }) {
     const t = useTranslations('Table');
 
-    if (!pagination.hasPreviousPage && !hasNextPage) return null;
+    if (!pagination.hasPreviousPage && !hasNextPage) {
+        return null;
+    }
     return (
         <div className="flex items-center justify-center gap-2 pt-2">
             <Button

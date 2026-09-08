@@ -1,4 +1,6 @@
-import { ConvexError, ObjectType, v } from 'convex/values';
+import { categoryCapabilities } from './categoriesPermissions';
+import type { ObjectType } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import type { PaginationOptions } from 'convex/server';
 import type { Id } from '../_generated/dataModel';
 import type { DatabaseReader, DatabaseWriter } from '../_generated/server';
@@ -27,12 +29,17 @@ type CategoryQueryCtx = {
     db: DatabaseReader;
     userId: Id<'user'>;
     organizationId: Id<'organization'> | null;
+    role?: string;
+    memberRole?: string | null;
 };
 
 type CategoryMutationCtx = {
     db: DatabaseWriter;
+    dbForIntegrityChecks: DatabaseReader;
     userId: Id<'user'>;
     organizationId: Id<'organization'> | null;
+    role?: string;
+    memberRole?: string | null;
 };
 
 type CategoryInput = ObjectType<typeof categoryInputValidator>;
@@ -82,11 +89,18 @@ export async function listCategoriesForCurrentUser(
 ) {
     const organizationId = requireActiveOrganization(ctx);
 
-    return await ctx.db
+    const result = await ctx.db
         .query('categories')
         .withIndex('by_organization', q => q.eq('organizationId', organizationId))
         .order('desc')
         .paginate(args.paginationOpts);
+    return {
+        ...result,
+        page: result.page.map(category => ({
+            ...category,
+            capabilities: categoryCapabilities(ctx, category),
+        })),
+    };
 }
 
 export async function createCategoryForCurrentOrganization(
@@ -130,6 +144,10 @@ export async function updateCategoryForCurrentOrganization(
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
 
+    if (!categoryCapabilities(ctx, existing).canEdit) {
+        throw new ConvexError(ERROR_CODES.FORBIDDEN);
+    }
+
     const patch: {
         name?: string;
         color?: string;
@@ -163,7 +181,7 @@ export async function updateCategoryForCurrentOrganization(
         patch.icon = args.icon ?? undefined;
     }
 
-    return await ctx.db.patch('categories', categoryId, patch);
+    await ctx.db.patch('categories', categoryId, patch);
 }
 
 export async function deleteCategoryForCurrentOrganization(
@@ -175,11 +193,11 @@ export async function deleteCategoryForCurrentOrganization(
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
 
-    if (category.organizationId !== ctx.organizationId) {
+    if (!categoryCapabilities(ctx, category).canDelete) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
 
-    const hasObjectives = await ctx.db
+    const hasObjectives = await ctx.dbForIntegrityChecks
         .query('objectives')
         .withIndex('by_categoryId', q => q.eq('categoryId', args.id))
         .first();
@@ -188,7 +206,7 @@ export async function deleteCategoryForCurrentOrganization(
         throw new ConvexError(ERROR_CODES.CATEGORY_HAS_OBJECTIVES);
     }
 
-    return await ctx.db.delete('categories', args.id);
+    await ctx.db.delete('categories', args.id);
 }
 
 export async function createDefaultCategoriesForCurrentOrganization(ctx: CategoryMutationCtx) {

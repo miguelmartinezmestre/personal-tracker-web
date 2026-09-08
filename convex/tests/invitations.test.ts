@@ -6,25 +6,6 @@ import { ERROR_CODES, TIME } from '../utils/constants';
 import type { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';
 
-type InvitationRecord = {
-    _id: string;
-    organizationId: string;
-    email: string;
-    role?: string | null;
-    status: string;
-    expiresAt: number;
-    createdAt: number;
-    inviterId: string;
-};
-
-type MemberRecord = {
-    _id: string;
-    organizationId: string;
-    userId: string;
-    role: string;
-    createdAt: number;
-};
-
 describe('convex invitations (better-auth)', () => {
     const t = initConvexTest();
 
@@ -61,13 +42,14 @@ describe('convex invitations (better-auth)', () => {
         });
 
         const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
-            ctx.db.get(invitationId)
+            ctx.db.get('invitation', invitationId)
         );
-        const record = invitation as unknown as InvitationRecord;
-        expect(record).not.toBeNull();
-        expect(record.status).toBe('pending');
-        expect(record.email).toBe('invitee@example.com');
-        expect(record.organizationId).toBe(organizationId);
+        if (!invitation) {
+            throw new Error('Expected invitation');
+        }
+        expect(invitation.status).toBe('pending');
+        expect(invitation.email).toBe('invitee@example.com');
+        expect(invitation.organizationId).toBe(organizationId);
     });
 
     test('public invitation status exposes only validity', async () => {
@@ -156,7 +138,7 @@ describe('convex invitations (better-auth)', () => {
         });
 
         await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
-            await ctx.db.patch(invitationId, { status: 'accepted' });
+            await ctx.db.patch('invitation', invitationId, { status: 'accepted' });
             await ctx.db.insert('member', {
                 organizationId,
                 userId: invitee.docId,
@@ -166,7 +148,7 @@ describe('convex invitations (better-auth)', () => {
         });
 
         const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
-            ctx.db.get(invitationId)
+            ctx.db.get('invitation', invitationId)
         );
         const members = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
             ctx.db
@@ -180,10 +162,11 @@ describe('convex invitations (better-auth)', () => {
                 .collect()
         );
 
-        const invitationRecord = invitation as unknown as InvitationRecord;
-        const memberRecords = members as unknown as MemberRecord[];
-        expect(invitationRecord.status).toBe('accepted');
-        expect(memberRecords.length).toBe(1);
+        if (!invitation) {
+            throw new Error('Expected accepted invitation');
+        }
+        expect(invitation.status).toBe('accepted');
+        expect(members.length).toBe(1);
     });
 
     test('rejecting invitation marks status rejected', async () => {
@@ -217,14 +200,16 @@ describe('convex invitations (better-auth)', () => {
         });
 
         await t.run(async (ctx: GenericMutationCtx<DataModel>) => {
-            await ctx.db.patch(invitationId, { status: 'rejected' });
+            await ctx.db.patch('invitation', invitationId, { status: 'rejected' });
         });
 
         const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
-            ctx.db.get(invitationId)
+            ctx.db.get('invitation', invitationId)
         );
-        const record = invitation as InvitationRecord;
-        expect(record.status).toBe('rejected');
+        if (!invitation) {
+            throw new Error('Expected rejected invitation');
+        }
+        expect(invitation.status).toBe('rejected');
     });
 
     test('expired invitations can be detected', async () => {
@@ -258,10 +243,12 @@ describe('convex invitations (better-auth)', () => {
         });
 
         const invitation = await t.run(async (ctx: GenericQueryCtx<DataModel>) =>
-            ctx.db.get(invitationId)
+            ctx.db.get('invitation', invitationId)
         );
-        const record = invitation as InvitationRecord;
-        expect(record.expiresAt).toBeLessThan(Date.now());
+        if (!invitation) {
+            throw new Error('Expected expired invitation');
+        }
+        expect(invitation.expiresAt).toBeLessThan(Date.now());
     });
 
     test('getUserInvitations does not trust a stale client timestamp to revive an expired invitation', async () => {

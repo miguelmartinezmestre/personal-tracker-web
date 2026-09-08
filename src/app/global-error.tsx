@@ -25,7 +25,9 @@ function getBrowserLocale(): SupportedLocale {
         .find(cookie => cookie.startsWith('locale='))
         ?.split('=')[1];
 
-    if (localeCookie === 'es' || localeCookie === 'en') return localeCookie;
+    if (localeCookie === 'es' || localeCookie === 'en') {
+        return localeCookie;
+    }
     return navigator.language.toLowerCase().startsWith('es') ? 'es' : 'en';
 }
 

@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useAuditLogsTableColumns } from './audit-logs-table-columns';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
-import { Doc } from '@/convex/_generated/dataModel';
+import type { Doc } from '@/convex/_generated/dataModel';
 import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 export function AuditLogsTable() {
@@ -34,6 +34,11 @@ export function AuditLogsTable() {
                 </p>
             </div>
             <DataTable
+                isError={logs.isError}
+                error={logs.error}
+                onRetry={() => {
+                    void logs.refetch();
+                }}
                 columns={columns}
                 data={auditLogRows}
                 isLoading={logs.isLoading}

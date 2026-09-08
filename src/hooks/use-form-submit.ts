@@ -10,7 +10,9 @@ export function useFormSubmit<T>(mutationFn: (values: T) => Promise<void>): {
     const isSubmittingRef = useRef(false);
 
     const submit = async (values: T) => {
-        if (isSubmittingRef.current) return;
+        if (isSubmittingRef.current) {
+            return;
+        }
 
         isSubmittingRef.current = true;
         setIsSubmitting(true);

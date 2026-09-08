@@ -53,7 +53,7 @@ export function AchievementCard({
             className={cn(
                 'transition-all hover:shadow-md',
                 onClick && 'cursor-pointer',
-                isEarned ? 'border-primary/50' : 'opacity-75'
+                isEarned ? 'border-primary/50' : 'border-dashed'
             )}
             tabIndex={onClick ? 0 : undefined}
             role={onClick ? 'button' : undefined}
@@ -61,7 +61,9 @@ export function AchievementCard({
             onKeyDown={
                 onClick
                     ? e => {
-                          if (e.key !== 'Enter' && e.key !== ' ') return;
+                          if (e.key !== 'Enter' && e.key !== ' ') {
+                              return;
+                          }
 
                           e.preventDefault();
                           onClick();
@@ -106,7 +108,9 @@ export function AchievementCard({
                 <div className="space-y-2">
                     {isEarned ? (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-green-600 font-medium">{t('card.earned')}</span>
+                            <span className="text-green-700 dark:text-green-400 font-medium">
+                                {t('card.earned')}
+                            </span>
                             {formattedEarnedDate && (
                                 <span className="text-muted-foreground">{formattedEarnedDate}</span>
                             )}
@@ -119,7 +123,13 @@ export function AchievementCard({
                                     {currentProgress} / {definition.threshold}
                                 </span>
                             </div>
-                            <Progress value={progressPercent} className="h-2" />
+                            <Progress
+                                aria-label={t(`definitions.${definition.code}.name`, {
+                                    threshold: definition.threshold,
+                                })}
+                                value={progressPercent}
+                                className="h-2"
+                            />
                         </>
                     )}
                     <div className="flex items-center justify-end">

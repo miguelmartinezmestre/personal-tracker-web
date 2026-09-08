@@ -1,13 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import type { Doc } from '../_generated/dataModel';
 import { buildDeadlineMessage, getDeadlineDayWindow } from '../domain/notifications/deadlineRules';
+import { asTestId } from './testCasts';
 
 function objective(deadline?: number): Doc<'objectives'> {
     return {
-        _id: 'objective-id',
+        _id: asTestId<'objectives'>('objective-id'),
         _creationTime: 0,
-        createdBy: 'user-id' as Doc<'objectives'>['createdBy'],
-        organizationId: 'organization-id',
+        createdBy: asTestId<'user'>('user-id'),
+        ownerId: asTestId<'user'>('user-id'),
+        visibility: 'private',
+        organizationId: asTestId<'organization'>('organization-id'),
         title: 'Submit thesis',
         targetValue: 100,
         currentValue: 25,
@@ -15,7 +18,7 @@ function objective(deadline?: number): Doc<'objectives'> {
         deadline,
         createdAt: 0,
         updatedAt: 0,
-    } as Doc<'objectives'>;
+    };
 }
 
 describe('deadline notification rules', () => {

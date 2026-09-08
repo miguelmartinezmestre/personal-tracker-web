@@ -7,17 +7,25 @@ import type { Route } from 'next';
 
 type LinkItem = { name: string; href: Route };
 
-type LinkArray = LinkItem[];
+function navbarLinkTestId(href: Route): string | undefined {
+    if (href === '/register') {
+        return 'navbar-register-link';
+    }
+    if (href === '/login') {
+        return 'navbar-login-link';
+    }
+    return undefined;
+}
 
 export default function NavBar() {
     const t = useTranslations('HomePage');
-    const links: LinkArray = [
+    const links: LinkItem[] = [
         { name: t('register'), href: '/register' },
         { name: t('login'), href: '/login' },
     ];
 
     const sessionQuery = useSession();
-    const isAuthenticated = Boolean(sessionQuery?.data?.user);
+    const isAuthenticated = Boolean(sessionQuery.data?.user);
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
@@ -27,13 +35,7 @@ export default function NavBar() {
                     href={link.href}
                     className="text-primary hover:text-primary/80"
                     prefetch={false}
-                    data-testid={
-                        link.href === '/register'
-                            ? 'navbar-register-link'
-                            : link.href === '/login'
-                              ? 'navbar-login-link'
-                              : undefined
-                    }
+                    data-testid={navbarLinkTestId(link.href)}
                 >
                     {link.name}
                 </Link>

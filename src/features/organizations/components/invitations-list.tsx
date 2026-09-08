@@ -1,5 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { activateAcceptedOrganization } from '../lib/accept-invitation';
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertCircle, Mail, ShieldCheck } from 'lucide-react';
@@ -18,11 +21,29 @@ import { InvitationCard } from './invitation-card';
 
 export function InvitationsList() {
     const t = useTranslations('Invitations');
-    const { data: invitations, isLoading } = usePendingInvitations();
+    const common = useTranslations('Common');
+    const {
+        data: invitations,
+        isLoading,
+        isError,
+        refetch,
+        hasMore,
+        loadMore,
+        isFetching,
+    } = usePendingInvitations();
     const session = useSession();
     const acceptInvitation = useAcceptInvitation();
     const rejectInvitation = useRejectInvitation();
     const [actionError, setActionError] = useState('');
+    const [pendingOrganization, setPendingOrganization] = useState<string | null>(null);
+    const router = useRouter();
+    const activation = useMutation({
+        mutationFn: activateAcceptedOrganization,
+        onSuccess: () => {
+            setPendingOrganization(null);
+            router.refresh();
+        },
+    });
     const [verificationSent, setVerificationSent] = useState(false);
     const currentUser = session.data?.user;
     const requiresEmailVerification = Boolean(currentUser && !currentUser.emailVerified);
@@ -52,7 +73,10 @@ export function InvitationsList() {
     async function handleAccept(invitationId: string, organizationId: string) {
         setActionError('');
         try {
-            await acceptInvitation.mutateAsync({ invitationId, organizationId });
+            const result = await acceptInvitation.mutateAsync({ invitationId, organizationId });
+            if (result.status === 'acceptedActivationPending') {
+                setPendingOrganization(result.organizationId);
+            }
         } catch {
             setActionError(t('errorAccepting'));
         }
@@ -67,6 +91,32 @@ export function InvitationsList() {
         }
     }
 
+    if (pendingOrganization) {
+        return (
+            <Alert data-testid="invitation-activation-pending">
+                <AlertTitle>{t('activationPendingTitle')}</AlertTitle>
+                <AlertDescription>
+                    <p>{t('activationPendingDescription')}</p>
+                    <Button
+                        disabled={activation.isPending}
+                        onClick={() => activation.mutate(pendingOrganization)}
+                    >
+                        {t('retryActivation')}
+                    </Button>
+                    {activation.isError ? <p role="alert">{t('errorAccepting')}</p> : null}
+                </AlertDescription>
+            </Alert>
+        );
+    }
+    if (isError) {
+        return (
+            <QueryErrorFallback
+                onRetry={() => {
+                    void refetch();
+                }}
+            />
+        );
+    }
     if (isLoading) {
         return (
             <div className="text-center py-8" data-testid="invitations-loading">
@@ -75,10 +125,17 @@ export function InvitationsList() {
         );
     }
 
-    const pendingInvitations =
-        invitations?.filter(invitation => invitation.status === 'pending') ?? [];
+    const pendingInvitations = invitations.filter(invitation => invitation.status === 'pending');
 
     if (pendingInvitations.length === 0) {
+        if (acceptInvitation.isPending) {
+            return (
+                <div className="text-center py-16" data-testid="invitations-joining">
+                    <p className="text-sm text-muted-foreground">{t('joining')}</p>
+                </div>
+            );
+        }
+
         return (
             <div className="text-center py-16" data-testid="invitations-empty">
                 <Mail className="mx-auto h-12 w-12 text-muted-foreground/50" />
@@ -140,6 +197,11 @@ export function InvitationsList() {
                     />
                 ))}
             </div>
+            {hasMore ? (
+                <Button variant="outline" disabled={isFetching} onClick={loadMore}>
+                    {common('actions.loadMore')}
+                </Button>
+            ) : null}
         </div>
     );
 }

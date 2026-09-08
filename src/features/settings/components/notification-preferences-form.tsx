@@ -1,5 +1,6 @@
 'use client';
 
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
@@ -14,7 +15,12 @@ export default function NotificationPreferencesForm() {
     const t = useTranslations('Settings');
     const preferencesQuery = convexQuery(api.notificationPreferences.getUserPreferences, {});
 
-    const { data: preferences, isPending: isLoading } = useQuery(preferencesQuery);
+    const {
+        data: preferences,
+        isPending: isLoading,
+        isError,
+        refetch,
+    } = useQuery(preferencesQuery);
 
     const updateMutation = useMutation({
         mutationFn: useConvexMutation(api.notificationPreferences.updateUserPreferences),
@@ -37,14 +43,25 @@ export default function NotificationPreferencesForm() {
             | 'progressNotifications'
             | 'organizationNotifications'
     ) => {
-        if (!preferences) return;
+        if (!preferences) {
+            return;
+        }
 
-        const currentValue = preferences[field] ?? false;
+        const currentValue = preferences[field];
         updateMutation.mutate({
             [field]: !currentValue,
         });
     };
 
+    if (isError) {
+        return (
+            <QueryErrorFallback
+                onRetry={() => {
+                    void refetch();
+                }}
+            />
+        );
+    }
     if (isLoading) {
         return (
             <Card className="w-full">
@@ -86,7 +103,7 @@ export default function NotificationPreferencesForm() {
                     </div>
                     <Switch
                         id="achievement-notifications"
-                        checked={preferences?.achievementNotifications ?? true}
+                        checked={preferences.achievementNotifications}
                         onCheckedChange={() => handleToggle('achievementNotifications')}
                         disabled={updateMutation.isPending}
                     />
@@ -106,7 +123,7 @@ export default function NotificationPreferencesForm() {
                     </div>
                     <Switch
                         id="deadline-notifications"
-                        checked={preferences?.deadlineNotifications ?? true}
+                        checked={preferences.deadlineNotifications}
                         onCheckedChange={() => handleToggle('deadlineNotifications')}
                         disabled={updateMutation.isPending}
                     />
@@ -126,7 +143,7 @@ export default function NotificationPreferencesForm() {
                     </div>
                     <Switch
                         id="progress-notifications"
-                        checked={preferences?.progressNotifications ?? true}
+                        checked={preferences.progressNotifications}
                         onCheckedChange={() => handleToggle('progressNotifications')}
                         disabled={updateMutation.isPending}
                     />
@@ -146,7 +163,7 @@ export default function NotificationPreferencesForm() {
                     </div>
                     <Switch
                         id="organization-notifications"
-                        checked={preferences?.organizationNotifications ?? true}
+                        checked={preferences.organizationNotifications}
                         onCheckedChange={() => handleToggle('organizationNotifications')}
                         disabled={updateMutation.isPending}
                     />

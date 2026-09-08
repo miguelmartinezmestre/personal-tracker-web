@@ -8,8 +8,8 @@ import type { DataTableFeatures } from '@/components/data-table/data-table-featu
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserAgentIcon } from '@/features/sessions/components/user-agent';
-import { api } from '@/convex/_generated/api';
-import { FunctionReturnType } from 'convex/server';
+import type { api } from '@/convex/_generated/api';
+import type { FunctionReturnType } from 'convex/server';
 import { useInvalidateSession } from './sessions-table-actions';
 
 type SessionListItem = FunctionReturnType<typeof api.sessions.getSessionsByUser>['page'][number];
@@ -82,8 +82,8 @@ export function useSessionsTableColumns() {
                         variant="destructive"
                         size="sm"
                         disabled={isInvalidatingSession}
-                        onClick={async () => {
-                            await invalidateSessionAsync({ sessionId: session._id });
+                        onClick={() => {
+                            void invalidateSessionAsync({ sessionId: session._id });
                         }}
                         data-testid="session-revoke-button"
                     >

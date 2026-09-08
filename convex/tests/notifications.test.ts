@@ -182,13 +182,13 @@ describe('convex notifications', async () => {
 
         await expect(
             userIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notification!._id,
+                id: notification._id,
                 read: true,
             })
         ).resolves.toMatchObject({ read: true });
         await expect(
             userIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notification!._id,
+                id: notification._id,
                 read: false,
             })
         ).resolves.toMatchObject({ read: false });
@@ -203,7 +203,7 @@ describe('convex notifications', async () => {
             message: 'Read',
         });
         await userIdentity.mutation(api.notifications.setNotificationRead, {
-            id: read!._id,
+            id: read._id,
             read: true,
         });
         await createTestNotification(t, {
@@ -240,11 +240,11 @@ describe('convex notifications', async () => {
 
         await expect(
             userIdentity.mutation(api.notifications.deleteNotification, {
-                id: notification!._id,
+                id: notification._id,
             })
         ).resolves.toEqual({ success: true });
         await expect(
-            userIdentity.run(async ctx => ctx.db.get(notification!._id))
+            userIdentity.run(async ctx => ctx.db.get('notifications', notification._id))
         ).resolves.toBeNull();
     });
 
@@ -347,7 +347,7 @@ describe('convex notifications', async () => {
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         await expect(
             t.mutation(api.notifications.setNotificationRead, {
-                id: notification!._id,
+                id: notification._id,
                 read: true,
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
@@ -356,7 +356,7 @@ describe('convex notifications', async () => {
         );
         await expect(
             t.mutation(api.notifications.deleteNotification, {
-                id: notification!._id,
+                id: notification._id,
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });

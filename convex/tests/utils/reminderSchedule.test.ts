@@ -38,8 +38,11 @@ describe('reminderSchedule', () => {
             const result = computeNextReminderAt('monthly');
             const after = Date.now();
 
-            const expectedMin = computeNextReminderAt('monthly', before)!;
-            const expectedMax = computeNextReminderAt('monthly', after)!;
+            const expectedMin = computeNextReminderAt('monthly', before);
+            const expectedMax = computeNextReminderAt('monthly', after);
+            if (result === undefined || expectedMin === undefined || expectedMax === undefined) {
+                throw new Error('Expected monthly reminder timestamps');
+            }
 
             expect(result).toBeGreaterThanOrEqual(expectedMin);
             expect(result).toBeLessThanOrEqual(expectedMax);

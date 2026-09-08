@@ -1,16 +1,20 @@
 'use client';
 
+import { usePaginationContinuation } from '@/hooks/use-pagination-continuation';
+import { extractErrorCode } from '@/lib/error-messages';
+import { queryState } from '@/lib/query-state';
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
-import type { ObjectiveStatus } from '@/convex/utils/constants';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
-import type { FilterOptions } from '@/features/objectives/components/objective-filters';
+import type { FilterOptions } from '@/features/objectives/components/objective-filter-types';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
+import { resolveObjectiveListFilters } from '@/features/objectives/hooks/resolve-objective-list-filters';
 import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
+import { useReferenceNow } from '@/lib/reference-now';
+import { toUtcCivilDay } from '@shared/civil-date';
 
 const DEFAULT_FILTERS: FilterOptions = {
     search: '',
@@ -19,22 +23,45 @@ const DEFAULT_FILTERS: FilterOptions = {
     deadlineRange: 'all',
 };
 
-type DeadlineRange = 'today' | 'week' | 'month' | 'overdue';
+function pageDetails(
+    data:
+        | {
+              page: ObjectiveWithCapabilities[];
+              continueCursor: string;
+              isDone: boolean;
+              needsContinuation?: boolean;
+          }
+        | undefined
+) {
+    const cursor = data?.continueCursor ?? null;
+    const done = data?.isDone ?? false;
+    return {
+        rows: data?.page ?? [],
+        cursor,
+        done,
+        continuing: Boolean(data?.needsContinuation),
+        hasNext: Boolean(cursor) && !done,
+    };
+}
 
 export function useObjectiveListState() {
     const [filters, setFilters] = React.useState<FilterOptions>(() => ({ ...DEFAULT_FILTERS }));
-    const searchText = filters.search.trim();
-    const hasSearch = searchText.length > 0;
-    const statusFilter = filters.status !== 'all' ? (filters.status as ObjectiveStatus) : undefined;
-    const categoryFilter =
-        filters.category !== 'all' ? (filters.category as Id<'categories'>) : undefined;
-    const deadlineRangeFilter =
-        filters.deadlineRange !== 'all' ? (filters.deadlineRange as DeadlineRange) : undefined;
+    const { searchText, hasSearch, status, categoryId, deadlineRange } =
+        resolveObjectiveListFilters(filters);
+    const referenceNow = useReferenceNow();
+    const referenceDay = deadlineRange ? toUtcCivilDay(referenceNow) : undefined;
 
     const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts, reset: resetPagination } = pagination;
     const trashPagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts: trashPaginationOpts, reset: resetTrashPagination } = trashPagination;
+
+    const scope = JSON.stringify({ filters, referenceDay });
+    const listContinuation = usePaginationContinuation(paginationOpts.cursor, scope);
+    const trashContinuation = usePaginationContinuation(trashPaginationOpts.cursor, 'trash');
+    const { follow: followList, reset: resetListContinuation } = listContinuation;
+    const { follow: followTrash } = trashContinuation;
+    const visiblePaginationOpts = { ...paginationOpts, cursor: listContinuation.cursor };
 
     const listQuery = useQuery(
         convexQuery(
@@ -42,53 +69,68 @@ export function useObjectiveListState() {
             hasSearch
                 ? 'skip'
                 : {
-                      paginationOpts,
-                      status: statusFilter,
-                      categoryId: categoryFilter,
-                      deadlineRange: deadlineRangeFilter,
+                      paginationOpts: visiblePaginationOpts,
+                      status,
+                      categoryId,
+                      deadlineRange,
+                      now: referenceDay,
                   }
         )
     );
 
     const searchQuery = useQuery(
         convexQuery(
-            api.objectives.searchObjectivesQuery,
+            api.objectives.searchObjectivesPaginated,
             hasSearch
                 ? {
                       search: searchText,
-                      limit: DEFAULT_PAGE_SIZE,
-                      status: statusFilter,
-                      categoryId: categoryFilter,
-                      deadlineRange: deadlineRangeFilter,
+                      paginationOpts: visiblePaginationOpts,
+                      status,
+                      categoryId,
+                      deadlineRange,
+                      now: referenceDay,
                   }
                 : 'skip'
         )
     );
     const trashQuery = useQuery(
         convexQuery(api.objectives.getDeletedObjectives, {
-            paginationOpts: trashPaginationOpts,
+            paginationOpts: { ...trashPaginationOpts, cursor: trashContinuation.cursor },
         })
     );
 
-    const { categoryOptions, categoryNameById } = useObjectiveCategoryOptions();
+    const { categoryOptions, categoryNameById, categoriesQuery } = useObjectiveCategoryOptions();
 
-    const continueCursor = listQuery.data?.continueCursor ?? null;
-    const pageIsDone = listQuery.data?.isDone ?? false;
-    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
-    const trashContinueCursor = trashQuery.data?.continueCursor ?? null;
-    const trashPageIsDone = trashQuery.data?.isDone ?? false;
-    const trashHasNextPage = Boolean(trashContinueCursor) && !trashPageIsDone;
+    const visiblePage = hasSearch ? searchQuery.data : listQuery.data;
+    const details = pageDetails(visiblePage);
+    const trashDetails = pageDetails(trashQuery.data);
 
-    const objectives: ObjectiveWithCapabilities[] = hasSearch
-        ? (searchQuery.data ?? [])
-        : (listQuery.data?.page ?? []);
+    const objectives = details.rows;
+    React.useEffect(() => followList(visiblePage), [followList, visiblePage]);
+    React.useEffect(() => followTrash(trashQuery.data), [followTrash, trashQuery.data]);
+
+    const activeQuery = hasSearch ? searchQuery : listQuery;
+    const isLoading = activeQuery.isPending || categoriesQuery.isPending || details.continuing;
+    const isError = activeQuery.isError || categoriesQuery.isError;
+    const state = queryState(
+        {
+            data: activeQuery.data === undefined ? undefined : objectives,
+            isLoading,
+            isError,
+            error: activeQuery.error ?? categoriesQuery.error,
+        },
+        rows => rows.length === 0
+    );
+
+    React.useEffect(() => {
+        if (extractErrorCode(activeQuery.error) === 'INVALID_CURSOR') {
+            resetPagination();
+            resetListContinuation();
+        }
+    }, [activeQuery.error, resetPagination, resetListContinuation]);
 
     const handleFiltersChange = (nextFilters: FilterOptions) => {
-        const shouldResetPagination =
-            nextFilters.status !== filters.status ||
-            nextFilters.category !== filters.category ||
-            nextFilters.deadlineRange !== filters.deadlineRange ||
-            nextFilters.search !== filters.search;
+        const shouldResetPagination = JSON.stringify(nextFilters) !== JSON.stringify(filters);
 
         if (shouldResetPagination) {
             resetPagination();
@@ -98,23 +140,35 @@ export function useObjectiveListState() {
     };
 
     return {
+        state,
+        isError,
+        retry: () => {
+            resetPagination();
+            resetListContinuation();
+            void activeQuery.refetch();
+            void categoriesQuery.refetch();
+        },
+        isTrashError: trashQuery.isError,
+        retryTrash: () => {
+            void trashQuery.refetch();
+        },
         filters,
         hasSearch,
         categories: categoryOptions,
         categoryNameById,
         handleFiltersChange,
         objectives,
-        deletedObjectives: trashQuery.data?.page ?? [],
+        deletedObjectives: trashDetails.rows,
         pagination,
         trashPagination,
-        hasNextPage,
-        trashHasNextPage,
-        isLoading: hasSearch ? searchQuery.isLoading : listQuery.isLoading,
-        isFetching: listQuery.isFetching,
-        isTrashLoading: trashQuery.isLoading,
+        hasNextPage: details.hasNext,
+        trashHasNextPage: trashDetails.hasNext,
+        isLoading,
+        isFetching: activeQuery.isFetching || details.continuing,
+        isTrashLoading: trashQuery.isPending || trashDetails.continuing,
         isTrashFetching: trashQuery.isFetching,
-        onNextPage: () => pagination.nextPage(continueCursor, pageIsDone),
-        onNextTrashPage: () => trashPagination.nextPage(trashContinueCursor, trashPageIsDone),
+        onNextPage: () => pagination.nextPage(details.cursor, details.done),
+        onNextTrashPage: () => trashPagination.nextPage(trashDetails.cursor, trashDetails.done),
         resetTrashPagination,
     };
 }

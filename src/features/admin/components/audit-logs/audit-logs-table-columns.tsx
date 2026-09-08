@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { useLocale, useTranslations } from 'next-intl';
-import { Doc } from '@/convex/_generated/dataModel';
+import type { Doc } from '@/convex/_generated/dataModel';
 import { formatDate, formatTime } from '@/lib/format-date';
 
 export function useAuditLogsTableColumns() {

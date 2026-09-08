@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
 import type { Id } from '../_generated/dataModel';
@@ -83,9 +83,9 @@ describe('auditLogs security', () => {
         });
         const log = result.page[0];
 
-        expect(log?.metadata?.before).toEqual({ _id: String(userId) });
-        expect(log?.metadata?.after).toEqual({ _id: String(userId), role: 'user' });
-        expect(log?.metadata?.context).toBe('security.redaction');
+        expect(log.metadata?.before).toEqual({ _id: String(userId) });
+        expect(log.metadata?.after).toEqual({ _id: String(userId), role: 'user' });
+        expect(log.metadata?.context).toBe('security.redaction');
     });
 
     test('recordAuditLog persists actorUserId only when it differs from userId', async () => {

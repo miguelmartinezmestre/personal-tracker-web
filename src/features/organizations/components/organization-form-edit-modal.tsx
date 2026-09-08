@@ -1,6 +1,5 @@
 'use client';
-
-import { z } from 'zod';
+import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,15 +12,12 @@ import {
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    Organization,
-    savedOrganizationSchema,
-} from '@/features/organizations/schemas/organization';
+import type { Organization } from '@/features/organizations/schemas/organization';
+import { savedOrganizationSchema } from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
-
 export default function EditOrganizationFormModal({
     defaultValues,
 }: {
@@ -30,7 +26,6 @@ export default function EditOrganizationFormModal({
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const updateOrganization = useUpdateOrganization();
-
     return (
         <FormModal<z.infer<typeof savedOrganizationSchema>>
             trigger={
@@ -45,7 +40,7 @@ export default function EditOrganizationFormModal({
                 defaultValues: {
                     id: defaultValues.id,
                     name: defaultValues.name,
-                    description: defaultValues.description ?? '',
+                    description: defaultValues.description,
                 },
                 validators: {
                     onChange: savedOrganizationSchema,
@@ -56,7 +51,7 @@ export default function EditOrganizationFormModal({
                 await updateOrganization.mutateAsync({
                     id: values.id || defaultValues.id,
                     name: values.name,
-                    description: values.description ?? undefined,
+                    description: values.description,
                 });
             }}
             submitLabel={t('saveOrganization')}
@@ -98,7 +93,7 @@ export default function EditOrganizationFormModal({
                                         placeholder={t('describeOrganizationInDetail')}
                                         className="resize-none min-h-[80px]"
                                         {...field}
-                                        value={(field.value as string) || ''}
+                                        value={typeof field.value === 'string' ? field.value : ''}
                                         data-testid="organization-edit-description-input"
                                     />
                                 </FormControl>

@@ -1,5 +1,6 @@
 'use client';
 
+import { extractErrorCode } from '@/lib/error-messages';
 import { AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -7,11 +8,13 @@ import { cn } from '@/lib/utils';
 
 interface QueryErrorFallbackProps {
     onRetry?: () => void;
+    error?: unknown;
     className?: string;
 }
 
-export function QueryErrorFallback({ onRetry, className }: QueryErrorFallbackProps) {
+export function QueryErrorFallback({ onRetry, className, error }: QueryErrorFallbackProps) {
     const t = useTranslations('Common');
+    if (extractErrorCode(error) === 'DASHBOARD_UPDATING') return <p role="status" className="py-4 text-sm text-muted-foreground">{t('updatingData')}</p>;
 
     return (
         <div

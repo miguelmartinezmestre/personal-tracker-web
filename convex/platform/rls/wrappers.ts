@@ -23,6 +23,7 @@ const config: RLSConfig = { defaultPolicy: 'deny' };
 
 type QueryRlsCtx = {
     db: DatabaseReader;
+    dbForIntegrityChecks: DatabaseReader;
     userId: Id<'user'>;
     email: string;
     organizationId: Id<'organization'> | null;
@@ -32,6 +33,7 @@ type QueryRlsCtx = {
 
 type MutationRlsCtx = {
     db: DatabaseWriter;
+    dbForIntegrityChecks: DatabaseReader;
     userId: Id<'user'>;
     email: string;
     organizationId: Id<'organization'> | null;
@@ -43,10 +45,11 @@ async function buildQueryRlsCtx(ctx: QueryCtx): Promise<QueryRlsCtx> {
     const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
 
     return {
+        dbForIntegrityChecks: ctx.db,
         db: wrapDatabaseReader(
             ctx,
             ctx.db,
-            await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
+            createRlsRules({ userId, role, memberRole, ctx, organizationId, email }),
             config
         ),
         userId,
@@ -60,6 +63,7 @@ async function buildQueryRlsCtx(ctx: QueryCtx): Promise<QueryRlsCtx> {
 async function buildMutationRlsCtx(ctx: MutationCtx): Promise<MutationRlsCtx> {
     const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
     const triggerDb = auditLogTriggers.wrapDB({
+        ...ctx,
         db: ctx.db,
         userId,
         organizationId,
@@ -69,12 +73,13 @@ async function buildMutationRlsCtx(ctx: MutationCtx): Promise<MutationRlsCtx> {
     const rlsDb = wrapDatabaseWriter(
         ctx,
         triggerDb,
-        await createRlsRules(userId, role, memberRole, ctx, organizationId, email),
+        createRlsRules({ userId, role, memberRole, ctx, organizationId, email }),
         config
     );
 
     return {
         db: rlsDb,
+        dbForIntegrityChecks: ctx.db,
         userId,
         email,
         organizationId,

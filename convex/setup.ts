@@ -1,6 +1,7 @@
+import { internalMutation } from './platform/db/internalMutation';
 import { ConvexError, v } from 'convex/values';
 import { getAuthUserIdentity } from 'kitcn/auth';
-import { internalMutation, internalQuery, mutation, query } from './_generated/server';
+import { internalQuery, mutation, query } from './_generated/server';
 import {
     completePlatformSetup,
     ensureTestOrganizationForUser,
@@ -17,7 +18,7 @@ import {
 import { ERROR_CODES } from './utils/constants';
 import { queryWithRLS } from './platform/rls/wrappers';
 import { isGlobalAdminRole } from '../shared/platform-roles';
-
+import { userDocumentValidator } from './utils/documentValidators';
 export const isPlatformSetUp = query({
     args: {},
     returns: v.boolean(),
@@ -25,7 +26,6 @@ export const isPlatformSetUp = query({
         return await isPlatformConfigured(ctx);
     },
 });
-
 export const getPublicPlatformSettings = query({
     args: {},
     returns: v.union(
@@ -40,7 +40,6 @@ export const getPublicPlatformSettings = query({
         return await getPublicSettings(ctx);
     },
 });
-
 export const completeSetup = mutation({
     args: completeSetupArgsValidator,
     returns: v.object({
@@ -52,22 +51,17 @@ export const completeSetup = mutation({
         if (!identity) {
             throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
         }
-
         const userId = ctx.db.normalizeId('user', identity.userId);
         if (!userId) {
             throw new ConvexError(ERROR_CODES.SETUP_AUTH_REQUIRED);
         }
-
         const platformSettings = await ctx.db.query('platformSettings').first();
-
         if (platformSettings) {
             throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         }
-
         return await completePlatformSetup(ctx, userId, args);
     },
 });
-
 export const isPlatformSetupUserInternal = internalQuery({
     args: { userId: v.id('user') },
     returns: v.boolean(),
@@ -75,7 +69,6 @@ export const isPlatformSetupUserInternal = internalQuery({
         return await isPlatformSetupUser(ctx, args.userId);
     },
 });
-
 export const isCurrentUserPlatformSetupUser = query({
     args: {},
     returns: v.boolean(),
@@ -84,16 +77,13 @@ export const isCurrentUserPlatformSetupUser = query({
         if (!identity) {
             return false;
         }
-
         const userId = ctx.db.normalizeId('user', identity.userId);
         if (!userId) {
             return false;
         }
-
         return await isPlatformSetupUser(ctx, userId);
     },
 });
-
 export const getPlatformSetupUserId = queryWithRLS({
     args: {},
     returns: v.union(v.id('user'), v.null()),
@@ -104,15 +94,18 @@ export const getPlatformSetupUserId = queryWithRLS({
         return await resolvePlatformSetupUserId(ctx);
     },
 });
-
 export const requireAdminInternal = internalQuery({
+    returns: userDocumentValidator,
     args: { userId: v.id('user') },
     handler: async (ctx, args) => {
         return await requireAdminUser(ctx, args.userId);
     },
 });
-
 export const ensureTestOrganizationInternal = internalMutation({
+    returns: v.object({
+        organizationId: v.id('organization'),
+        memberId: v.union(v.id('member'), v.null()),
+    }),
     args: ensureTestOrganizationInternalArgsValidator,
     handler: async (ctx, args) => {
         return await ensureTestOrganizationForUser(ctx, args);

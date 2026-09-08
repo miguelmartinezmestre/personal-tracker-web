@@ -26,7 +26,7 @@ test.describe('Route Protection', () => {
 
     test(
         'anonymous users are redirected from protected dashboard routes',
-        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page, context }) => {
             await context.clearCookies();
 
@@ -39,7 +39,15 @@ test.describe('Route Protection', () => {
 
     test(
         'authenticated users can use dashboard routes and are sent back to login after logout',
-        { tag: ['@REQ-ROLES-001', '@REQ-AUTENTICACION-005', '@REQ-NF-002', '@cross-browser'] },
+        {
+            tag: [
+                '@REQ-ROLES-001',
+                '@REQ-AUTENTICACION-005',
+                '@REQ-NF-002',
+                '@cross-browser-critical',
+                '@mobile-critical',
+            ],
+        },
         async ({ page }) => {
             await createTestUser(page);
             await expectOnDashboard(page);
@@ -58,7 +66,7 @@ test.describe('Route Protection', () => {
 
     test(
         'public auth routes remain available without a session',
-        { tag: ['@REQ-ROLES-001', '@cross-browser'] },
+        { tag: ['@REQ-ROLES-001', '@cross-browser-critical', '@mobile-critical'] },
         async ({ page, context }) => {
             await context.clearCookies();
 
@@ -75,7 +83,14 @@ test.describe('Route Protection', () => {
 
     test(
         'admin navigation is visible only to admins and admin routes reject members',
-        { tag: ['@REQ-ROLES-001', '@REQ-ROLES-002', '@cross-browser'] },
+        {
+            tag: [
+                '@REQ-ROLES-001',
+                '@REQ-ROLES-002',
+                '@cross-browser-critical',
+                '@mobile-critical',
+            ],
+        },
         async ({ page, browser }) => {
             await createTestUser(page);
             await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });

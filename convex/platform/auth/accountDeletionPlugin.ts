@@ -6,15 +6,19 @@ import { internal } from '../../_generated/api';
 import type { Id } from '../../_generated/dataModel';
 import type { ActionCtx, MutationCtx, QueryCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
+import { requireRunnableCtx } from './authRuntime';
 
 type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
-type RunnableCtx = MutationCtx | ActionCtx;
+
+function isUserId(value: string): value is Id<'user'> {
+    return value.length > 0;
+}
 
 async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'user'>) {
-    const isSetupUser: boolean = await (ctx as RunnableCtx).runQuery(
-        internal.setup.isPlatformSetupUserInternal,
-        { userId }
-    );
+    const runnableCtx = requireRunnableCtx(ctx);
+    const isSetupUser = await runnableCtx.runQuery(internal.setup.isPlatformSetupUserInternal, {
+        userId,
+    });
     if (isSetupUser) {
         throw new APIError('FORBIDDEN', {
             code: ERROR_CODES.SETUP_USER_DELETE_FORBIDDEN,
@@ -40,12 +44,21 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                     use: [sensitiveSessionMiddleware],
                 },
                 async endpointCtx => {
-                    const userId = endpointCtx.context.session.user.id as Id<'user'>;
+                    const rawUserId = endpointCtx.context.session.user.id;
+                    if (!isUserId(rawUserId)) {
+                        throw new APIError('BAD_REQUEST', {
+                            code: 'INVALID_SESSION',
+                            message: 'Invalid session',
+                        });
+                    }
+                    const userId = rawUserId;
                     await assertUserIsNotPlatformSetupUser(ctx, userId);
 
-                    const credentialPasswordHash: string | null = await (
-                        ctx as RunnableCtx
-                    ).runQuery(internal.auth.getCredentialPasswordHashForDeletion, { userId });
+                    const runnableCtx = requireRunnableCtx(ctx);
+                    const credentialPasswordHash: string | null = await runnableCtx.runQuery(
+                        internal.auth.getCredentialPasswordHashForDeletion,
+                        { userId }
+                    );
                     const passwordMatches =
                         credentialPasswordHash !== null &&
                         (await endpointCtx.context.password.verify({
@@ -60,13 +73,10 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                         });
                     }
 
-                    await (ctx as RunnableCtx).runMutation(
-                        internal.admin.cascadeUserDeletionInternal,
-                        {
-                            userId,
-                            actorUserId: userId,
-                        }
-                    );
+                    await runnableCtx.runMutation(internal.admin.cascadeUserDeletionInternal, {
+                        userId,
+                        actorUserId: userId,
+                    });
                     deleteSessionCookie(endpointCtx);
 
                     return endpointCtx.json({ success: true });

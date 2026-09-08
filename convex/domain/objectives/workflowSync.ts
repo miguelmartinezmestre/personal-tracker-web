@@ -1,3 +1,4 @@
+import { requireOperationalOrganization } from '../organizations/operational';
 import { internal } from '../../_generated/api';
 import type { Doc, Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
@@ -5,19 +6,32 @@ import { workflow } from '../../workflow';
 
 type ObjectiveWorkflowResource = 'objective' | 'progress_update';
 
-export const runObjectiveSync = async (
-    ctx: MutationCtx,
-    objectiveId: Id<'objectives'>,
-    individualUserId: Id<'user'>,
-    organizationContributorUserId: Id<'user'>,
-    organizationId: Id<'organization'> | null | undefined,
-    resourceType: ObjectiveWorkflowResource
-) => {
+type ObjectiveSyncArgs = {
+    ctx: MutationCtx;
+    objectiveId: Id<'objectives'>;
+    individualUserId: Id<'user'>;
+    organizationContributorUserId: Id<'user'>;
+    organizationId: Id<'organization'> | null | undefined;
+    resourceType: ObjectiveWorkflowResource;
+};
+
+export const runObjectiveSync = async ({
+    ctx,
+    objectiveId,
+    individualUserId,
+    organizationContributorUserId,
+    organizationId,
+    resourceType,
+}: ObjectiveSyncArgs) => {
     let canceledWorkflowId: Doc<'objectives'>['workflowId'];
 
     try {
         const objective = await ctx.db.get('objectives', objectiveId);
-        if (objective?.workflowId) {
+        if (!objective || objective.deletedAt !== undefined) {
+            return;
+        }
+        await requireOperationalOrganization(ctx, objective.organizationId);
+        if (objective.workflowId) {
             await workflow.cancel(ctx, objective.workflowId);
             canceledWorkflowId = objective.workflowId;
         }
@@ -39,7 +53,7 @@ export const runObjectiveSync = async (
                     organizationId: organizationId ?? null,
                     resourceType,
                 },
-                startAsync: true,
+                startAsync: false,
             }
         );
 

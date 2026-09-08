@@ -1,10 +1,11 @@
+import aggregateComponent from '@convex-dev/aggregate/test';
 import { convexTest } from 'convex-test';
 import workflowComponent from '@convex-dev/workflow/test';
 import { afterAll } from 'vitest';
 import schema from '../schema';
 import { modules } from './test.setup';
-import type { Id } from '../_generated/dataModel';
 import { getDefaultTestSessionId } from './test_helpers';
+import { asInvalidArg, asTestId } from './testCasts';
 
 export { modules };
 
@@ -16,22 +17,26 @@ export async function drainScheduledFunctions(t: ReturnType<typeof convexTest>) 
 }
 
 export function initConvexTest(options?: { workflow?: boolean }) {
+    process.env.BETTER_AUTH_SECRET ??= 'synthetic-secret-for-convex-pagination-tests-only';
     const t = convexTest(schema, modules);
+    aggregateComponent.register(t, 'dashboardObjectives');
+    aggregateComponent.register(t, 'dashboardProgress');
     if (options?.workflow ?? true) {
         workflowComponent.register(t);
     }
 
     const withIdentity = t.withIdentity.bind(t);
-    t.withIdentity = ((identity: Parameters<typeof t.withIdentity>[0]) => {
-        if (!identity.sessionId) {
-            const sessionId = getDefaultTestSessionId(t, identity.subject as Id<'user'>);
+    const withIdentityAndSession = (identity: Parameters<typeof t.withIdentity>[0]) => {
+        if (!identity.sessionId && identity.subject) {
+            const sessionId = getDefaultTestSessionId(t, asTestId<'user'>(identity.subject));
             if (sessionId) {
                 return withIdentity({ ...identity, sessionId });
             }
         }
 
         return withIdentity(identity);
-    }) as typeof t.withIdentity;
+    };
+    t.withIdentity = asInvalidArg<typeof t.withIdentity>(withIdentityAndSession);
 
     afterAll(async () => {
         await drainScheduledFunctions(t);

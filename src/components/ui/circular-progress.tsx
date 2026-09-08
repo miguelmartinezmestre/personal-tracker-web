@@ -12,13 +12,16 @@ interface CircularProgressProps extends React.ComponentPropsWithoutRef<
     value?: number;
     max?: number;
     className?: string;
+    'aria-label': string;
 }
 
 const CircularProgress = React.forwardRef<
     React.ComponentRef<typeof ProgressPrimitive.Root>,
     CircularProgressProps
 >(({ size = 'md', showValue = true, value = 0, max = 100, className, ...props }, ref) => {
-    const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+    const safeMax = Number.isFinite(max) && max > 0 ? max : 100;
+    const safeValue = Number.isFinite(value) ? Math.min(Math.max(value, 0), safeMax) : 0;
+    const percentage = (safeValue / safeMax) * 100;
 
     const sizeClasses = {
         sm: 'w-8 h-8',
@@ -43,24 +46,26 @@ const CircularProgress = React.forwardRef<
             <ProgressPrimitive.Root
                 ref={ref}
                 {...props}
-                value={value}
-                max={max}
+                value={safeValue}
+                max={safeMax}
                 className={cn(
                     'relative h-full w-full overflow-hidden rounded-full bg-secondary',
                     className
                 )}
             >
                 <ProgressPrimitive.Indicator
-                    className="h-full w-full flex-1 bg-primary transition-all duration-300 ease-in-out"
+                    className="h-full w-full transition-all duration-300 ease-in-out"
                     style={{
                         transform: `rotate(-90deg)`,
                         transformOrigin: 'center',
-                        background: `conic-gradient(from 0deg, hsl(var(--primary)) ${percentage * 3.6}deg, transparent ${percentage * 3.6}deg)`,
+                        background: `conic-gradient(from 0deg, var(--primary) ${percentage * 3.6}deg, transparent ${percentage * 3.6}deg)`,
+                        mask: 'radial-gradient(circle, transparent 58%, black 60%)',
                     }}
                 />
             </ProgressPrimitive.Root>
             {showValue && (
                 <div
+                    aria-hidden="true"
                     className={cn(
                         'absolute inset-0 flex items-center justify-center font-medium',
                         textSizeClasses[size]

@@ -1,3 +1,4 @@
+import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import {
     type ColumnDef,
     type RowData,
@@ -20,10 +21,15 @@ import { useTranslations } from 'next-intl';
 import { DataTablePagination } from './data-table-pagination';
 import { dataTableFeatures, type DataTableFeatures } from '../data-table-features';
 
+const sortLabels = { asc: 'ascending', desc: 'descending' } as const;
+
 interface DataTableProps<TData extends RowData> {
-    columns: ColumnDef<DataTableFeatures, TData, unknown>[];
+    columns: ColumnDef<DataTableFeatures, TData>[];
     data: TData[];
     isLoading?: boolean;
+    isError?: boolean;
+    error?: unknown;
+    onRetry?: () => void;
     enableSorting?: boolean;
     pagination?: {
         currentPage: number;
@@ -39,6 +45,9 @@ export function DataTable<TData extends RowData>({
     columns,
     data,
     isLoading = false,
+    isError = false,
+    error,
+    onRetry,
     enableSorting = false,
     pagination,
 }: DataTableProps<TData>) {
@@ -61,6 +70,10 @@ export function DataTable<TData extends RowData>({
               }
             : {}),
     });
+
+    if (isError) {
+        return <QueryErrorFallback error={error} onRetry={onRetry} />;
+    }
 
     if (isLoading) {
         return (
@@ -107,34 +120,59 @@ export function DataTable<TData extends RowData>({
                                 {headerGroup.headers.map(header => {
                                     const canSort = enableSorting && header.column.getCanSort();
                                     const sortState = header.column.getIsSorted();
-                                    return (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder ? null : canSort ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={header.column.getToggleSortingHandler()}
-                                                    className="flex w-full items-center gap-2 text-left"
-                                                    aria-label={t('toggleSorting')}
-                                                    data-testid={`table-sort-${header.column.id}`}
-                                                >
-                                                    {flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                                    {sortState === 'asc' ? (
-                                                        <ArrowUp className="h-3.5 w-3.5" />
-                                                    ) : sortState === 'desc' ? (
-                                                        <ArrowDown className="h-3.5 w-3.5" />
-                                                    ) : (
-                                                        <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
-                                                    )}
-                                                </button>
-                                            ) : (
-                                                flexRender(
+                                    if (header.isPlaceholder) {
+                                        return (
+                                            <TableHead
+                                                key={header.id}
+                                                aria-sort={
+                                                    sortState ? sortLabels[sortState] : undefined
+                                                }
+                                            />
+                                        );
+                                    }
+                                    if (!canSort) {
+                                        return (
+                                            <TableHead
+                                                key={header.id}
+                                                aria-sort={
+                                                    sortState ? sortLabels[sortState] : undefined
+                                                }
+                                            >
+                                                {flexRender(
                                                     header.column.columnDef.header,
                                                     header.getContext()
-                                                )
-                                            )}
+                                                )}
+                                            </TableHead>
+                                        );
+                                    }
+                                    return (
+                                        <TableHead
+                                            key={header.id}
+                                            aria-sort={
+                                                sortState ? sortLabels[sortState] : undefined
+                                            }
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={header.column.getToggleSortingHandler()}
+                                                className="flex w-full items-center gap-2 text-left"
+                                                aria-label={t('toggleSorting')}
+                                                data-testid={`table-sort-${header.column.id}`}
+                                            >
+                                                {flexRender(
+                                                    header.column.columnDef.header,
+                                                    header.getContext()
+                                                )}
+                                                {sortState === 'asc' ? (
+                                                    <ArrowUp className="h-3.5 w-3.5" />
+                                                ) : null}
+                                                {sortState === 'desc' ? (
+                                                    <ArrowDown className="h-3.5 w-3.5" />
+                                                ) : null}
+                                                {sortState ? null : (
+                                                    <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
+                                                )}
+                                            </button>
                                         </TableHead>
                                     );
                                 })}
@@ -142,7 +180,7 @@ export function DataTable<TData extends RowData>({
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {table.getRowModel().rows.length ? (
                             table.getRowModel().rows.map(row => (
                                 <TableRow key={row.id} data-testid="table-row">
                                     {row.getAllCells().map(cell => (
@@ -172,7 +210,7 @@ export function DataTable<TData extends RowData>({
                     hasNextPage={pagination.hasNextPage ?? false}
                     hasPreviousPage={pagination.hasPreviousPage ?? pagination.currentPage > 0}
                     rowCount={data.length}
-                    isLoading={isLoading || pagination.isLoading}
+                    isLoading={pagination.isLoading}
                 />
             )}
         </div>

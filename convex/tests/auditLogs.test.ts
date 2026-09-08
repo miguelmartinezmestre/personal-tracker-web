@@ -148,7 +148,7 @@ describe('convex auditLogs', () => {
 
         expect(firstPage.page).toHaveLength(5);
         expect(firstPage.isDone).toBe(false);
-        expect(firstPage.page[0]!.createdAt).toBeGreaterThanOrEqual(firstPage.page[1]!.createdAt);
+        expect(firstPage.page[0].createdAt).toBeGreaterThanOrEqual(firstPage.page[1].createdAt);
         expect(objectiveLogs.page.every(log => log.resourceType === 'objective')).toBe(true);
         const visibleUserIds = new Set(objectiveLogs.page.map(log => log.userId));
         expect(visibleUserIds.has(adminId)).toBe(true);
@@ -223,7 +223,10 @@ describe('convex auditLogs', () => {
         });
 
         const [withMetadata, withoutResource] = await adminIdentity.run(async ctx => {
-            return Promise.all([ctx.db.get(logIds[0]), ctx.db.get(logIds[1])]);
+            return Promise.all([
+                ctx.db.get('auditLogs', logIds[0]),
+                ctx.db.get('auditLogs', logIds[1]),
+            ]);
         });
 
         expect(withMetadata).toMatchObject({
@@ -252,7 +255,7 @@ describe('convex auditLogs', () => {
             });
         });
 
-        const log = await adminIdentity.run(async ctx => ctx.db.get(logId));
+        const log = await adminIdentity.run(async ctx => ctx.db.get('auditLogs', logId));
         expect(log).not.toBeNull();
         expect(log?.action).toBe('objective.created');
         expect('updatedAt' in (log ?? {})).toBe(false);

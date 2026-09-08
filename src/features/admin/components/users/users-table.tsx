@@ -10,12 +10,17 @@ import { useTranslations } from 'next-intl';
 import { useUsersTableColumns } from './users-table-columns';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
-import { Doc } from '@/convex/_generated/dataModel';
+import type { Doc } from '@/convex/_generated/dataModel';
 import { ADMIN_PAGE_SIZE } from '@shared/pagination';
 
 export function UsersTable() {
     const t = useTranslations('Admin');
-    const columns = useUsersTableColumns();
+    const setupQuery = useQuery(convexQuery(api.setup.getPlatformSetupUserId, {}));
+    const actorQuery = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+    const columns = useUsersTableColumns({
+        setupUserId: setupQuery.data,
+        currentUser: actorQuery.data ?? undefined,
+    });
     const [search, setSearch] = useState('');
 
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
@@ -35,6 +40,8 @@ export function UsersTable() {
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
 
     const userRows: Doc<'user'>[] = users.data?.page ?? [];
+    const isError = users.isError || setupQuery.isError || actorQuery.isError;
+    const isLoading = users.isPending || setupQuery.isPending || actorQuery.isPending;
 
     const handleSearchChange = (value: string) => {
         setSearch(value);
@@ -49,6 +56,7 @@ export function UsersTable() {
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                    aria-label={t('usersTable.searchPlaceholder')}
                     placeholder={t('usersTable.searchPlaceholder')}
                     value={search}
                     onChange={e => handleSearchChange(e.target.value)}
@@ -57,9 +65,16 @@ export function UsersTable() {
                 />
             </div>
             <DataTable
+                isError={isError}
+                error={users.error ?? setupQuery.error ?? actorQuery.error}
+                onRetry={() => {
+                    void users.refetch();
+                    void setupQuery.refetch();
+                    void actorQuery.refetch();
+                }}
                 columns={columns}
                 data={userRows}
-                isLoading={users.isLoading}
+                isLoading={isLoading}
                 pagination={{
                     currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
@@ -69,7 +84,7 @@ export function UsersTable() {
                     isLoading: users.isFetching,
                 }}
             />
-            {userRows.length === 0 && !users.isLoading && (
+            {userRows.length === 0 && !isLoading && !isError && (
                 <p
                     className="text-center text-muted-foreground py-8"
                     data-testid="admin-users-empty"

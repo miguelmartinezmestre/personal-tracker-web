@@ -7,14 +7,12 @@ import {
     createTestUser,
     ensureTestUserAuth,
 } from './test_helpers';
-import { Id } from '../_generated/dataModel';
-
+import type { Id } from '../_generated/dataModel';
 describe('convex organizations', () => {
     const t = initConvexTest();
     let userIdentity: ReturnType<typeof t.withIdentity>;
     let organizationId: Id<'organization'>;
     let memberUserId: Id<'user'>;
-
     beforeEach(async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const user = {
@@ -25,21 +23,17 @@ describe('convex organizations', () => {
             role: 'user',
             emailVerified: false,
         };
-
         const userData = await createTestUser(t, user);
         memberUserId = userData.docId;
-
         organizationId = await createTestOrganization(t, {
             name: 'Organizations Test Org ' + randomSuffix,
             slug: 'organizations-test-org-' + randomSuffix,
         });
-
         await createTestMember(t, {
             organizationId,
             userId: memberUserId,
             role: 'owner',
         });
-
         userIdentity = t.withIdentity({
             subject: userData.docId,
             role: user.role,
@@ -55,20 +49,17 @@ describe('convex organizations', () => {
             banned: false,
         });
     });
-
     test('getOrganizationMembers returns paginated members for authorized user', async () => {
         const result = await userIdentity.query(api.organizations.getOrganizationMembers, {
             organizationId,
             paginationOpts: { numItems: 20, cursor: null },
         });
-
         expect(Array.isArray(result.page)).toBe(true);
         expect(result.page.length).toBe(1);
         expect(result.page[0]?.userId).toBe(memberUserId);
         expect(result.isDone).toBe(true);
-        expect(typeof result.continueCursor).toBe('string');
+        expect(typeof result.continueCursor === 'string').toBe(true);
     });
-
     test('getOrganizationMembers rejects unauthenticated users', async () => {
         await expect(
             t.query(api.organizations.getOrganizationMembers, {
@@ -77,7 +68,6 @@ describe('convex organizations', () => {
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
     });
-
     test('getOrganizationMembers rejects users outside the organization', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const outsider = await createTestUser(t, {
@@ -100,7 +90,6 @@ describe('convex organizations', () => {
             banReason: null,
             banned: false,
         });
-
         await expect(
             outsiderIdentity.query(api.organizations.getOrganizationMembers, {
                 organizationId,
@@ -108,7 +97,6 @@ describe('convex organizations', () => {
             })
         ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
     });
-
     test('users outside the organization cannot list invitations', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const outsider = await createTestUser(t, {
@@ -131,19 +119,17 @@ describe('convex organizations', () => {
             banReason: null,
             banned: false,
         });
-
         await t.run(async ctx => {
             await ctx.db.insert('invitation', {
                 organizationId,
                 email: 'pending-outsider-check@example.com',
                 role: 'member',
                 status: 'pending',
-                expiresAt: Date.now() + 60_000,
+                expiresAt: Date.now() + 60000,
                 createdAt: Date.now(),
                 inviterId: memberUserId,
             });
         });
-
         await expect(
             outsiderIdentity.query(api.organizations.getOrganizationInvitations, {
                 organizationId,

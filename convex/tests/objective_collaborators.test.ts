@@ -134,7 +134,7 @@ describe('objective collaborators management', () => {
                     addedBy: ownerUser.docId,
                     createdAt: Date.now(),
                 });
-                await ctx.db.delete(id);
+                await ctx.db.delete('objectiveCollaborators', id);
                 return id;
             });
 
@@ -180,7 +180,7 @@ describe('objective collaborators management', () => {
                     addedBy: ownerUser.docId,
                     createdAt: Date.now(),
                 });
-                await ctx.db.delete(id);
+                await ctx.db.delete('objectiveCollaborators', id);
                 return id;
             });
 
@@ -256,7 +256,7 @@ describe('objective collaborators management', () => {
                 visibility: 'organization',
             });
 
-            expect(updated?.visibility).toBe('organization');
+            expect(updated.visibility).toBe('organization');
         });
 
         test('editor cannot change visibility', async () => {
@@ -288,7 +288,7 @@ describe('objective collaborators management', () => {
                 }
             );
 
-            expect(transferred?.ownerId).toBe(editorUser.docId);
+            expect(transferred.ownerId).toBe(editorUser.docId);
 
             const collaborators = await editorIdentity.query(
                 api.objectives.getObjectiveCollaborators,

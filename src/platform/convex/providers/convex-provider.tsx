@@ -20,8 +20,12 @@ const publicRoutePrefixes = [
 ];
 
 function isPublicRoute(pathname: string | null): boolean {
-    if (!pathname) return false;
-    if (pathname === '/') return true;
+    if (!pathname) {
+        return false;
+    }
+    if (pathname === '/') {
+        return true;
+    }
     return publicRoutePrefixes.some(prefix => prefix !== '/' && pathname.startsWith(prefix));
 }
 
@@ -71,7 +75,7 @@ export function BetterConvexProvider({
     children: React.ReactNode;
     token: string;
 }) {
-    const { push } = useRouter();
+    const router = useRouter();
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -80,10 +84,10 @@ export function BetterConvexProvider({
                 client={convex}
                 initialToken={token}
                 onMutationUnauthorized={() => {
-                    push('/login');
+                    router.push('/login');
                 }}
                 onQueryUnauthorized={() => {
-                    push('/login');
+                    router.push('/login');
                 }}
             >
                 <AuthShield>{children}</AuthShield>

@@ -16,7 +16,7 @@ export function createUpdatePasswordSchema(messages: UpdatePasswordValidationMes
         .superRefine((values, ctx) => {
             if (values.newPassword.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.newPassword)) {
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: 'custom',
                     path: ['newPassword'],
                     message: messages.weakPassword,
                 });
@@ -24,7 +24,7 @@ export function createUpdatePasswordSchema(messages: UpdatePasswordValidationMes
 
             if (values.newPassword !== values.confirmPassword) {
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: 'custom',
                     path: ['confirmPassword'],
                     message: messages.passwordsDontMatch,
                 });

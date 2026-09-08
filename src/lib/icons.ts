@@ -52,11 +52,12 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export function getLucideIcon(iconName: string | undefined | null): LucideIcon | null {
-    if (!iconName) return null;
+    if (!iconName) {
+        return null;
+    }
 
     const icon = iconMap[iconName];
-
-    if (typeof icon === 'function') {
+    if (icon) {
         return icon;
     }
 

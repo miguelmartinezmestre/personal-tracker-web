@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,13 +25,13 @@ export default function AccountSettingsFormEdit() {
     const t = useTranslations('Settings');
     const tCommon = useTranslations('Common');
     const sessionQuery = useSession();
-    const sessionUser = sessionQuery?.data?.user;
+    const sessionUser = sessionQuery.data?.user;
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const accountDefaultValues = {
+    const accountDefaultValues: z.infer<typeof accountDetailsSchema> = {
         email: sessionUser?.email ?? '',
         username: sessionUser?.name ?? '',
-    } as z.infer<typeof accountDetailsSchema>;
+    };
 
     const form = useForm({
         defaultValues: accountDefaultValues,
@@ -53,8 +53,8 @@ export default function AccountSettingsFormEdit() {
             return;
         }
 
-        const currentName = sessionUser.name ?? '';
-        const currentEmail = sessionUser.email ?? '';
+        const currentName = sessionUser.name;
+        const currentEmail = sessionUser.email;
 
         if (values.username !== currentName) {
             const { error: updateError } = await authClient.updateUser({
@@ -92,7 +92,7 @@ export default function AccountSettingsFormEdit() {
 
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleUpdateAccount);
 
-    if (sessionQuery?.isPending) {
+    if (sessionQuery.isPending) {
         return (
             <div className="flex justify-center items-center py-8">
                 <Loader2 className="size-8 animate-spin text-primary" />
@@ -101,10 +101,10 @@ export default function AccountSettingsFormEdit() {
     }
 
     return (
-        <Form {...form}>
+        <Form form={form}>
             <form
                 action={() => {
-                    form.handleSubmit();
+                    void form.handleSubmit();
                 }}
                 className="space-y-5 py-4"
             >

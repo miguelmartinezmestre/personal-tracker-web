@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 import { createObjective, openCreateProgressModal } from '../../helpers/test-helpers';
 
@@ -31,21 +31,8 @@ async function createProgressUpdate(page: Page, value: string, comment: string):
     await page.getByTestId('progress-value-input').fill(value);
     await page.getByTestId('progress-comment-input').fill(comment);
 
-    let saved = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await page.getByTestId('progress-save-button').click();
-        try {
-            await expect(page.getByTestId('progress-value-input')).toHaveCount(0, {
-                timeout: 5000,
-            });
-            saved = true;
-            break;
-        } catch {}
-    }
-
-    if (!saved) {
-        throw new Error('Could not save progress update');
-    }
+    await page.getByTestId('progress-save-button').click();
+    await expect(page.getByTestId('progress-value-input')).toBeHidden({ timeout: 10000 });
 }
 
 test.describe('Objectives Progress Updates', () => {

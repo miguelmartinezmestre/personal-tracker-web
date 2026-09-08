@@ -54,7 +54,9 @@ export function useCategoriesTableColumns() {
             id: 'update-category',
             cell: ({ row }) => {
                 const categoryRow = row.original;
-                return <EditCategoryFormModal defaultValues={categoryRow} />;
+                return categoryRow.capabilities?.canEdit ? (
+                    <EditCategoryFormModal defaultValues={categoryRow} />
+                ) : null;
             },
         },
         {
@@ -62,6 +64,9 @@ export function useCategoriesTableColumns() {
             id: 'delete',
             cell: ({ row }) => {
                 const categoryRow = row.original;
+                if (!categoryRow.capabilities?.canDelete) {
+                    return null;
+                }
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {

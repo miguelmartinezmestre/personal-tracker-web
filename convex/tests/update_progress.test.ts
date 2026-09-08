@@ -7,9 +7,10 @@ import {
     createTestMember,
     createTestCollaborator,
     createTestObjective,
+    readScheduledFunctionArg,
 } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 import { identityFor } from './test_identities';
 import { toUtcCivilDay } from '../../shared/civil-date';
 
@@ -221,7 +222,7 @@ describe('convex update_progress', () => {
 
         const beforeIds = await t.run(async ctx => {
             const rows = await ctx.db.system.query('_scheduled_functions').collect();
-            return rows.map(row => row._id as string);
+            return rows.map(row => row._id);
         });
         const beforeIdSet = new Set(beforeIds);
 
@@ -237,8 +238,8 @@ describe('convex update_progress', () => {
         const progressJobs = await t.run(async ctx => {
             const rows = await ctx.db.system.query('_scheduled_functions').collect();
             return rows
-                .filter(row => !beforeIdSet.has(row._id as string))
-                .map(row => row.args[0] as { userId: Id<'user'>; trigger: string } | undefined)
+                .filter(row => !beforeIdSet.has(row._id))
+                .map(readScheduledFunctionArg)
                 .filter(arg => arg?.trigger === 'progress_update');
         });
 
@@ -246,12 +247,15 @@ describe('convex update_progress', () => {
         expect(progressJobs.every(arg => arg?.userId === otherUser.docId)).toBe(true);
         expect(progressJobs.some(arg => arg?.userId === userId)).toBe(false);
 
+        if (!progressUpdate) {
+            throw new Error('Expected progress update');
+        }
         const beforeEditIds = await t.run(async ctx =>
             (await ctx.db.system.query('_scheduled_functions').collect()).map(row => row._id)
         );
         const beforeEditIdSet = new Set(beforeEditIds);
         await userIdentity.mutation(api.update_progress.updateUpdateProgress, {
-            id: progressUpdate!._id,
+            id: progressUpdate._id,
             updatedValue: 15,
             updateDate: Date.now(),
         });
@@ -259,9 +263,14 @@ describe('convex update_progress', () => {
         const editProgressJobUsers = await t.run(async ctx => {
             return (await ctx.db.system.query('_scheduled_functions').collect())
                 .filter(row => !beforeEditIdSet.has(row._id))
-                .map(row => row.args[0] as { userId?: Id<'user'>; trigger?: string } | undefined)
+                .map(readScheduledFunctionArg)
                 .filter(args => args?.trigger === 'progress_update')
-                .map(args => args!.userId);
+                .map(args => {
+                    if (!args) {
+                        throw new Error('Expected scheduled progress job args');
+                    }
+                    return args.userId;
+                });
         });
         expect(new Set(editProgressJobUsers)).toEqual(new Set([otherUser.docId, userId]));
     });
@@ -433,26 +442,34 @@ describe('convex update_progress', () => {
             });
         }
 
-        const series = (await userIdentity.query(
+        await userIdentity.run(async ctx => {
+            await ctx.db.patch('objectives', objectiveId, { currentValue: 180300 });
+        });
+        const series = await userIdentity.query(
             api.update_progress.getProgressSeriesByObjectiveId,
             {
                 objectiveId,
             }
-        )) as unknown as {
-            points?: { updatedValue: number; updateDate: number }[];
-            isTruncated?: boolean;
-        };
+        );
 
+        expect(series.seriesStartValue).toBe(5050);
+        expect(
+            series.seriesStartValue +
+                series.points.reduce((sum, point) => sum + point.updatedValue, 0)
+        ).toBe(180300);
         expect(series.isTruncated).toBe(true);
         expect(series.points).toHaveLength(500);
-        expect(series.points?.map(update => update.updatedValue).slice(0, 3)).toEqual([
+        expect(series.points.map(update => update.updatedValue).slice(0, 3)).toEqual([
             101, 102, 103,
         ]);
-        expect(series.points?.[series.points.length - 1]?.updatedValue).toBe(600);
+        expect(series.points[series.points.length - 1].updatedValue).toBe(600);
         expect(
-            series.points?.every((update, index, points) =>
-                index === 0 ? true : update.updateDate >= points[index - 1]!.updateDate
-            )
+            series.points.every((update, index, points) => {
+                if (index === 0) {
+                    return true;
+                }
+                return update.updateDate >= points[index - 1].updateDate;
+            })
         ).toBe(true);
     });
 
@@ -504,7 +521,9 @@ describe('convex update_progress', () => {
 
         expect(result).toEqual({ success: true });
 
-        const deleted = await userIdentity.run(async ctx => ctx.db.get(progressUpdateId));
+        const deleted = await userIdentity.run(async ctx =>
+            ctx.db.get('progressUpdates', progressUpdateId)
+        );
         expect(deleted).toBeNull();
     });
 
@@ -529,8 +548,11 @@ describe('convex update_progress', () => {
                 createdAt: Date.now(),
                 updatedAt: Date.now() - 1000,
             });
-            const update = await ctx.db.get(id);
-            return { id, initialUpdatedAt: update?.updatedAt };
+            const update = await ctx.db.get('progressUpdates', id);
+            if (!update) {
+                throw new Error('Expected inserted progress update');
+            }
+            return { id, initialUpdatedAt: update.updatedAt };
         });
 
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -540,7 +562,10 @@ describe('convex update_progress', () => {
             updatedValue: 85,
             updateDate: Date.now(),
         });
+        if (!updated) {
+            throw new Error('Expected updated progress update');
+        }
 
-        expect(updated?.updatedAt).toBeGreaterThan(progressUpdateId.initialUpdatedAt!);
+        expect(updated.updatedAt).toBeGreaterThan(progressUpdateId.initialUpdatedAt);
     });
 });

@@ -29,6 +29,29 @@ const auditMetadataSnapshot = v.union(
 export default defineSchema({
     ...authSchema.tables,
 
+    dashboardMigrations: defineTable({
+        organizationId: v.id('organization'),
+        generation: v.number(),
+        phase: v.union(v.literal('objectives'), v.literal('progress'), v.literal('ready')),
+        cursor: v.optional(v.union(v.string(), v.null())),
+        updatedAt: v.number(),
+    }).index('by_organization', ['organizationId']),
+    dashboardResyncs: defineTable({
+        organizationId: v.id('organization'),
+        objectiveId: v.id('objectives'),
+        revision: v.number(),
+        pending: v.boolean(),
+    })
+        .index('by_objective', ['objectiveId'])
+        .index('by_organization_pending', ['organizationId', 'pending']),
+    dashboardNamespaces: defineTable({
+        organizationId: v.id('organization'),
+        namespace: v.string(),
+        kind: v.union(v.literal('objectives'), v.literal('progress')),
+    })
+        .index('by_organization', ['organizationId'])
+        .index('by_namespace_kind', ['namespace', 'kind']),
+
     objectives: defineTable({
         organizationId: v.id('organization'),
         createdBy: v.id('user'),
@@ -115,6 +138,7 @@ export default defineSchema({
             'deadline',
         ])
         .index('by_status_deadline', ['status', 'deadline'])
+        .index('by_status_deletedAt_deadline', ['status', 'deletedAt', 'deadline'])
         .index('by_categoryId', ['categoryId'])
         .searchIndex('search_title_by_organization_status_categoryId', {
             searchField: 'title',
@@ -159,6 +183,8 @@ export default defineSchema({
         notificationType: notificationTypeValidator,
         notificationDate: v.number(),
         message: v.string(),
+        messageKey: v.optional(v.string()),
+        messageParams: v.optional(v.record(v.string(), v.union(v.string(), v.number()))),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
@@ -197,7 +223,7 @@ export default defineSchema({
         .index('by_resourceType_createdAt', ['resourceType', 'createdAt']),
 
     categories: defineTable({
-        userId: v.id('user'),
+        userId: v.optional(v.id('user')),
         organizationId: v.id('organization'),
         name: v.string(),
         color: v.string(),

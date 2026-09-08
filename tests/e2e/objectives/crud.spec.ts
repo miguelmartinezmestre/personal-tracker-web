@@ -1,4 +1,4 @@
-import { Locator, Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../fixtures/test-base';
 import { createCategory, openCreateObjectiveModal } from '../../helpers/test-helpers';
 import { saveEditedItemAndWaitForRow } from '../../helpers/save-and-wait-for-row';
@@ -53,10 +53,6 @@ async function saveEditedObjectiveAndWaitForRow(
         dialogInput: titleInput,
         rowLocator: objectiveRow(page, rowTitle),
         entityLabel: `objective "${rowTitle}"`,
-        onRetry: async currentPage => {
-            await currentPage.keyboard.press('Escape').catch(() => undefined);
-            await currentPage.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-        },
     });
 }
 
@@ -94,23 +90,8 @@ test.describe('Objectives CRUD', () => {
         const originalRow = objectiveRow(page, originalTitle);
         await expect(originalRow).toBeVisible({ timeout: 10000 });
 
-        let editModalOpened = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            await originalRow.getByTestId('objective-edit-open').click();
-            try {
-                await expect(page.getByTestId('objective-edit-title-input')).toBeVisible({
-                    timeout: 5000,
-                });
-                editModalOpened = true;
-                break;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-            }
-        }
-
-        if (!editModalOpened) {
-            throw new Error('Could not open edit objective modal');
-        }
+        await originalRow.getByTestId('objective-edit-open').click();
+        await expect(page.getByTestId('objective-edit-title-input')).toBeVisible();
 
         const editTitleInput = page.getByTestId('objective-edit-title-input');
         await editTitleInput.clear();
@@ -135,38 +116,16 @@ test.describe('Objectives CRUD', () => {
         const deleteDialog = page.locator(
             '[data-slot="alert-dialog-content"], [role="alertdialog"]'
         );
-        let deleteConfirmed = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-                await createdRow.getByTestId('objective-delete-button').click();
-                await expect(deleteDialog).toBeVisible({ timeout: 5000 });
-                const confirmButton = deleteDialog.getByTestId('delete-confirm-button');
-                await confirmButton.click();
-                await expect(deleteDialog).toBeHidden({ timeout: 10000 });
-                deleteConfirmed = true;
-                break;
-            } catch {
-                await page.keyboard.press('Escape').catch(() => undefined);
-            }
-        }
-
-        if (!deleteConfirmed) {
-            throw new Error('Could not confirm objective deletion');
-        }
-
-        let titleCount = -1;
-        const maxTime = Date.now() + 15000;
-
-        while (Date.now() < maxTime && titleCount !== 0) {
-            await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-            titleCount = await page.getByText(title).count();
-
-            if (titleCount !== 0) {
-                await page.waitForTimeout(500);
-            }
-        }
-
-        expect(titleCount).toBe(0);
+        await createdRow.getByTestId('objective-delete-button').click();
+        await expect(deleteDialog).toBeVisible();
+        await deleteDialog.getByTestId('delete-confirm-button').click();
+        await expect(deleteDialog).toBeHidden();
+        await expect(objectiveRow(page, title)).toHaveCount(0);
+        await expect(
+            page
+                .locator('section[aria-labelledby="objective-trash-heading"]')
+                .getByText(title, { exact: true })
+        ).toBeVisible();
     });
 
     test('filter objectives by search text', { tag: ['@REQ-OBJETIVOS-008'] }, async ({ page }) => {

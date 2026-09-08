@@ -6,8 +6,12 @@
         "scripts/**/*.{ts,mjs,js}",
         "tests/**/*.ts"
     ],
-    "project": ["src/**/*.{ts,tsx}", "convex/**/*.ts", "scripts/**/*.{ts,mjs,js}", "tests/**/*.ts"],
+    "project": [
+        "src/**/*.{ts,tsx,css}",
+        "convex/**/*.ts",
+        "scripts/**/*.{ts,mjs,js}",
+        "tests/**/*.ts"
+    ],
     "ignoreBinaries": ["d2"],
-    "ignoreDependencies": ["tailwindcss", "tw-animate-css"],
     "ignoreExportsUsedInFile": true
 }

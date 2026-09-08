@@ -38,7 +38,9 @@ export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE)
     };
 
     const nextPage = (continueCursor: string | null | undefined, isDone: boolean = false) => {
-        if (isDone || !continueCursor) return;
+        if (isDone || !continueCursor) {
+            return;
+        }
         dispatch({ type: 'next', cursor: continueCursor });
     };
 

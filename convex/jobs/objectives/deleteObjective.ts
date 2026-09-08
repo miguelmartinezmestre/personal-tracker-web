@@ -22,7 +22,7 @@ export async function continueObjectiveDeletion(
     const phase = args.phase ?? 'collaborators';
     const totalProgressDeleted = args.totalProgressDeleted ?? 0;
     const totalNotificationsDeleted = args.totalNotificationsDeleted ?? 0;
-    const objective = await ctx.db.get(args.objectiveId);
+    const objective = await ctx.db.get('objectives', args.objectiveId);
 
     if (!objective) {
         return {
@@ -86,7 +86,7 @@ export async function continueObjectiveDeletion(
             });
 
         for (const update of page.page) {
-            await ctx.db.delete(update._id);
+            await ctx.db.delete('progressUpdates', update._id);
         }
 
         const newTotalProgress = totalProgressDeleted + page.page.length;
@@ -134,7 +134,7 @@ export async function continueObjectiveDeletion(
         });
 
     for (const notification of page.page) {
-        await ctx.db.delete(notification._id);
+        await ctx.db.delete('notifications', notification._id);
     }
 
     const newTotalNotifications = totalNotificationsDeleted + page.page.length;
@@ -158,7 +158,7 @@ export async function continueObjectiveDeletion(
         };
     }
 
-    await ctx.db.delete(args.objectiveId);
+    await ctx.db.delete('objectives', args.objectiveId);
 
     return {
         status: 'completed',
@@ -220,7 +220,7 @@ export async function deleteObjectiveWithDependents(
     }
 
     for (const update of progressBatch) {
-        await ctx.db.delete(update._id);
+        await ctx.db.delete('progressUpdates', update._id);
     }
 
     const notificationsBatch = await ctx.db
@@ -242,7 +242,7 @@ export async function deleteObjectiveWithDependents(
     }
 
     for (const notification of notificationsBatch) {
-        await ctx.db.delete(notification._id);
+        await ctx.db.delete('notifications', notification._id);
     }
 
     await ctx.db.delete('objectives', args.objectiveId);

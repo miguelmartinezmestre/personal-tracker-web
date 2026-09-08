@@ -5,19 +5,35 @@ import {
     buildPermissionSubject,
     canEditProgress,
     canObjective,
+    type ObjectiveAction,
 } from '../domain/objectives/permissions';
+import { asTestId } from './testCasts';
 
 function uid(value: string): Id<'user'> {
-    return value as Id<'user'>;
+    return asTestId<'user'>(value);
 }
 
 const ownerId = uid('owner1');
 const otherUserId = uid('other1');
+const OBJECTIVE_ACTIONS: readonly ObjectiveAction[] = [
+    'view',
+    'editDefinition',
+    'delete',
+    'purge',
+    'restore',
+    'manageCollaborators',
+    'setVisibility',
+    'transferOwnership',
+    'contributeProgress',
+];
 
 describe('objective permissions', () => {
     test('role matrix grants and denies core objective actions', () => {
         const objective = { ownerId, visibility: 'private' as const };
-        const cases = [
+        const cases: Array<{
+            subject: ReturnType<typeof buildPermissionSubject>;
+            expected: Partial<Record<ObjectiveAction, boolean>>;
+        }> = [
             {
                 subject: buildPermissionSubject({
                     userId: otherUserId,
@@ -103,10 +119,12 @@ describe('objective permissions', () => {
         ];
 
         for (const { subject, expected } of cases) {
-            for (const [action, allowed] of Object.entries(expected)) {
-                expect(
-                    canObjective(action as Parameters<typeof canObjective>[0], subject, objective)
-                ).toBe(allowed);
+            for (const action of OBJECTIVE_ACTIONS) {
+                const allowed = expected[action];
+                if (allowed === undefined) {
+                    continue;
+                }
+                expect(canObjective(action, subject, objective)).toBe(allowed);
             }
         }
 

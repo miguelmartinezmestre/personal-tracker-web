@@ -4,6 +4,8 @@
 .next/
 .next-e2e-*/
 coverage/
+reports/
+docs/historico/
 dist/
 node_modules/
 pnpm-lock.yaml

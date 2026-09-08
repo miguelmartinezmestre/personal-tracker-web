@@ -1,7 +1,15 @@
-import { chromium, FullConfig } from '@playwright/test';
+import type { FullConfig } from '@playwright/test';
+import { chromium } from '@playwright/test';
 
 async function globalSetup(config: FullConfig) {
-    const baseURL = config.projects?.[0]?.use?.baseURL || 'http://localhost:3000';
+    let baseURL = 'http://localhost:3000';
+    for (const project of config.projects) {
+        const projectBaseURL = project.use.baseURL;
+        if (projectBaseURL) {
+            baseURL = projectBaseURL;
+        }
+        break;
+    }
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -12,7 +20,7 @@ async function globalSetup(config: FullConfig) {
     try {
         while (attempts < maxAttempts) {
             try {
-                await page.goto(`${baseURL}`, {
+                await page.goto(baseURL, {
                     timeout: 3000,
                     waitUntil: 'domcontentloaded',
                 });

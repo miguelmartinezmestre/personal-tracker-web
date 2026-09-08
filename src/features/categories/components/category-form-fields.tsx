@@ -1,5 +1,4 @@
 'use client';
-
 import {
     FormControl,
     FormDescription,
@@ -19,7 +18,6 @@ import {
 import { categoryIconSchema } from '@/features/categories/schemas/category';
 import { getLucideIcon } from '@/lib/icons';
 import { useTranslations } from 'next-intl';
-
 const colorOptions = [
     { value: '#ef4444', labelKey: 'red' },
     { value: '#f97316', labelKey: 'orange' },
@@ -31,21 +29,17 @@ const colorOptions = [
     { value: '#ec4899', labelKey: 'pink' },
     { value: '#6b7280', labelKey: 'gray' },
 ] as const;
-
 const iconOptions = categoryIconSchema.options;
-
 interface CategoryFormFieldsProps {
     testIdPrefix: 'category' | 'category-edit';
     showColorDescription?: boolean;
 }
-
 export function CategoryFormFields({
     testIdPrefix,
     showColorDescription = false,
 }: CategoryFormFieldsProps) {
     const t = useTranslations('Objectives.categories');
     const tCommon = useTranslations('Common');
-
     return (
         <>
             <FormField
@@ -71,7 +65,7 @@ export function CategoryFormFields({
                     <FormItem>
                         <FormLabel>{t('fields.color')}</FormLabel>
                         <Select
-                            value={field.value as string | undefined}
+                            value={typeof field.value === 'string' ? field.value : undefined}
                             onValueChange={field.onChange}
                         >
                             <FormControl>
@@ -102,11 +96,7 @@ export function CategoryFormFields({
                         {showColorDescription && (
                             <FormDescription>
                                 {tCommon(
-                                    `colors.${
-                                        colorOptions.find(
-                                            colorOption => colorOption.value === field.value
-                                        )?.labelKey ?? 'blue'
-                                    }`
+                                    `colors.${colorOptions.find(colorOption => colorOption.value === field.value)?.labelKey ?? 'blue'}`
                                 )}
                             </FormDescription>
                         )}
@@ -121,7 +111,7 @@ export function CategoryFormFields({
                     <FormItem>
                         <FormLabel>{t('fields.icon')}</FormLabel>
                         <Select
-                            value={(field.value as string | undefined) ?? 'none'}
+                            value={typeof field.value === 'string' ? field.value : 'none'}
                             onValueChange={value =>
                                 field.onChange(value === 'none' ? undefined : value)
                             }
@@ -137,7 +127,6 @@ export function CategoryFormFields({
                                 </SelectItem>
                                 {iconOptions.map(icon => {
                                     const IconComponent = getLucideIcon(icon);
-
                                     return (
                                         <SelectItem
                                             key={icon}

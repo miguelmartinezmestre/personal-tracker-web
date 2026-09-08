@@ -21,6 +21,7 @@ import {
 
 export default function OrganizationsTable() {
     const t = useTranslations('Organizations');
+    const common = useTranslations('Common');
     const organizations = useOrganizations();
     const deleteOrganization = useDeleteOrganization();
 
@@ -110,10 +111,23 @@ export default function OrganizationsTable() {
     return (
         <div data-testid="organizations-table">
             <DataTable
+                isError={organizations.isError}
+                onRetry={() => {
+                    void organizations.refetch();
+                }}
                 columns={columns}
                 data={organizations.data ?? []}
                 isLoading={organizations.isLoading}
             />
+            {organizations.hasMore ? (
+                <Button
+                    variant="outline"
+                    disabled={organizations.isFetching}
+                    onClick={organizations.loadMore}
+                >
+                    {common('actions.loadMore')}
+                </Button>
+            ) : null}
         </div>
     );
 }

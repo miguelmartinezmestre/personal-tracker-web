@@ -1,5 +1,6 @@
 import type { MutationCtx } from './_generated/server';
 import { getAuthUserId, type Triggers as BetterAuthTriggers } from 'kitcn/auth';
+import { requireMutationCtx, type GenericCtx } from './platform/auth/authRuntime';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
 import {
@@ -8,6 +9,7 @@ import {
     toAuditPrimitive,
 } from './domain/audit/privacy';
 import { startMemberLeaveCleanup } from './jobs/organizations/memberLeaveCleanup';
+import { isJsonObject, type JsonObject } from '../shared/boundary-values';
 
 type BetterAuthSchema = typeof schema;
 
@@ -41,9 +43,10 @@ const ALLOWED_INVITATION_FIELDS = new Set([
     'inviterId',
 ]);
 
-const sanitizeSession = (
-    session: Record<string, unknown>
-): Record<string, string | number | boolean | null> => {
+const sanitizeSession = (session: object): Record<string, string | number | boolean | null> => {
+    if (!isJsonObject(session)) {
+        return {};
+    }
     const result: Record<string, string | number | boolean | null> = {};
     for (const key of Object.keys(session)) {
         if (ALLOWED_SESSION_FIELDS.has(key)) {
@@ -53,9 +56,10 @@ const sanitizeSession = (
     return result;
 };
 
-const sanitizeUser = (
-    user: Record<string, unknown>
-): Record<string, string | number | boolean | null> => {
+const sanitizeUser = (user: object): Record<string, string | number | boolean | null> => {
+    if (!isJsonObject(user)) {
+        return {};
+    }
     const result: Record<string, string | number | boolean | null> = {};
     for (const key of Object.keys(user)) {
         if (ALLOWED_USER_FIELDS.has(key)) {
@@ -66,8 +70,11 @@ const sanitizeUser = (
 };
 
 const sanitizeInvitation = (
-    invitation: Record<string, unknown>
+    invitation: object
 ): Record<string, string | number | boolean | null> => {
+    if (!isJsonObject(invitation)) {
+        return {};
+    }
     const result: Record<string, string | number | boolean | null> = {};
     for (const key of Object.keys(invitation)) {
         if (ALLOWED_INVITATION_FIELDS.has(key)) {
@@ -84,9 +91,9 @@ type AuthAuditMetadata = {
 };
 
 const isAuditRecord = (
-    value: unknown
+    value: JsonObject | object | string | number | boolean | null | undefined
 ): value is Record<string, string | number | boolean | null> => {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
+    return isJsonObject(value);
 };
 
 const insertAuthAuditLog = async (
@@ -165,11 +172,12 @@ const insertAuthAuditLog = async (
     });
 };
 
-export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx> = {
+export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, GenericCtx> = {
     session: {
         change: async (change, ctx) => {
+            const mutationCtx = requireMutationCtx(ctx);
             if (change.operation === 'insert') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'session.created',
                     resourceType: 'session',
                     resourceId: change.newDoc._id,
@@ -180,7 +188,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
 
             if (change.operation === 'delete') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'session.deleted',
                     resourceType: 'session',
                     resourceId: change.oldDoc._id,
@@ -193,8 +201,9 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
     },
     invitation: {
         change: async (change, ctx) => {
+            const mutationCtx = requireMutationCtx(ctx);
             if (change.operation === 'insert') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'invitation.created',
                     resourceType: 'invitation',
                     resourceId: change.newDoc._id,
@@ -205,7 +214,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
 
             if (change.operation === 'update') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'invitation.updated',
                     resourceType: 'invitation',
                     resourceId: change.newDoc._id,
@@ -219,7 +228,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
 
             if (change.operation === 'delete') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'invitation.deleted',
                     resourceType: 'invitation',
                     resourceId: change.oldDoc._id,
@@ -232,8 +241,9 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
     },
     user: {
         change: async (change, ctx) => {
+            const mutationCtx = requireMutationCtx(ctx);
             if (change.operation === 'update') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'user.updated',
                     resourceType: 'user',
                     resourceId: change.newDoc._id,
@@ -246,7 +256,7 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
 
             if (change.operation === 'delete') {
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'user.deleted',
                     resourceType: 'user',
                     resourceId: change.oldDoc._id,
@@ -258,25 +268,27 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
     },
     member: {
         change: async (change, ctx) => {
+            const mutationCtx = requireMutationCtx(ctx);
             if (change.operation === 'delete') {
-                const organizationId = ctx.db.normalizeId(
+                const organizationId = mutationCtx.db.normalizeId(
                     'organization',
                     change.oldDoc.organizationId
                 );
-                const userId = ctx.db.normalizeId('user', change.oldDoc.userId);
+                const userId = mutationCtx.db.normalizeId('user', change.oldDoc.userId);
                 if (organizationId && userId) {
-                    await startMemberLeaveCleanup(ctx, organizationId, userId);
+                    await startMemberLeaveCleanup(mutationCtx, organizationId, userId);
                 }
 
-                const memberDoc = change.oldDoc as Record<string, unknown>;
-                const sanitizedMember: Record<string, string | number | boolean | null> = {};
-                for (const key of ['_id', 'organizationId', 'userId', 'role', 'createdAt']) {
-                    if (key in memberDoc) {
-                        sanitizedMember[key] = toAuditPrimitive(memberDoc[key]);
-                    }
-                }
+                const oldDoc = change.oldDoc;
+                const sanitizedMember: Record<string, string | number | boolean | null> = {
+                    _id: toAuditPrimitive(oldDoc._id),
+                    organizationId: toAuditPrimitive(oldDoc.organizationId),
+                    userId: toAuditPrimitive(oldDoc.userId),
+                    role: toAuditPrimitive(oldDoc.role),
+                    createdAt: toAuditPrimitive(oldDoc.createdAt),
+                };
 
-                await insertAuthAuditLog(ctx, {
+                await insertAuthAuditLog(mutationCtx, {
                     action: 'organization_member.deleted',
                     resourceType: 'organization_member',
                     resourceId: change.oldDoc._id,
@@ -287,4 +299,4 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
             }
         },
     },
-} as BetterAuthTriggers<DataModel, BetterAuthSchema, MutationCtx>;
+};

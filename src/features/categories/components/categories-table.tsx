@@ -4,7 +4,7 @@ import { DataTable } from '@/components/data-table/components/table';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import type { Category } from '@/features/categories/schemas/category';
+import { categoryIconSchema, type Category } from '@/features/categories/schemas/category';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { useCategoriesTableColumns } from './categories-table-columns';
@@ -16,25 +16,19 @@ type ConvexCategory = {
     name: string;
     color: string;
     icon?: string;
-    userId: string;
+    userId?: string;
+    capabilities: { canEdit: boolean; canDelete: boolean };
     organizationId: string;
     createdAt: number;
     updatedAt: number;
 };
 
 function mapConvexCategoryToCategory(convexCategory: ConvexCategory): Category {
-    const validIcon: Category['icon'] =
-        convexCategory.icon === 'target' ||
-        convexCategory.icon === 'chart' ||
-        convexCategory.icon === 'check' ||
-        convexCategory.icon === 'calendar' ||
-        convexCategory.icon === 'lightbulb' ||
-        convexCategory.icon === 'users'
-            ? convexCategory.icon
-            : undefined;
+    const validIcon = categoryIconSchema.safeParse(convexCategory.icon).data;
 
     return {
         id: convexCategory._id,
+        capabilities: convexCategory.capabilities,
         name: convexCategory.name,
         color: convexCategory.color,
         icon: validIcon,
@@ -60,6 +54,11 @@ export default function CategoriesTable() {
     return (
         <div>
             <DataTable
+                isError={categoriesQuery.isError}
+                error={categoriesQuery.error}
+                onRetry={() => {
+                    void categoriesQuery.refetch();
+                }}
                 columns={columns}
                 data={tableCategories}
                 isLoading={categoriesQuery.isLoading}

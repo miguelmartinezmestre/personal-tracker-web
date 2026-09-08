@@ -11,7 +11,7 @@ Infrastructure files and Docker Compose stacks live in `infrastructure/`.
 
 ## Build, Test, and Development Commands
 
-Use `pnpm` with Node `>=22.21.1`.
+Use `pnpm` with Node `>=24.19.0`.
 
 - `pnpm build` / `pnpm start`: build and serve production output.
 - `pnpm lint`: run ESLint across the repo.

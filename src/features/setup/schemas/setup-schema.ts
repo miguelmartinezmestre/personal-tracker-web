@@ -21,7 +21,7 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
     return z
         .object({
             username: z.string().min(3),
-            email: z.string().email(),
+            email: z.email(),
             password: z.string().min(8),
             confirmPassword: z.string().min(8),
             setupSecret: z
@@ -36,7 +36,7 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
         .superRefine((values, ctx) => {
             if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: 'custom',
                     path: ['password'],
                     message:
                         'Password must include at least one uppercase letter, one lowercase letter, and one number',
@@ -45,7 +45,7 @@ export function createAdminAccountSchema(messages?: Partial<AdminAccountSchemaMe
 
             if (values.password !== values.confirmPassword) {
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: 'custom',
                     path: ['confirmPassword'],
                     message: 'Passwords do not match',
                 });
@@ -57,7 +57,7 @@ export const adminAccountSchema = createAdminAccountSchema();
 
 export const organizationSchema = z.object({
     name: z.string().min(1).max(100),
-    logo: z.string().url().optional().or(z.literal('')),
+    logo: z.url().optional().or(z.literal('')),
 });
 
 export const setupCategorySchema = z.object({

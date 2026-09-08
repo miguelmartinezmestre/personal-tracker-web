@@ -5,9 +5,7 @@ import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { authClient } from '@/features/auth/client';
 import type { Id } from '@/convex/_generated/dataModel';
-import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 type RevokeSessionVariables = {
     userId: Id<'user'>;
@@ -15,7 +13,7 @@ type RevokeSessionVariables = {
 };
 
 type RevokeAllSessionsVariables = {
-    userId: string;
+    userId: Id<'user'>;
 };
 
 export function useRevokeSession() {
@@ -36,17 +34,19 @@ export function useRevokeSession() {
 
 export function useConfirmRevokeAllSessions() {
     const t = useTranslations('Admin');
+    const revoke = useConvexMutation(api.admin.revokeAllUserSessions);
 
     const { mutate: revokeAllSessions, isPending: isRevokingAllSessions } = useMutation({
         mutationFn: async ({ userId }: RevokeAllSessionsVariables) => {
             if (!confirm(t('userSessions.confirm.revokeAll'))) {
                 return;
             }
-            const result = await authClient.admin.revokeUserSessions({ userId });
-            throwIfAuthClientError(result);
-            return result.data;
+            return await revoke({ userId });
         },
-        onSuccess: _data => {
+        onSuccess: data => {
+            if (!data) {
+                return;
+            }
             toast.success(t('userSessions.toast.revokeAllSuccess'));
         },
         onError: (error: Error) => {

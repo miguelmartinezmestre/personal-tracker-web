@@ -1,12 +1,22 @@
+import { getOptionalString, isJsonObject, type JsonObject } from '../../../shared/boundary-values';
+
 export const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 export const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';
 
 export const PERSONAL_ORGANIZATION_METADATA_TYPE = 'personal';
 
-type PersonalOrganizationMetadata = {
-    type?: unknown;
-    ownerUserId?: unknown;
-};
+function parseMetadataObject(metadata: string): JsonObject | undefined {
+    try {
+        // oxlint-disable-next-line typescript/no-unsafe-assignment -- JSON.parse is an untyped boundary; immediately narrowed by isJsonObject
+        const parsed: JsonObject | object | string | number | boolean | null = JSON.parse(metadata);
+        if (isJsonObject(parsed)) {
+            return parsed;
+        }
+    } catch {
+        return undefined;
+    }
+    return undefined;
+}
 
 export function buildDefaultOrganizationSlug(userId: string) {
     const normalizedSuffix = userId
@@ -22,12 +32,8 @@ export function isPersonalOrganizationMetadata(metadata: string | null | undefin
         return false;
     }
 
-    try {
-        const parsed = JSON.parse(metadata) as PersonalOrganizationMetadata | null;
-        return parsed?.type === PERSONAL_ORGANIZATION_METADATA_TYPE;
-    } catch {
-        return false;
-    }
+    const parsed = parseMetadataObject(metadata);
+    return parsed?.type === PERSONAL_ORGANIZATION_METADATA_TYPE;
 }
 
 export function getPersonalOrganizationOwnerUserId(
@@ -37,16 +43,17 @@ export function getPersonalOrganizationOwnerUserId(
         return null;
     }
 
-    try {
-        const parsed = JSON.parse(metadata) as PersonalOrganizationMetadata | null;
-        return parsed?.type === PERSONAL_ORGANIZATION_METADATA_TYPE &&
-            typeof parsed.ownerUserId === 'string' &&
-            parsed.ownerUserId.length > 0
-            ? parsed.ownerUserId
-            : null;
-    } catch {
+    const parsed = parseMetadataObject(metadata);
+    if (parsed?.type !== PERSONAL_ORGANIZATION_METADATA_TYPE) {
         return null;
     }
+
+    const ownerUserId = getOptionalString(parsed.ownerUserId);
+    if (ownerUserId && ownerUserId.length > 0) {
+        return ownerUserId;
+    }
+
+    return null;
 }
 
 export function buildPersonalOrganizationMetadata(userId: string) {

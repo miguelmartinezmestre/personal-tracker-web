@@ -14,9 +14,9 @@ const MIN_TARGET = 0.001;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FIVE_YEARS_MS = 5 * 365 * DAY_MS;
 
-const metricSchema = z.number().finite().min(0).max(MAX_METRIC);
-const targetMetricSchema = z.number().finite().min(MIN_TARGET).max(MAX_METRIC);
-const deadlineSchema = z.number().finite();
+const metricSchema = z.number().min(0).max(MAX_METRIC);
+const targetMetricSchema = z.number().min(MIN_TARGET).max(MAX_METRIC);
+const deadlineSchema = z.number();
 
 const categorySelectionSchema = z
     .string()
@@ -45,25 +45,27 @@ export const objectiveSchema = z
     .superRefine((values, context) => {
         if (values.startValue != null && values.startValue > values.targetValue) {
             context.addIssue({
-                code: z.ZodIssueCode.custom,
+                code: 'custom',
                 path: ['startValue'],
                 message: 'Starting value cannot exceed the target value',
             });
         }
 
-        if (values.deadline == null) return;
+        if (values.deadline == null) {
+            return;
+        }
 
         const now = Date.now();
         if (values.deadline < now - FIVE_YEARS_MS) {
             context.addIssue({
-                code: z.ZodIssueCode.custom,
+                code: 'custom',
                 path: ['deadline'],
                 message: 'Deadline is too far in the past',
             });
         }
         if (values.deadline > now + FIVE_YEARS_MS * 2) {
             context.addIssue({
-                code: z.ZodIssueCode.custom,
+                code: 'custom',
                 path: ['deadline'],
                 message: 'Deadline is too far in the future',
             });

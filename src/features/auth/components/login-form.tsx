@@ -1,5 +1,7 @@
 'use client';
 
+import type { Route } from 'next';
+
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -13,47 +15,45 @@ import {
 } from '@/components/ui/form-tanstack';
 import { Input } from '@/components/ui/input';
 import { loginSchema } from '@/features/auth/schemas/login';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import type { Route } from 'next';
 import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { getSafeCallbackPath } from '@shared/auth-security';
-
+import { useHydrated } from '@/hooks/use-hydrated';
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
     callbackUrl?: string;
 }
-
 export default function LoginForm({
     showPasswordResetSuccess = false,
     callbackUrl,
 }: LoginFormProps) {
+    const hydrated = useHydrated();
     const router = useRouter();
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [loginError, setLoginError] = useState('');
     const session = useSession();
-
     const signOutMutation = useMutation(
         useSignOutMutationOptions({
             onSuccess: () => {},
             onError: () => {},
         })
     );
-
+    const loginDefaultValues: z.infer<typeof loginSchema> = {
+        email: '',
+        password: '',
+    };
     const form = useForm({
-        defaultValues: {
-            email: '',
-            password: '',
-        } as z.infer<typeof loginSchema>,
+        defaultValues: loginDefaultValues,
         validators: {
             onChange: loginSchema,
             onSubmit: loginSchema,
@@ -62,14 +62,11 @@ export default function LoginForm({
             await onSubmit(value);
         },
     });
-
     async function handleSignIn(values: z.infer<typeof loginSchema>) {
         if (session.data?.user) {
             await signOutMutation.mutateAsync();
         }
-
         setLoginError('');
-
         await authClient.signIn.email(
             {
                 email: values.email,
@@ -85,14 +82,12 @@ export default function LoginForm({
             }
         );
     }
-
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleSignIn);
-
     return (
-        <Form {...form}>
+        <Form form={form}>
             <form
                 action={() => {
-                    form.handleSubmit();
+                    void form.handleSubmit();
                 }}
                 className="space-y-6"
             >
@@ -122,6 +117,7 @@ export default function LoginForm({
                             <FormControl>
                                 <Input
                                     {...field}
+                                    disabled={!hydrated}
                                     type="email"
                                     placeholder={tCommon('placeholders.email')}
                                     className="focus:ring-2 focus:ring-primary/20"
@@ -143,6 +139,7 @@ export default function LoginForm({
                             <FormControl>
                                 <Input
                                     {...field}
+                                    disabled={!hydrated}
                                     type="password"
                                     placeholder={tCommon('placeholders.password')}
                                     className="focus:ring-2 focus:ring-primary/20"
@@ -166,7 +163,7 @@ export default function LoginForm({
                 <Button
                     type="submit"
                     className="w-full py-6 text-lg font-medium"
-                    disabled={isSubmitting}
+                    disabled={!hydrated || isSubmitting}
                     data-testid="login-button"
                 >
                     {isSubmitting ? tCommon('loading') : t('login')}

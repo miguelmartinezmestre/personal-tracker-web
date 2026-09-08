@@ -45,9 +45,12 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
     };
 
     const addCategory = () => {
-        if (!newName.trim()) return;
+        if (!newName.trim()) {
+            return;
+        }
         onChange([...data, { name: newName.trim(), color: '#6366F1', icon: 'tag' }]);
-        setCategoryKeys(keys => [...keys, `setup-category-${nextCategoryKey.current++}`]);
+        const nextKey = `setup-category-${nextCategoryKey.current++}`;
+        setCategoryKeys(keys => [...keys, nextKey]);
         setNewName('');
     };
 
@@ -81,11 +84,12 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
                         />
                         <Select
                             value={category.icon ?? 'tag'}
-                            onValueChange={value =>
-                                updateCategory(index, {
-                                    icon: value as SetupCategory['icon'],
-                                })
-                            }
+                            onValueChange={value => {
+                                const parsed = categoryIconSchema.safeParse(value);
+                                if (parsed.success) {
+                                    updateCategory(index, { icon: parsed.data });
+                                }
+                            }}
                         >
                             <SelectTrigger
                                 className="w-[110px]"
@@ -125,7 +129,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
                         onChange={e => setNewName(e.target.value)}
                         placeholder={t('categories.newPlaceholder')}
                         onKeyDown={e => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                                 e.preventDefault();
                                 addCategory();
                             }

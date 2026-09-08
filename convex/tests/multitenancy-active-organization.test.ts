@@ -139,8 +139,8 @@ describe('active organization tenant boundary', () => {
             await t.finishAllScheduledFunctions(vi.runAllTimers);
 
             const result = await t.run(async ctx => ({
-                orgA: await ctx.db.get(orgANotificationId),
-                orgB: await ctx.db.get(orgBNotificationId),
+                orgA: await ctx.db.get('notifications', orgANotificationId),
+                orgB: await ctx.db.get('notifications', orgBNotificationId),
             }));
 
             expect(result.orgA?.read).toBe(true);

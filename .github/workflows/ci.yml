@@ -6,6 +6,9 @@ on:
         branches:
             - main
 
+permissions:
+    contents: read
+
 jobs:
     quality:
         runs-on: ubuntu-latest
@@ -18,7 +21,7 @@ jobs:
             - name: Setup pnpm
               uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
               with:
-                  version: 11.20.0
+                  version: 12.3.4
 
             - name: Setup Node
               uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -38,7 +41,22 @@ jobs:
               run: pnpm run test:coverage
 
             - name: Audit production dependencies
-              run: pnpm audit --prod --audit-level high
+              run: pnpm audit --audit-level high
+
+            - name: Start isolated codegen backend
+              run: pnpm exec tsx scripts/verification-backend.ts start
+
+            - name: Check generated code drift
+              run: pnpm exec tsx scripts/check-generated.ts
+
+            - name: Stop isolated codegen backend
+              if: always()
+              run: pnpm exec tsx scripts/verification-backend.ts stop
+
+            - name: Generate dependency inventories
+              run: |
+                  pnpm exec tsx scripts/generate-sbom.ts reports/verification/sbom.cdx.json
+                  pnpm run deps:licenses
 
             - name: Build
               env:
@@ -46,6 +64,20 @@ jobs:
                   NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
                   NEXT_PUBLIC_CONVEX_SITE_URL: https://example.convex.site
               run: pnpm run build
+
+            - name: Consolidate evidence hashes
+              if: always()
+              run: pnpm exec tsx scripts/generate-evidence.ts
+
+            - name: Preserve quality evidence
+              if: always()
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+              with:
+                  name: quality-evidence
+                  retention-days: 90
+                  path: |
+                      reports/
+                      coverage/
 
     e2e:
         needs: quality
@@ -59,7 +91,7 @@ jobs:
             - name: Setup pnpm
               uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
               with:
-                  version: 11.20.0
+                  version: 12.3.4
 
             - name: Setup Node
               uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -75,3 +107,18 @@ jobs:
 
             - name: Run end-to-end suite
               run: pnpm run test:e2e
+
+            - name: Consolidate evidence hashes
+              if: always()
+              run: pnpm exec tsx scripts/generate-evidence.ts
+
+            - name: Preserve end-to-end evidence
+              if: always()
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+              with:
+                  name: e2e-evidence
+                  retention-days: 90
+                  path: |
+                      reports/
+                      playwright-report/
+                      test-results/

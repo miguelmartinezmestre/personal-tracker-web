@@ -3,6 +3,7 @@ import type { WorkflowId } from '@convex-dev/workflow';
 import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestOrganization, createTestUser } from './test_helpers';
+import { asInvalidArg } from './testCasts';
 
 describe('objective workflow lifecycle', () => {
     test.each([
@@ -44,7 +45,7 @@ describe('objective workflow lifecycle', () => {
             { objectiveId }
         );
         const state = await t.run(async ctx => ({
-            objective: await ctx.db.get(objectiveId),
+            objective: await ctx.db.get('objectives', objectiveId),
             notifications: await ctx.db
                 .query('notifications')
                 .withIndex('by_user_organization_date', q =>
@@ -89,8 +90,8 @@ describe('objective workflow lifecycle', () => {
             });
         });
 
-        const olderWorkflowId = '00000000000000000010001workflows' as WorkflowId;
-        const newerWorkflowId = '00000000000000000010002workflows' as WorkflowId;
+        const olderWorkflowId = asInvalidArg<WorkflowId>('00000000000000000010001workflows');
+        const newerWorkflowId = asInvalidArg<WorkflowId>('00000000000000000010002workflows');
 
         await t.run(async ctx => {
             await ctx.db.patch('objectives', objectiveId, {
@@ -112,7 +113,7 @@ describe('objective workflow lifecycle', () => {
             }
         );
 
-        const objective = await t.run(async ctx => await ctx.db.get(objectiveId));
+        const objective = await t.run(async ctx => await ctx.db.get('objectives', objectiveId));
         expect(objective?.workflowId).toBe(newerWorkflowId);
     });
 
@@ -147,7 +148,7 @@ describe('objective workflow lifecycle', () => {
             });
         });
 
-        const workflowId = '00000000000000000010003workflows' as WorkflowId;
+        const workflowId = asInvalidArg<WorkflowId>('00000000000000000010003workflows');
 
         await t.run(async ctx => {
             await ctx.db.patch('objectives', objectiveId, { workflowId });
@@ -167,7 +168,7 @@ describe('objective workflow lifecycle', () => {
             }
         );
 
-        const objective = await t.run(async ctx => await ctx.db.get(objectiveId));
+        const objective = await t.run(async ctx => await ctx.db.get('objectives', objectiveId));
         expect(objective?.workflowId).toBeUndefined();
     });
 });

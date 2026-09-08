@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import { Id, DataModel } from '../_generated/dataModel';
+import type { Id, DataModel } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -8,7 +8,8 @@ import {
     createTestOrganization,
     createTestUser,
 } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
+import type { TestConvexForDataModel } from 'convex-test';
+import { asInvalidArg } from './testCasts';
 import { ERROR_CODES } from '../utils/constants';
 import {
     CATEGORY_NAME_MAX_LENGTH,
@@ -70,20 +71,20 @@ describe('input validation security', () => {
 
         await expect(
             userIdentity.query(api.objectives.getObjectiveById, {
-                id: malformedId as unknown as Id<'objectives'>,
+                id: asInvalidArg<Id<'objectives'>>(malformedId),
             })
         ).rejects.toThrow();
 
         await expect(
             userIdentity.query(api.update_progress.getUpdateProgressByObjectiveId, {
-                objectiveId: malformedId as unknown as Id<'objectives'>,
+                objectiveId: asInvalidArg<Id<'objectives'>>(malformedId),
                 paginationOpts: { numItems: 10, cursor: null },
             })
         ).rejects.toThrow();
 
         await expect(
             userIdentity.mutation(api.notifications.setNotificationRead, {
-                id: malformedId as unknown as Id<'notifications'>,
+                id: asInvalidArg<Id<'notifications'>>(malformedId),
                 read: true,
             })
         ).rejects.toThrow();
@@ -99,15 +100,15 @@ describe('input validation security', () => {
 
         await expect(
             userIdentity.mutation(api.categories.createCategory, {
-                name: { $ne: '' } as unknown as string,
+                name: asInvalidArg<string>({ $ne: '' }),
                 color: '#10b981',
             })
         ).rejects.toThrow();
 
         await expect(
             userIdentity.mutation(api.objectives.createObjective, {
-                title: { $regex: '.*' } as unknown as string,
-                targetValue: { $gt: 0 } as unknown as number,
+                title: asInvalidArg<string>({ $regex: '.*' }),
+                targetValue: asInvalidArg<number>({ $gt: 0 }),
             })
         ).rejects.toThrow();
 

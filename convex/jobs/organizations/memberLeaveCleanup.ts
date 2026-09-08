@@ -52,7 +52,9 @@ async function retireObjectiveWithoutSuccessor(
     departingUserId: Id<'user'>
 ) {
     const objective = await ctx.db.get('objectives', objectiveId);
-    if (!objective) return;
+    if (!objective) {
+        return;
+    }
 
     if (objective.workflowId) {
         await workflow.cancel(ctx, objective.workflowId);

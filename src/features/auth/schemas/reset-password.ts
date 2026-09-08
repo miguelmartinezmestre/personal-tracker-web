@@ -10,7 +10,7 @@ export const resetPasswordSchema = z
     .superRefine((values, ctx) => {
         if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {
             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
+                code: 'custom',
                 path: ['password'],
                 message: STRONG_PASSWORD_MESSAGE_ES,
             });
@@ -18,7 +18,7 @@ export const resetPasswordSchema = z
 
         if (values.password !== values.confirmPassword) {
             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
+                code: 'custom',
                 path: ['confirmPassword'],
                 message: 'Las contraseñas no coinciden',
             });

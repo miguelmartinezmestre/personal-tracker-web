@@ -3,14 +3,14 @@
 import { useTranslations } from 'next-intl';
 import { AchievementsWidget } from '@/features/achievements/components/achievements-widget';
 import { api } from '@/convex/_generated/api';
-import { Loader2, Target, CheckCircle, Calendar, Activity } from 'lucide-react';
+import { Target, CheckCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import StatCard from '@/features/dashboard/components/stat-card';
 import dynamic from 'next/dynamic';
 import { useReferenceNow } from '@/lib/reference-now';
+import { DashboardWelcome, RecentActivityCard, UpcomingDeadlinesCard } from './home-panels';
 
 const MonthlyProgressChart = dynamic(
     () => import('@/features/dashboard/components/monthly-progress-chart'),
@@ -36,26 +36,31 @@ export default function Home() {
     const { data: upcomingDeadlines } = deadlinesQuery;
     const { data: recentActivity } = activityQuery;
     const upcomingDeadlineItems = upcomingDeadlines?.items ?? [];
-
     const t = useTranslations('DashboardHome');
 
     return (
         <div className="container mx-auto p-4 space-y-6">
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">{t('dashboardTitle')}</h1>
-                <p data-testid="welcome-message" className="text-muted-foreground">
-                    {userQuery.isError ? (
-                        t('welcome', { name: '' })
-                    ) : !user ? (
-                        <Loader2 className="animate-spin" />
-                    ) : (
-                        t('welcome', { name: user?.name ?? '' })
-                    )}
-                </p>
+                <div data-testid="welcome-message" className="text-muted-foreground">
+                    <DashboardWelcome
+                        isError={userQuery.isError}
+                        error={userQuery.error}
+                        onRetry={() => {
+                            void userQuery.refetch();
+                        }}
+                        name={user?.name}
+                    />
+                </div>
             </div>
 
             {statsQuery.isError ? (
-                <QueryErrorFallback onRetry={() => statsQuery.refetch()} />
+                <QueryErrorFallback
+                    error={statsQuery.error}
+                    onRetry={() => {
+                        void statsQuery.refetch();
+                    }}
+                />
             ) : (
                 <div className="grid grid-cols-2 gap-4" data-testid="dashboard-stats">
                     <StatCard
@@ -85,96 +90,28 @@ export default function Home() {
                 <div className="md:col-span-1">
                     <AchievementsWidget />
                 </div>
-
-                <Card className="md:col-span-1" data-testid="upcoming-deadlines">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            {t('upcomingDeadlines')}
-                        </CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {deadlinesQuery.isError ? (
-                            <QueryErrorFallback onRetry={() => deadlinesQuery.refetch()} />
-                        ) : !upcomingDeadlines ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : upcomingDeadlineItems.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                {t('noUpcomingDeadlines')}
-                            </p>
-                        ) : (
-                            <ul className="space-y-2">
-                                {upcomingDeadlineItems.slice(0, 5).map(deadline => (
-                                    <li key={deadline.id} className="flex justify-between text-sm">
-                                        <span className="truncate mr-2">{deadline.title}</span>
-                                        <span className="text-muted-foreground shrink-0">
-                                            {t('deadlineDaysRemaining', {
-                                                days: deadline.daysRemaining,
-                                            })}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                        {upcomingDeadlines?.isTruncated ? (
-                            <p className="mt-2 text-xs text-muted-foreground" role="status">
-                                {t('partialData')}
-                            </p>
-                        ) : null}
-                    </CardContent>
-                </Card>
-
-                <Card className="md:col-span-1" data-testid="recent-activity">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">{t('recentActivity')}</CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {activityQuery.isError ? (
-                            <QueryErrorFallback onRetry={() => activityQuery.refetch()} />
-                        ) : !recentActivity ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                            <>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">
-                                        {t('activity.progressUpdates')}
-                                    </span>
-                                    <span className="font-medium">
-                                        {recentActivity.progressUpdatesCount}
-                                        {recentActivity.progressUpdatesTruncated ? '+' : ''}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">
-                                        {t('activity.objectivesCreated')}
-                                    </span>
-                                    <span className="font-medium">
-                                        {recentActivity.objectivesCreatedCount}
-                                        {recentActivity.objectivesCreatedTruncated ? '+' : ''}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">
-                                        {t('activity.objectivesCompleted')}
-                                    </span>
-                                    <span className="font-medium">
-                                        {recentActivity.objectivesCompletedCount}
-                                        {recentActivity.objectivesCompletedTruncated ? '+' : ''}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('activity.period', { days: recentActivity.periodDays })}
-                                </p>
-                                {recentActivity.isTruncated ? (
-                                    <p className="text-xs text-muted-foreground" role="status">
-                                        {t('partialData')}
-                                    </p>
-                                ) : null}
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
+                <UpcomingDeadlinesCard
+                    query={{
+                        isError: deadlinesQuery.isError,
+                        error: deadlinesQuery.error,
+                        onRetry: () => {
+                            void deadlinesQuery.refetch();
+                        },
+                    }}
+                    items={upcomingDeadlineItems}
+                    isTruncated={upcomingDeadlines?.isTruncated ?? false}
+                    isLoaded={Boolean(upcomingDeadlines)}
+                />
+                <RecentActivityCard
+                    query={{
+                        isError: activityQuery.isError,
+                        error: activityQuery.error,
+                        onRetry: () => {
+                            void activityQuery.refetch();
+                        },
+                    }}
+                    activity={recentActivity}
+                />
             </div>
         </div>
     );

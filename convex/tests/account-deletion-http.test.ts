@@ -7,11 +7,12 @@ import {
     createTestOrganization,
     createTestUser,
 } from './test_helpers';
+import type { JsonValue } from '../../shared/boundary-values';
 
 const ORIGIN = 'http://localhost:3000';
 const PASSWORD = 'ValidDeletionPassword123';
 
-function jsonRequest(body: unknown, cookie?: string): RequestInit {
+function jsonRequest(body: JsonValue, cookie?: string): RequestInit {
     return {
         method: 'POST',
         headers: {

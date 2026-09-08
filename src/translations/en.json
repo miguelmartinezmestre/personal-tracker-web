@@ -40,7 +40,8 @@
             "signOut": "Sign out",
             "signingOut": "Signing out...",
             "goToLogin": "Go to Login",
-            "revokeAll": "Revoke all"
+            "revokeAll": "Revoke all",
+            "loadMore": "Load more"
         },
         "fields": {
             "email": "Email",
@@ -113,6 +114,13 @@
         "redirectingToLogin": "Redirecting to login...",
         "aria": {
             "breadcrumbs": "Breadcrumbs"
+        },
+        "updatingData": "We are updating the dashboard data.",
+        "chartData": "View chart data",
+        "skipToContent": "Skip to content",
+        "validation": {
+            "invalidEmail": "Enter a valid email address.",
+            "minimumCharacters": "Enter at least {count} characters."
         }
     },
     "DashboardHome": {
@@ -145,7 +153,9 @@
             "noDataAvailable": "No data available",
             "updates": "Updates",
             "progress": "Progress",
-            "partialData": "This chart shows a partial data set."
+            "partialData": "This chart shows a partial data set.",
+            "month": "Month",
+            "objective": "Objective"
         }
     },
     "HomePage": {
@@ -380,6 +390,15 @@
             "deleteDescription": "This will permanently remove the notification.",
             "deleteConfirm": "Delete",
             "cancel": "Cancel"
+        },
+        "messages": {
+            "objectiveCompleted": "Objective \"{title}\" completed.",
+            "progressAdded": "Progress added to \"{title}\": +{amount, number} {unit}",
+            "deadlineToday": "Objective \"{title}\" is due today, {date}.",
+            "deadlineUpcoming": "Objective \"{title}\" is due in {days, plural, one {# day} other {# days}}, on {date}.",
+            "deadlineOverdue": "Objective \"{title}\" is overdue by {days, plural, one {# day} other {# days}}, due on {date}.",
+            "achievementEarned": "You unlocked \"{name}\" and earned {points, number} points.",
+            "organizationAchievementEarned": "The organization unlocked \"{name}\" and earned {points, number} points."
         }
     },
     "CommandMenu": {
@@ -603,7 +622,17 @@
             "restore": "Restore",
             "purge": "Delete permanently",
             "purgeTitle": "Permanently delete objective?",
-            "purgeDescription": "This permanently removes the objective and its related progress and notifications. It cannot be undone."
+            "purgeDescription": "This permanently removes the objective and its related progress and notifications. It cannot be undone.",
+            "description": "Objectives that have been deleted. You can permanently delete them here.",
+            "noDeletedObjectives": "No deleted objectives",
+            "permanentlyDelete": "Permanently Delete",
+            "restoreObjective": "This action cannot be undone.",
+            "confirmHardDelete": "Are you sure you want to permanently delete this objective?",
+            "confirmHardDeleteDescription": "This will permanently remove the objective and all its progress updates and notifications. This action cannot be undone.",
+            "toast": {
+                "hardDeleteSuccess": "Objective permanently deleted",
+                "hardDeleteFailed": "Failed to permanently delete objective"
+            }
         },
         "confirm": {
             "deleteObjective": "Are you sure you want to delete this objective?",
@@ -757,19 +786,6 @@
                 "addFailed": "Failed to add collaborator",
                 "removeSuccess": "Collaborator removed successfully",
                 "removeFailed": "Failed to remove collaborator"
-            }
-        },
-        "trash": {
-            "title": "Trash",
-            "description": "Objectives that have been deleted. You can permanently delete them here.",
-            "noDeletedObjectives": "No deleted objectives",
-            "permanentlyDelete": "Permanently Delete",
-            "restoreObjective": "This action cannot be undone.",
-            "confirmHardDelete": "Are you sure you want to permanently delete this objective?",
-            "confirmHardDeleteDescription": "This will permanently remove the objective and all its progress updates and notifications. This action cannot be undone.",
-            "toast": {
-                "hardDeleteSuccess": "Objective permanently deleted",
-                "hardDeleteFailed": "Failed to permanently delete objective"
             }
         }
     },
@@ -1104,7 +1120,8 @@
             "progressTimelineDescription": "Cumulative progress over time",
             "value": "Value",
             "target": "Target"
-        }
+        },
+        "historyLimited": "The chart shows the latest 500 updates and includes the earlier accumulated progress."
     },
     "Header": {
         "appName": "Metricas",
@@ -1261,7 +1278,10 @@
         "confirmAcceptTitle": "Switch Organization?",
         "confirmAcceptDescription": "You are about to join \"{orgName}\" and set it as your active organization. This will change your current workspace context. Are you sure you want to proceed?",
         "joining": "Joining...",
-        "confirmJoin": "Yes, Join Organization"
+        "confirmJoin": "Yes, Join Organization",
+        "activationPendingTitle": "Invitation accepted",
+        "activationPendingDescription": "You have joined the organization. We could not activate it yet.",
+        "retryActivation": "Activate organization"
     },
     "TextSelection": {
         "openIn": "Open in {provider}"

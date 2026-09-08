@@ -1,12 +1,16 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import ts from 'typescript';
+import { findForbiddenQueries } from './lib/convex-guardrails';
 
 const CONVEX_DIRECTORY = path.resolve(process.cwd(), 'convex');
 const REGISTERED_FUNCTIONS = new Set([
     'query',
     'mutation',
     'action',
+    'internalQuery',
+    'internalMutation',
+    'internalAction',
     'queryWithRLS',
     'mutationWithRLS',
     'internalQueryWithRLS',
@@ -30,8 +34,8 @@ async function listTypeScriptFiles(directory: string): Promise<string[]> {
     return files.flat();
 }
 
-function getRegisteredFunctionName(expression: ts.Expression): string | null {
-    if (!ts.isCallExpression(expression) || !ts.isIdentifier(expression.expression)) {
+function getRegisteredFunctionName(expression: ts.CallExpression): string | null {
+    if (!ts.isIdentifier(expression.expression)) {
         return null;
     }
     return REGISTERED_FUNCTIONS.has(expression.expression.text) ? expression.expression.text : null;
@@ -42,7 +46,6 @@ function getObjectPropertyNames(object: ts.ObjectLiteralExpression): Set<string>
         object.properties.flatMap(property => {
             if (
                 (ts.isPropertyAssignment(property) || ts.isMethodDeclaration(property)) &&
-                property.name &&
                 ts.isIdentifier(property.name)
             ) {
                 return [property.name.text];
@@ -52,16 +55,15 @@ function getObjectPropertyNames(object: ts.ObjectLiteralExpression): Set<string>
     );
 }
 
-async function checkFile(filePath: string): Promise<string[]> {
+async function checkFile(filePath: string, program: ts.Program): Promise<string[]> {
     const sourceText = await readFile(filePath, 'utf8');
-    const sourceFile = ts.createSourceFile(
-        filePath,
-        sourceText,
-        ts.ScriptTarget.Latest,
-        true,
-        ts.ScriptKind.TS
+    const sourceFile =
+        program.getSourceFile(filePath) ??
+        ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const failures: string[] = findForbiddenQueries(sourceFile, program.getTypeChecker()).map(
+        failure =>
+            `${path.relative(process.cwd(), filePath)}:${failure.line} database ${failure.method} must use an index and bounded reads`
     );
-    const failures: string[] = [];
 
     for (const statement of sourceFile.statements) {
         if (!ts.isVariableStatement(statement)) continue;
@@ -72,6 +74,7 @@ async function checkFile(filePath: string): Promise<string[]> {
 
         for (const declaration of statement.declarationList.declarations) {
             if (!declaration.initializer || !ts.isIdentifier(declaration.name)) continue;
+            if (!ts.isCallExpression(declaration.initializer)) continue;
             const functionName = getRegisteredFunctionName(declaration.initializer);
             if (!functionName) continue;
 
@@ -98,7 +101,12 @@ async function checkFile(filePath: string): Promise<string[]> {
 }
 
 const files = await listTypeScriptFiles(CONVEX_DIRECTORY);
-const failures = (await Promise.all(files.map(checkFile))).flat();
+const configPath = path.join(CONVEX_DIRECTORY, 'tsconfig.json');
+const config = ts.readConfigFile(configPath, file => ts.sys.readFile(file));
+if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
+const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, CONVEX_DIRECTORY);
+const program = ts.createProgram(files, parsed.options);
+const failures = (await Promise.all(files.map(file => checkFile(file, program)))).flat();
 
 if (failures.length > 0) {
     console.error(`Convex contract check failed (${failures.length}):`);

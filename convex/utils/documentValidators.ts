@@ -68,7 +68,7 @@ export const objectiveDocumentValidator = v.object({
 export const categoryDocumentValidator = v.object({
     _id: v.id('categories'),
     _creationTime: v.number(),
-    userId: v.id('user'),
+    userId: v.optional(v.id('user')),
     organizationId: v.id('organization'),
     name: v.string(),
     color: v.string(),
@@ -100,6 +100,8 @@ export const notificationDocumentValidator = v.object({
     notificationType: notificationTypeValidator,
     notificationDate: v.number(),
     message: v.string(),
+    messageKey: v.optional(v.string()),
+    messageParams: v.optional(v.record(v.string(), v.union(v.string(), v.number()))),
     createdAt: v.number(),
     updatedAt: v.number(),
 });

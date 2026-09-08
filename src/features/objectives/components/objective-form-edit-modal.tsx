@@ -1,14 +1,13 @@
 'use client';
 
+import type { Id } from '@/convex/_generated/dataModel';
+import { requiredRouteParam } from '@/features/lib/route-param';
+
 import type { ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { Id } from '@/convex/_generated/dataModel';
-import {
-    Objective,
-    SavedObjectiveForm,
-    savedObjectiveSchema,
-} from '@/features/objectives/schemas/objective';
+import type { Objective, SavedObjectiveForm } from '@/features/objectives/schemas/objective';
+import { savedObjectiveSchema } from '@/features/objectives/schemas/objective';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
@@ -17,14 +16,12 @@ import FormModal from '@/components/forms/form-modal';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
 import { useObjectiveCategoryOptions } from '@/features/objectives/hooks/use-objective-category-options';
 import { toCategoryId } from '@/features/objectives/lib/objective-category-selection';
-
 type EditObjectiveFormModalProps = {
     defaultValues: Objective;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     trigger?: ReactNode;
 };
-
 export default function EditObjectiveFormModal({
     defaultValues,
     open,
@@ -37,7 +34,7 @@ export default function EditObjectiveFormModal({
         _id: defaultValues._id,
         title: defaultValues.title,
         description: defaultValues.description,
-        categoryId: defaultValues.categoryId ? String(defaultValues.categoryId) : null,
+        categoryId: defaultValues.categoryId ?? null,
         targetValue: defaultValues.targetValue,
         currentValue: defaultValues.currentValue,
         startValue: defaultValues.startValue,
@@ -46,21 +43,17 @@ export default function EditObjectiveFormModal({
         unit: defaultValues.unit,
     };
     const updateObjective = useConvexMutation(api.objectives.updateObjective);
-
     const updateObjectiveMutation = useMutation({
         mutationFn: async (args: Parameters<typeof updateObjective>[0]) =>
             await updateObjective(args),
     });
-
     const { categoriesQuery, categoryOptions } = useObjectiveCategoryOptions();
-
     const defaultTrigger = (
         <Button className="gap-2" data-testid="objective-edit-open">
             <Pencil className="h-4 w-4" />
             {t('editObjective')}
         </Button>
     );
-
     return (
         <FormModal<SavedObjectiveForm>
             trigger={trigger ?? (open === undefined ? defaultTrigger : undefined)}
@@ -77,7 +70,7 @@ export default function EditObjectiveFormModal({
             }}
             onSubmit={async (value: SavedObjectiveForm) => {
                 await updateObjectiveMutation.mutateAsync({
-                    id: value._id as Id<'objectives'>,
+                    id: requiredRouteParam(value._id) as Id<'objectives'>,
                     title: value.title,
                     description: value.description ?? undefined,
                     categoryId: toCategoryId(value.categoryId) ?? null,

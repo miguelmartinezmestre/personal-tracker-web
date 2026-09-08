@@ -3,12 +3,25 @@ import { cookies } from 'next/headers';
 import { routing } from './routing';
 import { cache } from 'react';
 import { fetchPlatformDefaultLocale } from '@/lib/platform-locale';
+import enMessages from '../translations/en.json';
+import esMessages from '../translations/es.json';
+
+type AppLocale = (typeof routing.locales)[number];
+
+function isAppLocale(value: string): value is AppLocale {
+    return routing.locales.some(locale => locale === value);
+}
+
+function messagesForLocale(locale: AppLocale) {
+    switch (locale) {
+        case 'en':
+            return enMessages;
+        case 'es':
+            return esMessages;
+    }
+}
 
 const getValidLocale = cache(async () => {
-    type AppLocale = (typeof routing.locales)[number];
-    const isAppLocale = (value: string): value is AppLocale =>
-        (routing.locales as readonly string[]).includes(value);
-
     let locale: string | undefined;
 
     try {
@@ -35,6 +48,6 @@ export default getRequestConfig(async () => {
 
     return {
         locale: validLocale,
-        messages: (await import(`../translations/${validLocale}.json`)).default,
+        messages: messagesForLocale(validLocale),
     };
 });

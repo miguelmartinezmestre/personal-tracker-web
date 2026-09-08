@@ -3,7 +3,7 @@ import { validatePasswordPolicy } from '../../shared/password-policy';
 
 describe('password policy', () => {
     test('rejects missing, short, and weak passwords', () => {
-        const cases: Array<[unknown, string]> = [
+        const cases: Array<[string | undefined, string]> = [
             [undefined, 'PASSWORD_TOO_SHORT'],
             ['Short1', 'PASSWORD_TOO_SHORT'],
             ['password', 'WEAK_PASSWORD'],

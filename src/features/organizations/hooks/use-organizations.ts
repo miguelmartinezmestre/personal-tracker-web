@@ -1,5 +1,6 @@
 'use client';
 
+import { useConvexPages } from '@/hooks/use-convex-pages';
 import { useMutation } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/convex/_generated/api';
@@ -10,7 +11,7 @@ import type {
 } from '@/features/organizations/schemas/organization';
 import { convexQuery } from '@convex-dev/react-query';
 import {
-    ORGANIZATION_ROLES,
+    isOrganizationRoleValue,
     type OrganizationRoleValue,
 } from '@/features/organizations/types/roles';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
@@ -37,9 +38,10 @@ interface OrganizationRaw {
 }
 
 function normalizeOrganizationRole(role: string): OrganizationRoleValue {
-    return ORGANIZATION_ROLES.includes(role as OrganizationRoleValue)
-        ? (role as OrganizationRoleValue)
-        : 'member';
+    if (isOrganizationRoleValue(role)) {
+        return role;
+    }
+    return 'member';
 }
 
 function mapOrganization(rawOrganization: OrganizationRaw): Organization {
@@ -54,51 +56,25 @@ function mapOrganization(rawOrganization: OrganizationRaw): Organization {
 }
 
 export function useOrganizations() {
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getOrganizationsByUser, {})
+    const result = useConvexPages<OrganizationRaw>(
+        'organizations',
+        cursor =>
+            convexQuery(api.organizations.getOrganizationsPage, {
+                paginationOpts: { cursor, numItems: 50 },
+            }),
+        organization => organization.id
     );
-
-    const organizations: Organization[] | undefined = data?.map(mapOrganization);
-
-    return {
-        data: organizations,
-        isPending: isPending,
-        isLoading: isLoading,
-    };
+    return { ...result, data: result.data?.map(mapOrganization) };
 }
 
-export function useOrganizationByIdentifier(identifier: string | null) {
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getOrganizationsByUser, identifier ? {} : 'skip')
+export function useOrganizationByIdentifier(identifier: string) {
+    const query = useQuery(
+        convexQuery(
+            api.organizations.getOrganizationByIdentifier,
+            identifier ? { identifier } : 'skip'
+        )
     );
-
-    if (!identifier) {
-        return { data: null, isPending, isLoading };
-    }
-
-    const trimmedIdentifier = identifier.trim();
-
-    let matchedOrganization = data?.find((organization: OrganizationRaw) => {
-        const slug = organization.slug;
-        if (!slug) return false;
-        return slug.trim() === trimmedIdentifier;
-    });
-
-    if (!matchedOrganization) {
-        matchedOrganization = data?.find(
-            (organization: OrganizationRaw) => organization.id.trim() === trimmedIdentifier
-        );
-    }
-
-    const organization: Organization | null = matchedOrganization
-        ? mapOrganization(matchedOrganization)
-        : null;
-
-    return {
-        data: organization,
-        isPending: isPending,
-        isLoading: isLoading,
-    };
+    return { ...query, data: query.data ? mapOrganization(query.data) : null };
 }
 
 export function useCreateOrganization() {
@@ -122,7 +98,7 @@ export function useUpdateOrganization() {
             const result = await authClient.organization.update({
                 data: {
                     name: values.name,
-                    metadata: { description: values.description ?? '' },
+                    metadata: { description: values.description },
                 },
                 organizationId: values.id,
             });

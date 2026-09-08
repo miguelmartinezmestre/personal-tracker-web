@@ -40,7 +40,8 @@
             "signOut": "Cerrar sesión",
             "signingOut": "Cerrando sesión...",
             "goToLogin": "Ir a iniciar sesión",
-            "revokeAll": "Revocar todas"
+            "revokeAll": "Revocar todas",
+            "loadMore": "Cargar más"
         },
         "fields": {
             "email": "Correo electrónico",
@@ -113,6 +114,13 @@
         "redirectingToLogin": "Redirigiendo a iniciar sesión...",
         "aria": {
             "breadcrumbs": "Migas de pan"
+        },
+        "updatingData": "Estamos actualizando los datos del panel.",
+        "chartData": "Ver datos de la gráfica",
+        "skipToContent": "Saltar al contenido",
+        "validation": {
+            "invalidEmail": "Introduce un correo válido.",
+            "minimumCharacters": "Introduce al menos {count} caracteres."
         }
     },
     "DashboardHome": {
@@ -145,7 +153,9 @@
             "noDataAvailable": "Sin datos disponibles",
             "updates": "Actualizaciones",
             "progress": "Progreso",
-            "partialData": "Este gráfico muestra un conjunto parcial de datos."
+            "partialData": "Este gráfico muestra un conjunto parcial de datos.",
+            "month": "Mes",
+            "objective": "Objetivo"
         }
     },
     "HomePage": {
@@ -380,6 +390,15 @@
             "deleteDescription": "Esto eliminará la notificación permanentemente.",
             "deleteConfirm": "Eliminar",
             "cancel": "Cancelar"
+        },
+        "messages": {
+            "objectiveCompleted": "Objetivo \"{title}\" completado.",
+            "progressAdded": "Progreso añadido a \"{title}\": +{amount, number} {unit}",
+            "deadlineToday": "El objetivo \"{title}\" vence hoy, {date}.",
+            "deadlineUpcoming": "El objetivo \"{title}\" vence en {days, plural, one {# día} other {# días}}, el {date}.",
+            "deadlineOverdue": "El objetivo \"{title}\" venció hace {days, plural, one {# día} other {# días}}, el {date}.",
+            "achievementEarned": "Has desbloqueado \"{name}\" y ganado {points, number} puntos.",
+            "organizationAchievementEarned": "La organización ha desbloqueado \"{name}\" y ganado {points, number} puntos."
         }
     },
     "CommandMenu": {
@@ -603,7 +622,17 @@
             "restore": "Restaurar",
             "purge": "Eliminar definitivamente",
             "purgeTitle": "¿Eliminar el objetivo definitivamente?",
-            "purgeDescription": "Esto elimina para siempre el objetivo y sus progresos y notificaciones relacionados. No se puede deshacer."
+            "purgeDescription": "Esto elimina para siempre el objetivo y sus progresos y notificaciones relacionados. No se puede deshacer.",
+            "description": "Objetivos que han sido eliminados. Puedes eliminarlos permanentemente aquí.",
+            "noDeletedObjectives": "No hay objetivos eliminados",
+            "permanentlyDelete": "Eliminar permanentemente",
+            "restoreObjective": "Esta acción no se puede deshacer.",
+            "confirmHardDelete": "¿Estás seguro de que quieres eliminar permanentemente este objetivo?",
+            "confirmHardDeleteDescription": "Esto eliminará permanentemente el objetivo y todas sus actualizaciones de progreso y notificaciones. Esta acción no se puede deshacer.",
+            "toast": {
+                "hardDeleteSuccess": "Objetivo eliminado permanentemente",
+                "hardDeleteFailed": "Error al eliminar permanentemente el objetivo"
+            }
         },
         "confirm": {
             "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
@@ -757,19 +786,6 @@
                 "addFailed": "Error al añadir colaborador",
                 "removeSuccess": "Colaborador eliminado exitosamente",
                 "removeFailed": "Error al eliminar colaborador"
-            }
-        },
-        "trash": {
-            "title": "Papelera",
-            "description": "Objetivos que han sido eliminados. Puedes eliminarlos permanentemente aquí.",
-            "noDeletedObjectives": "No hay objetivos eliminados",
-            "permanentlyDelete": "Eliminar permanentemente",
-            "restoreObjective": "Esta acción no se puede deshacer.",
-            "confirmHardDelete": "¿Estás seguro de que quieres eliminar permanentemente este objetivo?",
-            "confirmHardDeleteDescription": "Esto eliminará permanentemente el objetivo y todas sus actualizaciones de progreso y notificaciones. Esta acción no se puede deshacer.",
-            "toast": {
-                "hardDeleteSuccess": "Objetivo eliminado permanentemente",
-                "hardDeleteFailed": "Error al eliminar permanentemente el objetivo"
             }
         }
     },
@@ -1104,7 +1120,8 @@
             "progressTimelineDescription": "Progreso acumulado a lo largo del tiempo",
             "value": "Valor",
             "target": "Objetivo"
-        }
+        },
+        "historyLimited": "La gráfica muestra las últimas 500 actualizaciones y conserva el acumulado anterior."
     },
     "Header": {
         "appName": "Métricas",
@@ -1261,7 +1278,10 @@
         "confirmAcceptTitle": "¿Cambiar de organización?",
         "confirmAcceptDescription": "Estás a punto de unirte a «{orgName}» y establecerla como tu organización activa. Esto cambiará el contexto de tu espacio de trabajo actual. ¿Seguro que quieres continuar?",
         "joining": "Uniéndote...",
-        "confirmJoin": "Sí, unirme a la organización"
+        "confirmJoin": "Sí, unirme a la organización",
+        "activationPendingTitle": "Invitación aceptada",
+        "activationPendingDescription": "Ya perteneces a la organización. No hemos podido activarla todavía.",
+        "retryActivation": "Activar organización"
     },
     "TextSelection": {
         "openIn": "Abrir en {provider}"

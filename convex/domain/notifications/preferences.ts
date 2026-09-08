@@ -22,18 +22,10 @@ export async function getNotificationPreferencesForUser(
     if (preferences) {
         return {
             ...preferences,
-            achievementNotifications:
-                preferences.achievementNotifications ??
-                DEFAULT_NOTIFICATION_PREFERENCES.achievementNotifications,
-            deadlineNotifications:
-                preferences.deadlineNotifications ??
-                DEFAULT_NOTIFICATION_PREFERENCES.deadlineNotifications,
-            progressNotifications:
-                preferences.progressNotifications ??
-                DEFAULT_NOTIFICATION_PREFERENCES.progressNotifications,
-            organizationNotifications:
-                preferences.organizationNotifications ??
-                DEFAULT_NOTIFICATION_PREFERENCES.organizationNotifications,
+            achievementNotifications: preferences.achievementNotifications,
+            deadlineNotifications: preferences.deadlineNotifications,
+            progressNotifications: preferences.progressNotifications,
+            organizationNotifications: preferences.organizationNotifications,
         };
     }
 
@@ -75,7 +67,7 @@ export async function updateNotificationPreferencesForUser(
             updateFields.organizationNotifications = patch.organizationNotifications;
         }
 
-        await ctx.db.patch(existing._id, updateFields);
+        await ctx.db.patch('notificationPreferences', existing._id, updateFields);
 
         return {
             success: true,
@@ -119,7 +111,7 @@ async function shouldSendPreference(
         return true;
     }
 
-    return preferences[key] ?? true;
+    return preferences[key];
 }
 
 export async function shouldSendDeadlineNotification(

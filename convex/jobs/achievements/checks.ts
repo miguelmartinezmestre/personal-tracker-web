@@ -1,4 +1,4 @@
-import { Infer } from 'convex/values';
+import type { Infer } from 'convex/values';
 import { internal } from '../../_generated/api';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
@@ -16,7 +16,7 @@ import {
     shouldSendAchievementNotification,
     shouldSendOrganizationNotification,
 } from '../../domain/notifications/preferences';
-import { achievementTriggerValidator } from '../../utils/validators';
+import type { achievementTriggerValidator } from '../../utils/validators';
 
 type AchievementTrigger = Infer<typeof achievementTriggerValidator>;
 type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
@@ -28,7 +28,9 @@ function canReceiveAchievement(
     user: { deletedAt?: number; banned?: boolean | null; banExpires?: number | null } | null,
     now: number
 ) {
-    if (!user || user.deletedAt !== undefined) return false;
+    if (!user || user.deletedAt !== undefined) {
+        return false;
+    }
     return user.banned !== true || (user.banExpires != null && user.banExpires <= now);
 }
 
@@ -229,7 +231,9 @@ export async function checkUserAchievementsJob(
         ctx,
         scopeType: 'individual',
         evaluate(code) {
-            if (earnedCodes.has(code)) return false;
+            if (earnedCodes.has(code)) {
+                return false;
+            }
             const rule = getAchievementRule(code);
             const definition = definitionByCode.get(code);
             return Boolean(
@@ -240,6 +244,7 @@ export async function checkUserAchievementsJob(
             );
         },
         async award(defId, code, points) {
+            const threshold = (await ctx.db.get('achievementDefinitions', defId))?.threshold ?? 0;
             if (!canReceiveAchievement(await ctx.db.get('user', userId), now)) {
                 return false;
             }
@@ -251,7 +256,9 @@ export async function checkUserAchievementsJob(
                 )
                 .first();
 
-            if (alreadyAwarded) return false;
+            if (alreadyAwarded) {
+                return false;
+            }
 
             await ctx.db.insert('obtainedAchievements', {
                 userId: userId,
@@ -270,6 +277,8 @@ export async function checkUserAchievementsJob(
                     read: false,
                     notificationType: 'achievement',
                     notificationDate: now,
+                    messageKey: 'achievementEarned',
+                    messageParams: { code, points, threshold },
                     message: `Achievement unlocked: "${code}"! You earned ${points} points.`,
                     createdAt: now,
                     updatedAt: now,
@@ -386,8 +395,10 @@ export async function checkOrganizationAchievementsJob(
     const result = await evaluateAndAwardAchievements({
         ctx,
         scopeType: 'organization',
-        async evaluate(code) {
-            if (earnedCodes.has(code)) return false;
+        evaluate(code) {
+            if (earnedCodes.has(code)) {
+                return false;
+            }
             const rule = getAchievementRule(code);
             const definition = definitionByCode.get(code);
             return Boolean(
@@ -398,6 +409,7 @@ export async function checkOrganizationAchievementsJob(
             );
         },
         async award(defId, code, points) {
+            const threshold = (await ctx.db.get('achievementDefinitions', defId))?.threshold ?? 0;
             // Re-read both rows immediately before the write. Convex tracks
             // them in this transaction's read set, so a concurrent member or
             // organization deletion conflicts and retries into the abort path.
@@ -410,7 +422,9 @@ export async function checkOrganizationAchievementsJob(
                       )
                       .first()
                 : null;
-            if (!currentOrganization || !currentMembership) return false;
+            if (!currentOrganization || !currentMembership) {
+                return false;
+            }
 
             const alreadyAwarded = await ctx.db
                 .query('organizationAchievements')
@@ -419,7 +433,9 @@ export async function checkOrganizationAchievementsJob(
                 )
                 .first();
 
-            if (alreadyAwarded) return false;
+            if (alreadyAwarded) {
+                return false;
+            }
 
             const orgAchievementId = await ctx.db.insert('organizationAchievements', {
                 organization: organizationId,
@@ -452,6 +468,7 @@ export async function checkOrganizationAchievementsJob(
                     organizationId,
                     code,
                     points,
+                    threshold,
                     cursor: null,
                 }
             );
@@ -491,6 +508,7 @@ export async function notifyOrganizationAchievementMembersJob(
         organizationId: Id<'organization'>;
         code: string;
         points: number;
+        threshold?: number;
         cursor?: string | null;
     }
 ) {
@@ -508,8 +526,12 @@ export async function notifyOrganizationAchievementMembersJob(
     const now = Date.now();
 
     for (const member of page.page) {
-        if (!canReceiveAchievement(await ctx.db.get('user', member.userId), now)) continue;
-        if (!(await shouldSendOrganizationNotification(ctx, member.userId))) continue;
+        if (!canReceiveAchievement(await ctx.db.get('user', member.userId), now)) {
+            continue;
+        }
+        if (!(await shouldSendOrganizationNotification(ctx, member.userId))) {
+            continue;
+        }
         await ctx.db.insert('notifications', {
             userId: member.userId,
             organizationId: args.organizationId,
@@ -517,6 +539,16 @@ export async function notifyOrganizationAchievementMembersJob(
             read: false,
             notificationType: 'achievement',
             notificationDate: now,
+            ...(args.threshold === undefined
+                ? {}
+                : {
+                      messageKey: 'organizationAchievementEarned',
+                      messageParams: {
+                          code: args.code,
+                          points: args.points,
+                          threshold: args.threshold,
+                      },
+                  }),
             message: `Organization achievement unlocked: "${args.code}"! The organization earned ${args.points} points.`,
             createdAt: now,
             updatedAt: now,

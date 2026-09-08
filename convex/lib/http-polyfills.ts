@@ -1,4 +1,4 @@
-if (typeof MessageChannel === 'undefined') {
+if (!('MessageChannel' in globalThis)) {
     class MockMessagePort {
         onmessage: ((ev: MessageEvent) => void) | undefined;
         onmessageerror: ((ev: MessageEvent) => void) | undefined;
@@ -10,7 +10,7 @@ if (typeof MessageChannel === 'undefined') {
             return false;
         }
 
-        postMessage(_message: unknown, _transfer: Transferable[] = []) {}
+        postMessage(_message: string | object | null, _transfer: Transferable[] = []) {}
         removeEventListener() {}
         start() {}
     }
@@ -25,5 +25,5 @@ if (typeof MessageChannel === 'undefined') {
         }
     }
 
-    globalThis.MessageChannel = MockMessageChannel as unknown as typeof MessageChannel;
+    Object.assign(globalThis, { MessageChannel: MockMessageChannel });
 }

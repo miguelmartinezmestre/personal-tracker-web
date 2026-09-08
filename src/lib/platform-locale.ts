@@ -6,7 +6,7 @@ import { routing } from '@/i18n/routing';
 type AppLocale = (typeof routing.locales)[number];
 
 function isAppLocale(value: string): value is AppLocale {
-    return (routing.locales as readonly string[]).includes(value);
+    return routing.locales.some(locale => locale === value);
 }
 
 export async function fetchPlatformDefaultLocale(): Promise<AppLocale | null> {

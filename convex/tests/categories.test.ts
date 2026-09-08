@@ -91,7 +91,10 @@ describe('convex categories', async () => {
         });
 
         const [withIcon, withoutIcon] = await userIdentity.run(async ctx => {
-            return Promise.all([ctx.db.get(withIconId), ctx.db.get(withoutIconId)]);
+            return Promise.all([
+                ctx.db.get('categories', withIconId),
+                ctx.db.get('categories', withoutIconId),
+            ]);
         });
 
         expect(withIcon).toMatchObject({
@@ -175,7 +178,7 @@ describe('convex categories', async () => {
             icon: 'target',
         });
 
-        const updated = await userIdentity.run(async ctx => ctx.db.get(categoryId));
+        const updated = await userIdentity.run(async ctx => ctx.db.get('categories', categoryId));
         expect(updated).toMatchObject({
             name: 'Updated',
             color: '#ff0000',
@@ -192,7 +195,9 @@ describe('convex categories', async () => {
 
         await userIdentity.mutation(api.categories.deleteCategory, { id: categoryId });
 
-        await expect(userIdentity.run(async ctx => ctx.db.get(categoryId))).resolves.toBeNull();
+        await expect(
+            userIdentity.run(async ctx => ctx.db.get('categories', categoryId))
+        ).resolves.toBeNull();
     });
 
     test('creates the default category set for the caller', async () => {

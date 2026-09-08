@@ -1,4 +1,5 @@
-import { test, expect, Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import {
     createTestUser,
     loginUser,
@@ -13,6 +14,10 @@ let screenshotCounter = 0;
 
 const SCREENSHOT_DIR = 'test-results/screenshots/tfg';
 
+async function isVisibleNow(locator: Locator): Promise<boolean> {
+    return locator.isVisible().catch(() => false);
+}
+
 async function takeTFGScreenshot(page: Page, name: string, description?: string) {
     const screenshotDirectory = path.join(process.cwd(), SCREENSHOT_DIR);
     if (!fs.existsSync(screenshotDirectory)) {
@@ -20,29 +25,27 @@ async function takeTFGScreenshot(page: Page, name: string, description?: string)
     }
 
     await page.evaluate(() => {
-        document.querySelectorAll('[data-sonner-toaster]').forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-        });
-        document.querySelectorAll('[data-loading]').forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-        });
-        document.querySelectorAll('[class*="Issues"], [class*="issues"]').forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-        });
-        document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-toast]').forEach(element => {
-            (element as HTMLElement).style.display = 'none';
-        });
+        const hide = (element: Element) => {
+            if (element instanceof HTMLElement) {
+                element.style.display = 'none';
+            }
+        };
+        document.querySelectorAll('[data-sonner-toaster]').forEach(hide);
+        document.querySelectorAll('[data-loading]').forEach(hide);
+        document.querySelectorAll('[class*="Issues"], [class*="issues"]').forEach(hide);
+        document.querySelectorAll('[data-nextjs-dialog], [data-nextjs-toast]').forEach(hide);
         document
             .querySelectorAll('[class*="error-overlay"], [class*="ErrorOverlay"]')
-            .forEach(element => {
-                (element as HTMLElement).style.display = 'none';
-            });
+            .forEach(hide);
         document
             .querySelectorAll('button[class*="bg-destructive"], button[class*="bg-red"]')
             .forEach(element => {
+                if (!(element instanceof HTMLElement)) {
+                    return;
+                }
                 const text = element.textContent || '';
                 if (/^\d+\s*Issues?$/i.test(text.trim()) || /^\d+$/.test(text.trim())) {
-                    (element as HTMLElement).style.display = 'none';
+                    element.style.display = 'none';
                 }
             });
     });
@@ -94,7 +97,7 @@ async function seedAchievementsAsAdmin(page: Page) {
     await page.waitForTimeout(1000);
 
     const seedButton = page.getByTestId('achievements-seed-button');
-    if (await seedButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await isVisibleNow(seedButton)) {
         console.log('Initializing achievement definitions with admin user...');
         await seedButton.click();
         await expect(seedButton).toBeHidden({ timeout: 15000 });
@@ -248,12 +251,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         const objTypeSelect = page
             .locator('[data-testid*="objective-type"]:not([disabled])')
             .or(page.locator('[data-testid*="objectiveType"]:not([disabled])'));
-        if (
-            await objTypeSelect
-                .first()
-                .isVisible({ timeout: 1000 })
-                .catch(() => false)
-        ) {
+        if (await isVisibleNow(objTypeSelect.first())) {
             await objTypeSelect.first().click({ timeout: 2000 });
             await page.waitForTimeout(200);
             await takeTFGScreenshot(
@@ -265,12 +263,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         }
 
         const periodSelect = page.locator('[data-testid*="period"]:not([disabled])');
-        if (
-            await periodSelect
-                .first()
-                .isVisible({ timeout: 1000 })
-                .catch(() => false)
-        ) {
+        if (await isVisibleNow(periodSelect.first())) {
             await periodSelect.first().click({ timeout: 2000 });
             await page.waitForTimeout(200);
             await takeTFGScreenshot(
@@ -316,7 +309,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         const objectiveLink = page
             .locator('tr:has-text("Learn TypeScript") a, a:has-text("Learn TypeScript")')
             .first();
-        if (await objectiveLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await isVisibleNow(objectiveLink)) {
             await objectiveLink.click();
         } else {
             await page.getByText('Learn TypeScript').first().click();
@@ -500,12 +493,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
 
         const seedButton = page.getByTestId('achievements-seed-button');
         const initButton = page.locator('button:has-text("Initialize")').or(seedButton);
-        if (
-            await initButton
-                .first()
-                .isVisible({ timeout: 2000 })
-                .catch(() => false)
-        ) {
+        if (await isVisibleNow(initButton.first())) {
             console.log('Initializing achievements...');
             await initButton.first().click();
             await page.waitForTimeout(3000);
@@ -689,7 +677,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(2000);
 
         const noResults = page.locator('text=No results');
-        if (await noResults.isVisible({ timeout: 1000 }).catch(() => false)) {
+        if (await isVisibleNow(noResults)) {
             console.log('Warning: Sessions table is empty, reloading...');
             await page.reload();
             await page.waitForLoadState('networkidle');
@@ -710,7 +698,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             .locator('[data-testid*="session-card"]')
             .or(page.locator('.session-item').first())
             .or(page.locator('table tbody tr').first());
-        if (await sessionCard.isVisible({ timeout: 1000 }).catch(() => false)) {
+        if (await isVisibleNow(sessionCard)) {
             await takeTFGScreenshot(
                 page,
                 'sessions-current-row',
@@ -834,7 +822,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
 
         const langSwitcher = page.getByTestId('language-switcher');
 
-        if (await langSwitcher.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await isVisibleNow(langSwitcher)) {
             await langSwitcher.click();
             await page.waitForTimeout(300);
             await takeTFGScreenshot(
@@ -844,7 +832,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
 
             const spanishOption = page.getByTestId('language-option-es');
-            if (await spanishOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+            if (await isVisibleNow(spanishOption)) {
                 await spanishOption.click();
                 await page.waitForTimeout(500);
                 await takeTFGScreenshot(page, 'language-spanish-ui', 'UI in Spanish');
@@ -852,7 +840,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
                 await langSwitcher.click();
                 await page.waitForTimeout(200);
                 const englishOption = page.getByTestId('language-option-en');
-                if (await englishOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+                if (await isVisibleNow(englishOption)) {
                     await englishOption.click();
                     await page.waitForTimeout(300);
                 }
@@ -910,7 +898,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.waitForTimeout(500);
 
         const sidebar = page.getByTestId('app-sidebar');
-        if (await sidebar.isVisible({ timeout: 2000 }).catch(() => false)) {
+        if (await isVisibleNow(sidebar)) {
             await takeTFGScreenshot(
                 page,
                 'sidebar-navigation',
@@ -918,7 +906,7 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
             );
         } else {
             const asideSidebar = page.locator('aside').first();
-            if (await asideSidebar.isVisible({ timeout: 1000 }).catch(() => false)) {
+            if (await isVisibleNow(asideSidebar)) {
                 await takeTFGScreenshot(
                     page,
                     'sidebar-navigation',

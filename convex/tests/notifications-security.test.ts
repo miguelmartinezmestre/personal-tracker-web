@@ -8,8 +8,8 @@ import {
     createTestObjective,
     createTestNotification,
 } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 
 describe('notifications security - cross-user access prevention', async () => {
     const t = initConvexTest();
@@ -129,21 +129,21 @@ describe('notifications security - cross-user access prevention', async () => {
             banned: false,
         });
 
-        userAObjectiveId = (await createTestObjective(t, {
+        userAObjectiveId = await createTestObjective(t, {
             userId: userAId,
             organizationId: sharedOrganizationId,
             title: 'User A Objective',
             targetValue: 100,
             currentValue: 0,
-        })) as Id<'objectives'>;
+        });
 
-        userBObjectiveId = (await createTestObjective(t, {
+        userBObjectiveId = await createTestObjective(t, {
             userId: userBId,
             organizationId: sharedOrganizationId,
             title: 'User B Objective',
             targetValue: 100,
             currentValue: 0,
-        })) as Id<'objectives'>;
+        });
     });
 
     describe('CRITICAL: User B cannot access User A notifications in same org', () => {
@@ -156,17 +156,17 @@ describe('notifications security - cross-user access prevention', async () => {
                 message: 'User A Private Notification',
             });
 
-            expect(notificationA!.read).toBe(false);
+            expect(notificationA.read).toBe(false);
 
             await expect(
                 userBIdentity.mutation(api.notifications.setNotificationRead, {
-                    id: notificationA!._id,
+                    id: notificationA._id,
                     read: true,
                 })
             ).rejects.toThrow(/Not authorized|NOT_AUTHORIZED_NOTIFICATION|RLS/);
 
             const unchangedNotification = await userAIdentity.run(async ctx => {
-                return await ctx.db.get(notificationA!._id);
+                return await ctx.db.get('notifications', notificationA._id);
             });
             expect(unchangedNotification?.read).toBe(false);
         });
@@ -182,12 +182,12 @@ describe('notifications security - cross-user access prevention', async () => {
 
             await expect(
                 userBIdentity.mutation(api.notifications.deleteNotification, {
-                    id: notificationA!._id,
+                    id: notificationA._id,
                 })
             ).rejects.toThrow(/Not authorized|NOT_AUTHORIZED_NOTIFICATION|RLS/);
 
             const stillExists = await userAIdentity.run(async ctx => {
-                return await ctx.db.get(notificationA!._id);
+                return await ctx.db.get('notifications', notificationA._id);
             });
             expect(stillExists).not.toBeNull();
         });
@@ -247,12 +247,15 @@ describe('notifications security - cross-user access prevention', async () => {
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
-                return await ctx.db.get(id);
+                return await ctx.db.get('notifications', id);
             });
+            if (!orgNotification) {
+                throw new Error('Expected organization notification');
+            }
 
             await expect(
                 userBIdentity.mutation(api.notifications.setNotificationRead, {
-                    id: orgNotification!._id,
+                    id: orgNotification._id,
                     read: true,
                 })
             ).rejects.toThrow(/Not authorized|NOT_AUTHORIZED_NOTIFICATION|RLS/);
@@ -270,7 +273,7 @@ describe('notifications security - cross-user access prevention', async () => {
             });
 
             const updated = await adminIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notificationA!._id,
+                id: notificationA._id,
                 read: true,
             });
 
@@ -287,11 +290,11 @@ describe('notifications security - cross-user access prevention', async () => {
             });
 
             await adminIdentity.mutation(api.notifications.deleteNotification, {
-                id: notificationA!._id,
+                id: notificationA._id,
             });
 
             const deleted = await userAIdentity.run(async ctx => {
-                return await ctx.db.get(notificationA!._id);
+                return await ctx.db.get('notifications', notificationA._id);
             });
             expect(deleted).toBeNull();
         });
@@ -317,13 +320,13 @@ describe('notifications security - cross-user access prevention', async () => {
 
             await expect(
                 userBIdentity.mutation(api.notifications.setNotificationRead, {
-                    id: personalNotification!._id,
+                    id: personalNotification._id,
                     read: true,
                 })
             ).rejects.toThrow(/Not authorized|NOT_AUTHORIZED_NOTIFICATION/);
 
             const unchanged = await userAIdentity.run(async ctx => {
-                return await ctx.db.get(personalNotification!._id);
+                return await ctx.db.get('notifications', personalNotification._id);
             });
             expect(unchanged?.read).toBe(false);
         });
@@ -346,12 +349,12 @@ describe('notifications security - cross-user access prevention', async () => {
             });
 
             await userAIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notificationA!._id,
+                id: notificationA._id,
                 read: true,
             });
 
             const notificationBStatus = await userBIdentity.run(async ctx => {
-                return await ctx.db.get(notificationB!._id);
+                return await ctx.db.get('notifications', notificationB._id);
             });
             expect(notificationBStatus?.read).toBe(false);
         });

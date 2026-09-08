@@ -1,21 +1,10 @@
-import { APIError, createAuthMiddleware } from 'better-auth/api';
-import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
+import { internalMutation } from './platform/db/internalMutation';
 import { internal } from './_generated/api';
-import {
-    internalQuery,
-    internalMutation,
-    type ActionCtx,
-    type MutationCtx,
-    type QueryCtx,
-} from './_generated/server';
-import authConfig from './auth.config';
-import { admin, organization } from 'better-auth/plugins';
+import { internalQuery, type MutationCtx } from './_generated/server';
 import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
-import { authAuditTriggers } from './authAuditTriggers';
 import { ERROR_CODES } from './utils/constants';
 import { defineAuth } from './generated/auth';
-import { buildInvitationEmail } from './platform/email/invitationEmail';
 import { queryWithRLS } from './platform/rls/wrappers';
 import {
     DEFAULT_ORGANIZATION_NAME,
@@ -25,61 +14,40 @@ import {
     getPersonalOrganizationOwnerUserId,
     isLegacyPersonalOrganizationSlugForUser,
     isPersonalOrganizationForUser,
-    isPersonalOrganizationMetadata,
 } from './domain/organizations/personalOrganization';
-
-type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
-type RunnableCtx = MutationCtx | ActionCtx;
-type AuthOptions = BetterAuthOptionsWithoutDatabase & {
-    triggers: never;
-};
-
-import { env } from './lib/env';
-import { validatePasswordPolicy } from '../shared/password-policy';
-import { platformAdminRoles, platformRoles } from '../shared/platform-admin-access';
-import {
-    getInvitationIdFromCallbackPath,
-    isSetupSecretValid,
-    ORGANIZATION_SECURITY_OPTIONS,
-    SETUP_SECRET_HEADER,
-} from '../shared/auth-security';
 import { userDocumentValidator } from './utils/documentValidators';
-import { accountDeletionPlugin } from './platform/auth/accountDeletionPlugin';
-
+import { buildBetterAuthOptions } from './platform/auth/betterAuthOptions';
+import type { GenericCtx } from './platform/auth/authRuntime';
+import { isActiveAccount } from './domain/organizations/operational';
 const PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT = 1000;
 const SESSION_RECOVERY_BATCH_SIZE = 20;
-const SESSION_RECOVERY_MEMBERSHIP_SCAN_LIMIT = 20;
-
 type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted' | 'affected';
-
+type SessionRecoveryResult = {
+    status: 'in_progress' | 'completed';
+    phase: SessionRecoveryPhase;
+};
+const NEXT_SESSION_RECOVERY_PHASE: Record<SessionRecoveryPhase, SessionRecoveryPhase | null> = {
+    'actor-null': 'actor-unset',
+    'actor-unset': 'actor-deleted',
+    'actor-deleted': 'affected',
+    affected: null,
+};
+function actorPhaseOrganizationId(
+    phase: Exclude<SessionRecoveryPhase, 'affected'>,
+    organizationId: Id<'organization'>
+): Id<'organization'> | null | undefined {
+    switch (phase) {
+        case 'actor-null':
+            return null;
+        case 'actor-unset':
+            return undefined;
+        case 'actor-deleted':
+            return organizationId;
+    }
+}
 function normalizeRegistrationEmail(email: string) {
     return email.trim().toLowerCase();
 }
-
-function usesReservedPersonalOrganizationIdentity(organization: {
-    slug?: unknown;
-    metadata?: unknown;
-}) {
-    const reservedSlug =
-        typeof organization.slug === 'string' &&
-        organization.slug.startsWith(`${DEFAULT_ORGANIZATION_SLUG_BASE}-`);
-    const reservedMetadata =
-        (typeof organization.metadata === 'string' &&
-            isPersonalOrganizationMetadata(organization.metadata)) ||
-        (typeof organization.metadata === 'object' &&
-            organization.metadata !== null &&
-            (organization.metadata as { type?: unknown }).type === 'personal');
-
-    return reservedSlug || reservedMetadata;
-}
-
-function throwReservedPersonalOrganizationIdentity() {
-    throw new APIError('FORBIDDEN', {
-        code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
-        message: 'Personal organization slug and metadata are reserved.',
-    });
-}
-
 export const getEmailRegistrationAuthorization = internalQuery({
     args: {
         email: v.string(),
@@ -92,21 +60,17 @@ export const getEmailRegistrationAuthorization = internalQuery({
         if (!settings) {
             return 'bootstrap';
         }
-
         if (settings.registrationPolicy === 'open') {
             return 'allowed';
         }
-
         const normalizedEmail = normalizeRegistrationEmail(args.email);
         if (!normalizedEmail || !args.invitationId) {
             return 'denied';
         }
-
         const invitationId = ctx.db.normalizeId('invitation', args.invitationId);
         if (!invitationId) {
             return 'denied';
         }
-
         const invitation = await ctx.db.get('invitation', invitationId);
         if (
             !invitation ||
@@ -116,51 +80,48 @@ export const getEmailRegistrationAuthorization = internalQuery({
         ) {
             return 'denied';
         }
-
         const organization = await ctx.db.get('organization', invitation.organizationId);
         return organization ? 'allowed' : 'denied';
     },
 });
-
 export const ensureDefaultOrganizationForUser = internalMutation({
+    returns: v.id('organization'),
     args: {
-        userId: v.id('user'),
+        userId: v.string(),
     },
     handler: async (ctx, args) => {
-        const existingMembership = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', args.userId))
-            .first();
-
-        if (existingMembership) {
-            return existingMembership.organizationId;
+        const userId = ctx.db.normalizeId('user', args.userId);
+        if (!userId) {
+            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
         }
-
+        for await (const membership of ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))) {
+            if (await ctx.db.get('organization', membership.organizationId)) {
+                return membership.organizationId;
+            }
+        }
         const now = Date.now();
-        const slug = await buildAvailablePersonalOrganizationSlug(ctx, args.userId);
+        const slug = await buildAvailablePersonalOrganizationSlug(ctx, userId);
         const organizationId = await ctx.db.insert('organization', {
             name: DEFAULT_ORGANIZATION_NAME,
             slug,
             createdAt: now,
-            metadata: buildPersonalOrganizationMetadata(args.userId),
+            metadata: buildPersonalOrganizationMetadata(userId),
             logo: null,
         });
-
         await ctx.db.insert('member', {
             organizationId,
-            userId: args.userId,
+            userId,
             role: 'owner',
             createdAt: now,
         });
-
         return organizationId;
     },
 });
-
 async function buildAvailablePersonalOrganizationSlug(ctx: MutationCtx, userId: Id<'user'>) {
     const baseSlug = buildDefaultOrganizationSlug(userId);
     let candidate = baseSlug;
-
     for (let attempt = 0; attempt < 5; attempt++) {
         const collision = await ctx.db
             .query('organization')
@@ -169,58 +130,48 @@ async function buildAvailablePersonalOrganizationSlug(ctx: MutationCtx, userId: 
         if (!collision) {
             return candidate;
         }
-
         candidate = `${baseSlug}-${Date.now().toString(36)}-${attempt + 1}`;
     }
-
     throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
 }
-
 async function findOrCreateFallbackOrganization(
     ctx: MutationCtx,
     userId: Id<'user'>,
     deletedOrganizationId: Id<'organization'>
 ): Promise<Id<'organization'> | null> {
     const user = await ctx.db.get('user', userId);
-    if (!user || user.deletedAt !== undefined) {
+    if (!isActiveAccount(user, Date.now())) {
         return null;
     }
-
-    const memberships = await ctx.db
+    const personal = await ctx.db
+        .query('organization')
+        .withIndex('slug', q => q.eq('slug', buildDefaultOrganizationSlug(userId)))
+        .first();
+    if (
+        personal &&
+        personal._id !== deletedOrganizationId &&
+        isPersonalOrganizationForUser({ metadata: personal.metadata, slug: personal.slug, userId })
+    ) {
+        const membership = await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', personal._id).eq('userId', userId)
+            )
+            .first();
+        if (membership) {
+            return personal._id;
+        }
+    }
+    for await (const membership of ctx.db
         .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .take(SESSION_RECOVERY_MEMBERSHIP_SCAN_LIMIT);
-    const candidates: Array<{
-        organizationId: Id<'organization'>;
-        createdAt: number;
-        isPersonal: boolean;
-    }> = [];
-
-    for (const membership of memberships) {
-        if (membership.organizationId === deletedOrganizationId) continue;
-
-        const organization = await ctx.db.get('organization', membership.organizationId);
-        if (!organization) continue;
-
-        candidates.push({
-            organizationId: organization._id,
-            createdAt: membership.createdAt,
-            isPersonal: isPersonalOrganizationForUser({
-                metadata: organization.metadata,
-                slug: organization.slug,
-                userId,
-            }),
-        });
+        .withIndex('userId', q => q.eq('userId', userId))) {
+        if (
+            membership.organizationId !== deletedOrganizationId &&
+            (await ctx.db.get('organization', membership.organizationId))
+        ) {
+            return membership.organizationId;
+        }
     }
-
-    candidates.sort(
-        (left, right) =>
-            Number(right.isPersonal) - Number(left.isPersonal) || left.createdAt - right.createdAt
-    );
-    if (candidates[0]) {
-        return candidates[0].organizationId;
-    }
-
     const now = Date.now();
     const personalSlug = await buildAvailablePersonalOrganizationSlug(ctx, userId);
     const organizationId = await ctx.db.insert('organization', {
@@ -230,25 +181,29 @@ async function findOrCreateFallbackOrganization(
         metadata: buildPersonalOrganizationMetadata(userId),
         logo: null,
     });
-
     await ctx.db.insert('member', {
         organizationId,
         userId,
         role: 'owner',
         createdAt: now,
     });
-
     return organizationId;
 }
-
 async function repairSessionsAfterOrganizationDeletion(
     ctx: MutationCtx,
-    sessions: Array<{ _id: Id<'session'>; userId: string }>,
+    sessions: Array<{
+        _id: Id<'session'>;
+        userId: string;
+        expiresAt: number;
+    }>,
     deletedOrganizationId: Id<'organization'>
 ) {
     const fallbackByUser = new Map<string, Id<'organization'> | null>();
-
     for (const session of sessions) {
+        if (session.expiresAt <= Date.now()) {
+            await ctx.db.delete('session', session._id);
+            continue;
+        }
         let fallbackOrganizationId = fallbackByUser.get(session.userId);
         if (fallbackOrganizationId === undefined) {
             const userId = ctx.db.normalizeId('user', session.userId);
@@ -257,19 +212,16 @@ async function repairSessionsAfterOrganizationDeletion(
                 : null;
             fallbackByUser.set(session.userId, fallbackOrganizationId);
         }
-
         if (!fallbackOrganizationId) {
             await ctx.db.delete('session', session._id);
             continue;
         }
-
         await ctx.db.patch('session', session._id, {
             activeOrganizationId: fallbackOrganizationId,
             updatedAt: Date.now(),
         });
     }
 }
-
 async function scheduleSessionRecovery(
     ctx: MutationCtx,
     args: {
@@ -280,11 +232,19 @@ async function scheduleSessionRecovery(
 ) {
     await ctx.scheduler.runAfter(0, internal.auth.recoverSessionsAfterOrganizationDeletion, args);
 }
-
 export const recoverSessionsAfterOrganizationDeletion = internalMutation({
+    returns: v.object({
+        status: v.union(v.literal('in_progress'), v.literal('completed')),
+        phase: v.union(
+            v.literal('actor-null'),
+            v.literal('actor-unset'),
+            v.literal('actor-deleted'),
+            v.literal('affected')
+        ),
+    }),
     args: {
-        organizationId: v.id('organization'),
-        actorUserId: v.id('user'),
+        organizationId: v.string(),
+        actorUserId: v.string(),
         phase: v.optional(
             v.union(
                 v.literal('actor-null'),
@@ -295,66 +255,74 @@ export const recoverSessionsAfterOrganizationDeletion = internalMutation({
         ),
     },
     handler: async (ctx, args) => {
+        const organizationId = ctx.db.normalizeId('organization', args.organizationId);
+        const actorUserId = ctx.db.normalizeId('user', args.actorUserId);
+        if (!organizationId || !actorUserId) {
+            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
+        }
         const phase = args.phase ?? 'actor-null';
-        let sessions: Array<{ _id: Id<'session'>; userId: string }>;
-
+        let sessions: Array<{
+            _id: Id<'session'>;
+            userId: string;
+            expiresAt: number;
+        }>;
         if (phase === 'affected') {
             sessions = await ctx.db
                 .query('session')
                 .withIndex('activeOrganizationId', q =>
-                    q.eq('activeOrganizationId', args.organizationId)
+                    q.eq('activeOrganizationId', organizationId)
                 )
                 .take(SESSION_RECOVERY_BATCH_SIZE);
         } else {
-            const activeOrganizationId =
-                phase === 'actor-null'
-                    ? null
-                    : phase === 'actor-unset'
-                      ? undefined
-                      : args.organizationId;
+            const activeOrganizationId = actorPhaseOrganizationId(phase, organizationId);
             sessions = await ctx.db
                 .query('session')
                 .withIndex('by_userId_and_activeOrganizationId', q =>
-                    q
-                        .eq('userId', args.actorUserId)
-                        .eq('activeOrganizationId', activeOrganizationId)
+                    q.eq('userId', actorUserId).eq('activeOrganizationId', activeOrganizationId)
                 )
                 .take(SESSION_RECOVERY_BATCH_SIZE);
         }
-
-        await repairSessionsAfterOrganizationDeletion(ctx, sessions, args.organizationId);
-
+        await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
         if (sessions.length === SESSION_RECOVERY_BATCH_SIZE) {
             await scheduleSessionRecovery(ctx, {
-                organizationId: args.organizationId,
-                actorUserId: args.actorUserId,
+                organizationId,
+                actorUserId,
                 phase,
             });
-            return { status: 'in_progress' as const, phase };
+            const inProgress: SessionRecoveryResult = { status: 'in_progress', phase };
+            return inProgress;
         }
-
-        const nextPhase: SessionRecoveryPhase | null =
-            phase === 'actor-null'
-                ? 'actor-unset'
-                : phase === 'actor-unset'
-                  ? 'actor-deleted'
-                  : phase === 'actor-deleted'
-                    ? 'affected'
-                    : null;
+        const nextPhase = NEXT_SESSION_RECOVERY_PHASE[phase];
         if (nextPhase) {
             await scheduleSessionRecovery(ctx, {
-                organizationId: args.organizationId,
-                actorUserId: args.actorUserId,
+                organizationId,
+                actorUserId,
                 phase: nextPhase,
             });
-            return { status: 'in_progress' as const, phase: nextPhase };
+            const inProgress: SessionRecoveryResult = { status: 'in_progress', phase: nextPhase };
+            return inProgress;
         }
-
-        return { status: 'completed' as const, phase };
+        const completed: SessionRecoveryResult = { status: 'completed', phase };
+        return completed;
     },
 });
-
+export const recoverAffectedOrganizationSessions = internalMutation({
+    args: { organizationId: v.id('organization') },
+    returns: v.object({ remaining: v.boolean() }),
+    handler: async (ctx, { organizationId }) => {
+        if (await ctx.db.get('organization', organizationId)) {
+            return { remaining: false };
+        }
+        const sessions = await ctx.db
+            .query('session')
+            .withIndex('activeOrganizationId', q => q.eq('activeOrganizationId', organizationId))
+            .take(SESSION_RECOVERY_BATCH_SIZE);
+        await repairSessionsAfterOrganizationDeletion(ctx, sessions, organizationId);
+        return { remaining: sessions.length === SESSION_RECOVERY_BATCH_SIZE };
+    },
+});
 export const isDefaultOrganization = internalQuery({
+    returns: v.boolean(),
     args: {
         organizationId: v.string(),
     },
@@ -363,52 +331,36 @@ export const isDefaultOrganization = internalQuery({
         if (!organizationId) {
             return false;
         }
-
         const organization = await ctx.db.get('organization', organizationId);
         if (!organization) {
             return false;
         }
-
         const metadataOwnerUserId = getPersonalOrganizationOwnerUserId(organization.metadata);
         if (metadataOwnerUserId) {
             const ownerUserId = ctx.db.normalizeId('user', metadataOwnerUserId);
             if (!ownerUserId) {
                 return false;
             }
-
             const ownerMembership = await ctx.db
                 .query('member')
                 .withIndex('by_organizationId_and_userId', q =>
                     q.eq('organizationId', organizationId).eq('userId', ownerUserId)
                 )
                 .first();
-
             return ownerMembership?.role === 'owner';
         }
-
         if (!organization.slug.startsWith(`${DEFAULT_ORGANIZATION_SLUG_BASE}-`)) {
             return false;
         }
-
         const members = await ctx.db
             .query('member')
             .withIndex('organizationId', q => q.eq('organizationId', organizationId))
             .take(PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT);
-
         return members.some(member =>
             isLegacyPersonalOrganizationSlugForUser(organization.slug, member.userId)
         );
     },
 });
-
-async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: string) {
-    const isDefaultOrganization: boolean = await ctx.runQuery(internal.auth.isDefaultOrganization, {
-        organizationId,
-    });
-
-    return isDefaultOrganization;
-}
-
 export const getCredentialPasswordHashForDeletion = internalQuery({
     args: { userId: v.id('user') },
     returns: v.union(v.string(), v.null()),
@@ -422,236 +374,7 @@ export const getCredentialPasswordHashForDeletion = internalQuery({
         return typeof account?.password === 'string' ? account.password : null;
     },
 });
-
-export default defineAuth((ctx: GenericCtx): AuthOptions => ({
-    baseURL: env.BETTER_AUTH_URL,
-    advanced: {
-        database: {
-            // Convex IDs are generated by the database. Letting Better Auth
-            // force an opaque plugin ID (notably for invitations) makes the
-            // adapter's `_id` disagree with the ID returned by ctx.db.insert.
-            generateId: false,
-        },
-    },
-    user: {
-        deleteUser: {
-            // The core endpoint physically deletes the user record. Keep it
-            // disabled and expose `softDeleteUser` from our plugin instead.
-            enabled: false,
-        },
-    },
-    emailAndPassword: {
-        enabled: true,
-        sendResetPassword: async ({ user, url }, _request) => {
-            await (ctx as MutationCtx).runMutation(internal.email.sendTransactionalEmail, {
-                to: user.email,
-                subject: 'Reset your password',
-                text: `Click the link to reset your password: ${url}`,
-            });
-        },
-        onPasswordReset: async () => {},
-        revokeSessionsOnPasswordReset: true,
-    },
-    emailVerification: {
-        sendVerificationEmail: async ({ user, url }) => {
-            await (ctx as MutationCtx).runMutation(internal.email.sendTransactionalEmail, {
-                to: user.email,
-                subject: 'Verify your email address',
-                text: `Click the link to verify your email address: ${url}`,
-            });
-        },
-    },
-    databaseHooks: {
-        session: {
-            create: {
-                before: async session => {
-                    const userId = session.userId as Id<'user'>;
-                    const activeOrganizationId: Id<'organization'> = await (
-                        ctx as RunnableCtx
-                    ).runMutation(internal.auth.ensureDefaultOrganizationForUser, {
-                        userId,
-                    });
-
-                    return {
-                        data: {
-                            ...session,
-                            activeOrganizationId,
-                        },
-                    };
-                },
-            },
-        },
-    },
-    hooks: {
-        before: createAuthMiddleware(async authRequest => {
-            const pathsWithStrongPassword = [
-                '/sign-up/email',
-                '/reset-password',
-                '/change-password',
-            ];
-            if (!pathsWithStrongPassword.includes(authRequest.path)) {
-                return;
-            }
-
-            if (authRequest.path === '/sign-up/email') {
-                const signUpBody = authRequest.body as
-                    { email?: unknown; callbackURL?: unknown } | undefined;
-                const email = signUpBody?.email;
-                const invitationId =
-                    typeof signUpBody?.callbackURL === 'string'
-                        ? getInvitationIdFromCallbackPath(signUpBody.callbackURL)
-                        : null;
-                const authorization =
-                    typeof email === 'string'
-                        ? await (ctx as RunnableCtx).runQuery(
-                              internal.auth.getEmailRegistrationAuthorization,
-                              {
-                                  email,
-                                  invitationId,
-                                  now: Date.now(),
-                              }
-                          )
-                        : 'denied';
-
-                if (authorization === 'bootstrap') {
-                    const providedSetupSecret =
-                        authRequest.headers?.get(SETUP_SECRET_HEADER) ??
-                        authRequest.request?.headers.get(SETUP_SECRET_HEADER);
-
-                    if (!isSetupSecretValid(env.SETUP_SECRET, providedSetupSecret)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.SETUP_SECRET_REQUIRED,
-                            message: 'The setup secret is missing or invalid.',
-                        });
-                    }
-                } else if (authorization === 'denied') {
-                    throw new APIError('FORBIDDEN', {
-                        code: ERROR_CODES.REGISTRATION_INVITATION_REQUIRED,
-                        message: 'A valid pending invitation is required to register.',
-                    });
-                }
-            }
-
-            const password =
-                (authRequest.body as { password?: unknown; newPassword?: unknown } | undefined)
-                    ?.password ??
-                (authRequest.body as { newPassword?: unknown } | undefined)?.newPassword ??
-                undefined;
-
-            const passwordPolicy = validatePasswordPolicy(password);
-            if (!passwordPolicy.ok) {
-                throw new APIError('BAD_REQUEST', {
-                    code: passwordPolicy.code,
-                    message: passwordPolicy.message,
-                });
-            }
-        }),
-    },
-    plugins: [
-        convex({
-            authConfig,
-            jwks: env.JWKS,
-        }),
-        accountDeletionPlugin(ctx),
-        admin({
-            adminRoles: platformAdminRoles,
-            roles: platformRoles,
-        }),
-        organization({
-            ...ORGANIZATION_SECURITY_OPTIONS,
-            invitationExpiresIn: 60 * 60 * 24 * 2,
-            defaultRole: 'member',
-            organizationHooks: {
-                beforeCreateOrganization: async ({ organization: newOrganization }) => {
-                    if (usesReservedPersonalOrganizationIdentity(newOrganization)) {
-                        throwReservedPersonalOrganizationIdentity();
-                    }
-                },
-                beforeDeleteOrganization: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_DELETE_FORBIDDEN,
-                            message: 'Personal organization cannot be deleted.',
-                        });
-                    }
-                },
-                afterDeleteOrganization: async ({ organization, user }) => {
-                    await (ctx as RunnableCtx).runMutation(
-                        internal.auth.recoverSessionsAfterOrganizationDeletion,
-                        {
-                            organizationId: organization.id as Id<'organization'>,
-                            actorUserId: user.id as Id<'user'>,
-                            phase: 'actor-null',
-                        }
-                    );
-                    await (ctx as RunnableCtx).runMutation(
-                        internal.admin.cascadeOrganizationDeletionInternal,
-                        {
-                            organizationId: organization.id as Id<'organization'>,
-                        }
-                    );
-                },
-                beforeUpdateOrganization: async ({ organization, member }) => {
-                    if (!('slug' in organization) && !('metadata' in organization)) {
-                        return;
-                    }
-
-                    if (await isProtectedDefaultOrganization(ctx, member.organizationId)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_UPDATE_RESTRICTED,
-                            message: 'Personal organization slug and metadata cannot be changed.',
-                        });
-                    }
-
-                    if (usesReservedPersonalOrganizationIdentity(organization)) {
-                        throwReservedPersonalOrganizationIdentity();
-                    }
-                },
-                beforeCreateInvitation: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
-                            message: 'Personal organization cannot invite members.',
-                        });
-                    }
-                },
-                beforeAcceptInvitation: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_INVITE_FORBIDDEN,
-                            message: 'Personal organization cannot invite members.',
-                        });
-                    }
-                },
-                beforeAddMember: async ({ organization }) => {
-                    if (await isProtectedDefaultOrganization(ctx, organization.id)) {
-                        throw new APIError('FORBIDDEN', {
-                            code: ERROR_CODES.PERSONAL_ORG_MEMBER_ADD_FORBIDDEN,
-                            message: 'Personal organization cannot add members.',
-                        });
-                    }
-                },
-            },
-            sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
-                const invitationEmail = buildInvitationEmail({
-                    siteUrl: env.SITE_URL,
-                    invitationId: id,
-                    inviteeEmail: email,
-                    organizationName: organization.name,
-                    inviterName: inviter.user.name ?? inviter.user.email,
-                    role,
-                });
-
-                await (ctx as MutationCtx).runMutation(
-                    internal.email.sendTransactionalEmail,
-                    invitationEmail
-                );
-            },
-        }),
-    ],
-    triggers: authAuditTriggers as never,
-}));
-
+export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));
 export const getCurrentUser = queryWithRLS({
     args: {},
     returns: v.union(userDocumentValidator, v.null()),
@@ -659,7 +382,6 @@ export const getCurrentUser = queryWithRLS({
         return await ctx.db.get('user', ctx.userId);
     },
 });
-
 export const getDashboardContext = queryWithRLS({
     args: {},
     returns: v.object({
@@ -671,7 +393,6 @@ export const getDashboardContext = queryWithRLS({
         if (!user) {
             throw new ConvexError(ERROR_CODES.AUTH_REQUIRED);
         }
-
         return {
             user,
             organizationId: ctx.organizationId,

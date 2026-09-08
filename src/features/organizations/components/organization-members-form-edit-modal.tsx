@@ -1,5 +1,4 @@
 'use client';
-
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,10 +9,8 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form-tanstack';
-import {
-    OrganizationMember,
-    savedOrganizationMemberSchema,
-} from '@/features/organizations/schemas/organization-member';
+import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
+import { savedOrganizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
     Select,
     SelectItem,
@@ -21,12 +18,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { OrganizationRole } from '../types/roles';
+import { OrganizationRole, isOrganizationRoleValue } from '../types/roles';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import FormModal from '@/components/forms/form-modal';
-
 export default function OrganizationMemberEditFormModal({
     defaultValues,
     canAssignOwner,
@@ -36,14 +32,12 @@ export default function OrganizationMemberEditFormModal({
 }) {
     const t = useTranslations('OrganizationMembers');
     const tCommon = useTranslationsCommon('Common');
-
     const roleOptions = [
         ...(canAssignOwner ? [{ value: OrganizationRole.OWNER, label: t('roles.owner') }] : []),
         { value: OrganizationRole.ADMIN, label: t('roles.admin') },
         { value: OrganizationRole.MEMBER, label: t('roles.member') },
     ];
     const updateOrganizationMember = useUpdateOrganizationMember();
-
     return (
         <FormModal<OrganizationMember>
             trigger={
@@ -62,10 +56,13 @@ export default function OrganizationMemberEditFormModal({
                 },
             }}
             onSubmit={async (values: OrganizationMember) => {
+                if (!isOrganizationRoleValue(values.role)) {
+                    return;
+                }
                 await updateOrganizationMember.mutateAsync({
                     memberId: values.id,
                     organizationId: values.organizationId,
-                    role: values.role as 'owner' | 'admin' | 'member',
+                    role: values.role,
                 });
             }}
             submitLabel={t('saveOrganizationMember')}
@@ -83,7 +80,7 @@ export default function OrganizationMemberEditFormModal({
                             <FormItem>
                                 <FormLabel>{t('email')}</FormLabel>
                                 <p className="text-sm text-muted-foreground py-2">
-                                    {(field.value as string) || ''}
+                                    {typeof field.value === 'string' ? field.value : ''}
                                 </p>
                                 <FormDescription>
                                     {t('giveYourOrganizationMemberAClearConciseEmail')}
@@ -100,7 +97,7 @@ export default function OrganizationMemberEditFormModal({
                                 <FormLabel>{t('role')}</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
-                                    value={(field.value as string) || 'member'}
+                                    value={typeof field.value === 'string' ? field.value : 'member'}
                                 >
                                     <FormControl>
                                         <SelectTrigger data-testid="organization-member-edit-role-select">

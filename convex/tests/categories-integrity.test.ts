@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 
 describe('categories integrity', async () => {
     const t = initConvexTest();
@@ -70,7 +70,9 @@ describe('categories integrity', async () => {
                 userIdentity.mutation(api.categories.deleteCategory, { id: categoryId })
             ).rejects.toThrow(/CATEGORY_HAS_OBJECTIVES/);
 
-            const category = await userIdentity.run(async ctx => ctx.db.get(categoryId));
+            const category = await userIdentity.run(async ctx =>
+                ctx.db.get('categories', categoryId)
+            );
             expect(category).not.toBeNull();
         });
 
@@ -82,7 +84,9 @@ describe('categories integrity', async () => {
 
             await userIdentity.mutation(api.categories.deleteCategory, { id: categoryId });
 
-            const category = await userIdentity.run(async ctx => ctx.db.get(categoryId));
+            const category = await userIdentity.run(async ctx =>
+                ctx.db.get('categories', categoryId)
+            );
             expect(category).toBeNull();
         });
 
@@ -276,7 +280,9 @@ describe('categories integrity', async () => {
                 name: '  my category  ',
             });
 
-            const updated = await userIdentity.run(async ctx => ctx.db.get(categoryId));
+            const updated = await userIdentity.run(async ctx =>
+                ctx.db.get('categories', categoryId)
+            );
             expect(updated?.name).toBe('my category');
         });
     });
@@ -350,7 +356,9 @@ describe('categories integrity', async () => {
                 targetValue: 100,
             });
 
-            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            const objective = await userIdentity.run(async ctx =>
+                ctx.db.get('objectives', objectiveId)
+            );
 
             expect(objective?.categoryId).toBe(categoryId);
         });
@@ -397,10 +405,14 @@ describe('categories integrity', async () => {
                 name: 'New Name',
             });
 
-            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            const objective = await userIdentity.run(async ctx =>
+                ctx.db.get('objectives', objectiveId)
+            );
             expect(objective?.categoryId).toBe(categoryId);
 
-            const category = await userIdentity.run(async ctx => ctx.db.get(categoryId));
+            const category = await userIdentity.run(async ctx =>
+                ctx.db.get('categories', categoryId)
+            );
             expect(category?.name).toBe('New Name');
         });
 
@@ -447,7 +459,9 @@ describe('categories integrity', async () => {
                 targetValue: 100,
             });
 
-            const objective = await userIdentity.run(async ctx => ctx.db.get(objectiveId));
+            const objective = await userIdentity.run(async ctx =>
+                ctx.db.get('objectives', objectiveId)
+            );
 
             expect(objective?.categoryId).toBe(categoryId);
         });

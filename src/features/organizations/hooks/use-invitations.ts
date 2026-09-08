@@ -1,11 +1,13 @@
 'use client';
 
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useConvexPages } from '@/hooks/use-convex-pages';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
 import { useReferenceNow } from '@/lib/reference-now';
+import { isOrganizationRoleValue } from '@/features/organizations/types/roles';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
 
@@ -43,24 +45,36 @@ export interface Invitation {
     expiresAt?: Date;
 }
 
+export type InvitationStatus = Invitation['status'];
+
+function parseInvitationStatus(status: string): InvitationStatus {
+    if (
+        status === 'pending' ||
+        status === 'accepted' ||
+        status === 'rejected' ||
+        status === 'cancelled'
+    ) {
+        return status;
+    }
+    return 'pending';
+}
+
 export function usePendingInvitations() {
     const referenceNow = useReferenceNow();
-    const { data, isPending, isLoading } = useQuery(
-        convexQuery(api.organizations.getUserInvitations, { now: referenceNow })
+    const result = useConvexPages<InvitationRaw>(
+        'userInvitations',
+        cursor =>
+            convexQuery(api.organizations.getUserInvitationsPage, {
+                now: referenceNow,
+                paginationOpts: { numItems: 50, cursor },
+            }),
+        invitation => invitation.id
     );
+    const { data } = result;
 
     const invitations: Invitation[] | undefined = data?.map((rawInvitation: InvitationRaw) => {
-        const validRoles: InvitationRole[] = ['owner', 'admin', 'member'];
-        const role = validRoles.includes(rawInvitation.role as InvitationRole)
-            ? (rawInvitation.role as InvitationRole)
-            : 'member';
-
-        const validStatuses = ['pending', 'accepted', 'rejected', 'cancelled'] as const;
-        const status = validStatuses.includes(
-            rawInvitation.status as (typeof validStatuses)[number]
-        )
-            ? (rawInvitation.status as (typeof validStatuses)[number])
-            : 'pending';
+        const role = isOrganizationRoleValue(rawInvitation.role) ? rawInvitation.role : 'member';
+        const status = parseInvitationStatus(rawInvitation.status);
 
         return {
             id: rawInvitation.id,
@@ -75,11 +89,7 @@ export function usePendingInvitations() {
         };
     });
 
-    return {
-        data: invitations ?? [],
-        isPending: isPending,
-        isLoading: isLoading,
-    };
+    return { ...result, data: invitations ?? [] };
 }
 
 export function useAcceptInvitation() {
@@ -89,8 +99,10 @@ export function useAcceptInvitation() {
         mutationFn: async (params: { invitationId: string; organizationId: string }) => {
             return await acceptInvitationAndActivateOrganization(params);
         },
-        onSuccess: () => {
-            router.refresh();
+        onSuccess: result => {
+            if (result.status === 'acceptedAndActivated') {
+                router.refresh();
+            }
         },
     });
 }

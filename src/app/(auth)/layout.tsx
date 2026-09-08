@@ -1,7 +1,7 @@
 import { Footer } from '@/features/landing';
 import { Header } from '@/features/landing';
 
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col min-h-screen">
             <Header />

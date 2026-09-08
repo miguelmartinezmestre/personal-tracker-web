@@ -8,7 +8,7 @@ import { DataTable } from '@/components/data-table/components/table';
 import { useSessionsTableColumns } from './sessions-table-columns';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
-import { FunctionReturnType } from 'convex/server';
+import type { FunctionReturnType } from 'convex/server';
 import { Button } from '@/components/ui/button';
 import { useInvalidateAllOtherSessions } from './sessions-table-actions';
 import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
@@ -26,7 +26,7 @@ export default function SessionsTable() {
 
     const sessionsQuery = useQuery(convexQuery(api.sessions.getSessionsByUser, { paginationOpts }));
 
-    const sessionsData = sessionsQuery.data as SessionsResult | undefined;
+    const sessionsData = sessionsQuery.data;
     const continueCursor = sessionsData?.continueCursor ?? null;
     const pageIsDone = sessionsData?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
@@ -49,12 +49,11 @@ export default function SessionsTable() {
                     type="button"
                     variant="outline"
                     disabled={!canRevokeAllOtherSessions || isInvalidatingAllOtherSessions}
-                    onClick={async () => {
+                    onClick={() => {
                         if (!currentSessionId) {
                             return;
                         }
-
-                        await invalidateAllOtherSessionsAsync({
+                        void invalidateAllOtherSessionsAsync({
                             currentSessionId,
                         });
                     }}
@@ -64,6 +63,11 @@ export default function SessionsTable() {
                 </Button>
             </div>
             <DataTable
+                isError={sessionsQuery.isError}
+                error={sessionsQuery.error}
+                onRetry={() => {
+                    void sessionsQuery.refetch();
+                }}
                 columns={columns}
                 data={sessionRows}
                 isLoading={sessionsQuery.isLoading}

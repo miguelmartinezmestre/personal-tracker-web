@@ -1,5 +1,4 @@
 'use client';
-
 import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
@@ -13,19 +12,17 @@ import {
     Tooltip,
     ReferenceLine,
 } from 'recharts';
-
+import { getOptionalString, isJsonObject } from '@shared/boundary-values';
 interface ProgressTimelinePoint {
     date: number;
     currentValue: number;
     objective: number;
 }
-
 interface ObjectiveProgressTimelineProps {
     data: ProgressTimelinePoint[];
     unit?: string | null;
     targetValue?: number | null;
 }
-
 export default function ObjectiveProgressTimeline({
     data,
     unit,
@@ -33,29 +30,25 @@ export default function ObjectiveProgressTimeline({
 }: ObjectiveProgressTimelineProps) {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
-
     const dateFormatter = new Intl.DateTimeFormat(locale, {
         month: 'short',
         day: 'numeric',
     });
-
     const fullDateFormatter = new Intl.DateTimeFormat(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
     });
-
-    if (data.length < 2) return null;
-
+    if (data.length < 2) {
+        return null;
+    }
     const chartData = data.map(point => ({
         date: point.date,
         label: dateFormatter.format(new Date(point.date)),
         fullLabel: fullDateFormatter.format(new Date(point.date)),
         value: point.currentValue,
     }));
-
     const unitSuffix = unit ? ` ${unit}` : '';
-
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -97,10 +90,21 @@ export default function ObjectiveProgressTimeline({
                             }}
                             labelStyle={{ color: 'var(--popover-foreground)' }}
                             itemStyle={{ color: 'var(--popover-foreground)' }}
-                            labelFormatter={(_label, payload) => {
-                                const item = payload[0]?.payload as
-                                    { fullLabel: string } | undefined;
-                                return item?.fullLabel ?? String(_label);
+                            labelFormatter={(label, payload) => {
+                                const first = payload[0];
+                                if (first && isJsonObject(first.payload)) {
+                                    const fullLabel = getOptionalString(first.payload.fullLabel);
+                                    if (fullLabel) {
+                                        return fullLabel;
+                                    }
+                                }
+                                if (typeof label === 'string') {
+                                    return label;
+                                }
+                                if (typeof label === 'number') {
+                                    return `${label}`;
+                                }
+                                return '';
                             }}
                             formatter={value => [
                                 `${typeof value === 'number' ? value : 0}${unitSuffix}`,

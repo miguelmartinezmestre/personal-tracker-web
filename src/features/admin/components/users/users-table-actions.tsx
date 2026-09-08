@@ -48,7 +48,11 @@ export function useDeleteUser() {
     const t = useTranslations('Admin');
     const deleteUserMutation = useConvexMutation(api.admin.deleteUser);
 
-    const { mutate: deleteUser, isPending: isDeletingUser } = useMutation({
+    const {
+        mutate: deleteUser,
+        mutateAsync: deleteUserAsync,
+        isPending: isDeletingUser,
+    } = useMutation({
         mutationFn: async ({ userId }: { userId: Id<'user'> }) => {
             return await deleteUserMutation({ userId });
         },
@@ -59,5 +63,5 @@ export function useDeleteUser() {
             toast.error(t('usersTable.toast.deleteFailed', { message: error.message }));
         },
     });
-    return { deleteUser, isDeletingUser };
+    return { deleteUser, deleteUserAsync, isDeletingUser };
 }

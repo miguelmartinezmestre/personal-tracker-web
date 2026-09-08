@@ -1,5 +1,8 @@
 'use client';
 
+import type { Id } from '@/convex/_generated/dataModel';
+import { requiredRouteParam } from '@/features/lib/route-param';
+
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,34 +18,29 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
-import {
-    CreateUpdateProgress,
-    updateProgressSchema,
-} from '@/features/update-progress/schemas/update-progress';
+import type { CreateUpdateProgress } from '@/features/update-progress/schemas/update-progress';
+import { updateProgressSchema } from '@/features/update-progress/schemas/update-progress';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { formatCivilDate } from '@/lib/format-date';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { Id } from '@/convex/_generated/dataModel';
 import FormModal from '@/components/forms/form-modal';
 import {
     currentUtcCivilDay,
     localDateToUtcCivilDay,
     utcCivilDayToLocalDate,
 } from '@shared/civil-date';
-
 export default function CreateUpdateProgressFormModal() {
     const t = useTranslations('UpdateProgress');
     const locale = useLocale();
-    const { id: objectiveId } = useParams();
+    const params = useParams();
+    const objectiveId = requiredRouteParam(params.id) as Id<'objectives'>;
     const [defaultUpdateDate] = useState(() => currentUtcCivilDay());
-
     const createUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.createUpdateProgress),
     });
-
     return (
         <FormModal<CreateUpdateProgress>
             trigger={
@@ -66,8 +64,8 @@ export default function CreateUpdateProgressFormModal() {
             }}
             onSubmit={async (value: CreateUpdateProgress) => {
                 await createUpdateProgress.mutateAsync({
-                    objective: objectiveId as Id<'objectives'>,
-                    updatedValue: Number(value.updatedValue),
+                    objective: objectiveId,
+                    updatedValue: value.updatedValue,
                     updateDate: value.updateDate,
                     comment: value.comment ?? undefined,
                 });

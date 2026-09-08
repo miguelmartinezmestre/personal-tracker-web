@@ -7,9 +7,11 @@ import {
     createTestMember,
     createTestSession,
 } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
+import { getOptionalString, isJsonObject, type JsonValue } from '../../shared/boundary-values';
+import { asInvalidArg } from './testCasts';
 
 describe('convex auth', () => {
     const t = initConvexTest();
@@ -84,14 +86,23 @@ describe('convex auth', () => {
             activeOrganizationId: String(_organizationId),
         };
 
-        const createdSession = (await t.mutation(internal.generated.auth.create, {
-            input: {
-                model: 'session',
-                data: sessionDoc,
-            },
-        })) as { _id?: string; id?: string };
-
-        const sessionId = createdSession._id ?? createdSession.id;
+        const createdSession = asInvalidArg<JsonValue>(
+            // oxlint-disable-next-line typescript/no-unsafe-argument -- generated Better Auth adapter returns an untyped document
+            await t.mutation(internal.generated.auth.create, {
+                input: {
+                    model: 'session',
+                    data: sessionDoc,
+                },
+            })
+        );
+        if (!isJsonObject(createdSession)) {
+            throw new Error('Expected session create result');
+        }
+        const sessionId =
+            getOptionalString(createdSession._id) ?? getOptionalString(createdSession.id);
+        if (!sessionId) {
+            throw new Error('Expected session id');
+        }
 
         await t.mutation(internal.generated.auth.deleteOne, {
             input: {
@@ -146,7 +157,9 @@ describe('convex auth', () => {
             userId: user.docId,
         });
 
-        const organization = await t.run(async ctx => await ctx.db.get(organizationId));
+        const organization = await t.run(
+            async ctx => await ctx.db.get('organization', organizationId)
+        );
         expect(organization?.metadata).toBe(
             JSON.stringify({ type: 'personal', ownerUserId: user.docId })
         );

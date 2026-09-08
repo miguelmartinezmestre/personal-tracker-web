@@ -1,5 +1,5 @@
 import { OrganizationsLayout } from '@/features/organizations';
 
-export default async function OrganizationsPage() {
+export default function OrganizationsPage() {
     return <OrganizationsLayout />;
 }

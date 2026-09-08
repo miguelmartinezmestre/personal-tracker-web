@@ -8,20 +8,7 @@ export const platformAdminRoles = [GLOBAL_ADMIN_ROLE];
 // tombstone and performs bounded cleanup. Leaving Better Auth's destructive
 // `remove-user` permission enabled would provide a second path that physically
 // removes the user row and bypasses that pipeline.
-const platformGlobalAdminAc = defaultAc.newRole({
-    user: [
-        'create',
-        'list',
-        'set-role',
-        'ban',
-        'impersonate',
-        'set-password',
-        'set-email',
-        'get',
-        'update',
-    ],
-    session: ['list', 'revoke', 'delete'],
-});
+const platformGlobalAdminAc = defaultAc.newRole({ user: [], session: [] });
 
 export const platformRoles = {
     [GLOBAL_ADMIN_ROLE]: platformGlobalAdminAc,

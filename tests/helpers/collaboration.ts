@@ -1,4 +1,5 @@
-import { Browser, BrowserContext, Page, expect } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { createOrganization, createTestUser, type TestUserData } from './test-helpers';
 import { verifyEmailFromInvitationPage } from './email-verification';
 
@@ -63,12 +64,16 @@ export async function setupCollaboratorInOrganization(
 
     await page.getByTestId('invitation-accept-confirm-button').click();
 
-    await expect(acceptButton).toBeHidden({ timeout: 20000 });
+    // Convex removes the pending invitation as soon as accept succeeds, which
+    // can hide this button before setActive finishes. Stay on invitations until
+    // the dashboard session actually switches; navigating earlier SSR's the
+    // personal organization into the layout.
+    await expect(page.getByTestId('organization-switcher')).toContainText(organizationName, {
+        timeout: 20000,
+    });
 
-    await page.goto('/dashboard/home');
+    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/dashboard\/home(?:\?|$)/, { timeout: 15000 });
-
-    // Accept auto-switches the active organization to the invited org.
     await expect(page.getByTestId('organization-switcher')).toContainText(organizationName, {
         timeout: 15000,
     });
@@ -85,37 +90,12 @@ export async function openCollaboratorsDialog(page: Page, objectiveTitle: string
     const openButton = row.getByTestId('objective-collaborators-open');
     const memberSelect = page.getByTestId('collaborator-member-select');
 
-    // The objectives list keeps re-rendering while its background queries settle right after
-    // an objective is created. That re-render unmounts the freshly opened dialog, so we open
-    // it, let the network settle, and confirm it is still open before handing control back.
-    // A re-open hits the now-cached queries and stays open.
-    for (let attempt = 0; attempt < 6; attempt++) {
-        await expect(openButton).toBeVisible({ timeout: 5000 });
-        await openButton.click();
-
-        try {
-            await expect(memberSelect).toBeVisible({ timeout: 5000 });
-        } catch {
-            await page.keyboard.press('Escape').catch(() => undefined);
-            continue;
-        }
-
-        await page.waitForLoadState('networkidle').catch(() => undefined);
-        await page.waitForTimeout(400);
-
-        if (await memberSelect.isVisible().catch(() => false)) {
-            return;
-        }
-    }
-
-    throw new Error(`Could not open collaborators dialog for objective "${objectiveTitle}"`);
+    await openButton.click();
+    await expect(memberSelect).toBeVisible({ timeout: 10000 });
 }
 
 export function collaboratorRowFilter(page: Page, member: TestUserData) {
-    return page
-        .getByTestId('collaborator-row')
-        .filter({ hasText: new RegExp(`${member.username}|${member.email}`, 'i') })
-        .first();
+    return page.getByTestId('collaborator-row').filter({ hasText: member.email }).first();
 }
 
 export async function addCollaboratorFromDialog(
@@ -124,10 +104,7 @@ export async function addCollaboratorFromDialog(
     role: 'editor' | 'viewer'
 ): Promise<void> {
     await page.getByTestId('collaborator-member-select').click();
-    const option = page
-        .getByRole('option')
-        .filter({ hasText: new RegExp(`${member.username}|${member.email}`, 'i') })
-        .first();
+    const option = page.getByRole('option').filter({ hasText: member.email }).first();
     await expect(option).toBeVisible({ timeout: 10000 });
     await option.click();
 
@@ -150,23 +127,9 @@ export async function changeCollaboratorRole(
     const row = collaboratorRowFilter(page, member);
     const roleSelect = row.getByTestId('collaborator-row-role-select');
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await roleSelect.click();
-        await page
-            .getByRole('option', { name: new RegExp(role, 'i') })
-            .first()
-            .click();
-
-        try {
-            await expect(roleSelect).toContainText(new RegExp(role, 'i'), { timeout: 10000 });
-            return;
-        } catch {
-            // Convex may reject an isolated mutation when its one-second execution budget is
-            // exhausted. Retrying the same idempotent role assignment keeps this helper stable.
-        }
-    }
-
-    throw new Error(`Could not change collaborator role to "${role}"`);
+    await roleSelect.click();
+    await page.getByRole('option', { name: new RegExp(role, 'i') }).click();
+    await expect(roleSelect).toContainText(new RegExp(role, 'i'), { timeout: 10000 });
 }
 
 export async function removeCollaboratorFromDialog(
@@ -176,19 +139,9 @@ export async function removeCollaboratorFromDialog(
     const row = collaboratorRowFilter(page, member);
     const removeButton = row.getByTestId('collaborator-remove-button');
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-        await expect(removeButton).toBeEnabled({ timeout: 10000 });
-        await removeButton.click();
-
-        try {
-            await expect(row).toBeHidden({ timeout: 10000 });
-            return;
-        } catch {
-            // Retry the idempotent removal after a transient Convex execution timeout.
-        }
-    }
-
-    throw new Error(`Could not remove collaborator "${member.email}"`);
+    await expect(removeButton).toBeEnabled();
+    await removeButton.click();
+    await expect(row).toBeHidden({ timeout: 10000 });
 }
 
 export async function transferOwnershipToCollaborator(

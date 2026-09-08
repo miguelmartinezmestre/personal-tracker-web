@@ -1,5 +1,6 @@
+import { isActiveAccount } from '../domain/organizations/operational';
 import { ConvexError } from 'convex/values';
-import { MutationCtx, QueryCtx } from '../_generated/server';
+import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import { ERROR_CODES } from './constants';
 import { isGlobalAdminRole } from '../../shared/platform-roles';
@@ -16,7 +17,7 @@ export async function requireAdmin(ctx: AdminContext) {
 
     const user = await ctx.db.get('user', userId);
 
-    if (!user || !isGlobalAdminRole(user.role)) {
+    if (!user || !isActiveAccount(user, Date.now()) || !isGlobalAdminRole(user.role)) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
 }

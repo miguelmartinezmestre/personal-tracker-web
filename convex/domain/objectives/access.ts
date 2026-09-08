@@ -74,6 +74,13 @@ export function enrichObjectiveWithCapabilities(
     };
 }
 
+export async function enrichObjectiveForActor(ctx: AccessCtx, objective: Doc<'objectives'>) {
+    return enrichObjectiveWithCapabilities(
+        objective,
+        await resolveObjectiveCapabilities(ctx, objective)
+    );
+}
+
 export async function getCategoryForObjective(
     ctx: QueryCtx | MutationCtx,
     organizationId: Id<'organization'>,

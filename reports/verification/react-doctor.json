@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-09-08T05:54:55.4826561Z",
+  "command": "npx -y react-doctor@latest . --verbose --scope changed",
+  "scannedFiles": 350,
+  "errors": 0,
+  "warnings": 117,
+  "scoreAvailable": false,
+  "analysisComplete": false,
+  "review": {
+    "convexSequentialOperations": "intentional transactional and paginated batches",
+    "convexMutationInvalidation": "not applied because Convex subscriptions update reactively",
+    "confirmedCompilerError": "fixed by moving registration work outside the unsupported try/finally shape",
+    "remainingItems": "diagnostic warnings without a reproduced functional defect"
+  }
+}

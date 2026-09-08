@@ -10,7 +10,9 @@ export const MAX_PAGE_ROWS_READ = 500;
 export const MAX_PAGE_BYTES_READ = 4 * 1024 * 1024;
 
 function boundedPositiveInteger(value: number | undefined, fallback: number, maximum: number) {
-    if (value === undefined) return fallback;
+    if (value === undefined) {
+        return fallback;
+    }
     if (!Number.isSafeInteger(value) || value <= 0) {
         throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
     }
@@ -38,7 +40,7 @@ export function withPaginationLimits(paginationOpts: PaginationOptions): Paginat
     };
 }
 
-export function isInvalidCursorError(error: unknown): boolean {
+export function isInvalidCursorError(error: Error | string | null | undefined): boolean {
     if (error instanceof Error) {
         return (
             error.message.includes(INVALID_CURSOR_ERROR) ||
@@ -46,8 +48,11 @@ export function isInvalidCursorError(error: unknown): boolean {
         );
     }
 
-    const message = String(error);
-    return message.includes(INVALID_CURSOR_ERROR) || message.includes(MALFORMED_CURSOR_ERROR);
+    if (!error) {
+        return false;
+    }
+
+    return error.includes(INVALID_CURSOR_ERROR) || error.includes(MALFORMED_CURSOR_ERROR);
 }
 
 export async function withInvalidCursorRetry<T>(
@@ -55,7 +60,7 @@ export async function withInvalidCursorRetry<T>(
     queryPage: (paginationOpts: PaginationOptions) => Promise<T>
 ): Promise<T> {
     let normalizedOptions = withPaginationLimits(paginationOpts);
-    if (paginationOpts.cursor) {
+    if (paginationOpts.cursor && !paginationOpts.cursor.startsWith('vp1.')) {
         try {
             JSON.parse(paginationOpts.cursor);
         } catch {

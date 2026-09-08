@@ -4,13 +4,14 @@ import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
 import { seedAchievementDefinitionsJob } from '../../jobs/achievements/checks';
-import {
+import type {
     completeSetupArgsValidator,
     ensureTestOrganizationInternalArgsValidator,
 } from './validators';
 import { GLOBAL_ADMIN_ROLE, isGlobalAdminRole } from '../../../shared/platform-roles';
 import { isPersonalOrganizationForUser } from '../../domain/organizations/personalOrganization';
 import { buildOrganizationSlug } from '../../../shared/organization-slug';
+import { isActiveAccount } from '../../domain/organizations/operational';
 import {
     CATEGORY_COLOR_PATTERN,
     CATEGORY_ICONS,
@@ -71,7 +72,9 @@ export async function isPlatformConfigured(ctx: { db: DatabaseReader }) {
 
 export async function getPublicSettings(ctx: { db: DatabaseReader }) {
     const settings = await ctx.db.query('platformSettings').first();
-    if (!settings) return null;
+    if (!settings) {
+        return null;
+    }
     return {
         platformName: settings.platformName,
         defaultLanguage: settings.defaultLanguage,
@@ -101,7 +104,7 @@ export async function completePlatformSetup(
         throw new ConvexError(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
     }
 
-    const currentUser = await ctx.db.get(userId);
+    const currentUser = await ctx.db.get('user', userId);
 
     if (!currentUser) {
         throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
@@ -117,7 +120,7 @@ export async function completePlatformSetup(
         throw new ConvexError(ERROR_CODES.SETUP_USER_MISMATCH);
     }
 
-    await ctx.db.patch(userId, { role: GLOBAL_ADMIN_ROLE });
+    await ctx.db.patch('user', userId, { role: GLOBAL_ADMIN_ROLE });
 
     const memberships = await ctx.db
         .query('member')
@@ -133,7 +136,9 @@ export async function completePlatformSetup(
 
     for (const membership of memberships) {
         const organization = await ctx.db.get('organization', membership.organizationId);
-        if (!organization) continue;
+        if (!organization) {
+            continue;
+        }
 
         if (
             isPersonalOrganizationForUser({
@@ -152,7 +157,7 @@ export async function completePlatformSetup(
 
     if (reusableOrganizationId) {
         organizationId = reusableOrganizationId;
-        await ctx.db.patch(organizationId, {
+        await ctx.db.patch('organization', organizationId, {
             name: args.organizationName,
             ...(args.organizationLogo ? { logo: args.organizationLogo } : {}),
         });
@@ -221,12 +226,12 @@ export async function completePlatformSetup(
 }
 
 export async function getUserById(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
-    return await ctx.db.get(userId);
+    return await ctx.db.get('user', userId);
 }
 
 export async function requireAdminUser(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
-    const user = await ctx.db.get(userId);
-    if (!user || !isGlobalAdminRole(user.role)) {
+    const user = await ctx.db.get('user', userId);
+    if (!user || !isActiveAccount(user, Date.now()) || !isGlobalAdminRole(user.role)) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
     return user;
@@ -276,7 +281,7 @@ export async function ensureTestOrganizationForUser(
     }
 
     if (currentSession && currentSession.activeOrganizationId !== organizationId) {
-        await ctx.db.patch(currentSession._id, {
+        await ctx.db.patch('session', currentSession._id, {
             activeOrganizationId: organizationId,
         });
     }

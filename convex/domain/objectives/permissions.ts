@@ -69,10 +69,6 @@ export function canObjective(
         case 'setVisibility':
         case 'transferOwnership':
             return false;
-        default: {
-            const _exhaustive: never = action;
-            return _exhaustive;
-        }
     }
 }
 

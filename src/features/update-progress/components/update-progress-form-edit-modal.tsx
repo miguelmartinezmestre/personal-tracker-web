@@ -1,6 +1,8 @@
 'use client';
 
-import { z } from 'zod';
+import { requiredRouteParam } from '@/features/lib/route-param';
+
+import type { z } from 'zod';
 import { CalendarIcon, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,11 +20,9 @@ import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import {
-    UpdateProgress,
-    savedUpdateProgressSchema,
-} from '@/features/update-progress/schemas/update-progress';
-import { Id } from '@/convex/_generated/dataModel';
+import type { Id } from '@/convex/_generated/dataModel';
+import type { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
+import { savedUpdateProgressSchema } from '@/features/update-progress/schemas/update-progress';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatCivilDate } from '@/lib/format-date';
 import FormModal from '@/components/forms/form-modal';
@@ -31,7 +31,6 @@ import {
     localDateToUtcCivilDay,
     utcCivilDayToLocalDate,
 } from '@shared/civil-date';
-
 export default function UpdateProgressFormModal({
     defaultValues,
     objectiveId: _objectiveId,
@@ -42,11 +41,9 @@ export default function UpdateProgressFormModal({
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
     const locale = useLocale();
-
     const updateUpdateProgress = useMutation({
         mutationFn: useConvexMutation(api.update_progress.updateUpdateProgress),
     });
-
     return (
         <FormModal<z.infer<typeof savedUpdateProgressSchema>>
             trigger={
@@ -66,7 +63,7 @@ export default function UpdateProgressFormModal({
             }}
             onSubmit={async value => {
                 await updateUpdateProgress.mutateAsync({
-                    id: value._id as Id<'progressUpdates'>,
+                    id: requiredRouteParam(value._id) as Id<'progressUpdates'>,
                     updatedValue: value.updatedValue,
                     updateDate: value.updateDate,
                     comment: value.comment ?? undefined,

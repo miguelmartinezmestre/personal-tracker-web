@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 import { ERROR_CODES, TIME } from '../utils/constants';
 
 describe('Domain validation at backend boundaries', () => {

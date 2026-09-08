@@ -6,7 +6,6 @@ export const updateProgressSchema = z.object({
     updatedValue: z.number(),
     updateDate: z
         .number()
-        .finite()
         .refine(
             value => toUtcCivilDay(value) <= currentUtcCivilDay(),
             'Future dates are not allowed'

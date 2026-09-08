@@ -28,13 +28,13 @@ describe('RLS auth and organization tables', () => {
         });
 
         const organization = await t.run(async ctx => {
-            const rules = await createRlsRules(
-                user.docId,
-                user.role ?? 'user',
-                'owner',
+            const rules = createRlsRules({
+                userId: user.docId,
+                role: user.role ?? 'user',
+                memberRole: 'owner',
                 ctx,
-                organizationId
-            );
+                organizationId,
+            });
             const rlsDb = wrapDatabaseReader(ctx, ctx.db, rules, rlsConfig);
 
             return await rlsDb.get('organization', organizationId);
@@ -75,14 +75,14 @@ describe('RLS auth and organization tables', () => {
         );
 
         const [invitation, organization, invitationSender] = await t.run(async ctx => {
-            const rules = await createRlsRules(
-                invitee.docId,
-                invitee.role ?? 'user',
-                null,
+            const rules = createRlsRules({
+                userId: invitee.docId,
+                role: invitee.role ?? 'user',
+                memberRole: null,
                 ctx,
-                null,
-                invitee.email
-            );
+                organizationId: null,
+                email: invitee.email,
+            });
             const rlsDb = wrapDatabaseReader(ctx, ctx.db, rules, rlsConfig);
 
             return await Promise.all([

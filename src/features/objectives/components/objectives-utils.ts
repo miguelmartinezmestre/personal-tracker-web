@@ -22,8 +22,8 @@ export const computeObjectiveProgressPercent = (objective: {
     targetValue: number;
     startValue?: number | null;
 }) => {
-    const current = objective.currentValue ?? 0;
-    const target = objective.targetValue ?? 0;
+    const current = objective.currentValue;
+    const target = objective.targetValue;
     const start = objective.startValue ?? 0;
     const denominator = target - start;
 

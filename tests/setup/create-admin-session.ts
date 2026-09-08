@@ -9,6 +9,33 @@ import {
 
 const ADMIN_USER_FILE = 'tests/.auth/admin-user.json';
 
+async function fillSetupInput(
+    page: Page,
+    testId: string,
+    value: string,
+    options?: { untilNextEnabled?: boolean }
+): Promise<void> {
+    const input = page.getByTestId(testId);
+    const nextButton = page.getByTestId('setup-next-button');
+    await expect(input).toBeVisible();
+    await expect(async () => {
+        await input.click();
+        await input.fill('');
+        await input.pressSequentially(value, { delay: 15 });
+        await input.blur();
+        await expect(input).toHaveValue(value);
+        if (options?.untilNextEnabled) {
+            await expect(nextButton).toBeEnabled({ timeout: 1_000 });
+        }
+    }).toPass({ timeout: 15_000 });
+}
+
+async function clickSetupNext(page: Page): Promise<void> {
+    const nextButton = page.getByTestId('setup-next-button');
+    await expect(nextButton).toBeEnabled({ timeout: 10_000 });
+    await nextButton.click();
+}
+
 async function waitForAdminDashboardReady(page: Page): Promise<void> {
     await expect(async () => {
         await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
@@ -33,26 +60,28 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
         expect(unauthorizedSignUp.status()).toBe(403);
     }
 
-    await page.getByTestId('setup-platform-name').fill('Metrics App');
-    await page.getByTestId('setup-next-button').click();
+    await fillSetupInput(page, 'setup-platform-name', 'Metrics App', { untilNextEnabled: true });
+    await clickSetupNext(page);
 
-    await page.getByTestId('setup-username').fill(userData.username);
-    await page.getByTestId('setup-email').fill(userData.email);
-    await page.getByTestId('setup-password').fill(userData.password);
-    await page.getByTestId('setup-confirm-password').fill(userData.password);
+    await fillSetupInput(page, 'setup-username', userData.username);
+    await fillSetupInput(page, 'setup-email', userData.email);
+    await fillSetupInput(page, 'setup-password', userData.password);
+    await fillSetupInput(page, 'setup-confirm-password', userData.password);
     if (setupSecret) {
-        await page.getByTestId('setup-secret').fill(setupSecret);
+        await fillSetupInput(page, 'setup-secret', setupSecret);
     }
-    await page.getByTestId('setup-next-button').click();
+    await clickSetupNext(page);
 
-    await page.getByTestId('setup-org-name').fill('Product Team');
-    await page.getByTestId('setup-next-button').click();
+    await fillSetupInput(page, 'setup-org-name', 'Product Team', { untilNextEnabled: true });
+    await clickSetupNext(page);
 
-    await page.getByTestId('setup-next-button').click();
+    await clickSetupNext(page);
     await page.locator('#policy-open').click();
-    await page.getByTestId('setup-next-button').click();
+    await clickSetupNext(page);
 
-    await page.getByTestId('setup-complete-button').click();
+    const completeButton = page.getByTestId('setup-complete-button');
+    await expect(completeButton).toBeEnabled({ timeout: 10_000 });
+    await completeButton.click();
     await page.waitForURL(/\/dashboard\/home(\?|$)/, { timeout: 30_000 });
 }
 

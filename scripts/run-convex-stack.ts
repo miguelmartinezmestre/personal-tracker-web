@@ -2,9 +2,11 @@
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import process from 'node:process';
-import { sanitizeEnv } from './lib/command';
+import { redactSensitiveText } from './lib/command';
+import { buildStackEnvironment } from './lib/stack-environment';
+import { readLocalStackCredentials, writeLocalStackCredentials } from './lib/local-stack-state';
 import {
     bootstrapConvexCredentials,
     buildConvexCommandEnv,
@@ -30,25 +32,36 @@ const APP_URL =
     process.env.SITE_URL ??
     process.env.BETTER_AUTH_URL ??
     'http://localhost:3000';
+const RESET = process.argv.includes('--reset');
+const STOP = process.argv.includes('--stop');
+if (RESET && STOP) {
+    throw new Error('Choose stop or reset, not both');
+}
+if (RESET && !process.argv.includes('--confirm')) throw new Error('Reset requires --confirm');
+const savedCredentials = RESET ? undefined : readLocalStackCredentials(process.cwd());
 const MYSQL_ROOT_PASSWORD =
-    process.env.MYSQL_ROOT_PASSWORD ?? randomBytes(24).toString('base64url');
+    savedCredentials?.mysqlRootPassword ??
+    process.env.MYSQL_ROOT_PASSWORD ??
+    randomBytes(24).toString('base64url');
 
 function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
-    return {
-        ...sanitizeEnv(process.env),
-        PORT: CONVEX_PORT,
-        SITE_PROXY_PORT: CONVEX_SITE_PORT,
-        DASHBOARD_PORT,
-        MAILHOG_SMTP_PORT,
-        MAILHOG_UI_PORT,
-        CONVEX_CLOUD_ORIGIN: CONVEX_URL,
-        CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
-        NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
-        MYSQL_ROOT_PASSWORD,
-        DATABASE_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/convex_self_hosted`,
-        MYSQL_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306`,
-        ...extraEnv,
-    };
+    return buildStackEnvironment({
+        mode: 'local',
+        overrides: {
+            PORT: CONVEX_PORT,
+            SITE_PROXY_PORT: CONVEX_SITE_PORT,
+            DASHBOARD_PORT,
+            MAILHOG_SMTP_PORT,
+            MAILHOG_UI_PORT,
+            CONVEX_CLOUD_ORIGIN: CONVEX_URL,
+            CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
+            NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
+            MYSQL_ROOT_PASSWORD,
+            DATABASE_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/convex_self_hosted`,
+            MYSQL_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306`,
+            ...extraEnv,
+        },
+    });
 }
 
 const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
@@ -59,7 +72,10 @@ const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
 function cleanupGeneratedDirectories(): void {
     for (const directory of GENERATED_DIRECTORIES) {
         for (const parent of [process.cwd(), join(process.cwd(), 'infrastructure')]) {
-            const directoryPath = join(parent, directory);
+            const directoryPath = resolve(parent, directory);
+            if (!directoryPath.startsWith(`${resolve(process.cwd())}${sep}`)) {
+                throw new Error('Refusing to delete a path outside the workspace');
+            }
             if (!existsSync(directoryPath)) {
                 continue;
             }
@@ -102,9 +118,28 @@ function upsertEnvFile(filePath: string, updates: Record<string, string>): void 
 }
 
 async function main(): Promise<void> {
-    console.log('Resetting local Convex docker compose...');
-    await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
-    cleanupGeneratedDirectories();
+    if (STOP) {
+        await dockerCompose(['down', '--remove-orphans']);
+        return;
+    }
+    getComposeEnv();
+    if (RESET) {
+        console.log('Resetting the local development database...');
+        await dockerCompose(['down', '-v', '--remove-orphans']);
+        cleanupGeneratedDirectories();
+    } else if (
+        !savedCredentials &&
+        !process.env.MYSQL_ROOT_PASSWORD &&
+        existsSync(join(process.cwd(), 'infrastructure', 'mysql-data'))
+    ) {
+        throw new Error(
+            'Existing local data requires its MYSQL_ROOT_PASSWORD before adopting persistent credentials'
+        );
+    }
+    writeLocalStackCredentials(process.cwd(), {
+        ...savedCredentials,
+        mysqlRootPassword: MYSQL_ROOT_PASSWORD,
+    });
 
     console.log('Starting local Convex backend docker compose services...');
     console.log(`  - Convex backend: ${CONVEX_URL}`);
@@ -121,8 +156,15 @@ async function main(): Promise<void> {
     await dockerCompose(['up', '-d', 'dashboard']);
 
     console.log('Generating Convex self-hosted admin key...');
-    const { adminKey, betterAuthSecret, jwks } =
-        await bootstrapConvexCredentials(dockerComposeCapture);
+    const { adminKey, betterAuthSecret, jwks } = await bootstrapConvexCredentials(
+        dockerComposeCapture,
+        savedCredentials
+    );
+    writeLocalStackCredentials(process.cwd(), {
+        mysqlRootPassword: MYSQL_ROOT_PASSWORD,
+        betterAuthSecret,
+        jwks,
+    });
     const commandEnv = buildConvexCommandEnv({
         adminKey,
         betterAuthSecret,
@@ -153,14 +195,13 @@ async function main(): Promise<void> {
 
 async function cleanup(): Promise<void> {
     console.log('Cleaning up Docker containers...');
-    await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
-    cleanupGeneratedDirectories();
+    await dockerCompose(['down', '--remove-orphans'], { ignoreExitCode: true });
 }
 
 main().catch(async error => {
     console.error('\nLocal Convex stack setup failed.');
     if (error instanceof Error) {
-        console.error(error.message);
+        console.error(redactSensitiveText(error.message));
     } else {
         console.error(error);
     }

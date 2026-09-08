@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form-tanstack';
 
-type FormModalProps<TFormValues extends Record<string, unknown>> = {
+type FormModalProps<TFormValues extends object> = {
     trigger?: ReactNode;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -35,7 +35,7 @@ type FormModalProps<TFormValues extends Record<string, unknown>> = {
     submitTestId?: string;
 };
 
-export default function FormModal<TFormValues extends Record<string, unknown>>({
+export default function FormModal<TFormValues extends object>({
     trigger,
     open: controlledOpen,
     onOpenChange: controlledOnOpenChange,
@@ -83,7 +83,7 @@ export default function FormModal<TFormValues extends Record<string, unknown>>({
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
 
-                <Form {...form}>
+                <Form form={form}>
                     <form
                         onSubmit={event => {
                             event.preventDefault();

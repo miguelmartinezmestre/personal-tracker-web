@@ -9,7 +9,6 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { api } from '@/convex/_generated/api';
 import { AchievementBadge } from './achievement-badge';
-import type { AchievementTier } from '@/features/achievements/schemas/achievement';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 
@@ -109,7 +108,7 @@ export function AchievementsWidget() {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold group-hover/stat:scale-105 transition-transform origin-left">
-                                    {stats?.totalPoints ?? 0}
+                                    {stats.totalPoints}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     {t('stats.totalPoints')}
@@ -123,9 +122,9 @@ export function AchievementsWidget() {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold group-hover/stat:scale-105 transition-transform origin-left">
-                                    {stats?.earnedCount ?? 0}
+                                    {stats.earnedCount}
                                     <span className="text-sm font-normal text-muted-foreground">
-                                        /{stats?.totalAvailable ?? 0}
+                                        /{stats.totalAvailable}
                                     </span>
                                 </p>
                                 <p className="text-xs text-muted-foreground">{t('stats.earned')}</p>
@@ -133,39 +132,29 @@ export function AchievementsWidget() {
                         </div>
                     </div>
 
-                    {recentAchievements != null && recentAchievements.length > 0 ? (
+                    {recentAchievements.length > 0 ? (
                         <div className="space-y-2">
                             <p className="text-xs text-muted-foreground font-medium">
                                 {t('widget.recentlyEarned')}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                {recentAchievements
-                                    .filter(
-                                        (
-                                            achievement
-                                        ): achievement is NonNullable<typeof achievement> =>
-                                            achievement !== null
-                                    )
-                                    .map((achievement, index) => (
-                                        <div
-                                            key={achievement._id}
-                                            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-                                            style={{ animationDelay: `${index * 50}ms` }}
-                                        >
-                                            <AchievementBadge
-                                                icon={achievement.icon ?? 'Trophy'}
-                                                tier={
-                                                    (achievement.tier as AchievementTier) ??
-                                                    'bronze'
-                                                }
-                                                name={t(`definitions.${achievement.code}.name`, {
-                                                    defaultValue: achievement.code ?? 'Achievement',
-                                                })}
-                                                earned={true}
-                                                size="md"
-                                            />
-                                        </div>
-                                    ))}
+                                {recentAchievements.map((achievement, index) => (
+                                    <div
+                                        key={achievement._id}
+                                        className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                        style={{ animationDelay: `${index * 50}ms` }}
+                                    >
+                                        <AchievementBadge
+                                            icon={achievement.icon}
+                                            tier={achievement.tier}
+                                            name={t(`definitions.${achievement.code}.name`, {
+                                                defaultValue: achievement.code,
+                                            })}
+                                            earned={true}
+                                            size="md"
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ) : (

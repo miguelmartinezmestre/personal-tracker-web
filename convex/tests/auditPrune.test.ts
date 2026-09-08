@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { internal } from '../_generated/api';
 import type { MutationCtx } from '../_generated/server';
+import { asInvalidArg } from './testCasts';
 import { pruneAuditLogsOlderThanRetentionJob } from '../jobs/audit/pruneAuditLogs';
 import { initConvexTest } from './test.helper';
 import { createTestOrganization, createTestUser } from './test_helpers';
@@ -44,8 +45,8 @@ describe('audit log retention pruning', () => {
         await t.mutation(internal.auditLogs.pruneAuditLogsOlderThanRetention, {});
 
         const remaining = await t.run(async ctx => ({
-            old: await ctx.db.get(ids.oldId),
-            retained: await ctx.db.get(ids.retainedId),
+            old: await ctx.db.get('auditLogs', ids.oldId),
+            retained: await ctx.db.get('auditLogs', ids.retainedId),
         }));
 
         expect(remaining.old).toBeNull();
@@ -59,7 +60,7 @@ describe('audit log retention pruning', () => {
         const query = vi.fn(() => ({ withIndex }));
         const deleteAuditLog = vi.fn();
         const runAfter = vi.fn();
-        const ctx = {
+        const ctx = asInvalidArg<MutationCtx>({
             db: {
                 query,
                 delete: deleteAuditLog,
@@ -67,7 +68,7 @@ describe('audit log retention pruning', () => {
             scheduler: {
                 runAfter,
             },
-        } as unknown as MutationCtx;
+        });
 
         await pruneAuditLogsOlderThanRetentionJob(ctx);
 

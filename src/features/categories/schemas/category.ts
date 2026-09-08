@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Id } from '@/convex/_generated/dataModel';
+import type { Id } from '@/convex/_generated/dataModel';
 import {
     CATEGORY_COLOR_PATTERN,
     CATEGORY_ICONS,
@@ -20,6 +20,7 @@ export const categorySchema = z.object({
 
 export const savedCategorySchema = categorySchema.extend({
     id: z.custom<Id<'categories'>>(),
+    capabilities: z.object({ canEdit: z.boolean(), canDelete: z.boolean() }).optional(),
 });
 
 export type Category = z.infer<typeof savedCategorySchema>;

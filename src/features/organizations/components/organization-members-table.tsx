@@ -1,5 +1,8 @@
 'use client';
 
+import type { Id } from '@/convex/_generated/dataModel';
+import { requiredRouteParam } from '@/features/lib/route-param';
+
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { DataTable } from '@/components/data-table/components/table';
@@ -7,7 +10,7 @@ import { useDeleteOrganizationMember } from '@/features/organizations/hooks/use-
 import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { Button } from '@/components/ui/button';
-import { OrganizationMember } from '@/features/organizations/schemas/organization-member';
+import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSession } from '@/features/auth/hooks/use-session';
@@ -15,29 +18,30 @@ import { DeleteConfirmationDialog } from '@/components/data-table/components/del
 import { toast } from 'sonner';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 import {
     isOrganizationAdminRole,
     isOrganizationOwnerRole,
+    isOrganizationRoleValue,
     type OrganizationRoleValue,
 } from '../types/roles';
 import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 import { formatDate } from '@/lib/format-date';
-
 interface OrganizationMemberRaw {
     id: string;
     organizationId: string;
     userId: string;
     role: string;
     createdAt: number;
-    user?: { email?: string; name?: string; image?: string | null } | null;
+    user?: {
+        email?: string;
+        name?: string;
+        image?: string | null;
+    } | null;
 }
-
 interface OrganizationMembersTableProps {
     organizationId: string;
     actorRole?: OrganizationRoleValue;
 }
-
 export default function OrganizationMembersTable({
     organizationId,
     actorRole,
@@ -49,34 +53,28 @@ export default function OrganizationMembersTable({
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
-
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
-
+    const organizationTableId = requiredRouteParam(organizationId) as Id<'organization'>;
     const membersQuery = useQuery(
-        convexQuery(
-            api.organizations.getOrganizationMembers,
-            organizationId
-                ? { organizationId: organizationId as Id<'organization'>, paginationOpts }
-                : 'skip'
-        )
+        convexQuery(api.organizations.getOrganizationMembers, {
+            organizationId: organizationTableId,
+            paginationOpts,
+        })
     );
-
     const continueCursor = membersQuery.data?.continueCursor ?? null;
     const pageIsDone = membersQuery.data?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
-
     const members: OrganizationMember[] = (membersQuery.data?.page ?? []).map(
         (member: OrganizationMemberRaw) => ({
             id: member.id,
             organizationId: member.organizationId,
             userId: member.userId,
             email: member.user?.email ?? '',
-            role: member.role as OrganizationRoleValue,
+            role: isOrganizationRoleValue(member.role) ? member.role : 'member',
             createdAt: new Date(member.createdAt),
         })
     );
-
     const columns: ColumnDef<DataTableFeatures, OrganizationMember>[] = [
         {
             accessorKey: 'email',
@@ -102,7 +100,6 @@ export default function OrganizationMembersTable({
                     canManageMembers &&
                     !isCurrentUser &&
                     (!isOrganizationOwnerRole(organizationMemberRow.role) || canManageOwners);
-
                 return canManageTarget ? (
                     <OrganizationMemberEditFormModal
                         defaultValues={organizationMemberRow}
@@ -119,11 +116,9 @@ export default function OrganizationMembersTable({
                 const canManageTarget =
                     canManageMembers &&
                     (!isOrganizationOwnerRole(row.original.role) || canManageOwners);
-
                 if (isCurrentUser || !canManageTarget) {
                     return null;
                 }
-
                 return (
                     <DeleteConfirmationDialog
                         onConfirm={async () => {
@@ -153,10 +148,14 @@ export default function OrganizationMembersTable({
             },
         },
     ];
-
     return (
         <div data-testid="organization-members-table">
             <DataTable
+                isError={membersQuery.isError}
+                error={membersQuery.error}
+                onRetry={() => {
+                    void membersQuery.refetch();
+                }}
                 columns={columns}
                 data={members}
                 isLoading={membersQuery.isLoading}

@@ -1,7 +1,10 @@
-import { GenericSchema, SchemaDefinition } from 'convex/server';
-import { TestConvex } from 'convex-test';
-import { MutationCtx } from '../_generated/server';
-import { Id } from '../_generated/dataModel';
+import { domainTriggers } from '../platform/db/domainTriggers';
+import type { GenericSchema, SchemaDefinition } from 'convex/server';
+import type { TestConvex } from 'convex-test';
+import type { MutationCtx } from '../_generated/server';
+import type { Doc, Id } from '../_generated/dataModel';
+import { getOptionalString, isJsonObject } from '../../shared/boundary-values';
+import { asTestId } from './testCasts';
 
 const defaultTestSessionIds = new WeakMap<
     TestConvex<SchemaDefinition<GenericSchema, boolean>>,
@@ -202,7 +205,7 @@ export async function createTestObjective(
             completedAt !== undefined &&
             completedAt <= options.deadline);
     return t.run(async (ctx: MutationCtx) => {
-        return await ctx.db.insert('objectives', {
+        return await domainTriggers.wrapDB(ctx).db.insert('objectives', {
             organizationId: options.organizationId,
             createdBy: options.userId,
             ownerId: options.ownerId ?? options.userId,
@@ -238,7 +241,7 @@ export async function createTestCollaborator(
 ): Promise<Id<'objectiveCollaborators'>> {
     const now = Date.now();
     return t.run(async (ctx: MutationCtx) => {
-        return await ctx.db.insert('objectiveCollaborators', {
+        return await domainTriggers.wrapDB(ctx).db.insert('objectiveCollaborators', {
             objectiveId: options.objectiveId,
             userId: options.userId,
             organizationId: options.organizationId,
@@ -260,7 +263,7 @@ export async function createTestNotification(
         read?: boolean;
         notificationDate?: number;
     }
-) {
+): Promise<Doc<'notifications'>> {
     const now = Date.now();
     return t.run(async (ctx: MutationCtx) => {
         const id = await ctx.db.insert('notifications', {
@@ -274,7 +277,7 @@ export async function createTestNotification(
             createdAt: now,
             updatedAt: now,
         });
-        const notification = await ctx.db.get(id);
+        const notification = await ctx.db.get('notifications', id);
         if (!notification) {
             throw new Error('Failed to create test notification');
         }
@@ -306,4 +309,22 @@ export async function createTestSession(
             updatedAt: now,
         });
     });
+}
+
+export function readScheduledFunctionArg(row: {
+    readonly args: readonly (string | number | boolean | null | object | undefined)[];
+}): { trigger?: string; userId?: Id<'user'> } | undefined {
+    const value = row.args[0];
+    if (!isJsonObject(value)) {
+        return undefined;
+    }
+    const trigger = getOptionalString(value.trigger);
+    const userIdValue = getOptionalString(value.userId);
+    if (userIdValue === undefined) {
+        return { trigger };
+    }
+    return {
+        trigger,
+        userId: asTestId<'user'>(userIdValue),
+    };
 }

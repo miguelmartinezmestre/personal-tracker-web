@@ -9,7 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getInvitationCallbackPath } from '@shared/auth-security';
-import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
+import { InvitationActivationPending } from '@/features/organizations/components/invitation-activation-pending';
+import {
+    acceptInvitationAndActivateOrganization,
+    activateAcceptedOrganization,
+} from '@/features/organizations/lib/accept-invitation';
 
 type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
@@ -24,6 +28,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
 
     const [status, setStatus] = useState<InvitationStatus>('ready');
     const [errorMessage, setErrorMessage] = useState('');
+    const [pendingOrganization, setPendingOrganization] = useState<string | null>(null);
     const loginSearchParams = new URLSearchParams({
         callbackUrl: getInvitationCallbackPath(token),
     });
@@ -43,18 +48,46 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         setErrorMessage('');
 
         try {
-            await acceptInvitationAndActivateOrganization({
+            const result = await acceptInvitationAndActivateOrganization({
                 invitationId: token,
             });
-            router.refresh();
-            setStatus('accepted');
+            if (result.status === 'acceptedActivationPending') {
+                setPendingOrganization(result.organizationId);
+                setStatus('ready');
+            } else {
+                router.refresh();
+                setStatus('accepted');
+            }
         } catch {
             setStatus('error');
             setErrorMessage(t('errorAccepting'));
         }
     }
 
-    if (sessionQuery?.isPending) {
+    async function retryActivation() {
+        if (!pendingOrganization) {
+            return;
+        }
+        setStatus('accepting');
+        try {
+            await activateAcceptedOrganization(pendingOrganization);
+            setPendingOrganization(null);
+            setStatus('accepted');
+        } catch {
+            setStatus('ready');
+            setErrorMessage(t('errorAccepting'));
+        }
+    }
+    if (pendingOrganization) {
+        return (
+            <InvitationActivationPending
+                isPending={status === 'accepting'}
+                error={errorMessage}
+                retry={retryActivation}
+            />
+        );
+    }
+    if (sessionQuery.isPending) {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
@@ -101,7 +134,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
-    if (!sessionQuery?.data?.user && status === 'ready') {
+    if (!sessionQuery.data?.user && status === 'ready') {
         return (
             <div className="flex min-h-screen items-center justify-center p-4">
                 <Card className="w-full max-w-md">
@@ -143,7 +176,9 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Button
-                        onClick={handleAccept}
+                        onClick={() => {
+                            void handleAccept();
+                        }}
                         disabled={status === 'accepting'}
                         className="w-full"
                     >

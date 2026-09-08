@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
 
 export class AchievementsPage {
     readonly page: Page;
@@ -69,7 +69,9 @@ export class AchievementsPage {
         const click = async (locator: Locator) => {
             await locator.waitFor({ state: 'visible', timeout: 10000 });
             await locator.evaluate(element => {
-                (element as HTMLElement).click();
+                if (element instanceof HTMLElement) {
+                    element.click();
+                }
             });
         };
 

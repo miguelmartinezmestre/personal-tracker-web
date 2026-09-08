@@ -151,7 +151,7 @@ describe('objective layered permissions integration', () => {
         ).rejects.toThrow();
     });
 
-    test('objective pagination returns a safe short page and advances past RLS-hidden rows', async () => {
+    test('objective pagination consumes hidden rows to fill the visible page', async () => {
         const visibleObjectiveId = await createTestObjective(t, {
             userId: ownerUser.docId,
             ownerId: ownerUser.docId,
@@ -176,15 +176,12 @@ describe('objective layered permissions integration', () => {
             paginationOpts: { numItems: 2, cursor: null },
         });
 
-        expect(firstPage.page).toEqual([]);
-        expect(firstPage.isDone).toBe(false);
-        expect(firstPage.continueCursor).toBeTruthy();
-
-        const secondPage = await outsiderIdentity.query(api.objectives.getObjectives, {
-            paginationOpts: { numItems: 2, cursor: firstPage.continueCursor },
-        });
-
-        expect(secondPage.page.some(objective => objective._id === visibleObjectiveId)).toBe(true);
+        expect(firstPage.page).toHaveLength(2);
+        expect(firstPage.needsContinuation).toBe(false);
+        expect(firstPage.page.some(objective => objective._id === visibleObjectiveId)).toBe(true);
+        expect(firstPage.page.every(objective => objective.visibility === 'organization')).toBe(
+            true
+        );
     });
 
     test('editor can contribute to private objective', async () => {
@@ -249,7 +246,7 @@ describe('objective layered permissions integration', () => {
         const restored = await ownerIdentity.mutation(api.objectives.restoreObjective, {
             id: privateObjectiveId,
         });
-        expect(restored?.deletedAt).toBeUndefined();
+        expect(restored.deletedAt).toBeUndefined();
 
         await expect(
             ownerIdentity.mutation(api.objectives.purgeObjective, {
@@ -273,7 +270,7 @@ describe('objective layered permissions integration', () => {
                 newOwnerId: adminUser.docId,
             }
         );
-        expect(transferred?.ownerId).toBe(adminUser.docId);
+        expect(transferred.ownerId).toBe(adminUser.docId);
     });
 
     test('reassigns ownership when owner leaves organization', async () => {

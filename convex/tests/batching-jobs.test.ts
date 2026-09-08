@@ -87,10 +87,14 @@ describe('batched jobs', () => {
         });
 
         while (result.status === 'in_progress') {
+            const phase = result.phase;
+            if (phase !== 'collaborators' && phase !== 'progress' && phase !== 'notifications') {
+                throw new Error(`Unexpected deletion phase: ${phase ?? '(none)'}`);
+            }
             result = await t.mutation(internal.objectives.deleteObjectiveContinue, {
                 objectiveId,
                 purgeToken: 'batch-purge-token',
-                phase: result.phase as 'collaborators' | 'progress' | 'notifications',
+                phase,
                 cursor: null,
                 totalProgressDeleted: result.deleted.progress,
                 totalNotificationsDeleted: result.deleted.notifications,

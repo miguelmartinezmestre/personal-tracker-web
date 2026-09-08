@@ -15,10 +15,12 @@ test(
 
         const registerButton = page.getByTestId('register-button');
         await registerButton.evaluate(button => {
-            const element = button as HTMLButtonElement;
-            element.click();
-            element.click();
-            element.click();
+            if (!(button instanceof HTMLButtonElement)) {
+                return;
+            }
+            button.click();
+            button.click();
+            button.click();
         });
 
         await expect(registerButton).toBeDisabled();

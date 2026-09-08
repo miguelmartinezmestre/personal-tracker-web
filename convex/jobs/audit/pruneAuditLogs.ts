@@ -13,7 +13,7 @@ export async function pruneAuditLogsOlderThanRetentionJob(ctx: MutationCtx) {
         .take(PRUNE_BATCH);
 
     for (const row of batch) {
-        await ctx.db.delete(row._id);
+        await ctx.db.delete('auditLogs', row._id);
     }
 
     if (batch.length === PRUNE_BATCH) {

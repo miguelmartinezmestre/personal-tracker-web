@@ -31,30 +31,16 @@ export const objectiveLifecycle = workflow.define({
             internal.jobs.objectives.syncObjectiveFromProgress.syncObjectiveFromProgress,
             {
                 objectiveId: args.objectiveId,
+                actorUserId: args.organizationContributorUserId,
             }
         );
 
-        if (syncResult.found && (syncResult.completedNow || syncResult.earlyBirdCompletedNow)) {
-            await step.runMutation(internal.achievements.checkUserAchievements, {
-                userId: args.individualUserId,
-                organizationId: syncResult.organizationId,
-                trigger: 'objective_completed',
-            });
-        }
-        if (syncResult.found && syncResult.completedNow) {
-            await step.runMutation(internal.achievements.checkOrganizationAchievements, {
-                organizationId: syncResult.organizationId,
-                userId: args.organizationContributorUserId,
-                trigger: 'objective_completed',
-            });
-        }
-
-        const status = syncResult.status === 'completed' ? 'completed' : 'active';
+        const status = syncResult.found ? syncResult.status : 'active';
 
         return {
             objectiveId: args.objectiveId,
             status,
-            currentValue: syncResult.currentValue ?? 0,
+            currentValue: syncResult.found ? syncResult.currentValue : 0,
             completedNow: syncResult.completedNow,
             reopened: syncResult.reopened,
         };

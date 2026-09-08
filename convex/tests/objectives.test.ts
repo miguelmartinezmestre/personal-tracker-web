@@ -6,6 +6,7 @@ import {
     createTestObjective,
     createTestOrganization,
     createTestUser,
+    readScheduledFunctionArg,
 } from './test_helpers';
 import { identityFor } from './test_identities';
 import type { DataModel, Id } from '../_generated/dataModel';
@@ -73,7 +74,7 @@ describe('convex objectives', () => {
                 updateDate: Date.now(),
             });
 
-            const before = await t.run(async ctx => ctx.db.get(objectiveId));
+            const before = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
             expect(before?.status).toBe('active');
 
             // Lowering the target below the current value must complete the
@@ -85,7 +86,7 @@ describe('convex objectives', () => {
                 targetValue: 40,
             });
 
-            const after = await t.run(async ctx => ctx.db.get(objectiveId));
+            const after = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
             expect(after?.status).toBe('completed');
             expect(after?.completedAt).toBeDefined();
         });
@@ -113,7 +114,7 @@ describe('convex objectives', () => {
                 targetValue: 12,
             });
 
-            const objective = await t.run(async ctx => ctx.db.get(objectiveId));
+            const objective = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
             expect(objective).toMatchObject({
                 title: 'Read 12 books',
                 targetValue: 12,
@@ -135,7 +136,7 @@ describe('convex objectives', () => {
                 currentValue: 10,
             });
 
-            const objective = await t.run(async ctx => ctx.db.get(objectiveId));
+            const objective = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
             expect(objective?.status).toBe('completed');
             expect(objective?.completedAt).toBeDefined();
         });
@@ -291,9 +292,9 @@ describe('convex objectives', () => {
                 unit: 'km',
             });
 
-            expect(updated?.title).toBe('New title');
-            expect(updated?.unit).toBe('km');
-            expect(updated?.targetValue).toBe(100);
+            expect(updated.title).toBe('New title');
+            expect(updated.unit).toBe('km');
+            expect(updated.targetValue).toBe(100);
         });
 
         test('can clear a deadline and recomputes early-bird progress on deadline changes', async () => {
@@ -330,9 +331,7 @@ describe('convex objectives', () => {
             const completionEvaluations = await t.run(async ctx => {
                 return (await ctx.db.system.query('_scheduled_functions').collect())
                     .filter(row => !beforeScheduledIdSet.has(row._id))
-                    .map(
-                        row => row.args[0] as { trigger?: string; userId?: Id<'user'> } | undefined
-                    )
+                    .map(readScheduledFunctionArg)
                     .filter(args => args?.trigger === 'objective_completed');
             });
             expect(completionEvaluations).toEqual([
@@ -378,7 +377,7 @@ describe('convex objectives', () => {
                 })
             ).rejects.toThrow();
 
-            const untouched = await t.run(async ctx => ctx.db.get(foreignId));
+            const untouched = await t.run(async ctx => ctx.db.get('objectives', foreignId));
             expect(untouched?.title).toBe('Foreign');
         });
     });
@@ -410,7 +409,7 @@ describe('convex objectives', () => {
             expect(result.objectiveId).toBe(objectiveId);
             expect(result.status).toBe('soft_deleted');
 
-            const objective = await t.run(async ctx => ctx.db.get(objectiveId));
+            const objective = await t.run(async ctx => ctx.db.get('objectives', objectiveId));
             expect(objective?.deletedAt).toBeDefined();
             expect(objective?.deletedBy).toBe(userId);
         });
@@ -427,7 +426,7 @@ describe('convex objectives', () => {
                 userIdentity.mutation(api.objectives.deleteObjective, { id: foreignId })
             ).rejects.toThrow();
 
-            const untouched = await t.run(async ctx => ctx.db.get(foreignId));
+            const untouched = await t.run(async ctx => ctx.db.get('objectives', foreignId));
             expect(untouched).not.toBeNull();
         });
     });
@@ -566,7 +565,7 @@ describe('convex objectives', () => {
                 id: memberObjectiveId,
                 title: 'Updated by member',
             });
-            expect(updated?.title).toBe('Updated by member');
+            expect(updated.title).toBe('Updated by member');
 
             const result = await memberIdentity.mutation(api.objectives.deleteObjective, {
                 id: memberObjectiveId,
@@ -579,7 +578,7 @@ describe('convex objectives', () => {
                 id: ownerObjectiveId,
                 title: 'Updated by admin',
             });
-            expect(updated?.title).toBe('Updated by admin');
+            expect(updated.title).toBe('Updated by admin');
 
             const result = await adminIdentity.mutation(api.objectives.deleteObjective, {
                 id: ownerObjectiveId,

@@ -1,14 +1,11 @@
 import type { PaginationOptions } from 'convex/server';
 import { ConvexError } from 'convex/values';
-import { internal } from '../../_generated/api';
-import type { Doc, Id } from '../../_generated/dataModel';
+import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { shouldSendProgressNotification } from '../notifications/preferences';
 import { ERROR_CODES } from '../../utils/constants';
 import {
-    applyObjectiveProgressDelta,
     normalizeUpdateDate,
-    reconcileObjectiveMetrics,
     validateObjectiveNotCompleted,
     validateProgressDelta,
 } from './metrics';
@@ -17,100 +14,10 @@ import { canEditProgress } from './permissions';
 import { PROGRESS_COMMENT_MAX_LENGTH } from '../../../shared/input-constraints';
 import { assertOptionalBoundedString } from '../../utils/inputValidation';
 
+import { transitionObjective } from './transitions';
+import { isOperationalMember } from '../organizations/operational';
+
 const PROGRESS_SERIES_LIMIT = 500;
-
-type AchievementTrigger = 'objective_created' | 'objective_completed' | 'progress_update';
-
-async function insertObjectiveCompletedNotificationIfEnabled(
-    ctx: MutationCtx,
-    objective: Doc<'objectives'>,
-    now = Date.now()
-) {
-    const notifyProgress = await shouldSendProgressNotification(ctx, objective.ownerId);
-    if (!notifyProgress) {
-        return;
-    }
-
-    await ctx.db.insert('notifications', {
-        userId: objective.ownerId,
-        organizationId: objective.organizationId,
-        objective: objective._id,
-        read: false,
-        notificationType: 'status',
-        notificationDate: now,
-        message: `Objective "${objective.title}" completed.`,
-        createdAt: now,
-        updatedAt: now,
-    });
-}
-
-/**
- * Schedules achievement evaluators while preserving their distinct attribution:
- * individual metrics belong to the user whose data is counted, while an
- * organization award records the user who caused the organization event.
- */
-export async function scheduleAchievementChecks(
-    ctx: MutationCtx,
-    args: {
-        individualUserId: Id<'user'>;
-        organizationContributorUserId?: Id<'user'>;
-        organizationId: Id<'organization'>;
-        trigger: AchievementTrigger;
-    }
-) {
-    await ctx.scheduler.runAfter(0, internal.achievements.checkUserAchievements, {
-        userId: args.individualUserId,
-        organizationId: args.organizationId,
-        trigger: args.trigger,
-    });
-    if (args.organizationContributorUserId) {
-        await ctx.scheduler.runAfter(0, internal.achievements.checkOrganizationAchievements, {
-            organizationId: args.organizationId,
-            userId: args.organizationContributorUserId,
-            trigger: args.trigger,
-        });
-    }
-}
-
-/**
- * Reconciles an objective's completion state from its maintained current value
- * *synchronously* and emits the relevant side effects when it transitions to
- * completed or first qualifies as an early bird after a deadline edit. Used by
- * objective definition changes (update/restore) so status and achievements do
- * not depend on the asynchronous lifecycle workflow. Idempotent: a subsequent
- * reconciliation observes the materialized state and does nothing.
- */
-export async function finalizeObjectiveCompletion(
-    ctx: MutationCtx,
-    objectiveId: Id<'objectives'>,
-    actingUserId: Id<'user'>
-): Promise<{ completedNow: boolean; earlyBirdCompletedNow: boolean }> {
-    const { completedNow, earlyBirdCompletedNow } = await reconcileObjectiveMetrics(
-        ctx,
-        objectiveId
-    );
-    if (!completedNow && !earlyBirdCompletedNow) {
-        return { completedNow, earlyBirdCompletedNow };
-    }
-
-    const objective = await ctx.db.get('objectives', objectiveId);
-    if (!objective) {
-        return { completedNow, earlyBirdCompletedNow };
-    }
-
-    if (completedNow) {
-        await insertObjectiveCompletedNotificationIfEnabled(ctx, objective);
-    }
-
-    await scheduleAchievementChecks(ctx, {
-        individualUserId: objective.createdBy,
-        organizationContributorUserId: completedNow ? actingUserId : undefined,
-        organizationId: objective.organizationId,
-        trigger: 'objective_completed',
-    });
-
-    return { completedNow, earlyBirdCompletedNow };
-}
 
 type ProgressMutationCtx = MutationCtx & {
     userId: Id<'user'>;
@@ -177,46 +84,35 @@ export async function createProgressUpdate(
         updatedAt: now,
     });
 
-    const { completedNow } = await applyObjectiveProgressDelta(
-        ctx,
-        objective._id,
-        args.updatedValue
-    );
+    await transitionObjective(ctx, objective._id, {
+        actorUserId: args.actingUserId,
+        progressAuthorId: args.actingUserId,
+        delta: args.updatedValue,
+    });
 
     const notifyProgress = await shouldSendProgressNotification(ctx, objective.ownerId);
-    if (notifyProgress) {
+    if (
+        notifyProgress &&
+        (await isOperationalMember(ctx, objective.organizationId, objective.ownerId))
+    ) {
         await ctx.db.insert('notifications', {
             userId: objective.ownerId,
             organizationId: objective.organizationId,
             objective: args.objective,
             read: false,
             notificationType: 'progress',
+            messageKey: 'progressAdded',
+            messageParams: {
+                title: objective.title,
+                amount: args.updatedValue,
+                unit: objective.unit ?? '',
+            },
             notificationDate: now,
             message: `Progress added to "${objective.title}": +${args.updatedValue}${
                 objective.unit ? ` ${objective.unit}` : ''
             }`,
             createdAt: now,
             updatedAt: now,
-        });
-    }
-
-    if (completedNow) {
-        await insertObjectiveCompletedNotificationIfEnabled(ctx, objective, now);
-    }
-
-    await scheduleAchievementChecks(ctx, {
-        individualUserId: args.actingUserId,
-        organizationContributorUserId: args.actingUserId,
-        organizationId: objective.organizationId,
-        trigger: 'progress_update',
-    });
-
-    if (completedNow) {
-        await scheduleAchievementChecks(ctx, {
-            individualUserId: objective.createdBy,
-            organizationContributorUserId: args.actingUserId,
-            organizationId: objective.organizationId,
-            trigger: 'objective_completed',
         });
     }
 
@@ -252,7 +148,13 @@ export async function getProgressSeriesByObjective(
     const isTruncated = results.length > PROGRESS_SERIES_LIMIT;
     const points = results.slice(0, PROGRESS_SERIES_LIMIT).reverse();
 
-    return { points, isTruncated };
+    const objective = await ctx.db.get('objectives', args.objectiveId);
+    if (!objective) {
+        throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
+    }
+    const seriesStartValue =
+        objective.currentValue - points.reduce((sum, point) => sum + point.updatedValue, 0);
+    return { points, isTruncated, seriesStartValue };
 }
 
 export async function updateProgressUpdate(
@@ -296,29 +198,11 @@ export async function updateProgressUpdate(
         updatedAt: Date.now(),
     });
 
-    const { completedNow } = await applyObjectiveProgressDelta(
-        ctx,
-        objective._id,
-        args.updatedValue - existing.updatedValue
-    );
-
-    await scheduleAchievementChecks(ctx, {
-        individualUserId: existing.createdBy,
-        organizationContributorUserId: ctx.userId,
-        organizationId: objective.organizationId,
-        trigger: 'progress_update',
+    await transitionObjective(ctx, objective._id, {
+        actorUserId: ctx.userId,
+        progressAuthorId: existing.createdBy,
+        delta: args.updatedValue - existing.updatedValue,
     });
-
-    if (completedNow) {
-        await scheduleAchievementChecks(ctx, {
-            individualUserId: objective.createdBy,
-            organizationContributorUserId: ctx.userId,
-            organizationId: objective.organizationId,
-            trigger: 'objective_completed',
-        });
-
-        await insertObjectiveCompletedNotificationIfEnabled(ctx, objective);
-    }
 
     return await ctx.db.get('progressUpdates', args.id);
 }
@@ -344,7 +228,11 @@ export async function deleteProgressUpdate(
     }
 
     await ctx.db.delete('progressUpdates', args.id);
-    await applyObjectiveProgressDelta(ctx, objective._id, -existing.updatedValue);
+    await transitionObjective(ctx, objective._id, {
+        actorUserId: ctx.userId,
+        progressAuthorId: existing.createdBy,
+        delta: -existing.updatedValue,
+    });
 
     return { success: true } as const;
 }

@@ -45,7 +45,11 @@ export default function StepPlatformConfig({ data, onChange }: StepPlatformConfi
                     <Label htmlFor="defaultLanguage">{t('platformConfig.languageLabel')}</Label>
                     <Select
                         value={data.defaultLanguage}
-                        onValueChange={value => onChange({ defaultLanguage: value as 'en' | 'es' })}
+                        onValueChange={value => {
+                            if (value === 'en' || value === 'es') {
+                                onChange({ defaultLanguage: value });
+                            }
+                        }}
                     >
                         <SelectTrigger id="defaultLanguage" data-testid="setup-language-select">
                             <SelectValue />

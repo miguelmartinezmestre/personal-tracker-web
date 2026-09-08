@@ -1,0 +1,938 @@
+{
+    "source": "metricas-memoria/requisitos.tex",
+    "expectedCount": 77,
+    "note": "La vinculación a una prueba o revisión no equivale a que el requisito esté verificado. Los resultados de ejecución se recogen en el manifiesto de evidencias.",
+    "requirements": [
+        {
+            "id": "REQ-AUTENTICACION-001",
+            "descriptionTex": "El Sistema DEBE permitir a los usuarios registrarse cuando lo autorice la política configurada: libremente en modo \\texttt{open} o mediante el identificador exacto de una invitación pendiente, no caducada y dirigida al mismo correo en modo \\texttt{invitation-only}. El alta requiere una dirección de correo válida y única, una contraseña de al menos 8 caracteres con una mayúscula, una minúscula y un número, y un nombre de usuario de al menos 3 caracteres.",
+            "sourceLine": 44,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/double-submit.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/register.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-002",
+            "descriptionTex": "El Sistema DEBE permitir a los usuarios iniciar sesión utilizando su dirección de correo electrónico y contraseña registrados.",
+            "sourceLine": 49,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/smoke/critical-paths.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-003",
+            "descriptionTex": "El Sistema DEBE proporcionar una funcionalidad para restablecer la contraseña del usuario en caso de olvido.",
+            "sourceLine": 54,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/password-reset.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-004",
+            "descriptionTex": "El Sistema DEBE permitir a los usuarios autenticados editar su información de perfil.",
+            "sourceLine": 59,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/settings/settings.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-005",
+            "descriptionTex": "El Sistema DEBE permitir cerrar sesión de manera segura.",
+            "sourceLine": 64,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/route-protection.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-006",
+            "descriptionTex": "El Sistema DEBE mantener registro de las sesiones activas de cada usuario.",
+            "sourceLine": 69,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/sessions/sessions.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-007",
+            "descriptionTex": "El Sistema DEBE permitir gestionar sesiones activas.",
+            "sourceLine": 74,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/sessions/sessions.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-008",
+            "descriptionTex": "El Sistema DEBE permitir cerrar todas las demás sesiones excepto la actual.",
+            "sourceLine": 79,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/sessions/sessions.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-AUTENTICACION-009",
+            "descriptionTex": "El Sistema DEBE permitir al usuario",
+            "sourceLine": 84,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/settings/settings.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-001",
+            "descriptionTex": "El Sistema DEBE permitir la creación de metas con título, descripción, valor inicial, unidad y valor objetivo.",
+            "sourceLine": 102,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators-visibility.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/crud.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/smoke/critical-paths.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-002",
+            "descriptionTex": "El Sistema DEBE mostrar una lista de metas activas y finalizadas.",
+            "sourceLine": 107,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/objectives.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-003",
+            "descriptionTex": "El Sistema DEBE permitir editar metas existentes, incluyendo el valor objetivo.",
+            "sourceLine": 112,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-004",
+            "descriptionTex": "El Sistema DEBE permitir categorizar metas en distintos tipos.",
+            "sourceLine": 117,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/categories/crud.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-005",
+            "descriptionTex": "El Sistema DEBE permitir establecer, editar y retirar fechas límite para los objetivos.",
+            "sourceLine": 122,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/objectiveDomain.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-006",
+            "descriptionTex": "El Sistema DEBE mostrar el estado de progreso de las metas.",
+            "sourceLine": 127,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/progress-updates.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-007",
+            "descriptionTex": "El Sistema DEBE mostrar una vista de detalle para cada objetivo con historial de progreso.",
+            "sourceLine": 132,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/progress-updates.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-OBJETIVOS-008",
+            "descriptionTex": "El Sistema DEBE permitir buscar objetivos por título mediante búsqueda de texto completo, combinable con los filtros de estado y categoría.",
+            "sourceLine": 137,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-PROGRESO-001",
+            "descriptionTex": "El Sistema DEBE permitir registrar nuevos valores de progreso.",
+            "sourceLine": 147,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/progress-updates.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-PROGRESO-002",
+            "descriptionTex": "El Sistema DEBE mantener un historial completo de actualizaciones dentro de la ventana operativa configurada. La fecha efectiva se interpreta como fecha civil UTC: se aceptan el día UTC actual y los días anteriores dentro de la ventana de cinco años, y se rechaza cualquier día UTC futuro.",
+            "sourceLine": 152,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/update_progress.test.ts"
+                },
+                {
+                    "kind": "automated-test",
+                    "path": "src/features/update-progress/lib/progress-points.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-PROGRESO-003",
+            "descriptionTex": "El Sistema DEBE permitir editar y eliminar registros de progreso existentes, incluso cuando el objetivo está completado. No se permite crear nuevos registros sobre un objetivo completado. La corrección o eliminación aplica la diferencia al acumulado y puede reabrirlo (pasar de \\texttt{completed} a \\texttt{active}) si el valor resultante vuelve a quedar por debajo de la meta.",
+            "sourceLine": 157,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/progress-updates.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-PROGRESO-004",
+            "descriptionTex": "El Sistema DEBE mostrar una visualización gráfica del progreso de cada objetivo.",
+            "sourceLine": 162,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-PROGRESO-005",
+            "descriptionTex": "El Sistema DEBE sincronizar automáticamente el valor actual del objetivo tras cada actualización de progreso.",
+            "sourceLine": 167,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/progress-updates.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-DASHBOARD-001",
+            "descriptionTex": "El Sistema DEBE mostrar estadísticas generales sobre los objetivos accesibles en la organización activa.",
+            "sourceLine": 176,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-DASHBOARD-002",
+            "descriptionTex": "El Sistema DEBE mostrar gráficos de objetivos con mayor progreso.",
+            "sourceLine": 181,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-DASHBOARD-003",
+            "descriptionTex": "El Sistema DEBE mostrar gráficos de actualizaciones mensuales.",
+            "sourceLine": 186,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-DASHBOARD-004",
+            "descriptionTex": "El Sistema DEBE calcular y mostrar días restantes hasta fechas límite.",
+            "sourceLine": 191,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-DASHBOARD-005",
+            "descriptionTex": "El Sistema DEBE mostrar próximos vencimientos en el dashboard.",
+            "sourceLine": 196,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-DASHBOARD-006",
+            "descriptionTex": "El Sistema DEBE mostrar actividad reciente (creaciones, actualizaciones y objetivos completados).",
+            "sourceLine": 201,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/dashboard/home.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-001",
+            "descriptionTex": "El Sistema DEBE permitir crear organizaciones con un nombre y una descripción. La unicidad se garantiza mediante el identificador legible (\\textit{slug}), derivado automáticamente del nombre.",
+            "sourceLine": 211,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-002",
+            "descriptionTex": "El Sistema DEBE permitir invitar usuarios a organizaciones mediante correo electrónico.",
+            "sourceLine": 216,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/invitations.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/members.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-003",
+            "descriptionTex": "El Sistema DEBE implementar roles dentro de organizaciones: propietario, administrador y miembro.",
+            "sourceLine": 221,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/members.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-004",
+            "descriptionTex": "El Sistema DEBE permitir gestionar miembros de la organización.",
+            "sourceLine": 226,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/members.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-005",
+            "descriptionTex": "El Sistema DEBE mostrar un centro de invitaciones pendientes para el usuario.",
+            "sourceLine": 231,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/invitations.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-006",
+            "descriptionTex": "El Sistema DEBE permitir aceptar o rechazar invitaciones pendientes una vez verificado el correo del destinatario.",
+            "sourceLine": 236,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/invitations.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-007",
+            "descriptionTex": "El Sistema DEBE permitir editar la información de la organización (nombre, descripción).",
+            "sourceLine": 241,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-EQUIPOS-008",
+            "descriptionTex": "El Sistema DEBE permitir eliminar organizaciones (solo al propietario).",
+            "sourceLine": 246,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NOTIFICACIONES-001",
+            "descriptionTex": "El Sistema DEBE generar notificaciones automáticas sobre objetivos.",
+            "sourceLine": 256,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/notifications.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NOTIFICACIONES-002",
+            "descriptionTex": "El Sistema DEBE permitir marcar notificaciones como leídas.",
+            "sourceLine": 261,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/notifications/notifications.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NOTIFICACIONES-003",
+            "descriptionTex": "El Sistema DEBE mostrar lista de notificaciones ordenadas por fecha.",
+            "sourceLine": 266,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/notifications/notifications.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NOTIFICACIONES-004",
+            "descriptionTex": "El Sistema DEBE permitir notificaciones sin objetivo asociado.",
+            "sourceLine": 271,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/notifications-security.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ROLES-001",
+            "descriptionTex": "El Sistema DEBE implementar dos roles globales de plataforma, Administrador y Usuario regular, independientes de los roles internos de cada organización.",
+            "sourceLine": 281,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/route-protection.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ROLES-002",
+            "descriptionTex": "El Sistema DEBE mostrar las funcionalidades de administración de la plataforma solo a usuarios con el rol global Administrador.",
+            "sourceLine": 286,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/route-protection.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-001",
+            "descriptionTex": "El Sistema DEBE implementar un sistema de logros que premie el progreso del usuario.",
+            "sourceLine": 295,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/achievements/achievements.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/smoke/critical-paths.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-002",
+            "descriptionTex": "El Sistema DEBE soportar logros individuales con diferentes categorías: hitos de creación, completación, racha de actividad y actualizaciones.",
+            "sourceLine": 300,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/achievements/achievements.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-003",
+            "descriptionTex": "El Sistema DEBE soportar logros organizacionales que premien el trabajo en equipo.",
+            "sourceLine": 305,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/achievements/achievements.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-004",
+            "descriptionTex": "El Sistema DEBE implementar un sistema de niveles para los logros: bronce, plata y oro.",
+            "sourceLine": 310,
+            "evidence": [
+                {
+                    "kind": "source-review",
+                    "path": "convex/domain/achievements/definitions.ts"
+                },
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/achievements.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-005",
+            "descriptionTex": "El Sistema DEBE asignar puntos a cada logro obtenido.",
+            "sourceLine": 315,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/achievements/achievements.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-006",
+            "descriptionTex": "El Sistema DEBE mostrar una galería de logros con el progreso hacia logros no obtenidos.",
+            "sourceLine": 320,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/achievements/achievements.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-007",
+            "descriptionTex": "El Sistema DEBE generar notificaciones cuando se desbloquee un nuevo logro.",
+            "sourceLine": 325,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/achievements-org-award.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-LOGROS-008",
+            "descriptionTex": "El Sistema DEBE calcular y mostrar la racha de actividad del usuario (días consecutivos con actualizaciones).",
+            "sourceLine": 330,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/achievements_calculations.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-CATEGORIAS-001",
+            "descriptionTex": "El Sistema DEBE permitir crear categorías personalizadas con nombre, color e icono dentro de la organización activa.",
+            "sourceLine": 339,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/categories/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-CATEGORIAS-002",
+            "descriptionTex": "El Sistema DEBE ofrecer un catálogo de categorías predefinidas (por ejemplo, equivalentes a salud, carrera o educación; sembradas con nombres en inglés como \\textit{Health}, \\textit{Career} o \\textit{Education}) que se crean durante la configuración inicial de la plataforma a través del asistente de \\textit{setup}.",
+            "sourceLine": 344,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/setup.test.ts"
+                },
+                {
+                    "kind": "source-review",
+                    "path": "src/features/setup/components/step-categories.tsx"
+                }
+            ]
+        },
+        {
+            "id": "REQ-CATEGORIAS-003",
+            "descriptionTex": "El Sistema DEBE permitir editar y eliminar categorías personalizadas de la organización activa.",
+            "sourceLine": 349,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/categories/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-CATEGORIAS-004",
+            "descriptionTex": "El Sistema DEBE permitir filtrar objetivos por categoría.",
+            "sourceLine": 354,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/objectiveDomain.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-COLABORACION-001",
+            "descriptionTex": "El Sistema DEBE permitir a los miembros crear objetivos en la organización activa.",
+            "sourceLine": 363,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/objective_permissions_integration.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-COLABORACION-002",
+            "descriptionTex": "El Sistema DEBE permitir eliminar objetivos de la organización al propietario del objetivo y a los administradores o propietarios de la organización (no a cualquier miembro).",
+            "sourceLine": 368,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/objective_permissions_integration.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-COLABORACION-003",
+            "descriptionTex": "El Sistema DEBE mostrar los objetivos a los que el usuario tiene acceso dentro de la organización seleccionada.",
+            "sourceLine": 373,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-COLABORACION-004",
+            "descriptionTex": "El Sistema DEBE permitir definir la visibilidad de cada objetivo entre privada (visible para su propietario, colaboradores y los administradores o propietarios de la organización) y de organización (visible para sus miembros).",
+            "sourceLine": 378,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators-visibility.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-COLABORACION-005",
+            "descriptionTex": "El Sistema DEBE permitir al propietario de un objetivo añadir, modificar y eliminar colaboradores (miembros de la organización) con rol de editor (pueden registrar progreso) o de visor (solo lectura).",
+            "sourceLine": 383,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-COLABORACION-006",
+            "descriptionTex": "El Sistema DEBE permitir transferir la propiedad de un objetivo a otro miembro de la misma organización.",
+            "sourceLine": 388,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/collaborators.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ADMIN-001",
+            "descriptionTex": "El Sistema DEBE proporcionar un panel de administración para gestionar usuarios.",
+            "sourceLine": 397,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/admin/users.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ADMIN-002",
+            "descriptionTex": "El Sistema DEBE permitir a los administradores bloquear y desbloquear usuarios.",
+            "sourceLine": 402,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/admin.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ADMIN-003",
+            "descriptionTex": "El Sistema DEBE permitir a los administradores cambiar el rol de otros usuarios.",
+            "sourceLine": 407,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/admin/users.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ADMIN-004",
+            "descriptionTex": "El Sistema DEBE permitir a los administradores ver y gestionar sesiones de cualquier usuario.",
+            "sourceLine": 412,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/admin/sessions.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-ADMIN-005",
+            "descriptionTex": "El Sistema DEBE proporcionar un registro de auditoría accesible para administradores.",
+            "sourceLine": 417,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/admin/audit-logs.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-001",
+            "descriptionTex": "El Sistema DEBE almacenar las contraseñas utilizando un algoritmo criptográfico seguro.",
+            "sourceLine": 430,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/account-deletion-http.test.ts"
+                },
+                {
+                    "kind": "source-review",
+                    "path": "convex/platform/auth/betterAuthOptions.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-002",
+            "descriptionTex": "El Sistema DEBE implementar autenticación con expiración temporal.",
+            "sourceLine": 435,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/route-protection.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/smoke/critical-paths.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-003",
+            "descriptionTex": "El Sistema DEBE implementar un sistema que controle que ningún usuario pueda acceder a información en la base de datos para la que no tenga permiso, de modo que solo acceda a datos propios o compartidos explícitamente mediante su organización, rol o colaboración.",
+            "sourceLine": 440,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/route-protection.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/crud.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/security/headers.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-004",
+            "descriptionTex": "El Sistema DEBE mantener un registro de auditoría de las acciones relevantes de los usuarios.",
+            "sourceLine": 446,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/admin/audit-logs.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-005",
+            "descriptionTex": "El Sistema DEBE validar en el cliente las entradas de los formularios principales y, en el servidor, todos los argumentos que atraviesan funciones públicas.",
+            "sourceLine": 452,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/auth/register.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/settings/settings.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-006",
+            "descriptionTex": "El Sistema DEBE ser responsive y funcionar correctamente en dispositivos como móviles o ordenadores.",
+            "sourceLine": 464,
+            "evidence": [
+                {
+                    "kind": "source-review",
+                    "path": "playwright.config.ts"
+                },
+                {
+                    "kind": "automated-test",
+                    "path": "tests/e2e/ui/accessibility.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-007",
+            "descriptionTex": "El Sistema DEBE soportar internacionalización en los idiomas español e inglés.",
+            "sourceLine": 470,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/i18n/language-switching.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-008",
+            "descriptionTex": "El Sistema DEBE paginar los listados largos para mantener un rendimiento adecuado.",
+            "sourceLine": 481,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/visible-pagination.test.ts"
+                },
+                {
+                    "kind": "automated-test",
+                    "path": "convex/tests/dashboard-scale.test.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-009",
+            "descriptionTex": "El Sistema DEBE soportar cambio de tema (modo claro y oscuro).",
+            "sourceLine": 487,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/ui/theme-switching.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-010",
+            "descriptionTex": "El Sistema DEBE mostrar indicadores visuales mientras es necesario esperar.",
+            "sourceLine": 493,
+            "evidence": [
+                {
+                    "kind": "automated-test",
+                    "path": "src/lib/query-state.test.ts"
+                },
+                {
+                    "kind": "automated-test",
+                    "path": "src/components/data-table/components/table.test.tsx"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-011",
+            "descriptionTex": "El Sistema DEBE implementar diálogos de confirmación para acciones destructivas.",
+            "sourceLine": 499,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/categories/crud.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/objectives/crud.spec.ts"
+                },
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/organizations/crud.spec.ts"
+                }
+            ]
+        },
+        {
+            "id": "REQ-NF-012",
+            "descriptionTex": "El Sistema DEBE ofrecer una paleta de comandos para la navegación rápida mediante un atajo de teclado (Cmd/Ctrl+K).",
+            "sourceLine": 505,
+            "evidence": [
+                {
+                    "kind": "e2e",
+                    "path": "tests/e2e/ui/command-palette.spec.ts"
+                }
+            ]
+        }
+    ]
+}

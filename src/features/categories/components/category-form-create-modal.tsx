@@ -1,9 +1,10 @@
 'use client';
 
-import { z } from 'zod';
+import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { categorySchema, CreateCategory } from '@/features/categories/schemas/category';
+import type { CreateCategory } from '@/features/categories/schemas/category';
+import { categorySchema } from '@/features/categories/schemas/category';
 import { useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';

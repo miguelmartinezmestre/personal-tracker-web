@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+import { Bell, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -9,17 +9,47 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 
+function unreadCountLabel(
+    count: number,
+    isTruncated: boolean,
+    t: ReturnType<typeof useTranslations>
+): string {
+    if (count <= 0) {
+        return t('allCaughtUp');
+    }
+    if (isTruncated) {
+        return t('unreadCountAtLeast', { count });
+    }
+    return t('unreadCount', { count });
+}
+
 export function NotificationBell() {
     const t = useTranslations('Notifications');
-    const { data: overview } = useQuery(convexQuery(api.notifications.getNotificationOverview, {}));
+    const common = useTranslations('Common');
+    const {
+        data: overview,
+        isError,
+        isPending,
+    } = useQuery(convexQuery(api.notifications.getNotificationOverview, {}));
 
     const count = overview?.unreadCount ?? 0;
     const isTruncated = overview?.isUnreadTruncated ?? false;
+    let label = unreadCountLabel(count, isTruncated, t);
+    if (isPending) {
+        label = common('loading');
+    }
+    if (isError) {
+        label = common('queryError');
+    }
 
     return (
         <Button variant="ghost" size="icon" className="relative" asChild>
             <Link href="/dashboard/notifications" prefetch={false}>
-                <Bell className="h-5 w-5" />
+                {isError ? (
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                ) : (
+                    <Bell className="h-5 w-5" />
+                )}
                 {count > 0 && (
                     <Badge
                         variant="destructive"
@@ -28,13 +58,7 @@ export function NotificationBell() {
                         {count > 99 ? '99+' : count}
                     </Badge>
                 )}
-                <span className="sr-only">
-                    {count > 0
-                        ? isTruncated
-                            ? t('unreadCountAtLeast', { count })
-                            : t('unreadCount', { count })
-                        : t('allCaughtUp')}
-                </span>
+                <span className="sr-only">{label}</span>
             </Link>
         </Button>
     );

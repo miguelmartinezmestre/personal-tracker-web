@@ -98,7 +98,7 @@ describe('accept invitation active organization', () => {
                 role: 'member',
                 createdAt: Date.now(),
             });
-            await ctx.db.patch(sessionId, {
+            await ctx.db.patch('session', sessionId, {
                 activeOrganizationId: invitedOrgId,
             });
         });

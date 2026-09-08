@@ -1,5 +1,8 @@
 'use client';
 
+import type { Id } from '@/convex/_generated/dataModel';
+import { optionalRouteParam } from '@/features/lib/route-param';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,37 +15,32 @@ import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 import { useQuery } from '@tanstack/react-query';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
-import type { Id } from '@/convex/_generated/dataModel';
-import { FunctionReturnType } from 'convex/server';
 import { ADMIN_PAGE_SIZE } from '@shared/pagination';
-
-type UserSessionsQueryResult = FunctionReturnType<typeof api.admin.listUserSessions>;
-
 export function UserSessions() {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
     const [userId, setUserId] = useState('');
-    const columns = useUserSessionsTableColumns(userId ? (userId as Id<'user'>) : undefined);
+    const parsedUserId = optionalRouteParam(userId) as Id<'user'> | undefined;
+    const columns = useUserSessionsTableColumns(parsedUserId);
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
-
     const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
         useServerPagination(ADMIN_PAGE_SIZE);
-
-    const { data: sessionsQueryResult, isLoading } = useQuery(
+    const {
+        data: sessionsQueryResult,
+        isLoading,
+        isError,
+        refetch,
+    } = useQuery(
         convexQuery(
             api.admin.listUserSessions,
-            userId ? { userId: userId as Id<'user'>, paginationOpts } : 'skip'
+            parsedUserId ? { userId: parsedUserId, paginationOpts } : 'skip'
         )
     );
-
-    const sessions = sessionsQueryResult as UserSessionsQueryResult | undefined;
-
+    const sessions = sessionsQueryResult;
     const continueCursor = sessions?.continueCursor ?? null;
     const pageIsDone = sessions?.isDone ?? false;
     const hasNextPage = Boolean(continueCursor) && !pageIsDone;
-
     const sessionRows = sessions?.page ?? [];
-
     return (
         <div className="space-y-4">
             <div className="flex gap-2">
@@ -60,7 +58,11 @@ export function UserSessions() {
                 {userId && (
                     <Button
                         variant="destructive"
-                        onClick={() => revokeAllSessions({ userId })}
+                        onClick={() => {
+                            if (parsedUserId) {
+                                revokeAllSessions({ userId: parsedUserId });
+                            }
+                        }}
                         disabled={isRevokingAllSessions}
                         data-testid="user-sessions-revoke-all-button"
                     >
@@ -72,6 +74,10 @@ export function UserSessions() {
             {userId ? (
                 <>
                     <DataTable
+                        isError={isError}
+                        onRetry={() => {
+                            void refetch();
+                        }}
                         columns={columns}
                         data={sessionRows}
                         isLoading={isLoading}
@@ -84,7 +90,7 @@ export function UserSessions() {
                             isLoading,
                         }}
                     />
-                    {sessionRows.length === 0 && !isLoading && (
+                    {sessionRows.length === 0 && !isLoading && !isError && (
                         <p className="text-center text-muted-foreground py-8">
                             {t('userSessions.emptyWithUser')}
                         </p>

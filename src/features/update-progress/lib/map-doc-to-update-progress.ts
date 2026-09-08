@@ -1,5 +1,5 @@
-import { Doc } from '@/convex/_generated/dataModel';
-import { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
+import type { Doc } from '@/convex/_generated/dataModel';
+import type { UpdateProgress } from '@/features/update-progress/schemas/update-progress';
 
 export function mapDocToUpdateProgress(progressUpdateDoc: Doc<'progressUpdates'>): UpdateProgress {
     return {

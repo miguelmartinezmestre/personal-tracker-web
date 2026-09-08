@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestSession, createTestUser, ensureTestUserAuth } from './test_helpers';
-import { TestConvexForDataModel } from 'convex-test';
-import { DataModel, Id } from '../_generated/dataModel';
+import type { TestConvexForDataModel } from 'convex-test';
+import type { DataModel, Id } from '../_generated/dataModel';
 import type { GenericQueryCtx } from 'convex/server';
 
 describe('convex sessions', () => {
@@ -106,7 +106,7 @@ describe('convex sessions', () => {
         ).rejects.toThrow(/FORBIDDEN|Forbidden|Not authorized/i);
 
         const otherSession = await t.run(async ctx => {
-            return await ctx.db.get(otherSessionId);
+            return await ctx.db.get('session', otherSessionId);
         });
 
         expect(otherSession).not.toBeNull();
@@ -144,9 +144,9 @@ describe('convex sessions', () => {
 
         const sessions = await t.run(async ctx => {
             return {
-                current: await ctx.db.get(sessionId),
-                ownOther: await ctx.db.get(ownOtherSessionId),
-                otherUser: await ctx.db.get(otherUserSessionId),
+                current: await ctx.db.get('session', sessionId),
+                ownOther: await ctx.db.get('session', ownOtherSessionId),
+                otherUser: await ctx.db.get('session', otherUserSessionId),
             };
         });
 
@@ -169,7 +169,7 @@ describe('convex sessions', () => {
             })
         ).rejects.toThrow(/AUTH_REQUIRED/);
 
-        const retainedSession = await t.run(async ctx => ctx.db.get(sessionId));
+        const retainedSession = await t.run(async ctx => ctx.db.get('session', sessionId));
         expect(retainedSession).not.toBeNull();
     });
 
@@ -191,12 +191,14 @@ describe('convex sessions', () => {
 
     test('session can be retrieved after creation', async () => {
         const session = await t.run(async (ctx: GenericQueryCtx<DataModel>) => {
-            return await ctx.db.get(sessionId as unknown as Id<'session'>);
+            return await ctx.db.get('session', sessionId);
         });
 
-        expect(session).not.toBeNull();
-        expect((session as { userId?: string })?.userId).toBe(userId);
-        expect((session as { createdAt?: number })?.createdAt).toBeDefined();
-        expect((session as { updatedAt?: number })?.updatedAt).toBeDefined();
+        if (!session) {
+            throw new Error('Expected session');
+        }
+        expect(session.userId).toBe(userId);
+        expect(session.createdAt).toBeDefined();
+        expect(session.updatedAt).toBeDefined();
     });
 });

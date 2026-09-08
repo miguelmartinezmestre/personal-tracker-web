@@ -6,7 +6,7 @@ import {
     openModal,
 } from '../../helpers/test-helpers';
 import { CategoryFactory } from '../../helpers/factories';
-import { Locator, Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import {
     saveEditedItemAndWaitForRow,
     submitOpenDialogForm,
@@ -43,13 +43,6 @@ test.describe('Categories CRUD', () => {
             dialogInput: nameInput,
             rowLocator: page.getByTestId('table-row').filter({ hasText: rowName }).first(),
             entityLabel: `category "${rowName}"`,
-            prepareForRowCheck: async currentPage => {
-                await currentPage.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-            },
-            onRetry: async currentPage => {
-                await currentPage.keyboard.press('Escape').catch(() => undefined);
-                await currentPage.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-            },
         });
     }
 
@@ -61,7 +54,6 @@ test.describe('Categories CRUD', () => {
 
             await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
             await openModal(page, 'category-create-open', 'category-name-input', {
-                maxAttempts: 5,
                 timeout: 10000,
             });
 
@@ -160,7 +152,6 @@ test.describe('Categories CRUD', () => {
     test('validate category name required', { tag: ['@REQ-CATEGORIAS-001'] }, async ({ page }) => {
         await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
         await openModal(page, 'category-create-open', 'category-name-input', {
-            maxAttempts: 5,
             timeout: 10000,
         });
 

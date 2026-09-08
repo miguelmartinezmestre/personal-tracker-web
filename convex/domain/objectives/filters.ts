@@ -35,10 +35,10 @@ export function matchesDeadlineRange(deadline: number | undefined, range: Deadli
     }
 
     const bounds = getDeadlineRangeBounds(range);
-    if (bounds.gte !== undefined && deadline < bounds.gte) {
+    if (deadline < bounds.gte) {
         return false;
     }
-    if (bounds.lt !== undefined && deadline >= bounds.lt) {
+    if (deadline >= bounds.lt) {
         return false;
     }
     return true;
