@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:8dc228cc-40ad-43ab-9b1c-a1af71dc1c6f",
+  "serialNumber": "urn:uuid:ac6b948f-d248-4b1d-b7b1-b26e6fd10cd6",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-08T05:43:38.988Z",
+    "timestamp": "2026-09-18T02:39:23.966Z",
     "component": {
       "type": "application",
       "name": "metricas-tfg",
@@ -551,13 +551,6 @@
       "version": "0.2.6",
       "purl": "pkg:npm/%40convex-dev/resend@0.2.6",
       "bom-ref": "pkg:npm/%40convex-dev/resend@0.2.6"
-    },
-    {
-      "type": "library",
-      "name": "@convex-dev/workflow",
-      "version": "0.4.4",
-      "purl": "pkg:npm/%40convex-dev/workflow@0.4.4",
-      "bom-ref": "pkg:npm/%40convex-dev/workflow@0.4.4"
     },
     {
       "type": "library",
@@ -3130,13 +3123,6 @@
     },
     {
       "type": "library",
-      "name": "async-channel",
-      "version": "0.2.0",
-      "purl": "pkg:npm/async-channel@0.2.0",
-      "bom-ref": "pkg:npm/async-channel@0.2.0"
-    },
-    {
-      "type": "library",
       "name": "auth",
       "version": "1.6.23",
       "purl": "pkg:npm/auth@1.6.23",
@@ -3554,13 +3540,6 @@
       "version": "2.0.5",
       "purl": "pkg:npm/destr@2.0.5",
       "bom-ref": "pkg:npm/destr@2.0.5"
-    },
-    {
-      "type": "library",
-      "name": "detect-europe-js",
-      "version": "0.1.2",
-      "purl": "pkg:npm/detect-europe-js@0.1.2",
-      "bom-ref": "pkg:npm/detect-europe-js@0.1.2"
     },
     {
       "type": "library",
@@ -4100,13 +4079,6 @@
       "version": "1.0.1",
       "purl": "pkg:npm/is-potential-custom-element-name@1.0.1",
       "bom-ref": "pkg:npm/is-potential-custom-element-name@1.0.1"
-    },
-    {
-      "type": "library",
-      "name": "is-standalone-pwa",
-      "version": "0.1.1",
-      "purl": "pkg:npm/is-standalone-pwa@0.1.1",
-      "bom-ref": "pkg:npm/is-standalone-pwa@0.1.1"
     },
     {
       "type": "library",
@@ -5356,20 +5328,6 @@
     },
     {
       "type": "library",
-      "name": "ua-is-frozen",
-      "version": "0.1.2",
-      "purl": "pkg:npm/ua-is-frozen@0.1.2",
-      "bom-ref": "pkg:npm/ua-is-frozen@0.1.2"
-    },
-    {
-      "type": "library",
-      "name": "ua-parser-js",
-      "version": "2.0.10",
-      "purl": "pkg:npm/ua-parser-js@2.0.10",
-      "bom-ref": "pkg:npm/ua-parser-js@2.0.10"
-    },
-    {
-      "type": "library",
       "name": "unbash",
       "version": "4.0.4",
       "purl": "pkg:npm/unbash@4.0.4",
@@ -5602,8 +5560,6 @@
         "pkg:npm/%40convex-dev/eslint-plugin@2.0.0",
         "pkg:npm/%40convex-dev/react-query@0.1.0",
         "pkg:npm/%40convex-dev/resend@0.2.6",
-        "pkg:npm/%40convex-dev/workflow@0.4.4",
-        "pkg:npm/%40convex-dev/workpool@0.4.9",
         "pkg:npm/%40edge-runtime/vm@5.0.0",
         "pkg:npm/%40playwright/test@1.62.1",
         "pkg:npm/%40radix-ui/react-alert-dialog@1.1.23",
@@ -5668,7 +5624,6 @@
         "pkg:npm/tw-animate-css@1.4.0",
         "pkg:npm/typescript-eslint@8.66.0",
         "pkg:npm/typescript@6.0.3",
-        "pkg:npm/ua-parser-js@2.0.10",
         "pkg:npm/vitest@4.1.10",
         "pkg:npm/zod@4.4.3"
       ]
@@ -5955,19 +5910,6 @@
       "dependsOn": [
         "pkg:npm/standardwebhooks@1.0.0"
       ]
-    },
-    {
-      "ref": "pkg:npm/%40convex-dev/workflow@0.4.4",
-      "dependsOn": [
-        "pkg:npm/%40convex-dev/workpool@0.4.9",
-        "pkg:npm/async-channel@0.2.0",
-        "pkg:npm/convex-helpers@0.1.120",
-        "pkg:npm/convex@1.43.0"
-      ]
-    },
-    {
-      "ref": "pkg:npm/async-channel@0.2.0",
-      "dependsOn": []
     },
     {
       "ref": "pkg:npm/%40radix-ui/react-alert-dialog@1.1.23",
@@ -7495,26 +7437,6 @@
     },
     {
       "ref": "pkg:npm/tw-animate-css@1.4.0",
-      "dependsOn": []
-    },
-    {
-      "ref": "pkg:npm/ua-parser-js@2.0.10",
-      "dependsOn": [
-        "pkg:npm/detect-europe-js@0.1.2",
-        "pkg:npm/is-standalone-pwa@0.1.1",
-        "pkg:npm/ua-is-frozen@0.1.2"
-      ]
-    },
-    {
-      "ref": "pkg:npm/detect-europe-js@0.1.2",
-      "dependsOn": []
-    },
-    {
-      "ref": "pkg:npm/is-standalone-pwa@0.1.1",
-      "dependsOn": []
-    },
-    {
-      "ref": "pkg:npm/ua-is-frozen@0.1.2",
       "dependsOn": []
     },
     {

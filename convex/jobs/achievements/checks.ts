@@ -10,6 +10,7 @@ import {
 import {
     ACHIEVEMENT_DEFINITIONS,
     getAchievementRule,
+    type AchievementDefinition,
     type AchievementMetricKey,
 } from '../../domain/achievements/definitions';
 import {
@@ -35,83 +36,28 @@ function canReceiveAchievement(
 }
 
 type EvaluateAndAwardParams = {
-    ctx: MutationCtx;
     scopeType: 'individual' | 'organization';
-    evaluate: (code: string) => Promise<boolean> | boolean;
-    award: (defId: Id<'achievementDefinitions'>, code: string, points: number) => Promise<boolean>;
+    evaluate: (definition: AchievementDefinition) => Promise<boolean> | boolean;
+    award: (definition: AchievementDefinition) => Promise<boolean>;
 };
 
 async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
-    const { ctx, scopeType, evaluate, award } = params;
+    const { scopeType, evaluate, award } = params;
 
-    const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-
-    const activeDefinitions = definitions.filter(
-        definition => definition.type === scopeType && definition.isActive
+    const activeDefinitions = ACHIEVEMENT_DEFINITIONS.filter(
+        definition => definition.type === scopeType
     );
 
     const newAchievements: string[] = [];
 
     for (const definition of activeDefinitions) {
-        const shouldAward = await evaluate(definition.code);
-        if (shouldAward && (await award(definition._id, definition.code, definition.points))) {
+        const shouldAward = await evaluate(definition);
+        if (shouldAward && (await award(definition))) {
             newAchievements.push(definition.code);
         }
     }
 
     return { awarded: newAchievements };
-}
-
-export async function seedAchievementDefinitionsJob(ctx: MutationCtx) {
-    const now = Date.now();
-    const existingDefinitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-    const existingByCode = new Map(
-        existingDefinitions.map(definition => [definition.code, definition])
-    );
-    let inserted = 0;
-    let updated = 0;
-
-    for (const definition of ACHIEVEMENT_DEFINITIONS) {
-        const { metricKey: _metricKey, trigger: _trigger, ...storedDefinition } = definition;
-        const existing = existingByCode.get(definition.code);
-        if (!existing) {
-            await ctx.db.insert('achievementDefinitions', {
-                ...storedDefinition,
-                isActive: true,
-                createdAt: now,
-                updatedAt: now,
-            });
-            inserted++;
-            continue;
-        }
-
-        const canonicalChanged =
-            existing.type !== storedDefinition.type ||
-            existing.category !== storedDefinition.category ||
-            existing.tier !== storedDefinition.tier ||
-            existing.threshold !== storedDefinition.threshold ||
-            existing.icon !== storedDefinition.icon ||
-            existing.points !== storedDefinition.points;
-        if (canonicalChanged) {
-            await ctx.db.patch('achievementDefinitions', existing._id, {
-                ...storedDefinition,
-                // Preserve an administrator's activation choice while repairing
-                // the canonical definition fields.
-                isActive: existing.isActive,
-                updatedAt: now,
-            });
-            updated++;
-        }
-    }
-
-    const count = inserted + updated;
-    if (count === 0) {
-        return { message: 'Achievements already seeded', count };
-    }
-    if (existingDefinitions.length === 0 && updated === 0) {
-        return { message: 'Achievements seeded successfully', count };
-    }
-    return { message: 'Achievement definitions reconciled', count };
 }
 
 export async function checkUserAchievementsJob(
@@ -161,14 +107,8 @@ export async function checkUserAchievementsJob(
         .withIndex('by_user', q => q.eq('userId', userId))
         .take(LIST_LIMIT);
 
-    const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-    const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
-    const definitionByCode = new Map(definitions.map(definition => [definition.code, definition]));
-
     const earnedCodes = new Set(
-        earnedAchievements
-            .map(earnedAchievement => definitionById.get(earnedAchievement.achievement)?.code)
-            .filter(Boolean)
+        earnedAchievements.map(earnedAchievement => earnedAchievement.achievement)
     );
 
     let objectivesDone = args.objectivesDone ?? false;
@@ -228,23 +168,18 @@ export async function checkUserAchievementsJob(
     };
 
     const result = await evaluateAndAwardAchievements({
-        ctx,
         scopeType: 'individual',
-        evaluate(code) {
-            if (earnedCodes.has(code)) {
+        evaluate(definition) {
+            if (earnedCodes.has(definition.code)) {
                 return false;
             }
-            const rule = getAchievementRule(code);
-            const definition = definitionByCode.get(code);
+            const rule = getAchievementRule(definition.code);
             return Boolean(
-                rule &&
-                definition &&
-                rule.trigger === trigger &&
-                metrics[rule.metricKey] >= definition.threshold
+                rule && rule.trigger === trigger && metrics[rule.metricKey] >= definition.threshold
             );
         },
-        async award(defId, code, points) {
-            const threshold = (await ctx.db.get('achievementDefinitions', defId))?.threshold ?? 0;
+        async award(definition) {
+            const { code, points, threshold } = definition;
             if (!canReceiveAchievement(await ctx.db.get('user', userId), now)) {
                 return false;
             }
@@ -252,7 +187,7 @@ export async function checkUserAchievementsJob(
             const alreadyAwarded = await ctx.db
                 .query('obtainedAchievements')
                 .withIndex('by_user_achievement', q =>
-                    q.eq('userId', userId).eq('achievement', defId)
+                    q.eq('userId', userId).eq('achievement', code)
                 )
                 .first();
 
@@ -262,7 +197,7 @@ export async function checkUserAchievementsJob(
 
             await ctx.db.insert('obtainedAchievements', {
                 userId: userId,
-                achievement: defId,
+                achievement: code,
                 earnedAt: now,
                 createdAt: now,
                 updatedAt: now,
@@ -355,14 +290,8 @@ export async function checkOrganizationAchievementsJob(
         .withIndex('by_organization_achievement', q => q.eq('organization', organizationId))
         .take(LIST_LIMIT);
 
-    const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-    const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
-    const definitionByCode = new Map(definitions.map(definition => [definition.code, definition]));
-
     const earnedCodes = new Set(
-        earnedAchievements
-            .map(earnedAchievement => definitionById.get(earnedAchievement.achievement)?.code)
-            .filter(Boolean)
+        earnedAchievements.map(earnedAchievement => earnedAchievement.achievement)
     );
 
     const objectivesPage = await ctx.db
@@ -393,23 +322,18 @@ export async function checkOrganizationAchievementsJob(
     };
 
     const result = await evaluateAndAwardAchievements({
-        ctx,
         scopeType: 'organization',
-        evaluate(code) {
-            if (earnedCodes.has(code)) {
+        evaluate(definition) {
+            if (earnedCodes.has(definition.code)) {
                 return false;
             }
-            const rule = getAchievementRule(code);
-            const definition = definitionByCode.get(code);
+            const rule = getAchievementRule(definition.code);
             return Boolean(
-                rule &&
-                definition &&
-                rule.trigger === trigger &&
-                metrics[rule.metricKey] >= definition.threshold
+                rule && rule.trigger === trigger && metrics[rule.metricKey] >= definition.threshold
             );
         },
-        async award(defId, code, points) {
-            const threshold = (await ctx.db.get('achievementDefinitions', defId))?.threshold ?? 0;
+        async award(definition) {
+            const { code, points, threshold } = definition;
             // Re-read both rows immediately before the write. Convex tracks
             // them in this transaction's read set, so a concurrent member or
             // organization deletion conflicts and retries into the abort path.
@@ -429,7 +353,7 @@ export async function checkOrganizationAchievementsJob(
             const alreadyAwarded = await ctx.db
                 .query('organizationAchievements')
                 .withIndex('by_organization_achievement', q =>
-                    q.eq('organization', organizationId).eq('achievement', defId)
+                    q.eq('organization', organizationId).eq('achievement', code)
                 )
                 .first();
 
@@ -439,7 +363,7 @@ export async function checkOrganizationAchievementsJob(
 
             const orgAchievementId = await ctx.db.insert('organizationAchievements', {
                 organization: organizationId,
-                achievement: defId,
+                achievement: code,
                 earnedAt: now,
                 createdAt: now,
                 updatedAt: now,

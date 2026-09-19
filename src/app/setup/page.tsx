@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
-import { SetupWizard } from '@/features/setup';
+import SetupWizard from '@/features/setup/components/setup-wizard';
 import { getTranslations } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';

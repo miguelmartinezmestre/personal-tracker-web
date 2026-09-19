@@ -1,4 +1,4 @@
-import { UpdateProgressLayout } from '@/features/update-progress';
+import UpdateProgressLayout from '@/features/update-progress/components/update-progress-layout';
 import { redirect } from 'next/navigation';
 
 export default async function ObjectiveDetailPage({ params }: { params: Promise<{ id: string }> }) {

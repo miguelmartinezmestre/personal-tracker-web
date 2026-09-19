@@ -2,7 +2,7 @@ import { ConvexError } from 'convex/values';
 import type { Doc, Id } from '../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { requireAdmin } from '../utils/requiredAdmin';
-import { isPlatformSetupUser } from '../platform/setup/bootstrap';
+import { isPlatformSetupUser } from '../platform/admin/access';
 import { ERROR_CODES } from '../utils/constants';
 import { GLOBAL_ADMIN_ROLE } from '../../shared/platform-roles';
 import { isActiveAccount } from './organizations/operational';

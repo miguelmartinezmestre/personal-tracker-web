@@ -56,7 +56,7 @@ export default function EditCategoryFormModal({ defaultValues }: { defaultValues
             cancelTestId="category-edit-cancel-button"
             submitTestId="category-edit-save-button"
         >
-            {() => <CategoryFormFields testIdPrefix="category-edit" />}
+            {form => <CategoryFormFields form={form} testIdPrefix="category-edit" />}
         </FormModal>
     );
 }

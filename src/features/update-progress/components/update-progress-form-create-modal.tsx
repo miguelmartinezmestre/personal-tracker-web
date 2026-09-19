@@ -6,12 +6,13 @@ import { requiredRouteParam } from '@/features/lib/route-param';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -76,98 +77,125 @@ export default function CreateUpdateProgressFormModal() {
             cancelTestId="progress-cancel-button"
             submitTestId="progress-save-button"
         >
-            {() => (
+            {form => (
                 <>
-                    <FormField
-                        name="updatedValue"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('updatedValue')}</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder={t('enterUpdatedValue')}
-                                        type="number"
-                                        data-testid="progress-value-input"
-                                        {...field}
-                                        value={Number.isNaN(field.value) ? '' : field.value}
-                                        onChange={e =>
-                                            field.onChange(Number.parseFloat(e.target.value))
-                                        }
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        name="comment"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('comment')}</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder={t('describeYourUpdateProgressInDetail')}
-                                        className="resize-none min-h-[80px]"
-                                        data-testid="progress-comment-input"
-                                        {...field}
-                                        value={field.value || ''}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        name="updateDate"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel>{t('table.columns.date')}</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                className={cn(
-                                                    'w-full pl-3 text-left font-normal',
-                                                    !field.value && 'text-muted-foreground'
-                                                )}
-                                            >
-                                                {Number.isFinite(Number(field.value)) ? (
-                                                    formatCivilDate(Number(field.value), locale)
-                                                ) : (
-                                                    <span>{t('pickADate')}</span>
-                                                )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={
-                                                Number.isFinite(Number(field.value))
-                                                    ? utcCivilDayToLocalDate(Number(field.value))
-                                                    : undefined
+                    <form.Field name="updatedValue">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('updatedValue')}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder={t('enterUpdatedValue')}
+                                            type="number"
+                                            data-testid="progress-value-input"
+                                            name={field.name}
+                                            value={
+                                                typeof field.state.value === 'number' &&
+                                                !Number.isNaN(field.state.value)
+                                                    ? field.state.value
+                                                    : ''
                                             }
-                                            onSelect={date =>
-                                                field.onChange(
-                                                    date
-                                                        ? localDateToUtcCivilDay(date)
-                                                        : currentUtcCivilDay()
+                                            onChange={event =>
+                                                field.handleChange(
+                                                    Number.parseFloat(event.target.value)
                                                 )
                                             }
-                                            disabled={date =>
-                                                localDateToUtcCivilDay(date) > currentUtcCivilDay()
-                                            }
+                                            onBlur={field.handleBlur}
                                         />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
                         )}
-                    />
+                    </form.Field>
+
+                    <form.Field name="comment">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('comment')}</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder={t('describeYourUpdateProgressInDetail')}
+                                            className="resize-none min-h-[80px]"
+                                            data-testid="progress-comment-input"
+                                            name={field.name}
+                                            value={
+                                                typeof field.state.value === 'string'
+                                                    ? field.state.value
+                                                    : ''
+                                            }
+                                            onChange={event =>
+                                                field.handleChange(event.target.value)
+                                            }
+                                            onBlur={field.handleBlur}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
+                        )}
+                    </form.Field>
+
+                    <form.Field name="updateDate">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>{t('table.columns.date')}</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant="outline"
+                                                    onBlur={field.handleBlur}
+                                                    className={cn(
+                                                        'w-full pl-3 text-left font-normal',
+                                                        !field.state.value &&
+                                                            'text-muted-foreground'
+                                                    )}
+                                                >
+                                                    {Number.isFinite(Number(field.state.value)) ? (
+                                                        formatCivilDate(
+                                                            Number(field.state.value),
+                                                            locale
+                                                        )
+                                                    ) : (
+                                                        <span>{t('pickADate')}</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={
+                                                    Number.isFinite(Number(field.state.value))
+                                                        ? utcCivilDayToLocalDate(
+                                                              Number(field.state.value)
+                                                          )
+                                                        : undefined
+                                                }
+                                                onSelect={date =>
+                                                    field.handleChange(
+                                                        date
+                                                            ? localDateToUtcCivilDay(date)
+                                                            : currentUtcCivilDay()
+                                                    )
+                                                }
+                                                disabled={date =>
+                                                    localDateToUtcCivilDay(date) >
+                                                    currentUtcCivilDay()
+                                                }
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
+                        )}
+                    </form.Field>
                 </>
             )}
         </FormModal>

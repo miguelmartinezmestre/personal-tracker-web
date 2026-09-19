@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { CreateObjectiveFormModal } from '@/features/objectives';
-import { ResponsiveObjectivesView } from '@/features/objectives';
+import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
+import { ResponsiveObjectivesView } from '@/features/objectives/components/responsive-objectives-view';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {

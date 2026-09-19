@@ -1,6 +1,5 @@
 import aggregateComponent from '@convex-dev/aggregate/test';
 import { convexTest } from 'convex-test';
-import workflowComponent from '@convex-dev/workflow/test';
 import { afterAll } from 'vitest';
 import schema from '../schema';
 import { modules } from './test.setup';
@@ -16,14 +15,11 @@ export async function drainScheduledFunctions(t: ReturnType<typeof convexTest>) 
     }
 }
 
-export function initConvexTest(options?: { workflow?: boolean }) {
+export function initConvexTest() {
     process.env.BETTER_AUTH_SECRET ??= 'synthetic-secret-for-convex-pagination-tests-only';
     const t = convexTest(schema, modules);
     aggregateComponent.register(t, 'dashboardObjectives');
     aggregateComponent.register(t, 'dashboardProgress');
-    if (options?.workflow ?? true) {
-        workflowComponent.register(t);
-    }
 
     const withIdentity = t.withIdentity.bind(t);
     const withIdentityAndSession = (identity: Parameters<typeof t.withIdentity>[0]) => {

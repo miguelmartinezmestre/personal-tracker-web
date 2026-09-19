@@ -3,13 +3,14 @@ import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
     FormDescription,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
@@ -56,49 +57,68 @@ export default function CreateOrganizationFormModal() {
             cancelTestId="organization-cancel-button"
             submitTestId="organization-save-button"
         >
-            {() => (
+            {form => (
                 <>
-                    <FormField
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('name')}</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder={t('enterOrganizationName')}
-                                        {...field}
-                                        data-testid="organization-name-input"
-                                    />
-                                </FormControl>
-                                <FormDescription>
-                                    {t('giveYourOrganizationAClearConciseTitle')}
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                    <form.Field name="name">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('name')}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder={t('enterOrganizationName')}
+                                            name={field.name}
+                                            value={
+                                                typeof field.state.value === 'string'
+                                                    ? field.state.value
+                                                    : ''
+                                            }
+                                            onChange={event =>
+                                                field.handleChange(event.target.value)
+                                            }
+                                            onBlur={field.handleBlur}
+                                            data-testid="organization-name-input"
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        {t('giveYourOrganizationAClearConciseTitle')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
                         )}
-                    />
+                    </form.Field>
 
-                    <FormField
-                        name="description"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('tableDescription')}</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder={t('describeOrganizationInDetail')}
-                                        className="resize-none min-h-[80px]"
-                                        {...field}
-                                        value={typeof field.value === 'string' ? field.value : ''}
-                                        data-testid="organization-description-input"
-                                    />
-                                </FormControl>
-                                <FormDescription>
-                                    {t('optionalAddDetailsAboutYourOrganization')}
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                    <form.Field name="description">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('tableDescription')}</FormLabel>
+                                    <FormControl>
+                                        <Textarea
+                                            placeholder={t('describeOrganizationInDetail')}
+                                            className="resize-none min-h-[80px]"
+                                            name={field.name}
+                                            value={
+                                                typeof field.state.value === 'string'
+                                                    ? field.state.value
+                                                    : ''
+                                            }
+                                            onChange={event =>
+                                                field.handleChange(event.target.value)
+                                            }
+                                            onBlur={field.handleBlur}
+                                            data-testid="organization-description-input"
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        {t('optionalAddDetailsAboutYourOrganization')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
                         )}
-                    />
+                    </form.Field>
                 </>
             )}
         </FormModal>

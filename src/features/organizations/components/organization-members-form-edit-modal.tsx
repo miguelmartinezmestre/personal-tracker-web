@@ -2,13 +2,14 @@
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
     FormDescription,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { savedOrganizationMemberSchema } from '@/features/organizations/schemas/organization-member';
 import {
@@ -72,53 +73,64 @@ export default function OrganizationMemberEditFormModal({
             cancelTestId="organization-member-edit-cancel-button"
             submitTestId="organization-member-edit-save-button"
         >
-            {() => (
+            {form => (
                 <>
-                    <FormField
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('email')}</FormLabel>
-                                <p className="text-sm text-muted-foreground py-2">
-                                    {typeof field.value === 'string' ? field.value : ''}
-                                </p>
-                                <FormDescription>
-                                    {t('giveYourOrganizationMemberAClearConciseEmail')}
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                    <form.Field name="email">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('email')}</FormLabel>
+                                    <p className="text-sm text-muted-foreground py-2">
+                                        {typeof field.state.value === 'string'
+                                            ? field.state.value
+                                            : ''}
+                                    </p>
+                                    <FormDescription>
+                                        {t('giveYourOrganizationMemberAClearConciseEmail')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
                         )}
-                    />
+                    </form.Field>
 
-                    <FormField
-                        name="role"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('role')}</FormLabel>
-                                <Select
-                                    onValueChange={field.onChange}
-                                    value={typeof field.value === 'string' ? field.value : 'member'}
-                                >
-                                    <FormControl>
-                                        <SelectTrigger data-testid="organization-member-edit-role-select">
-                                            <SelectValue placeholder={t('selectRole')} />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {roleOptions.map(role => (
-                                            <SelectItem key={role.value} value={role.value}>
-                                                {role.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormDescription>
-                                    {t('currentRoleOfYourOrganizationMember')}
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                    <form.Field name="role">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('role')}</FormLabel>
+                                    <Select
+                                        onValueChange={value => field.handleChange(value)}
+                                        value={
+                                            typeof field.state.value === 'string'
+                                                ? field.state.value
+                                                : 'member'
+                                        }
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger
+                                                onBlur={field.handleBlur}
+                                                data-testid="organization-member-edit-role-select"
+                                            >
+                                                <SelectValue placeholder={t('selectRole')} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {roleOptions.map(role => (
+                                                <SelectItem key={role.value} value={role.value}>
+                                                    {role.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        {t('currentRoleOfYourOrganizationMember')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
                         )}
-                    />
+                    </form.Field>
                 </>
             )}
         </FormModal>

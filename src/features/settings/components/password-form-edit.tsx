@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
 import {
-    Form,
+    FieldShell,
+    getFieldError,
     FormControl,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import {
     createUpdatePasswordSchema,
@@ -81,92 +81,102 @@ export default function PasswordFormEdit() {
         setIsLoading(false);
     };
     return (
-        <Form form={form}>
-            <form
-                action={() => {
-                    void form.handleSubmit();
-                }}
-                className="space-y-5 py-4"
-            >
-                <FormField
-                    name="currentPassword"
-                    render={({ field }) => (
+        <form
+            action={() => {
+                void form.handleSubmit();
+            }}
+            className="space-y-5 py-4"
+        >
+            <form.Field name="currentPassword">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('password')}</FormLabel>
                             <FormControl>
                                 <Input
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     type="password"
                                     data-testid="password-current-input"
                                 />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <FormField
-                    name="confirmPassword"
-                    render={({ field }) => (
+            <form.Field name="confirmPassword">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('confirmPassword')}</FormLabel>
                             <FormControl>
                                 <Input
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     type="password"
                                     data-testid="password-confirm-input"
                                 />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <FormField
-                    name="newPassword"
-                    render={({ field }) => (
+            <form.Field name="newPassword">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('newPassword')}</FormLabel>
                             <FormControl>
                                 <Input
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     type="password"
                                     data-testid="password-new-input"
                                 />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <DialogFooter className="pt-4">
-                    <Button
-                        variant="outline"
-                        type="button"
-                        onClick={() => form.reset()}
-                        disabled={isLoading}
-                        data-testid="password-cancel-button"
-                    >
-                        {t('cancel')}
-                    </Button>
-                    <Button type="submit" disabled={isLoading} data-testid="password-save-button">
-                        {isLoading ? t('saving') : t('savePassword')}
-                    </Button>
-                </DialogFooter>
-                {error && (
-                    <p className="text-destructive" data-testid="password-error-message">
-                        {error}
-                    </p>
-                )}
-                {message && (
-                    <p
-                        className="text-emerald-700 dark:text-emerald-300"
-                        data-testid="password-success-message"
-                    >
-                        {message}
-                    </p>
-                )}
-            </form>
-        </Form>
+            <DialogFooter className="pt-4">
+                <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => form.reset()}
+                    disabled={isLoading}
+                    data-testid="password-cancel-button"
+                >
+                    {t('cancel')}
+                </Button>
+                <Button type="submit" disabled={isLoading} data-testid="password-save-button">
+                    {isLoading ? t('saving') : t('savePassword')}
+                </Button>
+            </DialogFooter>
+            {error && (
+                <p className="text-destructive" data-testid="password-error-message">
+                    {error}
+                </p>
+            )}
+            {message && (
+                <p
+                    className="text-emerald-700 dark:text-emerald-300"
+                    data-testid="password-success-message"
+                >
+                    {message}
+                </p>
+            )}
+        </form>
     );
 }

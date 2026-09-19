@@ -1,20 +1,17 @@
-import { internalMutation } from './platform/db/internalMutation';
 import { ConvexError, v } from 'convex/values';
 import { getAuthUserIdentity } from 'kitcn/auth';
 import { internalQuery, mutation, query } from './_generated/server';
 import {
     completePlatformSetup,
-    ensureTestOrganizationForUser,
-    getPlatformSetupUserId as resolvePlatformSetupUserId,
     getPublicSettings,
     isPlatformConfigured,
-    isPlatformSetupUser,
-    requireAdminUser,
 } from './platform/setup/bootstrap';
 import {
-    completeSetupArgsValidator,
-    ensureTestOrganizationInternalArgsValidator,
-} from './platform/setup/validators';
+    getPlatformSetupUserId as resolvePlatformSetupUserId,
+    isPlatformSetupUser,
+    requireAdminUser,
+} from './platform/admin/access';
+import { completeSetupArgsValidator } from './platform/setup/validators';
 import { ERROR_CODES } from './utils/constants';
 import { queryWithRLS } from './platform/rls/wrappers';
 import { isGlobalAdminRole } from '../shared/platform-roles';
@@ -99,15 +96,5 @@ export const requireAdminInternal = internalQuery({
     args: { userId: v.id('user') },
     handler: async (ctx, args) => {
         return await requireAdminUser(ctx, args.userId);
-    },
-});
-export const ensureTestOrganizationInternal = internalMutation({
-    returns: v.object({
-        organizationId: v.id('organization'),
-        memberId: v.union(v.id('member'), v.null()),
-    }),
-    args: ensureTestOrganizationInternalArgsValidator,
-    handler: async (ctx, args) => {
-        return await ensureTestOrganizationForUser(ctx, args);
     },
 });

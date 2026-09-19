@@ -9,6 +9,7 @@ import {
 } from './test_helpers';
 import type { TestConvexForDataModel } from 'convex-test';
 import type { DataModel, Id } from '../_generated/dataModel';
+import { getAchievementDefinition } from '../domain/achievements/definitions';
 
 describe('convex achievements', async () => {
     const t = initConvexTest();
@@ -60,117 +61,8 @@ describe('convex achievements', async () => {
         });
     });
 
-    describe('seedAchievementDefinitions', () => {
-        test('seeds achievement definitions successfully as admin', async () => {
-            const result = await userIdentity.mutation(
-                api.achievements.seedAchievementDefinitions,
-                {}
-            );
-
-            expect(result.count).toBeGreaterThan(0);
-            expect(result.message).toBe('Achievements seeded successfully');
-        });
-
-        test('does not duplicate achievements on second seed', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
-            const result = await userIdentity.mutation(
-                api.achievements.seedAchievementDefinitions,
-                {}
-            );
-
-            expect(result.count).toBe(0);
-            expect(result.message).toBe('Achievements already seeded');
-        });
-
-        test('reconciles missing and stale canonical definitions', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-            await userIdentity.run(async ctx => {
-                const definitions = await ctx.db.query('achievementDefinitions').collect();
-                const missing = definitions.find(
-                    definition => definition.code === 'first_objective'
-                );
-                const stale = definitions.find(
-                    definition => definition.code === 'objectives_created_5'
-                );
-                if (!missing || !stale) throw new Error('Expected seeded definitions');
-                await ctx.db.delete('achievementDefinitions', missing._id);
-                await ctx.db.patch('achievementDefinitions', stale._id, {
-                    points: -1,
-                    isActive: false,
-                });
-            });
-
-            const result = await userIdentity.mutation(
-                api.achievements.seedAchievementDefinitions,
-                {}
-            );
-            expect(result).toEqual({ message: 'Achievement definitions reconciled', count: 2 });
-
-            const definitions = await userIdentity.run(ctx =>
-                ctx.db.query('achievementDefinitions').collect()
-            );
-            expect(
-                definitions.find(definition => definition.code === 'first_objective')
-            ).toBeDefined();
-            expect(
-                definitions.find(definition => definition.code === 'objectives_created_5')
-            ).toMatchObject({ points: 25, isActive: false });
-
-            // This file intentionally shares one Convex fixture across tests.
-            // Restore the canonical definition so the deactivation exercised
-            // above does not hide it from later progress assertions.
-            const reconciled = definitions.find(
-                definition => definition.code === 'objectives_created_5'
-            );
-            if (reconciled) {
-                await userIdentity.run(ctx =>
-                    ctx.db.patch('achievementDefinitions', reconciled._id, { isActive: true })
-                );
-            }
-        });
-
-        test('rejects non-admin users with FORBIDDEN', async () => {
-            const regularUser = await createTestUser(t, {
-                userId: 'regular-user-seed',
-                email: 'regular-seed@example.com',
-                name: 'Regular User',
-                role: 'user',
-            });
-
-            await createTestMember(t, {
-                organizationId: await createTestOrganization(t, {
-                    name: 'Regular User Org',
-                    slug: 'regular-user-seed-org',
-                }),
-                userId: regularUser.docId,
-                role: 'owner',
-            });
-
-            const regularUserIdentity = t.withIdentity({
-                subject: regularUser.docId,
-                role: regularUser.role ?? null,
-                email: regularUser.email,
-                name: regularUser.name,
-                emailVerified: false,
-                createdAt: Date.now(),
-                userId: regularUser.docId,
-                image: 'https://example.com/image.png',
-                banExpires: null,
-                banReason: null,
-                banned: false,
-            });
-
-            await expect(
-                regularUserIdentity.mutation(api.achievements.seedAchievementDefinitions, {})
-            ).rejects.toThrow(/FORBIDDEN/);
-        });
-    });
-
     describe('getAchievementDefinitions', () => {
         test('returns all active achievement definitions', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const definitions = await userIdentity.query(
                 internal.achievements.getAchievementDefinitions,
                 {}
@@ -184,8 +76,6 @@ describe('convex achievements', async () => {
         });
 
         test('filters by type when specified', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const individualDefs = await userIdentity.query(
                 internal.achievements.getAchievementDefinitions,
                 {
@@ -218,20 +108,14 @@ describe('convex achievements', async () => {
         });
 
         test('returns user achievements with definitions', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await userIdentity.run(async ctx => {
-                const firstDef = await ctx.db.query('achievementDefinitions').first();
-
-                if (firstDef) {
-                    await ctx.db.insert('obtainedAchievements', {
-                        userId: userId,
-                        achievement: firstDef._id,
-                        earnedAt: Date.now(),
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
+                await ctx.db.insert('obtainedAchievements', {
+                    userId,
+                    achievement: 'first_objective',
+                    earnedAt: Date.now(),
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const achievements = await userIdentity.query(
@@ -247,8 +131,6 @@ describe('convex achievements', async () => {
 
     describe('getUserAchievementStats', () => {
         test('returns zero stats when user has no achievements', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const stats = await userIdentity.query(api.achievements.getUserAchievementStats, {});
 
             expect(stats.totalPoints).toBe(0);
@@ -257,25 +139,17 @@ describe('convex achievements', async () => {
         });
 
         test('calculates points correctly when user has achievements', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const awardedPoints = await userIdentity.run(async ctx => {
-                const definitions = await ctx.db.query('achievementDefinitions').collect();
-                const achievementDefinition = definitions.find(
-                    definition => definition.code === 'first_objective'
-                );
-
-                if (achievementDefinition) {
-                    await ctx.db.insert('obtainedAchievements', {
-                        userId: userId,
-                        achievement: achievementDefinition._id,
-                        earnedAt: Date.now(),
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                    return achievementDefinition.points;
-                }
-                return 0;
+                const achievementDefinition = getAchievementDefinition('first_objective');
+                if (!achievementDefinition) throw new Error('Expected achievement definition');
+                await ctx.db.insert('obtainedAchievements', {
+                    userId,
+                    achievement: achievementDefinition.code,
+                    earnedAt: Date.now(),
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
+                return achievementDefinition.points;
             });
 
             const stats = await userIdentity.query(api.achievements.getUserAchievementStats, {});
@@ -287,15 +161,15 @@ describe('convex achievements', async () => {
 
     describe('getRecentAchievements', () => {
         test('returns limited number of achievements', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await userIdentity.run(async ctx => {
-                const defs = await ctx.db.query('achievementDefinitions').take(3);
-
-                for (const def of defs) {
+                for (const code of [
+                    'first_objective',
+                    'objectives_created_5',
+                    'objectives_created_15',
+                ]) {
                     await ctx.db.insert('obtainedAchievements', {
-                        userId: userId,
-                        achievement: def._id,
+                        userId,
+                        achievement: code,
                         earnedAt: Date.now(),
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
@@ -313,8 +187,6 @@ describe('convex achievements', async () => {
 
     describe('getUserAchievementProgress', () => {
         test('returns progress for all individual achievements', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const progress = await userIdentity.query(
                 api.achievements.getUserAchievementProgress,
                 {}
@@ -327,8 +199,6 @@ describe('convex achievements', async () => {
         });
 
         test('returns organization achievement progress for active organization', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -353,8 +223,6 @@ describe('convex achievements', async () => {
         });
 
         test('shows correct progress for objectives created', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -384,8 +252,6 @@ describe('convex achievements', async () => {
         });
 
         test('shows correct progress for objectives completed', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -407,8 +273,6 @@ describe('convex achievements', async () => {
         });
 
         test('shows correct progress for early_bird achievement', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const now = Date.now();
             const futureDeadline = now + 7 * 24 * 60 * 60 * 1000;
 
@@ -446,8 +310,6 @@ describe('convex achievements', async () => {
         });
 
         test('early_bird does not count objectives without deadline', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('objectives', {
                     createdBy: userId,
@@ -479,8 +341,6 @@ describe('convex achievements', async () => {
         });
 
         test('early_bird does not count objectives completed after deadline', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const now = Date.now();
             const pastDeadline = now - 1000;
 
@@ -517,8 +377,6 @@ describe('convex achievements', async () => {
         });
 
         test('early_bird does not count late completion when created before deadline', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const now = Date.now();
             const pastDeadline = now - 1000;
             const createdBeforeDeadline = pastDeadline - 7 * 24 * 60 * 60 * 1000;
@@ -558,8 +416,6 @@ describe('convex achievements', async () => {
         test('awards early_bird when objective is completed via progress update', async () => {
             vi.useFakeTimers();
             try {
-                await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
                 const now = Date.now();
                 const futureDeadline = now + 7 * 24 * 60 * 60 * 1000;
 
@@ -597,8 +453,6 @@ describe('convex achievements', async () => {
 
     describe('getUnviewedAchievementsCount', () => {
         test('returns count of unread achievement notifications', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await userIdentity.run(async ctx => {
                 await ctx.db.insert('notifications', {
                     userId: userId,
@@ -647,8 +501,6 @@ describe('convex achievements', async () => {
 
     describe('checkUserAchievements (internal)', () => {
         test('awards first_objective achievement when first objective is created', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -668,21 +520,14 @@ describe('convex achievements', async () => {
         });
 
         test('does not award same achievement twice', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             await userIdentity.run(async ctx => {
-                const definitions = await ctx.db.query('achievementDefinitions').collect();
-                const def = definitions.find(definition => definition.code === 'first_objective');
-
-                if (def) {
-                    await ctx.db.insert('obtainedAchievements', {
-                        userId: userId,
-                        achievement: def._id,
-                        earnedAt: Date.now(),
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
+                await ctx.db.insert('obtainedAchievements', {
+                    userId,
+                    achievement: 'first_objective',
+                    earnedAt: Date.now(),
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             await createTestObjective(t, {
@@ -706,8 +551,6 @@ describe('convex achievements', async () => {
         });
 
         test('progress achievement logic validates correct threshold', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const objectiveId = await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -751,8 +594,6 @@ describe('convex achievements', async () => {
         });
 
         test('streak achievement tracks consecutive daily updates', async () => {
-            await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const objectiveId = await createTestObjective(t, {
                 userId: userId,
                 organizationId: organizationId,
@@ -815,12 +656,6 @@ describe('convex achievements', async () => {
             await expect(t.query(api.achievements.getUserAchievementStats, {})).rejects.toThrow(
                 /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
-        });
-
-        test('seedAchievementDefinitions rejects unauthenticated users', async () => {
-            await expect(
-                t.mutation(api.achievements.seedAchievementDefinitions, {})
-            ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         });
     });
 

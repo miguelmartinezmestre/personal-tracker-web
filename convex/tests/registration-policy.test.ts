@@ -5,7 +5,7 @@ import { createTestOrganization, createTestUser } from './test_helpers';
 
 describe('backend registration policy', () => {
     test('classifies the first registration as a protected bootstrap', async () => {
-        const t = initConvexTest({ workflow: false });
+        const t = initConvexTest();
 
         await expect(
             t.query(internal.auth.getEmailRegistrationAuthorization, {
@@ -17,7 +17,7 @@ describe('backend registration policy', () => {
     });
 
     test('allows arbitrary email registration when policy is open', async () => {
-        const t = initConvexTest({ workflow: false });
+        const t = initConvexTest();
         await t.run(async ctx => {
             await ctx.db.insert('platformSettings', {
                 platformName: 'Open platform',
@@ -36,7 +36,7 @@ describe('backend registration policy', () => {
     });
 
     test('requires the exact active invitation for the same email', async () => {
-        const t = initConvexTest({ workflow: false });
+        const t = initConvexTest();
         const now = Date.now();
         const inviter = await createTestUser(t, {
             userId: 'registration-policy-inviter',

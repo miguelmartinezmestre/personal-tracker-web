@@ -18,7 +18,6 @@ export class AchievementsPage {
     readonly contentOrganization: Locator;
     readonly gridIndividual: Locator;
     readonly gridOrganization: Locator;
-    readonly seedButton: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -38,7 +37,6 @@ export class AchievementsPage {
         this.contentOrganization = page.getByTestId('achievements-content-organization');
         this.gridIndividual = page.getByTestId('achievements-grid-individual');
         this.gridOrganization = page.getByTestId('achievements-grid-organization');
-        this.seedButton = page.getByTestId('achievements-seed-button');
     }
 
     async goto() {

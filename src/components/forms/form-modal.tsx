@@ -1,8 +1,9 @@
 'use client';
 
 import { type ReactNode, useState } from 'react';
-import { useForm, type AnyFormApi, type AnyFormOptions } from '@tanstack/react-form';
+import { useForm, type AnyFormOptions } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
+import type { TanStackFormApi } from './form-types';
 import {
     Dialog,
     DialogContent,
@@ -12,7 +13,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Form } from '@/components/ui/form-tanstack';
 
 type FormModalProps<TFormValues extends object> = {
     trigger?: ReactNode;
@@ -24,7 +24,7 @@ type FormModalProps<TFormValues extends object> = {
         defaultValues: TFormValues;
     };
     onSubmit: (values: TFormValues) => Promise<void>;
-    children: (form: AnyFormApi) => ReactNode;
+    children: (form: TanStackFormApi) => ReactNode;
     submitLabel: string;
     cancelLabel: string;
     pendingLabel?: string;
@@ -83,36 +83,34 @@ export default function FormModal<TFormValues extends object>({
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
 
-                <Form form={form}>
-                    <form
-                        onSubmit={event => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            void form.handleSubmit();
-                        }}
-                        className="space-y-5 py-4"
-                    >
-                        {children(form)}
+                <form
+                    onSubmit={event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        void form.handleSubmit();
+                    }}
+                    className="space-y-5 py-4"
+                >
+                    {children(form)}
 
-                        <DialogFooter className="pt-4">
-                            <Button
-                                variant="outline"
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                data-testid={cancelTestId}
-                            >
-                                {cancelLabel}
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={isPending || submitDisabled}
-                                data-testid={submitTestId}
-                            >
-                                {isPending && pendingLabel ? pendingLabel : submitLabel}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
+                    <DialogFooter className="pt-4">
+                        <Button
+                            variant="outline"
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            data-testid={cancelTestId}
+                        >
+                            {cancelLabel}
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isPending || submitDisabled}
+                            data-testid={submitTestId}
+                        >
+                            {isPending && pendingLabel ? pendingLabel : submitLabel}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

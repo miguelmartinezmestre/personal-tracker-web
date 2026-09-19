@@ -55,7 +55,6 @@ describe('achievements multi-tenancy', () => {
             role: 'member',
         });
         userIdentity = t.withIdentity(identityFor(user));
-        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
     });
 
     test('aggregates an individual achievement across organizations', async () => {

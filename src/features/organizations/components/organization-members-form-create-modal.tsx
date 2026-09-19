@@ -2,13 +2,14 @@
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
     FormDescription,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import type { CreateOrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { organizationMemberSchema } from '@/features/organizations/schemas/organization-member';
@@ -78,60 +79,76 @@ export default function CreateOrganizationMemberFormModal({
             cancelTestId="organization-member-cancel-button"
             submitTestId="organization-member-save-button"
         >
-            {() => (
+            {form => (
                 <>
-                    <FormField
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('email')}</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder={t('enterEmail')}
-                                        type="email"
-                                        {...field}
-                                        value={typeof field.value === 'string' ? field.value : ''}
-                                        onChange={e => field.onChange(e.target.value)}
-                                        data-testid="organization-member-email-input"
-                                    />
-                                </FormControl>
-                                <FormDescription>
-                                    {t('giveYourOrganizationMemberAClearConciseEmail')}
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        name="role"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('role')}</FormLabel>
-                                <Select
-                                    onValueChange={field.onChange}
-                                    value={typeof field.value === 'string' ? field.value : 'member'}
-                                >
+                    <form.Field name="email">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
-                                        <SelectTrigger data-testid="organization-member-role-select">
-                                            <SelectValue placeholder={t('selectRole')} />
-                                        </SelectTrigger>
+                                        <Input
+                                            placeholder={t('enterEmail')}
+                                            type="email"
+                                            name={field.name}
+                                            value={
+                                                typeof field.state.value === 'string'
+                                                    ? field.state.value
+                                                    : ''
+                                            }
+                                            onChange={event =>
+                                                field.handleChange(event.target.value)
+                                            }
+                                            onBlur={field.handleBlur}
+                                            data-testid="organization-member-email-input"
+                                        />
                                     </FormControl>
-                                    <SelectContent>
-                                        {roleOptions.map(role => (
-                                            <SelectItem key={role.value} value={role.value}>
-                                                {role.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormDescription>
-                                    {t('currentRoleOfYourOrganizationMember')}
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                                    <FormDescription>
+                                        {t('giveYourOrganizationMemberAClearConciseEmail')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
                         )}
-                    />
+                    </form.Field>
+
+                    <form.Field name="role">
+                        {field => (
+                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                                <FormItem>
+                                    <FormLabel>{t('role')}</FormLabel>
+                                    <Select
+                                        onValueChange={value => field.handleChange(value)}
+                                        value={
+                                            typeof field.state.value === 'string'
+                                                ? field.state.value
+                                                : 'member'
+                                        }
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger
+                                                onBlur={field.handleBlur}
+                                                data-testid="organization-member-role-select"
+                                            >
+                                                <SelectValue placeholder={t('selectRole')} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {roleOptions.map(role => (
+                                                <SelectItem key={role.value} value={role.value}>
+                                                    {role.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        {t('currentRoleOfYourOrganizationMember')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FieldShell>
+                        )}
+                    </form.Field>
                 </>
             )}
         </FormModal>

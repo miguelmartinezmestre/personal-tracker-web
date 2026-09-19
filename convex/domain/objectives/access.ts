@@ -1,7 +1,6 @@
 import { ConvexError } from 'convex/values';
 import type { Doc, Id } from '../../_generated/dataModel';
 import type { MutationCtx, QueryCtx } from '../../_generated/server';
-import { isGlobalAdminRole } from '../../../shared/platform-roles';
 import { ERROR_CODES } from '../../utils/constants';
 import { getCollaboratorRoleForUser } from './collaborators';
 import {
@@ -47,14 +46,8 @@ export async function assertObjectiveAction(
     objective: Doc<'objectives'>,
     action: ObjectiveAction
 ): Promise<PermissionSubject> {
-    const isGlobalAdmin = isGlobalAdminRole(ctx.role);
-    if (
-        !isGlobalAdmin &&
-        (!ctx.organizationId || objective.organizationId !== ctx.organizationId)
-    ) {
-        throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_OBJECTIVE);
-    }
-
+    // RLS has already scoped this row to the active organization (or global admin).
+    // Keep the domain check focused on the action-specific invariant.
     const subject = await resolveObjectivePermissionSubject(ctx, objective);
 
     if (!canObjective(action, subject, objective)) {

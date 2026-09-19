@@ -43,8 +43,6 @@ describe('organization achievements are awarded (F1)', () => {
     });
 
     test('awards an organization achievement when an org objective is created', async () => {
-        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
         await userIdentity.mutation(api.objectives.createObjective, {
             title: 'Org Objective',
             targetValue: 100,
@@ -68,7 +66,6 @@ describe('organization achievements are awarded (F1)', () => {
     });
 
     test('stale jobs cannot recreate achievements or notifications after organization deletion', async () => {
-        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
         await t.run(ctx => ctx.db.delete('organization', organizationId));
 
         const awardResult = await t.mutation(internal.achievements.checkOrganizationAchievements, {

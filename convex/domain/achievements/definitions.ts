@@ -10,7 +10,7 @@ export type AchievementMetricKey =
     | 'organizationObjectivesCompleted'
     | 'organizationProgressStreak';
 
-type AchievementDefinition = {
+export type AchievementDefinition = {
     code: string;
     type: AchievementType;
     category: AchievementCategory;
@@ -21,6 +21,8 @@ type AchievementDefinition = {
     icon: string;
     points: number;
 };
+
+export type AchievementDefinitionView = Omit<AchievementDefinition, 'metricKey' | 'trigger'>;
 
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     {
@@ -243,6 +245,17 @@ export const ACHIEVEMENT_RULES_BY_CODE = new Map(
         },
     ])
 );
+
+export function toAchievementDefinitionView(
+    definition: AchievementDefinition
+): AchievementDefinitionView {
+    const { metricKey: _metricKey, trigger: _trigger, ...view } = definition;
+    return view;
+}
+
+export function getAchievementDefinition(code: string) {
+    return ACHIEVEMENT_DEFINITIONS.find(definition => definition.code === code);
+}
 
 export function getAchievementRule(code: string) {
     return ACHIEVEMENT_RULES_BY_CODE.get(code);

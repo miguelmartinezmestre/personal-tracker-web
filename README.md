@@ -50,7 +50,7 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 
 ## Documentation
 
-- [Current implementation inventory](docs/estado-proyecto.md) and [versioned wiki](wiki/README.md).
+- [Current implementation inventory](docs/estado-proyecto.md).
 - [Local operation and recovery](docs/operacion-local.md).
 
 - [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.

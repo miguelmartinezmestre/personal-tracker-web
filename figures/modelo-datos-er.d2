@@ -124,7 +124,6 @@ objectives: {
 | currentValue | number |
 | deadline | optional(number) |
 | status | objectiveStatusValidator |
-| workflowId | optional(vWorkflowId) |
 | deletedAt | optional(number) |
 | deletedBy | optional(id('user')) |
 `|
@@ -287,16 +286,6 @@ platformSettings: {
   style: { font-size: 10; font-color: "#111827" }
 }
 
-workflow: {
-  shape: text
-  label: |`md
-| Convex Workflow | |
-| --- | --- |
-| workflowId | vWorkflowId |
-`|
-  style: { font-size: 10; font-color: "#111827" }
-}
-
 resourcePointer: {
   shape: text
   label: |`md
@@ -341,5 +330,4 @@ achievementDefinitions -> obtainedAchievements: { style: { stroke: "#2F4F4F"; st
 achievementDefinitions -> organizationAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
 organizationAchievements -> organizationAchievementContributors: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
 
-objectives -> workflow: { style: { stroke: "#6B7280"; stroke-width: 2; stroke-dash: 2 } }
 auditLogs -> resourcePointer: { style: { stroke: "#6B7280"; stroke-width: 2; stroke-dash: 2 } }

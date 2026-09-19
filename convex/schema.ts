@@ -1,15 +1,11 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 import authSchema from './authSchema';
-import { vWorkflowId } from '@convex-dev/workflow';
 import {
     objectiveStatusValidator,
     objectiveVisibilityValidator,
     objectiveCollaboratorRoleValidator,
     notificationTypeValidator,
-    achievementTypeValidator,
-    achievementCategoryValidator,
-    achievementTierValidator,
 } from './utils/validators';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
@@ -66,10 +62,8 @@ export default defineSchema({
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
         completedAt: v.optional(v.number()),
-        // Optional during rollout so the bounded backfill can migrate existing rows.
         earlyBirdCompleted: v.optional(v.boolean()),
         unit: v.optional(v.string()),
-        workflowId: v.optional(vWorkflowId),
         deletedAt: v.optional(v.number()),
         deletedBy: v.optional(v.id('user')),
         purgeToken: v.optional(v.string()),
@@ -234,22 +228,9 @@ export default defineSchema({
         .index('by_organization', ['organizationId'])
         .index('by_organization_name', ['organizationId', 'name']),
 
-    achievementDefinitions: defineTable({
-        code: v.string(),
-        type: achievementTypeValidator,
-        category: achievementCategoryValidator,
-        tier: achievementTierValidator,
-        threshold: v.number(),
-        icon: v.string(),
-        points: v.number(),
-        isActive: v.boolean(),
-        createdAt: v.number(),
-        updatedAt: v.number(),
-    }),
-
     obtainedAchievements: defineTable({
         userId: v.id('user'),
-        achievement: v.id('achievementDefinitions'),
+        achievement: v.string(),
         earnedAt: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -259,7 +240,7 @@ export default defineSchema({
 
     organizationAchievements: defineTable({
         organization: v.id('organization'),
-        achievement: v.id('achievementDefinitions'),
+        achievement: v.string(),
         earnedAt: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),

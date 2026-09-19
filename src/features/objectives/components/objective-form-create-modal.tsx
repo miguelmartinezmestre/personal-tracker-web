@@ -75,8 +75,9 @@ export default function CreateObjectiveFormModal() {
             cancelTestId="objective-cancel-button"
             submitTestId="objective-save-button"
         >
-            {() => (
+            {form => (
                 <ObjectiveFormFields
+                    form={form}
                     mode="create"
                     categoryOptions={categoryOptions}
                     categoriesLoading={categoriesQuery.isLoading}

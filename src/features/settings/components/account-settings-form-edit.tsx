@@ -6,13 +6,13 @@ import type { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-    Form,
+    FieldShell,
+    getFieldError,
     FormControl,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import { accountDetailsSchema } from '@/features/settings/schemas/account-details';
 import { DialogFooter } from '@/components/ui/dialog';
@@ -101,76 +101,82 @@ export default function AccountSettingsFormEdit() {
     }
 
     return (
-        <Form form={form}>
-            <form
-                action={() => {
-                    void form.handleSubmit();
-                }}
-                className="space-y-5 py-4"
-            >
-                <FormField
-                    name="username"
-                    render={({ field }) => (
+        <form
+            action={() => {
+                void form.handleSubmit();
+            }}
+            className="space-y-5 py-4"
+        >
+            <form.Field name="username">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('username')}</FormLabel>
                             <FormControl>
                                 <Input
                                     placeholder={t('placeholders.enterUsername')}
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     data-testid="account-username-input"
                                 />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <FormField
-                    name="email"
-                    render={({ field }) => (
+            <form.Field name="email">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('email')}</FormLabel>
                             <FormControl>
                                 <Input
                                     type="email"
                                     placeholder={t('placeholders.enterEmail')}
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     data-testid="account-email-input"
                                 />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <DialogFooter className="pt-4">
-                    <Button
-                        variant="outline"
-                        type="button"
-                        onClick={handleCancel}
-                        disabled={isSubmitting}
-                        data-testid="account-cancel-button"
-                    >
-                        {t('cancel')}
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting} data-testid="account-save-button">
-                        {isSubmitting ? tCommon('loading') : t('saveAccount')}
-                    </Button>
-                </DialogFooter>
-                {error && (
-                    <p className="text-destructive" data-testid="account-error-message">
-                        {error}
-                    </p>
-                )}
-                {message && (
-                    <p
-                        className="text-emerald-700 dark:text-emerald-300"
-                        data-testid="account-success-message"
-                    >
-                        {message}
-                    </p>
-                )}
-            </form>
-        </Form>
+            <DialogFooter className="pt-4">
+                <Button
+                    variant="outline"
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={isSubmitting}
+                    data-testid="account-cancel-button"
+                >
+                    {t('cancel')}
+                </Button>
+                <Button type="submit" disabled={isSubmitting} data-testid="account-save-button">
+                    {isSubmitting ? tCommon('loading') : t('saveAccount')}
+                </Button>
+            </DialogFooter>
+            {error && (
+                <p className="text-destructive" data-testid="account-error-message">
+                    {error}
+                </p>
+            )}
+            {message && (
+                <p
+                    className="text-emerald-700 dark:text-emerald-300"
+                    data-testid="account-success-message"
+                >
+                    {message}
+                </p>
+            )}
+        </form>
     );
 }

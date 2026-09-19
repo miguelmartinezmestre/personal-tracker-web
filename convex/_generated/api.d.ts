@@ -38,7 +38,6 @@ import type * as domain_objectives_metrics from "../domain/objectives/metrics.js
 import type * as domain_objectives_permissions from "../domain/objectives/permissions.js";
 import type * as domain_objectives_progress from "../domain/objectives/progress.js";
 import type * as domain_objectives_transitions from "../domain/objectives/transitions.js";
-import type * as domain_objectives_workflowSync from "../domain/objectives/workflowSync.js";
 import type * as domain_organizations_operational from "../domain/organizations/operational.js";
 import type * as domain_organizations_personalOrganization from "../domain/organizations/personalOrganization.js";
 import type * as email from "../email.js";
@@ -53,8 +52,6 @@ import type * as jobs_email_transactional from "../jobs/email/transactional.js";
 import type * as jobs_notifications_deadlineNotifications from "../jobs/notifications/deadlineNotifications.js";
 import type * as jobs_notifications_markAllRead from "../jobs/notifications/markAllRead.js";
 import type * as jobs_objectives_deleteObjective from "../jobs/objectives/deleteObjective.js";
-import type * as jobs_objectives_lifecycleCompletion from "../jobs/objectives/lifecycleCompletion.js";
-import type * as jobs_objectives_lifecycleWorkflow from "../jobs/objectives/lifecycleWorkflow.js";
 import type * as jobs_objectives_syncObjectiveFromProgress from "../jobs/objectives/syncObjectiveFromProgress.js";
 import type * as jobs_organizations_cascadeDeletion from "../jobs/organizations/cascadeDeletion.js";
 import type * as jobs_organizations_memberLeaveCleanup from "../jobs/organizations/memberLeaveCleanup.js";
@@ -65,6 +62,7 @@ import type * as notificationPreferences from "../notificationPreferences.js";
 import type * as notifications from "../notifications.js";
 import type * as objectives from "../objectives.js";
 import type * as organizations from "../organizations.js";
+import type * as platform_admin_access from "../platform/admin/access.js";
 import type * as platform_audit_triggers from "../platform/audit/triggers.js";
 import type * as platform_auth_accountDeletionPlugin from "../platform/auth/accountDeletionPlugin.js";
 import type * as platform_auth_authRuntime from "../platform/auth/authRuntime.js";
@@ -98,7 +96,6 @@ import type * as utils_reminderSchedule from "../utils/reminderSchedule.js";
 import type * as utils_requiredAdmin from "../utils/requiredAdmin.js";
 import type * as utils_validators from "../utils/validators.js";
 import type * as utils_visiblePagination from "../utils/visiblePagination.js";
-import type * as workflow from "../workflow.js";
 
 import type {
   ApiFromModules,
@@ -137,7 +134,6 @@ declare const fullApi: ApiFromModules<{
   "domain/objectives/permissions": typeof domain_objectives_permissions;
   "domain/objectives/progress": typeof domain_objectives_progress;
   "domain/objectives/transitions": typeof domain_objectives_transitions;
-  "domain/objectives/workflowSync": typeof domain_objectives_workflowSync;
   "domain/organizations/operational": typeof domain_organizations_operational;
   "domain/organizations/personalOrganization": typeof domain_organizations_personalOrganization;
   email: typeof email;
@@ -152,8 +148,6 @@ declare const fullApi: ApiFromModules<{
   "jobs/notifications/deadlineNotifications": typeof jobs_notifications_deadlineNotifications;
   "jobs/notifications/markAllRead": typeof jobs_notifications_markAllRead;
   "jobs/objectives/deleteObjective": typeof jobs_objectives_deleteObjective;
-  "jobs/objectives/lifecycleCompletion": typeof jobs_objectives_lifecycleCompletion;
-  "jobs/objectives/lifecycleWorkflow": typeof jobs_objectives_lifecycleWorkflow;
   "jobs/objectives/syncObjectiveFromProgress": typeof jobs_objectives_syncObjectiveFromProgress;
   "jobs/organizations/cascadeDeletion": typeof jobs_organizations_cascadeDeletion;
   "jobs/organizations/memberLeaveCleanup": typeof jobs_organizations_memberLeaveCleanup;
@@ -164,6 +158,7 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   objectives: typeof objectives;
   organizations: typeof organizations;
+  "platform/admin/access": typeof platform_admin_access;
   "platform/audit/triggers": typeof platform_audit_triggers;
   "platform/auth/accountDeletionPlugin": typeof platform_auth_accountDeletionPlugin;
   "platform/auth/authRuntime": typeof platform_auth_authRuntime;
@@ -197,7 +192,6 @@ declare const fullApi: ApiFromModules<{
   "utils/requiredAdmin": typeof utils_requiredAdmin;
   "utils/validators": typeof utils_validators;
   "utils/visiblePagination": typeof utils_visiblePagination;
-  workflow: typeof workflow;
 }>;
 
 /**
@@ -227,7 +221,6 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
-  workflow: import("@convex-dev/workflow/_generated/component.js").ComponentApi<"workflow">;
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
   dashboardObjectives: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"dashboardObjectives">;
   dashboardProgress: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"dashboardProgress">;

@@ -55,7 +55,6 @@ export const objectiveDocumentValidator = v.object({
     completedAt: v.optional(v.number()),
     earlyBirdCompleted: v.optional(v.boolean()),
     unit: v.optional(v.string()),
-    workflowId: v.optional(v.string()),
     deletedAt: v.optional(v.number()),
     deletedBy: v.optional(v.id('user')),
     purgeToken: v.optional(v.string()),
@@ -119,8 +118,6 @@ export const notificationPreferencesDocumentValidator = v.object({
 });
 
 export const achievementDefinitionDocumentValidator = v.object({
-    _id: v.id('achievementDefinitions'),
-    _creationTime: v.number(),
     code: v.string(),
     type: achievementTypeValidator,
     category: achievementCategoryValidator,
@@ -128,16 +125,13 @@ export const achievementDefinitionDocumentValidator = v.object({
     threshold: v.number(),
     icon: v.string(),
     points: v.number(),
-    isActive: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
 });
 
 export const obtainedAchievementDocumentValidator = v.object({
     _id: v.id('obtainedAchievements'),
     _creationTime: v.number(),
     userId: v.id('user'),
-    achievement: v.id('achievementDefinitions'),
+    achievement: v.string(),
     earnedAt: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -147,7 +141,7 @@ export const organizationAchievementDocumentValidator = v.object({
     _id: v.id('organizationAchievements'),
     _creationTime: v.number(),
     organization: v.id('organization'),
-    achievement: v.id('achievementDefinitions'),
+    achievement: v.string(),
     earnedAt: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),

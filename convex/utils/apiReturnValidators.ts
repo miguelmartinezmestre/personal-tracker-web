@@ -43,7 +43,6 @@ export const objectiveWithCapabilitiesValidator = v.object({
     completedAt: v.optional(v.number()),
     earlyBirdCompleted: v.optional(v.boolean()),
     unit: v.optional(v.string()),
-    workflowId: v.optional(v.string()),
     deletedAt: v.optional(v.number()),
     deletedBy: v.optional(v.id('user')),
     purgeToken: v.optional(v.string()),
@@ -110,7 +109,7 @@ export const userAchievementWithDefinitionValidator = v.object({
     _id: v.id('obtainedAchievements'),
     _creationTime: v.number(),
     userId: v.id('user'),
-    achievement: v.id('achievementDefinitions'),
+    achievement: v.string(),
     earnedAt: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -122,7 +121,7 @@ export const organizationAchievementWithDefinitionValidator = v.object({
     _id: v.id('organizationAchievements'),
     _creationTime: v.number(),
     organization: v.id('organization'),
-    achievement: v.id('achievementDefinitions'),
+    achievement: v.string(),
     earnedAt: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -243,11 +242,6 @@ export const currentSessionValidator = v.object({
             emailVerified: v.boolean(),
         })
     ),
-});
-
-export const seedAchievementsResultValidator = v.object({
-    message: v.string(),
-    count: v.number(),
 });
 
 export const successResultValidator = v.object({

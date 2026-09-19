@@ -14,13 +14,13 @@ import { buildOrganizationSlug } from '../../shared/organization-slug';
 describe('convex setup', () => {
     describe('isPlatformSetUp', () => {
         test('returns false when no platformSettings exist', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
             const result = await t.query(api.setup.isPlatformSetUp, {});
             expect(result).toBe(false);
         });
 
         test('returns true when platformSettings exist', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
@@ -53,13 +53,13 @@ describe('convex setup', () => {
 
     describe('getPublicPlatformSettings', () => {
         test('returns null when no settings exist', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
             const result = await t.query(api.setup.getPublicPlatformSettings, {});
             expect(result).toBeNull();
         });
 
         test('returns only public fields when settings exist', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
@@ -96,7 +96,7 @@ describe('convex setup', () => {
 
     describe('completeSetup', () => {
         test('creates a non-empty stable slug for an organization name without ASCII characters', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
             const user = await createTestUser(t, {
                 userId: 'setup-unicode-organization',
                 email: 'setup-unicode-organization@test.com',
@@ -133,7 +133,7 @@ describe('convex setup', () => {
         });
 
         test('fails when platform is already configured', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             const userId = await t.run(async ctx => {
                 const id = await ctx.db.insert('user', {
@@ -187,7 +187,7 @@ describe('convex setup', () => {
         });
 
         test('binds setup to the first user even when more than one account exists', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             const user1 = await createTestUser(t, {
                 userId: 'user-1',
@@ -235,7 +235,7 @@ describe('convex setup', () => {
         });
 
         test('rejects invalid setup enum values at the backend boundary', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             const user = await createTestUser(t, {
                 userId: 'setup-invalid-enums',
@@ -269,7 +269,7 @@ describe('convex setup', () => {
         });
 
         test('succeeds with exactly one user and no existing settings', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             const user = await createTestUser(t, {
                 userId: 'user-1',
@@ -349,7 +349,7 @@ describe('convex setup', () => {
         });
 
         test('creates a team organization without converting the protected personal one', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
             const user = await createTestUser(t, {
                 userId: 'setup-personal-workspace-user',
                 email: 'personal-setup@example.com',
@@ -415,7 +415,7 @@ describe('convex setup', () => {
 
     describe('isPlatformSetupUser queries', () => {
         test('isCurrentUserPlatformSetupUser returns true for setup user', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             const setupUserId = await t.run(async ctx => {
                 const userId = await ctx.db.insert('user', {
@@ -476,7 +476,7 @@ describe('convex setup', () => {
         });
 
         test('isCurrentUserPlatformSetupUser returns false for other users', async () => {
-            const t = initConvexTest({ workflow: false });
+            const t = initConvexTest();
 
             const otherUserId = await t.run(async ctx => {
                 const setupUserId = await ctx.db.insert('user', {

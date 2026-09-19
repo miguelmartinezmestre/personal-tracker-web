@@ -297,7 +297,6 @@ describe('convex update_progress', () => {
         });
         const collaboratorIdentity = t.withIdentity(identityFor(collaborator));
 
-        await userIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
         for (let index = 0; index < 4; index++) {
             await createTestObjective(t, {
                 userId,
@@ -332,20 +331,14 @@ describe('convex update_progress', () => {
         ).toMatchObject({ currentProgress: 0, isEarned: false });
 
         const attribution = await t.run(async ctx => {
-            const definitions = await ctx.db.query('achievementDefinitions').collect();
-            const organizationDefinition = definitions.find(
-                definition => definition.code === 'organization_completed_5'
-            );
-            const organizationAchievement = organizationDefinition
-                ? await ctx.db
-                      .query('organizationAchievements')
-                      .withIndex('by_organization_achievement', q =>
-                          q
-                              .eq('organization', organizationId)
-                              .eq('achievement', organizationDefinition._id)
-                      )
-                      .first()
-                : null;
+            const organizationAchievement = await ctx.db
+                .query('organizationAchievements')
+                .withIndex('by_organization_achievement', q =>
+                    q
+                        .eq('organization', organizationId)
+                        .eq('achievement', 'organization_completed_5')
+                )
+                .first();
             return organizationAchievement
                 ? await ctx.db
                       .query('organizationAchievementContributors')

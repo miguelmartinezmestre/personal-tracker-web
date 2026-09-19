@@ -1,11 +1,13 @@
 'use client';
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
+import type { TanStackFormApi } from '@/components/forms/form-types';
 import {
     Select,
     SelectContent,
@@ -19,6 +21,7 @@ import {
     type CategoryOption,
 } from '@/features/objectives/lib/objective-category-selection';
 type ObjectiveCategoryFieldProps = {
+    form: TanStackFormApi;
     label: string;
     placeholder: string;
     loadingLabel: string;
@@ -61,6 +64,7 @@ function CategorySelectItems({
     );
 }
 export function ObjectiveCategoryField({
+    form,
     label,
     placeholder,
     loadingLabel,
@@ -70,32 +74,33 @@ export function ObjectiveCategoryField({
     categoriesLoading,
 }: ObjectiveCategoryFieldProps) {
     return (
-        <FormField
-            name="categoryId"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>{label}</FormLabel>
-                    <Select
-                        onValueChange={field.onChange}
-                        value={typeof field.value === 'string' ? field.value : ''}
-                    >
-                        <FormControl>
-                            <SelectTrigger data-testid={testId}>
-                                <SelectValue placeholder={placeholder} />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <CategorySelectItems
-                                categoriesLoading={categoriesLoading}
-                                categoryOptions={categoryOptions}
-                                loadingLabel={loadingLabel}
-                                emptyLabel={emptyLabel}
-                            />
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
+        <form.Field name="categoryId">
+            {field => (
+                <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <Select
+                            onValueChange={value => field.handleChange(value)}
+                            value={typeof field.state.value === 'string' ? field.state.value : ''}
+                        >
+                            <FormControl>
+                                <SelectTrigger onBlur={field.handleBlur} data-testid={testId}>
+                                    <SelectValue placeholder={placeholder} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <CategorySelectItems
+                                    categoriesLoading={categoriesLoading}
+                                    categoryOptions={categoryOptions}
+                                    loadingLabel={loadingLabel}
+                                    emptyLabel={emptyLabel}
+                                />
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                </FieldShell>
             )}
-        />
+        </form.Field>
     );
 }

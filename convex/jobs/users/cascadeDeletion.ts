@@ -7,7 +7,6 @@ import {
 } from '../../domain/objectives/collaborators';
 import { isPersonalOrganizationForUser } from '../../domain/organizations/personalOrganization';
 import { startOrganizationDeletionCascade } from '../organizations/cascadeDeletion';
-import { workflow } from '../../workflow';
 const USER_DELETION_BATCH_SIZE = 50;
 export type UserDeletionPhase =
     | 'sessions'
@@ -121,9 +120,6 @@ async function deleteUserObjectivesPhase(
         if (successor) {
             await reassignOwnedObjective(ctx, objective, successor);
             continue;
-        }
-        if (objective.workflowId) {
-            await workflow.cancel(ctx, objective.workflowId);
         }
         const purgeToken =
             objective.purgeToken ?? `user-delete-${String(objective._id)}-${now.toString(36)}`;

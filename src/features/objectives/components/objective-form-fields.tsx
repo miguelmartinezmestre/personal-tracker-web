@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { TanStackFormApi } from '@/components/forms/form-types';
 import type { CategoryOption } from '@/features/objectives/lib/objective-category-selection';
 import { ObjectiveTextFields } from './objective-text-fields';
 import { ObjectiveCategoryField } from './objective-category-field';
@@ -8,6 +9,7 @@ import { ObjectiveMetricsFields } from './objective-metrics-fields';
 import { ObjectiveVisibilityAndDeadlineFields } from './objective-visibility-deadline-fields';
 
 type ObjectiveFormFieldsProps = {
+    form: TanStackFormApi;
     mode: 'create' | 'edit';
     categoryOptions: CategoryOption[];
     categoriesLoading: boolean;
@@ -18,6 +20,7 @@ function getTestId(mode: ObjectiveFormFieldsProps['mode'], name: string) {
 }
 
 export function ObjectiveFormFields({
+    form,
     mode,
     categoryOptions,
     categoriesLoading,
@@ -37,6 +40,7 @@ export function ObjectiveFormFields({
     return (
         <>
             <ObjectiveTextFields
+                form={form}
                 titleLabel={titleLabel}
                 descriptionLabel={descriptionLabel}
                 titlePlaceholder={t('enterObjectiveTitle')}
@@ -46,6 +50,7 @@ export function ObjectiveFormFields({
                 descriptionTestId={getTestId(mode, 'description-input')}
             />
             <ObjectiveCategoryField
+                form={form}
                 label={categoryLabel}
                 placeholder={t('selectACategory')}
                 loadingLabel={tCommon('loading')}
@@ -55,6 +60,7 @@ export function ObjectiveFormFields({
                 categoriesLoading={categoriesLoading}
             />
             <ObjectiveMetricsFields
+                form={form}
                 mode={mode}
                 targetValueLabel={targetValueLabel}
                 unitLabel={unitLabel}
@@ -66,6 +72,7 @@ export function ObjectiveFormFields({
                 unitTestId={getTestId(mode, 'unit-input')}
             />
             <ObjectiveVisibilityAndDeadlineFields
+                form={form}
                 mode={mode}
                 visibilityLabel={t('visibility.label')}
                 visibilityDescription={t('visibility.description')}

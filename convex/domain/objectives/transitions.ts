@@ -6,7 +6,6 @@ import { ERROR_CODES } from '../../utils/constants';
 import { shouldSendProgressNotification } from '../notifications/preferences';
 import { isOperationalMember, requireOperationalOrganization } from '../organizations/operational';
 import { applyObjectiveProgressDelta } from './metrics';
-import { runObjectiveSync } from './workflowSync';
 
 type AchievementTrigger = 'objective_created' | 'objective_completed' | 'progress_update';
 
@@ -62,7 +61,7 @@ async function notifyCompletion(ctx: MutationCtx, objective: Doc<'objectives'>) 
 }
 
 /** One transaction owns the metric/status transition, derived-data triggers and effects.
- * The workflow repeats this reconciliation safely without launching another workflow.
+ * A queued reconciliation repeats it safely without scheduling another.
  * Attribution remains per progress author and per objective creator.
  */
 export async function transitionObjective(
@@ -73,7 +72,7 @@ export async function transitionObjective(
         delta?: number;
         progressAuthorId?: Id<'user'>;
         created?: boolean;
-        synchronizeWorkflow?: boolean;
+        scheduleReconciliation?: boolean;
     }
 ) {
     const objective = await ctx.db.get('objectives', objectiveId);
@@ -102,17 +101,17 @@ export async function transitionObjective(
         });
     }
     if (
-        args.synchronizeWorkflow !== false &&
+        args.scheduleReconciliation !== false &&
         (!args.progressAuthorId || result.status !== objective.status)
     ) {
-        await runObjectiveSync({
-            ctx,
-            objectiveId,
-            individualUserId: objective.createdBy,
-            organizationContributorUserId: args.actorUserId,
-            organizationId: objective.organizationId,
-            resourceType: args.progressAuthorId ? 'progress_update' : 'objective',
-        });
+        await ctx.scheduler.runAfter(
+            0,
+            internal.jobs.objectives.syncObjectiveFromProgress.syncObjectiveFromProgress,
+            {
+                objectiveId,
+                actorUserId: args.actorUserId,
+            }
+        );
     }
     return { ...result, reopened: objective.status === 'completed' && result.status === 'active' };
 }

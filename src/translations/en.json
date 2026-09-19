@@ -340,10 +340,6 @@
         "toast": {
             "unlocked": "Achievement Unlocked!",
             "points": "+{points} points"
-        },
-        "seed": {
-            "initialize": "Initialize Achievements",
-            "seeding": "Seeding..."
         }
     },
     "Notifications": {
@@ -1132,26 +1128,9 @@
     },
     "UserAgent": {
         "device": "Device",
-        "iphone": "iPhone",
-        "ipad": "iPad",
-        "androidPhone": "Android Phone",
         "smartphone": "Smartphone",
-        "androidTablet": "Android Tablet",
         "tablet": "Tablet",
-        "smartTv": "Smart TV",
-        "wearable": "Wearable device",
-        "embedded": "Embedded device",
-        "gameConsole": "Game console",
-        "windowsPc": "Windows PC",
-        "mac": "Mac",
-        "linuxPc": "Linux PC",
-        "chromebook": "Chromebook",
-        "androidDevice": "Android device",
-        "iosDevice": "iOS device",
-        "botCrawler": "Bot/Crawler",
-        "unknownOs": "Unknown OS",
-        "unknownBrowser": "Unknown browser",
-        "descriptionTemplate": "{device} with {os} using {browser}"
+        "botCrawler": "Bot/Crawler"
     },
     "ObjectiveCard": {
         "perWeek": "per week",
@@ -1175,28 +1154,8 @@
     "Table": {
         "toggleSorting": "Toggle sorting",
         "noResults": "No results",
-        "searchPlaceholder": "Search in table...",
-        "filters": "Filters",
-        "columnFilters": "Column filters",
-        "noFilterableColumns": "No filterable columns.",
-        "filterColumn": "Filter {column}",
-        "columns": "Columns",
-        "toggleColumns": "Toggle columns",
-        "order": "Order",
-        "columnOrder": "Column order",
-        "resetOrder": "Reset order",
-        "export": "Export",
-        "exportCsv": "Export CSV",
-        "exportExcel": "Export Excel",
-        "exportSheetName": "Data",
         "showing": "Showing",
-        "to": "to",
-        "ofTotal": "of",
         "rows": "rows",
-        "page": "Page",
-        "of": "of",
-        "first": "First",
-        "last": "Last",
         "previous": "Previous",
         "next": "Next"
     },

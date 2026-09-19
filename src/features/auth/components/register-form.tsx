@@ -1,7 +1,6 @@
 'use client';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Form } from '@/components/ui/form-tanstack';
 import { createRegisterSchema, type RegisterFormValues } from '@/features/auth/schemas/register';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
@@ -128,77 +127,79 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
     }
 
     return (
-        <Form form={form}>
-            <form
-                action={() => {
-                    void form.handleSubmit();
-                }}
-                className="space-y-6"
-            >
-                <fieldset disabled={!hydrated} className="space-y-6 min-w-0">
-                    {registerError && (
-                        <Alert variant="destructive" className="mb-6">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>{tCommon('error')}</AlertTitle>
-                            <AlertDescription>{registerError}</AlertDescription>
-                        </Alert>
-                    )}
-                    {verificationSent && (
-                        <Alert className="mb-6">
-                            <AlertTitle>{t('verificationSentTitle')}</AlertTitle>
-                            <AlertDescription>{t('verificationSentDescription')}</AlertDescription>
-                        </Alert>
-                    )}
+        <form
+            action={() => {
+                void form.handleSubmit();
+            }}
+            className="space-y-6"
+        >
+            <fieldset disabled={!hydrated} className="space-y-6 min-w-0">
+                {registerError && (
+                    <Alert variant="destructive" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
+                        <AlertDescription>{registerError}</AlertDescription>
+                    </Alert>
+                )}
+                {verificationSent && (
+                    <Alert className="mb-6">
+                        <AlertTitle>{t('verificationSentTitle')}</AlertTitle>
+                        <AlertDescription>{t('verificationSentDescription')}</AlertDescription>
+                    </Alert>
+                )}
 
-                    <RegisterFormInputField
-                        name="username"
-                        label={tCommon('fields.username')}
-                        placeholder={tCommon('placeholders.username')}
-                        testId="register-username-input"
-                    />
+                <RegisterFormInputField
+                    form={form}
+                    name="username"
+                    label={tCommon('fields.username')}
+                    placeholder={tCommon('placeholders.username')}
+                    testId="register-username-input"
+                />
 
-                    <RegisterFormInputField
-                        name="email"
-                        type="email"
-                        label={tCommon('fields.email')}
-                        placeholder={tCommon('placeholders.email')}
-                        testId="register-email-input"
-                    />
+                <RegisterFormInputField
+                    form={form}
+                    name="email"
+                    type="email"
+                    label={tCommon('fields.email')}
+                    placeholder={tCommon('placeholders.email')}
+                    testId="register-email-input"
+                />
 
-                    <RegisterFormInputField
-                        name="password"
-                        type="password"
-                        label={tCommon('fields.password')}
-                        placeholder={tCommon('placeholders.min8Chars')}
-                        testId="register-password-input"
-                    />
+                <RegisterFormInputField
+                    form={form}
+                    name="password"
+                    type="password"
+                    label={tCommon('fields.password')}
+                    placeholder={tCommon('placeholders.min8Chars')}
+                    testId="register-password-input"
+                />
 
-                    <RegisterFormInputField
-                        name="confirmPassword"
-                        type="password"
-                        label={tCommon('fields.confirmPassword')}
-                        placeholder={tCommon('placeholders.confirmPassword')}
-                        testId="register-confirm-password-input"
-                    />
+                <RegisterFormInputField
+                    form={form}
+                    name="confirmPassword"
+                    type="password"
+                    label={tCommon('fields.confirmPassword')}
+                    placeholder={tCommon('placeholders.confirmPassword')}
+                    testId="register-confirm-password-input"
+                />
 
-                    <Button
-                        type="submit"
-                        className="w-full py-6 text-lg font-medium"
-                        data-testid="register-button"
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? tCommon('loading') : t('register')}
-                    </Button>
+                <Button
+                    type="submit"
+                    className="w-full py-6 text-lg font-medium"
+                    data-testid="register-button"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? tCommon('loading') : t('register')}
+                </Button>
 
-                    <div className="text-center mt-4">
-                        <p className="text-sm text-muted-foreground">
-                            <Link href="/login" prefetch={false}>
-                                {t('alreadyHaveAccount')} {t('login')}
-                            </Link>
-                        </p>
-                    </div>
-                </fieldset>
-            </form>
-        </Form>
+                <div className="text-center mt-4">
+                    <p className="text-sm text-muted-foreground">
+                        <Link href="/login" prefetch={false}>
+                            {t('alreadyHaveAccount')} {t('login')}
+                        </Link>
+                    </p>
+                </div>
+            </fieldset>
+        </form>
     );
 }

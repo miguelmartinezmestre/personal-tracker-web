@@ -60,7 +60,7 @@ async function main() {
     }
     for (const root of roots) visit(root, project.name, projectRef, new Set());
     components.delete(projectRef);
-    const output = process.argv[2] ?? 'artifacts/sbom.cdx.json';
+    const output = process.argv[2] ?? 'reports/verification/sbom.cdx.json';
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(
         output,

@@ -8,7 +8,7 @@ import { requireAdmin } from './utils/requiredAdmin';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { toSessionListItem } from './sessions';
 import { ERROR_CODES } from './utils/constants';
-import { isPlatformSetupUser } from './platform/setup/bootstrap';
+import { isPlatformSetupUser } from './platform/admin/access';
 import type { Id } from './_generated/dataModel';
 import {
     continueUserDeletionCascade as continueUserDeletionCascadeJob,

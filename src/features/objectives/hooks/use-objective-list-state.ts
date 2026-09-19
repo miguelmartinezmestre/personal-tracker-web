@@ -1,6 +1,5 @@
 'use client';
 
-import { usePaginationContinuation } from '@/hooks/use-pagination-continuation';
 import { extractErrorCode } from '@/lib/error-messages';
 import { queryState } from '@/lib/query-state';
 import * as React from 'react';
@@ -51,17 +50,11 @@ export function useObjectiveListState() {
     const referenceNow = useReferenceNow();
     const referenceDay = deadlineRange ? toUtcCivilDay(referenceNow) : undefined;
 
-    const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
-    const { paginationOpts, reset: resetPagination } = pagination;
-    const trashPagination = useServerPagination(DEFAULT_PAGE_SIZE);
-    const { paginationOpts: trashPaginationOpts, reset: resetTrashPagination } = trashPagination;
-
     const scope = JSON.stringify({ filters, referenceDay });
-    const listContinuation = usePaginationContinuation(paginationOpts.cursor, scope);
-    const trashContinuation = usePaginationContinuation(trashPaginationOpts.cursor, 'trash');
-    const { follow: followList, reset: resetListContinuation } = listContinuation;
-    const { follow: followTrash } = trashContinuation;
-    const visiblePaginationOpts = { ...paginationOpts, cursor: listContinuation.cursor };
+    const pagination = useServerPagination(DEFAULT_PAGE_SIZE, scope);
+    const { paginationOpts, reset: resetPagination } = pagination;
+    const trashPagination = useServerPagination(DEFAULT_PAGE_SIZE, 'trash');
+    const { paginationOpts: trashPaginationOpts, reset: resetTrashPagination } = trashPagination;
 
     const listQuery = useQuery(
         convexQuery(
@@ -69,7 +62,7 @@ export function useObjectiveListState() {
             hasSearch
                 ? 'skip'
                 : {
-                      paginationOpts: visiblePaginationOpts,
+                      paginationOpts,
                       status,
                       categoryId,
                       deadlineRange,
@@ -84,7 +77,7 @@ export function useObjectiveListState() {
             hasSearch
                 ? {
                       search: searchText,
-                      paginationOpts: visiblePaginationOpts,
+                      paginationOpts,
                       status,
                       categoryId,
                       deadlineRange,
@@ -95,7 +88,7 @@ export function useObjectiveListState() {
     );
     const trashQuery = useQuery(
         convexQuery(api.objectives.getDeletedObjectives, {
-            paginationOpts: { ...trashPaginationOpts, cursor: trashContinuation.cursor },
+            paginationOpts: trashPaginationOpts,
         })
     );
 
@@ -106,6 +99,8 @@ export function useObjectiveListState() {
     const trashDetails = pageDetails(trashQuery.data);
 
     const objectives = details.rows;
+    const followList = pagination.follow;
+    const followTrash = trashPagination.follow;
     React.useEffect(() => followList(visiblePage), [followList, visiblePage]);
     React.useEffect(() => followTrash(trashQuery.data), [followTrash, trashQuery.data]);
 
@@ -125,9 +120,8 @@ export function useObjectiveListState() {
     React.useEffect(() => {
         if (extractErrorCode(activeQuery.error) === 'INVALID_CURSOR') {
             resetPagination();
-            resetListContinuation();
         }
-    }, [activeQuery.error, resetPagination, resetListContinuation]);
+    }, [activeQuery.error, resetPagination]);
 
     const handleFiltersChange = (nextFilters: FilterOptions) => {
         const shouldResetPagination = JSON.stringify(nextFilters) !== JSON.stringify(filters);
@@ -144,7 +138,6 @@ export function useObjectiveListState() {
         isError,
         retry: () => {
             resetPagination();
-            resetListContinuation();
             void activeQuery.refetch();
             void categoriesQuery.refetch();
         },

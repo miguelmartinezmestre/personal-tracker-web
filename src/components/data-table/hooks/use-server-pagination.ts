@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useCallback, useReducer, useState } from 'react';
 import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 type State = {
@@ -7,6 +7,10 @@ type State = {
 };
 
 type Action = { type: 'next'; cursor: string } | { type: 'prev' } | { type: 'reset' };
+
+type Continuation = { base: string | null; scope: string; cursor: string };
+
+type PageWithContinuation = { needsContinuation?: boolean; continueCursor: string };
 
 function reducer(state: State, action: Action): State {
     switch (action.type) {
@@ -29,12 +33,40 @@ function reducer(state: State, action: Action): State {
     }
 }
 
-export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
+/**
+ * Cursor-stack pagination for data tables with one visible page and previous/next controls.
+ * `follow` skips forward when the backend had to advance a page past rows the actor cannot
+ * see (`needsContinuation`). `scope` resets that continuation when query parameters change.
+ * Use `useConvexPages` instead when the UI accumulates all loaded rows behind "load more".
+ */
+export function useServerPagination(
+    initialPageSize: number = DEFAULT_PAGE_SIZE,
+    scope: string = ''
+) {
     const [state, dispatch] = useReducer(reducer, { currentPage: 0, cursors: [null] });
+    const [continuation, setContinuation] = useState<Continuation | null>(null);
+
+    const baseCursor = state.cursors[state.currentPage] ?? null;
+    if (continuation && (continuation.base !== baseCursor || continuation.scope !== scope)) {
+        setContinuation(null);
+    }
+    const cursor =
+        continuation?.base === baseCursor && continuation.scope === scope
+            ? continuation.cursor
+            : baseCursor;
+
+    const follow = useCallback(
+        (page: PageWithContinuation | undefined) => {
+            if (page?.needsContinuation) {
+                setContinuation({ base: baseCursor, scope, cursor: page.continueCursor });
+            }
+        },
+        [baseCursor, scope]
+    );
 
     const paginationOpts = {
         numItems: initialPageSize,
-        cursor: state.cursors[state.currentPage] ?? null,
+        cursor,
     };
 
     const nextPage = (continueCursor: string | null | undefined, isDone: boolean = false) => {
@@ -49,6 +81,7 @@ export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE)
     };
 
     const reset = () => {
+        setContinuation(null);
         dispatch({ type: 'reset' });
     };
 
@@ -60,6 +93,7 @@ export function useServerPagination(initialPageSize: number = DEFAULT_PAGE_SIZE)
         nextPage,
         previousPage,
         reset,
+        follow,
         hasPreviousPage: state.currentPage > 0,
     };
 }

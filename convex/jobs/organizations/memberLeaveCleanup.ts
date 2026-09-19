@@ -5,7 +5,6 @@ import {
     findObjectiveSuccessorOwner,
     reassignOwnedObjective,
 } from '../../domain/objectives/collaborators';
-import { workflow } from '../../workflow';
 
 const COLLABORATOR_BATCH_SIZE = 50;
 const OBJECTIVE_BATCH_SIZE = 10;
@@ -54,10 +53,6 @@ async function retireObjectiveWithoutSuccessor(
     const objective = await ctx.db.get('objectives', objectiveId);
     if (!objective) {
         return;
-    }
-
-    if (objective.workflowId) {
-        await workflow.cancel(ctx, objective.workflowId);
     }
 
     const now = Date.now();

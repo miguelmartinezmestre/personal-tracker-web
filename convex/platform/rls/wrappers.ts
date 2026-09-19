@@ -15,7 +15,7 @@ import {
     type QueryCtx,
 } from '../../_generated/server';
 import type { Id } from '../../_generated/dataModel';
-import { auditLogTriggers } from '../audit/triggers';
+import { domainTriggers } from '../db/domainTriggers';
 import { resolveAuthContext } from './authContext';
 import { createRlsRules } from './policies';
 
@@ -62,7 +62,7 @@ async function buildQueryRlsCtx(ctx: QueryCtx): Promise<QueryRlsCtx> {
 
 async function buildMutationRlsCtx(ctx: MutationCtx): Promise<MutationRlsCtx> {
     const { userId, email, organizationId, role, memberRole } = await resolveAuthContext(ctx);
-    const triggerDb = auditLogTriggers.wrapDB({
+    const triggerDb = domainTriggers.wrapDB({
         ...ctx,
         db: ctx.db,
         userId,

@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import {
     createTestUser,
     loginUser,
@@ -91,19 +91,6 @@ async function clearBrowserSession(page: Page) {
     });
 }
 
-async function seedAchievementsAsAdmin(page: Page) {
-    await page.goto('/dashboard/achievements');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    const seedButton = page.getByTestId('achievements-seed-button');
-    if (await isVisibleNow(seedButton)) {
-        console.log('Initializing achievement definitions with admin user...');
-        await seedButton.click();
-        await expect(seedButton).toBeHidden({ timeout: 15000 });
-    }
-}
-
 test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
     test.setTimeout(180000);
 
@@ -111,7 +98,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.setViewportSize({ width: 1440, height: 900 });
 
         const adminUser = await createAdminSession(page);
-        await seedAchievementsAsAdmin(page);
         await clearBrowserSession(page);
 
         console.log('\nSECTION 1: Landing Page & Public Pages\n');
@@ -490,18 +476,6 @@ test.describe('TFG Feature Walkthrough - Complete Documentation', () => {
         await page.goto('/dashboard/achievements');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(1000);
-
-        const seedButton = page.getByTestId('achievements-seed-button');
-        const initButton = page.locator('button:has-text("Initialize")').or(seedButton);
-        if (await isVisibleNow(initButton.first())) {
-            console.log('Initializing achievements...');
-            await initButton.first().click();
-            await page.waitForTimeout(3000);
-            await page.reload();
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(1000);
-            console.log('Achievements initialized');
-        }
 
         await takeTFGScreenshot(
             page,

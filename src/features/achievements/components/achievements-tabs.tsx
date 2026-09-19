@@ -59,7 +59,7 @@ export function AchievementsTabs({
                     >
                         {individualAchievements.map(achievement => (
                             <AchievementCard
-                                key={achievement.definition._id}
+                                key={achievement.definition.code}
                                 definition={achievement.definition}
                                 currentProgress={achievement.currentProgress}
                                 isEarned={achievement.isEarned}
@@ -89,7 +89,7 @@ export function AchievementsTabs({
                     >
                         {organizationAchievements.map(achievement => (
                             <AchievementCard
-                                key={achievement.definition._id}
+                                key={achievement.definition.code}
                                 definition={achievement.definition}
                                 currentProgress={achievement.currentProgress}
                                 isEarned={achievement.isEarned}

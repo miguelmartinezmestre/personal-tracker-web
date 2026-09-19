@@ -85,8 +85,9 @@ export default function EditObjectiveFormModal({
             pendingLabel={tCommon('loading')}
             submitTestId="objective-edit-save-button"
         >
-            {() => (
+            {form => (
                 <ObjectiveFormFields
+                    form={form}
                     mode="edit"
                     categoryOptions={categoryOptions}
                     categoriesLoading={categoriesQuery.isLoading}

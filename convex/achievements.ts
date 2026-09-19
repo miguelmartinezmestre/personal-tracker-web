@@ -7,25 +7,28 @@ import {
     calculateOrganizationStreak,
     isEarlyBirdCompletion,
 } from './domain/achievements/calculations';
-import { internalQueryWithRLS, mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
+import { internalQueryWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { achievementTypeValidator, achievementTriggerValidator } from './utils/validators';
 import {
     checkOrganizationAchievementsJob,
     checkUserAchievementsJob,
     notifyOrganizationAchievementMembersJob,
-    seedAchievementDefinitionsJob,
 } from './jobs/achievements/checks';
-import { getAchievementRule, type AchievementMetricKey } from './domain/achievements/definitions';
+import {
+    ACHIEVEMENT_DEFINITIONS,
+    getAchievementDefinition,
+    getAchievementRule,
+    toAchievementDefinitionView,
+    type AchievementMetricKey,
+} from './domain/achievements/definitions';
 import {
     achievementProgressItemValidator,
     achievementStatsValidator,
     organizationAchievementWithDefinitionValidator,
-    seedAchievementsResultValidator,
     userAchievementWithDefinitionValidator,
 } from './utils/apiReturnValidators';
 import { achievementDefinitionDocumentValidator } from './utils/documentValidators';
 const LIST_LIMIT = 1000;
-const EARLY_BIRD_BACKFILL_BATCH_SIZE = 50;
 type AchievementMetricSnapshot = Record<AchievementMetricKey, number>;
 function getMetricThresholdLimit(
     definitions: Array<{
@@ -100,15 +103,11 @@ export const getAchievementDefinitions = internalQueryWithRLS({
         type: v.optional(achievementTypeValidator),
     },
     returns: v.array(achievementDefinitionDocumentValidator),
-    handler: async (ctx, args) => {
+    handler: (_ctx, args) => {
         const typeFilter = args.type;
-        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        if (typeFilter) {
-            return definitions.filter(
-                definition => definition.type === typeFilter && definition.isActive
-            );
-        }
-        return definitions.filter(definition => definition.isActive);
+        return ACHIEVEMENT_DEFINITIONS.filter(
+            definition => typeFilter === undefined || definition.type === typeFilter
+        ).map(toAchievementDefinitionView);
     },
 });
 export const getUserAchievements = internalQueryWithRLS({
@@ -120,14 +119,17 @@ export const getUserAchievements = internalQueryWithRLS({
             .query('obtainedAchievements')
             .withIndex('by_user', q => q.eq('userId', userId))
             .take(LIST_LIMIT);
-        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
         const achievementsWithDetails = obtainedAchievements.map(obtainedAchievement => ({
             ...obtainedAchievement,
-            definition: definitionById.get(obtainedAchievement.achievement),
+            definition: getAchievementDefinition(obtainedAchievement.achievement),
             user: obtainedAchievement.userId,
         }));
-        return achievementsWithDetails;
+        return achievementsWithDetails.map(achievement => ({
+            ...achievement,
+            definition: achievement.definition
+                ? toAchievementDefinitionView(achievement.definition)
+                : undefined,
+        }));
     },
 });
 export const getOrganizationAchievements = internalQueryWithRLS({
@@ -142,13 +144,16 @@ export const getOrganizationAchievements = internalQueryWithRLS({
                 q.eq('organization', args.organizationId)
             )
             .take(LIST_LIMIT);
-        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
         const achievementsWithDetails = organizationAchievements.map(organizationAchievement => ({
             ...organizationAchievement,
-            definition: definitionById.get(organizationAchievement.achievement),
+            definition: getAchievementDefinition(organizationAchievement.achievement),
         }));
-        return achievementsWithDetails;
+        return achievementsWithDetails.map(achievement => ({
+            ...achievement,
+            definition: achievement.definition
+                ? toAchievementDefinitionView(achievement.definition)
+                : undefined,
+        }));
     },
 });
 export const getUserAchievementStats = queryWithRLS({
@@ -160,18 +165,14 @@ export const getUserAchievementStats = queryWithRLS({
             .query('obtainedAchievements')
             .withIndex('by_user', q => q.eq('userId', userId))
             .take(LIST_LIMIT);
-        const allDefinitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const definitionById = new Map(
-            allDefinitions.map(definition => [definition._id, definition])
-        );
         let totalPoints = 0;
         for (const obtainedAchievement of obtainedAchievements) {
-            const definition = definitionById.get(obtainedAchievement.achievement);
+            const definition = getAchievementDefinition(obtainedAchievement.achievement);
             if (definition) {
                 totalPoints += definition.points;
             }
         }
-        const individualDefinitions = allDefinitions.filter(
+        const individualDefinitions = ACHIEVEMENT_DEFINITIONS.filter(
             definition => definition.type === 'individual'
         );
         return {
@@ -195,10 +196,9 @@ export const getRecentAchievements = queryWithRLS({
             .withIndex('by_user', q => q.eq('userId', userId))
             .order('desc')
             .take(limit);
-        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const definitionById = new Map(definitions.map(definition => [definition._id, definition]));
         const achievementsWithDetails = obtainedAchievements
-            .map(obtainedAchievement => definitionById.get(obtainedAchievement.achievement))
+            .map(obtainedAchievement => getAchievementDefinition(obtainedAchievement.achievement))
+            .map(definition => (definition ? toAchievementDefinitionView(definition) : undefined))
             .filter(
                 (definition): definition is NonNullable<typeof definition> =>
                     definition !== undefined
@@ -212,28 +212,18 @@ export const getUserAchievementProgress = queryWithRLS({
     handler: async ctx => {
         const userId = ctx.userId;
         const organizationId = ctx.organizationId;
-        const definitions = await ctx.db.query('achievementDefinitions').take(LIST_LIMIT);
-        const individualDefinitions = definitions.filter(
+        const individualDefinitions = ACHIEVEMENT_DEFINITIONS.filter(
             definition => definition.type === 'individual'
         );
         const organizationDefinitions = organizationId
-            ? definitions.filter(definition => definition.type === 'organization')
+            ? ACHIEVEMENT_DEFINITIONS.filter(definition => definition.type === 'organization')
             : [];
-        const activeIndividualDefinitions = individualDefinitions.filter(
-            definition => definition.isActive
-        );
-        const activeOrganizationDefinitions = organizationDefinitions.filter(
-            definition => definition.isActive
-        );
-        const activeDefinitions = [
-            ...activeIndividualDefinitions,
-            ...activeOrganizationDefinitions,
-        ];
+        const activeDefinitions = [...individualDefinitions, ...organizationDefinitions];
         const obtainedAchievements = await ctx.db
             .query('obtainedAchievements')
             .withIndex('by_user', q => q.eq('userId', userId))
             .take(LIST_LIMIT);
-        const earnedIds = new Set(
+        const earnedCodes = new Set(
             obtainedAchievements.map(obtainedAchievement => obtainedAchievement.achievement)
         );
         const organizationAchievements = organizationId
@@ -244,7 +234,7 @@ export const getUserAchievementProgress = queryWithRLS({
                   )
                   .take(LIST_LIMIT)
             : [];
-        const organizationEarnedIds = new Set(
+        const organizationEarnedCodes = new Set(
             organizationAchievements.map(
                 organizationAchievement => organizationAchievement.achievement
             )
@@ -254,27 +244,27 @@ export const getUserAchievementProgress = queryWithRLS({
         // count is equivalent for every achievement card and keeps each read
         // bounded even for organizations with a long history.
         const objectivesCreatedLimit = getMetricThresholdLimit(
-            activeIndividualDefinitions,
+            individualDefinitions,
             'objectivesCreated'
         );
         const objectivesCompletedLimit = getMetricThresholdLimit(
-            activeIndividualDefinitions,
+            individualDefinitions,
             'objectivesCompleted'
         );
         const earlyBirdLimit = getMetricThresholdLimit(
-            activeIndividualDefinitions,
+            individualDefinitions,
             'earlyBirdCompletions'
         );
         const progressUpdatesLimit = getMetricThresholdLimit(
-            activeIndividualDefinitions,
+            individualDefinitions,
             'progressUpdates'
         );
         const organizationObjectivesCreatedLimit = getMetricThresholdLimit(
-            activeOrganizationDefinitions,
+            organizationDefinitions,
             'organizationObjectivesCreated'
         );
         const organizationObjectivesCompletedLimit = getMetricThresholdLimit(
-            activeOrganizationDefinitions,
+            organizationDefinitions,
             'organizationObjectivesCompleted'
         );
         const globalUserMetrics = await ctx.runQuery(
@@ -315,15 +305,15 @@ export const getUserAchievementProgress = queryWithRLS({
                 definition.type === 'organization'
                     ? organizationAchievements.find(
                           organizationAchievement =>
-                              organizationAchievement.achievement === definition._id
+                              organizationAchievement.achievement === definition.code
                       )
                     : obtainedAchievements.find(
-                          obtainedAchievement => obtainedAchievement.achievement === definition._id
+                          obtainedAchievement => obtainedAchievement.achievement === definition.code
                       );
             const isEarned =
                 definition.type === 'organization'
-                    ? organizationEarnedIds.has(definition._id)
-                    : earnedIds.has(definition._id);
+                    ? organizationEarnedCodes.has(definition.code)
+                    : earnedCodes.has(definition.code);
             const rule = getAchievementRule(definition.code);
             const measuredProgress = rule ? metrics[rule.metricKey] : 0;
             // Award records are authoritative. A completed batched evaluator
@@ -333,7 +323,7 @@ export const getUserAchievementProgress = queryWithRLS({
                 ? Math.max(measuredProgress, definition.threshold)
                 : measuredProgress;
             return {
-                definition,
+                definition: toAchievementDefinitionView(definition),
                 currentProgress,
                 isEarned,
                 earnedAt: isEarned ? earnedAchievement?.earnedAt : undefined,
@@ -364,18 +354,12 @@ export const getUnviewedAchievementsCount = internalQueryWithRLS({
         return notifications.length;
     },
 });
-export const seedAchievementDefinitionsInternal = internalMutation({
-    returns: seedAchievementsResultValidator,
-    args: {},
-    handler: async ctx => {
-        return await seedAchievementDefinitionsJob(ctx);
-    },
-});
 /**
  * Migrates objectives created before `earlyBirdCompleted` was materialized.
  * The indexed undefined bucket shrinks after every patch, so each invocation
  * is bounded and no cursor can be invalidated by the writes.
  */
+const EARLY_BIRD_BACKFILL_BATCH_SIZE = 50;
 export const backfillObjectiveEarlyBirdFacts = internalMutation({
     returns: v.object({
         status: v.union(v.literal('in_progress'), v.literal('completed')),
@@ -401,19 +385,6 @@ export const backfillObjectiveEarlyBirdFacts = internalMutation({
             return { status: 'in_progress' as const, processed: objectives.length };
         }
         return { status: 'completed' as const, processed: objectives.length };
-    },
-});
-export const seedAchievementDefinitions = mutationWithRLS({
-    args: {},
-    returns: seedAchievementsResultValidator,
-    handler: async (
-        ctx
-    ): Promise<{
-        message: string;
-        count: number;
-    }> => {
-        await ctx.runQuery(internal.setup.requireAdminInternal, { userId: ctx.userId });
-        return await ctx.runMutation(internal.achievements.seedAchievementDefinitionsInternal, {});
     },
 });
 export const checkUserAchievements = internalMutation({

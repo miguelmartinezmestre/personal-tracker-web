@@ -15,7 +15,6 @@ const achievementTierSchema = z.enum([
 ]);
 
 const achievementDefinitionSchema = z.object({
-    _id: z.string(),
     code: z.string(),
     type: achievementTypeSchema,
     category: achievementCategorySchema,
@@ -23,9 +22,6 @@ const achievementDefinitionSchema = z.object({
     threshold: z.number(),
     icon: z.string(),
     points: z.number(),
-    isActive: z.boolean(),
-    createdAt: z.number(),
-    updatedAt: z.number(),
 });
 
 const achievementProgressSchema = z.object({

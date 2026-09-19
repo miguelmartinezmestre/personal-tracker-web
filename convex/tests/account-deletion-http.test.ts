@@ -33,7 +33,7 @@ function extractCookie(response: Response): string {
 }
 
 describe('soft-delete Better Auth endpoint', () => {
-    const t = initConvexTest({ workflow: false });
+    const t = initConvexTest();
 
     async function createCredentialUser(role: 'user' | 'globalAdmin' = 'user') {
         const suffix = Math.random().toString(36).slice(2, 10);

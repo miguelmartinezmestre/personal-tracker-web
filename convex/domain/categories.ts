@@ -70,6 +70,13 @@ function normalizeCategoryName(name: string) {
     return normalizeRequiredBoundedString(name, CATEGORY_NAME_MAX_LENGTH);
 }
 
+function preserveForbiddenError(error: unknown): never {
+    if (String(error).toLowerCase().includes('write access not allowed')) {
+        throw new ConvexError(ERROR_CODES.FORBIDDEN);
+    }
+    throw error;
+}
+
 async function findCategoryByOrganizationAndName(
     ctx: CategoryQueryCtx,
     organizationId: Id<'organization'>,
@@ -144,10 +151,6 @@ export async function updateCategoryForCurrentOrganization(
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
 
-    if (!categoryCapabilities(ctx, existing).canEdit) {
-        throw new ConvexError(ERROR_CODES.FORBIDDEN);
-    }
-
     const patch: {
         name?: string;
         color?: string;
@@ -181,7 +184,11 @@ export async function updateCategoryForCurrentOrganization(
         patch.icon = args.icon ?? undefined;
     }
 
-    await ctx.db.patch('categories', categoryId, patch);
+    try {
+        await ctx.db.patch('categories', categoryId, patch);
+    } catch (error) {
+        preserveForbiddenError(error);
+    }
 }
 
 export async function deleteCategoryForCurrentOrganization(
@@ -193,6 +200,8 @@ export async function deleteCategoryForCurrentOrganization(
         throw new ConvexError(ERROR_CODES.CATEGORY_NOT_FOUND);
     }
 
+    // The integrity reader intentionally bypasses RLS. Check the capability before
+    // using it so a failed delete cannot reveal references from another owner.
     if (!categoryCapabilities(ctx, category).canDelete) {
         throw new ConvexError(ERROR_CODES.FORBIDDEN);
     }
@@ -206,7 +215,11 @@ export async function deleteCategoryForCurrentOrganization(
         throw new ConvexError(ERROR_CODES.CATEGORY_HAS_OBJECTIVES);
     }
 
-    await ctx.db.delete('categories', args.id);
+    try {
+        await ctx.db.delete('categories', args.id);
+    } catch (error) {
+        preserveForbiddenError(error);
+    }
 }
 
 export async function createDefaultCategoriesForCurrentOrganization(ctx: CategoryMutationCtx) {

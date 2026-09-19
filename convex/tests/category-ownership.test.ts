@@ -92,4 +92,52 @@ describe('shared category ownership', () => {
         await admin.mutation(api.categories.deleteCategory, { id: categoryId });
         expect(await t.run(ctx => ctx.db.get('categories', categoryId))).toBeNull();
     });
+
+    test('a global administrator can edit and delete a category in another organization', async () => {
+        const suffix = ++sequence;
+        const owner = await createTestUser(t, {
+            userId: `category-owner-${suffix}`,
+            email: `category-owner-${suffix}@example.test`,
+            name: 'Category owner',
+            role: 'user',
+        });
+        const organizationId = await createTestOrganization(t, {
+            name: `Category organization ${suffix}`,
+            slug: `category-organization-${suffix}`,
+        });
+        await createTestMember(t, {
+            organizationId,
+            userId: owner.docId,
+            role: 'owner',
+        });
+        const ownerIdentity = t.withIdentity(identityFor(owner));
+        const categoryId = await ownerIdentity.mutation(api.categories.createCategory, {
+            name: 'Global administration',
+            color: '#123456',
+        });
+        const globalAdmin = await createTestUser(t, {
+            userId: `category-global-admin-${suffix}`,
+            email: `category-global-admin-${suffix}@example.test`,
+            name: 'Global administrator',
+            role: 'globalAdmin',
+        });
+        const globalAdminOrganizationId = await createTestOrganization(t, {
+            name: `Global administrator organization ${suffix}`,
+            slug: `global-administrator-organization-${suffix}`,
+        });
+        await createTestMember(t, {
+            organizationId: globalAdminOrganizationId,
+            userId: globalAdmin.docId,
+            role: 'owner',
+        });
+        const globalAdminIdentity = t.withIdentity(identityFor(globalAdmin));
+
+        await globalAdminIdentity.mutation(api.categories.updateCategory, {
+            id: categoryId,
+            name: 'Global administration updated',
+        });
+        await globalAdminIdentity.mutation(api.categories.deleteCategory, { id: categoryId });
+
+        expect(await t.run(ctx => ctx.db.get('categories', categoryId))).toBeNull();
+    });
 });

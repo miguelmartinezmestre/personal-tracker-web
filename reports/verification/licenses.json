@@ -23,18 +23,6 @@
       "description": "Runtime library for TypeScript helper functions"
     }
   ],
-  "AGPL-3.0-or-later": [
-    {
-      "name": "ua-parser-js",
-      "versions": [
-        "2.0.10"
-      ],
-      "license": "AGPL-3.0-or-later",
-      "author": "Faisal Salman",
-      "homepage": "https://uaparser.dev",
-      "description": "Detect Browser, Engine, OS, CPU, and Device type/model from User-Agent & Client Hints data. Supports browser & node.js environment"
-    }
-  ],
   "Apache-2.0": [
     {
       "name": "@chevrotain/cst-dts-gen",
@@ -124,15 +112,6 @@
       "license": "Apache-2.0",
       "homepage": "https://github.com/get-convex/resend#readme",
       "description": "A resend component for Convex."
-    },
-    {
-      "name": "@convex-dev/workflow",
-      "versions": [
-        "0.4.4"
-      ],
-      "license": "Apache-2.0",
-      "homepage": "https://github.com/get-convex/workflow",
-      "description": "Convex component for durably executing workflows."
     },
     {
       "name": "@convex-dev/workpool",
@@ -734,16 +713,6 @@
       "author": "Rebecca Turner",
       "homepage": "https://github.com/iarna/iarna-toml#readme",
       "description": "Better TOML parsing and stringifying all in that familiar JSON interface."
-    },
-    {
-      "name": "async-channel",
-      "versions": [
-        "0.2.0"
-      ],
-      "license": "ISC",
-      "author": "Kyle Cutler",
-      "homepage": "https://github.com/kyle1320/async-channel#readme",
-      "description": "Send asynchronous values across concurrent lines of execution"
     },
     {
       "name": "d3-array",
@@ -3298,16 +3267,6 @@
       "description": "A faster, secure and convenient alternative for JSON.parse"
     },
     {
-      "name": "detect-europe-js",
-      "versions": [
-        "0.1.2"
-      ],
-      "license": "MIT",
-      "author": "Faisal Salman",
-      "homepage": "https://github.com/faisalman/detect-europe-js#readme",
-      "description": "Detect if a user is from a country around the European Union (EU) area"
-    },
-    {
       "name": "detect-node-es",
       "versions": [
         "1.1.0"
@@ -3811,16 +3770,6 @@
       "author": "Mathias Bynens",
       "homepage": "https://github.com/mathiasbynens/is-potential-custom-element-name",
       "description": "Check whether a given string matches the `PotentialCustomElementName` production as defined in the HTML Standard."
-    },
-    {
-      "name": "is-standalone-pwa",
-      "versions": [
-        "0.1.1"
-      ],
-      "license": "MIT",
-      "author": "Faisal Salman",
-      "homepage": "https://github.com/faisalman/is-standalone-pwa#readme",
-      "description": "Detect if PWA is running in standalone mode"
     },
     {
       "name": "is-stream",
@@ -5123,16 +5072,6 @@
       "license": "MIT",
       "homepage": "https://typescript-eslint.io/packages/typescript-eslint",
       "description": "Tooling which enables you to use TypeScript with ESLint"
-    },
-    {
-      "name": "ua-is-frozen",
-      "versions": [
-        "0.1.2"
-      ],
-      "license": "MIT",
-      "author": "Faisal Salman",
-      "homepage": "https://github.com/faisalman/ua-is-frozen#readme",
-      "description": "A freeze-test for your user-agent string"
     },
     {
       "name": "undici",

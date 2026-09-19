@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { convexQuery, useConvexMutation } from '@convex-dev/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 import { useConvexAuth } from 'convex/react';
 import { AchievementsSkeleton } from './achievements-skeleton';
@@ -44,10 +44,6 @@ function AchievementsContent() {
         refetch: retryProgress,
     } = useQuery(convexQuery(api.achievements.getUserAchievementProgress, {}));
 
-    const seedMutation = useMutation({
-        mutationFn: useConvexMutation(api.achievements.seedAchievementDefinitions),
-    });
-
     const isLoading = statsLoading || progressLoading;
 
     if (statsError || progressError) {
@@ -81,8 +77,6 @@ function AchievementsContent() {
         progressEntry => progressEntry.definition.type === 'organization'
     );
 
-    const needsSeeding = progress.length === 0;
-
     return (
         <div
             className="container mx-auto w-full min-w-0 p-4 space-y-6"
@@ -95,19 +89,6 @@ function AchievementsContent() {
                         {t('title')}
                     </h1>
                 </div>
-                {needsSeeding ? (
-                    <div className="w-full sm:w-auto">
-                        <Button
-                            onClick={() => {
-                                seedMutation.mutate({});
-                            }}
-                            disabled={seedMutation.isPending}
-                            data-testid="achievements-seed-button"
-                        >
-                            {seedMutation.isPending ? t('seed.seeding') : t('seed.initialize')}
-                        </Button>
-                    </div>
-                ) : null}
             </div>
 
             <AchievementsStats

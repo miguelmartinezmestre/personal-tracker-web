@@ -340,10 +340,6 @@
         "toast": {
             "unlocked": "¡Logro desbloqueado!",
             "points": "+{points} puntos"
-        },
-        "seed": {
-            "initialize": "Inicializar logros",
-            "seeding": "Inicializando..."
         }
     },
     "Notifications": {
@@ -848,7 +844,7 @@
     },
     "Settings": {
         "dashboard": "Dashboard",
-        "settings": "Configuracion",
+        "settings": "Configuración",
         "account": "Cuenta",
         "passwordSettingsDescription": "Edita tus configuraciones de contraseña aquí.",
         "notificationsPlaceholder": "Cambia tus notificaciones aquí.",
@@ -928,7 +924,7 @@
         "accessDeniedDescription": "No tienes permisos de administrador para acceder a esta función.",
         "usersTable": {
             "empty": "No se encontraron usuarios.",
-            "emptyWithSearch": "No hay usuarios que coincidan con la busqueda.",
+            "emptyWithSearch": "No hay usuarios que coincidan con la búsqueda.",
             "searchPlaceholder": "Buscar usuarios por nombre o correo...",
             "roles": {
                 "admin": "Administrador",
@@ -1132,26 +1128,9 @@
     },
     "UserAgent": {
         "device": "Dispositivo",
-        "iphone": "iPhone",
-        "ipad": "iPad",
-        "androidPhone": "Teléfono Android",
         "smartphone": "Teléfono",
-        "androidTablet": "Tablet Android",
         "tablet": "Tablet",
-        "smartTv": "Smart TV",
-        "wearable": "Dispositivo wearable",
-        "embedded": "Dispositivo embebido",
-        "gameConsole": "Consola de juegos",
-        "windowsPc": "Windows PC",
-        "mac": "Mac",
-        "linuxPc": "Linux PC",
-        "chromebook": "Chromebook",
-        "androidDevice": "Dispositivo Android",
-        "iosDevice": "Dispositivo iOS",
-        "botCrawler": "Bot/Crawler",
-        "unknownOs": "Sistema operativo desconocido",
-        "unknownBrowser": "Navegador desconocido",
-        "descriptionTemplate": "{device} con {os} usando {browser}"
+        "botCrawler": "Bot/Crawler"
     },
     "ObjectiveCard": {
         "perWeek": "por semana",
@@ -1175,28 +1154,8 @@
     "Table": {
         "toggleSorting": "Alternar ordenamiento",
         "noResults": "Sin resultados",
-        "searchPlaceholder": "Buscar en tabla...",
-        "filters": "Filtros",
-        "columnFilters": "Filtros de columna",
-        "noFilterableColumns": "Sin columnas filtrables.",
-        "filterColumn": "Filtrar {column}",
-        "columns": "Columnas",
-        "toggleColumns": "Alternar columnas",
-        "order": "Orden",
-        "columnOrder": "Orden de columnas",
-        "resetOrder": "Restablecer orden",
-        "export": "Exportar",
-        "exportCsv": "Exportar CSV",
-        "exportExcel": "Exportar Excel",
-        "exportSheetName": "Datos",
         "showing": "Mostrando",
-        "to": "a",
-        "ofTotal": "de",
         "rows": "filas",
-        "page": "Página",
-        "of": "de",
-        "first": "Primera",
-        "last": "Última",
         "previous": "Anterior",
         "next": "Siguiente"
     },

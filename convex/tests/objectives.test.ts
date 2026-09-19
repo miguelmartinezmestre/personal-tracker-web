@@ -13,7 +13,7 @@ import type { DataModel, Id } from '../_generated/dataModel';
 import type { TestConvexForDataModel } from 'convex-test';
 
 describe('convex objectives', () => {
-    const t = initConvexTest({ workflow: false });
+    const t = initConvexTest();
 
     let userIdentity: TestConvexForDataModel<DataModel>;
     let userId: Id<'user'>;
@@ -78,9 +78,9 @@ describe('convex objectives', () => {
             expect(before?.status).toBe('active');
 
             // Lowering the target below the current value must complete the
-            // objective immediately. This suite runs with the workflow component
-            // disabled, so completion cannot depend on the async lifecycle
-            // workflow — it must be recomputed synchronously in the mutation.
+            // objective immediately. Completion cannot depend on the queued
+            // reconciliation — it must be recomputed synchronously in the
+            // mutation.
             await userIdentity.mutation(api.objectives.updateObjective, {
                 id: objectiveId,
                 targetValue: 40,

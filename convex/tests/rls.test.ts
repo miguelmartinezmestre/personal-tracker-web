@@ -416,8 +416,6 @@ describe('convex RLS (Row-Level Security)', async () => {
 
     describe('achievements RLS', () => {
         test('all users can read achievement definitions', async () => {
-            await adminIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
-
             const user1Defs = await user1Identity.query(
                 internal.achievements.getAchievementDefinitions,
                 {}
@@ -432,18 +430,14 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('user can only see their own achievements', async () => {
-            await adminIdentity.mutation(api.achievements.seedAchievementDefinitions, {});
             await user1Identity.run(async ctx => {
-                const def = await ctx.db.query('achievementDefinitions').first();
-                if (def) {
-                    await ctx.db.insert('obtainedAchievements', {
-                        userId: user1Id,
-                        achievement: def._id,
-                        earnedAt: Date.now(),
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
+                await ctx.db.insert('obtainedAchievements', {
+                    userId: user1Id,
+                    achievement: 'first_objective',
+                    earnedAt: Date.now(),
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                });
             });
 
             const user1Achievements = await user1Identity.query(

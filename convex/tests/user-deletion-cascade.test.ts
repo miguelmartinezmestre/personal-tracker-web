@@ -9,7 +9,7 @@ import {
 } from './test_helpers';
 
 describe('user deletion cascade', () => {
-    const t = initConvexTest({ workflow: false });
+    const t = initConvexTest();
 
     beforeEach(() => vi.useFakeTimers());
     afterEach(async () => {

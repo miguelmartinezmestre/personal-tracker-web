@@ -52,7 +52,9 @@ export default function CreateCategoryFormModal() {
             cancelTestId="category-cancel-button"
             submitTestId="category-save-button"
         >
-            {() => <CategoryFormFields testIdPrefix="category" showColorDescription />}
+            {form => (
+                <CategoryFormFields form={form} testIdPrefix="category" showColorDescription />
+            )}
         </FormModal>
     );
 }

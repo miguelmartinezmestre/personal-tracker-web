@@ -6,13 +6,13 @@ import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
-    FormField,
+    FieldShell,
+    getFieldError,
     FormItem,
     FormLabel,
     FormControl,
     FormMessage,
-    Form,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import { loginSchema } from '@/features/auth/schemas/login';
 import type { z } from 'zod';
@@ -84,39 +84,41 @@ export default function LoginForm({
     }
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleSignIn);
     return (
-        <Form form={form}>
-            <form
-                action={() => {
-                    void form.handleSubmit();
-                }}
-                className="space-y-6"
-            >
-                {showPasswordResetSuccess && (
-                    <Alert variant="default" className="mb-6">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{tCommon('success')}</AlertTitle>
-                        <AlertDescription>{t('resetPasswordSuccess')}</AlertDescription>
-                    </Alert>
-                )}
+        <form
+            action={() => {
+                void form.handleSubmit();
+            }}
+            className="space-y-6"
+        >
+            {showPasswordResetSuccess && (
+                <Alert variant="default" className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{tCommon('success')}</AlertTitle>
+                    <AlertDescription>{t('resetPasswordSuccess')}</AlertDescription>
+                </Alert>
+            )}
 
-                {loginError && (
-                    <Alert variant="destructive" className="mb-6">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{tCommon('error')}</AlertTitle>
-                        <AlertDescription>{loginError}</AlertDescription>
-                    </Alert>
-                )}
+            {loginError && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{tCommon('error')}</AlertTitle>
+                    <AlertDescription>{loginError}</AlertDescription>
+                </Alert>
+            )}
 
-                <FormField
-                    name="email"
-                    render={({ field }) => (
+            <form.Field name="email">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel className="text-foreground">
                                 {tCommon('fields.email')}
                             </FormLabel>
                             <FormControl>
                                 <Input
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     disabled={!hydrated}
                                     type="email"
                                     placeholder={tCommon('placeholders.email')}
@@ -126,19 +128,26 @@ export default function LoginForm({
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <FormField
-                    name="password"
-                    render={({ field }) => (
+            <form.Field name="password">
+                {field => (
+                    <FieldShell
+                        name={field.name}
+                        error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
+                    >
                         <FormItem>
                             <FormLabel className="text-foreground">
                                 {tCommon('fields.password')}
                             </FormLabel>
                             <FormControl>
                                 <Input
-                                    {...field}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
                                     disabled={!hydrated}
                                     type="password"
                                     placeholder={tCommon('placeholders.password')}
@@ -148,35 +157,35 @@ export default function LoginForm({
                             </FormControl>
                             <FormMessage />
                         </FormItem>
-                    )}
-                />
+                    </FieldShell>
+                )}
+            </form.Field>
 
-                <div className="flex justify-end">
-                    <Link
-                        href="/forget-password"
-                        className="text-sm text-primary hover:text-primary/80 transition-colors"
-                    >
-                        {t('forgotPassword')}
-                    </Link>
-                </div>
-
-                <Button
-                    type="submit"
-                    className="w-full py-6 text-lg font-medium"
-                    disabled={!hydrated || isSubmitting}
-                    data-testid="login-button"
+            <div className="flex justify-end">
+                <Link
+                    href="/forget-password"
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
                 >
-                    {isSubmitting ? tCommon('loading') : t('login')}
-                </Button>
+                    {t('forgotPassword')}
+                </Link>
+            </div>
 
-                <div className="text-center mt-4">
-                    <p className="text-sm text-muted-foreground">
-                        <Link href="/register" prefetch={false}>
-                            {t('noAccount')} {t('register')}
-                        </Link>
-                    </p>
-                </div>
-            </form>
-        </Form>
+            <Button
+                type="submit"
+                className="w-full py-6 text-lg font-medium"
+                disabled={!hydrated || isSubmitting}
+                data-testid="login-button"
+            >
+                {isSubmitting ? tCommon('loading') : t('login')}
+            </Button>
+
+            <div className="text-center mt-4">
+                <p className="text-sm text-muted-foreground">
+                    <Link href="/register" prefetch={false}>
+                        {t('noAccount')} {t('register')}
+                    </Link>
+                </p>
+            </div>
+        </form>
     );
 }

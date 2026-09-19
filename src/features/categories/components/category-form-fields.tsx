@@ -1,12 +1,14 @@
 'use client';
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
     FormDescription,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
+import type { TanStackFormApi } from '@/components/forms/form-types';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -31,10 +33,12 @@ const colorOptions = [
 ] as const;
 const iconOptions = categoryIconSchema.options;
 interface CategoryFormFieldsProps {
+    form: TanStackFormApi;
     testIdPrefix: 'category' | 'category-edit';
     showColorDescription?: boolean;
 }
 export function CategoryFormFields({
+    form,
     testIdPrefix,
     showColorDescription = false,
 }: CategoryFormFieldsProps) {
@@ -42,112 +46,140 @@ export function CategoryFormFields({
     const tCommon = useTranslations('Common');
     return (
         <>
-            <FormField
-                name="name"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{t('fields.name')}</FormLabel>
-                        <FormControl>
-                            <Input
-                                placeholder={t('placeholders.name')}
-                                {...field}
-                                data-testid={`${testIdPrefix}-name-input`}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-
-            <FormField
-                name="color"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{t('fields.color')}</FormLabel>
-                        <Select
-                            value={typeof field.value === 'string' ? field.value : undefined}
-                            onValueChange={field.onChange}
-                        >
+            <form.Field name="name">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FormItem>
+                            <FormLabel>{t('fields.name')}</FormLabel>
                             <FormControl>
-                                <SelectTrigger data-testid={`${testIdPrefix}-color-select`}>
-                                    <SelectValue placeholder={t('fields.color')} />
-                                </SelectTrigger>
+                                <Input
+                                    placeholder={t('placeholders.name')}
+                                    name={field.name}
+                                    value={
+                                        typeof field.state.value === 'string' ||
+                                        typeof field.state.value === 'number'
+                                            ? field.state.value
+                                            : ''
+                                    }
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
+                                    data-testid={`${testIdPrefix}-name-input`}
+                                />
                             </FormControl>
-                            <SelectContent>
-                                {colorOptions.map(option => (
-                                    <SelectItem
-                                        key={option.value}
-                                        value={option.value}
-                                        data-testid={`${testIdPrefix}-color-${option.value}`}
+                            <FormMessage />
+                        </FormItem>
+                    </FieldShell>
+                )}
+            </form.Field>
+
+            <form.Field name="color">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FormItem>
+                            <FormLabel>{t('fields.color')}</FormLabel>
+                            <Select
+                                value={
+                                    typeof field.state.value === 'string'
+                                        ? field.state.value
+                                        : undefined
+                                }
+                                onValueChange={value => field.handleChange(value)}
+                            >
+                                <FormControl>
+                                    <SelectTrigger
+                                        onBlur={field.handleBlur}
+                                        data-testid={`${testIdPrefix}-color-select`}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <div
-                                                className="h-4 w-4 rounded border"
-                                                style={{
-                                                    backgroundColor: option.value,
-                                                }}
-                                            />
-                                            {tCommon(`colors.${option.labelKey}`)}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {showColorDescription && (
-                            <FormDescription>
-                                {tCommon(
-                                    `colors.${colorOptions.find(colorOption => colorOption.value === field.value)?.labelKey ?? 'blue'}`
-                                )}
-                            </FormDescription>
-                        )}
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-
-            <FormField
-                name="icon"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{t('fields.icon')}</FormLabel>
-                        <Select
-                            value={typeof field.value === 'string' ? field.value : 'none'}
-                            onValueChange={value =>
-                                field.onChange(value === 'none' ? undefined : value)
-                            }
-                        >
-                            <FormControl>
-                                <SelectTrigger data-testid={`${testIdPrefix}-icon-select`}>
-                                    <SelectValue placeholder={t('placeholders.selectIcon')} />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="none" data-testid={`${testIdPrefix}-icon-none`}>
-                                    {tCommon('icons.tag')}
-                                </SelectItem>
-                                {iconOptions.map(icon => {
-                                    const IconComponent = getLucideIcon(icon);
-                                    return (
+                                        <SelectValue placeholder={t('fields.color')} />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {colorOptions.map(option => (
                                         <SelectItem
-                                            key={icon}
-                                            value={icon}
-                                            data-testid={`${testIdPrefix}-icon-${icon}`}
+                                            key={option.value}
+                                            value={option.value}
+                                            data-testid={`${testIdPrefix}-color-${option.value}`}
                                         >
                                             <div className="flex items-center gap-2">
-                                                {IconComponent ? (
-                                                    <IconComponent className="h-4 w-4" />
-                                                ) : null}
-                                                {tCommon('icons.' + icon)}
+                                                <div
+                                                    className="h-4 w-4 rounded border"
+                                                    style={{
+                                                        backgroundColor: option.value,
+                                                    }}
+                                                />
+                                                {tCommon(`colors.${option.labelKey}`)}
                                             </div>
                                         </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {showColorDescription && (
+                                <FormDescription>
+                                    {tCommon(
+                                        `colors.${colorOptions.find(colorOption => colorOption.value === field.state.value)?.labelKey ?? 'blue'}`
+                                    )}
+                                </FormDescription>
+                            )}
+                            <FormMessage />
+                        </FormItem>
+                    </FieldShell>
                 )}
-            />
+            </form.Field>
+
+            <form.Field name="icon">
+                {field => (
+                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FormItem>
+                            <FormLabel>{t('fields.icon')}</FormLabel>
+                            <Select
+                                value={
+                                    typeof field.state.value === 'string'
+                                        ? field.state.value
+                                        : 'none'
+                                }
+                                onValueChange={value =>
+                                    field.handleChange(value === 'none' ? undefined : value)
+                                }
+                            >
+                                <FormControl>
+                                    <SelectTrigger
+                                        onBlur={field.handleBlur}
+                                        data-testid={`${testIdPrefix}-icon-select`}
+                                    >
+                                        <SelectValue placeholder={t('placeholders.selectIcon')} />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem
+                                        value="none"
+                                        data-testid={`${testIdPrefix}-icon-none`}
+                                    >
+                                        {tCommon('icons.tag')}
+                                    </SelectItem>
+                                    {iconOptions.map(icon => {
+                                        const IconComponent = getLucideIcon(icon);
+                                        return (
+                                            <SelectItem
+                                                key={icon}
+                                                value={icon}
+                                                data-testid={`${testIdPrefix}-icon-${icon}`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {IconComponent ? (
+                                                        <IconComponent className="h-4 w-4" />
+                                                    ) : null}
+                                                    {tCommon('icons.' + icon)}
+                                                </div>
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    </FieldShell>
+                )}
+            </form.Field>
         </>
     );
 }

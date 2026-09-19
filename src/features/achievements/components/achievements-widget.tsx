@@ -140,7 +140,7 @@ export function AchievementsWidget() {
                             <div className="flex flex-wrap gap-2">
                                 {recentAchievements.map((achievement, index) => (
                                     <div
-                                        key={achievement._id}
+                                        key={achievement.code}
                                         className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >

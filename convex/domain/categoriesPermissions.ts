@@ -14,6 +14,8 @@ export function categoryCapabilities(
         actor.role === 'globalAdmin' ||
         actor.memberRole === 'owner' ||
         actor.memberRole === 'admin';
-    const canModify = inOrganization && (category.userId === actor.userId || isAdmin);
+    const canModify =
+        actor.role === 'globalAdmin' ||
+        (inOrganization && (category.userId === actor.userId || isAdmin));
     return { canEdit: canModify, canDelete: canModify };
 }

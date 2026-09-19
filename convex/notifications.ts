@@ -5,10 +5,7 @@ import { internal } from './_generated/api';
 import { mutationWithRLS, queryWithRLS } from './platform/rls/wrappers';
 import { runDeadlineNotificationsJob } from './jobs/notifications/deadlineNotifications';
 import { markAllReadBatchJob } from './jobs/notifications/markAllRead';
-import {
-    assertCanMutateNotification,
-    canReadObjectiveFromNotification,
-} from './domain/notifications/delivery';
+import { canReadObjectiveFromNotification } from './domain/notifications/delivery';
 import { ERROR_CODES } from './utils/constants';
 import {
     objectivesArrayValidator,
@@ -120,7 +117,6 @@ export const setNotificationRead = mutationWithRLS({
         if (!notification) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
-        assertCanMutateNotification(ctx, notification);
         await ctx.db.patch('notifications', args.id, { read: args.read, updatedAt: Date.now() });
         return await ctx.db.get('notifications', args.id);
     },
@@ -167,7 +163,6 @@ export const deleteNotification = mutationWithRLS({
         if (!notification) {
             throw new ConvexError(ERROR_CODES.NOT_AUTHORIZED_NOTIFICATION);
         }
-        assertCanMutateNotification(ctx, notification);
         await ctx.db.delete('notifications', args.id);
         return { success: true };
     },

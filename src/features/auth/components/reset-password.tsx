@@ -3,13 +3,13 @@
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
-    FormField,
+    FieldShell,
+    getFieldError,
     FormItem,
     FormLabel,
     FormControl,
     FormMessage,
-    Form,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import type { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
@@ -76,31 +76,33 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
     const { submit: onSubmit, isSubmitting } = useFormSubmit(handleResetPassword);
 
     return (
-        <Form form={form}>
-            <form
-                action={() => {
-                    void form.handleSubmit();
-                }}
-            >
-                <fieldset disabled={!hydrated} className="min-w-0 space-y-6">
-                    {registerError && (
-                        <Alert variant="destructive" className="mb-6">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>{tCommon('error')}</AlertTitle>
-                            <AlertDescription>{registerError}</AlertDescription>
-                        </Alert>
-                    )}
+        <form
+            action={() => {
+                void form.handleSubmit();
+            }}
+        >
+            <fieldset disabled={!hydrated} className="min-w-0 space-y-6">
+                {registerError && (
+                    <Alert variant="destructive" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>{tCommon('error')}</AlertTitle>
+                        <AlertDescription>{registerError}</AlertDescription>
+                    </Alert>
+                )}
 
-                    <FormField
-                        name="password"
-                        render={({ field }) => (
+                <form.Field name="password">
+                    {field => (
+                        <FieldShell name={field.name} error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel className="text-foreground">
                                     {tCommon('fields.password')}
                                 </FormLabel>
                                 <FormControl>
                                     <Input
-                                        {...field}
+                                        name={field.name}
+                                        value={field.state.value}
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
                                         type="password"
                                         placeholder={tCommon('placeholders.min8Chars')}
                                         className="focus:ring-2 focus:ring-primary/20"
@@ -109,19 +111,23 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}
-                    />
+                        </FieldShell>
+                    )}
+                </form.Field>
 
-                    <FormField
-                        name="confirmPassword"
-                        render={({ field }) => (
+                <form.Field name="confirmPassword">
+                    {field => (
+                        <FieldShell name={field.name} error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel className="text-foreground">
                                     {tCommon('fields.confirmPassword')}
                                 </FormLabel>
                                 <FormControl>
                                     <Input
-                                        {...field}
+                                        name={field.name}
+                                        value={field.state.value}
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
                                         type="password"
                                         placeholder={tCommon('placeholders.confirmPassword')}
                                         className="focus:ring-2 focus:ring-primary/20"
@@ -130,27 +136,27 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}
-                    />
+                        </FieldShell>
+                    )}
+                </form.Field>
 
-                    <Button
-                        type="submit"
-                        className="w-full py-6 text-lg font-medium"
-                        disabled={isSubmitting}
-                        data-testid="reset-password-submit"
-                    >
-                        {isSubmitting ? tCommon('loading') : t('resetPassword')}
-                    </Button>
+                <Button
+                    type="submit"
+                    className="w-full py-6 text-lg font-medium"
+                    disabled={isSubmitting}
+                    data-testid="reset-password-submit"
+                >
+                    {isSubmitting ? tCommon('loading') : t('resetPassword')}
+                </Button>
 
-                    <div className="text-center mt-4">
-                        <p className="text-sm text-muted-foreground">
-                            <Link href="/login" prefetch={false}>
-                                {t('alreadyHaveAccount')} {t('login')}
-                            </Link>
-                        </p>
-                    </div>
-                </fieldset>
-            </form>
-        </Form>
+                <div className="text-center mt-4">
+                    <p className="text-sm text-muted-foreground">
+                        <Link href="/login" prefetch={false}>
+                            {t('alreadyHaveAccount')} {t('login')}
+                        </Link>
+                    </p>
+                </div>
+            </fieldset>
+        </form>
     );
 }

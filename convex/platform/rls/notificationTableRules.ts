@@ -103,11 +103,6 @@ export function notificationTableRules(helpers: RlsHelpers) {
             insert: rlsDeny,
             modify: rlsDeny,
         },
-        achievementDefinitions: {
-            read: rlsAllow,
-            insert: () => rlsWhen(isGlobalAdmin),
-            modify: () => rlsWhen(isGlobalAdmin),
-        },
         obtainedAchievements: {
             read: async (_ctx: QueryLike, achievement: Doc<'obtainedAchievements'>) => {
                 if (isGlobalAdmin) {

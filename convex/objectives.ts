@@ -15,7 +15,6 @@ import { assertValidReferenceTimestamp } from './utils/queryTime';
 import { validateObjectiveMetrics } from './domain/objectives/metrics';
 import { getCategoryForObjective } from './domain/objectives/access';
 import { deadlineRangeValidator } from './domain/objectives/filters';
-import { workflow } from './workflow';
 import { listObjectives, searchObjectives, searchObjectivesPage } from './domain/objectives/list';
 import {
     continueObjectiveDeletion,
@@ -423,9 +422,6 @@ export const deleteObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
         }
         await assertObjectiveAction(ctx, objective, 'delete');
-        if (objective.workflowId) {
-            await workflow.cancel(ctx, objective.workflowId);
-        }
         const now = Date.now();
         await ctx.db.patch('objectives', args.id, {
             deletedAt: now,
@@ -618,9 +614,6 @@ export const purgeObjective = mutationWithRLS({
             throw new ConvexError(ERROR_CODES.OBJECTIVE_PURGE_IN_PROGRESS);
         }
         await assertObjectiveAction(ctx, objective, 'purge');
-        if (objective.workflowId) {
-            await workflow.cancel(ctx, objective.workflowId);
-        }
         const now = Date.now();
         const purgeToken = `${now.toString(36)}-${Math.random().toString(36).slice(2)}`;
         await ctx.db.patch('objectives', args.id, {

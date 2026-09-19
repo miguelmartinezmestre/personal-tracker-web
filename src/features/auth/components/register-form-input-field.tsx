@@ -1,15 +1,18 @@
 'use client';
 
 import {
+    FieldShell,
+    getFieldError,
     FormControl,
-    FormField,
     FormItem,
     FormLabel,
     FormMessage,
-} from '@/components/ui/form-tanstack';
+} from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
+import type { TanStackFormApi } from '@/components/forms/form-types';
 
 interface RegisterFormInputFieldProps {
+    form: TanStackFormApi;
     name: 'username' | 'email' | 'password' | 'confirmPassword';
     label: string;
     placeholder: string;
@@ -18,6 +21,7 @@ interface RegisterFormInputFieldProps {
 }
 
 export function RegisterFormInputField({
+    form,
     name,
     label,
     placeholder,
@@ -25,23 +29,32 @@ export function RegisterFormInputField({
     testId,
 }: RegisterFormInputFieldProps) {
     return (
-        <FormField
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-foreground">{label}</FormLabel>
-                    <FormControl>
-                        <Input
-                            {...field}
-                            type={type}
-                            placeholder={placeholder}
-                            className="focus:ring-2 focus:ring-primary/20"
-                            data-testid={testId}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
+        <form.Field name={name}>
+            {field => (
+                <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FormItem>
+                        <FormLabel className="text-foreground">{label}</FormLabel>
+                        <FormControl>
+                            <Input
+                                name={field.name}
+                                value={
+                                    typeof field.state.value === 'string' ||
+                                    typeof field.state.value === 'number'
+                                        ? field.state.value
+                                        : ''
+                                }
+                                onChange={event => field.handleChange(event.target.value)}
+                                onBlur={field.handleBlur}
+                                type={type}
+                                placeholder={placeholder}
+                                className="focus:ring-2 focus:ring-primary/20"
+                                data-testid={testId}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FieldShell>
             )}
-        />
+        </form.Field>
     );
 }

@@ -27,7 +27,7 @@ export const syncObjectiveFromProgress = internalMutation({
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.objectiveId);
         // A queued reconciliation may run after an objective was soft-deleted
-        // or entered its purge workflow. It must not mutate metrics or recreate
+        // or entered its purge. It must not mutate metrics or recreate
         // notifications for a logically absent objective.
         if (
             !objective ||
@@ -49,7 +49,7 @@ export const syncObjectiveFromProgress = internalMutation({
         const { currentValue, status, completedNow, earlyBirdCompletedNow, reopened } =
             await transitionObjective(ctx, objective._id, {
                 actorUserId: args.actorUserId ?? objective.ownerId,
-                synchronizeWorkflow: false,
+                scheduleReconciliation: false,
             });
         return {
             found: true as const,

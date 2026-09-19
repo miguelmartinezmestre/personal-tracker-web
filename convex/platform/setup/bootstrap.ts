@@ -3,15 +3,10 @@ import type { ObjectType } from 'convex/values';
 import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
-import { seedAchievementDefinitionsJob } from '../../jobs/achievements/checks';
-import type {
-    completeSetupArgsValidator,
-    ensureTestOrganizationInternalArgsValidator,
-} from './validators';
-import { GLOBAL_ADMIN_ROLE, isGlobalAdminRole } from '../../../shared/platform-roles';
+import type { completeSetupArgsValidator } from './validators';
+import { GLOBAL_ADMIN_ROLE } from '../../../shared/platform-roles';
 import { isPersonalOrganizationForUser } from '../../domain/organizations/personalOrganization';
 import { buildOrganizationSlug } from '../../../shared/organization-slug';
-import { isActiveAccount } from '../../domain/organizations/operational';
 import {
     CATEGORY_COLOR_PATTERN,
     CATEGORY_ICONS,
@@ -19,8 +14,6 @@ import {
 } from '../../../shared/input-constraints';
 
 type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
-
-type EnsureTestOrganizationArgs = ObjectType<typeof ensureTestOrganizationInternalArgsValidator>;
 
 const SETUP_LIMITS = {
     NAME_MAX: 100,
@@ -80,16 +73,6 @@ export async function getPublicSettings(ctx: { db: DatabaseReader }) {
         defaultLanguage: settings.defaultLanguage,
         registrationPolicy: settings.registrationPolicy,
     };
-}
-
-export async function isPlatformSetupUser(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
-    const settings = await ctx.db.query('platformSettings').first();
-    return settings?.setupCompletedBy === userId;
-}
-
-export async function getPlatformSetupUserId(ctx: { db: DatabaseReader }) {
-    const settings = await ctx.db.query('platformSettings').first();
-    return settings?.setupCompletedBy ?? null;
 }
 
 export async function completePlatformSetup(
@@ -212,8 +195,6 @@ export async function completePlatformSetup(
         });
     }
 
-    await seedAchievementDefinitionsJob(ctx);
-
     await ctx.db.insert('platformSettings', {
         platformName: args.platformName,
         defaultLanguage: args.defaultLanguage,
@@ -223,99 +204,4 @@ export async function completePlatformSetup(
     });
 
     return { success: true, organizationId };
-}
-
-export async function getUserById(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
-    return await ctx.db.get('user', userId);
-}
-
-export async function requireAdminUser(ctx: { db: DatabaseReader }, userId: Id<'user'>) {
-    const user = await ctx.db.get('user', userId);
-    if (!user || !isActiveAccount(user, Date.now()) || !isGlobalAdminRole(user.role)) {
-        throw new ConvexError(ERROR_CODES.FORBIDDEN);
-    }
-    return user;
-}
-
-export async function ensureTestOrganizationForUser(
-    ctx: MutationCtx,
-    args: EnsureTestOrganizationArgs
-) {
-    const userId = args.userId;
-    const now = Date.now();
-
-    const currentSession = await ctx.db
-        .query('session')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .order('desc')
-        .first();
-
-    let membership = await ctx.db
-        .query('member')
-        .withIndex('userId', q => q.eq('userId', userId))
-        .first();
-
-    let organizationId: Id<'organization'>;
-
-    if (membership) {
-        organizationId = membership.organizationId;
-    } else {
-        const suffix = Math.random().toString(36).slice(2, 10);
-        const organizationName = args.organizationName ?? `Test Org ${suffix}`;
-        organizationId = await ctx.db.insert('organization', {
-            name: organizationName,
-            slug: buildOrganizationSlug(organizationName),
-            createdAt: now,
-            metadata: JSON.stringify({
-                description: 'Automatically created for E2E tests',
-            }),
-            logo: null,
-        });
-
-        await ctx.db.insert('member', {
-            organizationId,
-            userId,
-            role: 'owner',
-            createdAt: now,
-        });
-    }
-
-    if (currentSession && currentSession.activeOrganizationId !== organizationId) {
-        await ctx.db.patch('session', currentSession._id, {
-            activeOrganizationId: organizationId,
-        });
-    }
-
-    if (args.createPersonalCategory !== false) {
-        const existingPersonalCategory = await ctx.db
-            .query('categories')
-            .withIndex('by_organization_name', q =>
-                q.eq('organizationId', organizationId).eq('name', 'Personal')
-            )
-            .first();
-
-        if (!existingPersonalCategory) {
-            await ctx.db.insert('categories', {
-                userId,
-                organizationId,
-                name: 'Personal',
-                color: '#3b82f6',
-                icon: 'user',
-                createdAt: now,
-                updatedAt: now,
-            });
-        }
-    }
-
-    membership = await ctx.db
-        .query('member')
-        .withIndex('by_organizationId_and_userId', q =>
-            q.eq('organizationId', organizationId).eq('userId', userId)
-        )
-        .first();
-
-    return {
-        organizationId,
-        memberId: membership?._id ?? null,
-    };
 }
