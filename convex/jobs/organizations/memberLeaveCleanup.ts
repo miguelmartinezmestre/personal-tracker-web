@@ -63,7 +63,6 @@ async function retireObjectiveWithoutSuccessor(
         deletedAt: objective.deletedAt ?? now,
         deletedBy: objective.deletedBy ?? departingUserId,
         purgeToken,
-        purgeStartedAt: objective.purgeStartedAt ?? now,
         ownerDeletionProcessedAt: now,
         updatedAt: now,
     });
@@ -72,9 +71,6 @@ async function retireObjectiveWithoutSuccessor(
         objectiveId,
         purgeToken,
         phase: 'collaborators',
-        cursor: null,
-        totalProgressDeleted: 0,
-        totalNotificationsDeleted: 0,
     });
 }
 

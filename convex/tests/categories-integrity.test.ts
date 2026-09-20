@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, createTestMember } from './test_helpers';
 import type { TestConvexForDataModel } from 'convex-test';
@@ -284,62 +284,6 @@ describe('categories integrity', async () => {
                 ctx.db.get('categories', categoryId)
             );
             expect(updated?.name).toBe('my category');
-        });
-    });
-
-    describe('createDefaultCategories idempotency', () => {
-        test('running createDefaultCategories twice does not create duplicates', async () => {
-            const firstRun = await userIdentity.mutation(
-                internal.categories.createDefaultCategories,
-                {}
-            );
-            expect(firstRun).toHaveLength(9);
-
-            const secondRun = await userIdentity.mutation(
-                internal.categories.createDefaultCategories,
-                {}
-            );
-
-            expect(secondRun).toHaveLength(0);
-
-            const allCategories = await userIdentity.run(async ctx =>
-                ctx.db
-                    .query('categories')
-                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                    .collect()
-            );
-
-            expect(allCategories).toHaveLength(9);
-        });
-
-        test('partial default categories are filled in', async () => {
-            await userIdentity.mutation(api.categories.createCategory, {
-                name: 'Health & Fitness',
-                color: '#10b981',
-                icon: 'heart',
-            });
-
-            await userIdentity.mutation(api.categories.createCategory, {
-                name: 'Career & Business',
-                color: '#3b82f6',
-                icon: 'briefcase',
-            });
-
-            const result = await userIdentity.mutation(
-                internal.categories.createDefaultCategories,
-                {}
-            );
-
-            expect(result).toHaveLength(7);
-
-            const allCategories = await userIdentity.run(async ctx =>
-                ctx.db
-                    .query('categories')
-                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                    .collect()
-            );
-
-            expect(allCategories).toHaveLength(9);
         });
     });
 

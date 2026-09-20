@@ -4,8 +4,6 @@ import {
     achievementTierValidator,
     achievementTypeValidator,
     notificationTypeValidator,
-    objectiveStatusValidator,
-    objectiveVisibilityValidator,
 } from './validators';
 
 const auditPrimitive = v.union(v.string(), v.number(), v.boolean(), v.null());
@@ -35,33 +33,6 @@ export const userDocumentValidator = v.object({
     banReason: v.optional(v.union(v.null(), v.string())),
     banExpires: v.optional(v.union(v.null(), v.number())),
     deletedAt: v.optional(v.number()),
-});
-
-export const objectiveDocumentValidator = v.object({
-    _id: v.id('objectives'),
-    _creationTime: v.number(),
-    organizationId: v.id('organization'),
-    createdBy: v.id('user'),
-    ownerId: v.id('user'),
-    visibility: objectiveVisibilityValidator,
-    title: v.string(),
-    description: v.optional(v.string()),
-    categoryId: v.optional(v.id('categories')),
-    targetValue: v.number(),
-    currentValue: v.number(),
-    startValue: v.optional(v.number()),
-    deadline: v.optional(v.number()),
-    status: objectiveStatusValidator,
-    completedAt: v.optional(v.number()),
-    earlyBirdCompleted: v.optional(v.boolean()),
-    unit: v.optional(v.string()),
-    deletedAt: v.optional(v.number()),
-    deletedBy: v.optional(v.id('user')),
-    purgeToken: v.optional(v.string()),
-    purgeStartedAt: v.optional(v.number()),
-    ownerDeletionProcessedAt: v.optional(v.number()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
 });
 
 export const categoryDocumentValidator = v.object({
@@ -101,20 +72,6 @@ export const notificationDocumentValidator = v.object({
     message: v.string(),
     messageKey: v.optional(v.string()),
     messageParams: v.optional(v.record(v.string(), v.union(v.string(), v.number()))),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-});
-
-export const notificationPreferencesDocumentValidator = v.object({
-    _id: v.id('notificationPreferences'),
-    _creationTime: v.number(),
-    userId: v.id('user'),
-    achievementNotifications: v.boolean(),
-    deadlineNotifications: v.boolean(),
-    progressNotifications: v.boolean(),
-    organizationNotifications: v.boolean(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
 });
 
 export const achievementDefinitionDocumentValidator = v.object({
@@ -125,26 +82,6 @@ export const achievementDefinitionDocumentValidator = v.object({
     threshold: v.number(),
     icon: v.string(),
     points: v.number(),
-});
-
-export const obtainedAchievementDocumentValidator = v.object({
-    _id: v.id('obtainedAchievements'),
-    _creationTime: v.number(),
-    userId: v.id('user'),
-    achievement: v.string(),
-    earnedAt: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-});
-
-export const organizationAchievementDocumentValidator = v.object({
-    _id: v.id('organizationAchievements'),
-    _creationTime: v.number(),
-    organization: v.id('organization'),
-    achievement: v.string(),
-    earnedAt: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
 });
 
 export const auditLogDocumentValidator = v.object({
@@ -163,6 +100,5 @@ export const auditLogDocumentValidator = v.object({
             context: v.optional(v.string()),
         })
     ),
-    severity: v.string(),
     createdAt: v.number(),
 });

@@ -9,13 +9,8 @@ export async function markAllReadBatchJob(
     args: {
         userId: Id<'user'>;
         organizationId: Id<'organization'>;
-        cursor?: string | null;
-        totalProcessed?: number;
     }
-) {
-    const now = Date.now();
-    const totalProcessed = args.totalProcessed ?? 0;
-
+): Promise<null> {
     // Do not advance a cursor over `read=false` while patching that same index
     // field. Process the current prefix repeatedly; each patched row leaves the
     // index, so the next invocation cannot skip unread notifications.
@@ -29,29 +24,14 @@ export async function markAllReadBatchJob(
     for (const notification of notifications) {
         await ctx.db.patch('notifications', notification._id, {
             read: true,
-            updatedAt: now,
         });
     }
-
-    const newTotal = totalProcessed + notifications.length;
 
     if (notifications.length === BATCH_SIZE) {
         await ctx.scheduler.runAfter(0, internal.notifications.markAllReadBatch, {
             userId: args.userId,
             organizationId: args.organizationId,
-            cursor: null,
-            totalProcessed: newTotal,
         });
-        return {
-            status: 'in_progress',
-            processedInBatch: notifications.length,
-            totalProcessed: newTotal,
-        };
     }
-
-    return {
-        status: 'completed',
-        processedInBatch: notifications.length,
-        totalProcessed: newTotal,
-    };
+    return null;
 }

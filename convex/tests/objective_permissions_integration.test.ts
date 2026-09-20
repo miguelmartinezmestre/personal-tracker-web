@@ -228,10 +228,13 @@ describe('objective layered permissions integration', () => {
         });
         expect(editorList.page.some(objective => objective._id === privateObjectiveId)).toBe(false);
 
-        const editorSearch = await editorIdentity.query(api.objectives.searchObjectivesQuery, {
+        const editorSearch = await editorIdentity.query(api.objectives.searchObjectivesPaginated, {
             search: 'Private objective',
+            paginationOpts: { numItems: 10, cursor: null },
         });
-        expect(editorSearch.some(objective => objective._id === privateObjectiveId)).toBe(false);
+        expect(editorSearch.page.some(objective => objective._id === privateObjectiveId)).toBe(
+            false
+        );
 
         const ownerList = await ownerIdentity.query(api.objectives.getObjectives, {
             paginationOpts: { numItems: 10, cursor: null },

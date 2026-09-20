@@ -22,7 +22,6 @@ export type OrganizationDeletionPhase =
 type ContinueOrganizationDeletionArgs = {
     organizationId: Id<'organization'>;
     phase?: OrganizationDeletionPhase;
-    deleteOrganizationRecord?: boolean;
 };
 
 type OrganizationDeletionResult = {
@@ -33,13 +32,11 @@ type OrganizationDeletionResult = {
 async function scheduleNext(
     ctx: MutationCtx,
     organizationId: Id<'organization'>,
-    phase: OrganizationDeletionPhase,
-    deleteOrganizationRecord: boolean
+    phase: OrganizationDeletionPhase
 ) {
     await ctx.scheduler.runAfter(0, internal.admin.continueOrganizationDeletionCascade, {
         organizationId,
         phase,
-        deleteOrganizationRecord,
     });
 }
 
@@ -48,19 +45,17 @@ async function advanceOrganizationDeletionPhase(args: {
     organizationId: Id<'organization'>;
     currentPhase: OrganizationDeletionPhase;
     nextPhase: OrganizationDeletionPhase;
-    deleteOrganizationRecord: boolean;
     rowCount: number;
 }): Promise<OrganizationDeletionResult> {
     const next =
         args.rowCount === ORGANIZATION_DELETION_BATCH_SIZE ? args.currentPhase : args.nextPhase;
-    await scheduleNext(args.ctx, args.organizationId, next, args.deleteOrganizationRecord);
+    await scheduleNext(args.ctx, args.organizationId, next);
     return { status: 'in_progress', phase: next };
 }
 
 async function deleteOrganizationCollaboratorsPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('objectiveCollaborators')
@@ -74,15 +69,13 @@ async function deleteOrganizationCollaboratorsPhase(
         organizationId,
         currentPhase: 'collaborators',
         nextPhase: 'progress',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationProgressPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('progressUpdates')
@@ -96,15 +89,13 @@ async function deleteOrganizationProgressPhase(
         organizationId,
         currentPhase: 'progress',
         nextPhase: 'notifications',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationNotificationsPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('notifications')
@@ -118,15 +109,13 @@ async function deleteOrganizationNotificationsPhase(
         organizationId,
         currentPhase: 'notifications',
         nextPhase: 'objectives',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationObjectivesPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('objectives')
@@ -140,15 +129,13 @@ async function deleteOrganizationObjectivesPhase(
         organizationId,
         currentPhase: 'objectives',
         nextPhase: 'categories',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationCategoriesPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('categories')
@@ -162,45 +149,33 @@ async function deleteOrganizationCategoriesPhase(
         organizationId,
         currentPhase: 'categories',
         nextPhase: 'achievements',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationAchievementsPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
-    const achievement = await ctx.db
+    const rows = await ctx.db
         .query('organizationAchievements')
         .withIndex('by_organization_achievement', q => q.eq('organization', organizationId))
-        .first();
-    if (!achievement) {
-        await scheduleNext(ctx, organizationId, 'audit', deleteOrganizationRecord);
-        return { status: 'in_progress', phase: 'audit' };
-    }
-
-    const contributors = await ctx.db
-        .query('organizationAchievementContributors')
-        .withIndex('by_organizationAchievement_user', q =>
-            q.eq('organizationAchievementId', achievement._id)
-        )
         .take(ORGANIZATION_DELETION_BATCH_SIZE);
-    for (const contributor of contributors) {
-        await ctx.db.delete('organizationAchievementContributors', contributor._id);
+    for (const row of rows) {
+        await ctx.db.delete('organizationAchievements', row._id);
     }
-    if (contributors.length < ORGANIZATION_DELETION_BATCH_SIZE) {
-        await ctx.db.delete('organizationAchievements', achievement._id);
-    }
-    await scheduleNext(ctx, organizationId, 'achievements', deleteOrganizationRecord);
-    return { status: 'in_progress', phase: 'achievements' };
+    return await advanceOrganizationDeletionPhase({
+        ctx,
+        organizationId,
+        currentPhase: 'achievements',
+        nextPhase: 'audit',
+        rowCount: rows.length,
+    });
 }
 
 async function deleteOrganizationAuditPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('auditLogs')
@@ -214,15 +189,13 @@ async function deleteOrganizationAuditPhase(
         organizationId,
         currentPhase: 'audit',
         nextPhase: 'invitations',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationInvitationsPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('invitation')
@@ -236,15 +209,13 @@ async function deleteOrganizationInvitationsPhase(
         organizationId,
         currentPhase: 'invitations',
         nextPhase: 'memberships',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationMembershipsPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const rows = await ctx.db
         .query('member')
@@ -258,15 +229,13 @@ async function deleteOrganizationMembershipsPhase(
         organizationId,
         currentPhase: 'memberships',
         nextPhase: 'sessions',
-        deleteOrganizationRecord,
         rowCount: rows.length,
     });
 }
 
 async function deleteOrganizationAggregatesPhase(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
     const namespaces = await ctx.db
         .query('dashboardNamespaces')
@@ -292,21 +261,14 @@ async function deleteOrganizationAggregatesPhase(
         await ctx.db.delete('dashboardMigrations', state._id);
     }
     const phase = namespaces.length || resyncs.length || state ? 'aggregates' : 'finalize';
-    await scheduleNext(ctx, organizationId, phase, deleteOrganizationRecord);
+    await scheduleNext(ctx, organizationId, phase);
     return { status: 'in_progress', phase };
 }
 
 async function finalizeOrganizationDeletion(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord: boolean
+    organizationId: Id<'organization'>
 ): Promise<OrganizationDeletionResult> {
-    if (deleteOrganizationRecord) {
-        const organization = await ctx.db.get('organization', organizationId);
-        if (organization) {
-            await ctx.db.delete('organization', organizationId);
-        }
-    }
     const remaining = await Promise.all([
         ctx.db
             .query('session')
@@ -382,7 +344,7 @@ async function finalizeOrganizationDeletion(
         if (!phase) {
             throw new Error('Unknown organization residue phase');
         }
-        await scheduleNext(ctx, organizationId, phase, deleteOrganizationRecord);
+        await scheduleNext(ctx, organizationId, phase);
         return { status: 'in_progress', phase };
     }
     return { status: 'completed', phase: 'finalize' };
@@ -390,13 +352,12 @@ async function finalizeOrganizationDeletion(
 
 export async function startOrganizationDeletionCascade(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    deleteOrganizationRecord = false
+    organizationId: Id<'organization'>
 ) {
     if (await ctx.db.get('organization', organizationId)) {
         await ctx.db.delete('organization', organizationId);
     }
-    await scheduleNext(ctx, organizationId, 'collaborators', deleteOrganizationRecord);
+    await scheduleNext(ctx, organizationId, 'collaborators');
 }
 
 export async function continueOrganizationDeletionCascade(
@@ -404,83 +365,38 @@ export async function continueOrganizationDeletionCascade(
     args: ContinueOrganizationDeletionArgs
 ): Promise<OrganizationDeletionResult> {
     const phase = args.phase ?? 'collaborators';
-    const deleteOrganizationRecord = args.deleteOrganizationRecord ?? false;
 
     switch (phase) {
         case 'collaborators':
-            return await deleteOrganizationCollaboratorsPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationCollaboratorsPhase(ctx, args.organizationId);
         case 'progress':
-            return await deleteOrganizationProgressPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationProgressPhase(ctx, args.organizationId);
         case 'notifications':
-            return await deleteOrganizationNotificationsPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationNotificationsPhase(ctx, args.organizationId);
         case 'objectives':
-            return await deleteOrganizationObjectivesPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationObjectivesPhase(ctx, args.organizationId);
         case 'categories':
-            return await deleteOrganizationCategoriesPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationCategoriesPhase(ctx, args.organizationId);
         case 'achievements':
-            return await deleteOrganizationAchievementsPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationAchievementsPhase(ctx, args.organizationId);
         case 'audit':
-            return await deleteOrganizationAuditPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationAuditPhase(ctx, args.organizationId);
         case 'invitations':
-            return await deleteOrganizationInvitationsPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationInvitationsPhase(ctx, args.organizationId);
         case 'memberships':
-            return await deleteOrganizationMembershipsPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationMembershipsPhase(ctx, args.organizationId);
         case 'aggregates':
-            return await deleteOrganizationAggregatesPhase(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await deleteOrganizationAggregatesPhase(ctx, args.organizationId);
         case 'sessions': {
             const { remaining } = await ctx.runMutation(
                 internal.auth.recoverAffectedOrganizationSessions,
                 { organizationId: args.organizationId }
             );
             const phase = remaining ? 'sessions' : 'aggregates';
-            await scheduleNext(ctx, args.organizationId, phase, deleteOrganizationRecord);
+            await scheduleNext(ctx, args.organizationId, phase);
             return { status: 'in_progress', phase };
         }
         case 'finalize':
-            return await finalizeOrganizationDeletion(
-                ctx,
-                args.organizationId,
-                deleteOrganizationRecord
-            );
+            return await finalizeOrganizationDeletion(ctx, args.organizationId);
     }
 }

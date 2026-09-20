@@ -44,7 +44,6 @@ export function ObjectiveRowActions({ objective, onEdit }: ObjectiveRowActionsPr
                         }}
                         title={t('confirm.deleteObjective')}
                         description={t('confirm.deleteObjectiveDescription')}
-                        triggerLabel={t('deleteObjective')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
                         isLoading={deleteObjectiveMutation.isPending}

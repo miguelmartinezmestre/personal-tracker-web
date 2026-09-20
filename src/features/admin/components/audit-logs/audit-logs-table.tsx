@@ -14,7 +14,7 @@ export function AuditLogsTable() {
     const t = useTranslations('Admin');
     const columns = useAuditLogsTableColumns();
 
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
 
     const logs = useQuery(convexQuery(api.auditLogs.getAuditLogs, { paginationOpts }));
@@ -43,7 +43,6 @@ export function AuditLogsTable() {
                 data={auditLogRows}
                 isLoading={logs.isLoading}
                 pagination={{
-                    currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,

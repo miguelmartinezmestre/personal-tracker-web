@@ -23,25 +23,26 @@ const tests: Step[] = [
         args: ['exec', 'vitest', 'run', '--config', 'vitest.frontend.config.ts'],
     },
 ];
-const checks: Step[] = [
+const staticChecks: Step[] = [
     { name: 'Formatting', args: ['exec', 'prettier', '.', '--check', '--ignore-unknown'] },
     ...types,
     { name: 'Lint', args: ['exec', 'node', 'scripts/run-lint.mjs'] },
-    ...tests,
     { name: 'Unused code', args: ['exec', 'knip'] },
     { name: 'Translations', args: ['exec', 'tsx', 'scripts/check-translations.ts'] },
     { name: 'Convex contracts', args: ['exec', 'tsx', 'scripts/check-convex-contracts.ts'] },
     { name: 'Requirement traceability', args: ['exec', 'tsx', 'scripts/check-requirements.ts'] },
     { name: 'Peer dependencies', args: ['peers', 'check'] },
 ];
+const checks: Step[] = [...staticChecks, ...tests];
+const coverageTests = tests.map(step => ({ ...step, args: [...step.args, '--coverage'] }));
 
 async function main() {
     const target = process.argv[2] ?? 'checks';
     let steps: Step[];
     if (target === 'types') steps = types;
     else if (target === 'test') steps = tests;
-    else if (target === 'coverage')
-        steps = tests.map(step => ({ ...step, args: [...step.args, '--coverage'] }));
+    else if (target === 'coverage') steps = coverageTests;
+    else if (target === 'static') steps = staticChecks;
     else if (target === 'checks') steps = checks;
     else if (target === 'checks-e2e')
         steps = [
@@ -50,7 +51,8 @@ async function main() {
         ];
     else if (target === 'ci')
         steps = [
-            ...checks,
+            ...staticChecks,
+            ...coverageTests,
             { name: 'Production build', args: ['exec', 'next', 'build'] },
             { name: 'End-to-end tests', args: ['exec', 'tsx', 'scripts/run-e2e-stack.ts'] },
         ];

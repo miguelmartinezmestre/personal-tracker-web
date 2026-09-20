@@ -7,56 +7,25 @@ import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
 import { useReferenceNow } from '@/lib/reference-now';
-import { isOrganizationRoleValue } from '@/features/organizations/types/roles';
+import {
+    isOrganizationRoleValue,
+    type OrganizationRoleValue,
+} from '@/features/organizations/types/roles';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
+import type { FunctionReturnType } from 'convex/server';
 
-export type InvitationRole = 'owner' | 'admin' | 'member';
-
-interface InvitationRaw {
-    id: string;
-    email: string;
-    role: string;
-    organizationId: string;
-    status: string;
-    createdAt: number;
-    expiresAt?: number;
-    organization?: { id: string; name: string; slug: string };
-    inviter?: { id: string; name: string; email: string };
-}
+type InvitationRaw = FunctionReturnType<
+    typeof api.organizations.getUserInvitationsPage
+>['page'][number];
 
 export interface Invitation {
-    id: string;
+    id: InvitationRaw['id'];
     email: string;
-    role: InvitationRole;
-    organizationId: string;
-    organization?: {
-        id: string;
-        name: string;
-        slug: string;
-    };
-    inviter?: {
-        id: string;
-        name: string;
-        email: string;
-    };
-    status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-    createdAt: Date;
-    expiresAt?: Date;
-}
-
-export type InvitationStatus = Invitation['status'];
-
-function parseInvitationStatus(status: string): InvitationStatus {
-    if (
-        status === 'pending' ||
-        status === 'accepted' ||
-        status === 'rejected' ||
-        status === 'cancelled'
-    ) {
-        return status;
-    }
-    return 'pending';
+    role: OrganizationRoleValue;
+    organizationId: InvitationRaw['organizationId'];
+    organization?: { name: string };
+    inviter?: { name: string };
 }
 
 export function usePendingInvitations() {
@@ -72,22 +41,16 @@ export function usePendingInvitations() {
     );
     const { data } = result;
 
-    const invitations: Invitation[] | undefined = data?.map((rawInvitation: InvitationRaw) => {
-        const role = isOrganizationRoleValue(rawInvitation.role) ? rawInvitation.role : 'member';
-        const status = parseInvitationStatus(rawInvitation.status);
-
-        return {
-            id: rawInvitation.id,
-            email: rawInvitation.email,
-            role,
-            organizationId: rawInvitation.organizationId,
-            status,
-            createdAt: new Date(rawInvitation.createdAt),
-            expiresAt: rawInvitation.expiresAt ? new Date(rawInvitation.expiresAt) : undefined,
-            organization: rawInvitation.organization,
-            inviter: rawInvitation.inviter,
-        };
-    });
+    const invitations: Invitation[] | undefined = data?.map(rawInvitation => ({
+        id: rawInvitation.id,
+        email: rawInvitation.email,
+        role: isOrganizationRoleValue(rawInvitation.role) ? rawInvitation.role : 'member',
+        organizationId: rawInvitation.organizationId,
+        organization: rawInvitation.organization
+            ? { name: rawInvitation.organization.name }
+            : undefined,
+        inviter: rawInvitation.inviter ? { name: rawInvitation.inviter.name } : undefined,
+    }));
 
     return { ...result, data: invitations ?? [] };
 }

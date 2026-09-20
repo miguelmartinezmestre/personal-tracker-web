@@ -79,7 +79,7 @@ export async function completePlatformSetup(
     ctx: MutationCtx,
     userId: Id<'user'>,
     args: CompleteSetupArgs
-): Promise<{ success: true; organizationId: Id<'organization'> }> {
+): Promise<{ organizationId: Id<'organization'> }> {
     assertSetupArgs(args);
 
     const existingSettings = await ctx.db.query('platformSettings').first();
@@ -126,7 +126,6 @@ export async function completePlatformSetup(
         if (
             isPersonalOrganizationForUser({
                 metadata: organization.metadata,
-                slug: organization.slug,
                 userId,
             })
         ) {
@@ -199,9 +198,8 @@ export async function completePlatformSetup(
         platformName: args.platformName,
         defaultLanguage: args.defaultLanguage,
         registrationPolicy: args.registrationPolicy,
-        setupCompletedAt: now,
         setupCompletedBy: userId,
     });
 
-    return { success: true, organizationId };
+    return { organizationId };
 }

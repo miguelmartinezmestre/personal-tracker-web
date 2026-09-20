@@ -77,7 +77,7 @@ export default function OrganizationMemberEditFormModal({
                 <>
                     <form.Field name="email">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('email')}</FormLabel>
                                     <p className="text-sm text-muted-foreground py-2">
@@ -96,7 +96,7 @@ export default function OrganizationMemberEditFormModal({
 
                     <form.Field name="role">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('role')}</FormLabel>
                                     <Select

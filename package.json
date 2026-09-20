@@ -11,6 +11,7 @@
         "build": "next build",
         "start": "next start",
         "checks": "tsx scripts/quality.ts checks",
+        "checks:static": "tsx scripts/quality.ts static",
         "checks:e2e": "tsx scripts/quality.ts checks-e2e",
         "ci": "tsx scripts/quality.ts ci",
         "ci:quick": "tsx scripts/quality.ts checks",

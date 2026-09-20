@@ -30,7 +30,6 @@ export default defineSchema({
         generation: v.number(),
         phase: v.union(v.literal('objectives'), v.literal('progress'), v.literal('ready')),
         cursor: v.optional(v.union(v.string(), v.null())),
-        updatedAt: v.number(),
     }).index('by_organization', ['organizationId']),
     dashboardResyncs: defineTable({
         organizationId: v.id('organization'),
@@ -58,16 +57,15 @@ export default defineSchema({
         categoryId: v.optional(v.id('categories')),
         targetValue: v.number(),
         currentValue: v.number(),
-        startValue: v.optional(v.number()),
+        startValue: v.number(),
         deadline: v.optional(v.number()),
         status: objectiveStatusValidator,
         completedAt: v.optional(v.number()),
-        earlyBirdCompleted: v.optional(v.boolean()),
+        earlyBirdCompleted: v.boolean(),
         unit: v.optional(v.string()),
         deletedAt: v.optional(v.number()),
         deletedBy: v.optional(v.id('user')),
         purgeToken: v.optional(v.string()),
-        purgeStartedAt: v.optional(v.number()),
         ownerDeletionProcessedAt: v.optional(v.number()),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -75,16 +73,7 @@ export default defineSchema({
         // Creator/org scoped metrics; prefix `createdBy` supports creator-wide reads.
         .index('by_createdBy_organization', ['createdBy', 'organizationId'])
         .index('by_createdBy_status', ['createdBy', 'status'])
-        .index('by_createdBy_organization_status', ['createdBy', 'organizationId', 'status'])
         .index('by_createdBy_earlyBirdCompleted', ['createdBy', 'earlyBirdCompleted'])
-        .index('by_createdBy_organization_earlyBirdCompleted', [
-            'createdBy',
-            'organizationId',
-            'earlyBirdCompleted',
-        ])
-        .index('by_earlyBirdCompleted', ['earlyBirdCompleted'])
-        .index('by_owner', ['ownerId'])
-        .index('by_owner_organization_deletedAt', ['ownerId', 'organizationId', 'deletedAt'])
         .index('by_owner_organization_ownerDeletionProcessedAt', [
             'ownerId',
             'organizationId',
@@ -94,8 +83,6 @@ export default defineSchema({
         // Listings stay scoped by organization; composite indexes keep optional filters bounded.
         .index('by_organization', ['organizationId'])
         .index('by_organization_status', ['organizationId', 'status'])
-        .index('by_organization_createdAt', ['organizationId', 'createdAt'])
-        .index('by_organization_completedAt', ['organizationId', 'completedAt'])
         .index('by_organization_deletedAt', ['organizationId', 'deletedAt'])
         .index('by_organization_deletedAt_status', ['organizationId', 'deletedAt', 'status'])
         .index('by_organization_deletedAt_categoryId', [
@@ -109,7 +96,6 @@ export default defineSchema({
             'status',
             'categoryId',
         ])
-        .index('by_organization_visibility', ['organizationId', 'visibility'])
         .index('by_organization_deadline', ['organizationId', 'deadline'])
         .index('by_organization_deletedAt_deadline', ['organizationId', 'deletedAt', 'deadline'])
         .index('by_organization_deletedAt_status_deadline', [
@@ -131,7 +117,6 @@ export default defineSchema({
             'categoryId',
             'deadline',
         ])
-        .index('by_status_deadline', ['status', 'deadline'])
         .index('by_status_deletedAt_deadline', ['status', 'deletedAt', 'deadline'])
         .index('by_categoryId', ['categoryId'])
         .searchIndex('search_title_by_organization_status_categoryId', {
@@ -166,7 +151,6 @@ export default defineSchema({
     })
         .index('by_objective_date', ['objective', 'updateDate'])
         .index('by_createdBy_date', ['createdBy', 'updateDate'])
-        .index('by_createdBy_organization_date', ['createdBy', 'organizationId', 'updateDate'])
         .index('by_organization_date', ['organizationId', 'updateDate']),
 
     notifications: defineTable({
@@ -179,19 +163,11 @@ export default defineSchema({
         message: v.string(),
         messageKey: v.optional(v.string()),
         messageParams: v.optional(v.record(v.string(), v.union(v.string(), v.number()))),
-        createdAt: v.number(),
-        updatedAt: v.number(),
     })
         .index('by_user', ['userId'])
         .index('by_organization', ['organizationId'])
         .index('by_user_organization_date', ['userId', 'organizationId', 'notificationDate'])
         .index('by_user_organization_read', ['userId', 'organizationId', 'read'])
-        .index('by_user_organization_read_type', [
-            'userId',
-            'organizationId',
-            'read',
-            'notificationType',
-        ])
         .index('by_objective_type_date', ['objective', 'notificationType', 'notificationDate']),
 
     auditLogs: defineTable({
@@ -208,12 +184,10 @@ export default defineSchema({
                 context: v.optional(v.string()),
             })
         ),
-        severity: v.string(),
         createdAt: v.number(),
     })
         .index('by_createdAt', ['createdAt'])
         .index('by_organization', ['organizationId'])
-        .index('by_resourceType_resourceId', ['resourceType', 'resourceId'])
         .index('by_resourceType_createdAt', ['resourceType', 'createdAt']),
 
     categories: defineTable({
@@ -232,8 +206,6 @@ export default defineSchema({
         userId: v.id('user'),
         achievement: v.string(),
         earnedAt: v.number(),
-        createdAt: v.number(),
-        updatedAt: v.number(),
     })
         .index('by_user', ['userId'])
         .index('by_user_achievement', ['userId', 'achievement']),
@@ -242,23 +214,13 @@ export default defineSchema({
         organization: v.id('organization'),
         achievement: v.string(),
         earnedAt: v.number(),
-        createdAt: v.number(),
-        updatedAt: v.number(),
     }).index('by_organization_achievement', ['organization', 'achievement']),
-
-    organizationAchievementContributors: defineTable({
-        organizationAchievementId: v.id('organizationAchievements'),
-        userId: v.id('user'),
-        contributedAt: v.number(),
-        contributionValue: v.optional(v.number()),
-    }).index('by_organizationAchievement_user', ['organizationAchievementId', 'userId']),
 
     platformSettings: defineTable({
         platformName: v.string(),
         defaultLanguage: v.union(v.literal('en'), v.literal('es')),
         registrationPolicy: v.union(v.literal('open'), v.literal('invitation-only')),
-        setupCompletedAt: v.optional(v.number()),
-        setupCompletedBy: v.optional(v.id('user')),
+        setupCompletedBy: v.id('user'),
     }),
 
     notificationPreferences: defineTable({
@@ -267,8 +229,6 @@ export default defineSchema({
         deadlineNotifications: v.boolean(),
         progressNotifications: v.boolean(),
         organizationNotifications: v.boolean(),
-        createdAt: v.number(),
-        updatedAt: v.number(),
     }).index('by_user', ['userId']),
 
     user: defineTable({

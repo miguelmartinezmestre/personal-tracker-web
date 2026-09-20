@@ -13,13 +13,11 @@ import { useDeleteUpdateProgress } from './update-progress-table-actions';
 import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 
 interface UseUpdateProgressTableColumnsProps {
-    objectiveId: Id<'objectives'>;
     objective: ObjectiveWithCapabilities | null;
     currentUserId: Id<'user'> | null;
 }
 
 export function useUpdateProgressTableColumns({
-    objectiveId,
     objective,
     currentUserId,
 }: UseUpdateProgressTableColumnsProps) {
@@ -63,10 +61,7 @@ export function useUpdateProgressTableColumns({
                     return null;
                 }
                 return (
-                    <UpdateProgressFormModal
-                        defaultValues={mapDocToUpdateProgress(progressRow)}
-                        objectiveId={objectiveId}
-                    />
+                    <UpdateProgressFormModal defaultValues={mapDocToUpdateProgress(progressRow)} />
                 );
             },
         },
@@ -87,7 +82,6 @@ export function useUpdateProgressTableColumns({
                         }}
                         title={t('confirm.deleteTitle')}
                         description={t('confirm.deleteDescription')}
-                        triggerLabel={t('table.columns.delete')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
                         isLoading={isDeletingProgress}

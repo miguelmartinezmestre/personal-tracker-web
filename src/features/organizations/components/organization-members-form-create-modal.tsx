@@ -83,7 +83,7 @@ export default function CreateOrganizationMemberFormModal({
                 <>
                     <form.Field name="email">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('email')}</FormLabel>
                                     <FormControl>
@@ -114,7 +114,7 @@ export default function CreateOrganizationMemberFormModal({
 
                     <form.Field name="role">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('role')}</FormLabel>
                                     <Select

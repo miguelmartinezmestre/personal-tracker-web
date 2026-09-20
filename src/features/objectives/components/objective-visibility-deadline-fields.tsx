@@ -55,7 +55,7 @@ export function ObjectiveVisibilityAndDeadlineFields({
             {mode === 'create' ? (
                 <form.Field name="visibility">
                     {field => (
-                        <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FieldShell error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel>{visibilityLabel}</FormLabel>
                                 <Select
@@ -100,7 +100,7 @@ export function ObjectiveVisibilityAndDeadlineFields({
                     const deadline =
                         typeof field.state.value === 'number' ? field.state.value : undefined;
                     return (
-                        <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FieldShell error={getFieldError(form, field)}>
                             <FormItem className="flex flex-col">
                                 <FormLabel>{deadlineLabel}</FormLabel>
                                 <Popover>

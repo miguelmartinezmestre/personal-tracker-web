@@ -82,46 +82,7 @@ const RESOURCE_ALLOWED_AUDIT_FIELDS: Partial<Record<string, Set<string>>> = {
         'createdAt',
         'inviterId',
     ]),
-    // Field names must match what the audit-trigger sanitizers actually emit
-    // (see platform/audit/triggers.ts) so the allowlist keeps the meaningful,
-    // security-relevant fields (ownership, visibility, soft-delete) rather than
-    // silently dropping them.
-    objective: new Set([
-        '_id',
-        'organizationId',
-        'createdBy',
-        'ownerId',
-        'visibility',
-        'status',
-        'categoryId',
-        'targetValue',
-        'currentValue',
-        'startValue',
-        'deadline',
-        'deletedAt',
-        'deletedBy',
-        'createdAt',
-        'updatedAt',
-    ]),
-    progress_update: new Set([
-        '_id',
-        'objective',
-        'createdBy',
-        'updatedValue',
-        'updateDate',
-        'createdAt',
-        'updatedAt',
-    ]),
-    category: new Set(['_id', 'userId', 'organizationId', 'createdAt', 'updatedAt']),
-    organization: new Set(['_id', 'createdAt']),
     organization_member: new Set(['_id', 'organizationId', 'userId', 'role', 'createdAt']),
-    platform_settings: new Set([
-        '_id',
-        'defaultLanguage',
-        'registrationPolicy',
-        'setupCompletedAt',
-        'setupCompletedBy',
-    ]),
 };
 export function toAuditPrimitive(value: JsonValue | object | null | undefined): AuditPrimitive {
     if (value === null || value === undefined) {

@@ -46,18 +46,6 @@ type CategoryInput = ObjectType<typeof categoryInputValidator>;
 
 type CategoryPatch = ObjectType<typeof categoryPatchValidator>;
 
-const DEFAULT_CATEGORIES: CategoryInput[] = [
-    { name: 'Health & Fitness', color: '#10b981', icon: 'heart' },
-    { name: 'Career & Business', color: '#3b82f6', icon: 'briefcase' },
-    { name: 'Learning & Education', color: '#8b5cf6', icon: 'book' },
-    { name: 'Personal Development', color: '#f59e0b', icon: 'user' },
-    { name: 'Finance & Savings', color: '#22c55e', icon: 'dollar-sign' },
-    { name: 'Relationships', color: '#ec4899', icon: 'users' },
-    { name: 'Creative Projects', color: '#a855f7', icon: 'palette' },
-    { name: 'Home & Organization', color: '#06b6d4', icon: 'home' },
-    { name: 'Travel & Adventure', color: '#f97316', icon: 'map' },
-];
-
 function requireActiveOrganization(ctx: CategoryQueryCtx): Id<'organization'> {
     if (!ctx.organizationId) {
         throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
@@ -220,29 +208,4 @@ export async function deleteCategoryForCurrentOrganization(
     } catch (error) {
         preserveForbiddenError(error);
     }
-}
-
-export async function createDefaultCategoriesForCurrentOrganization(ctx: CategoryMutationCtx) {
-    const organizationId = requireActiveOrganization(ctx);
-    const now = Date.now();
-    const results = [];
-
-    for (const category of DEFAULT_CATEGORIES) {
-        const exists = await findCategoryByOrganizationAndName(ctx, organizationId, category.name);
-
-        if (!exists) {
-            const categoryId = await ctx.db.insert('categories', {
-                userId: ctx.userId,
-                organizationId,
-                name: category.name,
-                color: category.color,
-                icon: category.icon,
-                createdAt: now,
-                updatedAt: now,
-            });
-            results.push(await ctx.db.get('categories', categoryId));
-        }
-    }
-
-    return results;
 }

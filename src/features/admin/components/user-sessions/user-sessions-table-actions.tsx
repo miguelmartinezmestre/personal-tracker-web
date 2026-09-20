@@ -37,14 +37,15 @@ export function useConfirmRevokeAllSessions() {
     const revoke = useConvexMutation(api.admin.revokeAllUserSessions);
 
     const { mutate: revokeAllSessions, isPending: isRevokingAllSessions } = useMutation({
-        mutationFn: async ({ userId }: RevokeAllSessionsVariables) => {
+        mutationFn: async ({ userId }: RevokeAllSessionsVariables): Promise<boolean> => {
             if (!confirm(t('userSessions.confirm.revokeAll'))) {
-                return;
+                return false;
             }
-            return await revoke({ userId });
+            await revoke({ userId });
+            return true;
         },
-        onSuccess: data => {
-            if (!data) {
+        onSuccess: confirmed => {
+            if (!confirmed) {
                 return;
             }
             toast.success(t('userSessions.toast.revokeAllSuccess'));

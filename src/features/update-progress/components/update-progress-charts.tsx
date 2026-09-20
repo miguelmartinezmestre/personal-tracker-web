@@ -44,7 +44,6 @@ export function UpdateProgressCharts({
                 </p>
             ) : null}
             <ObjectiveProgressGraph
-                data={progressData}
                 currentValue={objectiveDoc.currentValue}
                 unit={unit}
                 targetValue={targetValue}

@@ -58,6 +58,7 @@ describe('accept invitation active organization', () => {
         const personalOrgId = await createTestOrganization(t, {
             name: `Personal ${suffix}`,
             slug: `personal-${suffix}`,
+            description: JSON.stringify({ type: 'personal', ownerUserId: invitee.docId }),
         });
         const invitedOrgId = await createTestOrganization(t, {
             name: `Invited ${suffix}`,

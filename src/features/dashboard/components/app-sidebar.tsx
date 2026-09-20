@@ -115,7 +115,7 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
         }
     }, [pathname, isMobile, setOpenMobile]);
     return (
-        <Sidebar collapsible="icon" data-testid="app-sidebar">
+        <Sidebar data-testid="app-sidebar">
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -134,7 +134,7 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
                                 const isActive = pathname === item.url;
                                 return (
                                     <SidebarMenuItem key={item.name}>
-                                        <SidebarMenuButton asChild>
+                                        <SidebarMenuButton>
                                             <Link
                                                 href={item.url}
                                                 prefetch={false}

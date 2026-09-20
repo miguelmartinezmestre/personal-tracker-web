@@ -77,9 +77,9 @@ function parseMailHogMessages(value: JsonValue): MailHogMessage[] {
     }
     return messages;
 }
-function extractAuthUrl(
+function extractEmailUrl(
     message: MailHogMessage,
-    kind: 'verify-email' | 'reset-password'
+    kind: 'verify-email' | 'reset-password' | 'invitation'
 ): string | null {
     const body = (message.Content?.Body ?? '')
         .replace(/=\r?\n/g, '')
@@ -89,20 +89,24 @@ function extractAuthUrl(
     const links = body.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
     for (const candidate of links) {
         const url = new URL(candidate.replace(/&amp;/g, '&'));
-        if (!url.pathname.startsWith(`/api/auth/${kind}`)) {
+        const hasExpectedPath =
+            kind === 'invitation'
+                ? url.pathname.startsWith('/invitations/')
+                : url.pathname.startsWith(`/api/auth/${kind}`);
+        if (!hasExpectedPath) {
             continue;
         }
         if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
-            throw new Error('MailHog authentication links must target loopback');
+            throw new Error('MailHog email links must target loopback');
         }
         return url.toString();
     }
     return null;
 }
-async function findLatestVerificationUrl(
+async function findLatestEmailUrl(
     request: APIRequestContext,
     email: string,
-    kind: 'verify-email' | 'reset-password' = 'verify-email',
+    kind: 'verify-email' | 'reset-password' | 'invitation',
     since = 0
 ): Promise<string> {
     const searchUrl = new URL('/api/v2/search', MAILHOG_BASE_URL);
@@ -133,9 +137,9 @@ async function findLatestVerificationUrl(
         ) {
             continue;
         }
-        const verificationUrl = extractAuthUrl(message, kind);
-        if (verificationUrl) {
-            return verificationUrl;
+        const url = extractEmailUrl(message, kind);
+        if (url) {
+            return url;
         }
     }
     return '';
@@ -149,7 +153,24 @@ export async function waitForPasswordResetUrl(
     await expect
         .poll(
             async () => {
-                url = await findLatestVerificationUrl(page.request, email, 'reset-password', since);
+                url = await findLatestEmailUrl(page.request, email, 'reset-password', since);
+                return Boolean(url);
+            },
+            { timeout: 20000, intervals: [250, 500, 1000] }
+        )
+        .toBe(true);
+    return url;
+}
+export async function waitForInvitationUrl(
+    page: Page,
+    email: string,
+    since: number
+): Promise<string> {
+    let url = '';
+    await expect
+        .poll(
+            async () => {
+                url = await findLatestEmailUrl(page.request, email, 'invitation', since);
                 return Boolean(url);
             },
             { timeout: 20000, intervals: [250, 500, 1000] }
@@ -182,7 +203,7 @@ export async function verifyEmailFromInvitationPage(page: Page, email: string): 
     await expect
         .poll(
             async () => {
-                verificationUrl = await findLatestVerificationUrl(page.request, email);
+                verificationUrl = await findLatestEmailUrl(page.request, email, 'verify-email');
                 return verificationUrl;
             },
             { timeout: 20000, intervals: [250, 500, 1000] }

@@ -15,14 +15,15 @@ Use `pnpm` with Node `>=24.19.0`.
 
 - `pnpm build` / `pnpm start`: build and serve production output.
 - `pnpm lint`: run ESLint across the repo.
-- `pnpm check-types`: run app, Convex, and Playwright TypeScript checks.
-- `pnpm test`: run Vitest tests in `convex/tests/`.
+- `pnpm check-types`: run app, Convex, scripts, Playwright, and frontend-test TypeScript checks.
+- `pnpm test`: run the backend and frontend Vitest suites.
 - `pnpm test:coverage`: generate text, HTML, and LCOV coverage reports.
 - `pnpm test:e2e`: run Playwright against the local Docker e2e stack through
   `scripts/run-e2e-stack.ts`.
 - `pnpm test:e2e:tfg`: run the manual TFG walkthrough with
   `tests/manual/playwright.manual.config.ts`.
-- `pnpm format`: format `ts`, `tsx`, and `md` files with Prettier.
+- `pnpm format`: format supported files with Prettier.
+- `pnpm ci`: run static checks, both suites once with coverage, the build, and E2E tests.
 
 ## Coding Style & Naming Conventions
 
@@ -36,8 +37,8 @@ in `camelCase` with a `use` prefix, and tests as `*.test.ts` or `*.spec.ts`. Use
 
 Vitest covers backend logic in `convex/tests/**/*.test.ts`; Playwright covers UI and integration
 flows in `tests/e2e/**/*.spec.ts`. Add or update tests alongside behavior changes. Run `pnpm test`
-for backend work and `pnpm test:e2e` for user-facing flows. Husky runs `format`, `check-types`,
-`lint`, and `test` before commit, so keep the tree clean before pushing.
+for backend work and `pnpm test:e2e` for user-facing flows. Husky runs `format:check` and `lint`
+before commit. CI also checks types and executes both suites with coverage.
 
 ## Security & Configuration Tips
 

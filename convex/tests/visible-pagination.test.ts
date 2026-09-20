@@ -92,6 +92,7 @@ describe('visible objective pagination', () => {
                     currentValue: 10,
                     startValue: 10,
                     targetValue: 100,
+                    earlyBirdCompleted: false,
                     visibility: visible ? 'organization' : 'private',
                     createdAt: index,
                     updatedAt: index,

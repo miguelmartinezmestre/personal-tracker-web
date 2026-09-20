@@ -167,7 +167,6 @@ const insertAuthAuditLog = async (
         resourceType: args.resourceType,
         resourceId: args.resourceId ?? undefined,
         metadata,
-        severity: 'info',
         createdAt: Date.now(),
     });
 };

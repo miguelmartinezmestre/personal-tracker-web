@@ -125,7 +125,7 @@ export function InvitationsList() {
         );
     }
 
-    const pendingInvitations = invitations.filter(invitation => invitation.status === 'pending');
+    const pendingInvitations = invitations;
 
     if (pendingInvitations.length === 0) {
         if (acceptInvitation.isPending) {

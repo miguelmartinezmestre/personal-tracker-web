@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
     createTestUser,
@@ -319,7 +319,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 userId: user1Id,
                 organizationId: _user1OrganizationId,
                 objective: obj1Id,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User 1 notification',
             });
 
@@ -327,7 +327,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 userId: user2Id,
                 organizationId: _user2OrganizationId,
                 objective: obj2Id,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User 2 notification',
             });
 
@@ -359,7 +359,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 userId: user1Id,
                 organizationId: _user1OrganizationId,
                 objective: obj1Id,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User 1 notification',
             });
 
@@ -393,7 +393,7 @@ describe('convex RLS (Row-Level Security)', async () => {
                 userId: user1Id,
                 organizationId: _user1OrganizationId,
                 objective: obj1Id,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User 1 notification',
             });
 
@@ -416,17 +416,17 @@ describe('convex RLS (Row-Level Security)', async () => {
 
     describe('achievements RLS', () => {
         test('all users can read achievement definitions', async () => {
-            const user1Defs = await user1Identity.query(
-                internal.achievements.getAchievementDefinitions,
+            const user1Progress = await user1Identity.query(
+                api.achievements.getUserAchievementProgress,
                 {}
             );
-            expect(user1Defs.length).toBeGreaterThan(0);
+            expect(user1Progress.length).toBeGreaterThan(0);
 
-            const user2Defs = await user2Identity.query(
-                internal.achievements.getAchievementDefinitions,
+            const user2Progress = await user2Identity.query(
+                api.achievements.getUserAchievementProgress,
                 {}
             );
-            expect(user2Defs.length).toBeGreaterThan(0);
+            expect(user2Progress.length).toBeGreaterThan(0);
         });
 
         test('user can only see their own achievements', async () => {
@@ -435,22 +435,20 @@ describe('convex RLS (Row-Level Security)', async () => {
                     userId: user1Id,
                     achievement: 'first_objective',
                     earnedAt: Date.now(),
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
                 });
             });
 
-            const user1Achievements = await user1Identity.query(
-                internal.achievements.getUserAchievements,
+            const user1Stats = await user1Identity.query(
+                api.achievements.getUserAchievementStats,
                 {}
             );
-            expect(user1Achievements.length).toBeGreaterThan(0);
+            expect(user1Stats.earnedCount).toBe(1);
 
-            const user2Achievements = await user2Identity.query(
-                internal.achievements.getUserAchievements,
+            const user2Stats = await user2Identity.query(
+                api.achievements.getUserAchievementStats,
                 {}
             );
-            expect(user2Achievements).toHaveLength(0);
+            expect(user2Stats.earnedCount).toBe(0);
         });
     });
 
@@ -480,7 +478,7 @@ describe('convex RLS (Row-Level Security)', async () => {
         });
 
         test('unauthenticated user cannot access achievements', async () => {
-            await expect(t.query(internal.achievements.getUserAchievements, {})).rejects.toThrow(
+            await expect(t.query(api.achievements.getUserAchievementStats, {})).rejects.toThrow(
                 /Unauthenticated|User not authenticated|AUTH_REQUIRED/
             );
         });

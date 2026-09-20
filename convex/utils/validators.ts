@@ -35,8 +35,7 @@ export const notificationTypeValidator = v.union(
     v.literal(NOTIFICATION_TYPE.DEADLINE),
     v.literal(NOTIFICATION_TYPE.PROGRESS),
     v.literal(NOTIFICATION_TYPE.STATUS),
-    v.literal(NOTIFICATION_TYPE.ACHIEVEMENT),
-    v.literal(NOTIFICATION_TYPE.REMINDER)
+    v.literal(NOTIFICATION_TYPE.ACHIEVEMENT)
 );
 
 export const achievementTypeValidator = v.union(
@@ -61,10 +60,4 @@ export const achievementTriggerValidator = v.union(
     v.literal('objective_created'),
     v.literal('objective_completed'),
     v.literal('progress_update')
-);
-
-export const auditSeverityValidator = v.union(
-    v.literal('info'),
-    v.literal('warning'),
-    v.literal('critical')
 );

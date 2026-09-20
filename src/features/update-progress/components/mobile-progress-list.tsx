@@ -16,7 +16,6 @@ type MobileProgressListProps = {
     isLoading: boolean;
     isFetching: boolean;
     updates: Doc<'progressUpdates'>[];
-    objectiveId: Id<'objectives'>;
     unitSuffix: string;
     canEdit: (authorId: Id<'user'>) => boolean;
     isDeletingProgress: boolean;
@@ -30,20 +29,13 @@ type MobileProgressListProps = {
 function MobileProgressListBody({
     isLoading,
     updates,
-    objectiveId,
     unitSuffix,
     canEdit,
     isDeletingProgress,
     onDelete,
 }: Pick<
     MobileProgressListProps,
-    | 'isLoading'
-    | 'updates'
-    | 'objectiveId'
-    | 'unitSuffix'
-    | 'canEdit'
-    | 'isDeletingProgress'
-    | 'onDelete'
+    'isLoading' | 'updates' | 'unitSuffix' | 'canEdit' | 'isDeletingProgress' | 'onDelete'
 >) {
     const t = useTranslations('UpdateProgress');
     const tTable = useTranslations('Table');
@@ -102,17 +94,13 @@ function MobileProgressListBody({
                     <div className="flex flex-wrap gap-2 border-t pt-2">
                         {canEdit(progressRow.createdBy) ? (
                             <>
-                                <UpdateProgressFormModal
-                                    defaultValues={defaultValues}
-                                    objectiveId={objectiveId}
-                                />
+                                <UpdateProgressFormModal defaultValues={defaultValues} />
                                 <DeleteConfirmationDialog
                                     onConfirm={async () => {
                                         await onDelete(progressRow._id);
                                     }}
                                     title={t('confirm.deleteTitle')}
                                     description={t('confirm.deleteDescription')}
-                                    triggerLabel={t('table.columns.delete')}
                                     confirmLabel={t('confirm.deleteConfirm')}
                                     cancelLabel={t('confirm.cancel')}
                                     isLoading={isDeletingProgress}

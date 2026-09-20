@@ -15,7 +15,7 @@ import { assertValidReferenceTimestamp } from './utils/queryTime';
 import { validateObjectiveMetrics } from './domain/objectives/metrics';
 import { getCategoryForObjective } from './domain/objectives/access';
 import { deadlineRangeValidator } from './domain/objectives/filters';
-import { listObjectives, searchObjectives, searchObjectivesPage } from './domain/objectives/list';
+import { listObjectives, searchObjectivesPage } from './domain/objectives/list';
 import {
     continueObjectiveDeletion,
     deleteObjectiveWithDependents,
@@ -23,7 +23,6 @@ import {
 import { assertObjectiveAction, enrichObjectiveForActor } from './domain/objectives/access';
 import {
     addObjectiveCollaborator,
-    listCollaboratorsForObjective,
     removeObjectiveCollaborator,
     updateObjectiveCollaboratorRole,
 } from './domain/objectives/collaborators';
@@ -43,7 +42,6 @@ import {
     objectiveCollaboratorDocumentValidator,
     objectiveWithCapabilitiesValidator,
     paginatedObjectivesValidator,
-    paginatedObjectivesArrayValidator,
     successResultValidator,
 } from './utils/apiReturnValidators';
 export const getObjectives = queryWithRLS({
@@ -96,20 +94,6 @@ export const getDeletedObjectives = queryWithRLS({
         };
     },
 });
-export const searchObjectivesQuery = queryWithRLS({
-    args: {
-        search: v.string(),
-        limit: v.optional(v.number()),
-        status: v.optional(objectiveStatusValidator),
-        categoryId: v.optional(v.id('categories')),
-        deadlineRange: v.optional(deadlineRangeValidator),
-    },
-    returns: paginatedObjectivesArrayValidator,
-    handler: async (ctx, args) => {
-        const results = await searchObjectives(ctx, args);
-        return await Promise.all(results.map(objective => enrichObjectiveForActor(ctx, objective)));
-    },
-});
 export const searchObjectivesPaginated = queryWithRLS({
     args: {
         now: v.optional(v.number()),
@@ -145,39 +129,6 @@ export const getObjectiveById = queryWithRLS({
             return null;
         }
         return await enrichObjectiveForActor(ctx, objective);
-    },
-});
-export const getObjectiveCollaborators = queryWithRLS({
-    args: {
-        objectiveId: v.id('objectives'),
-    },
-    returns: v.array(collaboratorEnrichedValidator),
-    handler: async (ctx, args) => {
-        const objective = await ctx.db.get('objectives', args.objectiveId);
-        if (!objective) {
-            throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
-        }
-        await assertObjectiveAction(ctx, objective, 'view');
-        const collaborators = await listCollaboratorsForObjective(ctx, args.objectiveId);
-        const users = await Promise.all(collaborators.map(row => ctx.db.get('user', row.userId)));
-        return collaborators.map((collaborator, index) => {
-            const user = users[index];
-            return {
-                id: collaborator._id,
-                objectiveId: collaborator.objectiveId,
-                userId: collaborator.userId,
-                role: collaborator.role,
-                addedBy: collaborator.addedBy,
-                createdAt: collaborator.createdAt,
-                user: user
-                    ? {
-                          name: user.name,
-                          email: user.email,
-                          image: user.image,
-                      }
-                    : null,
-            };
-        });
     },
 });
 export const getObjectiveCollaboratorsPage = queryWithRLS({
@@ -335,7 +286,7 @@ export const updateObjective = mutationWithRLS({
                 : normalizeRequiredBoundedString(args.title, OBJECTIVE_TITLE_MAX_LENGTH);
         assertOptionalBoundedString(args.description, OBJECTIVE_DESCRIPTION_MAX_LENGTH);
         assertOptionalBoundedString(args.unit, OBJECTIVE_UNIT_MAX_LENGTH);
-        const previousStartValue = objective.startValue ?? 0;
+        const previousStartValue = objective.startValue;
         const nextStartValue = args.startValue ?? previousStartValue;
         // `currentValue - startValue` is the transactionally maintained sum of
         // progress entries. Moving the baseline therefore shifts currentValue
@@ -595,12 +546,6 @@ export const purgeObjective = mutationWithRLS({
     returns: v.object({
         status: v.string(),
         objectiveId: v.id('objectives'),
-        deleted: v.optional(
-            v.object({
-                progress: v.number(),
-                notifications: v.number(),
-            })
-        ),
     }),
     handler: async (ctx, args) => {
         const objective = await ctx.db.get('objectives', args.id);
@@ -618,28 +563,19 @@ export const purgeObjective = mutationWithRLS({
         const purgeToken = `${now.toString(36)}-${Math.random().toString(36).slice(2)}`;
         await ctx.db.patch('objectives', args.id, {
             purgeToken,
-            purgeStartedAt: now,
             updatedAt: now,
         });
         return await deleteObjectiveWithDependents(ctx, { objectiveId: args.id, purgeToken });
     },
 });
 export const deleteObjectiveContinue = internalMutation({
-    returns: v.object({
-        status: v.string(),
-        noOp: v.optional(v.boolean()),
-        phase: v.optional(v.string()),
-        deleted: v.object({ progress: v.number(), notifications: v.number() }),
-    }),
+    returns: v.null(),
     args: {
         objectiveId: v.id('objectives'),
         purgeToken: v.string(),
         phase: v.optional(
             v.union(v.literal('collaborators'), v.literal('progress'), v.literal('notifications'))
         ),
-        cursor: v.optional(v.union(v.string(), v.null())),
-        totalProgressDeleted: v.optional(v.number()),
-        totalNotificationsDeleted: v.optional(v.number()),
     },
     handler: continueObjectiveDeletion,
 });

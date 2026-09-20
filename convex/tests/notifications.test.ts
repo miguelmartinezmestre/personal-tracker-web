@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
-import { initConvexTest } from './test.helper';
+import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import {
     createTestMember,
     createTestNotification,
@@ -83,21 +83,23 @@ describe('convex notifications', async () => {
     });
 
     test('getNotificationsByUser returns own notifications ordered by date', async () => {
+        const firstNotificationDate = Date.now() - DAY_MS;
+        const secondNotificationDate = Date.now();
         await createTestNotification(t, {
             userId,
             organizationId: userOrganizationId,
             objective: objectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'First',
-            notificationDate: Date.now() - DAY_MS,
+            notificationDate: firstNotificationDate,
         });
         await createTestNotification(t, {
             userId,
             organizationId: userOrganizationId,
             objective: objectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'Second',
-            notificationDate: Date.now(),
+            notificationDate: secondNotificationDate,
         });
 
         const adminObjectiveId = await createTestObjective(t, {
@@ -111,7 +113,7 @@ describe('convex notifications', async () => {
             userId: adminUserId,
             organizationId: adminOrganizationId,
             objective: adminObjectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'Admin notification',
         });
 
@@ -120,6 +122,13 @@ describe('convex notifications', async () => {
         });
 
         expect(result.page.map(notification => notification.message)).toEqual(['Second', 'First']);
+        expect(result.page.map(notification => notification.notificationDate)).toEqual([
+            secondNotificationDate,
+            firstNotificationDate,
+        ]);
+        expect(result.page.every(notification => Number.isFinite(notification._creationTime))).toBe(
+            true
+        );
         expect(result.page.every(notification => notification.userId === userId)).toBe(true);
     });
 
@@ -132,11 +141,9 @@ describe('convex notifications', async () => {
                     organizationId: userOrganizationId,
                     objective: objectiveId,
                     read: false,
-                    notificationType: 'reminder',
+                    notificationType: 'deadline',
                     notificationDate: now + index,
                     message: `Unread ${index}`,
-                    createdAt: now,
-                    updatedAt: now,
                 });
             }
         });
@@ -163,7 +170,9 @@ describe('convex notifications', async () => {
             }
         );
 
-        expect(objectives.map(objective => objective._id)).toEqual([objectiveId]);
+        expect(objectives).toEqual([
+            { _id: objectiveId, title: 'Test Objective for Notifications' },
+        ]);
         await expect(
             userIdentity.query(api.notifications.getObjectivesForNotifications, {
                 objectiveIds: Array.from({ length: 51 }, () => objectiveId),
@@ -176,7 +185,7 @@ describe('convex notifications', async () => {
             userId,
             organizationId: userOrganizationId,
             objective: objectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'Toggle',
         });
 
@@ -185,12 +194,18 @@ describe('convex notifications', async () => {
                 id: notification._id,
                 read: true,
             })
+        ).resolves.toBeNull();
+        await expect(
+            userIdentity.run(ctx => ctx.db.get('notifications', notification._id))
         ).resolves.toMatchObject({ read: true });
         await expect(
             userIdentity.mutation(api.notifications.setNotificationRead, {
                 id: notification._id,
                 read: false,
             })
+        ).resolves.toBeNull();
+        await expect(
+            userIdentity.run(ctx => ctx.db.get('notifications', notification._id))
         ).resolves.toMatchObject({ read: false });
     });
 
@@ -199,7 +214,7 @@ describe('convex notifications', async () => {
             userId,
             organizationId: userOrganizationId,
             objective: objectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'Read',
         });
         await userIdentity.mutation(api.notifications.setNotificationRead, {
@@ -216,11 +231,8 @@ describe('convex notifications', async () => {
 
         await expect(
             userIdentity.mutation(api.notifications.markAllNotificationsRead, {})
-        ).resolves.toMatchObject({ status: 'marking_started' });
-        await t.mutation(internal.notifications.markAllReadBatch, {
-            userId,
-            organizationId: userOrganizationId,
-        });
+        ).resolves.toBeNull();
+        await drainScheduledFunctions(t);
 
         const result = await userIdentity.query(api.notifications.getNotificationsByUser, {
             paginationOpts: { numItems: 10, cursor: null },
@@ -234,7 +246,7 @@ describe('convex notifications', async () => {
             userId,
             organizationId: userOrganizationId,
             objective: objectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'To Delete',
         });
 
@@ -242,7 +254,7 @@ describe('convex notifications', async () => {
             userIdentity.mutation(api.notifications.deleteNotification, {
                 id: notification._id,
             })
-        ).resolves.toEqual({ success: true });
+        ).resolves.toBeNull();
         await expect(
             userIdentity.run(async ctx => ctx.db.get('notifications', notification._id))
         ).resolves.toBeNull();
@@ -266,15 +278,19 @@ describe('convex notifications', async () => {
             });
         }
 
-        const firstRun = await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
-        const secondRun = await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
-        const result = await userIdentity.query(api.notifications.getNotificationsByUser, {
+        await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
+        const firstResult = await userIdentity.query(api.notifications.getNotificationsByUser, {
+            paginationOpts: { numItems: 10, cursor: null },
+        });
+        await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
+        const secondResult = await userIdentity.query(api.notifications.getNotificationsByUser, {
             paginationOpts: { numItems: 10, cursor: null },
         });
 
-        expect(firstRun.created).toBeGreaterThan(0);
-        expect(secondRun.created).toBe(0);
-        expect(result.page.length).toBe(firstRun.created);
+        expect(firstResult.page.length).toBeGreaterThan(0);
+        expect(secondResult.page.map(notification => notification._id)).toEqual(
+            firstResult.page.map(notification => notification._id)
+        );
     });
 
     test('deadline cron skips disabled preferences and ineligible objectives', async () => {
@@ -314,6 +330,8 @@ describe('convex notifications', async () => {
                     organizationId: userOrganizationId,
                     targetValue: 100,
                     currentValue: objective.currentValue ?? 50,
+                    startValue: objective.currentValue ?? 50,
+                    earlyBirdCompleted: false,
                     createdAt: now,
                     updatedAt: now,
                     ...objective,
@@ -321,13 +339,11 @@ describe('convex notifications', async () => {
             }
         });
 
-        const cron = await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
+        await t.mutation(internal.notifications.runDeadlineNotificationsCron, {});
         const result = await userIdentity.query(api.notifications.getNotificationsByUser, {
             paginationOpts: { numItems: 10, cursor: null },
         });
 
-        expect(cron.created).toBe(0);
-        expect(cron.skipped).toBeGreaterThan(0);
         expect(result.page).toEqual([]);
     });
 
@@ -336,7 +352,7 @@ describe('convex notifications', async () => {
             userId,
             organizationId: userOrganizationId,
             objective: objectiveId,
-            notificationType: 'reminder',
+            notificationType: 'deadline',
             message: 'Private',
         });
 

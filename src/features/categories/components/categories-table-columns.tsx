@@ -74,7 +74,6 @@ export function useCategoriesTableColumns() {
                         }}
                         title={t('confirmDelete')}
                         description={t('confirmDeleteDescription')}
-                        triggerLabel={t('buttons.delete')}
                         confirmLabel={t('buttons.confirm')}
                         cancelLabel={t('buttons.cancel')}
                         isLoading={isDeletingCategory}

@@ -10,7 +10,7 @@ import type { Id } from '@/convex/_generated/dataModel';
 export function useInvalidateSession() {
     const t = useTranslations('Sessions');
 
-    const { mutate, mutateAsync, isPending } = useMutation({
+    const { mutateAsync, isPending } = useMutation({
         mutationFn: useConvexMutation(api.sessions.invalidateSession),
         onSuccess: () => {
             toast.success(t('sessionRevoked'));
@@ -21,7 +21,6 @@ export function useInvalidateSession() {
     });
 
     return {
-        invalidateSession: mutate,
         invalidateSessionAsync: mutateAsync,
         isInvalidatingSession: isPending,
     };
@@ -30,8 +29,8 @@ export function useInvalidateSession() {
 export function useInvalidateAllOtherSessions() {
     const t = useTranslations('Sessions');
 
-    const { mutate, mutateAsync, isPending } = useMutation<
-        { readonly success: boolean; readonly revokedCount: number },
+    const { mutateAsync, isPending } = useMutation<
+        { readonly revokedCount: number },
         Error,
         { currentSessionId: Id<'session'> }
     >({
@@ -49,7 +48,6 @@ export function useInvalidateAllOtherSessions() {
     });
 
     return {
-        invalidateAllOtherSessions: mutate,
         invalidateAllOtherSessionsAsync: mutateAsync,
         isInvalidatingAllOtherSessions: isPending,
     };

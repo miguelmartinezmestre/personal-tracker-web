@@ -111,8 +111,6 @@ export async function createProgressUpdate(
             message: `Progress added to "${objective.title}": +${args.updatedValue}${
                 objective.unit ? ` ${objective.unit}` : ''
             }`,
-            createdAt: now,
-            updatedAt: now,
         });
     }
 

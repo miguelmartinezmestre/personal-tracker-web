@@ -89,15 +89,15 @@ describe('objective collaborators management', () => {
         });
     });
 
-    describe('getObjectiveCollaborators', () => {
+    describe('getObjectiveCollaboratorsPage', () => {
         test('owner lists collaborators with user info', async () => {
             const collaborators = await ownerIdentity.query(
-                api.objectives.getObjectiveCollaborators,
-                { objectiveId }
+                api.objectives.getObjectiveCollaboratorsPage,
+                { objectiveId, paginationOpts: { numItems: 10, cursor: null } }
             );
 
-            expect(collaborators).toHaveLength(2);
-            const editorEntry = collaborators.find(
+            expect(collaborators.page).toHaveLength(2);
+            const editorEntry = collaborators.page.find(
                 collaborator => collaborator.userId === editorUser.docId
             );
             expect(editorEntry?.role).toBe('editor');
@@ -107,10 +107,10 @@ describe('objective collaborators management', () => {
 
         test('viewer collaborator can read collaborators of a viewable objective', async () => {
             const collaborators = await viewerIdentity.query(
-                api.objectives.getObjectiveCollaborators,
-                { objectiveId }
+                api.objectives.getObjectiveCollaboratorsPage,
+                { objectiveId, paginationOpts: { numItems: 10, cursor: null } }
             );
-            expect(collaborators).toHaveLength(2);
+            expect(collaborators.page).toHaveLength(2);
         });
     });
 
@@ -163,11 +163,15 @@ describe('objective collaborators management', () => {
             });
             expect(result).toEqual({ success: true });
 
-            const remaining = await ownerIdentity.query(api.objectives.getObjectiveCollaborators, {
-                objectiveId,
-            });
-            expect(remaining).toHaveLength(1);
-            expect(remaining[0]?.userId).toBe(editorUser.docId);
+            const remaining = await ownerIdentity.query(
+                api.objectives.getObjectiveCollaboratorsPage,
+                {
+                    objectiveId,
+                    paginationOpts: { numItems: 10, cursor: null },
+                }
+            );
+            expect(remaining.page).toHaveLength(1);
+            expect(remaining.page[0]?.userId).toBe(editorUser.docId);
         });
 
         test('rejects removing a non-existent collaborator', async () => {
@@ -291,11 +295,11 @@ describe('objective collaborators management', () => {
             expect(transferred.ownerId).toBe(editorUser.docId);
 
             const collaborators = await editorIdentity.query(
-                api.objectives.getObjectiveCollaborators,
-                { objectiveId }
+                api.objectives.getObjectiveCollaboratorsPage,
+                { objectiveId, paginationOpts: { numItems: 10, cursor: null } }
             );
             expect(
-                collaborators.some(collaborator => collaborator.userId === editorUser.docId)
+                collaborators.page.some(collaborator => collaborator.userId === editorUser.docId)
             ).toBe(false);
         });
     });

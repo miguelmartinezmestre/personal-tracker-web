@@ -29,15 +29,7 @@ import { GLOBAL_ADMIN_ROLE, USER_ROLE } from '@shared/platform-roles';
 import { api } from '@/convex/_generated/api';
 import { useConvexMutation } from '@convex-dev/react-query';
 
-export function EditUserModal({
-    user,
-    roleLocked = false,
-    onSuccessAction,
-}: {
-    user: Doc<'user'>;
-    roleLocked?: boolean;
-    onSuccessAction?: () => void;
-}) {
+export function EditUserModal({ user, roleLocked }: { user: Doc<'user'>; roleLocked: boolean }) {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
 
@@ -45,8 +37,13 @@ export function EditUserModal({
     const [email, setEmail] = useState(user.email);
     const [name, setName] = useState(user.name);
     const [role, setRole] = useState(
-        user.role === 'ADMIN' ? GLOBAL_ADMIN_ROLE : user.role || USER_ROLE
+        user.role === GLOBAL_ADMIN_ROLE ? GLOBAL_ADMIN_ROLE : USER_ROLE
     );
+    const handleRoleChange = (value: string) => {
+        if (value === GLOBAL_ADMIN_ROLE || value === USER_ROLE) {
+            setRole(value);
+        }
+    };
     const updateUserMutation = useConvexMutation(api.admin.updateUser);
 
     const updateUser = useMutation({
@@ -61,7 +58,6 @@ export function EditUserModal({
         onSuccess: () => {
             toast.success(t('usersTable.toast.updatedSuccess'));
             setOpen(false);
-            onSuccessAction?.();
         },
         onError: (error: Error) => {
             toast.error(t('usersTable.toast.updateFailed', { message: error.message }));
@@ -101,7 +97,7 @@ export function EditUserModal({
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="role">{tCommon('fields.role')}</Label>
-                        <Select value={role} onValueChange={setRole} disabled={roleLocked}>
+                        <Select value={role} onValueChange={handleRoleChange} disabled={roleLocked}>
                             <SelectTrigger data-testid="user-edit-role-select">
                                 <SelectValue />
                             </SelectTrigger>

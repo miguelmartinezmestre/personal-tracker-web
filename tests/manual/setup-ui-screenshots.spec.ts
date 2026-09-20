@@ -224,23 +224,20 @@ test.describe('Memoria setup + UI screenshots', () => {
             await captureFigure(page, 'objetivos-filtros.png');
         }
 
-        const firstObjectiveLink = page.locator('a[href*="/dashboard/objectives/"]').first();
-        if (await isVisibleNow(firstObjectiveLink)) {
-            await firstObjectiveLink.click();
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(800);
-            await captureFigure(page, 'progreso-detalle.png');
+        const firstObjectiveLink = page
+            .getByTestId('table-row')
+            .filter({ hasText: 'Learn TypeScript' })
+            .getByTestId('objective-progress-link')
+            .first();
+        await firstObjectiveLink.click();
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(800);
+        await captureFigure(page, 'progreso-detalle.png');
 
-            const addProgress = page
-                .getByTestId('add-progress-button')
-                .or(page.getByRole('button', { name: /progress|progreso/i }));
-            if (await isVisibleNow(addProgress.first())) {
-                await addProgress.first().click();
-                await page.waitForTimeout(500);
-                await captureFigure(page, 'progreso-formulario.png');
-                await page.keyboard.press('Escape');
-            }
-        }
+        await page.getByTestId('progress-create-open').click();
+        await page.waitForTimeout(500);
+        await captureFigure(page, 'progreso-formulario.png');
+        await page.keyboard.press('Escape');
 
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('networkidle');
@@ -270,27 +267,20 @@ test.describe('Memoria setup + UI screenshots', () => {
         await page.waitForTimeout(800);
         await captureFigure(page, 'logros-overview.png');
 
-        const adminLink = page.locator('a[href*="/dashboard/admin"]').first();
-        if (await isVisibleNow(adminLink)) {
-            await page.goto('/dashboard/admin');
-            await page.waitForLoadState('networkidle');
-            await page.waitForTimeout(800);
-            await captureFigure(page, 'admin-panel-usuarios.png');
+        await page.goto('/dashboard/admin/users');
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(800);
+        await captureFigure(page, 'admin-panel-usuarios.png');
 
-            const sessionsTab = page.getByRole('tab', { name: /session/i });
-            if (await isVisibleNow(sessionsTab.first())) {
-                await sessionsTab.first().click();
-                await page.waitForTimeout(500);
-                await captureFigure(page, 'admin-panel-sesiones.png');
-            }
+        await page.goto('/dashboard/admin/sessions');
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(500);
+        await captureFigure(page, 'admin-panel-sesiones.png');
 
-            const auditTab = page.getByRole('tab', { name: /audit|auditor/i });
-            if (await isVisibleNow(auditTab.first())) {
-                await auditTab.first().click();
-                await page.waitForTimeout(500);
-                await captureFigure(page, 'admin-panel-auditoria.png');
-            }
-        }
+        await page.goto('/dashboard/admin/audit');
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(500);
+        await captureFigure(page, 'admin-panel-auditoria.png');
 
         // Mobile views
         await page.setViewportSize({ width: 390, height: 844 });

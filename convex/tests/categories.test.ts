@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
 import type { DataModel, Id } from '../_generated/dataModel';
@@ -200,31 +200,6 @@ describe('convex categories', async () => {
         ).resolves.toBeNull();
     });
 
-    test('creates the default category set for the caller', async () => {
-        const result = await userIdentity.mutation(internal.categories.createDefaultCategories, {});
-        const names = result.map(category => category?.name);
-
-        expect(result).toHaveLength(9);
-        expect(names).toEqual(
-            expect.arrayContaining([
-                'Health & Fitness',
-                'Career & Business',
-                'Learning & Education',
-                'Personal Development',
-                'Finance & Savings',
-                'Relationships',
-                'Creative Projects',
-                'Home & Organization',
-                'Travel & Adventure',
-            ])
-        );
-        expect(result.every(category => category?.userId === userId)).toBe(true);
-        expect(result.every(category => /^#[0-9a-fA-F]{6}$/.test(category?.color ?? ''))).toBe(
-            true
-        );
-        expect(result.every(category => category?.icon)).toBe(true);
-    });
-
     test('category functions reject unauthenticated callers', async () => {
         const categoryId = await userIdentity.mutation(api.categories.createCategory, {
             name: 'Private',
@@ -243,9 +218,6 @@ describe('convex categories', async () => {
             t.mutation(api.categories.updateCategory, { id: categoryId, name: 'Hacked' })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
         await expect(t.mutation(api.categories.deleteCategory, { id: categoryId })).rejects.toThrow(
-            /Unauthenticated|User not authenticated|AUTH_REQUIRED/
-        );
-        await expect(t.mutation(internal.categories.createDefaultCategories, {})).rejects.toThrow(
             /Unauthenticated|User not authenticated|AUTH_REQUIRED/
         );
     });

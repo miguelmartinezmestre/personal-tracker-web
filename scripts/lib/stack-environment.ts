@@ -50,6 +50,7 @@ const LOCAL_KEYS = new Set([
     'JWKS',
     'SETUP_SECRET',
     'E2E_SETUP_SECRET',
+    'E2E_MAILHOG_UI_PORT',
     'NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP',
     'NEXT_DIST_DIR',
     'BASE_URL',

@@ -26,7 +26,6 @@ test(
         await createTestUser(page, {
             customUsername: username,
             customEmail: `smoke-${suffix}@test.com`,
-            customOrganizationSlug: `org-${suffix}`,
             password: DEFAULT_PASSWORD,
         });
         await expect(page.getByTestId('welcome-message')).toContainText(username);

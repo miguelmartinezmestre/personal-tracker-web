@@ -28,17 +28,12 @@
         "test-results/**",
         "playwright-report/**",
         "blob-report/**",
-        "logs/**",
         "tests/.auth/**",
         "next-env.d.ts",
         "convex/_generated/**",
         "convex/generated/**",
         "infrastructure/data/**",
-        "infrastructure/data-dev/**",
-        "infrastructure/mysql-data/**",
-        "infrastructure/mysql-data-dev/**",
-        "infrastructure/mysql-data-e2e/**",
-        "infrastructure/convex-data-e2e/**"
+        "infrastructure/mysql-data/**"
     ],
     "overrides": [
         {

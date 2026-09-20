@@ -42,8 +42,9 @@ describe('dashboard visibility', () => {
                 startValue: 0,
                 visibility: 'private',
             });
-            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toMatchObject({
-                totalObjectives: 0,
+            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
+                completedObjectives: 0,
+                pendingObjectives: 0,
             });
             const collaborator = await a.mutation(api.objectives.addCollaborator, {
                 objectiveId,
@@ -51,8 +52,9 @@ describe('dashboard visibility', () => {
                 role: 'editor',
             });
             expect(collaborator).not.toBeNull();
-            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toMatchObject({
-                totalObjectives: 1,
+            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
+                completedObjectives: 0,
+                pendingObjectives: 1,
             });
             await t.run(async ctx => {
                 await domainTriggers.wrapDB(ctx).db.insert('progressUpdates', {
@@ -72,8 +74,9 @@ describe('dashboard visibility', () => {
             await t.finishAllScheduledFunctions(() => {
                 vi.runAllTimers();
             });
-            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toMatchObject({
-                totalObjectives: 1,
+            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
+                completedObjectives: 0,
+                pendingObjectives: 1,
             });
             await a.mutation(api.objectives.setObjectiveVisibility, {
                 id: objectiveId,
@@ -91,8 +94,9 @@ describe('dashboard visibility', () => {
             await t.finishAllScheduledFunctions(() => {
                 vi.runAllTimers();
             });
-            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toMatchObject({
-                totalObjectives: 0,
+            await expect(b.query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
+                completedObjectives: 0,
+                pendingObjectives: 0,
             });
             const monthly = await b.query(api.dashboard.getMonthlyProgress, { now: Date.now() });
             expect(monthly.items.reduce((sum, item) => sum + item.count, 0)).toBe(0);

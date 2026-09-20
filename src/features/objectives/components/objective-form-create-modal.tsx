@@ -19,10 +19,8 @@ const defaultValues: CreateObjective = {
     description: '',
     categoryId: null,
     targetValue: 100,
-    currentValue: 0,
     startValue: 0,
     deadline: null,
-    status: 'active',
     unit: '',
     visibility: OBJECTIVE_VISIBILITY.PRIVATE,
 };

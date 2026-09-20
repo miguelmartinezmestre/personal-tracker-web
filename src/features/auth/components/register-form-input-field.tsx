@@ -31,7 +31,7 @@ export function RegisterFormInputField({
     return (
         <form.Field name={name}>
             {field => (
-                <FieldShell name={field.name} error={getFieldError(form, field)}>
+                <FieldShell error={getFieldError(form, field)}>
                     <FormItem>
                         <FormLabel className="text-foreground">{label}</FormLabel>
                         <FormControl>

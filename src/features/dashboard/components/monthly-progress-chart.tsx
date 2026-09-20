@@ -62,11 +62,6 @@ export default function MonthlyProgressChart() {
                         }))}
                     />
                 ) : null}
-                {monthlyProgress?.isTruncated ? (
-                    <p className="text-xs text-muted-foreground" role="status">
-                        {t('charts.partialData')}
-                    </p>
-                ) : null}
             </CardContent>
         </Card>
     );

@@ -4,7 +4,6 @@ import {
     achievementDefinitionDocumentValidator,
     auditLogDocumentValidator,
     notificationDocumentValidator,
-    objectiveDocumentValidator,
     userDocumentValidator,
 } from './documentValidators';
 import {
@@ -37,16 +36,15 @@ export const objectiveWithCapabilitiesValidator = v.object({
     categoryId: v.optional(v.id('categories')),
     targetValue: v.number(),
     currentValue: v.number(),
-    startValue: v.optional(v.number()),
+    startValue: v.number(),
     deadline: v.optional(v.number()),
     status: objectiveStatusValidator,
     completedAt: v.optional(v.number()),
-    earlyBirdCompleted: v.optional(v.boolean()),
+    earlyBirdCompleted: v.boolean(),
     unit: v.optional(v.string()),
     deletedAt: v.optional(v.number()),
     deletedBy: v.optional(v.id('user')),
     purgeToken: v.optional(v.string()),
-    purgeStartedAt: v.optional(v.number()),
     ownerDeletionProcessedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -105,29 +103,6 @@ export const collaboratorEnrichedValidator = v.object({
     ),
 });
 
-export const userAchievementWithDefinitionValidator = v.object({
-    _id: v.id('obtainedAchievements'),
-    _creationTime: v.number(),
-    userId: v.id('user'),
-    achievement: v.string(),
-    earnedAt: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    definition: v.optional(achievementDefinitionDocumentValidator),
-    user: v.id('user'),
-});
-
-export const organizationAchievementWithDefinitionValidator = v.object({
-    _id: v.id('organizationAchievements'),
-    _creationTime: v.number(),
-    organization: v.id('organization'),
-    achievement: v.string(),
-    earnedAt: v.number(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-    definition: v.optional(achievementDefinitionDocumentValidator),
-});
-
 export const achievementStatsValidator = v.object({
     totalPoints: v.number(),
     earnedCount: v.number(),
@@ -150,15 +125,6 @@ export const organizationSummaryValidator = v.object({
     createdAt: v.number(),
     role: organizationRoleValidator,
     isPersonal: v.boolean(),
-});
-
-export const activeOrganizationValidator = v.object({
-    id: v.id('organization'),
-    name: v.string(),
-    slug: v.string(),
-    description: v.string(),
-    logo: v.optional(v.union(v.null(), v.string())),
-    createdAt: v.number(),
 });
 
 export const activeMemberValidator = v.object({
@@ -189,39 +155,13 @@ export const paginatedOrganizationMembersValidator = paginationResultValidator(
     organizationMemberValidator
 );
 
-export const invitationOrganizationSummaryValidator = v.object({
-    id: v.id('organization'),
-    name: v.string(),
-    slug: v.string(),
-});
-
-export const invitationInviterSummaryValidator = v.object({
-    id: v.id('user'),
-    name: v.string(),
-    email: v.string(),
-});
-
 export const userInvitationValidator = v.object({
     id: v.id('invitation'),
     email: v.string(),
     role: v.string(),
     organizationId: v.id('organization'),
-    status: v.string(),
-    createdAt: v.number(),
-    expiresAt: v.number(),
-    organization: v.optional(invitationOrganizationSummaryValidator),
-    inviter: v.optional(invitationInviterSummaryValidator),
-});
-
-export const organizationInvitationValidator = v.object({
-    id: v.id('invitation'),
-    email: v.string(),
-    role: v.string(),
-    organizationId: v.id('organization'),
-    status: v.string(),
-    createdAt: v.number(),
-    expiresAt: v.number(),
-    inviter: v.optional(invitationInviterSummaryValidator),
+    organization: v.optional(v.object({ name: v.string() })),
+    inviter: v.optional(v.object({ name: v.string() })),
 });
 
 export const currentSessionValidator = v.object({
@@ -248,6 +188,6 @@ export const successResultValidator = v.object({
     success: v.boolean(),
 });
 
-export const paginatedObjectivesArrayValidator = v.array(objectiveWithCapabilitiesValidator);
-
-export const objectivesArrayValidator = v.array(objectiveDocumentValidator);
+export const objectivesArrayValidator = v.array(
+    v.object({ _id: v.id('objectives'), title: v.string() })
+);

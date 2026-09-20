@@ -10,40 +10,21 @@ type DeleteObjectiveContinueArgs = {
     objectiveId: Id<'objectives'>;
     purgeToken: string;
     phase?: DeleteObjectivePhase;
-    cursor?: string | null;
-    totalProgressDeleted?: number;
-    totalNotificationsDeleted?: number;
 };
 
 export async function continueObjectiveDeletion(
     ctx: MutationCtx,
     args: DeleteObjectiveContinueArgs
-) {
+): Promise<null> {
     const phase = args.phase ?? 'collaborators';
-    const totalProgressDeleted = args.totalProgressDeleted ?? 0;
-    const totalNotificationsDeleted = args.totalNotificationsDeleted ?? 0;
     const objective = await ctx.db.get('objectives', args.objectiveId);
 
     if (!objective) {
-        return {
-            status: 'completed',
-            noOp: true,
-            deleted: {
-                progress: totalProgressDeleted,
-                notifications: totalNotificationsDeleted,
-            },
-        };
+        return null;
     }
 
     if (objective.purgeToken !== args.purgeToken || objective.deletedAt === undefined) {
-        return {
-            status: 'cancelled',
-            noOp: true,
-            deleted: {
-                progress: totalProgressDeleted,
-                notifications: totalNotificationsDeleted,
-            },
-        };
+        return null;
     }
 
     if (phase === 'collaborators') {
@@ -61,19 +42,9 @@ export async function continueObjectiveDeletion(
             objectiveId: args.objectiveId,
             purgeToken: args.purgeToken,
             phase: nextPhase,
-            cursor: null,
-            totalProgressDeleted,
-            totalNotificationsDeleted,
         });
 
-        return {
-            status: 'in_progress',
-            phase: nextPhase,
-            deleted: {
-                progress: totalProgressDeleted,
-                notifications: totalNotificationsDeleted,
-            },
-        };
+        return null;
     }
 
     if (phase === 'progress') {
@@ -89,40 +60,21 @@ export async function continueObjectiveDeletion(
             await ctx.db.delete('progressUpdates', update._id);
         }
 
-        const newTotalProgress = totalProgressDeleted + page.page.length;
-
         if (!page.isDone) {
             await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
                 objectiveId: args.objectiveId,
                 purgeToken: args.purgeToken,
                 phase: 'progress',
-                cursor: null,
-                totalProgressDeleted: newTotalProgress,
-                totalNotificationsDeleted,
             });
-            return {
-                status: 'in_progress',
-                phase: 'progress',
-                deleted: {
-                    progress: newTotalProgress,
-                    notifications: totalNotificationsDeleted,
-                },
-            };
+            return null;
         }
 
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.objectiveId,
             purgeToken: args.purgeToken,
             phase: 'notifications',
-            cursor: null,
-            totalProgressDeleted: newTotalProgress,
-            totalNotificationsDeleted,
         });
-        return {
-            status: 'in_progress',
-            phase: 'notifications',
-            deleted: { progress: newTotalProgress, notifications: totalNotificationsDeleted },
-        };
+        return null;
     }
 
     const page = await ctx.db
@@ -137,33 +89,18 @@ export async function continueObjectiveDeletion(
         await ctx.db.delete('notifications', notification._id);
     }
 
-    const newTotalNotifications = totalNotificationsDeleted + page.page.length;
-
     if (!page.isDone) {
         await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
             objectiveId: args.objectiveId,
             purgeToken: args.purgeToken,
             phase: 'notifications',
-            cursor: null,
-            totalProgressDeleted,
-            totalNotificationsDeleted: newTotalNotifications,
         });
-        return {
-            status: 'in_progress',
-            phase: 'notifications',
-            deleted: {
-                progress: totalProgressDeleted,
-                notifications: newTotalNotifications,
-            },
-        };
+        return null;
     }
 
     await ctx.db.delete('objectives', args.objectiveId);
 
-    return {
-        status: 'completed',
-        deleted: { progress: totalProgressDeleted, notifications: newTotalNotifications },
-    };
+    return null;
 }
 
 export async function deleteObjectiveWithDependents(
@@ -189,9 +126,6 @@ export async function deleteObjectiveWithDependents(
             objectiveId: args.objectiveId,
             purgeToken: args.purgeToken,
             phase: 'collaborators',
-            cursor: null,
-            totalProgressDeleted: 0,
-            totalNotificationsDeleted: 0,
         });
 
         return { status: 'deletion_started', objectiveId: args.objectiveId };
@@ -211,9 +145,6 @@ export async function deleteObjectiveWithDependents(
             objectiveId: args.objectiveId,
             purgeToken: args.purgeToken,
             phase: 'progress',
-            cursor: null,
-            totalProgressDeleted: 0,
-            totalNotificationsDeleted: 0,
         });
 
         return { status: 'deletion_started', objectiveId: args.objectiveId };
@@ -233,9 +164,6 @@ export async function deleteObjectiveWithDependents(
             objectiveId: args.objectiveId,
             purgeToken: args.purgeToken,
             phase: 'notifications',
-            cursor: null,
-            totalProgressDeleted: progressBatch.length,
-            totalNotificationsDeleted: 0,
         });
 
         return { status: 'deletion_started', objectiveId: args.objectiveId };
@@ -250,9 +178,5 @@ export async function deleteObjectiveWithDependents(
     return {
         status: 'deleted',
         objectiveId: args.objectiveId,
-        deleted: {
-            progress: progressBatch.length,
-            notifications: notificationsBatch.length,
-        },
     };
 }

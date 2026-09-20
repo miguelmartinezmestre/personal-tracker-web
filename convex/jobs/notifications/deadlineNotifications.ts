@@ -15,19 +15,12 @@ export async function runDeadlineNotificationsJob(
     args: {
         cursor?: string | null;
         runAt?: number;
-        created?: number;
-        skipped?: number;
-        scannedSoFar?: number;
     }
-) {
+): Promise<null> {
     const now = args.runAt ?? Date.now();
     const { dayStart, dayEnd, scanUpperBound } = getDeadlineDayWindow(now);
     const scanLowerBound = dayStart - 7 * 86_400_000;
     const operationalOrganizations = new Map<string, boolean>();
-    let created = args.created || 0;
-    let skipped = args.skipped || 0;
-    const scannedSoFar = args.scannedSoFar ?? 0;
-
     const page = await ctx.db
         .query('objectives')
         .withIndex('by_status_deletedAt_deadline', q =>
@@ -62,11 +55,9 @@ export async function runDeadlineNotificationsJob(
             );
         }
         if (!operationalOrganizations.get(ownerScope)) {
-            skipped += 1;
             continue;
         }
         if (objective.deletedAt !== undefined) {
-            skipped += 1;
             continue;
         }
         if (!objective.deadline) {
@@ -79,12 +70,10 @@ export async function runDeadlineNotificationsJob(
         }
 
         if (!preferenceMap.get(objective.ownerId)) {
-            skipped += 1;
             continue;
         }
 
         if (existingSet.has(objective._id)) {
-            skipped += 1;
             continue;
         }
 
@@ -101,7 +90,6 @@ export async function runDeadlineNotificationsJob(
 
         if (existingNotification) {
             existingSet.add(objective._id);
-            skipped += 1;
             continue;
         }
 
@@ -128,38 +116,16 @@ export async function runDeadlineNotificationsJob(
             },
             notificationDate: now,
             message,
-            createdAt: now,
-            updatedAt: now,
         });
 
         existingSet.add(objective._id);
-        created += 1;
     }
-
-    const batchScanned = objectives.length;
-    const totalScanned = scannedSoFar + batchScanned;
 
     if (!page.isDone) {
         await ctx.scheduler.runAfter(0, internal.notifications.runDeadlineNotificationsCron, {
             cursor: page.continueCursor,
             runAt: now,
-            created,
-            skipped,
-            scannedSoFar: totalScanned,
         });
-        return {
-            status: 'in_progress' as const,
-            processedInBatch: batchScanned,
-            scannedSoFar: totalScanned,
-            createdSoFar: created,
-            skippedSoFar: skipped,
-        };
     }
-
-    return {
-        status: 'completed' as const,
-        scanned: totalScanned,
-        created,
-        skipped,
-    };
+    return null;
 }

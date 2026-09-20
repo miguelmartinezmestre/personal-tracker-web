@@ -11,47 +11,25 @@ function normalizeForEmail(name: string): string {
         .replace(/\s+/g, '.')
         .replace(/[^a-z0-9.]/g, '');
 }
-function normalizeForSlug(name: string): string {
-    const normalized = name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-    return normalized.substring(0, 20);
-}
-function createSafeSlug(name: string, suffix: string): string {
-    const normalized = normalizeForSlug(name);
-    const maxBaseLength = 30 - 1 - suffix.length;
-    const base = normalized.substring(0, Math.max(1, maxBaseLength));
-    return `${base}-${suffix}`;
-}
-export interface CreateTestUserOptions {
+interface CreateTestUserOptions {
     password?: string;
     usePresentableName?: boolean;
     customUsername?: string;
     customEmail?: string;
-    customOrganizationSlug?: string;
 }
 export interface TestUserData {
     username: string;
     email: string;
     password: string;
-    organizationSlug: string;
 }
 export function generateTestUserData(options?: CreateTestUserOptions): TestUserData {
     const uuid = randomUUID();
     const shortId = uuid.substring(0, 8);
     let username: string;
     let email: string;
-    let organizationSlug: string;
     if (options?.customUsername) {
         username = options.customUsername;
         email = options.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
-        organizationSlug =
-            options.customOrganizationSlug ?? createSafeSlug(options.customUsername, shortId);
     } else if (options?.usePresentableName) {
         const presentableNames = ['Miguel García', 'Ana Martínez', 'Carlos López'];
         // Deterministic pick derived from the generated id (no Math.random) so screenshots
@@ -60,17 +38,14 @@ export function generateTestUserData(options?: CreateTestUserOptions): TestUserD
             presentableNames[shortId.charCodeAt(0) % presentableNames.length] ?? 'Test User';
         username = presentableName;
         email = `${normalizeForEmail(presentableName)}.${shortId}@example.com`;
-        organizationSlug = createSafeSlug(presentableName, shortId);
     } else {
         username = `testuser-${shortId}`;
         email = `testuser-${shortId}@test.com`;
-        organizationSlug = `org-${shortId}`;
     }
     return {
         username,
         email,
         password: options?.password ?? DEFAULT_PASSWORD,
-        organizationSlug,
     };
 }
 export async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> {
@@ -92,33 +67,6 @@ export async function hasOrganizationSelectedInUI(page: Page): Promise<boolean> 
     }
     return !label.includes('no organization') && !label.includes('sin organizacion');
 }
-export async function selectOrganizationByName(
-    page: Page,
-    organizationName: string
-): Promise<boolean> {
-    const switcher = page.getByTestId('organization-switcher');
-    if ((await switcher.count()) === 0) {
-        return false;
-    }
-    await switcher.first().click();
-    const option = page
-        .locator(
-            '[data-testid^="organization-option-"]:not([data-disabled]):not([aria-disabled="true"])'
-        )
-        .filter({ hasText: organizationName })
-        .first();
-    try {
-        await expect(option).toBeVisible({ timeout: 5000 });
-    } catch {
-        await page.keyboard.press('Escape').catch(() => undefined);
-        return false;
-    }
-    await option.click();
-    await expect(option)
-        .toBeHidden({ timeout: 5000 })
-        .catch(() => undefined);
-    return true;
-}
 async function waitForAuthenticatedDashboard(page: Page, timeout = 15000): Promise<void> {
     await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
     await page.waitForURL(DASHBOARD_HOME_RE, { timeout });
@@ -139,14 +87,7 @@ async function loginWithCredentials(page: Page, email: string, password: string)
     await page.waitForURL(DASHBOARD_HOME_RE, { timeout: 30000 });
     await ensureAuthenticatedState(page);
 }
-async function fillControlledInput(
-    page: Page,
-    testId: string,
-    value: string,
-    options?: {
-        secret?: boolean;
-    }
-): Promise<void> {
+async function fillControlledInput(page: Page, testId: string, value: string): Promise<void> {
     const input = page.getByTestId(testId);
     await input.click();
     await input.fill('');
@@ -160,9 +101,6 @@ async function fillControlledInput(
     await input.fill('');
     await input.pressSequentially(value, { delay: 15 });
     await expect(input).toHaveValue(value, { timeout: 5000 });
-    if (!options?.secret) {
-        return;
-    }
 }
 async function completeRegistrationFlow(page: Page, userData: TestUserData): Promise<void> {
     await page.goto('/register');
@@ -171,18 +109,8 @@ async function completeRegistrationFlow(page: Page, userData: TestUserData): Pro
     });
     await fillControlledInput(page, 'register-username-input', userData.username);
     await fillControlledInput(page, 'register-email-input', userData.email);
-    await fillControlledInput(page, 'register-password-input', userData.password, { secret: true });
-    await fillControlledInput(page, 'register-confirm-password-input', userData.password, {
-        secret: true,
-    });
-    const organizationSlugInput = page.getByTestId('register-organization-slug-input');
-    if ((await organizationSlugInput.count()) > 0) {
-        await fillControlledInput(
-            page,
-            'register-organization-slug-input',
-            userData.organizationSlug
-        );
-    }
+    await fillControlledInput(page, 'register-password-input', userData.password);
+    await fillControlledInput(page, 'register-confirm-password-input', userData.password);
     // Ensure controlled form state commits on WebKit before submit.
     await page.getByTestId('register-confirm-password-input').blur();
     const registerButton = page.getByTestId('register-button');
@@ -233,23 +161,17 @@ export async function logoutUser(page: Page): Promise<void> {
     await logoutButton.click();
     await expect(page).toHaveURL(/\/login(\?|$)/, { timeout: 15000 });
 }
-export interface CreateObjectiveOptions {
+interface CreateObjectiveOptions {
     title?: string;
     description?: string;
     category?: string;
     targetValue?: number;
-    currentValue?: number;
     unit?: string;
     visibility?: 'private' | 'organization';
     ensureCategories?: boolean;
 }
-export interface ObjectiveData {
+interface ObjectiveData {
     title: string;
-    description: string;
-    category: string;
-    targetValue: number;
-    currentValue: number;
-    unit: string;
 }
 const createObjectiveButtonName = /^(Create Objective|Crear objetivo)$/i;
 const createProgressButtonName = /^(Create New Update Progress|Crear nuevo progreso)$/i;
@@ -274,7 +196,6 @@ export async function createObjective(
     const description = options?.description ?? 'Test objective description';
     const category = options?.category ?? `Obj Cat ${uuid.substring(0, 8)}`;
     const targetValue = options?.targetValue ?? 100;
-    const currentValue = options?.currentValue ?? 0;
     const unit = options?.unit ?? 'units';
     if (options?.ensureCategories !== false) {
         await ensureDefaultCategories(page);
@@ -309,15 +230,14 @@ export async function createObjective(
             intervals: [500, 1000, 2000],
         })
         .toBeGreaterThan(0);
-    return { title, description, category, targetValue, currentValue, unit };
+    return { title };
 }
-export interface CreateCategoryOptions {
+interface CreateCategoryOptions {
     name?: string;
     color?: string;
 }
-export interface CategoryData {
+interface CategoryData {
     name: string;
-    color: string;
 }
 const categoryColorValues: Record<string, string> = {
     Red: '#ef4444',
@@ -357,7 +277,7 @@ export async function createCategory(
     await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
         timeout: 15000,
     });
-    return { name, color: colorValue };
+    return { name };
 }
 const PERSONAL_ROW = /\bPersonal\b/i;
 function personalCategoryTableRowCount(page: Page) {
@@ -401,13 +321,12 @@ export async function ensureDefaultCategories(page: Page): Promise<void> {
     }
     await expect(page.getByText(PERSONAL_ROW).first()).toBeVisible({ timeout: 5000 });
 }
-export interface CreateOrganizationOptions {
+interface CreateOrganizationOptions {
     name?: string;
     description?: string;
 }
-export interface OrganizationData {
+interface OrganizationData {
     name: string;
-    description: string;
 }
 export async function createOrganization(
     page: Page,
@@ -430,21 +349,7 @@ export async function createOrganization(
     await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
         timeout: 20000,
     });
-    return { name, description };
-}
-export async function waitForToast(page: Page, message: string | RegExp): Promise<void> {
-    const toast = page.locator('[data-sonner-toast]', { hasText: message });
-    await expect(toast).toBeVisible({ timeout: 5000 });
-}
-export async function waitForConvexData(
-    page: Page,
-    testId: string,
-    options?: {
-        timeout?: number;
-    }
-): Promise<void> {
-    const timeout = options?.timeout ?? 15000;
-    await expect(page.getByTestId(testId)).toBeVisible({ timeout });
+    return { name };
 }
 export async function openModal(
     page: Page,
@@ -457,49 +362,4 @@ export async function openModal(
     const timeout = options?.timeout ?? 10000;
     await page.getByTestId(triggerTestId).click();
     await expect(page.getByTestId(contentTestId)).toBeVisible({ timeout });
-}
-export async function selectDropdownOption(
-    page: Page,
-    triggerTestId: string,
-    optionText: string | RegExp,
-    options?: {
-        timeout?: number;
-        fallbackToFirst?: boolean;
-    }
-): Promise<void> {
-    const timeout = options?.timeout ?? 10000;
-    const fallbackToFirst = options?.fallbackToFirst ?? false;
-    await page.getByTestId(triggerTestId).click();
-    await expect(page.getByRole('option').first()).toBeVisible({ timeout });
-    const option = page.getByRole('option').filter({ hasText: optionText }).first();
-    if ((await option.count()) > 0) {
-        await option.click();
-        return;
-    }
-    if (fallbackToFirst) {
-        await page.getByRole('option').first().click();
-        return;
-    }
-    const optionDescription = typeof optionText === 'string' ? optionText : optionText.source;
-    throw new Error(`Dropdown option not found: ${optionDescription}`);
-}
-export async function navigateAndWaitForContent(
-    page: Page,
-    path: string,
-    contentTestId: string,
-    options?: {
-        timeout?: number;
-    }
-): Promise<void> {
-    const timeout = options?.timeout ?? 15000;
-    await page.goto(path, { waitUntil: 'domcontentloaded' });
-    await expect(page.getByTestId(contentTestId)).toBeVisible({ timeout });
-}
-export function getPageOrigin(page: Page): string {
-    const url = page.url();
-    try {
-        return new URL(url).origin;
-    } catch {
-        return process.env.BASE_URL || 'http://localhost:3000';
-    }
 }

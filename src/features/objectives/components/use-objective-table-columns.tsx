@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { StatusIndicator } from '@/components/ui/status-indicator';
-import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
+import { computeObjectiveProgressPercent } from './objectives-utils';
 import { ObjectiveRowActions } from './objective-row-actions';
 import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 
@@ -73,11 +73,10 @@ export function useObjectiveTableColumns({
             header: t('progress'),
             cell: ({ row }) => {
                 const objective = row.original;
-                const normalized = normalizeObjective(objective);
                 const progress = computeObjectiveProgressPercent({
-                    currentValue: normalized.currentValue,
-                    targetValue: normalized.targetValue,
-                    startValue: normalized.startValue,
+                    currentValue: objective.currentValue,
+                    targetValue: objective.targetValue,
+                    startValue: objective.startValue,
                 });
 
                 return (
@@ -85,8 +84,6 @@ export function useObjectiveTableColumns({
                         <CircularProgress
                             aria-label={`${t('progress')}: ${objective.title}`}
                             value={progress}
-                            max={100}
-                            size="sm"
                         />
                         <span className="text-sm text-muted-foreground">
                             {objective.currentValue}/{objective.targetValue} {objective.unit ?? ''}

@@ -14,7 +14,7 @@ import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 export default function NotificationsTable() {
     const t = useTranslations('Notifications');
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
         useServerPagination(DEFAULT_PAGE_SIZE);
     const notifications = useQuery(
         convexQuery(api.notifications.getNotificationsByUser, {
@@ -74,7 +74,6 @@ export default function NotificationsTable() {
                 data={tableNotifications}
                 isLoading={notifications.isLoading}
                 pagination={{
-                    currentPage,
                     onNextPage: () => nextPage(notificationsContinueCursor, notificationsIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,

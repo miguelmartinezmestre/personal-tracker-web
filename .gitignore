@@ -22,21 +22,14 @@ convex/.env.*.local
 .pnpm-debug.log*
 *.log
 
-# test-capture logs (scripts/capture-tests.sh)
-/logs/
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 .next
 
-# mysql
-/infrastructure/mysql-data-e2e
+# local stack data
 /infrastructure/mysql-data
-/infrastructure/mysql-data-dev
 /infrastructure/data
-/infrastructure/data-dev
-/infrastructure/convex-data-e2e
 
 # Playwright
 node_modules/

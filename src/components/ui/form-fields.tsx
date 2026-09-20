@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { getOptionalString, isRecord } from '@shared/boundary-values';
 
 type FieldContextValue = {
-    name: string;
     error?: string;
 };
 
@@ -47,7 +46,6 @@ function formatFieldError(error: unknown): string | undefined {
 }
 
 type FieldShellProps = {
-    name: string;
     error?: unknown;
     children: React.ReactNode;
 };
@@ -61,9 +59,9 @@ export function getFieldError(
         : undefined;
 }
 
-function FieldShell({ name, error, children }: FieldShellProps) {
+function FieldShell({ error, children }: FieldShellProps) {
     return (
-        <FieldContext.Provider value={{ name, error: formatFieldError(error) }}>
+        <FieldContext.Provider value={{ error: formatFieldError(error) }}>
             {children}
         </FieldContext.Provider>
     );
@@ -83,8 +81,6 @@ function useFormField() {
     }
     const { id } = itemContext;
     return {
-        id,
-        name: fieldContext.name,
         error: fieldContext.error,
         formItemId: `${id}-form-item`,
         formDescriptionId: `${id}-form-item-description`,
@@ -139,10 +135,12 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
     );
 }
 
-function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
+function FormMessage({
+    className,
+    ...props
+}: Omit<React.ComponentProps<'p'>, 'children'>) {
     const { error, formMessageId } = useFormField();
-    const body = error ?? props.children;
-    if (!body) {
+    if (!error) {
         return null;
     }
     return (
@@ -152,14 +150,13 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
             className={cn('text-destructive text-sm', className)}
             {...props}
         >
-            {body}
+            {error}
         </p>
     );
 }
 
 export {
     FieldShell,
-    useFormField,
     FormItem,
     FormLabel,
     FormControl,

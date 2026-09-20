@@ -21,7 +21,6 @@ export async function getNotificationPreferencesForUser(
 
     if (preferences) {
         return {
-            ...preferences,
             achievementNotifications: preferences.achievementNotifications,
             deadlineNotifications: preferences.deadlineNotifications,
             progressNotifications: preferences.progressNotifications,
@@ -29,12 +28,7 @@ export async function getNotificationPreferencesForUser(
         };
     }
 
-    return {
-        userId,
-        ...DEFAULT_NOTIFICATION_PREFERENCES,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-    };
+    return DEFAULT_NOTIFICATION_PREFERENCES;
 }
 
 export async function updateNotificationPreferencesForUser(
@@ -42,17 +36,13 @@ export async function updateNotificationPreferencesForUser(
     userId: Id<'user'>,
     patch: NotificationPreferencePatch
 ) {
-    const now = Date.now();
-
     const existing = await ctx.db
         .query('notificationPreferences')
         .withIndex('by_user', q => q.eq('userId', userId))
         .first();
 
     if (existing) {
-        const updateFields: Record<string, boolean | number> = {
-            updatedAt: now,
-        };
+        const updateFields: Record<string, boolean> = {};
 
         if (patch.achievementNotifications !== undefined) {
             updateFields.achievementNotifications = patch.achievementNotifications;
@@ -67,12 +57,11 @@ export async function updateNotificationPreferencesForUser(
             updateFields.organizationNotifications = patch.organizationNotifications;
         }
 
-        await ctx.db.patch('notificationPreferences', existing._id, updateFields);
+        if (Object.keys(updateFields).length > 0) {
+            await ctx.db.patch('notificationPreferences', existing._id, updateFields);
+        }
 
-        return {
-            success: true,
-            message: 'Preferences updated successfully',
-        };
+        return null;
     }
 
     await ctx.db.insert('notificationPreferences', {
@@ -87,14 +76,9 @@ export async function updateNotificationPreferencesForUser(
         organizationNotifications:
             patch.organizationNotifications ??
             DEFAULT_NOTIFICATION_PREFERENCES.organizationNotifications,
-        createdAt: now,
-        updatedAt: now,
     });
 
-    return {
-        success: true,
-        message: 'Preferences created successfully',
-    };
+    return null;
 }
 
 async function shouldSendPreference(

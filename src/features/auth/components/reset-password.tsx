@@ -92,7 +92,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
 
                 <form.Field name="password">
                     {field => (
-                        <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FieldShell error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel className="text-foreground">
                                     {tCommon('fields.password')}
@@ -117,7 +117,7 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
 
                 <form.Field name="confirmPassword">
                     {field => (
-                        <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FieldShell error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel className="text-foreground">
                                     {tCommon('fields.confirmPassword')}

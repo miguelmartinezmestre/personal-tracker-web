@@ -122,6 +122,8 @@ objectives: {
 | completedAt | optional(number) |
 | targetValue | number |
 | currentValue | number |
+| startValue | number |
+| earlyBirdCompleted | boolean |
 | deadline | optional(number) |
 | status | objectiveStatusValidator |
 | deletedAt | optional(number) |
@@ -164,7 +166,7 @@ categories: {
   label: |`md
 | categories | |
 | --- | --- |
-| userId | id('user') |
+| userId | optional(id('user')) |
 | organizationId | id('organization') |
 | name | string |
 | color | string |
@@ -214,23 +216,23 @@ auditLogs: {
 | action | string |
 | resourceType | string |
 | resourceId | optional(string) |
-| severity | string |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
 
-achievementDefinitions: {
+achievementCatalog: {
   shape: text
   label: |`md
-| achievementDefinitions | |
+| Catálogo de logros en TypeScript | |
 | --- | --- |
 | code | string |
-| type | achievementTypeValidator |
-| category | achievementCategoryValidator |
-| tier | achievementTierValidator |
+| type | AchievementType |
+| category | AchievementCategory |
+| tier | AchievementTier |
 | threshold | number |
 | points | number |
-| isActive | boolean |
+| metricKey | AchievementMetricKey |
+| trigger | objective_created \| objective_completed \| progress_update |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -241,7 +243,7 @@ obtainedAchievements: {
 | obtainedAchievements | |
 | --- | --- |
 | userId | id('user') |
-| achievement | id('achievementDefinitions') |
+| achievement | código del catálogo |
 | earnedAt | number |
 `|
   style: { font-size: 10; font-color: "#111827" }
@@ -253,21 +255,8 @@ organizationAchievements: {
 | organizationAchievements | |
 | --- | --- |
 | organization | id('organization') |
-| achievement | id('achievementDefinitions') |
+| achievement | código del catálogo |
 | earnedAt | number |
-`|
-  style: { font-size: 10; font-color: "#111827" }
-}
-
-organizationAchievementContributors: {
-  shape: text
-  label: |`md
-| organizationAchievementContributors | |
-| --- | --- |
-| organizationAchievementId | id('organizationAchievements') |
-| userId | id('user') |
-| contributedAt | number |
-| contributionValue | optional(number) |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -280,8 +269,7 @@ platformSettings: {
 | platformName | string |
 | defaultLanguage | string |
 | registrationPolicy | string |
-| setupCompletedAt | optional(number) |
-| setupCompletedBy | optional(id('user')) |
+| setupCompletedBy | id('user') |
 `|
   style: { font-size: 10; font-color: "#111827" }
 }
@@ -308,7 +296,6 @@ user -> notifications: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> notificationPreferences: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> auditLogs: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> obtainedAchievements: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
-user -> organizationAchievementContributors: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 user -> platformSettings: { style: { stroke: "#1D4ED8"; stroke-width: 2 } }
 
 organization -> session: { style: { stroke: "#334155"; stroke-width: 2; stroke-dash: 4 } }
@@ -326,8 +313,7 @@ categories -> objectives: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
 objectives -> objectiveCollaborators: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
 objectives -> progressUpdates: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
 objectives -> notifications: { style: { stroke: "#1F4E79"; stroke-width: 2 } }
-achievementDefinitions -> obtainedAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
-achievementDefinitions -> organizationAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
-organizationAchievements -> organizationAchievementContributors: { style: { stroke: "#2F4F4F"; stroke-width: 2 } }
+achievementCatalog -> obtainedAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2; stroke-dash: 4 } }
+achievementCatalog -> organizationAchievements: { style: { stroke: "#2F4F4F"; stroke-width: 2; stroke-dash: 4 } }
 
 auditLogs -> resourcePointer: { style: { stroke: "#6B7280"; stroke-width: 2; stroke-dash: 2 } }

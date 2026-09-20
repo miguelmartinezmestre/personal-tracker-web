@@ -8,7 +8,6 @@ import {
     ensureTestUserAuth,
 } from './test_helpers';
 import { asInvalidArg } from './testCasts';
-import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
 import { buildOrganizationSlug } from '../../shared/organization-slug';
 
 describe('convex setup', () => {
@@ -41,7 +40,6 @@ describe('convex setup', () => {
                     platformName: 'Test Platform',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
-                    setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
                 });
             });
@@ -80,7 +78,6 @@ describe('convex setup', () => {
                     platformName: 'My Platform',
                     defaultLanguage: 'es',
                     registrationPolicy: 'invitation-only',
-                    setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
                 });
             });
@@ -154,7 +151,6 @@ describe('convex setup', () => {
                     platformName: 'Existing',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
-                    setupCompletedAt: Date.now(),
                     setupCompletedBy: id,
                 });
 
@@ -231,7 +227,10 @@ describe('convex setup', () => {
             // (previously this deadlocked with a "more than one user" error).
             const asUser1 = t.withIdentity(buildIdentity(user1));
             const result = await asUser1.mutation(api.setup.completeSetup, setupArgs);
-            expect(result.success).toBe(true);
+            expect(typeof result.organizationId).toBe('string');
+            await expect(
+                t.run(ctx => ctx.db.get('organization', result.organizationId))
+            ).resolves.not.toBeNull();
         });
 
         test('rejects invalid setup enum values at the backend boundary', async () => {
@@ -313,8 +312,7 @@ describe('convex setup', () => {
                 ],
             });
 
-            expect(result.success).toBe(true);
-            expect(result.organizationId).toBeDefined();
+            expect(typeof result.organizationId).toBe('string');
 
             const updatedUser = await t.run(async ctx => {
                 return await ctx.db.get('user', user.docId);
@@ -357,8 +355,8 @@ describe('convex setup', () => {
             });
             const personalOrganizationId = await createTestOrganization(t, {
                 name: 'Personal Organization',
-                slug: buildDefaultOrganizationSlug(user.docId),
-                description: JSON.stringify({ type: 'personal' }),
+                slug: 'personal-workspace',
+                description: JSON.stringify({ type: 'personal', ownerUserId: user.docId }),
             });
             await createTestMember(t, {
                 organizationId: personalOrganizationId,
@@ -402,7 +400,9 @@ describe('convex setup', () => {
                     .first();
 
                 expect(personal?.name).toBe('Personal Organization');
-                expect(personal?.metadata).toBe(JSON.stringify({ type: 'personal' }));
+                expect(personal?.metadata).toBe(
+                    JSON.stringify({ type: 'personal', ownerUserId: user.docId })
+                );
                 expect(team?.name).toBe('Real Team');
                 expect(team?.metadata).toBeNull();
                 expect(memberships.map(membership => membership.organizationId)).toEqual(
@@ -436,7 +436,6 @@ describe('convex setup', () => {
                     platformName: 'Test Platform',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
-                    setupCompletedAt: Date.now(),
                     setupCompletedBy: userId,
                 });
 
@@ -511,7 +510,6 @@ describe('convex setup', () => {
                     platformName: 'Test Platform',
                     defaultLanguage: 'en',
                     registrationPolicy: 'open',
-                    setupCompletedAt: Date.now(),
                     setupCompletedBy: setupUserId,
                 });
 

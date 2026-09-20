@@ -57,7 +57,6 @@ export function useConvexPages<T>(
         isLoading: !data && isFetching,
         isFetching,
         isError: queries.some(query => query.isError),
-        error: queries.find(query => query.isError)?.error,
         hasMore: Boolean(last?.data && !last.data.isDone),
         loadMore: () => {
             if (last?.data && !last.data.isDone && !isFetching) {

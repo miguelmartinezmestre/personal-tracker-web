@@ -34,10 +34,8 @@ import {
 } from '@shared/civil-date';
 export default function UpdateProgressFormModal({
     defaultValues,
-    objectiveId: _objectiveId,
 }: {
     defaultValues: UpdateProgress;
-    objectiveId: Id<'objectives'>;
 }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
@@ -81,7 +79,7 @@ export default function UpdateProgressFormModal({
                 <>
                     <form.Field name="updatedValue">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('updatedValue')}</FormLabel>
                                     <FormControl>
@@ -112,7 +110,7 @@ export default function UpdateProgressFormModal({
 
                     <form.Field name="comment">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('comment')}</FormLabel>
                                     <FormControl>
@@ -140,7 +138,7 @@ export default function UpdateProgressFormModal({
 
                     <form.Field name="updateDate">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem className="flex flex-col">
                                     <FormLabel>{t('table.columns.date')}</FormLabel>
                                     <Popover>

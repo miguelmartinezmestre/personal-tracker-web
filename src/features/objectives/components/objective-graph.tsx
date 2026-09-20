@@ -8,34 +8,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress as ProgressBar } from '@/components/ui/progress';
 import { computeObjectiveProgressPercent } from './objectives-utils';
 
-type ObjectiveProgressPoint = {
-    date: number;
-    currentValue: number;
-    objective: number;
-};
-
 interface ObjectiveProgressGraphProps {
-    data: ObjectiveProgressPoint[];
     currentValue: number;
-    unit?: string | null;
-    targetValue?: number | null;
-    startValue?: number | null;
-    lastUpdated?: number | null;
-    title?: string;
-    description?: string;
+    unit: string | null | undefined;
+    targetValue: number;
+    startValue: number;
+    lastUpdated: number | null;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 export function ObjectiveProgressGraph({
-    data,
     currentValue,
     unit,
     targetValue,
     startValue,
     lastUpdated,
-    title,
-    description,
 }: ObjectiveProgressGraphProps) {
     const tObjectives = useTranslations('Objectives');
     const tUpdateProgress = useTranslations('UpdateProgress');
@@ -49,20 +37,19 @@ export function ObjectiveProgressGraph({
     });
 
     const latestValue = currentValue;
-    const objectiveValue = targetValue ?? data[data.length - 1]?.objective ?? 0;
+    const objectiveValue = targetValue;
     const progressPercent = Math.round(
         computeObjectiveProgressPercent({
             currentValue: latestValue,
             targetValue: objectiveValue,
-            startValue: startValue ?? null,
+            startValue,
         })
     );
     const progressBarValue = clamp(progressPercent, 0, 100);
 
     const formatValue = (value: number) =>
         `${numberFormatter.format(value)}${unit ? ` ${unit}` : ''}`;
-    const descriptionText =
-        description ?? `${tObjectives('targetValue')}: ${formatValue(objectiveValue)}`;
+    const descriptionText = `${tObjectives('targetValue')}: ${formatValue(objectiveValue)}`;
 
     return (
         <Card>
@@ -74,7 +61,7 @@ export function ObjectiveProgressGraph({
                         <span>{progressPercent}%</span>
                     </Badge>
                 </CardTitle>
-                <CardDescription>{title ?? tObjectives('progress')}</CardDescription>
+                <CardDescription>{tObjectives('progress')}</CardDescription>
                 <CardDescription>{descriptionText}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

@@ -13,24 +13,10 @@ export type AuditTriggerCtx = MutationCtx & {
 };
 
 type AuditResourceType =
-    | 'objective'
-    | 'objective_collaborator'
-    | 'progress_update'
-    | 'category'
-    | 'organization'
-    | 'organization_member'
-    | 'user'
-    | 'platform_settings';
+    'objective' | 'objective_collaborator' | 'progress_update' | 'category' | 'user';
 
 type SanitizedTable =
-    | 'objectives'
-    | 'objectiveCollaborators'
-    | 'progressUpdates'
-    | 'categories'
-    | 'organization'
-    | 'member'
-    | 'user'
-    | 'platformSettings';
+    'objectives' | 'objectiveCollaborators' | 'progressUpdates' | 'categories' | 'user';
 
 type AuditFieldRecord = Record<string, string | number | boolean | null>;
 
@@ -106,29 +92,6 @@ function sanitizeCategory(doc: object): AuditFieldRecord {
     };
 }
 
-function sanitizeOrganization(doc: object): AuditFieldRecord {
-    if (!isJsonObject(doc)) {
-        return {};
-    }
-    return {
-        _id: toAuditPrimitive(doc._id),
-        createdAt: toAuditPrimitive(doc.createdAt),
-    };
-}
-
-function sanitizeMember(doc: object): AuditFieldRecord {
-    if (!isJsonObject(doc)) {
-        return {};
-    }
-    return {
-        _id: toAuditPrimitive(doc._id),
-        organizationId: toAuditPrimitive(doc.organizationId),
-        userId: toAuditPrimitive(doc.userId),
-        role: toAuditPrimitive(doc.role),
-        createdAt: toAuditPrimitive(doc.createdAt),
-    };
-}
-
 function sanitizeUser(doc: object): AuditFieldRecord {
     if (!isJsonObject(doc)) {
         return {};
@@ -140,19 +103,6 @@ function sanitizeUser(doc: object): AuditFieldRecord {
         deletedAt: toAuditPrimitive(doc.deletedAt),
         createdAt: toAuditPrimitive(doc.createdAt),
         updatedAt: toAuditPrimitive(doc.updatedAt),
-    };
-}
-
-function sanitizePlatformSettings(doc: object): AuditFieldRecord {
-    if (!isJsonObject(doc)) {
-        return {};
-    }
-    return {
-        _id: toAuditPrimitive(doc._id),
-        defaultLanguage: toAuditPrimitive(doc.defaultLanguage),
-        registrationPolicy: toAuditPrimitive(doc.registrationPolicy),
-        setupCompletedAt: toAuditPrimitive(doc.setupCompletedAt),
-        setupCompletedBy: toAuditPrimitive(doc.setupCompletedBy),
     };
 }
 
@@ -172,14 +122,8 @@ function sanitizeDoc(
             return sanitizeProgressUpdate(doc);
         case 'categories':
             return sanitizeCategory(doc);
-        case 'organization':
-            return sanitizeOrganization(doc);
-        case 'member':
-            return sanitizeMember(doc);
         case 'user':
             return sanitizeUser(doc);
-        case 'platformSettings':
-            return sanitizePlatformSettings(doc);
     }
 }
 
@@ -216,14 +160,7 @@ const toAction = (
 ) => `${resourceType}.${OPERATION_ACTION_SUFFIX[operation]}`;
 
 const registerSimpleTrigger = <
-    TableName extends
-        | 'objectives'
-        | 'objectiveCollaborators'
-        | 'categories'
-        | 'organization'
-        | 'member'
-        | 'user'
-        | 'platformSettings',
+    TableName extends 'objectives' | 'objectiveCollaborators' | 'categories' | 'user',
 >(
     registry: Triggers<DataModel, AuditTriggerCtx>,
     tableName: TableName,
@@ -249,7 +186,6 @@ const registerSimpleTrigger = <
             resourceType,
             resourceId: String(change.id),
             metadata: toMetadata(tableName, change),
-            severity: 'info',
             createdAt: Date.now(),
         });
     });
@@ -275,24 +211,7 @@ export function registerAuditTriggers(registry: Triggers<DataModel, AuditTrigger
         return change.newDoc?.organizationId ?? change.oldDoc?.organizationId ?? null;
     });
 
-    registerSimpleTrigger(registry, 'organization', 'organization', (_ctx, change) => {
-        return change.newDoc?._id ?? change.oldDoc?._id ?? null;
-    });
-
-    registerSimpleTrigger(registry, 'member', 'organization_member', (_ctx, change) => {
-        const organizationId =
-            change.newDoc?.organizationId ?? change.oldDoc?.organizationId ?? null;
-        return organizationId;
-    });
-
     registerSimpleTrigger(registry, 'user', 'user', ctx => ctx.organizationId ?? null);
-
-    registerSimpleTrigger(
-        registry,
-        'platformSettings',
-        'platform_settings',
-        ctx => ctx.organizationId ?? null
-    );
 
     registry.register('progressUpdates', async (ctx, change) => {
         if (!ctx.userId) {
@@ -315,7 +234,6 @@ export function registerAuditTriggers(registry: Triggers<DataModel, AuditTrigger
             resourceType: 'progress_update',
             resourceId: String(change.id),
             metadata: toMetadata('progressUpdates', change),
-            severity: 'info',
             createdAt: Date.now(),
         });
     });

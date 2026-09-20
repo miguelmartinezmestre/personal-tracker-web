@@ -8,20 +8,30 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import type { Doc } from '@/convex/_generated/dataModel';
+import type { api } from '@/convex/_generated/api';
+import type { FunctionReturnType } from 'convex/server';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { useSetNotificationRead, useDeleteNotification } from './notifications-table-actions';
 import { formatDate, formatTime } from '@/lib/format-date';
-const typeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    reminder: 'secondary',
+const typeVariantMap: Partial<
+    Record<
+        Doc<'notifications'>['notificationType'],
+        'default' | 'secondary' | 'destructive' | 'outline'
+    >
+> = {
     deadline: 'destructive',
     progress: 'default',
     status: 'outline',
 };
+type NotificationObjective = FunctionReturnType<
+    typeof api.notifications.getObjectivesForNotifications
+>[number];
+
 interface UseNotificationsTableColumnsProps {
-    objectiveMap: Map<string, Doc<'objectives'>>;
-    onMutationSuccess?: () => void;
+    objectiveMap: Map<NotificationObjective['_id'], NotificationObjective>;
+    onMutationSuccess: () => void;
 }
 export function useNotificationsTableColumns({
     objectiveMap,
@@ -33,8 +43,7 @@ export function useNotificationsTableColumns({
     const { setNotificationRead, isSettingRead } = useSetNotificationRead(onMutationSuccess);
     const { deleteNotificationAsync, isDeletingNotification } =
         useDeleteNotification(onMutationSuccess);
-    const typeLabels: Record<string, string> = {
-        reminder: t('typeOptions.reminder'),
+    const typeLabels: Partial<Record<Doc<'notifications'>['notificationType'], string>> = {
         deadline: t('typeOptions.deadline'),
         progress: t('typeOptions.progress'),
         status: t('typeOptions.status'),

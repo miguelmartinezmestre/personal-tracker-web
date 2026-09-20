@@ -1,5 +1,6 @@
-import { test, expect, loginUser } from '../../fixtures/test-base';
+import { test, expect } from '../../fixtures/test-base';
 import type { Page } from '@playwright/test';
+import { loginUser } from '../../helpers/test-helpers';
 
 test.describe.configure({ mode: 'serial' });
 

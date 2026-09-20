@@ -3,8 +3,6 @@ import { paginationResultValidator } from 'convex/server';
 import { isActiveAccount } from './domain/organizations/operational';
 import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
-
-const LIST_LIMIT = 1000;
 import { query } from './_generated/server';
 import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './utils/constants';
@@ -14,7 +12,6 @@ import { queryWithRLS } from './platform/rls/wrappers';
 import {
     activeMemberValidator,
     currentSessionValidator,
-    organizationInvitationValidator,
     organizationSummaryValidator,
     paginatedOrganizationMembersValidator,
     userInvitationValidator,
@@ -118,58 +115,6 @@ export const getCurrentSession = query({
     },
 });
 
-export const getOrganizationsByUser = queryWithRLS({
-    args: {},
-    returns: v.array(organizationSummaryValidator),
-    handler: async ctx => {
-        const memberships = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', ctx.userId))
-            .take(LIST_LIMIT);
-
-        if (memberships.length === 0) {
-            return [];
-        }
-
-        const orgIds = [...new Set(memberships.map(membership => membership.organizationId))];
-        const orgs = await Promise.all(orgIds.map(id => ctx.db.get('organization', id)));
-        const orgMap = new Map(
-            orgs
-                .filter(
-                    (organization): organization is NonNullable<typeof organization> =>
-                        organization !== null
-                )
-                .map(organization => [organization._id, organization])
-        );
-
-        const organizations = memberships
-            .map(member => {
-                const org = orgMap.get(member.organizationId);
-                if (!org) {
-                    return null;
-                }
-
-                return {
-                    id: org._id,
-                    name: org.name,
-                    slug: org.slug,
-                    description: getOrganizationDescription(org.metadata),
-                    logo: org.logo,
-                    createdAt: org.createdAt,
-                    role: normalizeOrganizationRole(member.role),
-                    isPersonal: isPersonalOrganizationForUser({
-                        metadata: org.metadata,
-                        slug: org.slug,
-                        userId: member.userId,
-                    }),
-                };
-            })
-            .filter(org => org !== null);
-
-        return organizations;
-    },
-});
-
 export const getOrganizationsPage = queryWithRLS({
     args: { paginationOpts: paginationOptsValidator },
     returns: v.object({
@@ -213,7 +158,6 @@ export const getOrganizationsPage = queryWithRLS({
                     role: normalizeOrganizationRole(member.role),
                     isPersonal: isPersonalOrganizationForUser({
                         metadata: org.metadata,
-                        slug: org.slug,
                         userId: ctx.userId,
                     }),
                 };
@@ -257,7 +201,6 @@ export const getOrganizationByIdentifier = queryWithRLS({
             role: normalizeOrganizationRole(member.role),
             isPersonal: isPersonalOrganizationForUser({
                 metadata: org.metadata,
-                slug: org.slug,
                 userId: ctx.userId,
             }),
         };
@@ -299,7 +242,7 @@ export const getUserInvitationsPage = queryWithRLS({
         });
         const page = await Promise.all(
             result.page.map(async invitation => {
-                const [org, inviter] = await Promise.all([
+                const [organization, inviter] = await Promise.all([
                     ctx.dbForIntegrityChecks.get('organization', invitation.organizationId),
                     ctx.dbForIntegrityChecks.get('user', invitation.inviterId),
                 ]);
@@ -308,67 +251,8 @@ export const getUserInvitationsPage = queryWithRLS({
                     email: invitation.email,
                     role: invitation.role || 'member',
                     organizationId: invitation.organizationId,
-                    status: invitation.status,
-                    createdAt: invitation.createdAt,
-                    expiresAt: invitation.expiresAt,
-                    organization: org ? { id: org._id, name: org.name, slug: org.slug } : undefined,
-                    inviter: inviter
-                        ? { id: inviter._id, name: inviter.name, email: inviter.email }
-                        : undefined,
-                };
-            })
-        );
-        return { ...result, page };
-    },
-});
-
-export const getOrganizationInvitationsPage = queryWithRLS({
-    args: { organizationId: v.id('organization'), paginationOpts: paginationOptsValidator },
-    returns: v.object({
-        ...paginationResultValidator(organizationInvitationValidator).fields,
-        needsContinuation: v.boolean(),
-    }),
-    handler: async (ctx, args) => {
-        const actor = await ctx.dbForIntegrityChecks
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-        if (!actor || !['admin', 'owner'].includes(actor.role)) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
-        const result = await paginateVisible({
-            scope: JSON.stringify(['organizationInvitations', ctx.userId, args.organizationId]),
-            paginationOpts: args.paginationOpts,
-            fetchPage: paginationOpts =>
-                ctx.dbForIntegrityChecks
-                    .query('invitation')
-                    .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-                    .order('desc')
-                    .paginate(paginationOpts),
-            get: async id => {
-                const normalized = ctx.db.normalizeId('invitation', id);
-                return normalized
-                    ? await ctx.dbForIntegrityChecks.get('invitation', normalized)
-                    : null;
-            },
-            accepts: invitation => invitation.organizationId === args.organizationId,
-        });
-        const page = await Promise.all(
-            result.page.map(async invitation => {
-                const inviter = await ctx.dbForIntegrityChecks.get('user', invitation.inviterId);
-                return {
-                    id: invitation._id,
-                    email: invitation.email,
-                    role: invitation.role || 'member',
-                    organizationId: invitation.organizationId,
-                    status: invitation.status,
-                    createdAt: invitation.createdAt,
-                    expiresAt: invitation.expiresAt,
-                    inviter: inviter
-                        ? { id: inviter._id, name: inviter.name, email: inviter.email }
-                        : undefined,
+                    organization: organization ? { name: organization.name } : undefined,
+                    inviter: inviter ? { name: inviter.name } : undefined,
                 };
             })
         );
@@ -465,145 +349,5 @@ export const getOrganizationMembers = queryWithRLS({
             ...paginatedMembers,
             page: enrichedPage,
         };
-    },
-});
-
-export const getUserInvitations = queryWithRLS({
-    args: {
-        now: v.number(),
-    },
-    returns: v.array(userInvitationValidator),
-    handler: async (ctx, args) => {
-        // `now` remains part of the API so clients can refresh this reactive
-        // query periodically, but it is never trusted to decide authorization
-        // or invitation validity.
-        assertValidReferenceTimestamp(args.now);
-        const serverNow = Date.now();
-        const invitations = await ctx.db
-            .query('invitation')
-            .withIndex('by_email_status_expiresAt', q =>
-                q.eq('email', ctx.email).eq('status', 'pending').gt('expiresAt', serverNow)
-            )
-            .take(LIST_LIMIT);
-
-        const activeInvitations = invitations.filter(invitation =>
-            isInvitationActive(invitation, serverNow)
-        );
-
-        if (activeInvitations.length === 0) {
-            return [];
-        }
-
-        const orgIds = [...new Set(activeInvitations.map(invitation => invitation.organizationId))];
-        const inviterIds = [...new Set(activeInvitations.map(invitation => invitation.inviterId))];
-
-        const [orgs, inviters] = await Promise.all([
-            Promise.all(orgIds.map(id => ctx.db.get('organization', id))),
-            Promise.all(inviterIds.map(id => ctx.db.get('user', id))),
-        ]);
-
-        const orgMap = new Map(
-            orgs
-                .filter(
-                    (organization): organization is NonNullable<typeof organization> =>
-                        organization !== null
-                )
-                .map(organization => [organization._id, organization])
-        );
-        const userMap = new Map(
-            inviters
-                .filter((user): user is NonNullable<typeof user> => user !== null)
-                .map(user => [user._id, user])
-        );
-
-        const invitationsWithDetails = activeInvitations.map(invitation => {
-            const org = orgMap.get(invitation.organizationId);
-            const inviter = userMap.get(invitation.inviterId);
-
-            return {
-                id: invitation._id,
-                email: invitation.email,
-                role: invitation.role || 'member',
-                organizationId: invitation.organizationId,
-                status: invitation.status,
-                createdAt: invitation.createdAt,
-                expiresAt: invitation.expiresAt,
-                organization: org
-                    ? {
-                          id: org._id,
-                          name: org.name,
-                          slug: org.slug,
-                      }
-                    : undefined,
-                inviter: inviter
-                    ? {
-                          id: inviter._id,
-                          name: inviter.name,
-                          email: inviter.email,
-                      }
-                    : undefined,
-            };
-        });
-
-        return invitationsWithDetails;
-    },
-});
-
-export const getOrganizationInvitations = queryWithRLS({
-    args: { organizationId: v.id('organization') },
-    returns: v.array(organizationInvitationValidator),
-    handler: async (ctx, args) => {
-        const userMembership = await ctx.db
-            .query('member')
-            .withIndex('by_organizationId_and_userId', q =>
-                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
-            )
-            .first();
-
-        if (!userMembership || !['admin', 'owner'].includes(userMembership.role)) {
-            throw new ConvexError(ERROR_CODES.FORBIDDEN);
-        }
-
-        const invitations = await ctx.db
-            .query('invitation')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-            .take(LIST_LIMIT);
-
-        if (invitations.length === 0) {
-            return [];
-        }
-
-        const inviterIds = [...new Set(invitations.map(invitation => invitation.inviterId))];
-        const inviters = await Promise.all(
-            inviterIds.map(id => ctx.dbForIntegrityChecks.get('user', id))
-        );
-        const userMap = new Map(
-            inviters
-                .filter((user): user is NonNullable<typeof user> => user !== null)
-                .map(user => [user._id, user])
-        );
-
-        const invitationsWithDetails = invitations.map(invitation => {
-            const inviter = userMap.get(invitation.inviterId);
-
-            return {
-                id: invitation._id,
-                email: invitation.email,
-                role: invitation.role || 'member',
-                organizationId: invitation.organizationId,
-                status: invitation.status,
-                createdAt: invitation.createdAt,
-                expiresAt: invitation.expiresAt,
-                inviter: inviter
-                    ? {
-                          id: inviter._id,
-                          name: inviter.name,
-                          email: inviter.email,
-                      }
-                    : undefined,
-            };
-        });
-
-        return invitationsWithDetails;
     },
 });

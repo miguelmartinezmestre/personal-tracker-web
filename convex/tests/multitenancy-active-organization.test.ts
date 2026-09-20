@@ -70,21 +70,17 @@ describe('active organization tenant boundary', () => {
                 userId,
                 organizationId: orgAId,
                 read: false,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 notificationDate: now,
                 message: 'Org A notification',
-                createdAt: now,
-                updatedAt: now,
             });
             await ctx.db.insert('notifications', {
                 userId,
                 organizationId: orgBId,
                 read: false,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 notificationDate: now + 1,
                 message: 'Org B notification',
-                createdAt: now,
-                updatedAt: now,
             });
         });
 
@@ -115,27 +111,25 @@ describe('active organization tenant boundary', () => {
                     userId,
                     organizationId: orgAId,
                     read: false,
-                    notificationType: 'reminder',
+                    notificationType: 'deadline',
                     notificationDate: now,
                     message: 'Org A unread notification',
-                    createdAt: now,
-                    updatedAt: now,
                 });
                 const orgBNotificationId = await ctx.db.insert('notifications', {
                     userId,
                     organizationId: orgBId,
                     read: false,
-                    notificationType: 'reminder',
+                    notificationType: 'deadline',
                     notificationDate: now + 1,
                     message: 'Org B unread notification',
-                    createdAt: now,
-                    updatedAt: now,
                 });
 
                 return { orgANotificationId, orgBNotificationId };
             });
 
-            await activeOrgAIdentity.mutation(api.notifications.markAllNotificationsRead, {});
+            await expect(
+                activeOrgAIdentity.mutation(api.notifications.markAllNotificationsRead, {})
+            ).resolves.toBeNull();
             await t.finishAllScheduledFunctions(vi.runAllTimers);
 
             const result = await t.run(async ctx => ({
@@ -201,11 +195,11 @@ describe('active organization tenant boundary', () => {
             currentValue: 0,
         });
 
-        const results = await activeOrgAIdentity.query(api.objectives.searchObjectivesQuery, {
+        const results = await activeOrgAIdentity.query(api.objectives.searchObjectivesPaginated, {
             search: 'revenue',
-            limit: 10,
+            paginationOpts: { numItems: 10, cursor: null },
         });
 
-        expect(results.map(objective => objective._id)).toContain(objectiveId);
+        expect(results.page.map(objective => objective._id)).toContain(objectiveId);
     });
 });

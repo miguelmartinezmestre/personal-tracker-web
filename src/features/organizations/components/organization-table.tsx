@@ -4,6 +4,7 @@ import { DataTable } from '@/components/data-table/components/table';
 import {
     useOrganizations,
     useDeleteOrganization,
+    type Organization,
 } from '@/features/organizations/hooks/use-organizations';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
@@ -13,7 +14,6 @@ import EditOrganizationFormModal from '@/features/organizations/components/organ
 import { useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import type { Organization } from '@/features/organizations/schemas/organization';
 import {
     isOrganizationAdminRole,
     isOrganizationOwnerRole,
@@ -67,7 +67,6 @@ export default function OrganizationsTable() {
                         }}
                         title={t('confirm.deleteOrganization')}
                         description={t('confirm.deleteOrganizationDescription')}
-                        triggerLabel={t('deleteOrganization')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
                         isLoading={deleteOrganization.isPending}

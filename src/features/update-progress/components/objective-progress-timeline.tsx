@@ -13,15 +13,11 @@ import {
     ReferenceLine,
 } from 'recharts';
 import { getOptionalString, isJsonObject } from '@shared/boundary-values';
-interface ProgressTimelinePoint {
-    date: number;
-    currentValue: number;
-    objective: number;
-}
+import type { ProgressPoint } from '../lib/progress-points';
 interface ObjectiveProgressTimelineProps {
-    data: ProgressTimelinePoint[];
-    unit?: string | null;
-    targetValue?: number | null;
+    data: ProgressPoint[];
+    unit: string | null | undefined;
+    targetValue: number;
 }
 export default function ObjectiveProgressTimeline({
     data,
@@ -111,18 +107,16 @@ export default function ObjectiveProgressTimeline({
                                 t('charts.value'),
                             ]}
                         />
-                        {targetValue != null && (
-                            <ReferenceLine
-                                y={targetValue}
-                                stroke="var(--destructive)"
-                                strokeDasharray="6 3"
-                                label={{
-                                    value: `${t('charts.target')}: ${targetValue}${unitSuffix}`,
-                                    position: 'insideTopRight',
-                                    className: 'text-xs fill-muted-foreground',
-                                }}
-                            />
-                        )}
+                        <ReferenceLine
+                            y={targetValue}
+                            stroke="var(--destructive)"
+                            strokeDasharray="6 3"
+                            label={{
+                                value: `${t('charts.target')}: ${targetValue}${unitSuffix}`,
+                                position: 'insideTopRight',
+                                className: 'text-xs fill-muted-foreground',
+                            }}
+                        />
                         <Area
                             type="monotone"
                             dataKey="value"

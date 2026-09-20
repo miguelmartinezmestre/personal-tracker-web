@@ -152,7 +152,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A Private Notification',
             });
 
@@ -176,7 +176,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A Private Notification',
             });
 
@@ -197,7 +197,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A Reminder 1',
             });
             await createTestNotification(t, {
@@ -212,7 +212,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userBId,
                 organizationId: sharedOrganizationId,
                 objective: userBObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User B Reminder',
             });
 
@@ -244,8 +244,6 @@ describe('notifications security - cross-user access prevention', async () => {
                     notificationType: 'status',
                     notificationDate: Date.now(),
                     message: 'Organization Status Update',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
                 });
                 return await ctx.db.get('notifications', id);
             });
@@ -268,15 +266,20 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A For Admin Modify Test',
             });
 
-            const updated = await adminIdentity.mutation(api.notifications.setNotificationRead, {
-                id: notificationA._id,
-                read: true,
-            });
+            await expect(
+                adminIdentity.mutation(api.notifications.setNotificationRead, {
+                    id: notificationA._id,
+                    read: true,
+                })
+            ).resolves.toBeNull();
 
+            const updated = await adminIdentity.run(ctx =>
+                ctx.db.get('notifications', notificationA._id)
+            );
             expect(updated?.read).toBe(true);
         });
 
@@ -285,7 +288,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A For Admin Delete Test',
             });
 
@@ -314,7 +317,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: personalObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A Personal Reminder',
             });
 
@@ -336,7 +339,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userAId,
                 organizationId: sharedOrganizationId,
                 objective: userAObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User A Isolation Test',
             });
 
@@ -344,7 +347,7 @@ describe('notifications security - cross-user access prevention', async () => {
                 userId: userBId,
                 organizationId: sharedOrganizationId,
                 objective: userBObjectiveId,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 message: 'User B Isolation Test',
             });
 

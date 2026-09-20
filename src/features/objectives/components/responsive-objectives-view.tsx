@@ -1,14 +1,12 @@
 'use client';
 
 import { QueryContent } from '@/components/query-content';
-import * as React from 'react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
 import { DataTable } from '@/components/data-table/components/table';
 import { ObjectivesFilters } from './objective-filters';
-import { normalizeObjective } from './objectives-utils';
 import { MobilePagination } from './mobile-pagination';
 import { useObjectiveListState } from '@/features/objectives/hooks/use-objective-list-state';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -16,7 +14,7 @@ import { useObjectiveTableColumns } from './use-objective-table-columns';
 import { ObjectiveMobileCard } from './objective-mobile-card';
 import { ObjectivesTrashSection } from './objectives-trash-section';
 
-export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>((_props, ref) => {
+export function ResponsiveObjectivesView() {
     const t = useTranslations('Objectives');
     const {
         state,
@@ -60,10 +58,10 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
     });
 
     return (
-        <div ref={ref} className="w-full min-w-0 space-y-4">
+        <div className="w-full min-w-0 space-y-4">
             {editingObjective ? (
                 <EditObjectiveFormModal
-                    defaultValues={normalizeObjective(editingObjective)}
+                    defaultValues={editingObjective}
                     open
                     onOpenChange={open => {
                         if (!open) {
@@ -122,7 +120,6 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
                         data={objectives}
                         isLoading={isLoading}
                         pagination={{
-                            currentPage: pagination.currentPage,
                             onNextPage: onNextPage,
                             onPreviousPage: pagination.previousPage,
                             hasNextPage: hasNextPage,
@@ -145,6 +142,4 @@ export const ResponsiveObjectivesView = React.forwardRef<HTMLDivElement, object>
             />
         </div>
     );
-});
-
-ResponsiveObjectivesView.displayName = 'ResponsiveObjectivesView';
+}

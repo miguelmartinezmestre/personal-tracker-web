@@ -109,7 +109,7 @@ export default function AccountSettingsFormEdit() {
         >
             <form.Field name="username">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('username')}</FormLabel>
                             <FormControl>
@@ -130,7 +130,7 @@ export default function AccountSettingsFormEdit() {
 
             <form.Field name="email">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('email')}</FormLabel>
                             <FormControl>

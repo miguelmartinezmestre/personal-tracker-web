@@ -65,47 +65,34 @@ describe('batched jobs', () => {
                     notificationType: 'progress',
                     notificationDate: now + index,
                     message: `Progress ${index}`,
-                    createdAt: now,
-                    updatedAt: now,
                 });
             }
             await ctx.db.patch('objectives', objectiveId, {
                 deletedAt: now,
                 deletedBy: userId,
                 purgeToken: 'batch-purge-token',
-                purgeStartedAt: now,
             });
         });
 
-        let result = await t.mutation(internal.objectives.deleteObjectiveContinue, {
+        await t.mutation(internal.objectives.deleteObjectiveContinue, {
             objectiveId,
             purgeToken: 'batch-purge-token',
             phase: 'progress',
-            cursor: null,
-            totalProgressDeleted: 0,
-            totalNotificationsDeleted: 0,
         });
+        await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
-        while (result.status === 'in_progress') {
-            const phase = result.phase;
-            if (phase !== 'collaborators' && phase !== 'progress' && phase !== 'notifications') {
-                throw new Error(`Unexpected deletion phase: ${phase ?? '(none)'}`);
-            }
-            result = await t.mutation(internal.objectives.deleteObjectiveContinue, {
-                objectiveId,
-                purgeToken: 'batch-purge-token',
-                phase,
-                cursor: null,
-                totalProgressDeleted: result.deleted.progress,
-                totalNotificationsDeleted: result.deleted.notifications,
-            });
-        }
-
-        expect(result).toMatchObject({
-            status: 'completed',
-            deleted: { progress: 51, notifications: 51 },
-        });
-        expect(await t.run(ctx => ctx.db.get('objectives', objectiveId))).toBeNull();
+        const remaining = await t.run(async ctx => ({
+            objective: await ctx.db.get('objectives', objectiveId),
+            progress: await ctx.db
+                .query('progressUpdates')
+                .withIndex('by_objective_date', q => q.eq('objective', objectiveId))
+                .collect(),
+            notifications: await ctx.db
+                .query('notifications')
+                .withIndex('by_objective_type_date', q => q.eq('objective', objectiveId))
+                .collect(),
+        }));
+        expect(remaining).toEqual({ objective: null, progress: [], notifications: [] });
     });
 
     test('marks unread notifications across the batch boundary', async () => {
@@ -124,22 +111,17 @@ describe('batched jobs', () => {
                     organizationId,
                     objective: objectiveId,
                     read: false,
-                    notificationType: 'reminder',
+                    notificationType: 'deadline',
                     notificationDate: now + index,
                     message: `Reminder ${index}`,
-                    createdAt: now,
-                    updatedAt: now,
                 });
             }
         });
 
-        const firstBatch = await t.mutation(internal.notifications.markAllReadBatch, {
+        await t.mutation(internal.notifications.markAllReadBatch, {
             userId,
             organizationId,
-            cursor: null,
-            totalProcessed: 0,
         });
-        expect(firstBatch).toMatchObject({ status: 'in_progress', totalProcessed: 100 });
 
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 

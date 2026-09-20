@@ -9,7 +9,6 @@ import {
 } from './test_helpers';
 import type { TestConvexForDataModel } from 'convex-test';
 import type { DataModel, Id } from '../_generated/dataModel';
-import { buildDefaultOrganizationSlug } from '../domain/organizations/personalOrganization';
 import { getOptionalString, isJsonObject, type JsonValue } from '../../shared/boundary-values';
 import { asInvalidArg } from './testCasts';
 
@@ -171,30 +170,6 @@ describe('convex auth', () => {
         expect(isDefaultOrganization).toBe(true);
     });
 
-    test('legacy default organization slug is protected', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-        const user = await createTestUser(t, {
-            userId: `legacy-default-org-user-${randomSuffix}`,
-            email: `legacy-default-org-user-${randomSuffix}@example.com`,
-            name: 'Legacy Default Org User',
-        });
-        const organizationId = await createTestOrganization(t, {
-            name: 'Renamed Personal Organization',
-            slug: buildDefaultOrganizationSlug(user.docId),
-        });
-        await createTestMember(t, {
-            organizationId,
-            userId: user.docId,
-            role: 'owner',
-        });
-
-        const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
-            organizationId,
-        });
-
-        expect(isDefaultOrganization).toBe(true);
-    });
-
     test('regular organization is not protected as default organization', async () => {
         const isDefaultOrganization = await t.query(internal.auth.isDefaultOrganization, {
             organizationId: _organizationId,
@@ -203,42 +178,7 @@ describe('convex auth', () => {
         expect(isDefaultOrganization).toBe(false);
     });
 
-    test('a reserved slug collision is not reused as another user personal organization', async () => {
-        const randomSuffix = Math.random().toString(36).substring(2, 15);
-        const user = await createTestUser(t, {
-            userId: `personal-slug-collision-user-${randomSuffix}`,
-            email: `personal-slug-collision-${randomSuffix}@example.com`,
-            name: 'Personal Slug Collision User',
-        });
-        const collidingOrganizationId = await createTestOrganization(t, {
-            name: 'Unrelated organization',
-            slug: buildDefaultOrganizationSlug(user.docId),
-        });
-
-        const personalOrganizationId = await t.mutation(
-            internal.auth.ensureDefaultOrganizationForUser,
-            { userId: user.docId }
-        );
-
-        expect(personalOrganizationId).not.toBe(collidingOrganizationId);
-        await t.run(async ctx => {
-            const personal = await ctx.db.get('organization', personalOrganizationId);
-            const collidingMembership = await ctx.db
-                .query('member')
-                .withIndex('by_organizationId_and_userId', q =>
-                    q.eq('organizationId', collidingOrganizationId).eq('userId', user.docId)
-                )
-                .first();
-
-            expect(personal?.slug).not.toBe(buildDefaultOrganizationSlug(user.docId));
-            expect(personal?.metadata).toBe(
-                JSON.stringify({ type: 'personal', ownerUserId: user.docId })
-            );
-            expect(collidingMembership).toBeNull();
-        });
-    });
-
-    test('getOrganizationsByUser marks default organization as personal', async () => {
+    test('getOrganizationsPage marks the metadata-owned organization as personal', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const user = await createTestUser(t, {
             userId: `personal-org-list-user-${randomSuffix}`,
@@ -277,11 +217,13 @@ describe('convex auth', () => {
         });
 
         const organizations = await personalOrgIdentity.query(
-            api.organizations.getOrganizationsByUser,
-            {}
+            api.organizations.getOrganizationsPage,
+            {
+                paginationOpts: { numItems: 10, cursor: null },
+            }
         );
 
-        const personalOrganization = organizations.find(
+        const personalOrganization = organizations.page.find(
             organization => organization.id === personalOrganizationId
         );
 

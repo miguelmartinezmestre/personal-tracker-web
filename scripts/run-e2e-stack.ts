@@ -26,11 +26,10 @@ const BUILD_FINGERPRINT_INPUTS = [
     'pnpm-lock.yaml',
     'next.config.ts',
     'postcss.config.mjs',
-    'proxy.ts',
     'tsconfig.json',
     'tsconfig.playwright.json',
 ];
-const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'public', 'shared'];
+const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'shared'];
 const BUILD_FINGERPRINT_FILE_PREFIXES = ['tsconfig'];
 const BUILD_FINGERPRINT_ENV_KEYS = [
     'BASE_URL',
@@ -70,10 +69,6 @@ const { forwardedPlaywrightArgs, rebuild: rebuildFromArgs } = parseScriptArgs(
 );
 const SHOULD_FORCE_REBUILD = rebuildFromArgs || process.env.E2E_FORCE_BUILD === 'true';
 const COMPOSE_FILE = 'infrastructure/docker-compose.e2e.yml';
-const E2E_STORAGE_DIRECTORIES = [
-    join('infrastructure', 'mysql-data-e2e'),
-    join('infrastructure', 'convex-data-e2e'),
-] as const;
 function detectBrowserProject(args: string[]): string | null {
     for (const [index, argument] of args.entries()) {
         if (argument === '--project') return args[index + 1] ?? null;
@@ -83,27 +78,9 @@ function detectBrowserProject(args: string[]): string | null {
 }
 const BROWSER_PROJECT = detectBrowserProject(forwardedPlaywrightArgs);
 const COMPOSE_PROJECT = BROWSER_PROJECT ? `metricas-e2e-${BROWSER_PROJECT}` : 'metricas-e2e';
-const PORT_OFFSETS: Record<
-    string,
-    {
-        convex: number;
-        site: number;
-        frontend: number;
-    }
-> = {
-    chromium: { convex: 0, site: 0, frontend: 0 },
-};
-const PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.convex ?? 0) : 0;
-const SITE_PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.site ?? 0) : 0;
-const FRONTEND_PORT_OFFSET = BROWSER_PROJECT ? (PORT_OFFSETS[BROWSER_PROJECT]?.frontend ?? 0) : 0;
-const BASE_CONVEX_PORT = 4210;
-const BASE_SITE_PORT = 4211;
-const BASE_FRONTEND_PORT = 4300;
-const E2E_CONVEX_PORT = process.env.E2E_CONVEX_PORT ?? String(BASE_CONVEX_PORT + PORT_OFFSET);
-const E2E_CONVEX_SITE_PORT =
-    process.env.E2E_CONVEX_SITE_PORT ?? String(BASE_SITE_PORT + SITE_PORT_OFFSET);
-const E2E_FRONTEND_PORT =
-    process.env.E2E_FRONTEND_PORT ?? String(BASE_FRONTEND_PORT + FRONTEND_PORT_OFFSET);
+const E2E_CONVEX_PORT = process.env.E2E_CONVEX_PORT ?? '4210';
+const E2E_CONVEX_SITE_PORT = process.env.E2E_CONVEX_SITE_PORT ?? '4211';
+const E2E_FRONTEND_PORT = process.env.E2E_FRONTEND_PORT ?? '4300';
 const E2E_MAILHOG_SMTP_PORT = process.env.E2E_MAILHOG_SMTP_PORT ?? '2026';
 const E2E_MAILHOG_UI_PORT = process.env.E2E_MAILHOG_UI_PORT ?? '8026';
 const E2E_NEXT_DIST_DIR =
@@ -198,21 +175,6 @@ function cleanupNextArtifacts(nextDistDir: string): void {
         return;
     }
     rmSync(directoryPath, { recursive: true, force: true });
-}
-function cleanupE2EStorage(): void {
-    const workspaceRoot = resolve(process.cwd());
-    for (const relativePath of E2E_STORAGE_DIRECTORIES) {
-        const directoryPath = resolve(workspaceRoot, relativePath);
-        if (
-            !directoryPath.startsWith(`${workspaceRoot}${sep}`) &&
-            directoryPath !== workspaceRoot
-        ) {
-            throw new Error(`Refusing to delete path outside workspace: ${directoryPath}`);
-        }
-        if (existsSync(directoryPath)) {
-            rmSync(directoryPath, { recursive: true, force: true });
-        }
-    }
 }
 function collectBuildFingerprintFiles(relativePath: string, files: Set<string>): void {
     const absolutePath = join(process.cwd(), relativePath);
@@ -458,7 +420,6 @@ async function main(): Promise<void> {
     const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
     console.log(`Resetting previous isolated Convex stack${browserLabel}...`);
     await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
-    cleanupE2EStorage();
     console.log(`Starting isolated Convex docker compose${browserLabel}...`);
     console.log(`  - Convex backend: port ${E2E_CONVEX_PORT}`);
     console.log(`  - Convex site: port ${E2E_CONVEX_SITE_PORT}`);
@@ -494,6 +455,7 @@ async function main(): Promise<void> {
             E2E_SETUP_SECRET: e2eSetupSecret,
             SETUP_SECRET: setupSecret,
             BASE_URL: baseUrl,
+            E2E_MAILHOG_UI_PORT,
             NEXT_DIST_DIR: nextDistDir,
             PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
         },

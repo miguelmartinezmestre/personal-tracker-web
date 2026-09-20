@@ -21,8 +21,6 @@ export default function UpdateProgressTable({
     const {
         isError,
         retry,
-        objectiveId,
-        currentPage,
         nextPage,
         previousPage,
         hasPreviousPage,
@@ -57,7 +55,6 @@ export default function UpdateProgressTable({
                 isLoading={updateProgress.isLoading}
                 isFetching={updateProgress.isFetching}
                 updates={updates}
-                objectiveId={objectiveId}
                 unitSuffix={unitSuffix}
                 canEdit={authorId => canEditProgressRow(authorId, objectiveDoc, currentUserId)}
                 isDeletingProgress={isDeletingProgress}
@@ -76,7 +73,6 @@ export default function UpdateProgressTable({
                     data={updates}
                     isLoading={updateProgress.isLoading}
                     pagination={{
-                        currentPage,
                         onNextPage: () => nextPage(continueCursor, pageIsDone),
                         onPreviousPage: previousPage,
                         hasNextPage,

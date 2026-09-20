@@ -9,8 +9,6 @@ import type { ObjectiveStatus } from '../../utils/constants';
 import type { DeadlineRange } from './filters';
 import { getDeadlineRangeBounds, matchesDeadlineRange } from './filters';
 
-const SEARCH_LIMIT = 50;
-
 const EMPTY_PAGE = { page: [], continueCursor: '', isDone: true };
 
 export type ObjectiveListFilters = {
@@ -41,7 +39,6 @@ type ObjectiveListArgs = ObjectiveListFilters & {
 
 export type ObjectiveSearchArgs = ObjectiveListFilters & {
     search: string;
-    limit?: number;
 };
 
 type SearchableObjective = Pick<
@@ -331,13 +328,4 @@ export async function searchObjectivesPage(
         },
         accepts: objective => acceptsObjective(ctx, objective, filters, 'active'),
     });
-}
-
-export async function searchObjectives(ctx: ObjectiveListCtx, args: ObjectiveSearchArgs) {
-    const limit = Math.min(Math.max(args.limit ?? SEARCH_LIMIT, 1), SEARCH_LIMIT);
-    const result = await searchObjectivesPage(ctx, {
-        ...args,
-        paginationOpts: { numItems: limit, cursor: null },
-    });
-    return result.page;
 }

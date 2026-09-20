@@ -1,4 +1,4 @@
-export type AcceptInvitationPayload = {
+type AcceptInvitationPayload = {
     invitation?: { organizationId?: string | null } | null;
     member?: { organizationId?: string | null } | null;
 };

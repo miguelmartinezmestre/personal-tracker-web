@@ -258,7 +258,7 @@ export async function createTestNotification(
         userId: Id<'user'>;
         organizationId: Id<'organization'>;
         message: string;
-        notificationType?: 'reminder' | 'deadline' | 'progress' | 'status' | 'achievement';
+        notificationType?: 'deadline' | 'progress' | 'status' | 'achievement';
         objective?: Id<'objectives'>;
         read?: boolean;
         notificationDate?: number;
@@ -271,11 +271,9 @@ export async function createTestNotification(
             organizationId: options.organizationId,
             objective: options.objective,
             read: options.read ?? false,
-            notificationType: options.notificationType ?? 'reminder',
+            notificationType: options.notificationType ?? 'deadline',
             notificationDate: options.notificationDate ?? now,
             message: options.message,
-            createdAt: now,
-            updatedAt: now,
         });
         const notification = await ctx.db.get('notifications', id);
         if (!notification) {

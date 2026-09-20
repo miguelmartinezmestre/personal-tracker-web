@@ -1,11 +1,5 @@
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
-import {
-    type ColumnDef,
-    type RowData,
-    type SortingState,
-    useTable,
-    flexRender,
-} from '@tanstack/react-table';
+import { type ColumnDef, type RowData, useTable, flexRender } from '@tanstack/react-table';
 import {
     TableHeader,
     TableRow,
@@ -15,13 +9,9 @@ import {
     Table,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { DataTablePagination } from './data-table-pagination';
 import { dataTableFeatures, type DataTableFeatures } from '../data-table-features';
-
-const sortLabels = { asc: 'ascending', desc: 'descending' } as const;
 
 interface DataTableProps<TData extends RowData> {
     columns: ColumnDef<DataTableFeatures, TData>[];
@@ -30,13 +20,11 @@ interface DataTableProps<TData extends RowData> {
     isError?: boolean;
     error?: unknown;
     onRetry?: () => void;
-    enableSorting?: boolean;
     pagination?: {
-        currentPage: number;
         onNextPage: () => void;
         onPreviousPage: () => void;
-        hasNextPage?: boolean;
-        hasPreviousPage?: boolean;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
         isLoading?: boolean;
     };
 }
@@ -48,13 +36,11 @@ export function DataTable<TData extends RowData>({
     isError = false,
     error,
     onRetry,
-    enableSorting = false,
     pagination,
 }: DataTableProps<TData>) {
     'use no memo';
 
     const t = useTranslations('Table');
-    const [sorting, setSorting] = useState<SortingState>([]);
     // TanStack Table returns non-memoizable functions; React Compiler skips this hook by design.
     // react-doctor-disable-next-line react-hooks-js/incompatible-library -- useTable
     const table = useTable({
@@ -62,13 +48,6 @@ export function DataTable<TData extends RowData>({
         data,
         columns,
         manualPagination: true,
-        enableSorting,
-        ...(enableSorting
-            ? {
-                  onSortingChange: setSorting,
-                  state: { sorting },
-              }
-            : {}),
     });
 
     if (isError) {
@@ -118,61 +97,15 @@ export function DataTable<TData extends RowData>({
                         {table.getHeaderGroups().map(headerGroup => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map(header => {
-                                    const canSort = enableSorting && header.column.getCanSort();
-                                    const sortState = header.column.getIsSorted();
                                     if (header.isPlaceholder) {
-                                        return (
-                                            <TableHead
-                                                key={header.id}
-                                                aria-sort={
-                                                    sortState ? sortLabels[sortState] : undefined
-                                                }
-                                            />
-                                        );
-                                    }
-                                    if (!canSort) {
-                                        return (
-                                            <TableHead
-                                                key={header.id}
-                                                aria-sort={
-                                                    sortState ? sortLabels[sortState] : undefined
-                                                }
-                                            >
-                                                {flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                            </TableHead>
-                                        );
+                                        return <TableHead key={header.id} />;
                                     }
                                     return (
-                                        <TableHead
-                                            key={header.id}
-                                            aria-sort={
-                                                sortState ? sortLabels[sortState] : undefined
-                                            }
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={header.column.getToggleSortingHandler()}
-                                                className="flex w-full items-center gap-2 text-left"
-                                                aria-label={t('toggleSorting')}
-                                                data-testid={`table-sort-${header.column.id}`}
-                                            >
-                                                {flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                                {sortState === 'asc' ? (
-                                                    <ArrowUp className="h-3.5 w-3.5" />
-                                                ) : null}
-                                                {sortState === 'desc' ? (
-                                                    <ArrowDown className="h-3.5 w-3.5" />
-                                                ) : null}
-                                                {sortState ? null : (
-                                                    <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
-                                                )}
-                                            </button>
+                                        <TableHead key={header.id}>
+                                            {flexRender(
+                                                header.column.columnDef.header,
+                                                header.getContext()
+                                            )}
                                         </TableHead>
                                     );
                                 })}
@@ -207,8 +140,8 @@ export function DataTable<TData extends RowData>({
                 <DataTablePagination
                     onNextPage={pagination.onNextPage}
                     onPreviousPage={pagination.onPreviousPage}
-                    hasNextPage={pagination.hasNextPage ?? false}
-                    hasPreviousPage={pagination.hasPreviousPage ?? pagination.currentPage > 0}
+                    hasNextPage={pagination.hasNextPage}
+                    hasPreviousPage={pagination.hasPreviousPage}
                     rowCount={data.length}
                     isLoading={pagination.isLoading}
                 />

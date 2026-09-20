@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export function useDeleteUpdateProgress() {
     const t = useTranslations('UpdateProgress');
 
-    const { mutate, mutateAsync, isPending } = useMutation({
+    const { mutateAsync, isPending } = useMutation({
         mutationFn: useConvexMutation(api.update_progress.deleteUpdateProgress),
         onSuccess: () => {
             toast.success(t('toast.deletedSuccess'));
@@ -20,7 +20,6 @@ export function useDeleteUpdateProgress() {
     });
 
     return {
-        deleteUpdateProgress: mutate,
         deleteUpdateProgressAsync: mutateAsync,
         isDeletingProgress: isPending,
     };

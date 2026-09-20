@@ -251,7 +251,7 @@ describe('convex invitations (better-auth)', () => {
         expect(invitation.expiresAt).toBeLessThan(Date.now());
     });
 
-    test('getUserInvitations does not trust a stale client timestamp to revive an expired invitation', async () => {
+    test('getUserInvitationsPage does not trust a stale timestamp to revive an expired invitation', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const targetEmail = `expired-target-${randomSuffix}@example.com`;
         const serverNow = Date.now();
@@ -297,19 +297,21 @@ describe('convex invitations (better-auth)', () => {
         });
 
         await expect(
-            targetIdentity.query(api.organizations.getUserInvitations, {
+            targetIdentity.query(api.organizations.getUserInvitationsPage, {
                 now: serverNow - TIME.DAY_MS * 2,
+                paginationOpts: { numItems: 10, cursor: null },
             })
         ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
 
-        const invitations = await targetIdentity.query(api.organizations.getUserInvitations, {
+        const invitations = await targetIdentity.query(api.organizations.getUserInvitationsPage, {
             now: serverNow,
+            paginationOpts: { numItems: 10, cursor: null },
         });
 
-        expect(invitations).toEqual([]);
+        expect(invitations.page).toEqual([]);
     });
 
-    test('getUserInvitations finds matching email beyond 1000 unrelated pending invitations', async () => {
+    test('getUserInvitationsPage finds an exact email among many unrelated invitations', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const targetEmail = `target-${randomSuffix}@example.com`;
 
@@ -378,12 +380,13 @@ describe('convex invitations (better-auth)', () => {
             banned: false,
         });
 
-        const invitations = await targetIdentity.query(api.organizations.getUserInvitations, {
+        const invitations = await targetIdentity.query(api.organizations.getUserInvitationsPage, {
             now: Date.now(),
+            paginationOpts: { numItems: 10, cursor: null },
         });
 
-        expect(invitations).toHaveLength(1);
-        expect(invitations[0]?.email).toBe(targetEmail);
-        expect(invitations[0]?.organizationId).toBe(organizationId);
+        expect(invitations.page).toHaveLength(1);
+        expect(invitations.page[0]?.email).toBe(targetEmail);
+        expect(invitations.page[0]?.organizationId).toBe(organizationId);
     });
 });

@@ -10,7 +10,7 @@ import { AchievementBadge } from './achievement-badge';
 import type {
     AchievementDefinition,
     AchievementTier,
-} from '@/features/achievements/schemas/achievement';
+} from '@/features/achievements/types/achievement';
 
 const TIER_LABELS: Record<AchievementTier, string> = {
     bronze: 'Bronze',
@@ -26,18 +26,16 @@ const TIER_BADGE_VARIANTS: Record<AchievementTier, 'default' | 'secondary' | 'ou
 
 interface AchievementCardProps {
     definition: AchievementDefinition;
-    currentProgress?: number;
+    currentProgress: number;
     isEarned: boolean;
     earnedAt?: number;
-    onClick?: () => void;
 }
 
 export function AchievementCard({
     definition,
-    currentProgress = 0,
+    currentProgress,
     isEarned,
     earnedAt,
-    onClick,
 }: AchievementCardProps) {
     const t = useTranslations('Achievements');
     const locale = useLocale();
@@ -52,24 +50,8 @@ export function AchievementCard({
         <Card
             className={cn(
                 'transition-all hover:shadow-md',
-                onClick && 'cursor-pointer',
                 isEarned ? 'border-primary/50' : 'border-dashed'
             )}
-            tabIndex={onClick ? 0 : undefined}
-            role={onClick ? 'button' : undefined}
-            onClick={onClick}
-            onKeyDown={
-                onClick
-                    ? e => {
-                          if (e.key !== 'Enter' && e.key !== ' ') {
-                              return;
-                          }
-
-                          e.preventDefault();
-                          onClick();
-                      }
-                    : undefined
-            }
             data-testid={`achievement-card-${definition.code}`}
         >
             <CardHeader className="flex flex-row items-center gap-4 pb-2">

@@ -27,22 +27,17 @@ import { USER_EMAIL_MAX_LENGTH, USER_NAME_MAX_LENGTH } from '../shared/input-con
 import { normalizeRequiredBoundedString } from './utils/inputValidation';
 const SESSION_REVOKE_BATCH_SIZE = 100;
 const MAX_DATE_TIMESTAMP = 8640000000000000;
-type SessionRevocationBatchResult = {
-    status: 'in_progress' | 'completed';
-    revokedCount: number;
-};
 export async function revokeAllSessionsForUser(
     ctx: MutationCtx,
     userId: Id<'user'>,
-    totalRevoked = 0,
     expectedBanUpdatedAt?: number
-): Promise<SessionRevocationBatchResult> {
+): Promise<void> {
     if (expectedBanUpdatedAt !== undefined) {
         const user = await ctx.db.get('user', userId);
         const activeBan =
             user?.banned === true && (user.banExpires == null || user.banExpires > Date.now());
         if (!user || !activeBan || user.updatedAt !== expectedBanUpdatedAt) {
-            return { status: 'completed', revokedCount: totalRevoked };
+            return;
         }
     }
     const sessions = await ctx.db
@@ -53,16 +48,12 @@ export async function revokeAllSessionsForUser(
     for (const session of batch) {
         await ctx.db.delete('session', session._id);
     }
-    const revokedCount = totalRevoked + batch.length;
     if (sessions.length > batch.length) {
         await ctx.scheduler.runAfter(0, internal.admin.continueUserSessionRevocation, {
             userId,
-            totalRevoked: revokedCount,
             ...(expectedBanUpdatedAt !== undefined ? { expectedBanUpdatedAt } : {}),
         });
-        return { status: 'in_progress', revokedCount };
     }
-    return { status: 'completed', revokedCount };
 }
 function getBanExpiresAt(now: number, banExpiresInSeconds: number | undefined): number | null {
     if (banExpiresInSeconds === undefined) {
@@ -183,27 +174,19 @@ export const banUser = mutationWithRLS({
         });
         // The durable status above blocks application access immediately. The
         // physical session rows can therefore be removed safely in batches.
-        await revokeAllSessionsForUser(ctx, args.userId, 0, banUpdatedAt);
+        await revokeAllSessionsForUser(ctx, args.userId, banUpdatedAt);
         return { success: true };
     },
 });
 export const continueUserSessionRevocation = internalMutation({
     args: {
         userId: v.id('user'),
-        totalRevoked: v.optional(v.number()),
         expectedBanUpdatedAt: v.optional(v.number()),
     },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        revokedCount: v.number(),
-    }),
-    handler: async (ctx, args): Promise<SessionRevocationBatchResult> => {
-        return await revokeAllSessionsForUser(
-            ctx,
-            args.userId,
-            args.totalRevoked ?? 0,
-            args.expectedBanUpdatedAt
-        );
+    returns: v.null(),
+    handler: async (ctx, args): Promise<null> => {
+        await revokeAllSessionsForUser(ctx, args.userId, args.expectedBanUpdatedAt);
+        return null;
     },
 });
 export const unbanUser = mutationWithRLS({
@@ -254,13 +237,11 @@ export const revokeUserSession = mutationWithRLS({
 });
 export const revokeAllUserSessions = mutationWithRLS({
     args: { userId: v.id('user') },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        revokedCount: v.number(),
-    }),
-    handler: async (ctx, args): Promise<SessionRevocationBatchResult> => {
+    returns: v.null(),
+    handler: async (ctx, args): Promise<null> => {
         await requireAdminTarget(ctx, args.userId, 'sessions');
-        return await revokeAllSessionsForUser(ctx, args.userId);
+        await revokeAllSessionsForUser(ctx, args.userId);
+        return null;
     },
 });
 async function resolveUserDeletionAuditOrganizationId(
@@ -350,7 +331,6 @@ export const cascadeUserDeletionInternal = internalMutation({
                 resourceType: 'user',
                 resourceId: String(args.userId),
                 metadata,
-                severity: 'info',
                 createdAt: Date.now(),
             });
         }
@@ -371,7 +351,6 @@ export const continueUserDeletionCascade = internalMutation({
     args: {
         userId: v.id('user'),
         phase: v.optional(userDeletionPhaseValidator),
-        cursor: v.optional(v.union(v.string(), v.null())),
     },
     returns: v.object({
         status: v.union(v.literal('in_progress'), v.literal('completed')),
@@ -411,7 +390,6 @@ export const continueOrganizationDeletionCascade = internalMutation({
     args: {
         organizationId: v.id('organization'),
         phase: v.optional(organizationDeletionPhaseValidator),
-        deleteOrganizationRecord: v.optional(v.boolean()),
     },
     returns: v.object({
         status: v.union(v.literal('in_progress'), v.literal('completed')),

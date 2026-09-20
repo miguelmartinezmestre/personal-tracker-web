@@ -16,6 +16,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
     useOrganizations,
     useOrganizationByIdentifier,
+    type Organization,
 } from '@/features/organizations/hooks/use-organizations';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { useSession } from '@/features/auth/hooks/use-session';
@@ -32,7 +33,7 @@ function OrganizationSwitcherMenuItems({
     onSelect,
 }: {
     isLoadingData: boolean;
-    organizations: { id: string; name: string; isPersonal?: boolean }[];
+    organizations: Pick<Organization, 'id' | 'name' | 'isPersonal'>[];
     activeOrganizationId: string | null;
     loadingLabel: string;
     emptyLabel: string;

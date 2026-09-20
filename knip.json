@@ -3,15 +3,21 @@
     "entry": [
         "src/app/**/*.{ts,tsx}",
         "convex/**/*.ts",
-        "scripts/**/*.{ts,mjs,js}",
-        "tests/**/*.ts"
+        "scripts/*.{ts,mjs,js}",
+        "tests/**/*.{spec,test}.ts",
+        "tests/setup/auth.stack.setup.ts"
     ],
     "project": [
         "src/**/*.{ts,tsx,css}",
         "convex/**/*.ts",
         "scripts/**/*.{ts,mjs,js}",
-        "tests/**/*.ts"
+        "tests/**/*.ts",
+        "shared/**/*.ts"
     ],
+    "playwright": {
+        "config": ["playwright.config.ts", "tests/manual/playwright.manual.config.ts"]
+    },
     "ignoreBinaries": ["d2"],
-    "ignoreExportsUsedInFile": true
+    "ignoreExportsUsedInFile": true,
+    "includeEntryExports": true
 }

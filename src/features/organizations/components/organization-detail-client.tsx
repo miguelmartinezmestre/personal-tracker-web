@@ -1,6 +1,9 @@
 'use client';
 
-import { useOrganizationByIdentifier } from '@/features/organizations/hooks/use-organizations';
+import {
+    useOrganizationByIdentifier,
+    type Organization,
+} from '@/features/organizations/hooks/use-organizations';
 import CreateOrganizationMemberFormModal from '@/features/organizations/components/organization-members-form-create-modal';
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
@@ -14,11 +17,7 @@ import {
 function OrganizationInviteAction({
     organization,
 }: {
-    organization: {
-        id: string;
-        isPersonal?: boolean;
-        role?: string;
-    };
+    organization: Pick<Organization, 'id' | 'isPersonal' | 'role'>;
 }) {
     const tMembers = useTranslations('OrganizationMembers');
     if (organization.isPersonal) {
@@ -31,11 +30,11 @@ function OrganizationInviteAction({
             </p>
         );
     }
-    if (isOrganizationAdminRole(organization.role ?? '')) {
+    if (isOrganizationAdminRole(organization.role)) {
         return (
             <CreateOrganizationMemberFormModal
                 organizationId={organization.id}
-                canAssignOwner={isOrganizationOwnerRole(organization.role ?? '')}
+                canAssignOwner={isOrganizationOwnerRole(organization.role)}
             />
         );
     }

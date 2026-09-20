@@ -22,18 +22,18 @@ interface InvitationCardProps {
     invitation: Invitation;
     onAccept: () => void;
     onReject: () => void;
-    isAccepting?: boolean;
-    isRejecting?: boolean;
-    isResponseDisabled?: boolean;
+    isAccepting: boolean;
+    isRejecting: boolean;
+    isResponseDisabled: boolean;
 }
 
 export function InvitationCard({
     invitation,
     onAccept,
     onReject,
-    isAccepting = false,
-    isRejecting = false,
-    isResponseDisabled = false,
+    isAccepting,
+    isRejecting,
+    isResponseDisabled,
 }: InvitationCardProps) {
     const t = useTranslations('Invitations');
     const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);

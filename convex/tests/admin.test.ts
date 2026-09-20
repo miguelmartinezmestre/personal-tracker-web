@@ -284,12 +284,12 @@ describe('convex admin', () => {
                     .query('session')
                     .withIndex('userId', q => q.eq('userId', userId))
                     .collect(),
-                auditLogs: await ctx.db
-                    .query('auditLogs')
-                    .withIndex('by_resourceType_resourceId', q =>
-                        q.eq('resourceType', 'user').eq('resourceId', String(userId))
-                    )
-                    .collect(),
+                auditLogs: (
+                    await ctx.db
+                        .query('auditLogs')
+                        .withIndex('by_resourceType_createdAt', q => q.eq('resourceType', 'user'))
+                        .collect()
+                ).filter(log => log.resourceId === String(userId)),
             }));
 
             expect(result).toEqual({ success: true });
@@ -406,12 +406,12 @@ describe('convex admin', () => {
             const result = await adminIdentity.mutation(api.admin.deleteUser, { userId });
             const immediate = await t.run(async ctx => ({
                 user: await ctx.db.get('user', userId),
-                auditLogs: await ctx.db
-                    .query('auditLogs')
-                    .withIndex('by_resourceType_resourceId', q =>
-                        q.eq('resourceType', 'user').eq('resourceId', String(userId))
-                    )
-                    .collect(),
+                auditLogs: (
+                    await ctx.db
+                        .query('auditLogs')
+                        .withIndex('by_resourceType_createdAt', q => q.eq('resourceType', 'user'))
+                        .collect()
+                ).filter(log => log.resourceId === String(userId)),
             }));
 
             expect(result).toEqual({ success: true });
@@ -521,7 +521,6 @@ describe('convex admin', () => {
                 platformName: 'Test Platform',
                 defaultLanguage: 'en',
                 registrationPolicy: 'open',
-                setupCompletedAt: Date.now(),
                 setupCompletedBy: userId,
             })
         );
@@ -546,7 +545,6 @@ describe('convex admin', () => {
                 platformName: 'Test Platform',
                 defaultLanguage: 'en',
                 registrationPolicy: 'open',
-                setupCompletedAt: Date.now(),
                 setupCompletedBy: adminId,
             });
         });

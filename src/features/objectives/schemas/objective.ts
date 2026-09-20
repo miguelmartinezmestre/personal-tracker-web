@@ -1,13 +1,11 @@
 import { z } from 'zod';
-import { OBJECTIVE_STATUS, OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
+import { OBJECTIVE_VISIBILITY } from '@/convex/utils/constants';
 import { isCategorySelectPlaceholder } from '@/features/objectives/lib/objective-category-selection';
 import {
     OBJECTIVE_DESCRIPTION_MAX_LENGTH,
     OBJECTIVE_TITLE_MAX_LENGTH,
     OBJECTIVE_UNIT_MAX_LENGTH,
 } from '@shared/input-constraints';
-
-export const objectiveStatusSchema = z.enum([OBJECTIVE_STATUS.ACTIVE, OBJECTIVE_STATUS.COMPLETED]);
 
 const MAX_METRIC = 1_000_000_000;
 const MIN_TARGET = 0.001;
@@ -33,10 +31,8 @@ export const objectiveSchema = z
 
         categoryId: categorySelectionSchema,
         targetValue: targetMetricSchema,
-        currentValue: metricSchema,
         startValue: metricSchema.optional().nullable(),
         deadline: deadlineSchema.optional().nullable(),
-        status: objectiveStatusSchema.optional().nullable(),
         unit: z.string().max(OBJECTIVE_UNIT_MAX_LENGTH).optional().nullable(),
         visibility: z
             .enum([OBJECTIVE_VISIBILITY.PRIVATE, OBJECTIVE_VISIBILITY.ORGANIZATION])
@@ -76,6 +72,5 @@ export const savedObjectiveSchema = objectiveSchema.extend({
     _id: z.string(),
 });
 
-export type Objective = z.infer<typeof savedObjectiveSchema>;
 export type CreateObjective = z.infer<typeof objectiveSchema>;
 export type SavedObjectiveForm = z.infer<typeof savedObjectiveSchema>;

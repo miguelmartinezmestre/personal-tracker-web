@@ -42,12 +42,7 @@ export default function LoginForm({
     const tCommon = useTranslations('Common');
     const [loginError, setLoginError] = useState('');
     const session = useSession();
-    const signOutMutation = useMutation(
-        useSignOutMutationOptions({
-            onSuccess: () => {},
-            onError: () => {},
-        })
-    );
+    const signOutMutation = useMutation(useSignOutMutationOptions());
     const loginDefaultValues: z.infer<typeof loginSchema> = {
         email: '',
         password: '',
@@ -108,7 +103,7 @@ export default function LoginForm({
 
             <form.Field name="email">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel className="text-foreground">
                                 {tCommon('fields.email')}
@@ -135,7 +130,6 @@ export default function LoginForm({
             <form.Field name="password">
                 {field => (
                     <FieldShell
-                        name={field.name}
                         error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
                     >
                         <FormItem>

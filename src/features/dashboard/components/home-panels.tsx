@@ -90,13 +90,9 @@ type RecentActivityCardProps = {
     activity:
         | {
               progressUpdatesCount: number;
-              progressUpdatesTruncated: boolean;
               objectivesCreatedCount: number;
-              objectivesCreatedTruncated: boolean;
               objectivesCompletedCount: number;
-              objectivesCompletedTruncated: boolean;
               periodDays: number;
-              isTruncated: boolean;
           }
         | undefined;
 };
@@ -114,35 +110,21 @@ export function RecentActivityCard({ query, activity }: RecentActivityCardProps)
             <>
                 <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{t('activity.progressUpdates')}</span>
-                    <span className="font-medium">
-                        {activity.progressUpdatesCount}
-                        {activity.progressUpdatesTruncated ? '+' : ''}
-                    </span>
+                    <span className="font-medium">{activity.progressUpdatesCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{t('activity.objectivesCreated')}</span>
-                    <span className="font-medium">
-                        {activity.objectivesCreatedCount}
-                        {activity.objectivesCreatedTruncated ? '+' : ''}
-                    </span>
+                    <span className="font-medium">{activity.objectivesCreatedCount}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                         {t('activity.objectivesCompleted')}
                     </span>
-                    <span className="font-medium">
-                        {activity.objectivesCompletedCount}
-                        {activity.objectivesCompletedTruncated ? '+' : ''}
-                    </span>
+                    <span className="font-medium">{activity.objectivesCompletedCount}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                     {t('activity.period', { days: activity.periodDays })}
                 </p>
-                {activity.isTruncated ? (
-                    <p className="text-xs text-muted-foreground" role="status">
-                        {t('partialData')}
-                    </p>
-                ) : null}
             </>
         );
     }

@@ -75,12 +75,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
     const [verificationSent, setVerificationSent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const session = useSession();
-    const signOutMutation = useMutation(
-        useSignOutMutationOptions({
-            onSuccess: () => {},
-            onError: () => {},
-        })
-    );
+    const signOutMutation = useMutation(useSignOutMutationOptions());
     const registerDefaultValues: RegisterFormValues = {
         email: '',
         password: '',

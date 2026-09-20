@@ -27,10 +27,10 @@ async function finishRebuild(
     throw new Error('The dashboard rebuild did not finish within the test execution budget');
 }
 
-describe('dashboard migration and scale', () => {
+describe('dashboard rebuild and scale', () => {
     const t = initConvexTest();
 
-    test('backfills 1502 legacy objectives and finds candidates beyond the old prefix', async () => {
+    test('rebuilds aggregates for 1502 objectives and finds late ranked candidates', async () => {
         vi.useFakeTimers();
         try {
             const user = await createTestUser(t, {
@@ -53,6 +53,7 @@ describe('dashboard migration and scale', () => {
                     visibility: 'organization' as const,
                     targetValue: 100,
                     startValue: 0,
+                    earlyBirdCompleted: false,
                     createdAt: now,
                     updatedAt: now,
                 };
@@ -81,25 +82,26 @@ describe('dashboard migration and scale', () => {
             await expect(identity.query(api.dashboard.getDashboardStats, {})).rejects.toThrow(
                 'DASHBOARD_UPDATING'
             );
-            await t.mutation(internal.dashboard.rebuildDashboard, { organizationId });
+            await t.mutation(internal.dashboard.rebuildAllDashboards, {});
             await finishRebuild(t, organizationId);
-            await expect(
-                identity.query(api.dashboard.getDashboardStats, {})
-            ).resolves.toMatchObject({
-                totalObjectives: 1502,
+            const stats = await identity.query(api.dashboard.getDashboardStats, {});
+            expect(stats).toEqual({
                 completedObjectives: 1500,
                 pendingObjectives: 2,
-                isTruncated: false,
             });
+            expect(stats.completedObjectives + stats.pendingObjectives).toBe(1502);
             const ranked = await identity.query(api.dashboard.getObjectivesWithMostProgress, {});
             expect(ranked.items[0]).toMatchObject({ id: highId, progress: 99 });
             const upcoming = await identity.query(api.dashboard.getUpcomingDeadlines, { now });
             expect(upcoming.items.map(item => item.id)).toEqual([highId]);
-            await t.mutation(internal.dashboard.rebuildDashboard, { organizationId });
+            await t.mutation(internal.dashboard.rebuildAllDashboards, {});
             await finishRebuild(t, organizationId);
-            await expect(
-                identity.query(api.dashboard.getDashboardStats, {})
-            ).resolves.toMatchObject({ totalObjectives: 1502 });
+            const rebuiltStats = await identity.query(api.dashboard.getDashboardStats, {});
+            expect(rebuiltStats).toEqual({
+                completedObjectives: 1500,
+                pendingObjectives: 2,
+            });
+            expect(rebuiltStats.completedObjectives + rebuiltStats.pendingObjectives).toBe(1502);
             const namespaces = await t.run(
                 async ctx =>
                     await ctx.db

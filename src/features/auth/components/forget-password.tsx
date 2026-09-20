@@ -89,7 +89,7 @@ export default function ForgetPasswordForm() {
 
                 <form.Field name="email">
                     {field => (
-                        <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FieldShell error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel className="text-foreground">
                                     {tCommon('fields.email')}

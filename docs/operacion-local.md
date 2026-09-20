@@ -58,20 +58,19 @@ pnpm exec convex import --replace-all --yes .local-stack/backups/snapshot.zip
 ```
 
 Después de importar, despliega la misma versión de funciones, revisa los jobs y ejecuta las
-consultas de salud. Compara el número de filas por tabla y un hash de los documentos ordenados. El
-ensayo registrado en `reports/verification/operations.json` realizó esta comparación sobre las 23
-tablas de aplicación y no encontró diferencias.
+consultas de salud. Compara el número de filas por tabla y un hash de los documentos ordenados. Las
+copias corresponden al esquema de su versión; el código actual no incorpora migraciones de
+documentos antiguos. `dashboard:rebuildAllDashboards` reconstruye los agregados de los documentos
+del esquema vigente.
 
-## Promoción y reversión
+## Verificación de una entrega
 
-1. Ejecuta los checks, cobertura, build y E2E sobre el commit candidato.
+1. Ejecuta `pnpm run ci` sobre la versión candidata. Incluye las comprobaciones estáticas, una sola
+   pasada de las suites con cobertura, el build y los E2E.
 2. Genera el SBOM, el inventario de licencias y el manifiesto de evidencias.
 3. Etiqueta localmente el mismo commit que se usó para generar los artefactos.
-4. Antes de promover una instalación existente, conserva una copia de sus datos y la versión de sus
-   secretos.
-5. Si la observación posterior muestra una regresión, vuelve a desplegar el tag anterior. Restaura
-   los datos solo si la nueva versión los modificó de forma incompatible. Las migraciones de esta
-   entrega son aditivas y no borran los datos de origen para construir agregados.
+4. Conserva las copias junto a la versión de código y las credenciales con las que se generaron.
+5. Para repetir un ensayo, arranca un backend vacío con el esquema de esa versión.
 
 La promoción real a Vercel o Convex Cloud y la gestión de TLS, monitorización, alertas y copias
 externas quedan fuera del ensayo local.

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import { calculateUserStreak } from '../domain/achievements/calculations';
+import { calculateOrganizationStreak } from '../domain/achievements/calculations';
 import { TIME } from '../utils/constants';
 import { initConvexTest } from './test.helper';
 import {
@@ -15,7 +15,6 @@ import { identityFor } from './test_identities';
 describe('achievements multi-tenancy', () => {
     const t = initConvexTest();
     let userId: Id<'user'>;
-    let outsiderId: Id<'user'>;
     let firstOrganizationId: Id<'organization'>;
     let secondOrganizationId: Id<'organization'>;
     let userIdentity: ReturnType<typeof t.withIdentity>;
@@ -28,14 +27,7 @@ describe('achievements multi-tenancy', () => {
             name: 'Achievement user',
             role: 'globalAdmin',
         });
-        const outsider = await createTestUser(t, {
-            userId: `achievement-outsider-${suffix}`,
-            email: `achievement-outsider-${suffix}@example.com`,
-            name: 'Achievement outsider',
-            role: 'user',
-        });
         userId = user.docId;
-        outsiderId = outsider.docId;
         firstOrganizationId = await createTestOrganization(t, {
             name: `First achievement organization ${suffix}`,
             slug: `first-achievement-organization-${suffix}`,
@@ -90,13 +82,7 @@ describe('achievements multi-tenancy', () => {
         });
     });
 
-    test('rejects a streak calculation for a non-member', async () => {
-        await expect(
-            t.run(ctx => calculateUserStreak(ctx, outsiderId, firstOrganizationId))
-        ).rejects.toThrow(/FORBIDDEN|not a member/i);
-    });
-
-    test('does not mix streak activity from different organizations', async () => {
+    test('organization streaks do not mix activity from different organizations', async () => {
         const firstObjectiveId = await createTestObjective(t, {
             userId,
             organizationId: firstOrganizationId,
@@ -109,8 +95,8 @@ describe('achievements multi-tenancy', () => {
             title: 'Second organization streak',
             targetValue: 100,
         });
-        const today = new Date();
-        today.setHours(12, 0, 0, 0);
+        const now = new Date();
+        const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12);
 
         await t.run(async ctx => {
             for (let index = 0; index < 2; index++) {
@@ -119,7 +105,7 @@ describe('achievements multi-tenancy', () => {
                     createdBy: userId,
                     organizationId: firstOrganizationId,
                     updatedValue: index + 1,
-                    updateDate: today.getTime() - index * TIME.DAY_MS,
+                    updateDate: today - index * TIME.DAY_MS,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
@@ -130,14 +116,14 @@ describe('achievements multi-tenancy', () => {
                     createdBy: userId,
                     organizationId: secondOrganizationId,
                     updatedValue: index + 1,
-                    updateDate: today.getTime() - index * TIME.DAY_MS,
+                    updateDate: today - index * TIME.DAY_MS,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
             }
         });
 
-        expect(await t.run(ctx => calculateUserStreak(ctx, userId, firstOrganizationId))).toBe(2);
-        expect(await t.run(ctx => calculateUserStreak(ctx, userId, secondOrganizationId))).toBe(4);
+        expect(await t.run(ctx => calculateOrganizationStreak(ctx, firstOrganizationId))).toBe(2);
+        expect(await t.run(ctx => calculateOrganizationStreak(ctx, secondOrganizationId))).toBe(4);
     });
 });

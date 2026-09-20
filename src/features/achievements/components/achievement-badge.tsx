@@ -2,8 +2,8 @@
 
 import { cn } from '@/lib/utils';
 import { Trophy, Target, CheckCircle, Flame, TrendingUp, Clock, Users, Lock } from 'lucide-react';
-import type { AchievementTier } from '@/features/achievements/schemas/achievement';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { AchievementTier } from '@/features/achievements/types/achievement';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslations } from 'next-intl';
 
 const TIER_COLORS: Record<AchievementTier, string> = {
@@ -32,9 +32,8 @@ interface AchievementBadgeProps {
     icon: string;
     tier: AchievementTier;
     name: string;
-    description?: string;
     earned: boolean;
-    size?: 'sm' | 'md' | 'lg';
+    size: 'sm' | 'md' | 'lg';
     showTooltip?: boolean;
 }
 
@@ -42,9 +41,8 @@ export function AchievementBadge({
     icon,
     tier,
     name,
-    description,
     earned,
-    size = 'md',
+    size,
     showTooltip = true,
 }: AchievementBadgeProps) {
     const t = useTranslations('Achievements.card');
@@ -85,15 +83,12 @@ export function AchievementBadge({
     }
 
     return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>{badge}</TooltipTrigger>
-                <TooltipContent>
-                    <p className="font-semibold">{name}</p>
-                    {description && <p className="text-xs text-muted-foreground">{description}</p>}
-                    {!earned && <p className="text-xs text-muted-foreground mt-1">{t('locked')}</p>}
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+            <TooltipTrigger asChild>{badge}</TooltipTrigger>
+            <TooltipContent>
+                <p className="font-semibold">{name}</p>
+                {!earned && <p className="text-xs text-muted-foreground mt-1">{t('locked')}</p>}
+            </TooltipContent>
+        </Tooltip>
     );
 }

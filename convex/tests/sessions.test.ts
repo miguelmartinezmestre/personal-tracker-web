@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
-import { initConvexTest } from './test.helper';
+import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import { createTestSession, createTestUser, ensureTestUserAuth } from './test_helpers';
 import type { TestConvexForDataModel } from 'convex-test';
 import type { DataModel, Id } from '../_generated/dataModel';
@@ -112,6 +112,27 @@ describe('convex sessions', () => {
         expect(otherSession).not.toBeNull();
     });
 
+    test('invalidateSession deletes an owned session', async () => {
+        const ownedSessionId = await createTestSession(t, {
+            userId,
+            expiresAt: Date.now() + 1_000_000,
+            token: `owned-session-${Math.random().toString(36).slice(2)}`,
+        });
+
+        await expect(
+            _userIdentity.mutation(api.sessions.invalidateSession, {
+                sessionId: ownedSessionId,
+            })
+        ).resolves.toBeNull();
+
+        const sessions = await t.run(async ctx => ({
+            current: await ctx.db.get('session', sessionId),
+            invalidated: await ctx.db.get('session', ownedSessionId),
+        }));
+        expect(sessions.current).not.toBeNull();
+        expect(sessions.invalidated).toBeNull();
+    });
+
     test('invalidateAllOtherSessions only revokes sessions owned by the current user', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const ownOtherSessionId = await createTestSession(t, {
@@ -140,7 +161,7 @@ describe('convex sessions', () => {
             currentSessionId: sessionId,
         });
 
-        expect(result).toEqual({ success: true, status: 'completed', revokedCount: 1 });
+        expect(result).toEqual({ revokedCount: 1 });
 
         const sessions = await t.run(async ctx => {
             return {
@@ -153,6 +174,48 @@ describe('convex sessions', () => {
         expect(sessions.current).not.toBeNull();
         expect(sessions.ownOther).toBeNull();
         expect(sessions.otherUser).not.toBeNull();
+    });
+
+    test('invalidateAllOtherSessions reports only the first batch and finishes asynchronously', async () => {
+        const now = Date.now();
+        await t.run(async ctx => {
+            for (let index = 0; index < 101; index++) {
+                await ctx.db.insert('session', {
+                    userId,
+                    token: `bulk-revoke-${String(userId)}-${index}`,
+                    expiresAt: now + 1_000_000,
+                    ipAddress: null,
+                    userAgent: null,
+                    activeOrganizationId: null,
+                    createdAt: now + index,
+                    updatedAt: now + index,
+                });
+            }
+        });
+
+        const result = await _userIdentity.mutation(api.sessions.invalidateAllOtherSessions, {
+            currentSessionId: sessionId,
+        });
+        expect(result).toEqual({ revokedCount: 100 });
+
+        const afterFirstBatch = await t.run(ctx =>
+            ctx.db
+                .query('session')
+                .withIndex('userId', q => q.eq('userId', userId))
+                .collect()
+        );
+        expect(afterFirstBatch).toHaveLength(2);
+        expect(afterFirstBatch.some(session => session._id === sessionId)).toBe(true);
+
+        await drainScheduledFunctions(t);
+
+        const remaining = await t.run(ctx =>
+            ctx.db
+                .query('session')
+                .withIndex('userId', q => q.eq('userId', userId))
+                .collect()
+        );
+        expect(remaining.map(session => session._id)).toEqual([sessionId]);
     });
 
     test.each([

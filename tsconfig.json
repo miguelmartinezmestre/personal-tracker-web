@@ -40,8 +40,6 @@
         ".next/dev/types/**/*.ts",
         ".next-e2e/types/**/*.ts",
         ".next-e2e/dev/types/**/*.ts",
-        ".next-e2e-webkit/types/**/*.ts",
-        ".next-e2e-webkit/dev/types/**/*.ts",
         ".next-e2e-chromium/types/**/*.ts",
         ".next-e2e-chromium/dev/types/**/*.ts",
         ".next-e2e-authenticated/types/**/*.ts",

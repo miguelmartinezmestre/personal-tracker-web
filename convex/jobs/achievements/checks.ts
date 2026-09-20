@@ -38,7 +38,7 @@ function canReceiveAchievement(
 type EvaluateAndAwardParams = {
     scopeType: 'individual' | 'organization';
     evaluate: (definition: AchievementDefinition) => Promise<boolean> | boolean;
-    award: (definition: AchievementDefinition) => Promise<boolean>;
+    award: (definition: AchievementDefinition) => Promise<void>;
 };
 
 async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
@@ -48,16 +48,12 @@ async function evaluateAndAwardAchievements(params: EvaluateAndAwardParams) {
         definition => definition.type === scopeType
     );
 
-    const newAchievements: string[] = [];
-
     for (const definition of activeDefinitions) {
         const shouldAward = await evaluate(definition);
-        if (shouldAward && (await award(definition))) {
-            newAchievements.push(definition.code);
+        if (shouldAward) {
+            await award(definition);
         }
     }
-
-    return { awarded: newAchievements };
 }
 
 export async function checkUserAchievementsJob(
@@ -75,7 +71,7 @@ export async function checkUserAchievementsJob(
         cumulativeCompletedCount?: number;
         cumulativeEarlyBirdCount?: number;
     }
-) {
+): Promise<null> {
     const { userId, organizationId, trigger } = args;
     const now = Date.now();
     let progressUpdatesCount = args.progressUpdatesCount ?? 0;
@@ -85,7 +81,7 @@ export async function checkUserAchievementsJob(
 
     const user = await ctx.db.get('user', userId);
     if (!canReceiveAchievement(user, now)) {
-        return { awarded: [], status: 'completed', aborted: true };
+        return null;
     }
 
     // The organization only contextualizes the notification. The award and
@@ -115,8 +111,6 @@ export async function checkUserAchievementsJob(
     let progressUpdatesDone = args.progressUpdatesDone ?? false;
     let objectivesContinueCursor = args.objectivesContinueCursor ?? null;
     let progressUpdatesContinueCursor = args.progressUpdatesContinueCursor ?? null;
-    let processedObjectives = 0;
-    let processedProgressUpdates = 0;
     let didPaginate = false;
 
     if (!objectivesDone) {
@@ -129,7 +123,6 @@ export async function checkUserAchievementsJob(
             });
 
         const objectivesBatch = objectivesPage.page;
-        processedObjectives = objectivesBatch.length;
         cumulativeObjectiveCount += objectivesBatch.length;
         cumulativeCompletedCount += objectivesBatch.filter(
             objective => objective.status === 'completed'
@@ -148,7 +141,6 @@ export async function checkUserAchievementsJob(
                 numItems: ACHIEVEMENT_BATCH_SIZE,
                 cursor: progressUpdatesContinueCursor,
             });
-        processedProgressUpdates = updatesPage.page.length;
         progressUpdatesCount += updatesPage.page.length;
         progressUpdatesDone = updatesPage.isDone;
         progressUpdatesContinueCursor = updatesPage.continueCursor;
@@ -167,7 +159,7 @@ export async function checkUserAchievementsJob(
         organizationProgressStreak: 0,
     };
 
-    const result = await evaluateAndAwardAchievements({
+    await evaluateAndAwardAchievements({
         scopeType: 'individual',
         evaluate(definition) {
             if (earnedCodes.has(definition.code)) {
@@ -181,7 +173,7 @@ export async function checkUserAchievementsJob(
         async award(definition) {
             const { code, points, threshold } = definition;
             if (!canReceiveAchievement(await ctx.db.get('user', userId), now)) {
-                return false;
+                return;
             }
 
             const alreadyAwarded = await ctx.db
@@ -192,15 +184,13 @@ export async function checkUserAchievementsJob(
                 .first();
 
             if (alreadyAwarded) {
-                return false;
+                return;
             }
 
             await ctx.db.insert('obtainedAchievements', {
                 userId: userId,
                 achievement: code,
                 earnedAt: now,
-                createdAt: now,
-                updatedAt: now,
             });
 
             const shouldNotify = await shouldSendAchievementNotification(ctx, userId);
@@ -215,12 +205,8 @@ export async function checkUserAchievementsJob(
                     messageKey: 'achievementEarned',
                     messageParams: { code, points, threshold },
                     message: `Achievement unlocked: "${code}"! You earned ${points} points.`,
-                    createdAt: now,
-                    updatedAt: now,
                 });
             }
-
-            return true;
         },
     });
 
@@ -238,16 +224,10 @@ export async function checkUserAchievementsJob(
             cumulativeCompletedCount,
             cumulativeEarlyBirdCount,
         });
-        return {
-            ...result,
-            status: 'in_progress',
-            processedBatch: processedObjectives + processedProgressUpdates,
-            cumulativeObjectiveCount,
-            cumulativeCompletedCount,
-        };
+        return null;
     }
 
-    return { ...result, status: 'completed' };
+    return null;
 }
 
 export async function checkOrganizationAchievementsJob(
@@ -260,7 +240,7 @@ export async function checkOrganizationAchievementsJob(
         orgScopedObjectivesCount?: number;
         orgScopedCompletedCount?: number;
     }
-) {
+): Promise<null> {
     const { organizationId, userId, trigger } = args;
     const now = Date.now();
     let orgScopedObjectivesCount = args.orgScopedObjectivesCount ?? 0;
@@ -276,13 +256,7 @@ export async function checkOrganizationAchievementsJob(
               .first()
         : null;
     if (!organization || !membership) {
-        return {
-            awarded: [],
-            status: 'completed',
-            aborted: true,
-            orgScopedObjectivesCount,
-            orgScopedCompletedCount,
-        };
+        return null;
     }
 
     const earnedAchievements = await ctx.db
@@ -321,7 +295,7 @@ export async function checkOrganizationAchievementsJob(
         organizationProgressStreak: organizationStreak,
     };
 
-    const result = await evaluateAndAwardAchievements({
+    await evaluateAndAwardAchievements({
         scopeType: 'organization',
         evaluate(definition) {
             if (earnedCodes.has(definition.code)) {
@@ -347,7 +321,7 @@ export async function checkOrganizationAchievementsJob(
                       .first()
                 : null;
             if (!currentOrganization || !currentMembership) {
-                return false;
+                return;
             }
 
             const alreadyAwarded = await ctx.db
@@ -358,32 +332,14 @@ export async function checkOrganizationAchievementsJob(
                 .first();
 
             if (alreadyAwarded) {
-                return false;
+                return;
             }
 
-            const orgAchievementId = await ctx.db.insert('organizationAchievements', {
+            await ctx.db.insert('organizationAchievements', {
                 organization: organizationId,
                 achievement: code,
                 earnedAt: now,
-                createdAt: now,
-                updatedAt: now,
             });
-
-            const existingContributor = await ctx.db
-                .query('organizationAchievementContributors')
-                .withIndex('by_organizationAchievement_user', q =>
-                    q.eq('organizationAchievementId', orgAchievementId).eq('userId', userId)
-                )
-                .first();
-
-            if (!existingContributor) {
-                await ctx.db.insert('organizationAchievementContributors', {
-                    organizationAchievementId: orgAchievementId,
-                    userId,
-                    contributedAt: Date.now(),
-                    contributionValue: 1,
-                });
-            }
 
             await ctx.scheduler.runAfter(
                 0,
@@ -396,7 +352,6 @@ export async function checkOrganizationAchievementsJob(
                     cursor: null,
                 }
             );
-            return true;
         },
     });
 
@@ -409,21 +364,10 @@ export async function checkOrganizationAchievementsJob(
             orgScopedObjectivesCount,
             orgScopedCompletedCount,
         });
-        return {
-            ...result,
-            status: 'in_progress',
-            processedBatch: batchObjectives.length,
-            orgScopedObjectivesCount,
-            orgScopedCompletedCount,
-        };
+        return null;
     }
 
-    return {
-        ...result,
-        status: 'completed',
-        orgScopedObjectivesCount,
-        orgScopedCompletedCount,
-    };
+    return null;
 }
 
 export async function notifyOrganizationAchievementMembersJob(
@@ -432,12 +376,12 @@ export async function notifyOrganizationAchievementMembersJob(
         organizationId: Id<'organization'>;
         code: string;
         points: number;
-        threshold?: number;
+        threshold: number;
         cursor?: string | null;
     }
-) {
+): Promise<null> {
     if (!(await ctx.db.get('organization', args.organizationId))) {
-        return { status: 'completed' as const, processed: 0, aborted: true };
+        return null;
     }
 
     const page = await ctx.db
@@ -463,19 +407,13 @@ export async function notifyOrganizationAchievementMembersJob(
             read: false,
             notificationType: 'achievement',
             notificationDate: now,
-            ...(args.threshold === undefined
-                ? {}
-                : {
-                      messageKey: 'organizationAchievementEarned',
-                      messageParams: {
-                          code: args.code,
-                          points: args.points,
-                          threshold: args.threshold,
-                      },
-                  }),
+            messageKey: 'organizationAchievementEarned',
+            messageParams: {
+                code: args.code,
+                points: args.points,
+                threshold: args.threshold,
+            },
             message: `Organization achievement unlocked: "${args.code}"! The organization earned ${args.points} points.`,
-            createdAt: now,
-            updatedAt: now,
         });
     }
 
@@ -488,8 +426,7 @@ export async function notifyOrganizationAchievementMembersJob(
                 cursor: page.continueCursor,
             }
         );
-        return { status: 'in_progress' as const, processed: page.page.length };
     }
 
-    return { status: 'completed' as const, processed: page.page.length };
+    return null;
 }

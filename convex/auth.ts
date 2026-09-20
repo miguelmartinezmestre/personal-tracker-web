@@ -8,18 +8,15 @@ import { defineAuth } from './generated/auth';
 import { queryWithRLS } from './platform/rls/wrappers';
 import {
     DEFAULT_ORGANIZATION_NAME,
-    DEFAULT_ORGANIZATION_SLUG_BASE,
     buildPersonalOrganizationMetadata,
     buildDefaultOrganizationSlug,
     getPersonalOrganizationOwnerUserId,
-    isLegacyPersonalOrganizationSlugForUser,
     isPersonalOrganizationForUser,
 } from './domain/organizations/personalOrganization';
 import { userDocumentValidator } from './utils/documentValidators';
 import { buildBetterAuthOptions } from './platform/auth/betterAuthOptions';
 import type { GenericCtx } from './platform/auth/authRuntime';
 import { isActiveAccount } from './domain/organizations/operational';
-const PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT = 1000;
 const SESSION_RECOVERY_BATCH_SIZE = 20;
 type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted' | 'affected';
 type SessionRecoveryResult = {
@@ -150,7 +147,7 @@ async function findOrCreateFallbackOrganization(
     if (
         personal &&
         personal._id !== deletedOrganizationId &&
-        isPersonalOrganizationForUser({ metadata: personal.metadata, slug: personal.slug, userId })
+        isPersonalOrganizationForUser({ metadata: personal.metadata, userId })
     ) {
         const membership = await ctx.db
             .query('member')
@@ -349,16 +346,7 @@ export const isDefaultOrganization = internalQuery({
                 .first();
             return ownerMembership?.role === 'owner';
         }
-        if (!organization.slug.startsWith(`${DEFAULT_ORGANIZATION_SLUG_BASE}-`)) {
-            return false;
-        }
-        const members = await ctx.db
-            .query('member')
-            .withIndex('organizationId', q => q.eq('organizationId', organizationId))
-            .take(PERSONAL_ORGANIZATION_MEMBER_CHECK_LIMIT);
-        return members.some(member =>
-            isLegacyPersonalOrganizationSlugForUser(organization.slug, member.userId)
-        );
+        return false;
     },
 });
 export const getCredentialPasswordHashForDeletion = internalQuery({

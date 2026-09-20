@@ -23,19 +23,15 @@ import {
 export const getDashboardStats = queryWithRLS({
     args: {},
     returns: v.object({
-        totalObjectives: v.number(),
         completedObjectives: v.number(),
         pendingObjectives: v.number(),
-        isTruncated: v.boolean(),
     }),
     handler: async ctx => {
         const scope = await dashboardScope(ctx);
         if (!scope) {
             return {
-                totalObjectives: 0,
                 completedObjectives: 0,
                 pendingObjectives: 0,
-                isTruncated: false,
             };
         }
         const [pendingObjectives, completedObjectives] = await Promise.all([
@@ -53,10 +49,8 @@ export const getDashboardStats = queryWithRLS({
             }),
         ]);
         return {
-            totalObjectives: pendingObjectives + completedObjectives,
             completedObjectives,
             pendingObjectives,
-            isTruncated: false,
         };
     },
 });
@@ -64,8 +58,7 @@ export const getDashboardStats = queryWithRLS({
 export const getMonthlyProgress = queryWithRLS({
     args: { months: v.optional(v.number()), now: v.number() },
     returns: v.object({
-        items: v.array(v.object({ month: v.string(), monthKey: v.string(), count: v.number() })),
-        isTruncated: v.boolean(),
+        items: v.array(v.object({ monthKey: v.string(), count: v.number() })),
     }),
     handler: async (ctx, args) => {
         assertValidReferenceTimestamp(args.now);
@@ -75,7 +68,7 @@ export const getMonthlyProgress = queryWithRLS({
         });
         const scope = await dashboardScope(ctx);
         if (!scope) {
-            return { items: [], isTruncated: false };
+            return { items: [] };
         }
         const now = new Date(Date.now());
         const items = await Promise.all(
@@ -86,13 +79,12 @@ export const getMonthlyProgress = queryWithRLS({
                 const date = new Date(start);
                 const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
                 return {
-                    month: monthKey,
                     monthKey,
                     count: await countProgress(ctx, scope.progressNamespace, start, end),
                 };
             })
         );
-        return { items, isTruncated: false };
+        return { items };
     },
 });
 
@@ -107,7 +99,6 @@ export const getObjectivesWithMostProgress = queryWithRLS({
                 status: objectiveStatusValidator,
             })
         ),
-        isTruncated: v.boolean(),
     }),
     handler: async (ctx, args) => {
         const limit = assertBoundedInteger(args.limit ?? PAGINATION.DASHBOARD_LIMIT, {
@@ -116,7 +107,7 @@ export const getObjectivesWithMostProgress = queryWithRLS({
         });
         const scope = await dashboardScope(ctx);
         if (!scope) {
-            return { items: [], isTruncated: false };
+            return { items: [] };
         }
         const result = await rankedObjectives(ctx, scope.namespaces, {
             kind: 'progress',
@@ -131,7 +122,6 @@ export const getObjectivesWithMostProgress = queryWithRLS({
                 progress: computeProgressPercent(doc),
                 status: doc.status,
             })),
-            isTruncated: false,
         };
     },
 });
@@ -143,9 +133,7 @@ export const getUpcomingDeadlines = queryWithRLS({
             v.object({
                 id: v.id('objectives'),
                 title: v.string(),
-                deadline: v.number(),
                 daysRemaining: v.number(),
-                progress: v.number(),
             })
         ),
         isTruncated: v.boolean(),
@@ -178,11 +166,9 @@ export const getUpcomingDeadlines = queryWithRLS({
                       {
                           id: doc._id,
                           title: doc.title,
-                          deadline: toUtcCivilDay(doc.deadline),
                           daysRemaining: Math.round(
                               (toUtcCivilDay(doc.deadline) - today) / TIME.DAY_MS
                           ),
-                          progress: computeProgressPercent(doc),
                       },
                   ]
         );
@@ -197,10 +183,6 @@ export const getRecentActivity = queryWithRLS({
         objectivesCreatedCount: v.number(),
         objectivesCompletedCount: v.number(),
         periodDays: v.number(),
-        progressUpdatesTruncated: v.boolean(),
-        objectivesCreatedTruncated: v.boolean(),
-        objectivesCompletedTruncated: v.boolean(),
-        isTruncated: v.boolean(),
     }),
     handler: async (ctx, args) => {
         assertValidReferenceTimestamp(args.now);
@@ -230,10 +212,6 @@ export const getRecentActivity = queryWithRLS({
             objectivesCreatedCount,
             objectivesCompletedCount,
             periodDays,
-            progressUpdatesTruncated: false,
-            objectivesCreatedTruncated: false,
-            objectivesCompletedTruncated: false,
-            isTruncated: false,
         };
     },
 });
@@ -259,14 +237,6 @@ export const resyncObjectiveProgress = internalMutation({
     },
     returns: v.null(),
     handler: resyncProgressBatch,
-});
-export const rebuildDashboard = internalMutation({
-    args: { organizationId: v.id('organization') },
-    returns: v.null(),
-    handler: async (ctx, args): Promise<null> => {
-        await startDashboardRebuild(ctx, args.organizationId);
-        return null;
-    },
 });
 export const rebuildAllDashboards = internalMutation({
     args: { cursor: v.optional(v.union(v.string(), v.null())) },

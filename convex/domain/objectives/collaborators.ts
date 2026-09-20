@@ -8,14 +8,7 @@ import {
 } from '../../utils/constants';
 import { isOrganizationAdminRole } from './permissions';
 
-const MAX_COLLABORATORS_PER_SCOPE = 1000;
 const SUCCESSOR_CANDIDATE_LIMIT = 100;
-
-function assertWithinCollaboratorLimit(rows: readonly object[]) {
-    if (rows.length > MAX_COLLABORATORS_PER_SCOPE) {
-        throw new ConvexError(ERROR_CODES.OBJECTIVE_ID_LIMIT_EXCEEDED);
-    }
-}
 
 export async function getCollaboratorRoleForUser(
     ctx: { db: QueryCtx['db'] },
@@ -28,19 +21,6 @@ export async function getCollaboratorRoleForUser(
         .first();
 
     return row?.role ?? null;
-}
-
-export async function listCollaboratorsForObjective(
-    ctx: { db: QueryCtx['db'] },
-    objectiveId: Id<'objectives'>
-) {
-    const rows = await ctx.db
-        .query('objectiveCollaborators')
-        .withIndex('by_objective', q => q.eq('objectiveId', objectiveId))
-        .take(MAX_COLLABORATORS_PER_SCOPE + 1);
-
-    assertWithinCollaboratorLimit(rows);
-    return rows;
 }
 
 export async function addObjectiveCollaborator(

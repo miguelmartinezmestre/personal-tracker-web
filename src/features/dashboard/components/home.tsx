@@ -73,11 +73,6 @@ export default function Home() {
                         value={stats?.completedObjectives}
                         icon={CheckCircle}
                     />
-                    {stats?.isTruncated ? (
-                        <p className="col-span-2 text-xs text-muted-foreground" role="status">
-                            {t('partialData')}
-                        </p>
-                    ) : null}
                 </div>
             )}
 

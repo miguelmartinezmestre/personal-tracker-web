@@ -81,7 +81,7 @@ export default function CreateUpdateProgressFormModal() {
                 <>
                     <form.Field name="updatedValue">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('updatedValue')}</FormLabel>
                                     <FormControl>
@@ -112,7 +112,7 @@ export default function CreateUpdateProgressFormModal() {
 
                     <form.Field name="comment">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('comment')}</FormLabel>
                                     <FormControl>
@@ -140,7 +140,7 @@ export default function CreateUpdateProgressFormModal() {
 
                     <form.Field name="updateDate">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem className="flex flex-col">
                                     <FormLabel>{t('table.columns.date')}</FormLabel>
                                     <Popover>

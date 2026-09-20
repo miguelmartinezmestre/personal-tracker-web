@@ -53,39 +53,37 @@ describe('organization achievements are awarded (F1)', () => {
         // individual one; draining runs it and awards the org achievement.
         await drainScheduledFunctions(t);
 
-        const organizationAchievements = await userIdentity.query(
-            internal.achievements.getOrganizationAchievements,
-            { organizationId }
+        const organizationAchievement = await t.run(ctx =>
+            ctx.db
+                .query('organizationAchievements')
+                .withIndex('by_organization_achievement', q =>
+                    q
+                        .eq('organization', organizationId)
+                        .eq('achievement', 'organization_first_objective')
+                )
+                .unique()
         );
 
-        expect(
-            organizationAchievements.some(
-                achievement => achievement.definition?.code === 'organization_first_objective'
-            )
-        ).toBe(true);
+        expect(organizationAchievement).not.toBeNull();
     });
 
     test('stale jobs cannot recreate achievements or notifications after organization deletion', async () => {
         await t.run(ctx => ctx.db.delete('organization', organizationId));
 
-        const awardResult = await t.mutation(internal.achievements.checkOrganizationAchievements, {
+        await t.mutation(internal.achievements.checkOrganizationAchievements, {
             organizationId,
             userId,
             trigger: 'objective_created',
             orgScopedObjectivesCount: 1,
         });
-        const notificationResult = await t.mutation(
-            internal.achievements.notifyOrganizationAchievementMembers,
-            {
-                organizationId,
-                code: 'organization_first_objective',
-                points: 15,
-                cursor: null,
-            }
-        );
+        await t.mutation(internal.achievements.notifyOrganizationAchievementMembers, {
+            organizationId,
+            code: 'organization_first_objective',
+            points: 15,
+            threshold: 1,
+            cursor: null,
+        });
 
-        expect(awardResult).toMatchObject({ status: 'completed', aborted: true, awarded: [] });
-        expect(notificationResult).toMatchObject({ status: 'completed', aborted: true });
         await t.run(async ctx => {
             expect(
                 await ctx.db

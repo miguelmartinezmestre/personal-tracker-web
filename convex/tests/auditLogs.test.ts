@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test_helpers';
 import type { DataModel, Id } from '../_generated/dataModel';
@@ -122,7 +122,6 @@ describe('convex auditLogs', () => {
                     action: i % 2 === 0 ? 'objective.created' : 'category.created',
                     resourceType: i % 2 === 0 ? 'objective' : 'category',
                     resourceId: `admin-${i}`,
-                    severity: 'info',
                     createdAt: now - i * 1000,
                 });
             }
@@ -132,7 +131,6 @@ describe('convex auditLogs', () => {
                 action: 'objective.created',
                 resourceType: 'objective',
                 resourceId: 'user-objective',
-                severity: 'warning',
                 createdAt: now + 1000,
             });
         });
@@ -156,43 +154,7 @@ describe('convex auditLogs', () => {
         expect(userLogs.page.every(log => log.userId === userId)).toBe(true);
     });
 
-    test('getAuditLogsByResource returns only the requested resource', async () => {
-        await adminIdentity.run(async ctx => {
-            const now = Date.now();
-            for (const [resourceId, action] of [
-                ['obj-target', 'objective.created'],
-                ['obj-target', 'objective.updated'],
-                ['obj-other', 'objective.created'],
-            ] as const) {
-                await ctx.db.insert('auditLogs', {
-                    userId: adminId,
-                    organizationId: adminOrganizationId,
-                    action,
-                    resourceType: 'objective',
-                    resourceId,
-                    severity: 'info',
-                    createdAt: now,
-                });
-            }
-        });
-
-        const result = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
-            resourceType: 'objective',
-            resourceId: 'obj-target',
-            paginationOpts,
-        });
-        const empty = await adminIdentity.query(internal.auditLogs.getAuditLogsByResource, {
-            resourceType: 'objective',
-            resourceId: 'non-existent',
-            paginationOpts,
-        });
-
-        expect(result.page).toHaveLength(2);
-        expect(result.page.every(log => log.resourceId === 'obj-target')).toBe(true);
-        expect(empty.page).toEqual([]);
-    });
-
-    test('audit log schema supports metadata, severity, optional resource and actor fields', async () => {
+    test('audit log schema supports metadata plus optional resource and actor fields', async () => {
         const logIds = await adminIdentity.run(async ctx => {
             const now = Date.now();
             return await Promise.all([
@@ -208,7 +170,6 @@ describe('convex auditLogs', () => {
                         after: { status: 'completed', currentValue: 10 },
                         context: 'objective.updated',
                     },
-                    severity: 'warning',
                     createdAt: now,
                 }),
                 ctx.db.insert('auditLogs', {
@@ -216,7 +177,6 @@ describe('convex auditLogs', () => {
                     organizationId: adminOrganizationId,
                     action: 'category.defaults_created',
                     resourceType: 'category',
-                    severity: 'info',
                     createdAt: now,
                 }),
             ]);
@@ -233,7 +193,6 @@ describe('convex auditLogs', () => {
             userId,
             actorUserId: adminId,
             resourceId: String(userId),
-            severity: 'warning',
             metadata: {
                 before: { status: 'active', currentValue: 1 },
                 after: { status: 'completed', currentValue: 10 },
@@ -250,7 +209,6 @@ describe('convex auditLogs', () => {
                 organizationId: adminOrganizationId,
                 action: 'objective.created',
                 resourceType: 'objective',
-                severity: 'info',
                 createdAt: Date.now(),
             });
         });
@@ -264,13 +222,6 @@ describe('convex auditLogs', () => {
     test('audit log queries reject unauthenticated callers', async () => {
         await expect(
             t.query(api.auditLogs.getAuditLogs, {
-                paginationOpts: { numItems: 10, cursor: null },
-            })
-        ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);
-        await expect(
-            t.query(internal.auditLogs.getAuditLogsByResource, {
-                resourceType: 'objective',
-                resourceId: 'obj-1',
                 paginationOpts: { numItems: 10, cursor: null },
             })
         ).rejects.toThrow(/Unauthenticated|User not authenticated|AUTH_REQUIRED/);

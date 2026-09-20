@@ -6,7 +6,6 @@ import type { TestConvexForDataModel } from 'convex-test';
 import {
     calculateGlobalUserStreak,
     calculateOrganizationStreak,
-    calculateUserStreak,
 } from '../domain/achievements/calculations';
 import { TIME } from '../utils/constants';
 
@@ -60,7 +59,9 @@ describe('achievements calculations', async () => {
                 title: 'Streak Objective',
                 targetValue: 100,
                 currentValue: 0,
+                startValue: 0,
                 status: 'active',
+                earlyBirdCompleted: false,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
@@ -86,103 +87,6 @@ describe('achievements calculations', async () => {
         return Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 12);
     }
 
-    test('calculateUserStreak returns zero when there is no qualifying progress', async () => {
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(0);
-
-        await createObjective();
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(0);
-    });
-
-    test('calculateUserStreak handles current activity and stale activity boundaries', async () => {
-        const objectiveId = await createObjective();
-        const today = noonToday();
-
-        await addProgress(objectiveId, today);
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(1);
-
-        await addProgress(objectiveId, today - DAY_MS);
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(2);
-
-        await addProgress(objectiveId, today - 4 * DAY_MS);
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(2);
-    });
-
-    test('calculateUserStreak ignores updates from a future UTC day', async () => {
-        const objectiveId = await createObjective();
-        const now = Date.now();
-
-        await addProgress(objectiveId, now + 2 * DAY_MS);
-        await addProgress(objectiveId, now);
-
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(1);
-    });
-
-    test('calculateUserStreak deduplicates same-day updates and aggregates objectives', async () => {
-        const firstObjectiveId = await createObjective();
-        const secondObjectiveId = await createObjective();
-        const today = noonToday();
-
-        await addProgress(firstObjectiveId, today);
-        await addProgress(firstObjectiveId, today + 3600000);
-        await addProgress(secondObjectiveId, today - DAY_MS);
-
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(2);
-    });
-
-    test('calculateUserStreak streams enough updates to avoid old scan-window truncation', async () => {
-        const objectiveId = await createObjective();
-        const today = noonToday();
-        const days = 30;
-
-        await userIdentity.run(async ctx => {
-            for (let day = 0; day < days; day++) {
-                const dayStart = today - day * DAY_MS;
-                for (let update = 0; update < 40; update++) {
-                    await ctx.db.insert('progressUpdates', {
-                        objective: objectiveId,
-                        createdBy: userId,
-                        organizationId,
-                        updatedValue: update,
-                        updateDate: dayStart + update * 1000,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            }
-        });
-
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(days);
-    });
-
-    test('calculateUserStreak stops at the first day gap', async () => {
-        const objectiveId = await createObjective();
-        const today = noonToday();
-
-        await addProgress(objectiveId, today);
-        await addProgress(objectiveId, today - DAY_MS);
-        await addProgress(objectiveId, today - 3 * DAY_MS);
-
-        await expect(
-            userIdentity.run(ctx => calculateUserStreak(ctx, userId, organizationId))
-        ).resolves.toBe(2);
-    });
-
     test('calculateGlobalUserStreak joins consecutive activity across organizations', async () => {
         const firstObjectiveId = await createObjective();
         const secondOrganizationId = await createTestOrganization(t, {
@@ -203,7 +107,9 @@ describe('achievements calculations', async () => {
                 title: 'Cross-organization streak objective',
                 targetValue: 100,
                 currentValue: 0,
+                startValue: 0,
                 status: 'active',
+                earlyBirdCompleted: false,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             })

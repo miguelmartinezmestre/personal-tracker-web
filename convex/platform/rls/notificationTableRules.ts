@@ -127,25 +127,5 @@ export function notificationTableRules(helpers: RlsHelpers) {
             insert: rlsDeny,
             modify: rlsDeny,
         },
-        organizationAchievementContributors: {
-            read: async (_ctx: QueryLike, row: Doc<'organizationAchievementContributors'>) => {
-                if (isGlobalAdmin) {
-                    return true;
-                }
-                if (row.userId === userId) {
-                    return true;
-                }
-                const orgAchievement = await ctx.db.get(
-                    'organizationAchievements',
-                    row.organizationAchievementId
-                );
-                if (!orgAchievement) {
-                    return false;
-                }
-                return isActiveOrganization(orgAchievement.organization);
-            },
-            insert: rlsDeny,
-            modify: rlsDeny,
-        },
     };
 }

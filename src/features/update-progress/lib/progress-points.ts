@@ -5,8 +5,7 @@ export type ProgressPoint = { date: number; currentValue: number; objective: num
 
 export function buildProgressPoints(
     chartUpdates: Pick<Doc<'progressUpdates'>, 'updatedValue' | 'updateDate'>[],
-    objectiveDoc:
-        { startValue?: number; currentValue: number; targetValue: number } | null | undefined,
+    objectiveDoc: { currentValue: number; targetValue: number } | null | undefined,
     seriesStartValue?: number
 ): ProgressPoint[] {
     if (!objectiveDoc) {

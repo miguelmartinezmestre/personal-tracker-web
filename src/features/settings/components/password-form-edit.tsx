@@ -89,7 +89,7 @@ export default function PasswordFormEdit() {
         >
             <form.Field name="currentPassword">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('password')}</FormLabel>
                             <FormControl>
@@ -110,7 +110,7 @@ export default function PasswordFormEdit() {
 
             <form.Field name="confirmPassword">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('confirmPassword')}</FormLabel>
                             <FormControl>
@@ -131,7 +131,7 @@ export default function PasswordFormEdit() {
 
             <form.Field name="newPassword">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('newPassword')}</FormLabel>
                             <FormControl>

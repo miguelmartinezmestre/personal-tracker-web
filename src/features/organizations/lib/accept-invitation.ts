@@ -7,9 +7,8 @@ type AcceptInvitationAndActivateParams = {
     organizationId?: string;
 };
 
-export type InvitationAcceptance = {
+type InvitationAcceptance = {
     status: 'acceptedAndActivated' | 'acceptedActivationPending';
-    data: Awaited<ReturnType<typeof authClient.organization.acceptInvitation>>['data'];
     organizationId: string;
 };
 
@@ -38,11 +37,10 @@ export async function acceptInvitationAndActivateOrganization(
 
     try {
         await activateAcceptedOrganization(organizationId);
-        return { status: 'acceptedAndActivated' as const, data: acceptResult.data, organizationId };
+        return { status: 'acceptedAndActivated', organizationId };
     } catch {
         return {
-            status: 'acceptedActivationPending' as const,
-            data: acceptResult.data,
+            status: 'acceptedActivationPending',
             organizationId,
         };
     }

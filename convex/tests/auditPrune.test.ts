@@ -28,7 +28,6 @@ describe('audit log retention pruning', () => {
                 organizationId,
                 action: 'OLD_ACTION',
                 resourceType: 'test',
-                severity: 'low',
                 createdAt: oldCreatedAt,
             });
             const retainedId = await ctx.db.insert('auditLogs', {
@@ -36,7 +35,6 @@ describe('audit log retention pruning', () => {
                 organizationId,
                 action: 'RETAINED_ACTION',
                 resourceType: 'test',
-                severity: 'low',
                 createdAt: retainedCreatedAt,
             });
             return { oldId, retainedId };

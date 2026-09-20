@@ -48,7 +48,7 @@ export function CategoryFormFields({
         <>
             <form.Field name="name">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('fields.name')}</FormLabel>
                             <FormControl>
@@ -74,7 +74,7 @@ export function CategoryFormFields({
 
             <form.Field name="color">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('fields.color')}</FormLabel>
                             <Select
@@ -128,7 +128,7 @@ export function CategoryFormFields({
 
             <form.Field name="icon">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{t('fields.icon')}</FormLabel>
                             <Select

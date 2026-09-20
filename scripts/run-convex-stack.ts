@@ -17,7 +17,10 @@ import {
 } from './lib/convex-stack';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.yml';
-const GENERATED_DIRECTORIES = ['mysql-data', 'mysql-data-dev', 'data', 'data-dev'];
+const GENERATED_DIRECTORIES = [
+    join('infrastructure', 'mysql-data'),
+    join('infrastructure', 'data'),
+] as const;
 
 const CONVEX_PORT = process.env.CONVEX_PORT ?? process.env.PORT ?? '3210';
 const CONVEX_SITE_PORT = process.env.CONVEX_SITE_PORT ?? process.env.SITE_PROXY_PORT ?? '3211';
@@ -70,19 +73,18 @@ const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
 });
 
 function cleanupGeneratedDirectories(): void {
-    for (const directory of GENERATED_DIRECTORIES) {
-        for (const parent of [process.cwd(), join(process.cwd(), 'infrastructure')]) {
-            const directoryPath = resolve(parent, directory);
-            if (!directoryPath.startsWith(`${resolve(process.cwd())}${sep}`)) {
-                throw new Error('Refusing to delete a path outside the workspace');
-            }
-            if (!existsSync(directoryPath)) {
-                continue;
-            }
-
-            rmSync(directoryPath, { recursive: true, force: true });
-            console.log(`Removed generated directory: ${directoryPath}`);
+    const workspaceRoot = resolve(process.cwd());
+    for (const relativePath of GENERATED_DIRECTORIES) {
+        const directoryPath = resolve(workspaceRoot, relativePath);
+        if (!directoryPath.startsWith(`${workspaceRoot}${sep}`)) {
+            throw new Error('Refusing to delete a path outside the workspace');
         }
+        if (!existsSync(directoryPath)) {
+            continue;
+        }
+
+        rmSync(directoryPath, { recursive: true, force: true });
+        console.log(`Removed generated directory: ${directoryPath}`);
     }
 }
 

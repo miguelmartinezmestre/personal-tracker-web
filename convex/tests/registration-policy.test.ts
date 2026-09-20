@@ -18,11 +18,17 @@ describe('backend registration policy', () => {
 
     test('allows arbitrary email registration when policy is open', async () => {
         const t = initConvexTest();
+        const setupUser = await createTestUser(t, {
+            userId: 'registration-policy-open-setup-user',
+            email: 'open-setup@example.com',
+            name: 'Open policy setup user',
+        });
         await t.run(async ctx => {
             await ctx.db.insert('platformSettings', {
                 platformName: 'Open platform',
                 defaultLanguage: 'en',
                 registrationPolicy: 'open',
+                setupCompletedBy: setupUser.docId,
             });
         });
 
@@ -53,6 +59,7 @@ describe('backend registration policy', () => {
                 platformName: 'Private platform',
                 defaultLanguage: 'en',
                 registrationPolicy: 'invitation-only',
+                setupCompletedBy: inviter.docId,
             });
             const active = await ctx.db.insert('invitation', {
                 organizationId,

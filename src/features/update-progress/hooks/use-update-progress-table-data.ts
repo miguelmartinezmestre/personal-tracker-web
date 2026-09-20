@@ -66,7 +66,7 @@ export function useUpdateProgressTableData(
     const params = useParams();
     const objectiveId = requiredRouteParam(params.id) as Id<'objectives'>;
     const { isAuthenticated } = useConvexAuth();
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
     const updateProgress = useQuery({
         ...convexQuery(api.update_progress.getUpdateProgressByObjectiveId, {
@@ -92,7 +92,6 @@ export function useUpdateProgressTableData(
     const { deleteUpdateProgressAsync, isDeletingProgress } = useDeleteUpdateProgress();
     const objectiveDoc = resolveObjectiveDoc(objectiveProp, objective.data);
     const columns = useUpdateProgressTableColumns({
-        objectiveId,
         objective: objectiveDoc,
         currentUserId,
     });
@@ -113,8 +112,6 @@ export function useUpdateProgressTableData(
                 void objective.refetch();
             }
         },
-        objectiveId,
-        currentPage,
         nextPage,
         previousPage,
         hasPreviousPage,

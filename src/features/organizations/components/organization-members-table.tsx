@@ -26,21 +26,13 @@ import {
 } from '../types/roles';
 import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 import { formatDate } from '@/lib/format-date';
-interface OrganizationMemberRaw {
-    id: string;
-    organizationId: string;
-    userId: string;
-    role: string;
-    createdAt: number;
-    user?: {
-        email?: string;
-        name?: string;
-        image?: string | null;
-    } | null;
-}
+import type { FunctionReturnType } from 'convex/server';
+type OrganizationMemberRaw = FunctionReturnType<
+    typeof api.organizations.getOrganizationMembers
+>['page'][number];
 interface OrganizationMembersTableProps {
     organizationId: string;
-    actorRole?: OrganizationRoleValue;
+    actorRole: OrganizationRoleValue;
 }
 export default function OrganizationMembersTable({
     organizationId,
@@ -53,7 +45,7 @@ export default function OrganizationMembersTable({
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
     const organizationTableId = requiredRouteParam(organizationId) as Id<'organization'>;
     const membersQuery = useQuery(
@@ -134,7 +126,6 @@ export default function OrganizationMembersTable({
                         }}
                         title={t('confirm.deleteTitle')}
                         description={t('confirm.deleteDescription')}
-                        triggerLabel={t('delete')}
                         confirmLabel={t('confirm.deleteConfirm')}
                         cancelLabel={t('confirm.cancel')}
                         isLoading={deleteOrganizationMember.isPending}
@@ -160,7 +151,6 @@ export default function OrganizationMembersTable({
                 data={members}
                 isLoading={membersQuery.isLoading}
                 pagination={{
-                    currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,

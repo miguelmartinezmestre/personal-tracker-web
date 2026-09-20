@@ -1,5 +1,4 @@
 import { useCallback, useReducer, useState } from 'react';
-import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
 
 type State = {
     currentPage: number;
@@ -39,10 +38,7 @@ function reducer(state: State, action: Action): State {
  * see (`needsContinuation`). `scope` resets that continuation when query parameters change.
  * Use `useConvexPages` instead when the UI accumulates all loaded rows behind "load more".
  */
-export function useServerPagination(
-    initialPageSize: number = DEFAULT_PAGE_SIZE,
-    scope: string = ''
-) {
+export function useServerPagination(pageSize: number, scope: string = '') {
     const [state, dispatch] = useReducer(reducer, { currentPage: 0, cursors: [null] });
     const [continuation, setContinuation] = useState<Continuation | null>(null);
 
@@ -65,11 +61,11 @@ export function useServerPagination(
     );
 
     const paginationOpts = {
-        numItems: initialPageSize,
+        numItems: pageSize,
         cursor,
     };
 
-    const nextPage = (continueCursor: string | null | undefined, isDone: boolean = false) => {
+    const nextPage = (continueCursor: string | null | undefined, isDone: boolean) => {
         if (isDone || !continueCursor) {
             return;
         }
@@ -86,9 +82,6 @@ export function useServerPagination(
     };
 
     return {
-        currentPage: state.currentPage,
-        pageSize: initialPageSize,
-        cursors: state.cursors,
         paginationOpts,
         nextPage,
         previousPage,

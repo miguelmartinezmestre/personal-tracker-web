@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { api, internal } from '../_generated/api';
+import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
@@ -102,11 +102,9 @@ describe('organization admins cannot access another organization by id', () => {
                 organizationId: orgBId,
                 objective: orgBObjectiveId,
                 read: false,
-                notificationType: 'reminder',
+                notificationType: 'deadline',
                 notificationDate: now,
                 message: 'Private org B notification',
-                createdAt: now,
-                updatedAt: now,
             });
         });
     });
@@ -194,13 +192,5 @@ describe('organization admins cannot access another organization by id', () => {
         );
         expect(notification).not.toBeNull();
         expect(notification?.read).toBe(false);
-    });
-
-    test('does not reveal organization achievements or contributors from another organization', async () => {
-        await expectEmptyListOrDenied(
-            orgAOwnerIdentity.query(internal.achievements.getOrganizationAchievements, {
-                organizationId: orgBId,
-            })
-        );
     });
 });

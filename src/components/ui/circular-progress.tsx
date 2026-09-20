@@ -4,42 +4,26 @@ import * as React from 'react';
 import * as ProgressPrimitive from '@radix-ui/react-progress';
 import { cn } from '@/lib/utils';
 
-interface CircularProgressProps extends React.ComponentPropsWithoutRef<
-    typeof ProgressPrimitive.Root
-> {
-    size?: 'sm' | 'md' | 'lg';
-    showValue?: boolean;
-    value?: number;
-    max?: number;
-    className?: string;
+interface CircularProgressProps
+    extends Omit<
+        React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
+        'value' | 'max'
+    > {
+    value: number;
     'aria-label': string;
 }
 
 const CircularProgress = React.forwardRef<
     React.ComponentRef<typeof ProgressPrimitive.Root>,
     CircularProgressProps
->(({ size = 'md', showValue = true, value = 0, max = 100, className, ...props }, ref) => {
-    const safeMax = Number.isFinite(max) && max > 0 ? max : 100;
-    const safeValue = Number.isFinite(value) ? Math.min(Math.max(value, 0), safeMax) : 0;
-    const percentage = (safeValue / safeMax) * 100;
-
-    const sizeClasses = {
-        sm: 'w-8 h-8',
-        md: 'w-12 h-12',
-        lg: 'w-16 h-16',
-    };
-
-    const textSizeClasses = {
-        sm: 'text-xs',
-        md: 'text-sm',
-        lg: 'text-base',
-    };
+>(({ value, className, ...props }, ref) => {
+    const safeValue = Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : 0;
+    const percentage = safeValue;
 
     return (
         <div
             className={cn(
-                'relative inline-flex items-center justify-center',
-                sizeClasses[size],
+                'relative inline-flex h-8 w-8 items-center justify-center',
                 className
             )}
         >
@@ -47,7 +31,7 @@ const CircularProgress = React.forwardRef<
                 ref={ref}
                 {...props}
                 value={safeValue}
-                max={safeMax}
+                max={100}
                 className={cn(
                     'relative h-full w-full overflow-hidden rounded-full bg-secondary',
                     className
@@ -63,17 +47,12 @@ const CircularProgress = React.forwardRef<
                     }}
                 />
             </ProgressPrimitive.Root>
-            {showValue && (
-                <div
-                    aria-hidden="true"
-                    className={cn(
-                        'absolute inset-0 flex items-center justify-center font-medium',
-                        textSizeClasses[size]
-                    )}
-                >
-                    {Math.round(percentage)}%
-                </div>
-            )}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 flex items-center justify-center text-xs font-medium"
+            >
+                {Math.round(percentage)}%
+            </div>
         </div>
     );
 });

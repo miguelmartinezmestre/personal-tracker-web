@@ -38,6 +38,8 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 - `pnpm dev:front` / `pnpm dev:convex` — Next or Convex alone.
 - `pnpm checks` — full pre-merge gate: format, types, lint, tests, knip, translations, Convex
   contract checks, and peer-dependency compatibility.
+- `pnpm checks:static` runs the gate without tests.
+- `pnpm ci` runs the static checks, both test suites once with coverage, the build, and E2E tests.
 - `pnpm test` runs backend and frontend suites; `pnpm test:backend` and `pnpm test:frontend` run
   them separately.
 - `pnpm test:coverage` — Vitest with coverage thresholds.

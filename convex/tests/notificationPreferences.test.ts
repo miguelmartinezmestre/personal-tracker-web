@@ -51,35 +51,26 @@ describe('convex notification preferences', () => {
             {}
         );
 
-        expect(preferences).toMatchObject({
-            userId,
+        expect(preferences).toEqual({
             achievementNotifications: true,
             deadlineNotifications: true,
             progressNotifications: true,
             organizationNotifications: true,
         });
-        expect('_id' in preferences).toBe(false);
     });
 
     test('creates preferences with defaults for omitted fields', async () => {
-        const result = await userIdentity.mutation(
-            api.notificationPreferences.updateUserPreferences,
-            {
+        await expect(
+            userIdentity.mutation(api.notificationPreferences.updateUserPreferences, {
                 deadlineNotifications: false,
-            }
-        );
-
-        expect(result).toEqual({
-            success: true,
-            message: 'Preferences created successfully',
-        });
+            })
+        ).resolves.toBeNull();
 
         const preferences = await userIdentity.query(
             api.notificationPreferences.getUserPreferences,
             {}
         );
-        expect(preferences).toMatchObject({
-            userId,
+        expect(preferences).toEqual({
             achievementNotifications: true,
             deadlineNotifications: false,
             progressNotifications: true,
@@ -95,23 +86,17 @@ describe('convex notification preferences', () => {
             organizationNotifications: true,
         });
 
-        const result = await userIdentity.mutation(
-            api.notificationPreferences.updateUserPreferences,
-            {
+        await expect(
+            userIdentity.mutation(api.notificationPreferences.updateUserPreferences, {
                 organizationNotifications: false,
-            }
-        );
-
-        expect(result).toEqual({
-            success: true,
-            message: 'Preferences updated successfully',
-        });
+            })
+        ).resolves.toBeNull();
 
         const preferences = await userIdentity.query(
             api.notificationPreferences.getUserPreferences,
             {}
         );
-        expect(preferences).toMatchObject({
+        expect(preferences).toEqual({
             achievementNotifications: false,
             deadlineNotifications: false,
             progressNotifications: false,

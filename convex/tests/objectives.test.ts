@@ -431,7 +431,7 @@ describe('convex objectives', () => {
         });
     });
 
-    describe('searchObjectivesQuery', () => {
+    describe('searchObjectivesPaginated', () => {
         test('finds objectives by title within the active organization only', async () => {
             await createTestObjective(t, {
                 userId,
@@ -446,12 +446,13 @@ describe('convex objectives', () => {
                 targetValue: 42,
             });
 
-            const results = await userIdentity.query(api.objectives.searchObjectivesQuery, {
+            const results = await userIdentity.query(api.objectives.searchObjectivesPaginated, {
                 search: 'Marathon',
+                paginationOpts: { numItems: 10, cursor: null },
             });
 
-            expect(results).toHaveLength(1);
-            expect(results[0]?.organizationId).toBe(organizationId);
+            expect(results.page).toHaveLength(1);
+            expect(results.page[0]?.organizationId).toBe(organizationId);
         });
 
         test('applies the status filter to search results', async () => {
@@ -470,13 +471,14 @@ describe('convex objectives', () => {
                 status: 'completed',
             });
 
-            const results = await userIdentity.query(api.objectives.searchObjectivesQuery, {
+            const results = await userIdentity.query(api.objectives.searchObjectivesPaginated, {
                 search: 'Marathon',
                 status: 'completed',
+                paginationOpts: { numItems: 10, cursor: null },
             });
 
-            expect(results).toHaveLength(1);
-            expect(results[0]?.title).toBe('Marathon finished');
+            expect(results.page).toHaveLength(1);
+            expect(results.page[0]?.title).toBe('Marathon finished');
         });
     });
 

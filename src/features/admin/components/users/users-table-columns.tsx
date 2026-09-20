@@ -1,7 +1,7 @@
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { UserCheck, Ban, Trash2 } from 'lucide-react';
@@ -15,8 +15,8 @@ export function useUsersTableColumns({
     setupUserId,
     currentUser,
 }: {
-    setupUserId?: Id<'user'> | null;
-    currentUser?: Doc<'user'>;
+    setupUserId: Id<'user'> | null | undefined;
+    currentUser: Doc<'user'> | undefined;
 }) {
     const t = useTranslations('Admin');
     const tCommon = useTranslations('Common');
@@ -109,25 +109,23 @@ export function useUsersTableColumns({
                             </Button>
                         )}
                         {isSetupUser ? (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span tabIndex={0}>
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                disabled
-                                                data-testid="user-delete-button"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        {t('usersTable.setupUserDeleteDisabled')}
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span tabIndex={0}>
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            disabled
+                                            data-testid="user-delete-button"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {t('usersTable.setupUserDeleteDisabled')}
+                                </TooltipContent>
+                            </Tooltip>
                         ) : (
                             <DeleteConfirmationDialog
                                 onConfirm={async () => {

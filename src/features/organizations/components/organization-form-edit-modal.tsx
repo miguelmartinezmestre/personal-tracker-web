@@ -13,11 +13,13 @@ import {
 } from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import type { Organization } from '@/features/organizations/schemas/organization';
 import { savedOrganizationSchema } from '@/features/organizations/schemas/organization';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
-import { useUpdateOrganization } from '@/features/organizations/hooks/use-organizations';
+import {
+    useUpdateOrganization,
+    type Organization,
+} from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
 export default function EditOrganizationFormModal({
     defaultValues,
@@ -48,9 +50,9 @@ export default function EditOrganizationFormModal({
                     onSubmit: savedOrganizationSchema,
                 },
             }}
-            onSubmit={async (values: Organization) => {
+            onSubmit={async (values: z.infer<typeof savedOrganizationSchema>) => {
                 await updateOrganization.mutateAsync({
-                    id: values.id || defaultValues.id,
+                    id: values.id,
                     name: values.name,
                     description: values.description,
                 });
@@ -66,7 +68,7 @@ export default function EditOrganizationFormModal({
                 <>
                     <form.Field name="name">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
@@ -96,7 +98,7 @@ export default function EditOrganizationFormModal({
 
                     <form.Field name="description">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('tableDescription')}</FormLabel>
                                     <FormControl>

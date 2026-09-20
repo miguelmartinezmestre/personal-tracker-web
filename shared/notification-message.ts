@@ -1,4 +1,4 @@
-export const NOTIFICATION_MESSAGE_KEYS = [
+const NOTIFICATION_MESSAGE_KEYS = [
     'objectiveCompleted',
     'progressAdded',
     'deadlineToday',
@@ -7,7 +7,7 @@ export const NOTIFICATION_MESSAGE_KEYS = [
     'achievementEarned',
     'organizationAchievementEarned',
 ] as const;
-export type NotificationMessageKey = (typeof NOTIFICATION_MESSAGE_KEYS)[number];
+type NotificationMessageKey = (typeof NOTIFICATION_MESSAGE_KEYS)[number];
 export type NotificationMessage = {
     message: string;
     messageKey?: string;

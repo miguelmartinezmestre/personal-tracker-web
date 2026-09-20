@@ -10,7 +10,6 @@ test.each([
     const translate = createTranslator({ locale, messages });
     for (const key of [
         'Objectives.trash.empty',
-        'Objectives.trash.loading',
         'Common.queryError',
         'Common.actions.retry',
     ] as const) {

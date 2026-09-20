@@ -20,7 +20,6 @@ export type UserDeletionPhase =
 type ContinueUserDeletionArgs = {
     userId: Id<'user'>;
     phase?: UserDeletionPhase;
-    cursor?: string | null;
 };
 type UserDeletionResult = {
     status: 'in_progress' | 'completed';
@@ -30,7 +29,6 @@ async function scheduleNext(ctx: MutationCtx, userId: Id<'user'>, phase: UserDel
     await ctx.scheduler.runAfter(0, internal.admin.continueUserDeletionCascade, {
         userId,
         phase,
-        cursor: null,
     });
 }
 async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
@@ -127,7 +125,6 @@ async function deleteUserObjectivesPhase(
             deletedAt: objective.deletedAt ?? now,
             deletedBy: objective.deletedBy ?? userId,
             purgeToken,
-            purgeStartedAt: objective.purgeStartedAt ?? now,
             ownerDeletionProcessedAt: now,
             updatedAt: now,
         });
@@ -135,9 +132,6 @@ async function deleteUserObjectivesPhase(
             objectiveId: objective._id,
             purgeToken,
             phase: 'collaborators',
-            cursor: null,
-            totalProgressDeleted: 0,
-            totalNotificationsDeleted: 0,
         });
     }
     if (objectives.length === USER_DELETION_BATCH_SIZE) {
@@ -243,12 +237,11 @@ async function transferOrDeleteMembership(
     const isPersonal = organization
         ? isPersonalOrganizationForUser({
               metadata: organization.metadata,
-              slug: organization.slug,
               userId,
           })
         : false;
     if (organization && (isPersonal || successors.length === 0)) {
-        await startOrganizationDeletionCascade(ctx, organization._id, true);
+        await startOrganizationDeletionCascade(ctx, organization._id);
     } else if (membership.role === 'owner') {
         const successor = successors.at(0);
         if (successor && successor.role !== 'owner') {

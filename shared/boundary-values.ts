@@ -1,12 +1,6 @@
-export type JsonPrimitive = string | number | boolean | null;
+type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { readonly [key: string]: JsonValue };
 export type JsonValue = JsonPrimitive | JsonObject | readonly JsonValue[];
-export type ErrorLike = {
-    readonly message?: string;
-    readonly code?: string;
-    readonly data?: unknown;
-    readonly name?: string;
-};
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value);

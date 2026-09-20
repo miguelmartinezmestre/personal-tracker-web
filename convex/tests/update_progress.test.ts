@@ -77,6 +77,7 @@ describe('convex update_progress', () => {
                 currentValue: 50,
                 startValue: 50,
                 status: 'active',
+                earlyBirdCompleted: false,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
@@ -275,7 +276,7 @@ describe('convex update_progress', () => {
         expect(new Set(editProgressJobUsers)).toEqual(new Set([otherUser.docId, userId]));
     });
 
-    test('collaborator completion awards the creator and records the collaborator for the organization', async () => {
+    test('collaborator completion awards the creator and the organization', async () => {
         const suffix = Math.random().toString(36).substring(2, 15);
         const collaborator = await createTestUser(t, {
             userId: `completion-collaborator-${suffix}`,
@@ -330,25 +331,17 @@ describe('convex update_progress', () => {
             collaboratorProgress.find(item => item.definition.code === 'objectives_completed_3')
         ).toMatchObject({ currentProgress: 0, isEarned: false });
 
-        const attribution = await t.run(async ctx => {
-            const organizationAchievement = await ctx.db
+        const organizationAchievement = await t.run(ctx =>
+            ctx.db
                 .query('organizationAchievements')
                 .withIndex('by_organization_achievement', q =>
                     q
                         .eq('organization', organizationId)
                         .eq('achievement', 'organization_completed_5')
                 )
-                .first();
-            return organizationAchievement
-                ? await ctx.db
-                      .query('organizationAchievementContributors')
-                      .withIndex('by_organizationAchievement_user', q =>
-                          q.eq('organizationAchievementId', organizationAchievement._id)
-                      )
-                      .first()
-                : null;
-        });
-        expect(attribution?.userId).toBe(collaborator.docId);
+                .unique()
+        );
+        expect(organizationAchievement).not.toBeNull();
     });
 
     test('createUpdateProgress works without comment', async () => {

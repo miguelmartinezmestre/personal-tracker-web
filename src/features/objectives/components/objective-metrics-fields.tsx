@@ -47,7 +47,7 @@ export function ObjectiveMetricsFields({
         >
             <form.Field name="targetValue">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{targetValueLabel}</FormLabel>
                             <FormControl>
@@ -76,7 +76,7 @@ export function ObjectiveMetricsFields({
             {mode === 'create' ? (
                 <form.Field name="startValue">
                     {field => (
-                        <FieldShell name={field.name} error={getFieldError(form, field)}>
+                        <FieldShell error={getFieldError(form, field)}>
                             <FormItem>
                                 <FormLabel>{initialValueLabel}</FormLabel>
                                 <FormControl>
@@ -109,7 +109,7 @@ export function ObjectiveMetricsFields({
 
             <form.Field name="unit">
                 {field => (
-                    <FieldShell name={field.name} error={getFieldError(form, field)}>
+                    <FieldShell error={getFieldError(form, field)}>
                         <FormItem>
                             <FormLabel>{unitLabel}</FormLabel>
                             <FormControl>

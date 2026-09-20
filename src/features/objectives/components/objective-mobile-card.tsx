@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { StatusIndicator } from '@/components/ui/status-indicator';
-import { computeObjectiveProgressPercent, normalizeObjective } from './objectives-utils';
+import { computeObjectiveProgressPercent } from './objectives-utils';
 import { ObjectiveRowActions } from './objective-row-actions';
 import type { ObjectiveWithCapabilities } from '@/features/objectives/types/objective-with-capabilities';
 
@@ -31,11 +31,10 @@ export function ObjectiveMobileCard({
 }: ObjectiveMobileCardProps) {
     const locale = useLocale();
     const t = useTranslations('Objectives');
-    const normalized = normalizeObjective(objective);
     const progress = computeObjectiveProgressPercent({
-        currentValue: normalized.currentValue,
-        targetValue: normalized.targetValue,
-        startValue: normalized.startValue,
+        currentValue: objective.currentValue,
+        targetValue: objective.targetValue,
+        startValue: objective.startValue,
     });
     const categoryName = objective.categoryId
         ? categoryNameById.get(objective.categoryId)
@@ -65,8 +64,6 @@ export function ObjectiveMobileCard({
                     <CircularProgress
                         aria-label={`${t('progress')}: ${objective.title}`}
                         value={progress}
-                        max={100}
-                        size="sm"
                     />
                     <div className="text-sm text-muted-foreground">
                         {objective.currentValue}/{objective.targetValue} {objective.unit ?? ''}

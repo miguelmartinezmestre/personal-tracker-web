@@ -76,7 +76,7 @@ export function ObjectiveCategoryField({
     return (
         <form.Field name="categoryId">
             {field => (
-                <FieldShell name={field.name} error={getFieldError(form, field)}>
+                <FieldShell error={getFieldError(form, field)}>
                     <FormItem>
                         <FormLabel>{label}</FormLabel>
                         <Select

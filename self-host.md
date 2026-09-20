@@ -75,5 +75,5 @@ sintéticos propios para el bootstrap. Al terminar conserva informes y logs reda
 `reports/e2e`, además de las trazas y capturas de Playwright.
 
 Los proyectos incluyen Chromium, Firefox, WebKit y `mobile-webkit`. El perfil móvil es emulado.
-Consulta el [procedimiento operativo](docs/operacion-local.md) para copias, restauración,
-reconciliación de agregados, observación y reversión de versiones.
+Consulta el [procedimiento operativo](docs/operacion-local.md) para copias y restauración de la
+misma versión, reconstrucción de agregados, observación y verificación de entregas.

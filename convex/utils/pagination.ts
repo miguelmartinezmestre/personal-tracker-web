@@ -2,9 +2,6 @@ import type { PaginationOptions } from 'convex/server';
 import { ConvexError } from 'convex/values';
 import { ERROR_CODES } from './constants';
 
-const INVALID_CURSOR_ERROR = 'InvalidCursor';
-const MALFORMED_CURSOR_ERROR = 'is not valid JSON';
-
 export const MAX_PAGE_ITEMS = 100;
 export const MAX_PAGE_ROWS_READ = 500;
 export const MAX_PAGE_BYTES_READ = 4 * 1024 * 1024;
@@ -38,21 +35,6 @@ export function withPaginationLimits(paginationOpts: PaginationOptions): Paginat
             MAX_PAGE_BYTES_READ
         ),
     };
-}
-
-export function isInvalidCursorError(error: Error | string | null | undefined): boolean {
-    if (error instanceof Error) {
-        return (
-            error.message.includes(INVALID_CURSOR_ERROR) ||
-            error.message.includes(MALFORMED_CURSOR_ERROR)
-        );
-    }
-
-    if (!error) {
-        return false;
-    }
-
-    return error.includes(INVALID_CURSOR_ERROR) || error.includes(MALFORMED_CURSOR_ERROR);
 }
 
 export async function withInvalidCursorRetry<T>(

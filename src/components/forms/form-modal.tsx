@@ -29,7 +29,6 @@ type FormModalProps<TFormValues extends object> = {
     cancelLabel: string;
     pendingLabel?: string;
     isPending?: boolean;
-    submitDisabled?: boolean;
     contentClassName?: string;
     cancelTestId?: string;
     submitTestId?: string;
@@ -48,7 +47,6 @@ export default function FormModal<TFormValues extends object>({
     cancelLabel,
     pendingLabel,
     isPending = false,
-    submitDisabled = false,
     contentClassName = 'sm:max-w-[600px] max-h-[90vh] overflow-y-auto',
     cancelTestId,
     submitTestId,
@@ -102,11 +100,7 @@ export default function FormModal<TFormValues extends object>({
                         >
                             {cancelLabel}
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled={isPending || submitDisabled}
-                            data-testid={submitTestId}
-                        >
+                        <Button type="submit" disabled={isPending} data-testid={submitTestId}>
                             {isPending && pendingLabel ? pendingLabel : submitLabel}
                         </Button>
                     </DialogFooter>

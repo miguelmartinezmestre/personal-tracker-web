@@ -55,13 +55,10 @@ async function notifyCompletion(ctx: MutationCtx, objective: Doc<'objectives'>) 
         messageParams: { title: objective.title },
         message: `Objective "${objective.title}" completed.`,
         notificationDate: now,
-        createdAt: now,
-        updatedAt: now,
     });
 }
 
 /** One transaction owns the metric/status transition, derived-data triggers and effects.
- * A queued reconciliation repeats it safely without scheduling another.
  * Attribution remains per progress author and per objective creator.
  */
 export async function transitionObjective(
@@ -72,7 +69,6 @@ export async function transitionObjective(
         delta?: number;
         progressAuthorId?: Id<'user'>;
         created?: boolean;
-        scheduleReconciliation?: boolean;
     }
 ) {
     const objective = await ctx.db.get('objectives', objectiveId);
@@ -99,19 +95,6 @@ export async function transitionObjective(
             organizationId: objective.organizationId,
             trigger: args.created ? 'objective_created' : 'progress_update',
         });
-    }
-    if (
-        args.scheduleReconciliation !== false &&
-        (!args.progressAuthorId || result.status !== objective.status)
-    ) {
-        await ctx.scheduler.runAfter(
-            0,
-            internal.jobs.objectives.syncObjectiveFromProgress.syncObjectiveFromProgress,
-            {
-                objectiveId,
-                actorUserId: args.actorUserId,
-            }
-        );
     }
     return { ...result, reopened: objective.status === 'completed' && result.status === 'active' };
 }

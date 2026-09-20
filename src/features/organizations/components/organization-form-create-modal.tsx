@@ -61,7 +61,7 @@ export default function CreateOrganizationFormModal() {
                 <>
                     <form.Field name="name">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('name')}</FormLabel>
                                     <FormControl>
@@ -91,7 +91,7 @@ export default function CreateOrganizationFormModal() {
 
                     <form.Field name="description">
                         {field => (
-                            <FieldShell name={field.name} error={getFieldError(form, field)}>
+                            <FieldShell error={getFieldError(form, field)}>
                                 <FormItem>
                                     <FormLabel>{t('tableDescription')}</FormLabel>
                                     <FormControl>

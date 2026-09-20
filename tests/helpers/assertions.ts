@@ -9,10 +9,6 @@ export async function expectOnLogin(page: Page): Promise<void> {
     await expect(page).toHaveURL(/\/login(\?|$)/, { timeout: 15_000 });
 }
 
-export async function expectOnRegister(page: Page): Promise<void> {
-    await expect(page).toHaveURL(/\/register$/);
-}
-
 export async function expectErrorAlert(page: Page, message?: string | RegExp): Promise<void> {
     const applicationAlert = page
         .locator(

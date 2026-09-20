@@ -21,7 +21,7 @@ export default function SessionsTable() {
     const { invalidateAllOtherSessionsAsync, isInvalidatingAllOtherSessions } =
         useInvalidateAllOtherSessions();
 
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage } =
         useServerPagination(DEFAULT_PAGE_SIZE);
 
     const sessionsQuery = useQuery(convexQuery(api.sessions.getSessionsByUser, { paginationOpts }));
@@ -72,7 +72,6 @@ export default function SessionsTable() {
                 data={sessionRows}
                 isLoading={sessionsQuery.isLoading}
                 pagination={{
-                    currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,

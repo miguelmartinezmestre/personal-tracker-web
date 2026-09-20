@@ -172,6 +172,7 @@ describe('objectiveDomain', () => {
                     deadline: Date.now() + 24 * 60 * 60 * 1000,
                     status,
                     completedAt: status === 'completed' ? Date.now() : undefined,
+                    earlyBirdCompleted: status === 'completed',
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });

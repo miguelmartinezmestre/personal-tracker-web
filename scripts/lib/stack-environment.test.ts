@@ -8,10 +8,12 @@ describe('isolated stack environment', () => {
         const env = buildStackEnvironment({
             mode: 'e2e',
             source: { PATH: 'tools', RANDOM_CREDENTIAL: 'sentinel', CI: 'true' },
+            overrides: { E2E_MAILHOG_UI_PORT: '18026' },
         });
         expect(env.PATH).toBe('tools');
         expect(env.CI).toBe('true');
         expect(env.RANDOM_CREDENTIAL).toBeUndefined();
+        expect(env.E2E_MAILHOG_UI_PORT).toBe('18026');
         expect(env.DATABASE_URL).toBe('mysql://root:root@mysql:3306/convex_self_hosted');
         expect(env.CONVEX_DEPLOY_KEY).toBe('');
     });

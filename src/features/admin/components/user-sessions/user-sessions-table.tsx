@@ -23,7 +23,7 @@ export function UserSessions() {
     const parsedUserId = optionalRouteParam(userId) as Id<'user'> | undefined;
     const columns = useUserSessionsTableColumns(parsedUserId);
     const { revokeAllSessions, isRevokingAllSessions } = useConfirmRevokeAllSessions();
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
         useServerPagination(ADMIN_PAGE_SIZE);
     const {
         data: sessionsQueryResult,
@@ -82,7 +82,6 @@ export function UserSessions() {
                         data={sessionRows}
                         isLoading={isLoading}
                         pagination={{
-                            currentPage,
                             onNextPage: () => nextPage(continueCursor, pageIsDone),
                             onPreviousPage: previousPage,
                             hasNextPage,

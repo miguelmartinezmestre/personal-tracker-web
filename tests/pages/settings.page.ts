@@ -2,22 +2,17 @@ import type { Page, Locator } from '@playwright/test';
 
 export class SettingsPage {
     readonly page: Page;
-    readonly settingsPage: Locator;
     readonly tabAccount: Locator;
-    readonly tabNotifications: Locator;
     readonly tabPassword: Locator;
     readonly tabDanger: Locator;
     readonly usernameInput: Locator;
     readonly emailInput: Locator;
     readonly accountSaveButton: Locator;
-    readonly accountCancelButton: Locator;
     readonly accountSuccessMessage: Locator;
-    readonly accountErrorMessage: Locator;
     readonly currentPasswordInput: Locator;
     readonly newPasswordInput: Locator;
     readonly confirmPasswordInput: Locator;
     readonly passwordSaveButton: Locator;
-    readonly passwordCancelButton: Locator;
     readonly passwordSuccessMessage: Locator;
     readonly passwordErrorMessage: Locator;
     readonly deleteEmailInput: Locator;
@@ -27,22 +22,17 @@ export class SettingsPage {
 
     constructor(page: Page) {
         this.page = page;
-        this.settingsPage = page.getByTestId('settings-page');
         this.tabAccount = page.getByTestId('settings-tab-account');
-        this.tabNotifications = page.getByTestId('settings-tab-notifications');
         this.tabPassword = page.getByTestId('settings-tab-password');
         this.tabDanger = page.getByTestId('settings-tab-danger');
         this.usernameInput = page.getByTestId('account-username-input');
         this.emailInput = page.getByTestId('account-email-input');
         this.accountSaveButton = page.getByTestId('account-save-button');
-        this.accountCancelButton = page.getByTestId('account-cancel-button');
         this.accountSuccessMessage = page.getByTestId('account-success-message');
-        this.accountErrorMessage = page.getByTestId('account-error-message');
         this.currentPasswordInput = page.getByTestId('password-current-input');
         this.newPasswordInput = page.getByTestId('password-new-input');
         this.confirmPasswordInput = page.getByTestId('password-confirm-input');
         this.passwordSaveButton = page.getByTestId('password-save-button');
-        this.passwordCancelButton = page.getByTestId('password-cancel-button');
         this.passwordSuccessMessage = page.getByTestId('password-success-message');
         this.passwordErrorMessage = page.getByTestId('password-error-message');
         this.deleteEmailInput = page.getByTestId('delete-account-email-input');

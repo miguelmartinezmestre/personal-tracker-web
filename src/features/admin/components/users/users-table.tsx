@@ -23,7 +23,7 @@ export function UsersTable() {
     });
     const [search, setSearch] = useState('');
 
-    const { currentPage, paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage, reset } =
         useServerPagination(ADMIN_PAGE_SIZE);
 
     const searchValue = search.trim() || undefined;
@@ -76,7 +76,6 @@ export function UsersTable() {
                 data={userRows}
                 isLoading={isLoading}
                 pagination={{
-                    currentPage,
                     onNextPage: () => nextPage(continueCursor, pageIsDone),
                     onPreviousPage: previousPage,
                     hasNextPage,

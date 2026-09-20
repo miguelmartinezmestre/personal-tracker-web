@@ -63,25 +63,12 @@ export function buildPersonalOrganizationMetadata(userId: string) {
     });
 }
 
-export function isLegacyPersonalOrganizationSlugForUser(slug: string, userId: string) {
-    return slug === buildDefaultOrganizationSlug(userId);
-}
-
 export function isPersonalOrganizationForUser({
     metadata,
-    slug,
     userId,
 }: {
     metadata: string | null | undefined;
-    slug: string;
     userId: string;
 }) {
-    const metadataOwnerUserId = getPersonalOrganizationOwnerUserId(metadata);
-    if (metadataOwnerUserId) {
-        return metadataOwnerUserId === userId;
-    }
-
-    // Legacy personal workspaces did not persist an owner in metadata. Their
-    // user-derived slug is the only ownership signal that can be trusted.
-    return isLegacyPersonalOrganizationSlugForUser(slug, userId);
+    return getPersonalOrganizationOwnerUserId(metadata) === userId;
 }

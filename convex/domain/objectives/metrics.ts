@@ -120,11 +120,11 @@ export function validateObjectiveNotCompleted(status: string): void {
 export const computeProgressPercent = (objective: {
     currentValue: number;
     targetValue: number;
-    startValue?: number | null;
+    startValue: number;
 }): number => {
     const current = objective.currentValue;
     const target = objective.targetValue;
-    const start = objective.startValue ?? 0;
+    const start = objective.startValue;
     const denominator = target - start;
 
     if (denominator <= 0) {
@@ -150,7 +150,7 @@ export async function applyObjectiveProgressDelta(
         throw new ConvexError(ERROR_CODES.OBJECTIVE_NOT_FOUND);
     }
 
-    const baseValue = objective.startValue ?? 0;
+    const baseValue = objective.startValue;
     const currentValue = Math.max(baseValue, objective.currentValue + delta);
     const status = currentValue >= objective.targetValue ? 'completed' : 'active';
     const completedNow = objective.status !== 'completed' && status === 'completed';
@@ -167,7 +167,7 @@ export async function applyObjectiveProgressDelta(
         deadline: objective.deadline,
         completedAt,
     });
-    const wasEarlyBirdCompleted = objective.earlyBirdCompleted ?? isEarlyBirdCompletion(objective);
+    const wasEarlyBirdCompleted = objective.earlyBirdCompleted;
     const earlyBirdCompletedNow = !wasEarlyBirdCompleted && earlyBirdCompleted;
 
     const patch: {

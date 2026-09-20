@@ -9,13 +9,11 @@ import {
 import {
     getPlatformSetupUserId as resolvePlatformSetupUserId,
     isPlatformSetupUser,
-    requireAdminUser,
 } from './platform/admin/access';
 import { completeSetupArgsValidator } from './platform/setup/validators';
 import { ERROR_CODES } from './utils/constants';
 import { queryWithRLS } from './platform/rls/wrappers';
 import { isGlobalAdminRole } from '../shared/platform-roles';
-import { userDocumentValidator } from './utils/documentValidators';
 export const isPlatformSetUp = query({
     args: {},
     returns: v.boolean(),
@@ -40,7 +38,6 @@ export const getPublicPlatformSettings = query({
 export const completeSetup = mutation({
     args: completeSetupArgsValidator,
     returns: v.object({
-        success: v.literal(true),
         organizationId: v.id('organization'),
     }),
     handler: async (ctx, args) => {
@@ -89,12 +86,5 @@ export const getPlatformSetupUserId = queryWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
         return await resolvePlatformSetupUserId(ctx);
-    },
-});
-export const requireAdminInternal = internalQuery({
-    returns: userDocumentValidator,
-    args: { userId: v.id('user') },
-    handler: async (ctx, args) => {
-        return await requireAdminUser(ctx, args.userId);
     },
 });

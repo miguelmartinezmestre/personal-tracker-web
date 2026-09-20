@@ -20,14 +20,6 @@ describe('user deletion cascade', () => {
 
     test('reassigns shared objectives, removes orphaned data and preserves a tombstone', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
-        const sharedOrganizationId = await createTestOrganization(t, {
-            name: `Shared organization ${suffix}`,
-            slug: `shared-organization-${suffix}`,
-        });
-        const personalOrganizationId = await createTestOrganization(t, {
-            name: `Personal organization ${suffix}`,
-            slug: `personal-organization-${suffix}`,
-        });
         const owner = await createTestUser(t, {
             userId: `deleted-owner-${suffix}`,
             email: `deleted-owner-${suffix}@example.com`,
@@ -37,6 +29,15 @@ describe('user deletion cascade', () => {
             userId: `successor-${suffix}`,
             email: `successor-${suffix}@example.com`,
             name: 'Successor',
+        });
+        const sharedOrganizationId = await createTestOrganization(t, {
+            name: `Shared organization ${suffix}`,
+            slug: `shared-organization-${suffix}`,
+        });
+        const personalOrganizationId = await createTestOrganization(t, {
+            name: `Personal organization ${suffix}`,
+            slug: `personal-organization-${suffix}`,
+            description: JSON.stringify({ type: 'personal', ownerUserId: owner.docId }),
         });
 
         await createTestMember(t, {

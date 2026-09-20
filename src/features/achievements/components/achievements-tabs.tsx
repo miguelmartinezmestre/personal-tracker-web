@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AchievementCard } from './achievement-card';
 import { achievementEmptyMessage } from '../lib/parse-achievement-progress';
-import type { AchievementProgress } from '@/features/achievements/schemas/achievement';
+import type { AchievementProgress } from '@/features/achievements/types/achievement';
 
 type AchievementsTabsProps = {
     filter: 'all' | 'earned' | 'locked';

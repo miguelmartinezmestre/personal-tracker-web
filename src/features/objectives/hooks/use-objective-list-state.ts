@@ -50,11 +50,10 @@ export function useObjectiveListState() {
     const referenceNow = useReferenceNow();
     const referenceDay = deadlineRange ? toUtcCivilDay(referenceNow) : undefined;
 
-    const scope = JSON.stringify({ filters, referenceDay });
-    const pagination = useServerPagination(DEFAULT_PAGE_SIZE, scope);
+    const pagination = useServerPagination(DEFAULT_PAGE_SIZE);
     const { paginationOpts, reset: resetPagination } = pagination;
     const trashPagination = useServerPagination(DEFAULT_PAGE_SIZE, 'trash');
-    const { paginationOpts: trashPaginationOpts, reset: resetTrashPagination } = trashPagination;
+    const { paginationOpts: trashPaginationOpts } = trashPagination;
 
     const listQuery = useQuery(
         convexQuery(
@@ -124,12 +123,7 @@ export function useObjectiveListState() {
     }, [activeQuery.error, resetPagination]);
 
     const handleFiltersChange = (nextFilters: FilterOptions) => {
-        const shouldResetPagination = JSON.stringify(nextFilters) !== JSON.stringify(filters);
-
-        if (shouldResetPagination) {
-            resetPagination();
-        }
-
+        resetPagination();
         setFilters(nextFilters);
     };
 
@@ -146,7 +140,6 @@ export function useObjectiveListState() {
             void trashQuery.refetch();
         },
         filters,
-        hasSearch,
         categories: categoryOptions,
         categoryNameById,
         handleFiltersChange,
@@ -162,6 +155,5 @@ export function useObjectiveListState() {
         isTrashFetching: trashQuery.isFetching,
         onNextPage: () => pagination.nextPage(details.cursor, details.done),
         onNextTrashPage: () => trashPagination.nextPage(trashDetails.cursor, trashDetails.done),
-        resetTrashPagination,
     };
 }

@@ -18,15 +18,13 @@ import { useTranslations } from 'next-intl';
 
 interface DeleteConfirmationDialogProps {
     onConfirm: () => void | Promise<void>;
-    title?: string;
-    description?: string;
+    title: string;
+    description: string;
     trigger?: ReactNode;
     triggerLabel?: string;
-    confirmLabel?: string;
-    cancelLabel?: string;
-    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-    size?: 'default' | 'sm' | 'lg' | 'icon';
-    isLoading?: boolean;
+    confirmLabel: string;
+    cancelLabel: string;
+    isLoading: boolean;
 }
 
 export function DeleteConfirmationDialog({
@@ -37,17 +35,13 @@ export function DeleteConfirmationDialog({
     triggerLabel,
     confirmLabel,
     cancelLabel,
-    variant = 'destructive',
-    size = 'sm',
-    isLoading: externalIsLoading = false,
+    isLoading: externalIsLoading,
 }: DeleteConfirmationDialogProps) {
     const t = useTranslations('DeleteConfirmation');
     const [open, setOpen] = useState(false);
     const [internalIsLoading, setInternalIsLoading] = useState(false);
 
     const isLoading = externalIsLoading || internalIsLoading;
-    const resolvedConfirmLabel = confirmLabel ?? t('confirm');
-    const resolvedCancelLabel = cancelLabel ?? t('cancel');
 
     const handleConfirm = async (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -65,22 +59,18 @@ export function DeleteConfirmationDialog({
         <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger asChild>
                 {trigger || (
-                    <Button variant={variant} size={size} disabled={isLoading}>
-                        {triggerLabel || resolvedConfirmLabel}
+                    <Button variant="destructive" size="sm" disabled={isLoading}>
+                        {triggerLabel || confirmLabel}
                     </Button>
                 )}
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{title || t('defaultTitle')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {description || t('defaultDescription')}
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>{description}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>
-                        {resolvedCancelLabel}
-                    </AlertDialogCancel>
+                    <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={event => {
                             void handleConfirm(event);
@@ -89,7 +79,7 @@ export function DeleteConfirmationDialog({
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         data-testid="delete-confirm-button"
                     >
-                        {isLoading ? t('deleting') : resolvedConfirmLabel}
+                        {isLoading ? t('deleting') : confirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

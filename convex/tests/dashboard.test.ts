@@ -52,10 +52,7 @@ describe('convex dashboard', async () => {
     });
 
     test('getDashboardStats returns zeroes and counts active vs completed objectives', async () => {
-        await expect(
-            userIdentity.query(api.dashboard.getDashboardStats, {})
-        ).resolves.toMatchObject({
-            totalObjectives: 0,
+        await expect(userIdentity.query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
             completedObjectives: 0,
             pendingObjectives: 0,
         });
@@ -85,10 +82,7 @@ describe('convex dashboard', async () => {
             status: 'completed',
         });
 
-        await expect(
-            userIdentity.query(api.dashboard.getDashboardStats, {})
-        ).resolves.toMatchObject({
-            totalObjectives: 3,
+        await expect(userIdentity.query(api.dashboard.getDashboardStats, {})).resolves.toEqual({
             completedObjectives: 1,
             pendingObjectives: 2,
         });
@@ -134,7 +128,6 @@ describe('convex dashboard', async () => {
         const lastMonthKey = `${lastMonth.getFullYear()}-${`${lastMonth.getMonth() + 1}`.padStart(2, '0')}`;
 
         expect(result.items).toHaveLength(6);
-        expect(result.isTruncated).toBe(false);
         expect(result.items.find(month => month.monthKey === currentMonthKey)?.count).toBe(3);
         expect(result.items.find(month => month.monthKey === lastMonthKey)?.count).toBe(2);
     });
@@ -153,6 +146,7 @@ describe('convex dashboard', async () => {
                     currentValue: i * 10,
                     startValue: 0,
                     status: 'active',
+                    earlyBirdCompleted: false,
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                 });
@@ -167,6 +161,7 @@ describe('convex dashboard', async () => {
                 currentValue: 100,
                 startValue: 0,
                 status: 'completed',
+                earlyBirdCompleted: false,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
@@ -183,7 +178,7 @@ describe('convex dashboard', async () => {
         const now = Date.now();
         const DAY_MS = 24 * 60 * 60 * 1000;
 
-        await createTestObjective(t, {
+        const deadlineInFiveDaysId = await createTestObjective(t, {
             userId,
             organizationId,
             title: 'Deadline in 5 days',
@@ -192,7 +187,7 @@ describe('convex dashboard', async () => {
             status: 'active',
             deadline: now + 5 * DAY_MS,
         });
-        await createTestObjective(t, {
+        const deadlineInTwoDaysId = await createTestObjective(t, {
             userId,
             organizationId,
             title: 'Deadline in 2 days',
@@ -222,9 +217,17 @@ describe('convex dashboard', async () => {
 
         const result = await userIdentity.query(api.dashboard.getUpcomingDeadlines, { now });
 
-        expect(result.items.map(item => item.title)).toEqual([
-            'Deadline in 2 days',
-            'Deadline in 5 days',
+        expect(result.items).toEqual([
+            {
+                id: deadlineInTwoDaysId,
+                title: 'Deadline in 2 days',
+                daysRemaining: 2,
+            },
+            {
+                id: deadlineInFiveDaysId,
+                title: 'Deadline in 5 days',
+                daysRemaining: 5,
+            },
         ]);
         expect(result.isTruncated).toBe(false);
     });
@@ -268,8 +271,10 @@ describe('convex dashboard', async () => {
                 title: 'Recently Completed',
                 targetValue: 100,
                 currentValue: 100,
+                startValue: 0,
                 status: 'completed',
                 completedAt: now,
+                earlyBirdCompleted: false,
                 createdAt: now,
                 updatedAt: now,
             });
@@ -281,8 +286,10 @@ describe('convex dashboard', async () => {
                 title: 'Old completion edited recently',
                 targetValue: 100,
                 currentValue: 100,
+                startValue: 0,
                 status: 'completed',
                 completedAt: now - 60 * DAY_MS,
+                earlyBirdCompleted: false,
                 createdAt: now - 90 * DAY_MS,
                 updatedAt: now,
             });
@@ -309,7 +316,9 @@ describe('convex dashboard', async () => {
                 title: 'Old objective with recent activity',
                 targetValue: 1_000,
                 currentValue: 0,
+                startValue: 0,
                 status: 'active',
+                earlyBirdCompleted: false,
                 createdAt: now - 60 * 24 * 60 * 60 * 1000,
                 updatedAt: now,
             })
@@ -335,10 +344,6 @@ describe('convex dashboard', async () => {
             progressUpdatesCount: 101,
             objectivesCreatedCount: 0,
             objectivesCompletedCount: 0,
-            progressUpdatesTruncated: false,
-            objectivesCreatedTruncated: false,
-            objectivesCompletedTruncated: false,
-            isTruncated: false,
         });
     });
 

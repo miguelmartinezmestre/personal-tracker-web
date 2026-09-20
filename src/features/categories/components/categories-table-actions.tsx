@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 export function useDeleteCategory() {
     const t = useTranslations('Objectives.categories');
 
-    const { mutate, mutateAsync, isPending } = useMutation({
+    const { mutateAsync, isPending } = useMutation({
         mutationFn: useConvexMutation(api.categories.deleteCategory),
         onSuccess: () => {
             toast.success(t('toast.deleteSuccess'));
@@ -20,7 +20,6 @@ export function useDeleteCategory() {
     });
 
     return {
-        deleteCategory: mutate,
         deleteCategoryAsync: mutateAsync,
         isDeletingCategory: isPending,
     };

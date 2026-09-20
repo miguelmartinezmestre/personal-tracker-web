@@ -40,7 +40,6 @@ interface SetupState {
 }
 
 type SetupAction =
-    | { type: 'GO_TO_STEP'; step: number }
     | { type: 'NEXT_STEP' }
     | { type: 'PREV_STEP' }
     | { type: 'UPDATE_PLATFORM'; data: Partial<PlatformConfig> }
@@ -68,11 +67,6 @@ const initialState: SetupState = {
 
 function setupReducer(state: SetupState, action: SetupAction): SetupState {
     switch (action.type) {
-        case 'GO_TO_STEP':
-            return {
-                ...state,
-                currentStep: Math.max(0, Math.min(action.step, SETUP_STEPS.length - 1)),
-            };
         case 'NEXT_STEP':
             return {
                 ...state,
@@ -151,7 +145,6 @@ export function useSetupWizard() {
 
     const [state, dispatch] = useReducer(setupReducer, initialState);
 
-    const goToStep = (step: number) => dispatch({ type: 'GO_TO_STEP', step });
     const nextStep = () => dispatch({ type: 'NEXT_STEP' });
     const prevStep = () => dispatch({ type: 'PREV_STEP' });
 
@@ -196,7 +189,6 @@ export function useSetupWizard() {
         currentStepName,
         data: state.data,
         totalSteps: SETUP_STEPS.length,
-        goToStep,
         nextStep,
         prevStep,
         updateStepData,

@@ -129,11 +129,6 @@ export default function TopObjectivesChart() {
                         }))}
                     />
                 ) : null}
-                {topObjectives?.isTruncated ? (
-                    <p className="text-xs text-muted-foreground" role="status">
-                        {t('charts.partialData')}
-                    </p>
-                ) : null}
             </CardContent>
         </Card>
     );

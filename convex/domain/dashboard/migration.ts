@@ -12,8 +12,7 @@ import { syncProgressEntries } from './sync';
 
 export async function ensureDashboardState(
     ctx: MutationCtx,
-    organizationId: Id<'organization'>,
-    insertedObjectiveId?: Id<'objectives'>
+    organizationId: Id<'organization'>
 ): Promise<Doc<'dashboardMigrations'> | null> {
     const existing = await ctx.db
         .query('dashboardMigrations')
@@ -25,24 +24,11 @@ export async function ensureDashboardState(
     if (!(await ctx.db.get('organization', organizationId))) {
         return null;
     }
-    const first = await ctx.db
-        .query('objectives')
-        .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-        .take(2);
-    const ready =
-        first.length === 0 || (first.length === 1 && first[0]?._id === insertedObjectiveId);
     const id = await ctx.db.insert('dashboardMigrations', {
         organizationId,
         generation: 1,
-        phase: ready ? 'ready' : 'objectives',
-        updatedAt: Date.now(),
+        phase: 'ready',
     });
-    if (!ready) {
-        await ctx.scheduler.runAfter(0, internal.dashboard.runDashboardBackfill, {
-            migrationId: id,
-            generation: 1,
-        });
-    }
     return await ctx.db.get('dashboardMigrations', id);
 }
 
@@ -63,7 +49,6 @@ export async function startDashboardRebuild(
         generation,
         phase: 'objectives' as const,
         cursor: null,
-        updatedAt: Date.now(),
     };
     const migrationId = existing?._id ?? (await ctx.db.insert('dashboardMigrations', values));
     if (existing) {
@@ -106,7 +91,6 @@ export async function runDashboardBackfillBatch(
         await ctx.db.patch('dashboardMigrations', state._id, {
             phase: page.isDone ? 'progress' : 'objectives',
             cursor: page.isDone ? null : page.continueCursor,
-            updatedAt: Date.now(),
         });
     } else {
         const page = await ctx.db
@@ -119,7 +103,6 @@ export async function runDashboardBackfillBatch(
         await ctx.db.patch('dashboardMigrations', state._id, {
             phase: page.isDone ? 'ready' : 'progress',
             cursor: page.isDone ? null : page.continueCursor,
-            updatedAt: Date.now(),
         });
         if (page.isDone) {
             await ctx.scheduler.runAfter(0, internal.dashboard.cleanupDashboardGenerations, {

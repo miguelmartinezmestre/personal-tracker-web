@@ -36,11 +36,7 @@ export async function syncObjectiveEntries(
     if (before && after && objectiveFields.every(field => before[field] === after[field])) {
         return;
     }
-    const state = await ensureDashboardState(
-        ctx,
-        objective.organizationId,
-        !before ? after?._id : undefined
-    );
+    const state = await ensureDashboardState(ctx, objective.organizationId);
     if (!state) {
         return;
     }

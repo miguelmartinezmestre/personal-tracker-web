@@ -18,18 +18,13 @@ export type SessionListItem = {
     isCurrent: boolean;
 };
 const SESSION_REVOCATION_BATCH_SIZE = 100;
-type OtherSessionRevocationResult = {
-    status: 'in_progress' | 'completed';
-    revokedCount: number;
-};
 async function revokeOtherSessionsBatch(
     ctx: Pick<MutationCtx, 'db' | 'scheduler'>,
     args: {
         userId: Id<'user'>;
         currentSessionId: Id<'session'>;
-        totalRevoked?: number;
     }
-): Promise<OtherSessionRevocationResult> {
+): Promise<number> {
     // Read two extra rows so `hasMore` remains accurate whether the preserved
     // current session is inside or outside this index window.
     const sessions = await ctx.db
@@ -41,16 +36,13 @@ async function revokeOtherSessionsBatch(
     for (const session of batch) {
         await ctx.db.delete('session', session._id);
     }
-    const revokedCount = (args.totalRevoked ?? 0) + batch.length;
     if (otherSessions.length > batch.length) {
         await ctx.scheduler.runAfter(0, internal.sessions.continueOtherSessionRevocation, {
             userId: args.userId,
             currentSessionId: args.currentSessionId,
-            totalRevoked: revokedCount,
         });
-        return { status: 'in_progress', revokedCount };
     }
-    return { status: 'completed', revokedCount };
+    return batch.length;
 }
 export function toSessionListItem(
     session: Doc<'session'>,
@@ -94,21 +86,19 @@ export const getSessionsByUser = queryWithRLS({
 });
 export const invalidateSession = mutationWithRLS({
     args: { sessionId: v.id('session') },
-    returns: v.object({ success: v.boolean() }),
+    returns: v.null(),
     handler: async (ctx, args) => {
         const session = await ctx.db.get('session', args.sessionId);
         if (!session || session.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
         await ctx.db.delete('session', args.sessionId);
-        return { success: true };
+        return null;
     },
 });
 export const invalidateAllOtherSessions = mutationWithRLS({
     args: { currentSessionId: v.id('session') },
     returns: v.object({
-        success: v.boolean(),
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
         revokedCount: v.number(),
     }),
     handler: async (ctx, args) => {
@@ -116,24 +106,21 @@ export const invalidateAllOtherSessions = mutationWithRLS({
         if (!current || current.userId !== ctx.userId) {
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
-        const result = await revokeOtherSessionsBatch(ctx, {
+        const revokedCount = await revokeOtherSessionsBatch(ctx, {
             userId: ctx.userId,
             currentSessionId: args.currentSessionId,
         });
-        return { success: true, ...result };
+        return { revokedCount };
     },
 });
 export const continueOtherSessionRevocation = internalMutation({
     args: {
         userId: v.id('user'),
         currentSessionId: v.id('session'),
-        totalRevoked: v.optional(v.number()),
     },
-    returns: v.object({
-        status: v.union(v.literal('in_progress'), v.literal('completed')),
-        revokedCount: v.number(),
-    }),
-    handler: async (ctx, args): Promise<OtherSessionRevocationResult> => {
-        return await revokeOtherSessionsBatch(ctx, args);
+    returns: v.null(),
+    handler: async (ctx, args): Promise<null> => {
+        await revokeOtherSessionsBatch(ctx, args);
+        return null;
     },
 });

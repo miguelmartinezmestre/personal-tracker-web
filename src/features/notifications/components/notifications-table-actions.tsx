@@ -6,14 +6,14 @@ import { api } from '@/convex/_generated/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
-export function useSetNotificationRead(onSuccess?: () => void) {
+export function useSetNotificationRead(onSuccess: () => void) {
     const t = useTranslations('Notifications');
     const setNotificationRead = useConvexMutation(api.notifications.setNotificationRead);
 
-    const { mutate, mutateAsync, isPending } = useMutation({
+    const { mutate, isPending } = useMutation({
         mutationFn: setNotificationRead,
         onSuccess: () => {
-            onSuccess?.();
+            onSuccess();
             toast.success(t('toast.updated'));
         },
         onError: () => {
@@ -23,19 +23,18 @@ export function useSetNotificationRead(onSuccess?: () => void) {
 
     return {
         setNotificationRead: mutate,
-        setNotificationReadAsync: mutateAsync,
         isSettingRead: isPending,
     };
 }
 
-export function useDeleteNotification(onSuccess?: () => void) {
+export function useDeleteNotification(onSuccess: () => void) {
     const t = useTranslations('Notifications');
     const deleteNotification = useConvexMutation(api.notifications.deleteNotification);
 
-    const { mutate, mutateAsync, isPending } = useMutation({
+    const { mutateAsync, isPending } = useMutation({
         mutationFn: deleteNotification,
         onSuccess: () => {
-            onSuccess?.();
+            onSuccess();
             toast.success(t('toast.deleted'));
         },
         onError: () => {
@@ -44,26 +43,25 @@ export function useDeleteNotification(onSuccess?: () => void) {
     });
 
     return {
-        deleteNotification: mutate,
         deleteNotificationAsync: mutateAsync,
         isDeletingNotification: isPending,
     };
 }
 
-export function useMarkAllNotificationsRead(onSuccess?: () => void) {
+export function useMarkAllNotificationsRead(onSuccess: () => void) {
     const t = useTranslations('Notifications');
     const markAllNotificationsRead = useConvexMutation(api.notifications.markAllNotificationsRead);
 
-    const { mutate, mutateAsync, isPending } = useMutation({
+    const { mutate, isPending } = useMutation({
         mutationFn: () => markAllNotificationsRead({}),
         onError: () => {
             toast.error(t('toast.markAllFailed'));
         },
         onSuccess: () => {
-            onSuccess?.();
+            onSuccess();
             toast.success(t('toast.markAll'));
         },
     });
 
-    return { markAllRead: mutate, markAllReadAsync: mutateAsync, isMarkingAllRead: isPending };
+    return { markAllRead: mutate, isMarkingAllRead: isPending };
 }
