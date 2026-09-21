@@ -1,15 +1,7 @@
 'use client';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    FieldShell,
-    getFieldError,
-    FormControl,
-    FormDescription,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { CreateOrganizationMember } from '@/features/organizations/schemas/organization-member';
 import { organizationMemberSchema } from '@/features/organizations/schemas/organization-member';
@@ -25,6 +17,7 @@ import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
 import { OrganizationRole, isOrganizationRoleValue } from '../types/roles';
 import FormModal from '@/components/forms/form-modal';
+import { getFieldErrors } from '@/components/forms/form-utils';
 interface CreateOrganizationMemberFormModalProps {
     organizationId: string;
     canAssignOwner: boolean;
@@ -80,46 +73,52 @@ export default function CreateOrganizationMemberFormModal({
             submitTestId="organization-member-save-button"
         >
             {form => (
-                <>
+                <FieldGroup>
                     <form.Field name="email">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('email')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t('enterEmail')}
-                                            type="email"
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-member-email-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('email')}</FieldLabel>
+                                    <Input
+                                        id={field.name}
+                                        name={field.name}
+                                        placeholder={t('enterEmail')}
+                                        type="email"
+                                        value={
+                                            typeof field.state.value === 'string'
+                                                ? field.state.value
+                                                : ''
+                                        }
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
+                                        aria-invalid={isInvalid}
+                                        data-testid="organization-member-email-input"
+                                    />
+                                    <FieldDescription>
                                         {t('giveYourOrganizationMemberAClearConciseEmail')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
 
                     <form.Field name="role">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('role')}</FormLabel>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('role')}</FieldLabel>
                                     <Select
+                                        name={field.name}
                                         onValueChange={value => {
-                                            if (isOrganizationRoleValue(value)) {
+                                            if (
+                                                typeof value === 'string' &&
+                                                isOrganizationRoleValue(value)
+                                            ) {
                                                 field.handleChange(value);
                                             }
                                         }}
@@ -128,15 +127,16 @@ export default function CreateOrganizationMemberFormModal({
                                                 ? field.state.value
                                                 : 'member'
                                         }
+                                        items={roleOptions}
                                     >
-                                        <FormControl>
-                                            <SelectTrigger
-                                                onBlur={field.handleBlur}
-                                                data-testid="organization-member-role-select"
-                                            >
-                                                <SelectValue placeholder={t('selectRole')} />
-                                            </SelectTrigger>
-                                        </FormControl>
+                                        <SelectTrigger
+                                            id={field.name}
+                                            onBlur={field.handleBlur}
+                                            aria-invalid={isInvalid}
+                                            data-testid="organization-member-role-select"
+                                        >
+                                            <SelectValue placeholder={t('selectRole')} />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {roleOptions.map(role => (
                                                 <SelectItem key={role.value} value={role.value}>
@@ -145,15 +145,15 @@ export default function CreateOrganizationMemberFormModal({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <FormDescription>
+                                    <FieldDescription>
                                         {t('currentRoleOfYourOrganizationMember')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
-                </>
+                </FieldGroup>
             )}
         </FormModal>
     );

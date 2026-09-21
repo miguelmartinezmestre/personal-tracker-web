@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 
 type FormModalProps<TFormValues extends object> = {
-    trigger?: ReactNode;
+    trigger?: React.ReactElement;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     title: string;
@@ -74,7 +74,7 @@ export default function FormModal<TFormValues extends object>({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
+            {trigger ? <DialogTrigger render={trigger} /> : null}
             <DialogContent className={contentClassName}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
@@ -87,7 +87,7 @@ export default function FormModal<TFormValues extends object>({
                         event.stopPropagation();
                         void form.handleSubmit();
                     }}
-                    className="space-y-5 py-4"
+                    className="py-4"
                 >
                     {children(form)}
 

@@ -5,14 +5,7 @@ import type { Route } from 'next';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import {
-    FieldShell,
-    getFieldError,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { loginSchema } from '@/features/auth/schemas/login';
 import type { z } from 'zod';
@@ -28,6 +21,7 @@ import { useSession } from '@/features/auth/hooks/use-session';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { getSafeCallbackPath } from '@/convex/platform/auth/security';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { getFieldErrors } from '@/components/forms/form-utils';
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
     callbackUrl?: string;
@@ -102,57 +96,59 @@ export default function LoginForm({
             )}
 
             <form.Field name="email">
-                {field => (
-                    <FieldShell error={getFieldError(form, field)}>
-                        <FormItem>
-                            <FormLabel className="text-foreground">
+                {field => {
+                    const errors = getFieldErrors(form, field);
+                    const isInvalid = !!errors.length;
+                    return (
+                        <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} className="text-foreground">
                                 {tCommon('fields.email')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    name={field.name}
-                                    value={field.state.value}
-                                    onChange={event => field.handleChange(event.target.value)}
-                                    onBlur={field.handleBlur}
-                                    disabled={!hydrated}
-                                    type="email"
-                                    placeholder={tCommon('placeholders.email')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="email-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FieldShell>
-                )}
+                            </FieldLabel>
+                            <Input
+                                id={field.name}
+                                name={field.name}
+                                value={field.state.value}
+                                onChange={event => field.handleChange(event.target.value)}
+                                onBlur={field.handleBlur}
+                                disabled={!hydrated}
+                                type="email"
+                                placeholder={tCommon('placeholders.email')}
+                                aria-invalid={isInvalid}
+                                className="focus:ring-2 focus:ring-primary/20"
+                                data-testid="email-input"
+                            />
+                            {isInvalid && <FieldError errors={errors} />}
+                        </Field>
+                    );
+                }}
             </form.Field>
 
             <form.Field name="password">
-                {field => (
-                    <FieldShell
-                        error={field.state.meta.isTouched ? field.state.meta.errors[0] : undefined}
-                    >
-                        <FormItem>
-                            <FormLabel className="text-foreground">
+                {field => {
+                    const errors = getFieldErrors(form, field);
+                    const isInvalid = !!errors.length;
+                    return (
+                        <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor={field.name} className="text-foreground">
                                 {tCommon('fields.password')}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    name={field.name}
-                                    value={field.state.value}
-                                    onChange={event => field.handleChange(event.target.value)}
-                                    onBlur={field.handleBlur}
-                                    disabled={!hydrated}
-                                    type="password"
-                                    placeholder={tCommon('placeholders.password')}
-                                    className="focus:ring-2 focus:ring-primary/20"
-                                    data-testid="password-input"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FieldShell>
-                )}
+                            </FieldLabel>
+                            <Input
+                                id={field.name}
+                                name={field.name}
+                                value={field.state.value}
+                                onChange={event => field.handleChange(event.target.value)}
+                                onBlur={field.handleBlur}
+                                disabled={!hydrated}
+                                type="password"
+                                placeholder={tCommon('placeholders.password')}
+                                aria-invalid={isInvalid}
+                                className="focus:ring-2 focus:ring-primary/20"
+                                data-testid="password-input"
+                            />
+                            {isInvalid && <FieldError errors={errors} />}
+                        </Field>
+                    );
+                }}
             </form.Field>
 
             <div className="flex justify-end">

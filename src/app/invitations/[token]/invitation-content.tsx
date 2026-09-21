@@ -108,8 +108,8 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         <CardDescription>{errorMessage || t('errorDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button asChild className="w-full">
-                            <Link href="/dashboard/home">{t('goToDashboard')}</Link>
+                        <Button render={<Link href="/dashboard/home" />} className="w-full">
+                            {t('goToDashboard')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -191,8 +191,12 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                             t('accept')
                         )}
                     </Button>
-                    <Button asChild variant="ghost" className="w-full">
-                        <Link href="/dashboard/home">{t('cancel')}</Link>
+                    <Button
+                        render={<Link href="/dashboard/home" />}
+                        variant="ghost"
+                        className="w-full"
+                    >
+                        {t('cancel')}
                     </Button>
                 </CardContent>
             </Card>

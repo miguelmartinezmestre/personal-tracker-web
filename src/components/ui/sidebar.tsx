@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { PanelLeftIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -119,7 +120,21 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
 function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
     return (<li data-slot="sidebar-menu-item" data-sidebar="menu-item" className={cn("group/menu-item relative", className)} {...props}/>);
 }
-function SidebarMenuButton({ className, ...props }: React.ComponentProps<typeof Slot>) {
-    return (<Slot data-slot="sidebar-menu-button" data-sidebar="menu-button" className={cn("peer/menu-button flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0", className)} {...props}/>);
+type SidebarMenuButtonOwnProps = React.ComponentProps<'button'> & {
+    'data-slot'?: string;
+    'data-sidebar'?: string;
+};
+
+function SidebarMenuButton({ className, render, ...props }: useRender.ComponentProps<'button'>) {
+    const ownProps: SidebarMenuButtonOwnProps = {
+        'data-slot': 'sidebar-menu-button',
+        'data-sidebar': 'menu-button',
+        className: cn('peer/menu-button flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0', className),
+    };
+    return useRender({
+        defaultTagName: 'button',
+        render,
+        props: mergeProps<'button'>(ownProps, props),
+    });
 }
 export { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar, };

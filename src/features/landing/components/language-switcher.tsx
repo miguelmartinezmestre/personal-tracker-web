@@ -35,19 +35,21 @@ export function LanguageSwitcher() {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="outline"
-                    data-testid="language-switcher"
-                    className="w-10 px-0 sm:min-w-[100px] sm:px-3"
-                >
-                    <span className="text-xs font-semibold uppercase sm:hidden">
-                        {currentLocaleData.value}
-                    </span>
-                    <span className="hidden sm:inline">{currentLocaleData.label}</span>
-                    <span className="sr-only">{t('label')}</span>
-                </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+                render={
+                    <Button
+                        variant="outline"
+                        data-testid="language-switcher"
+                        className="w-10 px-0 sm:min-w-[100px] sm:px-3"
+                    >
+                        <span className="text-xs font-semibold uppercase sm:hidden">
+                            {currentLocaleData.value}
+                        </span>
+                        <span className="hidden sm:inline">{currentLocaleData.label}</span>
+                        <span className="sr-only">{t('label')}</span>
+                    </Button>
+                }
+            />
             <DropdownMenuContent align="end" className="w-40">
                 {locales.map(locale => (
                     <DropdownMenuItem

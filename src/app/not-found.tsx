@@ -42,17 +42,27 @@ export default async function NotFound() {
                     </CardContent>
 
                     <CardFooter className="flex flex-col justify-center gap-3 sm:flex-row">
-                        <Button asChild className="w-full sm:w-auto">
-                            <Link href="/" prefetch={false} data-testid="not-found-home-link">
-                                <Home aria-hidden />
-                                {tNotFound('goHome')}
-                            </Link>
+                        <Button
+                            render={
+                                <Link href="/" prefetch={false} data-testid="not-found-home-link" />
+                            }
+                        >
+                            <Home aria-hidden />
+                            {tNotFound('goHome')}
                         </Button>
-                        <Button asChild variant="outline" className="w-full sm:w-auto">
-                            <Link href="/login" prefetch={false} data-testid="not-found-login-link">
-                                <LogIn aria-hidden />
-                                {tHomePage('login')}
-                            </Link>
+                        <Button
+                            render={
+                                <Link
+                                    href="/login"
+                                    prefetch={false}
+                                    data-testid="not-found-login-link"
+                                />
+                            }
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                        >
+                            <LogIn aria-hidden />
+                            {tHomePage('login')}
                         </Button>
                     </CardFooter>
                 </Card>

@@ -5,18 +5,17 @@
         "convex/**/*.ts",
         "scripts/*.ts",
         "tests/**/*.{spec,test}.ts",
-        "tests/setup/auth.stack.setup.ts"
+        "tests/setup/auth.stack.setup.ts",
+        "tests/config/global-setup.ts"
     ],
-    "project": [
-        "src/**/*.{ts,tsx,css}",
-        "convex/**/*.ts",
-        "scripts/**/*.ts",
-        "tests/**/*.ts"
-    ],
+    "project": ["src/**/*.{ts,tsx,css}", "convex/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"],
     "playwright": {
         "config": ["playwright.config.ts", "tests/manual/playwright.manual.config.ts"]
     },
     "ignoreBinaries": ["d2"],
     "ignoreExportsUsedInFile": true,
-    "includeEntryExports": true
+    "includeEntryExports": true,
+    "ignoreIssues": {
+        "tests/config/global-setup.ts": ["exports"]
+    }
 }

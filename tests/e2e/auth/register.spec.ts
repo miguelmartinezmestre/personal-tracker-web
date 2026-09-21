@@ -56,8 +56,7 @@ test.describe('User Registration', () => {
             await expect(
                 page
                     .getByTestId('register-email-input')
-                    .locator('..')
-                    .locator('[data-slot="form-message"]')
+                    .locator('xpath=following-sibling::div[@data-slot="field-error"]')
             ).toContainText(/email|correo/i);
         }
     );
@@ -78,7 +77,7 @@ test.describe('User Registration', () => {
                 await expect(page.getByTestId(testId)).toHaveAttribute('aria-invalid', 'true');
             }
 
-            await expect(page.locator('[data-slot="form-message"]')).toHaveCount(4);
+            await expect(page.locator('[data-slot="field-error"]')).toHaveCount(4);
             await expect(page).toHaveURL(/\/register/);
         }
     );
@@ -97,7 +96,7 @@ test.describe('User Registration', () => {
                 'aria-invalid',
                 'true'
             );
-            await expect(page.locator('[data-slot="form-message"]')).toContainText(
+            await expect(page.locator('[data-slot="field-error"]')).toContainText(
                 /mayúscula|uppercase/i
             );
             await expect(page).toHaveURL(/\/register/);

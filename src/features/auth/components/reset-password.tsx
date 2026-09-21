@@ -2,14 +2,7 @@
 
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import {
-    FieldShell,
-    getFieldError,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
@@ -22,6 +15,7 @@ import { resetPasswordSchema } from '@/features/auth/schemas/reset-password';
 import { authClient } from '@/features/auth/client';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { getFieldErrors } from '@/components/forms/form-utils';
 
 interface ResetPasswordProps {
     resetPasswordKey?: string;
@@ -91,53 +85,57 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                 )}
 
                 <form.Field name="password">
-                    {field => (
-                        <FieldShell error={getFieldError(form, field)}>
-                            <FormItem>
-                                <FormLabel className="text-foreground">
+                    {field => {
+                        const errors = getFieldErrors(form, field);
+                        const isInvalid = !!errors.length;
+                        return (
+                            <Field data-invalid={isInvalid}>
+                                <FieldLabel htmlFor={field.name} className="text-foreground">
                                     {tCommon('fields.password')}
-                                </FormLabel>
-                                <FormControl>
-                                    <Input
-                                        name={field.name}
-                                        value={field.state.value}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        onBlur={field.handleBlur}
-                                        type="password"
-                                        placeholder={tCommon('placeholders.min8Chars')}
-                                        className="focus:ring-2 focus:ring-primary/20"
-                                        data-testid="reset-password-input"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        </FieldShell>
-                    )}
+                                </FieldLabel>
+                                <Input
+                                    id={field.name}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
+                                    type="password"
+                                    placeholder={tCommon('placeholders.min8Chars')}
+                                    aria-invalid={isInvalid}
+                                    className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="reset-password-input"
+                                />
+                                {isInvalid && <FieldError errors={errors} />}
+                            </Field>
+                        );
+                    }}
                 </form.Field>
 
                 <form.Field name="confirmPassword">
-                    {field => (
-                        <FieldShell error={getFieldError(form, field)}>
-                            <FormItem>
-                                <FormLabel className="text-foreground">
+                    {field => {
+                        const errors = getFieldErrors(form, field);
+                        const isInvalid = !!errors.length;
+                        return (
+                            <Field data-invalid={isInvalid}>
+                                <FieldLabel htmlFor={field.name} className="text-foreground">
                                     {tCommon('fields.confirmPassword')}
-                                </FormLabel>
-                                <FormControl>
-                                    <Input
-                                        name={field.name}
-                                        value={field.state.value}
-                                        onChange={event => field.handleChange(event.target.value)}
-                                        onBlur={field.handleBlur}
-                                        type="password"
-                                        placeholder={tCommon('placeholders.confirmPassword')}
-                                        className="focus:ring-2 focus:ring-primary/20"
-                                        data-testid="reset-password-confirm-input"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        </FieldShell>
-                    )}
+                                </FieldLabel>
+                                <Input
+                                    id={field.name}
+                                    name={field.name}
+                                    value={field.state.value}
+                                    onChange={event => field.handleChange(event.target.value)}
+                                    onBlur={field.handleBlur}
+                                    type="password"
+                                    placeholder={tCommon('placeholders.confirmPassword')}
+                                    aria-invalid={isInvalid}
+                                    className="focus:ring-2 focus:ring-primary/20"
+                                    data-testid="reset-password-confirm-input"
+                                />
+                                {isInvalid && <FieldError errors={errors} />}
+                            </Field>
+                        );
+                    }}
                 </form.Field>
 
                 <Button

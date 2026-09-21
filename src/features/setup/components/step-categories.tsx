@@ -39,6 +39,11 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
         onChange(updated);
     };
 
+    const iconItems = ICON_OPTIONS.map(icon => ({
+        value: icon,
+        label: tCommon(`icons.${icon}`),
+    }));
+
     const removeCategory = (index: number) => {
         onChange(data.filter((_, i) => i !== index));
         setCategoryKeys(keys => keys.filter((_, keyIndex) => keyIndex !== index));
@@ -90,6 +95,7 @@ export default function StepCategories({ data, onChange }: StepCategoriesProps) 
                                     updateCategory(index, { icon: parsed.data });
                                 }
                             }}
+                            items={iconItems}
                         >
                             <SelectTrigger
                                 className="w-[110px]"

@@ -2,15 +2,7 @@
 import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    FieldShell,
-    getFieldError,
-    FormControl,
-    FormDescription,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form-fields';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
@@ -19,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
 import FormModal from '@/components/forms/form-modal';
+import { getFieldErrors } from '@/components/forms/form-utils';
 import { useRouter } from 'next/navigation';
 const defaultValues: CreateOrganization = {
     name: '',
@@ -58,68 +51,70 @@ export default function CreateOrganizationFormModal() {
             submitTestId="organization-save-button"
         >
             {form => (
-                <>
+                <FieldGroup>
                     <form.Field name="name">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('name')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t('enterOrganizationName')}
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-name-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>{t('name')}</FieldLabel>
+                                    <Input
+                                        id={field.name}
+                                        name={field.name}
+                                        placeholder={t('enterOrganizationName')}
+                                        value={
+                                            typeof field.state.value === 'string'
+                                                ? field.state.value
+                                                : ''
+                                        }
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
+                                        aria-invalid={isInvalid}
+                                        data-testid="organization-name-input"
+                                    />
+                                    <FieldDescription>
                                         {t('giveYourOrganizationAClearConciseTitle')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
 
                     <form.Field name="description">
-                        {field => (
-                            <FieldShell error={getFieldError(form, field)}>
-                                <FormItem>
-                                    <FormLabel>{t('tableDescription')}</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder={t('describeOrganizationInDetail')}
-                                            className="resize-none min-h-[80px]"
-                                            name={field.name}
-                                            value={
-                                                typeof field.state.value === 'string'
-                                                    ? field.state.value
-                                                    : ''
-                                            }
-                                            onChange={event =>
-                                                field.handleChange(event.target.value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            data-testid="organization-description-input"
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
+                        {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = !!errors.length;
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>
+                                        {t('tableDescription')}
+                                    </FieldLabel>
+                                    <Textarea
+                                        id={field.name}
+                                        name={field.name}
+                                        placeholder={t('describeOrganizationInDetail')}
+                                        className="resize-none min-h-[80px]"
+                                        value={
+                                            typeof field.state.value === 'string'
+                                                ? field.state.value
+                                                : ''
+                                        }
+                                        onChange={event => field.handleChange(event.target.value)}
+                                        onBlur={field.handleBlur}
+                                        aria-invalid={isInvalid}
+                                        data-testid="organization-description-input"
+                                    />
+                                    <FieldDescription>
                                         {t('optionalAddDetailsAboutYourOrganization')}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FieldShell>
-                        )}
+                                    </FieldDescription>
+                                    {isInvalid && <FieldError errors={errors} />}
+                                </Field>
+                            );
+                        }}
                     </form.Field>
-                </>
+                </FieldGroup>
             )}
         </FormModal>
     );

@@ -71,26 +71,28 @@ export function AppSidebar({ initialUser: _initialUser }: { initialUser: Current
                                 const isActive = pathname === item.url;
                                 return (
                                     <SidebarMenuItem key={item.name}>
-                                        <SidebarMenuButton>
-                                            <Link
-                                                href={item.url}
-                                                prefetch={false}
-                                                data-testid={`sidebar-nav-${item.name}`}
-                                                className={cn(
-                                                    'relative transition-all duration-200',
-                                                    isActive
-                                                        ? 'bg-accent text-accent-foreground font-medium'
-                                                        : 'hover:bg-accent/50 hover:text-accent-foreground'
-                                                )}
-                                            >
-                                                <item.icon
+                                        <SidebarMenuButton
+                                            render={
+                                                <Link
+                                                    href={item.url}
+                                                    prefetch={false}
+                                                    data-testid={`sidebar-nav-${item.name}`}
                                                     className={cn(
-                                                        'h-4 w-4 transition-all',
-                                                        isActive && 'text-primary'
+                                                        'relative transition-all duration-200',
+                                                        isActive
+                                                            ? 'bg-accent text-accent-foreground font-medium'
+                                                            : 'hover:bg-accent/50 hover:text-accent-foreground'
                                                     )}
                                                 />
-                                                {t(item.name)}
-                                            </Link>
+                                            }
+                                        >
+                                            <item.icon
+                                                className={cn(
+                                                    'h-4 w-4 transition-all',
+                                                    isActive && 'text-primary'
+                                                )}
+                                            />
+                                            {t(item.name)}
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 );

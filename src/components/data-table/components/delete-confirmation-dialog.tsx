@@ -12,7 +12,6 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -20,7 +19,7 @@ interface DeleteConfirmationDialogProps {
     onConfirm: () => void | Promise<void>;
     title: string;
     description: string;
-    trigger?: ReactNode;
+    trigger?: React.ReactElement;
     triggerLabel?: string;
     confirmLabel: string;
     cancelLabel: string;
@@ -57,13 +56,15 @@ export function DeleteConfirmationDialog({
 
     return (
         <AlertDialog open={open} onOpenChange={setOpen}>
-            <AlertDialogTrigger asChild>
-                {trigger || (
-                    <Button variant="destructive" size="sm" disabled={isLoading}>
-                        {triggerLabel || confirmLabel}
-                    </Button>
-                )}
-            </AlertDialogTrigger>
+            <AlertDialogTrigger
+                render={
+                    trigger || (
+                        <Button variant="destructive" size="sm" disabled={isLoading}>
+                            {triggerLabel || confirmLabel}
+                        </Button>
+                    )
+                }
+            />
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>

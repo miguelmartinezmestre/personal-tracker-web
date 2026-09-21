@@ -160,16 +160,50 @@ const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
     projectName: COMPOSE_PROJECT,
     getComposeEnv,
 });
-function cleanupNextArtifacts(nextDistDir: string): void {
+type CleanupMode = 'success' | 'failure';
+const E2E_WORKSPACE_ARTIFACT_DIRS = [
+    'test-results',
+    'playwright-report',
+    'blob-report',
+    'reports/e2e',
+    'tests/.auth',
+];
+function assertSafeRepoRelativeDirectory(relativePath: string): string {
     const root = resolve(process.cwd());
-    const directoryPath = resolve(root, nextDistDir);
-    if (!directoryPath.startsWith(`${root}${sep}`) || !nextDistDir.startsWith('.next-e2e')) {
-        throw new Error('Refusing to delete an invalid E2E build path');
+    const directoryPath = resolve(root, relativePath);
+    if (!directoryPath.startsWith(`${root}${sep}`)) {
+        throw new Error(`Refusing to delete an invalid E2E artifact path: ${relativePath}`);
     }
+    return directoryPath;
+}
+function removeGuardedDirectory(relativePath: string): void {
+    const directoryPath = assertSafeRepoRelativeDirectory(relativePath);
     if (!existsSync(directoryPath)) {
         return;
     }
     rmSync(directoryPath, { recursive: true, force: true });
+}
+function isNextE2eDistDirName(name: string): boolean {
+    return name === '.next-e2e' || name.startsWith('.next-e2e-');
+}
+function cleanupNextArtifacts(nextDistDir: string): void {
+    if (!isNextE2eDistDirName(nextDistDir)) {
+        throw new Error('Refusing to delete an invalid E2E build path');
+    }
+    removeGuardedDirectory(nextDistDir);
+}
+function listNextE2eDistDirs(): string[] {
+    return readdirSync(process.cwd(), { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && isNextE2eDistDirName(entry.name))
+        .map(entry => entry.name);
+}
+function removeE2eWorkspaceArtifacts(): void {
+    for (const relativePath of E2E_WORKSPACE_ARTIFACT_DIRS) {
+        removeGuardedDirectory(relativePath);
+    }
+    for (const nextDistDir of listNextE2eDistDirs()) {
+        cleanupNextArtifacts(nextDistDir);
+    }
 }
 function collectBuildFingerprintFiles(relativePath: string, files: Set<string>): void {
     const absolutePath = join(process.cwd(), relativePath);
@@ -359,11 +393,7 @@ async function stopFrontend(): Promise<void> {
         child.kill('SIGTERM');
     });
 }
-async function cleanup(): Promise<void> {
-    if (cleanupInProgress) {
-        return;
-    }
-    cleanupInProgress = true;
+async function captureFailureLogs(): Promise<void> {
     try {
         mkdirSync('reports/e2e', { recursive: true });
         writeFileSync(
@@ -378,6 +408,8 @@ async function cleanup(): Promise<void> {
         console.error(error instanceof Error ? error.message : 'Could not capture E2E logs');
         process.exitCode = 1;
     }
+}
+async function teardownE2eStack(): Promise<void> {
     await stopFrontend().catch(error => {
         console.error('Error while stopping frontend:', error);
     });
@@ -387,13 +419,33 @@ async function cleanup(): Promise<void> {
         console.error('Error while tearing down docker compose:', error);
     });
 }
+async function cleanup(mode: CleanupMode): Promise<void> {
+    if (cleanupInProgress) {
+        return;
+    }
+    cleanupInProgress = true;
+    if (mode === 'failure') {
+        await captureFailureLogs();
+    }
+    await teardownE2eStack();
+    if (mode === 'success') {
+        console.log('Removing e2e workspace artifacts after successful run.');
+        try {
+            removeE2eWorkspaceArtifacts();
+        } catch (error) {
+            console.error(
+                error instanceof Error ? error.message : 'Could not remove E2E workspace artifacts'
+            );
+        }
+    }
+}
 async function handleTermination(signal: NodeJS.Signals): Promise<void> {
     if (receivedTerminationSignal) {
         return;
     }
     receivedTerminationSignal = true;
     console.log(`\nReceived ${signal}. Cleaning up e2e stack...`);
-    await cleanup();
+    await cleanup('failure');
     process.exit(130);
 }
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
@@ -511,7 +563,7 @@ async function main(): Promise<void> {
 }
 main()
     .then(async () => {
-        await cleanup();
+        await cleanup('success');
     })
     .catch(async error => {
         const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
@@ -521,6 +573,6 @@ main()
         } else {
             console.error(error);
         }
-        await cleanup();
+        await cleanup('failure');
         process.exitCode = 1;
     });

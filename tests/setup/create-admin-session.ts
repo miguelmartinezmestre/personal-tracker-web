@@ -84,7 +84,7 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await clickSetupNext(page);
     await page
         .getByTestId('setup-registration-policy')
-        .getByLabel(/open|abierta/i)
+        .getByRole('radio', { name: /open|abierta/i })
         .click();
     await expect(page.locator('#policy-open')).toBeChecked();
     await clickSetupNext(page);

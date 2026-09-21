@@ -133,32 +133,34 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="outline"
-                    data-testid="organization-switcher"
-                    className="h-9 w-9 min-w-0 justify-center gap-2 border-2 border-primary/20 bg-primary/5 px-0 hover:bg-primary/10 hover:border-primary/30 sm:w-auto sm:min-w-[140px] sm:max-w-[18rem] sm:justify-start sm:px-3"
-                    disabled={setActiveMutation.isPending || isLoadingData}
-                >
-                    {setActiveMutation.isPending || isLoadingData ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <>
-                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                                <Building className="h-3 w-3 text-primary" />
-                            </div>
-                            <span className="hidden min-w-0 truncate font-medium sm:inline">
-                                {displayName}
-                            </span>
-                            <div
-                                className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
-                                title={t('activeOrganization')}
-                            />
-                        </>
-                    )}
-                    <span className="sr-only">{t('label')}</span>
-                </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+                render={
+                    <Button
+                        variant="outline"
+                        data-testid="organization-switcher"
+                        className="h-9 w-9 min-w-0 justify-center gap-2 border-2 border-primary/20 bg-primary/5 px-0 hover:bg-primary/10 hover:border-primary/30 sm:w-auto sm:min-w-[140px] sm:max-w-[18rem] sm:justify-start sm:px-3"
+                        disabled={setActiveMutation.isPending || isLoadingData}
+                    >
+                        {setActiveMutation.isPending || isLoadingData ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <>
+                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                    <Building className="h-3 w-3 text-primary" />
+                                </div>
+                                <span className="hidden min-w-0 truncate font-medium sm:inline">
+                                    {displayName}
+                                </span>
+                                <div
+                                    className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
+                                    title={t('activeOrganization')}
+                                />
+                            </>
+                        )}
+                        <span className="sr-only">{t('label')}</span>
+                    </Button>
+                }
+            />
             <DropdownMenuContent align="end" className="w-72">
                 <div className="border-b px-3 py-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -192,8 +194,8 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                 </div>
                 {organizationsQuery.isError ? (
                     <DropdownMenuItem
-                        onSelect={event => {
-                            event.preventDefault();
+                        closeOnClick={false}
+                        onClick={() => {
                             void organizationsQuery.refetch();
                         }}
                     >
@@ -203,8 +205,8 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                 {organizationsQuery.hasMore ? (
                     <DropdownMenuItem
                         disabled={organizationsQuery.isFetching}
-                        onSelect={event => {
-                            event.preventDefault();
+                        closeOnClick={false}
+                        onClick={() => {
                             organizationsQuery.loadMore();
                         }}
                     >
