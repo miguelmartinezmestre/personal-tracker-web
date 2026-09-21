@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import { convexQuery } from '@convex-dev/react-query';
-import { useReferenceNow } from '@/lib/reference-now';
 import {
     isOrganizationRoleValue,
     type OrganizationRoleValue,
@@ -29,7 +28,7 @@ export interface Invitation {
 }
 
 export function usePendingInvitations() {
-    const referenceNow = useReferenceNow();
+    const referenceNow = Date.now();
     const result = useConvexPages<InvitationRaw>(
         'userInvitations',
         cursor =>

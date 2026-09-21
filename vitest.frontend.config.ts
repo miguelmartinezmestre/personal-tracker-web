@@ -6,7 +6,6 @@ export default defineConfig({
         alias: {
             '@/convex': path.resolve('convex'),
             '@': path.resolve('src'),
-            '@shared': path.resolve('shared'),
         },
     },
     oxc: { jsx: { runtime: 'automatic' } },
@@ -15,12 +14,12 @@ export default defineConfig({
         pool: 'threads',
         maxWorkers: 1,
         setupFiles: ['./tests/frontend-setup.ts'],
-        include: ['src/**/*.test.{ts,tsx}', 'shared/**/*.test.ts', 'scripts/**/*.test.ts'],
+        include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
         coverage: {
             provider: 'v8',
             reportsDirectory: 'coverage/frontend',
             reporter: ['text', 'html', 'lcov'],
-            include: ['src/**/*.{ts,tsx}', 'shared/**/*.ts'],
+            include: ['src/**/*.{ts,tsx}'],
             exclude: ['**/*.test.*', '**/*.d.ts'],
         },
     },

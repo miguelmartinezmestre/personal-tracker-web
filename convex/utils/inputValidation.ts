@@ -1,5 +1,5 @@
 import { ConvexError } from 'convex/values';
-import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from '../../shared/input-constraints';
+import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from './inputConstraints';
 import { ERROR_CODES } from './constants';
 
 const CATEGORY_ICON_SET = new Set<string>(CATEGORY_ICONS);

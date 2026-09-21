@@ -2,18 +2,19 @@ import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { admin, organization } from 'better-auth/plugins';
 import { internal } from '../../_generated/api';
+import type { Id } from '../../_generated/dataModel';
 import { authAuditTriggers } from '../../authAuditTriggers';
 import authConfig from '../../auth.config';
 import { ERROR_CODES } from '../../utils/constants';
 import { env } from '../../lib/env';
-import { validatePasswordPolicy } from '../../../shared/password-policy';
-import { platformAdminRoles, platformRoles } from '../../../shared/platform-admin-access';
+import { validatePasswordPolicy } from './passwordPolicy';
+import { platformAdminRoles, platformRoles } from './accessControl';
 import {
     getInvitationIdFromCallbackPath,
     isSetupSecretValid,
     ORGANIZATION_SECURITY_OPTIONS,
     SETUP_SECRET_HEADER,
-} from '../../../shared/auth-security';
+} from './security';
 import { buildInvitationEmail } from '../email/invitationEmail';
 import { accountDeletionPlugin } from './accountDeletionPlugin';
 import {
@@ -22,7 +23,7 @@ import {
     usesReservedPersonalOrganizationIdentity,
     type GenericCtx,
 } from './authRuntime';
-import { isJsonObject } from '../../../shared/boundary-values';
+import { isJsonObject } from '../../utils/json';
 
 export type AuthOptions = BetterAuthOptionsWithoutDatabase & {
     triggers: typeof authAuditTriggers;
@@ -164,9 +165,12 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                         phase: 'actor-null',
                     }
                 );
-                await runnableCtx.runMutation(internal.admin.cascadeOrganizationDeletionInternal, {
-                    organizationId: organization.id,
-                });
+                await runnableCtx.runMutation(
+                    internal.cascades.cascadeOrganizationDeletionInternal,
+                    {
+                        organizationId: organization.id as Id<'organization'>,
+                    }
+                );
             },
             beforeUpdateOrganization: async ({ organization, member }) => {
                 if (!('slug' in organization) && !('metadata' in organization)) {

@@ -6,7 +6,7 @@ import {
     createTestOrganization,
     createTestUser,
     ensureTestUserAuth,
-} from './test_helpers';
+} from './test.helpers';
 import type { Id } from '../_generated/dataModel';
 describe('convex organizations', () => {
     const t = initConvexTest();

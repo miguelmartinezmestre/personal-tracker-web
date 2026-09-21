@@ -9,7 +9,7 @@ import {
     isSetupSecretValid,
     ORGANIZATION_SECURITY_OPTIONS,
     requireSecureHttpUrl,
-} from '../../shared/auth-security';
+} from '../platform/auth/security';
 
 describe('safe auth callbacks', () => {
     test.each([

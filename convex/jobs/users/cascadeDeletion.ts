@@ -1,36 +1,30 @@
 import { internal } from '../../_generated/api';
 import type { Id } from '../../_generated/dataModel';
 import type { MutationCtx } from '../../_generated/server';
-import {
-    findObjectiveSuccessorOwner,
-    reassignOwnedObjective,
-} from '../../domain/objectives/collaborators';
 import { isPersonalOrganizationForUser } from '../../domain/organizations/personalOrganization';
 import { startOrganizationDeletionCascade } from '../organizations/cascadeDeletion';
+
 const USER_DELETION_BATCH_SIZE = 50;
-export type UserDeletionPhase =
-    | 'sessions'
-    | 'accounts'
-    | 'objectives'
-    | 'collaborators'
-    | 'achievements'
-    | 'preferences'
-    | 'notifications'
-    | 'memberships';
+
+export type UserDeletionPhase = 'sessions' | 'accounts' | 'memberships';
+
 type ContinueUserDeletionArgs = {
     userId: Id<'user'>;
     phase?: UserDeletionPhase;
 };
+
 type UserDeletionResult = {
     status: 'in_progress' | 'completed';
     phase: UserDeletionPhase;
 };
+
 async function scheduleNext(ctx: MutationCtx, userId: Id<'user'>, phase: UserDeletionPhase) {
-    await ctx.scheduler.runAfter(0, internal.admin.continueUserDeletionCascade, {
+    await ctx.scheduler.runAfter(0, internal.cascades.continueUserDeletionCascade, {
         userId,
         phase,
     });
 }
+
 async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
     const user = await ctx.db.get('user', userId);
     if (!user || user.deletedAt !== undefined) {
@@ -51,6 +45,7 @@ async function anonymizeUser(ctx: MutationCtx, userId: Id<'user'>) {
         updatedAt: now,
     });
 }
+
 async function advanceUserDeletionPhase(args: {
     ctx: MutationCtx;
     userId: Id<'user'>;
@@ -62,6 +57,7 @@ async function advanceUserDeletionPhase(args: {
     await scheduleNext(args.ctx, args.userId, next);
     return { status: 'in_progress', phase: next };
 }
+
 async function deleteUserSessionsPhase(
     ctx: MutationCtx,
     userId: Id<'user'>
@@ -81,6 +77,7 @@ async function deleteUserSessionsPhase(
         rowCount: rows.length,
     });
 }
+
 async function deleteUserAccountsPhase(
     ctx: MutationCtx,
     userId: Id<'user'>
@@ -96,127 +93,11 @@ async function deleteUserAccountsPhase(
         ctx,
         userId,
         currentPhase: 'accounts',
-        nextPhase: 'objectives',
-        rowCount: rows.length,
-    });
-}
-async function deleteUserObjectivesPhase(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<UserDeletionResult> {
-    // The second index field is a durable per-row checkpoint. It avoids
-    // advancing a cursor over an index whose ownerId is being changed.
-    const objectives = await ctx.db
-        .query('objectives')
-        .withIndex('by_owner_ownerDeletionProcessedAt', q =>
-            q.eq('ownerId', userId).eq('ownerDeletionProcessedAt', undefined)
-        )
-        .take(USER_DELETION_BATCH_SIZE);
-    const now = Date.now();
-    for (const objective of objectives) {
-        const successor = await findObjectiveSuccessorOwner(ctx, objective, userId);
-        if (successor) {
-            await reassignOwnedObjective(ctx, objective, successor);
-            continue;
-        }
-        const purgeToken =
-            objective.purgeToken ?? `user-delete-${String(objective._id)}-${now.toString(36)}`;
-        await ctx.db.patch('objectives', objective._id, {
-            deletedAt: objective.deletedAt ?? now,
-            deletedBy: objective.deletedBy ?? userId,
-            purgeToken,
-            ownerDeletionProcessedAt: now,
-            updatedAt: now,
-        });
-        await ctx.scheduler.runAfter(0, internal.objectives.deleteObjectiveContinue, {
-            objectiveId: objective._id,
-            purgeToken,
-            phase: 'collaborators',
-        });
-    }
-    if (objectives.length === USER_DELETION_BATCH_SIZE) {
-        await scheduleNext(ctx, userId, 'objectives');
-        return { status: 'in_progress', phase: 'objectives' };
-    }
-    await scheduleNext(ctx, userId, 'collaborators');
-    return { status: 'in_progress', phase: 'collaborators' };
-}
-async function deleteUserCollaboratorsPhase(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<UserDeletionResult> {
-    const rows = await ctx.db
-        .query('objectiveCollaborators')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-    for (const row of rows) {
-        await ctx.db.delete('objectiveCollaborators', row._id);
-    }
-    return await advanceUserDeletionPhase({
-        ctx,
-        userId,
-        currentPhase: 'collaborators',
-        nextPhase: 'achievements',
-        rowCount: rows.length,
-    });
-}
-async function deleteUserAchievementsPhase(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<UserDeletionResult> {
-    const rows = await ctx.db
-        .query('obtainedAchievements')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-    for (const row of rows) {
-        await ctx.db.delete('obtainedAchievements', row._id);
-    }
-    return await advanceUserDeletionPhase({
-        ctx,
-        userId,
-        currentPhase: 'achievements',
-        nextPhase: 'preferences',
-        rowCount: rows.length,
-    });
-}
-async function deleteUserPreferencesPhase(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<UserDeletionResult> {
-    const rows = await ctx.db
-        .query('notificationPreferences')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-    for (const row of rows) {
-        await ctx.db.delete('notificationPreferences', row._id);
-    }
-    return await advanceUserDeletionPhase({
-        ctx,
-        userId,
-        currentPhase: 'preferences',
-        nextPhase: 'notifications',
-        rowCount: rows.length,
-    });
-}
-async function deleteUserNotificationsPhase(
-    ctx: MutationCtx,
-    userId: Id<'user'>
-): Promise<UserDeletionResult> {
-    const rows = await ctx.db
-        .query('notifications')
-        .withIndex('by_user', q => q.eq('userId', userId))
-        .take(USER_DELETION_BATCH_SIZE);
-    for (const row of rows) {
-        await ctx.db.delete('notifications', row._id);
-    }
-    return await advanceUserDeletionPhase({
-        ctx,
-        userId,
-        currentPhase: 'notifications',
         nextPhase: 'memberships',
         rowCount: rows.length,
     });
 }
+
 async function transferOrDeleteMembership(
     ctx: MutationCtx,
     membership: {
@@ -250,6 +131,7 @@ async function transferOrDeleteMembership(
     }
     await ctx.db.delete('member', membership._id);
 }
+
 async function deleteUserMembershipsPhase(
     ctx: MutationCtx,
     userId: Id<'user'>,
@@ -268,10 +150,12 @@ async function deleteUserMembershipsPhase(
     }
     return { status: 'completed', phase };
 }
+
 export async function startUserDeletionCascade(ctx: MutationCtx, userId: Id<'user'>) {
     await anonymizeUser(ctx, userId);
     await scheduleNext(ctx, userId, 'sessions');
 }
+
 export async function continueUserDeletionCascade(
     ctx: MutationCtx,
     args: ContinueUserDeletionArgs
@@ -282,16 +166,6 @@ export async function continueUserDeletionCascade(
             return await deleteUserSessionsPhase(ctx, args.userId);
         case 'accounts':
             return await deleteUserAccountsPhase(ctx, args.userId);
-        case 'objectives':
-            return await deleteUserObjectivesPhase(ctx, args.userId);
-        case 'collaborators':
-            return await deleteUserCollaboratorsPhase(ctx, args.userId);
-        case 'achievements':
-            return await deleteUserAchievementsPhase(ctx, args.userId);
-        case 'preferences':
-            return await deleteUserPreferencesPhase(ctx, args.userId);
-        case 'notifications':
-            return await deleteUserNotificationsPhase(ctx, args.userId);
         case 'memberships':
             return await deleteUserMembershipsPhase(ctx, args.userId, phase);
     }

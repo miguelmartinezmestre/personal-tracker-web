@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/form-fields';
 import { Input } from '@/components/ui/input';
 import type { TanStackFormApi } from '@/components/forms/form-types';
+import type { RegisterFormValues } from '@/features/auth/schemas/register';
 
 interface RegisterFormInputFieldProps {
-    form: TanStackFormApi;
+    form: TanStackFormApi<RegisterFormValues>;
     name: 'username' | 'email' | 'password' | 'confirmPassword';
     label: string;
     placeholder: string;

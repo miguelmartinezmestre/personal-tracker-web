@@ -51,10 +51,10 @@ locales que gestiona el perfil. Comprueba antes que dispones de la copia que qui
 
 ## Variables y secretos
 
-Los scripts construyen el entorno mediante listas permitidas. No copian indiscriminadamente las
-variables del terminal. Las claves de Convex, el secreto de Better Auth y los JWKS permanecen en
+Los procesos hijos heredan las variables del terminal. Los scripts superponen encima las del stack
+(URL, claves de Convex, MailHog). Las claves, el secreto de Better Auth y los JWKS permanecen en
 archivos locales ignorados por Git. Los cambios de secretos del backend se envían por entrada
-estándar, fuera de los argumentos del proceso y de los mensajes de error.
+estándar, fuera de los argumentos del proceso.
 
 No añadas credenciales a variables `NEXT_PUBLIC_*`. Conserva los secretos originales al restaurar
 una copia si necesitas mantener válidas las sesiones y claves cifradas. La rotación requiere un
@@ -69,11 +69,10 @@ pnpm run playwright:install
 pnpm run test:e2e
 ```
 
-Cada ejecución usa un proyecto Docker independiente, MySQL interno, direcciones loopback y MailHog.
-Sus volúmenes son efímeros. El ejecutor rechaza configuración de servicios externos y crea secretos
-sintéticos propios para el bootstrap. Al terminar conserva informes y logs redactados en
-`reports/e2e`, además de las trazas y capturas de Playwright.
+Cada ejecución usa un proyecto Docker independiente, MySQL interno y MailHog. Sus volúmenes son
+efímeros. Al terminar conserva informes y logs en `reports/e2e`, además de las trazas y capturas de
+Playwright.
 
-Los proyectos incluyen Chromium, Firefox, WebKit y `mobile-webkit`. El perfil móvil es emulado.
-Consulta el [procedimiento operativo](docs/operacion-local.md) para copias y restauración de la
-misma versión, reconstrucción de agregados, observación y verificación de entregas.
+Los e2e corren solo en Chrome de escritorio (Chromium de Playwright). Consulta el
+[procedimiento operativo](docs/operacion-local.md) para copias y restauración de la misma versión,
+reconstrucción de agregados, observación y verificación de entregas.

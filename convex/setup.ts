@@ -13,7 +13,7 @@ import {
 import { completeSetupArgsValidator } from './platform/setup/validators';
 import { ERROR_CODES } from './utils/constants';
 import { queryWithRLS } from './platform/rls/wrappers';
-import { isGlobalAdminRole } from '../shared/platform-roles';
+import { isGlobalAdminRole } from './platform/auth/roles';
 export const isPlatformSetUp = query({
     args: {},
     returns: v.boolean(),

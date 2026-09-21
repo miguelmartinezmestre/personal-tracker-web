@@ -1,4 +1,4 @@
-import { requireSecureHttpUrl } from '../../shared/auth-security';
+import { requireSecureHttpUrl } from '../../convex/platform/auth/security';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const allowHttpLocalhost = !isProduction || process.env.NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP === 'true';

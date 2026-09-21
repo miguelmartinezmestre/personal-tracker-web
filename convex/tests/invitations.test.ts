@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test_helpers';
+import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test.helpers';
 import { ERROR_CODES, TIME } from '../utils/constants';
 import type { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';

@@ -4,11 +4,10 @@ import type { Id } from '../_generated/dataModel';
 import { initConvexTest } from './test.helper';
 import {
     createTestMember,
-    createTestObjective,
     createTestOrganization,
     createTestUser,
     createTestSession,
-} from './test_helpers';
+} from './test.helpers';
 
 describe('organization deletion cascade', () => {
     const t = initConvexTest();
@@ -20,7 +19,7 @@ describe('organization deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('removes application data owned by the organization', async () => {
+    test('removes categories and memberships owned by the organization', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const user = await createTestUser(t, {
             userId: `organization-delete-${suffix}`,
@@ -33,12 +32,6 @@ describe('organization deletion cascade', () => {
             slug: `organization-to-delete-${suffix}`,
         });
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
-        const objectiveId = await createTestObjective(t, {
-            userId: user.docId,
-            organizationId,
-            title: 'Objective to delete',
-            targetValue: 10,
-        });
         const categoryId = await t.run(ctx =>
             ctx.db.insert('categories', {
                 userId: user.docId,
@@ -50,13 +43,13 @@ describe('organization deletion cascade', () => {
             })
         );
 
-        await t.mutation(internal.admin.cascadeOrganizationDeletionInternal, {
+        await t.mutation(internal.cascades.cascadeOrganizationDeletionInternal, {
             organizationId,
         });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
         await t.run(async ctx => {
-            expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
+            expect(await ctx.db.get('organization', organizationId)).toBeNull();
             expect(await ctx.db.get('categories', categoryId)).toBeNull();
         });
     });
@@ -107,7 +100,7 @@ describe('organization deletion cascade', () => {
                 })
             );
         }
-        await t.mutation(internal.admin.cascadeOrganizationDeletionInternal, {
+        await t.mutation(internal.cascades.cascadeOrganizationDeletionInternal, {
             organizationId: deletedId,
         });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
@@ -122,7 +115,7 @@ describe('organization deletion cascade', () => {
             expiresAt: Date.now() + 3600000,
             token: 'late-session',
         });
-        const check = await t.mutation(internal.admin.continueOrganizationDeletionCascade, {
+        const check = await t.mutation(internal.cascades.continueOrganizationDeletionCascade, {
             organizationId: deletedId,
             phase: 'finalize',
         });
@@ -133,7 +126,7 @@ describe('organization deletion cascade', () => {
                 ?.activeOrganizationId
         ).toBe(fallbackId);
         await expect(
-            t.mutation(internal.admin.continueOrganizationDeletionCascade, {
+            t.mutation(internal.cascades.continueOrganizationDeletionCascade, {
                 organizationId: deletedId,
                 phase: 'finalize',
             })

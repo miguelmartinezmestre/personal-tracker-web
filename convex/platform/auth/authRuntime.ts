@@ -2,7 +2,7 @@ import { ConvexError } from 'convex/values';
 import type { ActionCtx, MutationCtx, QueryCtx } from '../../_generated/server';
 import type { Id } from '../../_generated/dataModel';
 import { ERROR_CODES } from '../../utils/constants';
-import { getOptionalString, isJsonObject, type JsonObject } from '../../../shared/boundary-values';
+import { getOptionalString, isJsonObject, type JsonObject } from '../../utils/json';
 import { isPersonalOrganizationMetadata } from '../../domain/organizations/personalOrganization';
 import { DEFAULT_ORGANIZATION_SLUG_BASE } from '../../domain/organizations/personalOrganization';
 export type GenericCtx = QueryCtx | MutationCtx | ActionCtx;

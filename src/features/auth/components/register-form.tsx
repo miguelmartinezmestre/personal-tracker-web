@@ -13,7 +13,7 @@ import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { resolveErrorMessage } from '@/lib/error-messages';
-import { getInvitationCallbackPath } from '@shared/auth-security';
+import { getInvitationCallbackPath } from '@/convex/platform/auth/security';
 import { RegisterFormInputField } from './register-form-input-field';
 import { useHydrated } from '@/hooks/use-hydrated';
 interface RegisterFormProps {

@@ -90,6 +90,8 @@
     "DashboardHome": {
         "dashboardTitle": "Dashboard",
         "welcome": "Bienvenido {name}",
+        "welcomeAnonymous": "Bienvenido",
+        "emptyState": "Tu espacio de trabajo está listo. Las funciones del producto volverán aquí a medida que se reconstruyan.",
         "stats": {
             "active": "Activos",
             "completed": "Completados"

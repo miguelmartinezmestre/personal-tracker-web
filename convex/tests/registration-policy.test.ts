@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import { createTestOrganization, createTestUser } from './test_helpers';
+import { createTestOrganization, createTestUser } from './test.helpers';
 
 describe('backend registration policy', () => {
     test('classifies the first registration as a protected bootstrap', async () => {

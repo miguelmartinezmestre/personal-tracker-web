@@ -14,9 +14,8 @@ import { useSetupWizard } from '../hooks/use-setup-wizard';
 import { resolveErrorMessage } from '@/lib/error-messages';
 import SetupProgress from './setup-progress';
 import type { ErrorContext } from 'better-auth/client';
-import { setLocaleCookie } from '@/lib/locale-cookie';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { SETUP_SECRET_HEADER } from '@shared/auth-security';
+import { SETUP_SECRET_HEADER } from '@/convex/platform/auth/security';
 import { SetupStepContent, SetupWizardActions } from './setup-step-content';
 export default function SetupWizard() {
     const router = useRouter();
@@ -88,7 +87,7 @@ export default function SetupWizard() {
                                 });
                             throwIfAuthClientError(activeOrganizationResult);
                         }
-                        setLocaleCookie(data.platform.defaultLanguage);
+                        document.cookie = `locale=${data.platform.defaultLanguage};path=/;max-age=31536000;SameSite=Lax`;
                         router.push('/dashboard/home');
                     },
                     onError: (errorContext: ErrorContext) => {

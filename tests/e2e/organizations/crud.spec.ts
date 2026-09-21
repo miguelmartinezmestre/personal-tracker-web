@@ -1,10 +1,7 @@
 import type { Page } from '@playwright/test';
+import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
-import {
-    createOrganization,
-    createObjective,
-    ensureAuthenticatedState,
-} from '../../helpers/test-helpers';
+import { createOrganization } from '../../helpers/test-helpers';
 import { OrganizationFactory } from '../../helpers/factories';
 
 function escapeRegExp(value: string): string {
@@ -66,7 +63,7 @@ test.describe('Organizations CRUD', () => {
 
     test('edit organization name', { tag: ['@REQ-EQUIPOS-007'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
-            name: `Edit Org ${Date.now()}`,
+            name: `Edit Org ${randomUUID().substring(0, 8)}`,
         });
 
         await page.goto('/dashboard/organizations');
@@ -91,8 +88,8 @@ test.describe('Organizations CRUD', () => {
         const nameInput = page.getByTestId('organization-edit-name-input');
         await expect(nameInput).toBeVisible({ timeout: 10000 });
 
-        const newName = `Updated Org ${Date.now()}`;
-        const newDescription = `Updated description ${Date.now()}`;
+        const newName = `Updated Org ${randomUUID().substring(0, 8)}`;
+        const newDescription = `Updated description ${randomUUID().substring(0, 8)}`;
         await nameInput.fill(newName);
         await page.getByTestId('organization-edit-description-input').fill(newDescription);
 
@@ -109,7 +106,7 @@ test.describe('Organizations CRUD', () => {
 
     test('delete organization', { tag: ['@REQ-EQUIPOS-008', '@REQ-NF-011'] }, async ({ page }) => {
         const organization = await createOrganization(page, {
-            name: `Delete Org ${Date.now()}`,
+            name: `Delete Org ${randomUUID().substring(0, 8)}`,
         });
 
         await page.goto('/dashboard/organizations');
@@ -146,7 +143,9 @@ test.describe('Organizations CRUD', () => {
     });
 
     test('switch active organization', async ({ page }) => {
-        const newOrg = await createOrganization(page, { name: `Switch Org ${Date.now()}` });
+        const newOrg = await createOrganization(page, {
+            name: `Switch Org ${randomUUID().substring(0, 8)}`,
+        });
 
         await page.goto('/dashboard/home');
         await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
@@ -154,24 +153,6 @@ test.describe('Organizations CRUD', () => {
         await expect(page.getByTestId('organization-switcher')).toContainText(newOrg.name, {
             timeout: 10000,
         });
-    });
-
-    test('data isolation between organizations', { tag: ['@REQ-NF-003'] }, async ({ page }) => {
-        const obj1 = await createObjective(page, {
-            title: `Org1 Objective ${Date.now()}`,
-        });
-
-        const newOrg = await createOrganization(page, { name: `Isolated Org ${Date.now()}` });
-
-        await ensureAuthenticatedState(page);
-        await page.goto('/dashboard/home');
-        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
-
-        await setActiveOrganization(page, newOrg.name);
-
-        await page.goto('/dashboard/objectives');
-        await expect(page).toHaveURL(/\/dashboard\/objectives(\?|$)/);
-        await expect(page.getByText(obj1.title)).toBeHidden();
     });
 
     test('validate organization name required', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {

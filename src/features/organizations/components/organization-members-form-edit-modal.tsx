@@ -100,7 +100,11 @@ export default function OrganizationMemberEditFormModal({
                                 <FormItem>
                                     <FormLabel>{t('role')}</FormLabel>
                                     <Select
-                                        onValueChange={value => field.handleChange(value)}
+                                        onValueChange={value => {
+                                            if (isOrganizationRoleValue(value)) {
+                                                field.handleChange(value);
+                                            }
+                                        }}
                                         value={
                                             typeof field.state.value === 'string'
                                                 ? field.state.value

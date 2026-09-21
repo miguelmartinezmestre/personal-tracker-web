@@ -36,13 +36,12 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 
 - `pnpm dev` — Convex + Next in dev (`convex dev` starts the frontend via `dev:front`).
 - `pnpm dev:front` / `pnpm dev:convex` — Next or Convex alone.
-- `pnpm checks` — full pre-merge gate: format, types, lint, tests, knip, translations, Convex
-  contract checks, and peer-dependency compatibility.
-- `pnpm checks:static` runs the gate without tests.
-- `pnpm ci` runs the static checks, both test suites once with coverage, the build, and E2E tests.
-- `pnpm test` runs backend and frontend suites; `pnpm test:backend` and `pnpm test:frontend` run
-  them separately.
-- `pnpm test:coverage` — Vitest with coverage thresholds.
+- `pnpm checks` — `checks:static` then `test`.
+- `pnpm checks:static` — format, types, lint, knip, translations, requirements, and peer-dependency
+  compatibility.
+- `pnpm ci` — `checks:static`, `test:coverage`, `build`, and `test:e2e`.
+- `pnpm test` — `test:backend` then `test:frontend`.
+- `pnpm test:coverage` — both Vitest suites with coverage thresholds.
 - `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailHog SMTP).
 - `pnpm run convex:local` starts development services and preserves data. `convex:local:stop` stops
   them; only `convex:local:reset` deletes the managed local data. See

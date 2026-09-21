@@ -7,7 +7,7 @@ import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { getOptionalString, isRecord } from '@shared/boundary-values';
+import { getOptionalString, isRecord } from '@/convex/utils/json';
 
 type FieldContextValue = {
     error?: string;

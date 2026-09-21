@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { STRONG_PASSWORD_MESSAGE_ES, STRONG_PASSWORD_REGEX } from '@shared/password-policy';
+import {
+    STRONG_PASSWORD_MESSAGE_ES,
+    STRONG_PASSWORD_REGEX,
+} from '@/convex/platform/auth/passwordPolicy';
 
 export const resetPasswordSchema = z
     .object({

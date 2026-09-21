@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/command';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Home, User, Bell, Goal } from 'lucide-react';
+import { Home, Mail, Users } from 'lucide-react';
 import { useMountEffect } from '@/hooks/use-mount-effect';
 
 export default function CommandMenu() {
@@ -58,28 +58,20 @@ export default function CommandMenu() {
                             <span>{tSidebar('home')}</span>
                         </CommandItem>
                         <CommandItem
-                            onSelect={() => runCommand(() => router.push('/dashboard/objectives'))}
-                            data-testid="command-item-objectives"
+                            onSelect={() => runCommand(() => router.push('/dashboard/invitations'))}
+                            data-testid="command-item-invitations"
                         >
-                            <Goal className="mr-2 h-4 w-4" />
-                            <span>{tSidebar('objectives')}</span>
+                            <Mail className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('invitations')}</span>
                         </CommandItem>
                         <CommandItem
                             onSelect={() =>
-                                runCommand(() => router.push('/dashboard/notifications'))
+                                runCommand(() => router.push('/dashboard/organizations'))
                             }
-                            data-testid="command-item-notifications"
+                            data-testid="command-item-organizations"
                         >
-                            <Bell className="mr-2 h-4 w-4" />
-                            <span>{tSidebar('notifications')}</span>
-                        </CommandItem>
-
-                        <CommandItem
-                            onSelect={() => runCommand(() => router.push('/dashboard/sessions'))}
-                            data-testid="command-item-sessions"
-                        >
-                            <User className="mr-2 h-4 w-4" />
-                            <span>{tSidebar('sessions')}</span>
+                            <Users className="mr-2 h-4 w-4" />
+                            <span>{tSidebar('organizations')}</span>
                         </CommandItem>
                     </CommandGroup>
 

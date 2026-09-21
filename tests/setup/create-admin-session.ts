@@ -21,7 +21,13 @@ async function fillSetupInput(
     await expect(async () => {
         await input.click();
         await input.fill('');
-        await input.pressSequentially(value, { delay: 15 });
+        await input.fill(value);
+        const committed = await input.inputValue();
+        if (committed !== value) {
+            await input.click();
+            await input.fill('');
+            await input.pressSequentially(value, { delay: 15 });
+        }
         await input.blur();
         await expect(input).toHaveValue(value);
         if (options?.untilNextEnabled) {
@@ -76,7 +82,11 @@ async function completeSetupWizard(page: Page, userData: TestUserData): Promise<
     await clickSetupNext(page);
 
     await clickSetupNext(page);
-    await page.locator('#policy-open').click();
+    await page
+        .getByTestId('setup-registration-policy')
+        .getByLabel(/open|abierta/i)
+        .click();
+    await expect(page.locator('#policy-open')).toBeChecked();
     await clickSetupNext(page);
 
     const completeButton = page.getByTestId('setup-complete-button');
@@ -90,7 +100,7 @@ export async function createAdminSession(page: Page): Promise<TestUserData> {
 
     await completeSetupWizard(page, userData);
     await waitForAdminDashboardReady(page);
-    await expect(page.locator('a[href*="/dashboard/admin"]').first()).toBeVisible({
+    await expect(page.getByTestId('dashboard-home-stub')).toBeVisible({
         timeout: 10_000,
     });
 

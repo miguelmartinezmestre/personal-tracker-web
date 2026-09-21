@@ -44,7 +44,6 @@ async function decodeCursor(cursor: string | null, scope: string): Promise<Curso
 
 export type VisiblePage<T> = PaginationResult<T> & { needsContinuation: boolean };
 
-/** One native page per invocation; encrypted cursors retain unread candidates and a partial visible page. */
 export async function paginateVisible<T extends { _id: string }>(options: {
     scope: string;
     paginationOpts: PaginationOptions;

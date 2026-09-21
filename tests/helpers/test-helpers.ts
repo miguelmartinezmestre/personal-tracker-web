@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+﻿import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { randomUUID } from 'crypto';
 export const DEFAULT_PASSWORD = 'Password123';
@@ -31,9 +31,7 @@ export function generateTestUserData(options?: CreateTestUserOptions): TestUserD
         username = options.customUsername;
         email = options.customEmail ?? `${normalizeForEmail(options.customUsername)}@example.com`;
     } else if (options?.usePresentableName) {
-        const presentableNames = ['Miguel García', 'Ana Martínez', 'Carlos López'];
-        // Deterministic pick derived from the generated id (no Math.random) so screenshots
-        // and fixtures stay stable across runs while different calls still vary.
+        const presentableNames = ['Miguel GarcÃ­a', 'Ana MartÃ­nez', 'Carlos LÃ³pez'];
         const presentableName =
             presentableNames[shortId.charCodeAt(0) % presentableNames.length] ?? 'Test User';
         username = presentableName;
@@ -78,65 +76,60 @@ async function ensureActiveOrganization(page: Page, timeout = 12000): Promise<vo
 export async function ensureAuthenticatedState(page: Page): Promise<void> {
     await waitForAuthenticatedDashboard(page);
     await ensureActiveOrganization(page);
-    await page.goto('/dashboard/home', { waitUntil: 'domcontentloaded' });
 }
 async function loginWithCredentials(page: Page, email: string, password: string): Promise<void> {
     await page.getByTestId('email-input').fill(email);
     await page.getByTestId('password-input').fill(password);
     await page.getByTestId('login-button').click();
     await page.waitForURL(DASHBOARD_HOME_RE, { timeout: 30000 });
-    await ensureAuthenticatedState(page);
+    await expect(page.getByRole('main')).toBeVisible({ timeout: 15000 });
+    await ensureActiveOrganization(page);
 }
-async function fillControlledInput(page: Page, testId: string, value: string): Promise<void> {
-    const input = page.getByTestId(testId);
-    await input.click();
-    await input.fill('');
-    await input.fill(value);
-    const committed = await input.inputValue();
-    if (committed === value) {
-        return;
-    }
-    // WebKit occasionally drops the first fill on controlled inputs.
-    await input.click();
-    await input.fill('');
-    await input.pressSequentially(value, { delay: 15 });
-    await expect(input).toHaveValue(value, { timeout: 5000 });
+async function signInViaApi(page: Page, userData: TestUserData): Promise<void> {
+    const result = await page.evaluate(async user => {
+        const response = await fetch('/api/auth/sign-in/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                email: user.email,
+                password: user.password,
+            }),
+        });
+        return { ok: response.ok, status: response.status, body: await response.text() };
+    }, userData);
+    expect(result.ok, `sign-in/email failed with HTTP ${result.status}: ${result.body}`).toBe(true);
 }
-async function completeRegistrationFlow(page: Page, userData: TestUserData): Promise<void> {
-    await page.goto('/register');
-    await page.waitForSelector('[data-testid="register-username-input"]', {
-        timeout: 10000,
-    });
-    await fillControlledInput(page, 'register-username-input', userData.username);
-    await fillControlledInput(page, 'register-email-input', userData.email);
-    await fillControlledInput(page, 'register-password-input', userData.password);
-    await fillControlledInput(page, 'register-confirm-password-input', userData.password);
-    // Ensure controlled form state commits on WebKit before submit.
-    await page.getByTestId('register-confirm-password-input').blur();
-    const registerButton = page.getByTestId('register-button');
-    await expect(registerButton).toBeEnabled({ timeout: 10000 });
-    const signUpResponse = page.waitForResponse(
-        response =>
-            response.url().includes('/api/auth/sign-up/email') &&
-            response.request().method() === 'POST',
-        { timeout: 30000 }
-    );
-    await registerButton.click();
-    expect((await signUpResponse).ok()).toBe(true);
-    await page.waitForURL(/\/(dashboard\/home|login)(\?|$)/, { timeout: 30000 });
-    if (/\/login(\?|$)/.test(page.url())) {
-        await loginWithCredentials(page, userData.email, userData.password);
-        return;
+async function createTestUserViaApi(page: Page, userData: TestUserData): Promise<void> {
+    await page.goto('/register', { waitUntil: 'domcontentloaded' });
+    const result = await page.evaluate(async user => {
+        const response = await fetch('/api/auth/sign-up/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                name: user.username,
+                email: user.email,
+                password: user.password,
+            }),
+        });
+        return { ok: response.ok, status: response.status, body: await response.text() };
+    }, userData);
+    expect(result.ok, `sign-up/email failed with HTTP ${result.status}: ${result.body}`).toBe(true);
+
+    await waitForAuthenticatedDashboard(page);
+    if (!DASHBOARD_HOME_RE.test(page.url())) {
+        await signInViaApi(page, userData);
+        await waitForAuthenticatedDashboard(page);
     }
-    await page.waitForURL(DASHBOARD_HOME_RE, { timeout: 15000 });
-    await ensureAuthenticatedState(page);
+    await ensureActiveOrganization(page);
 }
 export async function createTestUser(
     page: Page,
     options?: CreateTestUserOptions
 ): Promise<TestUserData> {
     const userData = generateTestUserData(options);
-    await completeRegistrationFlow(page, userData);
+    await createTestUserViaApi(page, userData);
     return userData;
 }
 export async function loginUser(
@@ -161,166 +154,6 @@ export async function logoutUser(page: Page): Promise<void> {
     await logoutButton.click();
     await expect(page).toHaveURL(/\/login(\?|$)/, { timeout: 15000 });
 }
-interface CreateObjectiveOptions {
-    title?: string;
-    description?: string;
-    category?: string;
-    targetValue?: number;
-    unit?: string;
-    visibility?: 'private' | 'organization';
-    ensureCategories?: boolean;
-}
-interface ObjectiveData {
-    title: string;
-}
-const createObjectiveButtonName = /^(Create Objective|Crear objetivo)$/i;
-const createProgressButtonName = /^(Create New Update Progress|Crear nuevo progreso)$/i;
-export async function openCreateObjectiveModal(page: Page): Promise<void> {
-    const createButton = page.getByRole('button', { name: createObjectiveButtonName });
-    await expect(createButton).toHaveCount(1, { timeout: 15000 });
-    await createButton.click();
-    await expect(page.getByTestId('objective-title-input')).toBeVisible({ timeout: 10000 });
-}
-export async function openCreateProgressModal(page: Page): Promise<void> {
-    const createButton = page.getByRole('button', { name: createProgressButtonName });
-    await expect(createButton).toHaveCount(1, { timeout: 15000 });
-    await createButton.click();
-    await expect(page.getByTestId('progress-value-input')).toBeVisible({ timeout: 10000 });
-}
-export async function createObjective(
-    page: Page,
-    options?: CreateObjectiveOptions
-): Promise<ObjectiveData> {
-    const uuid = randomUUID();
-    const title = options?.title ?? `test-objective-${uuid.substring(0, 8)}`;
-    const description = options?.description ?? 'Test objective description';
-    const category = options?.category ?? `Obj Cat ${uuid.substring(0, 8)}`;
-    const targetValue = options?.targetValue ?? 100;
-    const unit = options?.unit ?? 'units';
-    if (options?.ensureCategories !== false) {
-        await ensureDefaultCategories(page);
-    }
-    if (options?.ensureCategories === false || options?.category === undefined) {
-        await createCategory(page, { name: category });
-    }
-    await page.goto('/dashboard/objectives', { waitUntil: 'domcontentloaded' });
-    await openCreateObjectiveModal(page);
-    await page.getByTestId('objective-title-input').fill(title);
-    await page.getByTestId('objective-description-input').fill(description);
-    await page.getByTestId('objective-category-select').click();
-    const enabledOptions = page.locator(
-        '[role="option"]:not([data-disabled]):not([aria-disabled="true"])'
-    );
-    const categoryOption = enabledOptions.filter({ hasText: new RegExp(category, 'i') }).first();
-    await expect(categoryOption).toBeVisible({ timeout: 10000 });
-    await categoryOption.click();
-    await page.getByTestId('objective-target-input').fill(`${targetValue}`);
-    await page.getByTestId('objective-unit-input').fill(unit);
-    if (options?.visibility) {
-        await page.getByTestId('objective-visibility-select').click();
-        await page
-            .getByRole('option', { name: new RegExp(options.visibility, 'i') })
-            .first()
-            .click();
-    }
-    await page.getByTestId('objective-save-button').click();
-    await expect
-        .poll(async () => await page.getByText(title).count(), {
-            timeout: 15000,
-            intervals: [500, 1000, 2000],
-        })
-        .toBeGreaterThan(0);
-    return { title };
-}
-interface CreateCategoryOptions {
-    name?: string;
-    color?: string;
-}
-interface CategoryData {
-    name: string;
-}
-const categoryColorValues: Record<string, string> = {
-    Red: '#ef4444',
-    Orange: '#f97316',
-    Yellow: '#eab308',
-    Green: '#22c55e',
-    Teal: '#14b8a6',
-    Blue: '#3b82f6',
-    Purple: '#a855f7',
-    Pink: '#ec4899',
-    Gray: '#6b7280',
-};
-function categoryColorValue(color: string): string {
-    return categoryColorValues[color] ?? color;
-}
-export async function createCategory(
-    page: Page,
-    options?: CreateCategoryOptions
-): Promise<CategoryData> {
-    const uuid = randomUUID();
-    const name = options?.name ?? `test-category-${uuid.substring(0, 8)}`;
-    const color = options?.color ?? 'Blue';
-    const colorValue = categoryColorValue(color);
-    await ensureAuthenticatedState(page);
-    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15000 });
-    await page.getByTestId('category-create-open').click();
-    await expect(page.getByTestId('category-name-input')).toBeVisible({ timeout: 5000 });
-    await page.getByTestId('category-name-input').fill(name);
-    await page.getByTestId('category-color-select').click();
-    await page.waitForSelector('[role="option"]', { timeout: 10000 });
-    await page.getByTestId(`category-color-${colorValue}`).click();
-    const saveButton = page.getByTestId('category-save-button');
-    await expect(saveButton).toBeEnabled({ timeout: 10000 });
-    await saveButton.click();
-    await expect(page.getByTestId('category-name-input')).toBeHidden({ timeout: 10000 });
-    await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
-        timeout: 15000,
-    });
-    return { name };
-}
-const PERSONAL_ROW = /\bPersonal\b/i;
-function personalCategoryTableRowCount(page: Page) {
-    return page.getByTestId('table-row').filter({ hasText: PERSONAL_ROW }).count();
-}
-async function hasVisiblePersonalCategory(page: Page): Promise<boolean> {
-    if ((await personalCategoryTableRowCount(page)) > 0) {
-        return true;
-    }
-    return page
-        .getByText(PERSONAL_ROW)
-        .first()
-        .isVisible()
-        .catch(() => false);
-}
-export async function ensureDefaultCategories(page: Page): Promise<void> {
-    await ensureAuthenticatedState(page);
-    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByTestId('category-create-open')).toBeVisible({ timeout: 15000 });
-    let hasPersonalCategory = false;
-    const maxWait = Date.now() + 8000;
-    while (Date.now() < maxWait && !hasPersonalCategory) {
-        hasPersonalCategory = await hasVisiblePersonalCategory(page);
-        if (!hasPersonalCategory) {
-            await page.waitForTimeout(300);
-        }
-    }
-    if (hasPersonalCategory) {
-        return;
-    }
-    await createCategory(page, { name: 'Personal', color: 'Blue' }).catch(() => undefined);
-    await page.goto('/dashboard/categories', { waitUntil: 'domcontentloaded' });
-    const maxVerify = Date.now() + 15000;
-    while (Date.now() < maxVerify) {
-        hasPersonalCategory = await hasVisiblePersonalCategory(page);
-        if (hasPersonalCategory) {
-            return;
-        }
-        await page.reload({ waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(400);
-    }
-    await expect(page.getByText(PERSONAL_ROW).first()).toBeVisible({ timeout: 5000 });
-}
 interface CreateOrganizationOptions {
     name?: string;
     description?: string;
@@ -343,23 +176,9 @@ export async function createOrganization(
     await page.getByTestId('organization-name-input').fill(name);
     await page.getByTestId('organization-description-input').fill(description);
     await page.getByTestId('organization-save-button').click();
-    // The modal closes only after the Better Auth request succeeds. A table-row
-    // assertion then verifies that the reactive Convex result reached the UI.
     await expect(page.getByTestId('organization-name-input')).toBeHidden({ timeout: 20000 });
     await expect(page.getByTestId('table-row').filter({ hasText: name }).first()).toBeVisible({
         timeout: 20000,
     });
     return { name };
-}
-export async function openModal(
-    page: Page,
-    triggerTestId: string,
-    contentTestId: string,
-    options?: {
-        timeout?: number;
-    }
-): Promise<void> {
-    const timeout = options?.timeout ?? 10000;
-    await page.getByTestId(triggerTestId).click();
-    await expect(page.getByTestId(contentTestId)).toBeVisible({ timeout });
 }

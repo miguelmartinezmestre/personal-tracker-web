@@ -4,14 +4,14 @@ import type { Id } from '../../_generated/dataModel';
 import type { DatabaseReader, MutationCtx } from '../../_generated/server';
 import { ERROR_CODES } from '../../utils/constants';
 import type { completeSetupArgsValidator } from './validators';
-import { GLOBAL_ADMIN_ROLE } from '../../../shared/platform-roles';
+import { GLOBAL_ADMIN_ROLE } from '../auth/roles';
 import { isPersonalOrganizationForUser } from '../../domain/organizations/personalOrganization';
-import { buildOrganizationSlug } from '../../../shared/organization-slug';
+import { buildOrganizationSlug } from '../../domain/organizations/slug';
 import {
     CATEGORY_COLOR_PATTERN,
     CATEGORY_ICONS,
     CATEGORY_NAME_MAX_LENGTH,
-} from '../../../shared/input-constraints';
+} from '../../utils/inputConstraints';
 
 type CompleteSetupArgs = ObjectType<typeof completeSetupArgsValidator>;
 
@@ -93,10 +93,6 @@ export async function completePlatformSetup(
         throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
     }
 
-    // The platform admin is the first registered account. Requiring exactly one
-    // user here would permanently brick setup if a second account registered
-    // before setup completed; instead we bind setup to the earliest user, which
-    // also prevents a later registrant from hijacking the admin role.
     const firstUser = await ctx.db.query('user').order('asc').first();
 
     if (!firstUser || firstUser._id !== userId) {
@@ -161,10 +157,6 @@ export async function completePlatformSetup(
         });
     }
 
-    // The session hook creates a protected personal workspace before the setup
-    // wizard runs. Keep that workspace intact and activate the actual team
-    // organization created by setup instead of silently converting the personal
-    // organization into a team that still rejects invitations and members.
     const sessions = await ctx.db
         .query('session')
         .withIndex('userId', q => q.eq('userId', userId))

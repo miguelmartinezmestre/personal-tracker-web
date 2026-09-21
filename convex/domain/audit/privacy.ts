@@ -1,10 +1,6 @@
-import type { Id } from '../../_generated/dataModel';
-import { isJsonObject, type JsonObject, type JsonValue } from '../../../shared/boundary-values';
-/**
- * Returns the actor id only when it differs from the affected user (`userId`).
- * When the actor and the subject are the same person (e.g. a user acting on their
- * own resource), the actor is left empty (`undefined`) to avoid redundant data.
- */
+﻿import type { Id } from '../../_generated/dataModel';
+import { isJsonObject, type JsonObject, type JsonValue } from '../../utils/json';
+
 export const resolveActorUserId = (
     userId: Id<'user'>,
     actorUserId: Id<'user'> | null | undefined

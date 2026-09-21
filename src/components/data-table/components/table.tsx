@@ -41,8 +41,6 @@ export function DataTable<TData extends RowData>({
     'use no memo';
 
     const t = useTranslations('Table');
-    // TanStack Table returns non-memoizable functions; React Compiler skips this hook by design.
-    // react-doctor-disable-next-line react-hooks-js/incompatible-library -- useTable
     const table = useTable({
         features: dataTableFeatures,
         data,

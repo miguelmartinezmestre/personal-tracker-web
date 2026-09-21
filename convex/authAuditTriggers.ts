@@ -9,7 +9,7 @@ import {
     toAuditPrimitive,
 } from './domain/audit/privacy';
 import { startMemberLeaveCleanup } from './jobs/organizations/memberLeaveCleanup';
-import { isJsonObject, type JsonObject } from '../shared/boundary-values';
+import { isJsonObject, type JsonObject } from './utils/json';
 
 type BetterAuthSchema = typeof schema;
 

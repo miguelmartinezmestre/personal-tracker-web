@@ -1,8 +1,15 @@
 {
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "typescript.enablePromptUseWorkspaceTsdk": true,
-    "i18n-ally.localesPaths": [
-        "src/i18n"
-    ],
-    "npm.packageManager": "pnpm"
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, package-lock.json, yarn.lock, bun.lock, bun.lockb, .npmrc, .nvmrc, .node-version, eslint.config.*, .oxlintrc.json, oxlint.config.*, oxfmt.config.*, prettier.config.*, .prettierrc*, .prettierignore, knip.json, commitlint.config.*, lint-staged.config.*, convex.json",
+        "tsconfig.json": "tsconfig.*.json, *.tsbuildinfo",
+        "next.config.*": "postcss.config.*",
+        "vitest.config.*": "vitest.frontend.config.ts, vitest.workspace.*, playwright.config.*",
+        ".env.example": ".env, .env.*, *.env",
+        ".gitignore": ".gitattributes, .gitmodules, .gitmessage, .git-blame-ignore-revs",
+        "AGENTS.md": "CLAUDE.md, CLAUDE.local.md, GEMINI.md",
+        "*.tsx": "${capture}.test.tsx, ${capture}.spec.tsx, ${capture}.stories.tsx, ${capture}.module.css",
+        "*.ts": "${capture}.test.ts, ${capture}.spec.ts, ${capture}.d.ts"
+    }
 }

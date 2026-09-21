@@ -4,16 +4,16 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join, resolve, sep } from 'node:path';
 import process from 'node:process';
-import { redactSensitiveText } from './lib/command';
-import { buildStackEnvironment } from './lib/stack-environment';
-import { readLocalStackCredentials, writeLocalStackCredentials } from './lib/local-stack-state';
+import { overlayEnv } from './lib/command';
 import {
     bootstrapConvexCredentials,
     buildConvexCommandEnv,
     configureConvexEnv,
     createDockerComposeHelpers,
     deployConvexFunctions,
+    readLocalStackCredentials,
     waitForConvexBackend,
+    writeLocalStackCredentials,
 } from './lib/convex-stack';
 
 const COMPOSE_FILE = 'infrastructure/docker-compose.yml';
@@ -48,22 +48,19 @@ const MYSQL_ROOT_PASSWORD =
     randomBytes(24).toString('base64url');
 
 function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
-    return buildStackEnvironment({
-        mode: 'local',
-        overrides: {
-            PORT: CONVEX_PORT,
-            SITE_PROXY_PORT: CONVEX_SITE_PORT,
-            DASHBOARD_PORT,
-            MAILHOG_SMTP_PORT,
-            MAILHOG_UI_PORT,
-            CONVEX_CLOUD_ORIGIN: CONVEX_URL,
-            CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
-            NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
-            MYSQL_ROOT_PASSWORD,
-            DATABASE_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/convex_self_hosted`,
-            MYSQL_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306`,
-            ...extraEnv,
-        },
+    return overlayEnv({
+        PORT: CONVEX_PORT,
+        SITE_PROXY_PORT: CONVEX_SITE_PORT,
+        DASHBOARD_PORT,
+        MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT,
+        CONVEX_CLOUD_ORIGIN: CONVEX_URL,
+        CONVEX_SITE_ORIGIN: CONVEX_SITE_URL,
+        NEXT_PUBLIC_DEPLOYMENT_URL: CONVEX_URL,
+        MYSQL_ROOT_PASSWORD,
+        DATABASE_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/convex_self_hosted`,
+        MYSQL_URL: `mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306`,
+        ...extraEnv,
     });
 }
 
@@ -203,7 +200,7 @@ async function cleanup(): Promise<void> {
 main().catch(async error => {
     console.error('\nLocal Convex stack setup failed.');
     if (error instanceof Error) {
-        console.error(redactSensitiveText(error.message));
+        console.error(error.message);
     } else {
         console.error(error);
     }

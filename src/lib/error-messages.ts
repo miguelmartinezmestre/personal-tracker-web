@@ -1,14 +1,4 @@
-/**
- * Maps backend `ConvexError` codes (see `convex/utils/constants.ts` `ERROR_CODES`
- * and `shared/password-policy.ts`) to human-friendly, localized messages.
- *
- * The backend throws machine-readable codes such as `NOT_AUTHORIZED_OBJECTIVE`
- * on purpose; without this layer those raw codes were being shown verbatim to
- * users. This module is deliberately framework-free (a static bilingual table)
- * so it can be used from non-React contexts too (e.g. the global mutation-error
- * toast in the query client, which runs outside the React tree).
- */
-import { isRecord } from '@shared/boundary-values';
+import { isRecord } from '@/convex/utils/json';
 
 export type ErrorLocale = 'en' | 'es';
 type ErrorDictionary = {

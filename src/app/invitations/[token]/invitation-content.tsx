@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getInvitationCallbackPath } from '@shared/auth-security';
+import { getInvitationCallbackPath } from '@/convex/platform/auth/security';
 import { InvitationActivationPending } from '@/features/organizations/components/invitation-activation-pending';
 import {
     acceptInvitationAndActivateOrganization,

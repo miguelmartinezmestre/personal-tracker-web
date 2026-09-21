@@ -1,17 +1,5 @@
-'use client';
-import {
-    Bell,
-    FileText,
-    Frame,
-    Goal,
-    Home,
-    Trophy,
-    Settings,
-    Users,
-    Activity,
-    Tag,
-    Mail,
-} from 'lucide-react';
+﻿'use client';
+import { Goal, Home, Mail, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -31,7 +19,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { api } from '@/convex/_generated/api';
 import type { FunctionReturnType } from 'convex/server';
-import { isGlobalAdminRole } from '@shared/platform-roles';
 type ProjectNavItem = {
     name: string;
     url: Route;
@@ -45,39 +32,9 @@ const baseProjects: ProjectNavItem[] = [
         icon: Home,
     },
     {
-        name: 'objectives',
-        url: '/dashboard/objectives',
-        icon: Goal,
-    },
-    {
-        name: 'categories',
-        url: '/dashboard/categories',
-        icon: Tag,
-    },
-    {
-        name: 'achievements',
-        url: '/dashboard/achievements',
-        icon: Trophy,
-    },
-    {
-        name: 'notifications',
-        url: '/dashboard/notifications',
-        icon: Bell,
-    },
-    {
         name: 'invitations',
         url: '/dashboard/invitations',
         icon: Mail,
-    },
-    {
-        name: 'sessions',
-        url: '/dashboard/sessions',
-        icon: Frame,
-    },
-    {
-        name: 'settings',
-        url: '/dashboard/settings',
-        icon: Settings,
     },
     {
         name: 'organizations',
@@ -85,30 +42,10 @@ const baseProjects: ProjectNavItem[] = [
         icon: Users,
     },
 ];
-const adminProjects: ProjectNavItem[] = [
-    {
-        name: 'users',
-        url: '/dashboard/admin/users',
-        icon: Users,
-    },
-    {
-        name: 'adminSessions',
-        url: '/dashboard/admin/sessions',
-        icon: Activity,
-    },
-    {
-        name: 'adminAudit',
-        url: '/dashboard/admin/audit',
-        icon: FileText,
-    },
-];
-export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
+export function AppSidebar({ initialUser: _initialUser }: { initialUser: CurrentUser }) {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
     const { isMobile, setOpenMobile } = useSidebar();
-    const user = initialUser;
-    const isAdmin = isGlobalAdminRole(user.role);
-    const projects = isAdmin ? [...baseProjects, ...adminProjects] : baseProjects;
     useEffect(() => {
         if (isMobile) {
             setOpenMobile(false);
@@ -130,7 +67,7 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
                 <SidebarGroup className="group-data-[collapsible=icon]:hidden">
                     <nav aria-label={t('navigationLabel')}>
                         <SidebarMenu data-testid="sidebar-menu">
-                            {projects.map(item => {
+                            {baseProjects.map(item => {
                                 const isActive = pathname === item.url;
                                 return (
                                     <SidebarMenuItem key={item.name}>
@@ -138,6 +75,7 @@ export function AppSidebar({ initialUser }: { initialUser: CurrentUser }) {
                                             <Link
                                                 href={item.url}
                                                 prefetch={false}
+                                                data-testid={`sidebar-nav-${item.name}`}
                                                 className={cn(
                                                     'relative transition-all duration-200',
                                                     isActive

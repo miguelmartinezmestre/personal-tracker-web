@@ -27,11 +27,6 @@ async function assertUserIsNotPlatformSetupUser(ctx: GenericCtx, userId: Id<'use
     }
 }
 
-/**
- * Replaces Better Auth's physical user deletion with the application's bounded
- * soft-delete pipeline. Password verification stays inside Better Auth's HTTP
- * endpoint, so credentials never become Convex function arguments or logs.
- */
 export function accountDeletionPlugin(ctx: GenericCtx) {
     return {
         id: 'account-deletion',
@@ -73,7 +68,7 @@ export function accountDeletionPlugin(ctx: GenericCtx) {
                         });
                     }
 
-                    await runnableCtx.runMutation(internal.admin.cascadeUserDeletionInternal, {
+                    await runnableCtx.runMutation(internal.cascades.cascadeUserDeletionInternal, {
                         userId,
                         actorUserId: userId,
                     });

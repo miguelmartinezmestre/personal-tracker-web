@@ -1,7 +1,7 @@
 import { getSessionCookie } from 'better-auth/cookies';
 import { type NextRequest, NextResponse } from 'next/server';
-import { securityHeaders } from '@shared/security-headers';
-import { getAuthRouteRedirect } from '@shared/auth-security';
+import { securityHeaders } from '@/lib/security-headers';
+import { getAuthRouteRedirect } from '@/convex/platform/auth/security';
 
 export default function proxy(request: NextRequest) {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');

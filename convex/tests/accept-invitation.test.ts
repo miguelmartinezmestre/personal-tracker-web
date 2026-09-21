@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import { resolveOrganizationIdAfterAccept } from '../../shared/accept-invitation';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import {
@@ -7,44 +6,11 @@ import {
     createTestOrganization,
     createTestSession,
     createTestUser,
-} from './test_helpers';
-import { identityFor } from './test_identities';
+} from './test.helpers';
+import { identityFor } from './test.identities';
 import { TIME } from '../utils/constants';
 
 describe('accept invitation active organization', () => {
-    test('resolveOrganizationIdAfterAccept prefers known organization id', () => {
-        expect(
-            resolveOrganizationIdAfterAccept(
-                {
-                    member: { organizationId: 'member-org' },
-                    invitation: { organizationId: 'invitation-org' },
-                },
-                'known-org'
-            )
-        ).toBe('known-org');
-    });
-
-    test('resolveOrganizationIdAfterAccept falls back to member then invitation', () => {
-        expect(
-            resolveOrganizationIdAfterAccept({
-                member: { organizationId: 'member-org' },
-                invitation: { organizationId: 'invitation-org' },
-            })
-        ).toBe('member-org');
-
-        expect(
-            resolveOrganizationIdAfterAccept({
-                invitation: { organizationId: 'invitation-org' },
-            })
-        ).toBe('invitation-org');
-    });
-
-    test('resolveOrganizationIdAfterAccept throws when organization id is missing', () => {
-        expect(() => resolveOrganizationIdAfterAccept({})).toThrow(
-            /Missing organization id after accepting invitation/
-        );
-    });
-
     test('existing user session can activate invited organization after accept', async () => {
         const t = initConvexTest();
         const suffix = Math.random().toString(36).slice(2, 12);
@@ -82,7 +48,6 @@ describe('accept invitation active organization', () => {
         const personalMember = await personalIdentity.query(api.organizations.getActiveMember, {});
         expect(personalMember?.organizationId).toBe(personalOrgId);
 
-        // Simulate Better Auth acceptInvitation + client setActive for the invited org.
         await t.run(async ctx => {
             await ctx.db.insert('invitation', {
                 organizationId: invitedOrgId,

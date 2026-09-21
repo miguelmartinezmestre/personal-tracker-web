@@ -17,9 +17,9 @@ import {
     userInvitationValidator,
 } from './utils/apiReturnValidators';
 import { assertValidReferenceTimestamp, isInvitationActive } from './utils/queryTime';
-import { ORGANIZATION_ROLE, type OrganizationRole } from '../shared/organization-roles';
+import { ORGANIZATION_ROLE, type OrganizationRole } from './domain/organizations/roles';
 import { withInvalidCursorRetry } from './utils/pagination';
-import { getOptionalString, isJsonObject, type JsonObject } from '../shared/boundary-values';
+import { getOptionalString, isJsonObject, type JsonObject } from './utils/json';
 
 function normalizeOrganizationRole(role: string): OrganizationRole {
     if (role === ORGANIZATION_ROLE.OWNER || role === ORGANIZATION_ROLE.ADMIN) {

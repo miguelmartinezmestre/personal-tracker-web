@@ -1,65 +1,28 @@
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { delimiter, dirname, join } from 'node:path';
-import { spawn, type SpawnOptionsWithoutStdio } from 'node:child_process';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
 import process from 'node:process';
-import { processEnvironment } from './stack-environment';
-import { installedNodeTool } from './node-tool';
 
-const nativePnpm =
-    process.platform === 'win32'
-        ? (process.env.PATH ?? '')
-              .split(delimiter)
-              .map(directory => join(directory, 'pnpm.exe'))
-              .find(candidate => existsSync(candidate))
-        : undefined;
-export const PNPM_COMMAND = nativePnpm ?? 'pnpm';
-export const DOCKER_COMMAND = process.platform === 'win32' ? 'docker.exe' : 'docker';
-export const USE_SHELL_FOR_PNPM = process.platform === 'win32' && !nativePnpm;
+export const PNPM_COMMAND = 'pnpm';
+export const DOCKER_COMMAND = 'docker';
 
-export interface RunCommandOptions extends SpawnOptionsWithoutStdio {
+export interface RunCommandOptions extends SpawnOptions {
     ignoreExitCode?: boolean;
-    sensitiveValues?: readonly string[];
     logFile?: string;
 }
 
-const secretValues = new Set<string>();
-
-export function registerSensitiveValues(values: readonly (string | undefined)[]): void {
-    for (const value of values) {
-        if (value && value.length >= 4) secretValues.add(value);
+export function overlayEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {};
+    for (const [key, value] of Object.entries({ ...process.env, ...overrides })) {
+        if (value !== undefined) {
+            env[key] = value;
+        }
     }
+    return env;
 }
 
-export function redactSensitiveText(text: string, values: readonly string[] = []): string {
-    let result = text;
-    const secrets = [...secretValues, ...values]
-        .filter(Boolean)
-        .sort((a, b) => b.length - a.length);
-    for (const secret of secrets) result = result.split(secret).join('[REDACTED]');
-    return result
-        .replace(/convex-self-hosted\|[^\s'"`]+/g, '[REDACTED_ADMIN_KEY]')
-        .replace(/(mysql|postgres(?:ql)?):\/\/[^\s@]+@/gi, '$1://[REDACTED]@')
-        .replace(
-            /((?:SECRET|PASSWORD|TOKEN|ADMIN_KEY|DEPLOY_KEY)["']?\s*[=:]\s*)(?:"[^"]*"|'[^']*'|[^\s,;}]+)/gi,
-            '$1"[REDACTED]"'
-        )
-        .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, 'Bearer [REDACTED]')
-        .replace(
-            /((?:set-cookie|cookie)["']?\s*:\s*)(?:"[^"]*"|'[^']*'|[^\r\n]+)/gi,
-            '$1"[REDACTED]"'
-        );
-}
-
-export function formatCommand(command: string, args: Array<string>): string {
-    return redactSensitiveText([command, ...args].join(' '));
-}
-
-function registerEnvironmentSecrets(env: NodeJS.ProcessEnv): void {
-    registerSensitiveValues(
-        Object.entries(env)
-            .filter(([key]) => /SECRET|PASSWORD|TOKEN|KEY|JWKS/.test(key))
-            .map(([, value]) => value)
-    );
+function formatCommand(command: string, args: Array<string>): string {
+    return [command, ...args].join(' ');
 }
 
 function lineWriter(write: (text: string) => void) {
@@ -69,15 +32,29 @@ function lineWriter(write: (text: string) => void) {
             pending += String(chunk);
             const end = pending.lastIndexOf('\n');
             if (end >= 0) {
-                write(redactSensitiveText(pending.slice(0, end + 1)));
+                write(pending.slice(0, end + 1));
                 pending = pending.slice(end + 1);
             }
         },
         flush() {
-            if (pending) write(redactSensitiveText(pending));
+            if (pending) write(pending);
             pending = '';
         },
     };
+}
+
+export function spawnCommand(
+    command: string,
+    args: Array<string>,
+    options: SpawnOptions = {}
+): ChildProcess {
+    const { env, ...rest } = options;
+    return spawn(command, args, {
+        cwd: process.cwd(),
+        shell: process.platform === 'win32',
+        ...rest,
+        env: overlayEnv(env),
+    });
 }
 
 function execute(
@@ -87,25 +64,7 @@ function execute(
     input: string | undefined,
     capture: boolean
 ): Promise<string> {
-    const { ignoreExitCode = false, sensitiveValues = [], logFile, ...spawnOptions } = options;
-    let env = { ...(spawnOptions.env ?? processEnvironment()) };
-    const installed = command === PNPM_COMMAND ? installedNodeTool(args) : null;
-    if (installed) {
-        const pathKey = Object.keys(env).find(key => key.toLowerCase() === 'path');
-        const previousPath = pathKey ? env[pathKey] : undefined;
-        if (pathKey && pathKey !== 'PATH') {
-            env = Object.fromEntries(Object.entries(env).filter(([key]) => key !== pathKey));
-        }
-        env.PATH = [join(process.cwd(), 'node_modules', '.bin'), previousPath ?? ''].join(
-            delimiter
-        );
-    }
-    registerEnvironmentSecrets(env);
-    registerSensitiveValues(sensitiveValues);
-    const inputName = args.at(-1) ?? '';
-    if (input && /SECRET|PASSWORD|TOKEN|KEY|JWKS/.test(inputName)) {
-        registerSensitiveValues([input.trim()]);
-    }
+    const { ignoreExitCode = false, logFile, ...spawnOptions } = options;
     if (logFile) {
         mkdirSync(dirname(logFile), { recursive: true });
         writeFileSync(logFile, '');
@@ -120,30 +79,26 @@ function execute(
     };
 
     return new Promise((resolve, reject) => {
-        const child = spawn(installed?.command ?? command, installed?.args ?? args, {
-            cwd: process.cwd(),
-            shell: false,
+        const child = spawnCommand(command, args, {
             ...spawnOptions,
-            ...(installed ? { shell: false } : {}),
-            env,
             stdio: ['pipe', 'pipe', 'pipe'],
         });
         let output = '';
         const stdout = lineWriter(text => record(text, process.stdout));
         const stderr = lineWriter(text => record(text, process.stderr));
-        child.stdout.on('data', (chunk: Buffer) => {
+        child.stdout?.on('data', (chunk: Buffer) => {
             output += String(chunk);
             stdout.append(chunk);
         });
-        child.stderr.on('data', (chunk: Buffer) => {
+        child.stderr?.on('data', (chunk: Buffer) => {
             output += String(chunk);
             stderr.append(chunk);
         });
-        child.stdin.on('error', () => {
+        child.stdin?.on('error', () => {
             /* Exit status reports a closed input pipe. */
         });
-        child.stdin.end(input);
-        child.on('error', error => reject(new Error(redactSensitiveText(error.message))));
+        child.stdin?.end(input);
+        child.on('error', error => reject(error));
         child.on('close', (code, signal) => {
             stdout.flush();
             stderr.flush();
@@ -152,9 +107,7 @@ function execute(
             } else {
                 reject(
                     new Error(
-                        redactSensitiveText(
-                            `Command failed (${formatCommand(command, args)}), exit=${code ?? 'unknown'}, signal=${signal ?? 'none'}\n${output}`
-                        )
+                        `Command failed (${formatCommand(command, args)}), exit=${code ?? 'unknown'}, signal=${signal ?? 'none'}\n${output}`
                     )
                 );
             }

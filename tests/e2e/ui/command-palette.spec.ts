@@ -34,11 +34,13 @@ test.describe('Command Palette', () => {
         async ({ isolatedAuthenticatedPage }) => {
             await openCommandPalette(isolatedAuthenticatedPage);
 
-            const objectivesItem = isolatedAuthenticatedPage.getByTestId('command-item-objectives');
-            await expect(objectivesItem).toBeVisible();
-            await objectivesItem.click();
+            const organizationsItem = isolatedAuthenticatedPage.getByTestId(
+                'command-item-organizations'
+            );
+            await expect(organizationsItem).toBeVisible();
+            await organizationsItem.click();
 
-            await isolatedAuthenticatedPage.waitForURL(/\/dashboard\/objectives/, {
+            await isolatedAuthenticatedPage.waitForURL(/\/dashboard\/organizations/, {
                 timeout: 10000,
             });
         }

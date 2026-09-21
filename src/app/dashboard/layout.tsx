@@ -6,11 +6,9 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { CommandMenu } from '@/features/dashboard';
 import { LanguageSwitcher } from '@/features/landing';
 import { OrganizationSwitcher } from '@/features/organizations';
-import { NotificationBell } from '@/features/notifications';
 import { SignOutButton } from '@/features/auth';
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
-import { NotificationSonnerListener } from '@/features/notifications';
 import { getTranslations } from 'next-intl/server';
 import { SkipToContent } from '@/components/skip-to-content';
 export const dynamic = 'force-dynamic';
@@ -45,14 +43,12 @@ export default async function Layout({ children }: { children: React.ReactNode }
                             key={activeOrganizationId ?? 'no-active-organization'}
                             initialActiveOrganizationId={activeOrganizationId}
                         />
-                        <NotificationBell />
                         <ThemeToggle testId="dashboard-theme-toggle" />
                         <LanguageSwitcher />
                         <SignOutButton />
                     </div>
                 </header>
                 <CommandMenu />
-                <NotificationSonnerListener organizationId={activeOrganizationId} />
                 <main
                     id="dashboard-main"
                     tabIndex={-1}

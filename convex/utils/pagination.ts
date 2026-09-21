@@ -16,10 +16,6 @@ function boundedPositiveInteger(value: number | undefined, fallback: number, max
     return Math.min(value, maximum);
 }
 
-/**
- * `paginationOptsValidator` validates shape, not cost. Apply server-owned read
- * ceilings so a caller cannot request an oversized initial/reactive page.
- */
 export function withPaginationLimits(paginationOpts: PaginationOptions): PaginationOptions {
     return {
         ...paginationOpts,
@@ -46,9 +42,6 @@ export async function withInvalidCursorRetry<T>(
         try {
             JSON.parse(paginationOpts.cursor);
         } catch {
-            // Convex allows only one .paginate() call per function execution,
-            // including failed calls. Reject obviously malformed cursors before
-            // touching the database so the same execution can safely start over.
             normalizedOptions = { ...normalizedOptions, cursor: null };
         }
     }

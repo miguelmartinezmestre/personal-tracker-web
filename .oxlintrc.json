@@ -242,7 +242,7 @@
             }
         },
         {
-            "files": ["src/**/*.{ts,tsx}", "shared/**/*.ts", "convex/**/*.ts"],
+            "files": ["src/**/*.{ts,tsx}", "convex/**/*.ts"],
             "excludeFiles": [
                 "convex/tests/**/*.ts",
                 "convex/_generated/**",

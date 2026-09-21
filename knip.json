@@ -3,16 +3,15 @@
     "entry": [
         "src/app/**/*.{ts,tsx}",
         "convex/**/*.ts",
-        "scripts/*.{ts,mjs,js}",
+        "scripts/*.ts",
         "tests/**/*.{spec,test}.ts",
         "tests/setup/auth.stack.setup.ts"
     ],
     "project": [
         "src/**/*.{ts,tsx,css}",
         "convex/**/*.ts",
-        "scripts/**/*.{ts,mjs,js}",
-        "tests/**/*.ts",
-        "shared/**/*.ts"
+        "scripts/**/*.ts",
+        "tests/**/*.ts"
     ],
     "playwright": {
         "config": ["playwright.config.ts", "tests/manual/playwright.manual.config.ts"]

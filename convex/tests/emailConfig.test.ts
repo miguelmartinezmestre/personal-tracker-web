@@ -6,7 +6,7 @@ import {
 } from '../platform/email/config';
 import { sendWithConfiguredProvider } from '../jobs/email/transactional';
 import type { MutationCtx } from '../_generated/server';
-import { asInvalidArg } from './testCasts';
+import { asInvalidArg } from './test.casts';
 
 describe('email provider configuration', () => {
     afterEach(() => {

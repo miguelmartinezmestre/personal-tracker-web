@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useTranslations } from 'next-intl';
 import type { AdminAccount } from '../schemas/setup-schema';
 import { createAdminAccountSchema } from '../schemas/setup-schema';
-import { MAX_SETUP_SECRET_LENGTH, MIN_SETUP_SECRET_LENGTH } from '@shared/auth-security';
+import { MAX_SETUP_SECRET_LENGTH, MIN_SETUP_SECRET_LENGTH } from '@/convex/platform/auth/security';
 
 interface StepAdminAccountProps {
     data: AdminAccount;

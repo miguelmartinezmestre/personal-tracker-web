@@ -15,15 +15,14 @@ Use `pnpm` with Node `>=24.19.0`.
 
 - `pnpm build` / `pnpm start`: build and serve production output.
 - `pnpm lint`: run ESLint across the repo.
-- `pnpm check-types`: run app, Convex, scripts, Playwright, and frontend-test TypeScript checks.
-- `pnpm test`: run the backend and frontend Vitest suites.
-- `pnpm test:coverage`: generate text, HTML, and LCOV coverage reports.
+- `pnpm check-types`: `check-types:frontend-tests`, `check-types:app`, `check-types:tests`,
+  `check-types:playwright`, and `check-types:scripts`.
+- `pnpm test`: `test:backend` then `test:frontend`.
+- `pnpm test:coverage`: both Vitest suites with coverage.
 - `pnpm test:e2e`: run Playwright against the local Docker e2e stack through
   `scripts/run-e2e-stack.ts`.
-- `pnpm test:e2e:tfg`: run the manual TFG walkthrough with
-  `tests/manual/playwright.manual.config.ts`.
 - `pnpm format`: format supported files with Prettier.
-- `pnpm ci`: run static checks, both suites once with coverage, the build, and E2E tests.
+- `pnpm ci`: `checks:static`, `test:coverage`, `build`, and `test:e2e`.
 
 ## Coding Style & Naming Conventions
 

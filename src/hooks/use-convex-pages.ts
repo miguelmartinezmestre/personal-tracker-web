@@ -6,11 +6,6 @@ import type { convexQuery } from '@convex-dev/react-query';
 
 type Page<T> = { page: T[]; isDone: boolean; continueCursor: string; needsContinuation?: boolean };
 
-/**
- * Accumulates several live Convex pages for "load more" views. Use this when the UI
- * keeps previously loaded rows, such as organization/member pickers. Data-table views
- * with explicit previous/next controls should use `useServerPagination` instead.
- */
 export function useConvexPages<T>(
     scope: string,
     options: (cursor: string | null) => ReturnType<typeof convexQuery>,

@@ -26,7 +26,7 @@ import { useSignOutMutationOptions } from '@/features/auth/client';
 import { useMutation } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { getSafeCallbackPath } from '@shared/auth-security';
+import { getSafeCallbackPath } from '@/convex/platform/auth/security';
 import { useHydrated } from '@/hooks/use-hydrated';
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;

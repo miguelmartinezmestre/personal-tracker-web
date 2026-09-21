@@ -6,11 +6,11 @@ import {
     createTestOrganization,
     createTestMember,
     createTestSession,
-} from './test_helpers';
+} from './test.helpers';
 import type { TestConvexForDataModel } from 'convex-test';
 import type { DataModel, Id } from '../_generated/dataModel';
-import { getOptionalString, isJsonObject, type JsonValue } from '../../shared/boundary-values';
-import { asInvalidArg } from './testCasts';
+import { getOptionalString, isJsonObject, type JsonValue } from '../utils/json';
+import { asInvalidArg } from './test.casts';
 
 describe('convex auth', () => {
     const t = initConvexTest();
@@ -110,12 +110,12 @@ describe('convex auth', () => {
             },
         });
 
-        const adminLogs = await userIdentity.query(api.auditLogs.getAuditLogs, {
-            paginationOpts: { numItems: 50, cursor: null },
+        const adminLogs = await t.run(async ctx => {
+            return await ctx.db.query('auditLogs').withIndex('by_createdAt').order('desc').take(50);
         });
 
         expect(
-            adminLogs.page.some(
+            adminLogs.some(
                 log =>
                     log.action === 'session.created' &&
                     log.resourceType === 'session' &&
@@ -124,7 +124,7 @@ describe('convex auth', () => {
         ).toBe(true);
 
         expect(
-            adminLogs.page.some(
+            adminLogs.some(
                 log =>
                     log.action === 'session.deleted' &&
                     log.resourceType === 'session' &&
@@ -132,7 +132,7 @@ describe('convex auth', () => {
             )
         ).toBe(true);
 
-        const sessionLogs = adminLogs.page.filter(log => log.resourceId === sessionId);
+        const sessionLogs = adminLogs.filter(log => log.resourceId === sessionId);
         for (const log of sessionLogs) {
             expect(log.metadata?.before ?? {}).not.toHaveProperty('token');
             expect(log.metadata?.after ?? {}).not.toHaveProperty('token');

@@ -20,12 +20,7 @@ test.describe('User Registration', () => {
     test(
         'successful registration with email/password',
         {
-            tag: [
-                '@REQ-AUTENTICACION-001',
-                '@REQ-NF-005',
-                '@cross-browser-critical',
-                '@mobile-critical',
-            ],
+            tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-005'],
         },
         async ({ page }) => {
             await page.goto('/register');
@@ -40,12 +35,7 @@ test.describe('User Registration', () => {
     test(
         'invalid registration input stays on the form',
         {
-            tag: [
-                '@REQ-AUTENTICACION-001',
-                '@REQ-NF-005',
-                '@cross-browser-critical',
-                '@mobile-critical',
-            ],
+            tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-005'],
         },
         async ({ page }) => {
             const user = UserFactory.create();
@@ -117,12 +107,7 @@ test.describe('User Registration', () => {
     test(
         'duplicate email shows error',
         {
-            tag: [
-                '@REQ-AUTENTICACION-001',
-                '@REQ-NF-005',
-                '@cross-browser-critical',
-                '@mobile-critical',
-            ],
+            tag: ['@REQ-AUTENTICACION-001', '@REQ-NF-005'],
         },
         async ({ page }) => {
             await page.goto('/register');

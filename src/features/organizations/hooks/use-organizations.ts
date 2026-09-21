@@ -7,7 +7,7 @@ import { authClient } from '@/features/auth/client';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
 import { convexQuery } from '@convex-dev/react-query';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { buildOrganizationSlug } from '@shared/organization-slug';
+import { buildOrganizationSlug } from '@/convex/domain/organizations/slug';
 import type { FunctionReturnType } from 'convex/server';
 
 type UpdateOrganization = CreateOrganization & { id: string };

@@ -1,6 +1,0 @@
-{
-  "schema": "https://cyclonedx.org/schema/bom-1.6.schema.json",
-  "schemaValid": true,
-  "referencesValid": true,
-  "components": 797
-}

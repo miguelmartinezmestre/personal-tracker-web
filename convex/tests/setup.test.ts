@@ -6,9 +6,9 @@ import {
     createTestOrganization,
     createTestMember,
     ensureTestUserAuth,
-} from './test_helpers';
-import { asInvalidArg } from './testCasts';
-import { buildOrganizationSlug } from '../../shared/organization-slug';
+} from './test.helpers';
+import { asInvalidArg } from './test.casts';
+import { buildOrganizationSlug } from '../domain/organizations/slug';
 
 describe('convex setup', () => {
     describe('isPlatformSetUp', () => {
@@ -219,12 +219,9 @@ describe('convex setup', () => {
                 categories: [],
             };
 
-            // A later registrant cannot hijack the platform admin role.
             const asUser2 = t.withIdentity(buildIdentity(user2));
             await expect(asUser2.mutation(api.setup.completeSetup, setupArgs)).rejects.toThrow();
 
-            // The first user can still complete setup despite the extra account
-            // (previously this deadlocked with a "more than one user" error).
             const asUser1 = t.withIdentity(buildIdentity(user1));
             const result = await asUser1.mutation(api.setup.completeSetup, setupArgs);
             expect(typeof result.organizationId).toBe('string');
@@ -338,12 +335,6 @@ describe('convex setup', () => {
             expect(settings?.defaultLanguage).toBe('es');
             expect(settings?.registrationPolicy).toBe('invitation-only');
             expect(settings?.setupCompletedBy).toBe(user.docId);
-
-            const achievementProgress = await userIdentity.query(
-                api.achievements.getUserAchievementProgress,
-                {}
-            );
-            expect(achievementProgress.length).toBeGreaterThan(0);
         });
 
         test('creates a team organization without converting the protected personal one', async () => {

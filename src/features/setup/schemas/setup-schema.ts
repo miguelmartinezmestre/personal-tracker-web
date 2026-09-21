@@ -4,9 +4,8 @@ import {
     isSetupSecretLengthValid,
     MAX_SETUP_SECRET_LENGTH,
     MIN_SETUP_SECRET_LENGTH,
-} from '@shared/auth-security';
-
-const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+} from '@/convex/platform/auth/security';
+import { STRONG_PASSWORD_REGEX } from '@/convex/platform/auth/passwordPolicy';
 
 export const platformConfigSchema = z.object({
     platformName: z.string().min(1).max(100),

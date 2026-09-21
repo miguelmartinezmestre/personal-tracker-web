@@ -1,25 +1,25 @@
 #!/usr/bin/env node
-import { spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import process from 'node:process';
-import { PNPM_COMMAND, USE_SHELL_FOR_PNPM, runCommand, redactSensitiveText } from './lib/command';
-import { buildStackEnvironment, assertLoopbackUrl } from './lib/stack-environment';
-import { installedNodeTool } from './lib/node-tool';
-import { isJsonObject, parseJsonValue } from '../shared/boundary-values';
+import { PNPM_COMMAND, overlayEnv, runCommand, spawnCommand } from './lib/command';
+import { isJsonObject, parseJsonValue } from '../convex/utils/json';
 import {
     bootstrapConvexCredentials,
     buildConvexCommandEnv,
+    buildUrl,
     configureConvexEnv,
     createDockerComposeHelpers,
     deployConvexFunctions,
+    fetchWithTimeout,
     HTTP_REQUEST_TIMEOUT_MS,
     POLL_INTERVAL_MS,
+    sleep,
     waitForConvexBackend,
 } from './lib/convex-stack';
-import { buildUrl, fetchWithTimeout, sleep } from './lib/http';
 const E2E_BUILD_META_FILE = 'build-meta.json';
 const BUILD_FINGERPRINT_INPUTS = [
     'package.json',
@@ -29,7 +29,7 @@ const BUILD_FINGERPRINT_INPUTS = [
     'tsconfig.json',
     'tsconfig.playwright.json',
 ];
-const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex', 'shared'];
+const BUILD_FINGERPRINT_DIRECTORIES = ['src', 'convex'];
 const BUILD_FINGERPRINT_FILE_PREFIXES = ['tsconfig'];
 const BUILD_FINGERPRINT_ENV_KEYS = [
     'BASE_URL',
@@ -87,8 +87,6 @@ const E2E_NEXT_DIST_DIR =
     process.env.E2E_NEXT_DIST_DIR ??
     (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
 const E2E_FRONTEND_MODE = process.env.E2E_FRONTEND_MODE ?? 'production';
-// Prefer E2E-specific overrides so ambient NEXT_PUBLIC_* / cloud URLs from the
-// developer shell or .env.local cannot point the isolated stack at the wrong host.
 const CONVEX_URL = process.env.E2E_CONVEX_URL ?? `http://127.0.0.1:${E2E_CONVEX_PORT}`;
 const CONVEX_SITE_URL =
     process.env.E2E_CONVEX_SITE_URL ?? `http://127.0.0.1:${E2E_CONVEX_SITE_PORT}`;
@@ -104,7 +102,7 @@ interface E2EBuildMeta {
     fingerprint: string;
 }
 function pushFrontendLogChunk(source: 'stdout' | 'stderr', chunk: string): void {
-    const lines = redactSensitiveText(chunk).replace(/\r\n/g, '\n').split('\n');
+    const lines = chunk.replace(/\r\n/g, '\n').split('\n');
     for (const rawLine of lines) {
         const line = rawLine.trim();
         if (!line) {
@@ -149,15 +147,12 @@ async function findAvailableFrontendPort(preferredPort: string): Promise<string>
     );
 }
 function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
-    return buildStackEnvironment({
-        mode: 'e2e',
-        overrides: {
-            PORT: E2E_CONVEX_PORT,
-            SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
-            MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
-            MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
-            ...extraEnv,
-        },
+    return overlayEnv({
+        PORT: E2E_CONVEX_PORT,
+        SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
+        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
+        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
+        ...extraEnv,
     });
 }
 const { dockerCompose, dockerComposeCapture } = createDockerComposeHelpers({
@@ -373,21 +368,14 @@ async function cleanup(): Promise<void> {
         mkdirSync('reports/e2e', { recursive: true });
         writeFileSync(
             `reports/e2e/frontend-${BROWSER_PROJECT ?? 'all'}.log`,
-            redactSensitiveText(frontendLogTail.join('\n'))
+            frontendLogTail.join('\n')
         );
         const backendLog = await dockerComposeCapture(['logs', '--no-color', '--tail', '1000'], {
             ignoreExitCode: true,
         });
-        writeFileSync(
-            `reports/e2e/backend-${BROWSER_PROJECT ?? 'all'}.log`,
-            redactSensitiveText(backendLog)
-        );
+        writeFileSync(`reports/e2e/backend-${BROWSER_PROJECT ?? 'all'}.log`, backendLog);
     } catch (error) {
-        console.error(
-            redactSensitiveText(
-                error instanceof Error ? error.message : 'Could not capture E2E logs'
-            )
-        );
+        console.error(error instanceof Error ? error.message : 'Could not capture E2E logs');
         process.exitCode = 1;
     }
     await stopFrontend().catch(error => {
@@ -414,9 +402,6 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     });
 }
 async function main(): Promise<void> {
-    buildStackEnvironment({ mode: 'e2e' });
-    assertLoopbackUrl(CONVEX_URL, 'E2E_CONVEX_URL');
-    assertLoopbackUrl(CONVEX_SITE_URL, 'E2E_CONVEX_SITE_URL');
     const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
     console.log(`Resetting previous isolated Convex stack${browserLabel}...`);
     await dockerCompose(['down', '-v', '--remove-orphans'], { ignoreExitCode: true });
@@ -440,7 +425,6 @@ async function main(): Promise<void> {
     const baseUrl = `http://127.0.0.1:${frontendPort}`;
     const siteUrl = baseUrl;
     const nextDistDir = E2E_NEXT_DIST_DIR;
-    const baseEnv = buildStackEnvironment({ mode: 'e2e' });
     const e2eSetupSecret = randomBytes(32).toString('base64url');
     const setupSecret = randomBytes(32).toString('base64url');
     const commandEnv = buildConvexCommandEnv({
@@ -457,7 +441,7 @@ async function main(): Promise<void> {
             BASE_URL: baseUrl,
             E2E_MAILHOG_UI_PORT,
             NEXT_DIST_DIR: nextDistDir,
-            PLAYWRIGHT_HTML_OPEN: baseEnv.PLAYWRIGHT_HTML_OPEN ?? 'never',
+            PLAYWRIGHT_HTML_OPEN: process.env.PLAYWRIGHT_HTML_OPEN ?? 'never',
         },
     });
     console.log('Configuring Convex env vars for e2e...');
@@ -480,7 +464,6 @@ async function main(): Promise<void> {
             await runCommand(PNPM_COMMAND, ['exec', 'next', 'build'], {
                 logFile: `reports/e2e/build-${BROWSER_PROJECT ?? 'all'}.log`,
                 env: commandEnv,
-                shell: USE_SHELL_FOR_PNPM,
             });
             writeBuildMeta(nextDistDir, buildFingerprint);
         }
@@ -493,14 +476,8 @@ async function main(): Promise<void> {
         E2E_FRONTEND_MODE === 'production'
             ? ['exec', 'next', 'start', '--port', frontendPort]
             : ['exec', 'next', 'dev', '--port', frontendPort];
-    const frontendCommand = installedNodeTool(frontendArgs);
-    if (!frontendCommand) {
-        throw new Error('The frontend must use the installed Next.js executable');
-    }
-    frontendProcess = spawn(frontendCommand.command, frontendCommand.args, {
-        cwd: process.cwd(),
+    frontendProcess = spawnCommand(PNPM_COMMAND, frontendArgs, {
         env: commandEnv,
-        shell: false,
         stdio: SHOW_NEXT_LOGS ? 'inherit' : ['ignore', 'pipe', 'pipe'],
     });
     if (!SHOW_NEXT_LOGS) {
@@ -525,7 +502,6 @@ async function main(): Promise<void> {
         await runCommand(PNPM_COMMAND, ['exec', 'playwright', 'test', ...forwardedPlaywrightArgs], {
             logFile: `reports/e2e/playwright-${BROWSER_PROJECT ?? 'all'}.log`,
             env: commandEnv,
-            shell: USE_SHELL_FOR_PNPM,
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -541,7 +517,7 @@ main()
         const browserLabel = BROWSER_PROJECT ? ` [${BROWSER_PROJECT}]` : '';
         console.error(`\nE2E stack execution failed${browserLabel}.`);
         if (error instanceof Error) {
-            console.error(redactSensitiveText(error.message));
+            console.error(error.message);
         } else {
             console.error(error);
         }

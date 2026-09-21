@@ -1,6 +1,5 @@
 import { authClient } from '@/features/auth/client';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { resolveOrganizationIdAfterAccept } from '@shared/accept-invitation';
 
 type AcceptInvitationAndActivateParams = {
     invitationId: string;
@@ -12,6 +11,28 @@ type InvitationAcceptance = {
     organizationId: string;
 };
 
+type AcceptInvitationPayload = {
+    invitation?: { organizationId?: string | null } | null;
+    member?: { organizationId?: string | null } | null;
+};
+
+export function resolveOrganizationIdAfterAccept(
+    payload: AcceptInvitationPayload | null | undefined,
+    knownOrganizationId?: string | null
+): string {
+    const organizationId =
+        knownOrganizationId ??
+        payload?.member?.organizationId ??
+        payload?.invitation?.organizationId ??
+        null;
+
+    if (!organizationId) {
+        throw new Error('Missing organization id after accepting invitation');
+    }
+
+    return organizationId;
+}
+
 export async function activateAcceptedOrganization(organizationId: string): Promise<void> {
     const result = await authClient.organization.setActive({ organizationId });
     throwIfAuthClientError(result);
@@ -19,9 +40,6 @@ export async function activateAcceptedOrganization(organizationId: string): Prom
     throwIfAuthClientError(session);
 }
 
-/**
- * Accept once. Activation and JWT refresh can then be retried independently.
- */
 export async function acceptInvitationAndActivateOrganization(
     params: AcceptInvitationAndActivateParams
 ): Promise<InvitationAcceptance> {

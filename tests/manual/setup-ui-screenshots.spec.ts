@@ -1,21 +1,7 @@
-/**
- * Captures /setup wizard steps and refreshes key UI screenshots for the thesis
- * (metricas-memoria/figures). Run via the isolated E2E stack:
- *
- *   pnpm exec tsx scripts/run-e2e-stack.ts \
- *     --config=tests/manual/playwright.manual.config.ts \
- *     tests/manual/setup-ui-screenshots.spec.ts
- *
- * Optional: MEMORIA_FIGURES_DIR=../metricas-memoria/figures
- */
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-    generateTestUserData,
-    hasOrganizationSelectedInUI,
-    openCreateObjectiveModal,
-} from '../helpers/test-helpers';
+import { generateTestUserData, hasOrganizationSelectedInUI } from '../helpers/test-helpers';
 
 const FIGURES_DIR = process.env.MEMORIA_FIGURES_DIR
     ? path.resolve(process.env.MEMORIA_FIGURES_DIR)
@@ -196,49 +182,6 @@ test.describe('Memoria setup + UI screenshots', () => {
             console.log('Wrote figure: navegacion-sidebar.png');
         }
 
-        await page.goto('/dashboard/objectives');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(800);
-        await captureFigure(page, 'objetivos-lista.png');
-
-        await openCreateObjectiveModal(page);
-        await page.waitForTimeout(500);
-        await page.getByTestId('objective-title-input').fill('Learn TypeScript');
-        await page
-            .getByTestId('objective-description-input')
-            .fill('Complete the TypeScript fundamentals course');
-        await page.getByTestId('objective-target-input').fill('100');
-        await page.getByTestId('objective-unit-input').fill('hours');
-        await captureFigure(page, 'objetivos-crear-formulario.png');
-        await page.getByTestId('objective-save-button').click();
-        await page.waitForTimeout(1200);
-        await captureFigure(page, 'objetivos-creado.png');
-        await captureFigure(page, 'objetivos-lista.png');
-
-        const filterToggle = page
-            .getByTestId('objectives-filter-toggle')
-            .or(page.getByRole('button', { name: /filter|filtr/i }));
-        if (await isVisibleNow(filterToggle.first())) {
-            await filterToggle.first().click();
-            await page.waitForTimeout(400);
-            await captureFigure(page, 'objetivos-filtros.png');
-        }
-
-        const firstObjectiveLink = page
-            .getByTestId('table-row')
-            .filter({ hasText: 'Learn TypeScript' })
-            .getByTestId('objective-progress-link')
-            .first();
-        await firstObjectiveLink.click();
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(800);
-        await captureFigure(page, 'progreso-detalle.png');
-
-        await page.getByTestId('progress-create-open').click();
-        await page.waitForTimeout(500);
-        await captureFigure(page, 'progreso-formulario.png');
-        await page.keyboard.press('Escape');
-
         await page.goto('/dashboard/organizations');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(800);
@@ -252,35 +195,10 @@ test.describe('Memoria setup + UI screenshots', () => {
             await captureFigure(page, 'organizaciones-miembros.png');
         }
 
-        await page.goto('/dashboard/notifications');
+        await page.goto('/dashboard/invitations');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(600);
-        await captureFigure(page, 'notificaciones-lista.png');
-
-        await page.goto('/dashboard/sessions');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(600);
-        await captureFigure(page, 'sesiones-lista.png');
-
-        await page.goto('/dashboard/achievements');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(800);
-        await captureFigure(page, 'logros-overview.png');
-
-        await page.goto('/dashboard/admin/users');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(800);
-        await captureFigure(page, 'admin-panel-usuarios.png');
-
-        await page.goto('/dashboard/admin/sessions');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(500);
-        await captureFigure(page, 'admin-panel-sesiones.png');
-
-        await page.goto('/dashboard/admin/audit');
-        await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(500);
-        await captureFigure(page, 'admin-panel-auditoria.png');
+        await captureFigure(page, 'invitaciones-lista.png');
 
         // Mobile views
         await page.setViewportSize({ width: 390, height: 844 });
@@ -293,10 +211,10 @@ test.describe('Memoria setup + UI screenshots', () => {
         await page.waitForTimeout(600);
         await captureFigure(page, 'captura_pantalla_inicial_mobile.png');
 
-        await page.goto('/dashboard/objectives');
+        await page.goto('/dashboard/organizations');
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(600);
-        await captureFigure(page, 'objetivos-mobile.png');
+        await captureFigure(page, 'organizaciones-mobile.png');
 
         console.log(`Setup + UI figures written to ${FIGURES_DIR}`);
     });

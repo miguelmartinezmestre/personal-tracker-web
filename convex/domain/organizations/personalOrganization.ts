@@ -1,4 +1,4 @@
-import { getOptionalString, isJsonObject, type JsonObject } from '../../../shared/boundary-values';
+import { getOptionalString, isJsonObject, type JsonObject } from '../../utils/json';
 
 export const DEFAULT_ORGANIZATION_NAME = 'Personal Organization';
 export const DEFAULT_ORGANIZATION_SLUG_BASE = 'personal-organization';

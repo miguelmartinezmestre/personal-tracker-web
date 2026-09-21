@@ -5,7 +5,7 @@ import { adminClient } from 'better-auth/client/plugins';
 import { organizationClient } from 'better-auth/client/plugins';
 import { createAuthMutations } from 'kitcn/react';
 import { env } from '@/lib/env';
-import { platformRoles } from '@shared/platform-admin-access';
+import { platformRoles } from '@/convex/platform/auth/accessControl';
 
 const accountDeletionClient = () =>
     ({

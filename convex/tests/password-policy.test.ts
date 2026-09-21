@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { validatePasswordPolicy } from '../../shared/password-policy';
+import { validatePasswordPolicy } from '../platform/auth/passwordPolicy';
 
 describe('password policy', () => {
     test('rejects missing, short, and weak passwords', () => {

@@ -18,19 +18,6 @@ interface UserData {
     password: string;
 }
 
-export const CategoryFactory = {
-    create(): CategoryData {
-        const shortId = randomUUID().substring(0, 8);
-        return {
-            name: `Category ${shortId}`,
-        };
-    },
-};
-
-interface CategoryData {
-    name: string;
-}
-
 export const OrganizationFactory = {
     create(): OrganizationData {
         const shortId = randomUUID().substring(0, 8);

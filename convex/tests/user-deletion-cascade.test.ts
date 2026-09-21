@@ -1,12 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
-import {
-    createTestMember,
-    createTestObjective,
-    createTestOrganization,
-    createTestUser,
-} from './test_helpers';
+import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
 
 describe('user deletion cascade', () => {
     const t = initConvexTest();
@@ -18,7 +13,7 @@ describe('user deletion cascade', () => {
         vi.useRealTimers();
     });
 
-    test('reassigns shared objectives, removes orphaned data and preserves a tombstone', async () => {
+    test('removes memberships, deletes personal orgs and preserves a tombstone', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const owner = await createTestUser(t, {
             userId: `deleted-owner-${suffix}`,
@@ -56,41 +51,30 @@ describe('user deletion cascade', () => {
             role: 'owner',
         });
 
-        const sharedObjectiveId = await createTestObjective(t, {
-            userId: owner.docId,
-            organizationId: sharedOrganizationId,
-            title: 'Shared objective',
-            targetValue: 100,
-            visibility: 'organization',
-        });
-        const orphanObjectiveId = await createTestObjective(t, {
-            userId: owner.docId,
-            organizationId: personalOrganizationId,
-            title: 'Orphan objective',
-            targetValue: 100,
-            visibility: 'private',
-        });
-        await t.run(ctx =>
-            ctx.db.insert('objectiveCollaborators', {
-                objectiveId: sharedObjectiveId,
-                userId: editor.docId,
-                organizationId: sharedOrganizationId,
-                role: 'editor',
-                addedBy: owner.docId,
-                createdAt: Date.now(),
-            })
-        );
-
-        await t.mutation(internal.admin.cascadeUserDeletionInternal, { userId: owner.docId });
+        await t.mutation(internal.cascades.cascadeUserDeletionInternal, { userId: owner.docId });
         await t.finishAllScheduledFunctions(() => vi.runAllTimers());
 
         const result = await t.run(async ctx => ({
-            sharedObjective: await ctx.db.get('objectives', sharedObjectiveId),
-            orphanObjective: await ctx.db.get('objectives', orphanObjectiveId),
+            personalOrganization: await ctx.db.get('organization', personalOrganizationId),
+            sharedOrganization: await ctx.db.get('organization', sharedOrganizationId),
+            ownerMembership: await ctx.db
+                .query('member')
+                .withIndex('by_organizationId_and_userId', q =>
+                    q.eq('organizationId', sharedOrganizationId).eq('userId', owner.docId)
+                )
+                .first(),
+            successorMembership: await ctx.db
+                .query('member')
+                .withIndex('by_organizationId_and_userId', q =>
+                    q.eq('organizationId', sharedOrganizationId).eq('userId', editor.docId)
+                )
+                .first(),
             tombstone: await ctx.db.get('user', owner.docId),
         }));
-        expect(result.sharedObjective?.ownerId).toBe(editor.docId);
-        expect(result.orphanObjective).toBeNull();
+        expect(result.personalOrganization).toBeNull();
+        expect(result.sharedOrganization).not.toBeNull();
+        expect(result.ownerMembership).toBeNull();
+        expect(result.successorMembership?.role).toBe('owner');
         expect(result.tombstone?.deletedAt).toBeDefined();
         expect(result.tombstone?.email).toContain('@deleted.invalid');
     });

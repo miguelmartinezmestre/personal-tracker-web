@@ -48,24 +48,3 @@ export async function expectWelcomeMessage(page: Page, username: string): Promis
     const welcomeMessage = page.getByTestId('welcome-message');
     await expect(welcomeMessage).toContainText(username);
 }
-
-export async function expectAdminMenuVisible(page: Page): Promise<void> {
-    const adminNavLink = page.getByRole('navigation').getByRole('link', { name: /admin/i });
-    const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]').first();
-
-    try {
-        await expect(adminNavLink).toBeVisible({ timeout: 15000 });
-    } catch {
-        await expect(adminMenuItem).toBeVisible({ timeout: 15000 });
-    }
-}
-
-export async function expectAdminMenuHidden(page: Page): Promise<void> {
-    const adminNavLink = page.getByRole('navigation').getByRole('link', { name: /admin/i });
-    const adminMenuItem = page.locator('a[href*="admin"], [data-testid*="admin"]');
-
-    const navCount = await adminNavLink.count();
-    const itemCount = await adminMenuItem.count();
-
-    expect(navCount + itemCount).toBe(0);
-}

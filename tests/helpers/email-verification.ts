@@ -4,7 +4,7 @@ import {
     isJsonObject,
     parseJsonValue,
     type JsonValue,
-} from '@shared/boundary-values';
+} from '@/convex/utils/json';
 type MailHogMessage = {
     Created?: string;
     Content?: {
@@ -112,7 +112,7 @@ async function findLatestEmailUrl(
     const searchUrl = new URL('/api/v2/search', MAILHOG_BASE_URL);
     searchUrl.searchParams.set('kind', 'to');
     searchUrl.searchParams.set('query', email);
-    searchUrl.searchParams.set('limit', '20');
+    searchUrl.searchParams.set('limit', '50');
     const response = await request.get(searchUrl.toString());
     if (!response.ok()) {
         return '';

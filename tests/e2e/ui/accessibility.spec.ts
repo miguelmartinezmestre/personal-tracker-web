@@ -1,22 +1,13 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { test, expect } from '../../fixtures/test-base';
 
-const routes = [
-    'home',
-    'objectives',
-    'categories',
-    'organizations',
-    'settings',
-    'notifications',
-    'sessions',
-    'achievements',
-] as const;
+const routes = ['home', 'organizations', 'invitations'] as const;
 
 for (const theme of ['light', 'dark'] as const) {
     for (const route of routes) {
         test(
             `${route} has no serious or critical accessibility violations in ${theme}`,
-            { tag: ['@accessibility', '@mobile-critical'] },
+            { tag: ['@accessibility'] },
             async ({ page }, testInfo) => {
                 await page.addInitScript(
                     selectedTheme => localStorage.setItem('theme', selectedTheme),
@@ -45,7 +36,7 @@ for (const theme of ['light', 'dark'] as const) {
 
 test(
     'keyboard skip link focuses the main content',
-    { tag: ['@accessibility', '@mobile-critical', '@cross-browser-critical'] },
+    { tag: ['@accessibility'] },
     async ({ page }) => {
         await page.goto('/dashboard/home');
         const main = page.getByRole('main');

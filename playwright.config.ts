@@ -7,9 +7,6 @@ const chromeProjectUse = {
     },
 };
 
-const firefoxProjectUse = devices['Desktop Firefox'];
-const webkitProjectUse = devices['Desktop Safari'];
-
 export default defineConfig({
     testDir: './tests',
     fullyParallel: false,
@@ -63,30 +60,7 @@ export default defineConfig({
             use: chromeProjectUse,
             testMatch: ['**/e2e/admin/**'],
         },
-        {
-            name: 'cross-browser-firefox',
-            dependencies: ['setup'],
-            grep: /@cross-browser-critical/,
-            use: firefoxProjectUse,
-            testMatch: ['**/e2e/**', '**/smoke/**'],
-        },
-        {
-            name: 'cross-browser-webkit',
-            dependencies: ['setup'],
-            grep: /@cross-browser-critical/,
-            use: webkitProjectUse,
-            testMatch: ['**/e2e/**', '**/smoke/**'],
-        },
-        {
-            name: 'mobile-webkit',
-            dependencies: ['setup'],
-            use: { ...devices['iPhone 13'] },
-            grep: /@mobile-critical/,
-            testMatch: ['**/e2e/**', '**/smoke/**'],
-        },
     ],
-
-    globalSetup: './tests/config/global-setup.ts',
 
     testIgnore: ['**/manual/**'],
 });

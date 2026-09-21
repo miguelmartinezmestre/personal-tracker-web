@@ -2,9 +2,6 @@ import { ConvexError } from 'convex/values';
 import { ERROR_CODES } from './constants';
 
 const MIN_REFERENCE_TIMESTAMP = Date.UTC(2020, 0, 1);
-// The caller value is only a reactive refresh nonce; business decisions use
-// `Date.now()` in the function. A one-day tolerance avoids breaking clients
-// with a poorly synchronized clock while rejecting nonsensical cache keys.
 const MAX_REFERENCE_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
 
 export function assertValidReferenceTimestamp(now: number): void {

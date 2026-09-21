@@ -9,7 +9,7 @@ import {
     parseJsonValue,
     type JsonObject,
     type JsonValue,
-} from '../shared/boundary-values';
+} from '../convex/utils/json';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = dirname(currentFile);

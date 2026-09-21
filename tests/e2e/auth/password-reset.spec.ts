@@ -6,7 +6,7 @@ import { waitForPasswordResetUrl } from '../../helpers/email-verification';
 test.describe('Password Reset', () => {
     test(
         'resets through MailHog, accepts the new password and rejects the previous one',
-        { tag: ['@REQ-AUTENTICACION-003', '@cross-browser-critical'] },
+        { tag: ['@REQ-AUTENTICACION-003'] },
         async ({ page }) => {
             const user = await createTestUser(page);
             await logoutUser(page);

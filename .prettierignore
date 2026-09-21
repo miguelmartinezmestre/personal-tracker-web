@@ -1,6 +1,7 @@
 **/components/ui/**/*.tsx
 .agents/
 .cursor/
+.convex/
 .next/
 .next-e2e-*/
 coverage/

@@ -32,13 +32,7 @@ function reducer(state: State, action: Action): State {
     }
 }
 
-/**
- * Cursor-stack pagination for data tables with one visible page and previous/next controls.
- * `follow` skips forward when the backend had to advance a page past rows the actor cannot
- * see (`needsContinuation`). `scope` resets that continuation when query parameters change.
- * Use `useConvexPages` instead when the UI accumulates all loaded rows behind "load more".
- */
-export function useServerPagination(pageSize: number, scope: string = '') {
+export function useServerPagination(pageSize: number = 20, scope: string = '') {
     const [state, dispatch] = useReducer(reducer, { currentPage: 0, cursors: [null] });
     const [continuation, setContinuation] = useState<Continuation | null>(null);
 

@@ -91,6 +91,25 @@ describe('Convex runtime env', () => {
         await expect(loadEnvModule()).rejects.toThrow('SITE_URL must use HTTPS in production');
     });
 
+    test('allows production-mode HTTP localhost for the local Convex stack', async () => {
+        process.env = {
+            ...originalEnv,
+            NODE_ENV: 'production',
+            SITE_URL: 'http://localhost:3000',
+            BETTER_AUTH_URL: 'http://localhost:3000',
+        };
+        delete process.env.E2E_SETUP_SECRET;
+        delete process.env.SETUP_SECRET;
+
+        await expect(loadEnvModule()).resolves.toMatchObject({
+            env: {
+                SITE_URL: 'http://localhost:3000',
+                BETTER_AUTH_URL: 'http://localhost:3000',
+                SETUP_SECRET: undefined,
+            },
+        });
+    });
+
     test('allows production-mode HTTP localhost for the local E2E stack', async () => {
         process.env = {
             ...originalEnv,

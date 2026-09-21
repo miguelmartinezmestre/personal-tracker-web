@@ -1,21 +1,8 @@
 import type { Doc, Id } from '../../_generated/dataModel';
-
-export type RlsInsertDoc<
-    Table extends
-        | 'categories'
-        | 'objectives'
-        | 'objectiveCollaborators'
-        | 'progressUpdates'
-        | 'notifications'
-        | 'notificationPreferences',
-> = Omit<Doc<Table>, '_id' | '_creationTime'>;
 import type { QueryCtx } from '../../_generated/server';
-import {
-    buildPermissionSubject,
-    type PermissionSubject,
-} from '../../domain/objectives/permissions';
-import { getCollaboratorRoleForUser } from '../../domain/objectives/collaborators';
-import { isGlobalAdminRole } from '../../../shared/platform-roles';
+import { isGlobalAdminRole } from '../auth/roles';
+
+export type RlsInsertDoc<Table extends 'categories'> = Omit<Doc<Table>, '_id' | '_creationTime'>;
 
 export function rlsDeny(): Promise<boolean> {
     return Promise.resolve(false);
@@ -60,8 +47,6 @@ export type RlsHelpers = {
     pendingInvitationsForEmail: () => Promise<
         Array<{ organizationId: Id<'organization'>; inviterId: Id<'user'> }>
     >;
-    canAccessObjectiveOrg: (objective: { organizationId: Id<'organization'> }) => boolean;
-    buildSubject: (objectiveId: Id<'objectives'>) => Promise<PermissionSubject>;
 };
 
 export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
@@ -176,37 +161,6 @@ export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
 
         return await pendingInvitationsForEmailPromise;
     };
-    const canAccessObjectiveOrg = (objective: { organizationId: Id<'organization'> }) => {
-        if (isGlobalAdmin) {
-            return true;
-        }
-        return isActiveOrganization(objective.organizationId);
-    };
-
-    const collaboratorRoleCache = new Map<
-        string,
-        Promise<Awaited<ReturnType<typeof getCollaboratorRoleForUser>>>
-    >();
-    const resolveCollaboratorRole = async (objectiveId: Id<'objectives'>) => {
-        if (isGlobalAdmin || isOrgAdmin) {
-            return null;
-        }
-        if (!collaboratorRoleCache.has(objectiveId)) {
-            collaboratorRoleCache.set(
-                objectiveId,
-                getCollaboratorRoleForUser(ctx, objectiveId, userId)
-            );
-        }
-        return (await collaboratorRoleCache.get(objectiveId)) ?? null;
-    };
-
-    const buildSubject = async (objectiveId: Id<'objectives'>) =>
-        buildPermissionSubject({
-            userId,
-            platformRole: role,
-            memberRole,
-            collaboratorRole: await resolveCollaboratorRole(objectiveId),
-        });
 
     return {
         userId,
@@ -224,7 +178,5 @@ export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
         isMemberOfOrganization,
         hasOrganizationAdminAccess,
         pendingInvitationsForEmail,
-        canAccessObjectiveOrg,
-        buildSubject,
     };
 }

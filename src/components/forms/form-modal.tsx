@@ -24,7 +24,7 @@ type FormModalProps<TFormValues extends object> = {
         defaultValues: TFormValues;
     };
     onSubmit: (values: TFormValues) => Promise<void>;
-    children: (form: TanStackFormApi) => ReactNode;
+    children: (form: TanStackFormApi<TFormValues>) => ReactNode;
     submitLabel: string;
     cancelLabel: string;
     pendingLabel?: string;

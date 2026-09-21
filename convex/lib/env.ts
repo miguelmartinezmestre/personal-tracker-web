@@ -4,14 +4,10 @@ import {
     MIN_SETUP_SECRET_LENGTH,
     MAX_SETUP_SECRET_LENGTH,
     requireSecureHttpUrl,
-} from '../../shared/auth-security';
-
-export const authEnv = {
-    JWKS: process.env['JWKS']?.trim() ? process.env['JWKS']?.trim() : undefined,
-} as const;
+} from '../platform/auth/security';
+import { authEnv } from './authEnv';
 
 const isProduction = process.env.NODE_ENV === 'production';
-const allowLocalE2EHttp = Boolean(process.env.E2E_SETUP_SECRET);
 
 function requireProductionUrl(name: string, fallback: string): string {
     const envValue = process.env[name];
@@ -24,7 +20,9 @@ function requireProductionUrl(name: string, fallback: string): string {
 
     return requireSecureHttpUrl(name, value, {
         requireHttps: isProduction,
-        allowHttpLocalhost: allowLocalE2EHttp,
+        // Convex evaluates modules with NODE_ENV=production even during `convex dev`.
+        // HTTP remains limited to loopback hosts; public URLs still require HTTPS.
+        allowHttpLocalhost: true,
     });
 }
 

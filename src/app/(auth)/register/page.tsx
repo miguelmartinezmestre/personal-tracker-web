@@ -5,7 +5,6 @@ import { checkPlatformSetUp } from '@/features/setup/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { env } from '@/lib/env';
-import { getCurrentTimestamp } from '@/lib/current-time';
 
 interface RegisterProps {
     searchParams: Promise<{ invitation?: string }>;
@@ -31,7 +30,7 @@ export default async function Register({ searchParams }: RegisterProps) {
         registrationRequiresInvitation && params.invitation
             ? await client.query(api.organizations.getPublicInvitationStatus, {
                   invitationId: params.invitation,
-                  now: getCurrentTimestamp(),
+                  now: Date.now(),
               })
             : null;
 

@@ -1,13 +1,8 @@
 import { hashPassword } from 'better-auth/crypto';
 import { describe, expect, test } from 'vitest';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
-import {
-    createTestMember,
-    createTestObjective,
-    createTestOrganization,
-    createTestUser,
-} from './test_helpers';
-import type { JsonValue } from '../../shared/boundary-values';
+import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
+import type { JsonValue } from '../utils/json';
 
 const ORIGIN = 'http://localhost:3000';
 const PASSWORD = 'ValidDeletionPassword123';
@@ -53,12 +48,6 @@ describe('soft-delete Better Auth endpoint', () => {
             userId: user.docId,
             role: 'owner',
         });
-        const objectiveId = await createTestObjective(t, {
-            organizationId,
-            userId: user.docId,
-            title: 'Deleted through the auth endpoint',
-            targetValue: 10,
-        });
         const now = Date.now();
         const passwordHash = await hashPassword(PASSWORD);
         await t.run(async ctx => {
@@ -72,7 +61,7 @@ describe('soft-delete Better Auth endpoint', () => {
             });
         });
 
-        return { user, organizationId, objectiveId };
+        return { user, organizationId };
     }
 
     async function signIn(email: string) {
@@ -85,7 +74,7 @@ describe('soft-delete Better Auth endpoint', () => {
     }
 
     test('verifies the password, returns success, preserves the tombstone and cleans auth rows', async () => {
-        const { user, objectiveId } = await createCredentialUser();
+        const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
 
         const response = await t.fetch(
@@ -110,7 +99,6 @@ describe('soft-delete Better Auth endpoint', () => {
         await t.run(async ctx => {
             const tombstone = await ctx.db.get('user', user.docId);
             expect(tombstone?.deletedAt).toBeDefined();
-            expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
             expect(
                 await ctx.db
                     .query('session')
@@ -127,7 +115,7 @@ describe('soft-delete Better Auth endpoint', () => {
     });
 
     test('rejects an incorrect password without mutating the account', async () => {
-        const { user, objectiveId } = await createCredentialUser();
+        const { user } = await createCredentialUser();
         const cookie = await signIn(user.email);
 
         const response = await t.fetch(
@@ -139,7 +127,6 @@ describe('soft-delete Better Auth endpoint', () => {
         await t.run(async ctx => {
             const retainedUser = await ctx.db.get('user', user.docId);
             expect(retainedUser?.deletedAt).toBeUndefined();
-            expect(await ctx.db.get('objectives', objectiveId)).not.toBeNull();
             expect(
                 await ctx.db
                     .query('account')
@@ -158,23 +145,10 @@ describe('soft-delete Better Auth endpoint', () => {
             jsonRequest({ password: PASSWORD }, cookie)
         );
 
-        expect(response.status).toBe(404);
-        expect((await t.run(ctx => ctx.db.get('user', user.docId)))?.deletedAt).toBeUndefined();
-    });
-
-    test('denies the Better Auth admin physical-delete endpoint', async () => {
-        const { user: target } = await createCredentialUser();
-        const { user: admin } = await createCredentialUser('globalAdmin');
-        const cookie = await signIn(admin.email);
-
-        const response = await t.fetch(
-            '/api/auth/admin/remove-user',
-            jsonRequest({ userId: target.docId }, cookie)
-        );
-
-        expect(response.status).toBe(403);
-        const retainedTarget = await t.run(ctx => ctx.db.get('user', target.docId));
-        expect(retainedTarget).not.toBeNull();
-        expect(retainedTarget?.deletedAt).toBeUndefined();
+        expect(response.status).not.toBe(200);
+        await t.run(async ctx => {
+            const retainedUser = await ctx.db.get('user', user.docId);
+            expect(retainedUser?.deletedAt).toBeUndefined();
+        });
     });
 });

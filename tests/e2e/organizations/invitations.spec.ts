@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { randomUUID } from 'crypto';
 import { test, expect } from '../../fixtures/test-base';
 import { createOrganization } from '../../helpers/test-helpers';
 import { setupCollaboratorInOrganization } from '../../helpers/collaboration';
@@ -14,10 +15,12 @@ async function openOrganizationDetail(page: Page, name: string): Promise<void> {
 }
 test.describe('Organization Invitations', () => {
     test('invite member by email', { tag: ['@REQ-EQUIPOS-002'] }, async ({ page }) => {
-        const organization = await createOrganization(page, { name: `Invite Org ${Date.now()}` });
+        const organization = await createOrganization(page, {
+            name: `Invite Org ${randomUUID().substring(0, 8)}`,
+        });
         await openOrganizationDetail(page, organization.name);
         await page.getByTestId('organization-member-create-open').click();
-        const inviteEmail = `invite-${Date.now()}@example.com`;
+        const inviteEmail = `invite-${randomUUID().substring(0, 8)}@example.com`;
         await page.getByTestId('organization-member-email-input').fill(inviteEmail);
         const invitedAt = Date.now();
         await page.getByTestId('organization-member-save-button').click();

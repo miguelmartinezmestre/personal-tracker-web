@@ -24,8 +24,6 @@ import {
     isOrganizationRoleValue,
     type OrganizationRoleValue,
 } from '../types/roles';
-import { DEFAULT_PAGE_SIZE } from '@shared/pagination';
-import { formatDate } from '@/lib/format-date';
 import type { FunctionReturnType } from 'convex/server';
 type OrganizationMemberRaw = FunctionReturnType<
     typeof api.organizations.getOrganizationMembers
@@ -45,8 +43,7 @@ export default function OrganizationMembersTable({
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
-    const { paginationOpts, nextPage, previousPage, hasPreviousPage } =
-        useServerPagination(DEFAULT_PAGE_SIZE);
+    const { paginationOpts, nextPage, previousPage, hasPreviousPage } = useServerPagination();
     const organizationTableId = requiredRouteParam(organizationId) as Id<'organization'>;
     const membersQuery = useQuery(
         convexQuery(api.organizations.getOrganizationMembers, {
@@ -80,7 +77,8 @@ export default function OrganizationMembersTable({
         {
             accessorKey: 'createdAt',
             header: t('joinedAt'),
-            cell: ({ row }) => formatDate(row.original.createdAt, locale),
+            cell: ({ row }) =>
+                new Intl.DateTimeFormat(locale).format(new Date(row.original.createdAt)),
         },
         {
             header: t('edit'),
