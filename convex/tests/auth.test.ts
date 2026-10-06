@@ -9,8 +9,17 @@ import {
 } from './test.helpers';
 import type { TestConvexForDataModel } from 'convex-test';
 import type { DataModel, Id } from '../_generated/dataModel';
-import { getOptionalString, isJsonObject, type JsonValue } from '../utils/json';
 import { asInvalidArg } from './test.casts';
+import { z } from 'zod';
+import {
+    getPersonalOrganizationOwnerUserId,
+    isPersonalOrganizationMetadata,
+} from '../personalOrganization';
+
+const sessionCreateResultSchema = z.object({
+    _id: z.string().optional(),
+    id: z.string().optional(),
+});
 
 describe('convex auth', () => {
     const t = initConvexTest();
@@ -85,7 +94,7 @@ describe('convex auth', () => {
             activeOrganizationId: String(_organizationId),
         };
 
-        const createdSession = asInvalidArg<JsonValue>(
+        const createdSession = asInvalidArg<Record<string, unknown>>(
             // oxlint-disable-next-line typescript/no-unsafe-argument -- generated Better Auth adapter returns an untyped document
             await t.mutation(internal.generated.auth.create, {
                 input: {
@@ -94,11 +103,11 @@ describe('convex auth', () => {
                 },
             })
         );
-        if (!isJsonObject(createdSession)) {
+        const parsedSession = sessionCreateResultSchema.safeParse(createdSession);
+        if (!parsedSession.success) {
             throw new Error('Expected session create result');
         }
-        const sessionId =
-            getOptionalString(createdSession._id) ?? getOptionalString(createdSession.id);
+        const sessionId = parsedSession.data._id ?? parsedSession.data.id;
         if (!sessionId) {
             throw new Error('Expected session id');
         }
@@ -228,5 +237,18 @@ describe('convex auth', () => {
         );
 
         expect(personalOrganization?.isPersonal).toBe(true);
+    });
+});
+
+describe('personal organization metadata', () => {
+    test('recognizes personal metadata even when its optional owner ID is malformed', () => {
+        const metadata = JSON.stringify({ type: 'personal', ownerUserId: 17 });
+
+        expect(isPersonalOrganizationMetadata(metadata)).toBe(true);
+        expect(getPersonalOrganizationOwnerUserId(metadata)).toBeNull();
+    });
+
+    test('does not recognize invalid JSON as personal metadata', () => {
+        expect(isPersonalOrganizationMetadata('{invalid json')).toBe(false);
     });
 });

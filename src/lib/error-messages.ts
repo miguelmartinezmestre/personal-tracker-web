@@ -1,5 +1,3 @@
-import { isRecord } from '@/convex/utils/json';
-
 export type ErrorLocale = 'en' | 'es';
 type ErrorDictionary = {
     generic: string;
@@ -56,10 +54,11 @@ const EN: ErrorDictionary = {
     TARGET_TOO_LARGE: 'The target value is too large.',
     VALUE_NOT_FINITE: 'The value is not a valid number.',
     VALUE_NEGATIVE: 'The value cannot be negative.',
+    PROGRESS_NOT_POSITIVE: 'The progress must be greater than zero.',
     VALUE_TOO_LARGE: 'The value is too large.',
     DEADLINE_TOO_OLD: 'The deadline is too far in the past.',
     DEADLINE_TOO_FAR: 'The deadline is too far in the future.',
-    START_AFTER_TARGET: 'The starting value cannot be greater than the target value.',
+    START_AFTER_TARGET: 'The starting value must be lower than the target value.',
     CATEGORY_HAS_OBJECTIVES: 'This category still has objectives and cannot be deleted.',
     DUPLICATE_CATEGORY_NAME: 'A category with that name already exists.',
 };
@@ -115,14 +114,21 @@ const ES: ErrorDictionary = {
     TARGET_TOO_LARGE: 'El valor objetivo es demasiado grande.',
     VALUE_NOT_FINITE: 'El valor no es un número válido.',
     VALUE_NEGATIVE: 'El valor no puede ser negativo.',
+    PROGRESS_NOT_POSITIVE: 'El avance debe ser mayor que cero.',
     VALUE_TOO_LARGE: 'El valor es demasiado grande.',
     DEADLINE_TOO_OLD: 'La fecha límite es demasiado antigua.',
     DEADLINE_TOO_FAR: 'La fecha límite está demasiado lejos en el futuro.',
-    START_AFTER_TARGET: 'El valor inicial no puede ser mayor que el valor objetivo.',
+    START_AFTER_TARGET: 'El valor inicial debe ser menor que el valor objetivo.',
     CATEGORY_HAS_OBJECTIVES: 'Esta categoría todavía tiene objetivos y no se puede eliminar.',
     DUPLICATE_CATEGORY_NAME: 'Ya existe una categoría con ese nombre.',
 };
 const DICTIONARIES: Record<ErrorLocale, ErrorDictionary> = { en: EN, es: ES };
+type ErrorTraversalNode = {
+    data?: unknown;
+    code?: unknown;
+    message?: unknown;
+    cause?: unknown;
+};
 function codeFromMessage(message: string): string | undefined {
     const trimmed = message.trim();
     if (/^[A-Z][A-Z0-9_]+$/.test(trimmed)) {
@@ -137,15 +143,19 @@ export function extractErrorCode(error: unknown): string | undefined {
         if (typeof value === 'string') {
             return codeFromMessage(value);
         }
-        if (!isRecord(value) || depth > 8 || seen.has(value)) {
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+            return undefined;
+        }
+        if (depth > 8 || seen.has(value)) {
             return undefined;
         }
         seen.add(value);
+        const node = value as ErrorTraversalNode;
         return (
-            visit(value.data, depth + 1) ??
-            visit(value.code, depth + 1) ??
-            visit(value.message, depth + 1) ??
-            visit(value.cause, depth + 1)
+            visit(node.data, depth + 1) ??
+            visit(node.code, depth + 1) ??
+            visit(node.message, depth + 1) ??
+            visit(node.cause, depth + 1)
         );
     }
     return visit(error, 0);

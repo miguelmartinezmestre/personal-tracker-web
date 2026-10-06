@@ -91,7 +91,7 @@
         "dashboardTitle": "Dashboard",
         "welcome": "Bienvenido {name}",
         "welcomeAnonymous": "Bienvenido",
-        "emptyState": "Tu espacio de trabajo está listo. Las funciones del producto volverán aquí a medida que se reconstruyan.",
+        "emptyState": "Aún no hay objetivos en esta organización. Crea uno para ver aquí tus estadísticas.",
         "stats": {
             "active": "Activos",
             "completed": "Completados"
@@ -117,7 +117,16 @@
             "progress": "Progreso",
             "partialData": "Este gráfico muestra un conjunto parcial de datos.",
             "month": "Mes",
-            "objective": "Objetivo"
+            "objective": "Objetivo",
+            "averageProgress": "Progreso medio",
+            "averageProgressDescription": "{count, plural, one {Media de # objetivo} other {Media de # objetivos}}",
+            "averageProgressAria": "Progreso medio de los objetivos: {percent}%",
+            "byCategory": "Objetivos por categoría",
+            "byCategoryDescription": "Número de objetivos en cada categoría",
+            "byCategoryAria": "Gráfico de barras con el número de objetivos por categoría",
+            "uncategorized": "Sin categoría",
+            "objectives": "Objetivos",
+            "completed": "Completados"
         }
     },
     "HomePage": {
@@ -402,6 +411,16 @@
         "enterUnit": "Ingresa la unidad de medida",
         "pickADate": "Selecciona una fecha",
         "saveObjective": "Guardar objetivo",
+        "noCategory": "Sin categoría",
+        "backToList": "Volver a objetivos",
+        "completedNotice": "Este objetivo está completado. Edita o elimina un avance para reabrirlo.",
+        "notFound": "Ese objetivo ya no existe.",
+        "toast": {
+            "created": "Objetivo creado",
+            "updated": "Objetivo actualizado",
+            "deleted": "Objetivo eliminado",
+            "deleteFailed": "No se pudo eliminar el objetivo"
+        },
         "category": "Categoría",
         "unit": "Unidad",
         "initialValue": "Valor inicial",
@@ -486,7 +505,8 @@
             "deleteObjective": "¿Estás seguro de que quieres eliminar este objetivo?",
             "deleteObjectiveDescription": "El objetivo se moverá a la papelera, donde podrá restaurarse o eliminarse definitivamente.",
             "deleteConfirm": "Eliminar",
-            "cancel": "Cancelar"
+            "cancel": "Cancelar",
+            "deletePermanentDescription": "Esto elimina el objetivo y sus avances de forma permanente. No se puede deshacer."
         },
         "categories": {
             "title": "Categorías",
@@ -527,6 +547,20 @@
                 "targetValueRequired": "Valor objetivo *",
                 "deadline": "Fecha límite"
             }
+        },
+        "chart": {
+            "title": "Evolución",
+            "ariaLabel": "Evolución del valor del objetivo a lo largo del tiempo",
+            "empty": "Registra un avance para ver la evolución del objetivo.",
+            "value": "Valor",
+            "increment": "Incremento",
+            "comment": "Comentario",
+            "startValue": "Valor inicial",
+            "idealPace": "Ritmo ideal",
+            "legendProgress": "Progreso",
+            "legendTarget": "Meta",
+            "legendPace": "Ritmo ideal hasta la fecha límite",
+            "partialData": "Se muestran solo los avances más recientes."
         }
     },
     "Sessions": {
@@ -733,6 +767,8 @@
         "comment": "Comentario",
         "describeYourUpdateProgressInDetail": "Describe tu progreso actualizado en detalle",
         "saveProgress": "Guardar progreso",
+        "deltaDescription": "Cantidad que se suma al valor actual.",
+        "empty": "Todavía no hay avances.",
         "cancel": "Cancelar",
         "table": {
             "columns": {
@@ -750,6 +786,8 @@
             "cancel": "Cancelar"
         },
         "toast": {
+            "created": "Avance guardado",
+            "updated": "Avance actualizado",
             "deletedSuccess": "Actualización eliminada exitosamente",
             "deleteFailed": "Error al eliminar actualización"
         },

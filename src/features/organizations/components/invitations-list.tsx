@@ -6,18 +6,58 @@ import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertCircle, Mail, ShieldCheck } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
     usePendingInvitations,
     useAcceptInvitation,
     useRejectInvitation,
 } from '@/features/organizations/hooks/use-invitations';
-import { useSession } from '@/features/auth/hooks/use-session';
 import { authClient } from '@/features/auth/client';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { InvitationCard } from './invitation-card';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+
+function VerificationAlert({
+    verificationSent,
+    isPending,
+    onSend,
+}: {
+    verificationSent: boolean;
+    isPending: boolean;
+    onSend: () => void;
+}) {
+    const t = useTranslations('Invitations');
+    let message = t('verificationRequiredDescription');
+    if (verificationSent) {
+        message = t('verificationEmailSent');
+    }
+    let buttonLabel = t('sendVerificationEmail');
+    if (isPending) {
+        buttonLabel = t('sendingVerificationEmail');
+    }
+    return (
+        <Alert data-testid="invitation-verification-required">
+            <ShieldCheck className="h-4 w-4" />
+            <AlertTitle>{t('verificationRequiredTitle')}</AlertTitle>
+            <AlertDescription className="space-y-3">
+                <p>{message}</p>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    data-testid="invitation-send-verification-email"
+                    disabled={isPending || verificationSent}
+                    onClick={onSend}
+                >
+                    {buttonLabel}
+                </Button>
+            </AlertDescription>
+        </Alert>
+    );
+}
 
 export function InvitationsList() {
     const t = useTranslations('Invitations');
@@ -31,7 +71,7 @@ export function InvitationsList() {
         loadMore,
         isFetching,
     } = usePendingInvitations();
-    const session = useSession();
+    const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const acceptInvitation = useAcceptInvitation();
     const rejectInvitation = useRejectInvitation();
     const [actionError, setActionError] = useState('');
@@ -145,41 +185,42 @@ export function InvitationsList() {
         );
     }
 
+    let verificationAlert = null;
+    if (requiresEmailVerification) {
+        verificationAlert = (
+            <VerificationAlert
+                verificationSent={verificationSent}
+                isPending={sendVerificationEmail.isPending}
+                onSend={() => sendVerificationEmail.mutate()}
+            />
+        );
+    }
+
+    let actionErrorAlert = null;
+    if (actionError) {
+        actionErrorAlert = (
+            <Alert variant="destructive" data-testid="invitation-action-error">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>{t('errorTitle')}</AlertTitle>
+                <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+        );
+    }
+
+    let loadMoreButton = null;
+    if (hasMore) {
+        loadMoreButton = (
+            <Button variant="outline" disabled={isFetching} onClick={loadMore}>
+                {common('actions.loadMore')}
+            </Button>
+        );
+    }
+
     return (
         <div className="space-y-4">
-            {requiresEmailVerification ? (
-                <Alert data-testid="invitation-verification-required">
-                    <ShieldCheck className="h-4 w-4" />
-                    <AlertTitle>{t('verificationRequiredTitle')}</AlertTitle>
-                    <AlertDescription className="space-y-3">
-                        <p>
-                            {verificationSent
-                                ? t('verificationEmailSent')
-                                : t('verificationRequiredDescription')}
-                        </p>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            data-testid="invitation-send-verification-email"
-                            disabled={sendVerificationEmail.isPending || verificationSent}
-                            onClick={() => sendVerificationEmail.mutate()}
-                        >
-                            {sendVerificationEmail.isPending
-                                ? t('sendingVerificationEmail')
-                                : t('sendVerificationEmail')}
-                        </Button>
-                    </AlertDescription>
-                </Alert>
-            ) : null}
+            {verificationAlert}
 
-            {actionError ? (
-                <Alert variant="destructive" data-testid="invitation-action-error">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>{t('errorTitle')}</AlertTitle>
-                    <AlertDescription>{actionError}</AlertDescription>
-                </Alert>
-            ) : null}
+            {actionErrorAlert}
 
             <div
                 className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
@@ -197,11 +238,7 @@ export function InvitationsList() {
                     />
                 ))}
             </div>
-            {hasMore ? (
-                <Button variant="outline" disabled={isFetching} onClick={loadMore}>
-                    {common('actions.loadMore')}
-                </Button>
-            ) : null}
+            {loadMoreButton}
         </div>
     );
 }

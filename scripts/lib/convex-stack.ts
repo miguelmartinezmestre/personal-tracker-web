@@ -122,10 +122,12 @@ async function waitForHttp({
 
         if (attempts % 5 === 0) {
             const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
-            const progressHint =
-                lastStatus !== null
-                    ? `last status=${lastStatus}`
-                    : `last error=${lastError ?? 'unknown'}`;
+            let progressHint: string;
+            if (lastStatus !== null) {
+                progressHint = `last status=${lastStatus}`;
+            } else {
+                progressHint = `last error=${lastError ?? 'unknown'}`;
+            }
             console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`);
         }
 

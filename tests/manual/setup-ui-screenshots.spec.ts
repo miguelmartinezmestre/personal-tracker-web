@@ -3,9 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { generateTestUserData, hasOrganizationSelectedInUI } from '../helpers/test-helpers';
 
-const FIGURES_DIR = process.env.MEMORIA_FIGURES_DIR
-    ? path.resolve(process.env.MEMORIA_FIGURES_DIR)
-    : path.resolve(process.cwd(), '../metricas-memoria/figures');
+let FIGURES_DIR: string;
+if (process.env.MEMORIA_FIGURES_DIR) {
+    FIGURES_DIR = path.resolve(process.env.MEMORIA_FIGURES_DIR);
+} else {
+    FIGURES_DIR = path.resolve(process.cwd(), '../metricas-memoria/figures');
+}
 
 const FALLBACK_DIR = path.join(process.cwd(), 'test-results/screenshots/memoria');
 

@@ -88,6 +88,37 @@ export function SetupWizardActions({
 }: SetupWizardActionsProps) {
     const t = useTranslations('Setup');
 
+    let action: React.ReactNode;
+    if (isLastStep) {
+        let completeLabel: React.ReactNode;
+        if (isSubmitting) {
+            completeLabel = (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('navigation.completing')}
+                </>
+            );
+        } else {
+            completeLabel = t('navigation.complete');
+        }
+        action = (
+            <Button
+                onClick={onComplete}
+                disabled={!canProceed || isSubmitting}
+                data-testid="setup-complete-button"
+            >
+                {completeLabel}
+            </Button>
+        );
+    } else {
+        action = (
+            <Button onClick={onNext} disabled={!canProceed} data-testid="setup-next-button">
+                {t('navigation.next')}
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+        );
+    }
+
     return (
         <div className="mt-8 flex justify-between">
             <Button variant="outline" onClick={onBack} disabled={isFirstStep || isSubmitting}>
@@ -95,27 +126,7 @@ export function SetupWizardActions({
                 {t('navigation.back')}
             </Button>
 
-            {isLastStep ? (
-                <Button
-                    onClick={onComplete}
-                    disabled={!canProceed || isSubmitting}
-                    data-testid="setup-complete-button"
-                >
-                    {isSubmitting ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t('navigation.completing')}
-                        </>
-                    ) : (
-                        t('navigation.complete')
-                    )}
-                </Button>
-            ) : (
-                <Button onClick={onNext} disabled={!canProceed} data-testid="setup-next-button">
-                    {t('navigation.next')}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-            )}
+            {action}
         </div>
     );
 }

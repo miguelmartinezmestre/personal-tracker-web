@@ -10,12 +10,13 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
-import { useMutation } from '@tanstack/react-query';
-import { useSession } from '@/features/auth/hooks/use-session';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { resolveErrorMessage } from '@/lib/error-messages';
-import { getInvitationCallbackPath } from '@/convex/platform/auth/security';
+import { getInvitationCallbackPath } from '@/convex/utils';
 import { RegisterFormInputField } from './register-form-input-field';
 import { useHydrated } from '@/hooks/use-hydrated';
+import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
 interface RegisterFormProps {
     invitationToken?: string | null;
 }
@@ -53,9 +54,10 @@ async function registerAccount({
         email: values.email,
         callbackURL: getInvitationCallbackPath(invitationToken),
     });
-    return verification.error
-        ? { status: 'error', error: verification.error }
-        : { status: 'verification-sent' };
+    if (verification.error) {
+        return { status: 'error', error: verification.error };
+    }
+    return { status: 'verification-sent' };
 }
 
 export default function RegisterForm({ invitationToken }: RegisterFormProps) {
@@ -74,7 +76,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
     const [registerError, setRegisterError] = useState('');
     const [verificationSent, setVerificationSent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const session = useSession();
+    const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
     const registerDefaultValues: RegisterFormValues = {
         email: '',

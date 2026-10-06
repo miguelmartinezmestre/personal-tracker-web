@@ -1,5 +1,5 @@
 ﻿'use client';
-import { Goal, Home, Mail, Users } from 'lucide-react';
+import { Goal, Home, Mail, Target, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
     Sidebar,
@@ -30,6 +30,11 @@ const baseProjects: ProjectNavItem[] = [
         name: 'home',
         url: '/dashboard/home',
         icon: Home,
+    },
+    {
+        name: 'objectives',
+        url: '/dashboard/objectives',
+        icon: Target,
     },
     {
         name: 'invitations',
@@ -68,7 +73,14 @@ export function AppSidebar({ initialUser: _initialUser }: { initialUser: Current
                     <nav aria-label={t('navigationLabel')}>
                         <SidebarMenu data-testid="sidebar-menu">
                             {baseProjects.map(item => {
-                                const isActive = pathname === item.url;
+                                let isActive: boolean;
+                                if (item.url === '/dashboard/objectives') {
+                                    isActive =
+                                        pathname === item.url ||
+                                        pathname.startsWith(`${item.url}/`);
+                                } else {
+                                    isActive = pathname === item.url;
+                                }
                                 return (
                                     <SidebarMenuItem key={item.name}>
                                         <SidebarMenuButton
@@ -79,9 +91,10 @@ export function AppSidebar({ initialUser: _initialUser }: { initialUser: Current
                                                     data-testid={`sidebar-nav-${item.name}`}
                                                     className={cn(
                                                         'relative transition-all duration-200',
-                                                        isActive
-                                                            ? 'bg-accent text-accent-foreground font-medium'
-                                                            : 'hover:bg-accent/50 hover:text-accent-foreground'
+                                                        isActive &&
+                                                            'bg-accent text-accent-foreground font-medium',
+                                                        !isActive &&
+                                                            'hover:bg-accent/50 hover:text-accent-foreground'
                                                     )}
                                                 />
                                             }

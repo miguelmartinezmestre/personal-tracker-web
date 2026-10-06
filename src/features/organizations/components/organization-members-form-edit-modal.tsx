@@ -11,7 +11,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { OrganizationRole, isOrganizationRoleValue } from '../types/roles';
+import {
+    OrganizationRole,
+    isOrganizationRoleValue,
+    type OrganizationRoleValue,
+} from '../types/roles';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useUpdateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
@@ -72,6 +76,10 @@ export default function OrganizationMemberEditFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
+                            let value = '';
+                            if (typeof field.state.value === 'string') {
+                                value = field.state.value;
+                            }
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('email')}</FieldLabel>
@@ -79,9 +87,7 @@ export default function OrganizationMemberEditFormModal({
                                         id={field.name}
                                         className="text-sm text-muted-foreground py-2"
                                     >
-                                        {typeof field.state.value === 'string'
-                                            ? field.state.value
-                                            : ''}
+                                        {value}
                                     </p>
                                     <FieldDescription>
                                         {t('giveYourOrganizationMemberAClearConciseEmail')}
@@ -96,6 +102,10 @@ export default function OrganizationMemberEditFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
+                            let value = 'member';
+                            if (typeof field.state.value === 'string') {
+                                value = field.state.value;
+                            }
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('role')}</FieldLabel>
@@ -106,14 +116,10 @@ export default function OrganizationMemberEditFormModal({
                                                 typeof value === 'string' &&
                                                 isOrganizationRoleValue(value)
                                             ) {
-                                                field.handleChange(value);
+                                                field.handleChange(value as OrganizationRoleValue);
                                             }
                                         }}
-                                        value={
-                                            typeof field.state.value === 'string'
-                                                ? field.state.value
-                                                : 'member'
-                                        }
+                                        value={value}
                                         items={roleOptions}
                                     >
                                         <SelectTrigger

@@ -38,9 +38,10 @@ export function useConvexPages<T>(
         query.data && !query.data.needsContinuation ? query.data.page : []
     );
     const hasSettledPage = queries.some(query => query.data && !query.data.needsContinuation);
-    const data = hasSettledPage
-        ? [...new Map(items.map(item => [key(item), item])).values()]
-        : undefined;
+    let data: T[] | undefined;
+    if (hasSettledPage) {
+        data = [...new Map(items.map(item => [key(item), item])).values()];
+    }
     const isFetching = Boolean(last?.isPending || last?.data?.needsContinuation);
     const invalidCursor = queries.some(query => extractErrorCode(query.error) === 'INVALID_CURSOR');
     if (invalidCursor && state.cursors.length > 1) {

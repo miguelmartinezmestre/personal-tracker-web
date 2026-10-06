@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/platform/theme/theme-switcher';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslations } from 'next-intl';
-import { useSession } from '@/features/auth/hooks/use-session';
 import type { Route } from 'next';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
+import { useQuery } from '@tanstack/react-query';
 
 type LinkItem = { name: string; href: Route };
 
@@ -24,7 +26,7 @@ export default function NavBar() {
         { name: t('login'), href: '/login' },
     ];
 
-    const sessionQuery = useSession();
+    const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const isAuthenticated = Boolean(sessionQuery.data?.user);
 
     return (

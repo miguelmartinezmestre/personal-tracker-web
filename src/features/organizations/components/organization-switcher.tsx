@@ -12,15 +12,16 @@ import {
 import { useTranslations } from 'next-intl';
 import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
     useOrganizations,
     useOrganizationByIdentifier,
     type Organization,
 } from '@/features/organizations/hooks/use-organizations';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { useSession } from '@/features/auth/hooks/use-session';
 import { useState } from 'react';
+import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
 
 function OrganizationSwitcherMenuItems({
     isLoadingData,
@@ -58,31 +59,41 @@ function OrganizationSwitcherMenuItems({
         );
     }
 
-    return organizations.map(organization => (
-        <DropdownMenuItem
-            key={organization.id}
-            onClick={() => onSelect(organization.id)}
-            data-testid={`organization-option-${organization.id}`}
-            className="flex items-center gap-3 cursor-pointer"
-            disabled={organization.id === activeOrganizationId}
-        >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
-                <Building className="h-3 w-3" />
-            </div>
-            <span className="flex-1 truncate">{organization.name}</span>
-            {organization.isPersonal ? (
+    return organizations.map(organization => {
+        let personalBadge = null;
+        if (organization.isPersonal) {
+            personalBadge = (
                 <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                     {personalLabel}
                 </span>
-            ) : null}
-            {organization.id === activeOrganizationId ? (
+            );
+        }
+        let currentLabelElement = null;
+        let currentCheck = null;
+        if (organization.id === activeOrganizationId) {
+            currentLabelElement = (
                 <span className="text-xs text-primary font-medium">{currentLabel}</span>
-            ) : null}
-            {organization.id === activeOrganizationId && (
-                <Check className="h-4 w-4 text-primary flex-shrink-0" />
-            )}
-        </DropdownMenuItem>
-    ));
+            );
+            currentCheck = <Check className="h-4 w-4 text-primary flex-shrink-0" />;
+        }
+        return (
+            <DropdownMenuItem
+                key={organization.id}
+                onClick={() => onSelect(organization.id)}
+                data-testid={`organization-option-${organization.id}`}
+                className="flex items-center gap-3 cursor-pointer"
+                disabled={organization.id === activeOrganizationId}
+            >
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+                    <Building className="h-3 w-3" />
+                </div>
+                <span className="flex-1 truncate">{organization.name}</span>
+                {personalBadge}
+                {currentLabelElement}
+                {currentCheck}
+            </DropdownMenuItem>
+        );
+    });
 }
 
 interface OrganizationSwitcherProps {
@@ -94,7 +105,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     const common = useTranslations('Common');
     const router = useRouter();
     const organizationsQuery = useOrganizations();
-    const sessionQuery = useSession();
+    const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const [optimisticOrganizationId, setOptimisticOrganizationId] = useState<string | null>(null);
     const sessionActiveOrganizationId = sessionQuery.data?.session.activeOrganizationId ?? null;
     const activeOrganizationId =
@@ -131,6 +142,62 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
         setActiveMutation.mutate(organizationId);
     };
 
+    let triggerContent;
+    if (setActiveMutation.isPending || isLoadingData) {
+        triggerContent = <Loader2 className="h-4 w-4 animate-spin" />;
+    } else {
+        triggerContent = (
+            <>
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Building className="h-3 w-3 text-primary" />
+                </div>
+                <span className="hidden min-w-0 truncate font-medium sm:inline">{displayName}</span>
+                <div
+                    className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
+                    title={t('activeOrganization')}
+                />
+            </>
+        );
+    }
+
+    let personalBadge = null;
+    if (activeIsPersonal) {
+        personalBadge = (
+            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                {t('personal')}
+            </span>
+        );
+    }
+
+    let retryItem = null;
+    if (organizationsQuery.isError) {
+        retryItem = (
+            <DropdownMenuItem
+                closeOnClick={false}
+                onClick={() => {
+                    void organizationsQuery.refetch();
+                }}
+            >
+                {common('actions.retry')}
+            </DropdownMenuItem>
+        );
+    }
+
+    let loadMoreItem = null;
+    if (organizationsQuery.hasMore) {
+        loadMoreItem = (
+            <DropdownMenuItem
+                disabled={organizationsQuery.isFetching}
+                closeOnClick={false}
+                onClick={() => {
+                    organizationsQuery.loadMore();
+                }}
+            >
+                {common('actions.loadMore')}
+            </DropdownMenuItem>
+        );
+    }
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger
@@ -141,22 +208,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                         className="h-9 w-9 min-w-0 justify-center gap-2 border-2 border-primary/20 bg-primary/5 px-0 hover:bg-primary/10 hover:border-primary/30 sm:w-auto sm:min-w-[140px] sm:max-w-[18rem] sm:justify-start sm:px-3"
                         disabled={setActiveMutation.isPending || isLoadingData}
                     >
-                        {setActiveMutation.isPending || isLoadingData ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <>
-                                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                                    <Building className="h-3 w-3 text-primary" />
-                                </div>
-                                <span className="hidden min-w-0 truncate font-medium sm:inline">
-                                    {displayName}
-                                </span>
-                                <div
-                                    className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
-                                    title={t('activeOrganization')}
-                                />
-                            </>
-                        )}
+                        {triggerContent}
                         <span className="sr-only">{t('label')}</span>
                     </Button>
                 }
@@ -168,11 +220,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                     </p>
                     <p className="mt-1 flex items-center gap-2 truncate text-sm font-semibold">
                         <span className="truncate">{displayName}</span>
-                        {activeIsPersonal ? (
-                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                {t('personal')}
-                            </span>
-                        ) : null}
+                        {personalBadge}
                     </p>
                 </div>
                 <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
@@ -192,27 +240,8 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                         onSelect={handleOrganizationChange}
                     />
                 </div>
-                {organizationsQuery.isError ? (
-                    <DropdownMenuItem
-                        closeOnClick={false}
-                        onClick={() => {
-                            void organizationsQuery.refetch();
-                        }}
-                    >
-                        {common('actions.retry')}
-                    </DropdownMenuItem>
-                ) : null}
-                {organizationsQuery.hasMore ? (
-                    <DropdownMenuItem
-                        disabled={organizationsQuery.isFetching}
-                        closeOnClick={false}
-                        onClick={() => {
-                            organizationsQuery.loadMore();
-                        }}
-                    >
-                        {common('actions.loadMore')}
-                    </DropdownMenuItem>
-                ) : null}
+                {retryItem}
+                {loadMoreItem}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => router.push('/dashboard/organizations')}

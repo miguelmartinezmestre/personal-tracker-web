@@ -8,9 +8,12 @@ async function openOrganizationDetail(page: Page, organizationName?: string): Pr
     await page.goto('/dashboard/organizations');
     await page.waitForURL(/\/dashboard\/organizations(?:\?|$)/, { timeout: 15000 });
 
-    const orgRow = organizationName
-        ? page.getByTestId('table-row').filter({ hasText: organizationName }).first()
-        : page.getByTestId('table-row').first();
+    let orgRow;
+    if (organizationName) {
+        orgRow = page.getByTestId('table-row').filter({ hasText: organizationName }).first();
+    } else {
+        orgRow = page.getByTestId('table-row').first();
+    }
 
     await orgRow.getByTestId('organization-detail-link').click();
     await expect(page).toHaveURL(ORGANIZATION_DETAIL_URL, { timeout: 10000 });

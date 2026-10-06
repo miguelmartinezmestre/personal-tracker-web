@@ -51,6 +51,38 @@ export default defineSchema({
         .index('by_organization', ['organizationId'])
         .index('by_organization_name', ['organizationId', 'name']),
 
+    objectives: defineTable({
+        organizationId: v.id('organization'),
+        createdBy: v.id('user'),
+        title: v.string(),
+        description: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
+        unit: v.optional(v.string()),
+        deadline: v.optional(v.number()),
+        startValue: v.number(),
+        currentValue: v.number(),
+        targetValue: v.number(),
+        status: v.union(v.literal('active'), v.literal('completed')),
+        completedAt: v.optional(v.number()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index('by_organization_createdAt', ['organizationId', 'createdAt'])
+        .index('by_organization_status_createdAt', ['organizationId', 'status', 'createdAt']),
+
+    progressUpdates: defineTable({
+        objective: v.id('objectives'),
+        organizationId: v.id('organization'),
+        createdBy: v.id('user'),
+        updatedValue: v.number(),
+        updateDate: v.number(),
+        comment: v.optional(v.string()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index('by_objective_date', ['objective', 'updateDate'])
+        .index('by_organization', ['organizationId']),
+
     platformSettings: defineTable({
         platformName: v.string(),
         defaultLanguage: v.union(v.literal('en'), v.literal('es')),

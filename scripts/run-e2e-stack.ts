@@ -6,7 +6,7 @@ import { createServer } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import process from 'node:process';
 import { PNPM_COMMAND, overlayEnv, runCommand, spawnCommand } from './lib/command';
-import { isJsonObject, parseJsonValue } from '../convex/utils/json';
+import { z } from 'zod';
 import {
     bootstrapConvexCredentials,
     buildConvexCommandEnv,
@@ -272,11 +272,8 @@ function readBuildMeta(nextDistDir: string): E2EBuildMeta | null {
         return null;
     }
     try {
-        const parsed = parseJsonValue(readFileSync(buildMetaPath, 'utf8'));
-        if (!isJsonObject(parsed) || !(typeof parsed.fingerprint === 'string')) {
-            return null;
-        }
-        return { fingerprint: parsed.fingerprint };
+        const parsed: unknown = JSON.parse(readFileSync(buildMetaPath, 'utf8'));
+        return z.object({ fingerprint: z.string() }).parse(parsed);
     } catch {
         return null;
     }
@@ -337,20 +334,24 @@ async function waitForFrontendReady(
             }
             if (attempts % 5 === 0) {
                 const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
-                const progressHint =
-                    lastStatus !== null
-                        ? `last status=${lastStatus}`
-                        : `last error=${lastError ?? 'unknown'}`;
+                let progressHint: string;
+                if (lastStatus !== null) {
+                    progressHint = `last status=${lastStatus}`;
+                } else {
+                    progressHint = `last error=${lastError ?? 'unknown'}`;
+                }
                 console.log(
                     `Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`
                 );
             }
             await sleep(POLL_INTERVAL_MS);
         }
-        const statusMessage =
-            lastStatus !== null
-                ? `last status=${lastStatus}`
-                : `last error=${lastError ?? 'unknown'}`;
+        let statusMessage: string;
+        if (lastStatus !== null) {
+            statusMessage = `last status=${lastStatus}`;
+        } else {
+            statusMessage = `last error=${lastError ?? 'unknown'}`;
+        }
         throw new Error(
             `Timed out waiting for ${url} (${statusMessage})${getFrontendFailureSuffix()}`
         );
@@ -524,10 +525,12 @@ async function main(): Promise<void> {
     frontendLogTail = [];
     // Use `next dev` directly (not `pnpm dev`, which wraps `convex dev --start`
     // and does not accept `--port`). Production mode still uses `next start`.
-    const frontendArgs =
-        E2E_FRONTEND_MODE === 'production'
-            ? ['exec', 'next', 'start', '--port', frontendPort]
-            : ['exec', 'next', 'dev', '--port', frontendPort];
+    let frontendArgs: string[];
+    if (E2E_FRONTEND_MODE === 'production') {
+        frontendArgs = ['exec', 'next', 'start', '--port', frontendPort];
+    } else {
+        frontendArgs = ['exec', 'next', 'dev', '--port', frontendPort];
+    }
     frontendProcess = spawnCommand(PNPM_COMMAND, frontendArgs, {
         env: commandEnv,
         stdio: SHOW_NEXT_LOGS ? 'inherit' : ['ignore', 'pipe', 'pipe'],

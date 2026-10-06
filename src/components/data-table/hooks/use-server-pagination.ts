@@ -40,10 +40,10 @@ export function useServerPagination(pageSize: number = 20, scope: string = '') {
     if (continuation && (continuation.base !== baseCursor || continuation.scope !== scope)) {
         setContinuation(null);
     }
-    const cursor =
-        continuation?.base === baseCursor && continuation.scope === scope
-            ? continuation.cursor
-            : baseCursor;
+    let cursor = baseCursor;
+    if (continuation?.base === baseCursor && continuation.scope === scope) {
+        cursor = continuation.cursor;
+    }
 
     const follow = useCallback(
         (page: PageWithContinuation | undefined) => {

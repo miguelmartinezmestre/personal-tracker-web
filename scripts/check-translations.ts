@@ -4,12 +4,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { categoryIconSchema } from '../src/features/categories/schemas/category';
 import { routing } from '../src/i18n/routing';
-import {
-    isJsonObject,
-    parseJsonValue,
-    type JsonObject,
-    type JsonValue,
-} from '../convex/utils/json';
+import { z } from 'zod';
+
+type TranslationNode = string | TranslationObject;
+interface TranslationObject {
+    [key: string]: TranslationNode;
+}
+const translationNodeSchema: z.ZodType<TranslationNode> = z.lazy(() =>
+    z.union([z.string(), z.record(z.string(), translationNodeSchema)])
+);
+const translationFileSchema = z.record(z.string(), translationNodeSchema);
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = dirname(currentFile);
@@ -17,11 +21,10 @@ const translationsDirectory = join(currentDirectory, '..', 'src', 'translations'
 const configuredLocales = [...routing.locales].sort();
 const configuredLocaleSet = new Set<string>(configuredLocales);
 
-function getAllKeys(value: JsonValue, prefix = ''): string[] {
-    if (!isJsonObject(value)) {
+function getAllKeys(value: TranslationNode, prefix = ''): string[] {
+    if (typeof value === 'string') {
         return prefix ? [prefix] : [];
     }
-
     const keys: string[] = [];
     for (const [key, childValue] of Object.entries(value)) {
         const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -31,7 +34,7 @@ function getAllKeys(value: JsonValue, prefix = ''): string[] {
     return keys;
 }
 
-function loadTranslations(locale: string): JsonObject {
+function loadTranslations(locale: string): TranslationObject {
     const filePath = join(translationsDirectory, `${locale}.json`);
     if (!existsSync(filePath)) {
         throw new Error(`Missing translation file for configured locale "${locale}": ${filePath}`);
@@ -39,12 +42,18 @@ function loadTranslations(locale: string): JsonObject {
 
     const source = readFileSync(filePath, 'utf8');
     assertUniqueTranslationKeys(source, filePath);
-    const parsed = parseJsonValue(source);
-    if (!isJsonObject(parsed)) {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(source);
+    } catch {
+        throw new Error(`Invalid translation file for configured locale "${locale}": ${filePath}`);
+    }
+    const translations = translationFileSchema.safeParse(parsed);
+    if (!translations.success) {
         throw new Error(`Invalid translation file for configured locale "${locale}": ${filePath}`);
     }
 
-    return parsed;
+    return translations.data;
 }
 
 function getTranslationFileLocales(): string[] {

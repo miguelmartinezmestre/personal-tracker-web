@@ -2,7 +2,7 @@ import type { GenericSchema, SchemaDefinition } from 'convex/server';
 import type { TestConvex } from 'convex-test';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { getOptionalString, isJsonObject } from '../utils/json';
+import { z } from 'zod';
 import { asTestId } from './test.casts';
 
 const defaultTestSessionIds = new WeakMap<
@@ -201,11 +201,12 @@ export function readScheduledFunctionArg(row: {
     readonly args: readonly (string | number | boolean | null | object | undefined)[];
 }): { trigger?: string; userId?: Id<'user'> } | undefined {
     const value = row.args[0];
-    if (!isJsonObject(value)) {
-        return undefined;
-    }
-    const trigger = getOptionalString(value.trigger);
-    const userIdValue = getOptionalString(value.userId);
+    const parsed = z
+        .object({ trigger: z.string().optional(), userId: z.string().optional() })
+        .safeParse(value);
+    if (!parsed.success) return undefined;
+    const trigger = parsed.data.trigger;
+    const userIdValue = parsed.data.userId;
     if (userIdValue === undefined) {
         return { trigger };
     }

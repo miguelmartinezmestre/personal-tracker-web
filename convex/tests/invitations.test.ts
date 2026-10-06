@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { api } from '../_generated/api';
 import { initConvexTest } from './test.helper';
 import { createTestUser, createTestOrganization, ensureTestUserAuth } from './test.helpers';
-import { ERROR_CODES, TIME } from '../utils/constants';
+import { ERROR_CODES, TIME } from '../constants';
 import type { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import type { DataModel } from '../_generated/dataModel';
 
@@ -83,6 +83,12 @@ describe('convex invitations (better-auth)', () => {
         ).resolves.toEqual({ isValid: true });
         await expect(
             t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId,
+                now: now + 60 * 60 * 1000,
+            })
+        ).resolves.toEqual({ isValid: true });
+        await expect(
+            t.query(api.organizations.getPublicInvitationStatus, {
                 invitationId: 'not-a-convex-id',
                 now,
             })
@@ -93,7 +99,7 @@ describe('convex invitations (better-auth)', () => {
         await expect(
             t.query(api.organizations.getPublicInvitationStatus, {
                 invitationId,
-                now: Date.now(),
+                now: Date.now() + 60 * 60 * 1000,
             })
         ).resolves.toEqual({ isValid: false });
     });

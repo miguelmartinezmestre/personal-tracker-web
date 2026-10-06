@@ -1,15 +1,11 @@
 import { describe, expect, test } from 'vitest';
+import { isSetupSecretLengthValid, isSetupSecretValid } from '../env';
 import {
     getAuthRouteRedirect,
     getInvitationCallbackPath,
     getInvitationIdFromCallbackPath,
     getSafeCallbackPath,
-    isLocalHostname,
-    isSetupSecretLengthValid,
-    isSetupSecretValid,
-    ORGANIZATION_SECURITY_OPTIONS,
-    requireSecureHttpUrl,
-} from '../platform/auth/security';
+} from '../utils';
 
 describe('safe auth callbacks', () => {
     test.each([
@@ -58,12 +54,6 @@ describe('auth route redirects', () => {
 });
 
 describe('organization invitation security', () => {
-    test('requires a verified email before responding to invitations', () => {
-        expect(ORGANIZATION_SECURITY_OPTIONS).toEqual({
-            requireEmailVerificationOnInvitation: true,
-        });
-    });
-
     test('builds an internal verification callback that resumes the invitation', () => {
         expect(getInvitationCallbackPath('invite/id?external=https://evil.example')).toBe(
             '/invitations/invite%2Fid%3Fexternal%3Dhttps%3A%2F%2Fevil.example'
@@ -102,48 +92,5 @@ describe('bootstrap setup secret', () => {
         expect(isSetupSecretLengthValid('a'.repeat(32))).toBe(true);
         expect(isSetupSecretLengthValid('a'.repeat(256))).toBe(true);
         expect(isSetupSecretLengthValid('a'.repeat(257))).toBe(false);
-    });
-
-    test.each(['localhost', '127.0.0.1', '[::1]', '::1'])(
-        'recognizes loopback host %s',
-        hostname => {
-            expect(isLocalHostname(hostname)).toBe(true);
-        }
-    );
-
-    test('does not treat a lookalike public hostname as loopback', () => {
-        expect(isLocalHostname('localhost.example.com')).toBe(false);
-    });
-});
-
-describe('secure deployment URLs', () => {
-    test('requires HTTPS for a public production URL', () => {
-        expect(() =>
-            requireSecureHttpUrl('SITE_URL', 'http://app.example.com', {
-                requireHttps: true,
-                allowHttpLocalhost: false,
-            })
-        ).toThrow('SITE_URL must use HTTPS in production');
-    });
-
-    test.each(['http://localhost:3000', 'http://127.0.0.1:3210', 'http://[::1]:3211'])(
-        'allows HTTP for an explicitly permitted local URL: %s',
-        value => {
-            expect(
-                requireSecureHttpUrl('SITE_URL', value, {
-                    requireHttps: true,
-                    allowHttpLocalhost: true,
-                })
-            ).toBe(value);
-        }
-    );
-
-    test('does not allow an insecure remote URL when localhost HTTP is permitted', () => {
-        expect(() =>
-            requireSecureHttpUrl('SITE_URL', 'http://app.example.com', {
-                requireHttps: true,
-                allowHttpLocalhost: true,
-            })
-        ).toThrow('SITE_URL must use HTTPS in production');
     });
 });

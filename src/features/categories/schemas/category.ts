@@ -1,5 +1,5 @@
 ﻿import { z } from 'zod';
-import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from '@/convex/utils/inputConstraints';
+import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS } from '@/convex/constants';
 
 export const categoryColorSchema = z
     .string()

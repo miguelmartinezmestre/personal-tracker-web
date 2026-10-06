@@ -8,7 +8,7 @@ import {
     ensureTestUserAuth,
 } from './test.helpers';
 import { asInvalidArg } from './test.casts';
-import { buildOrganizationSlug } from '../domain/organizations/slug';
+import { buildOrganizationSlug } from '../utils';
 
 describe('convex setup', () => {
     describe('isPlatformSetUp', () => {

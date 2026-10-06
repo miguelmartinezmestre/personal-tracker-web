@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest';
 import { wrapDatabaseReader } from 'convex-helpers/server/rowLevelSecurity';
 import { initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
-import { createRlsRules } from '../platform/rls/policies';
-import { TIME } from '../utils/constants';
+import { createRlsRules } from '../rls/policies';
+import { TIME } from '../constants';
 
 const rlsConfig = { defaultPolicy: 'deny' as const };
 

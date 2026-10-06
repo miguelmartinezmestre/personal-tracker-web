@@ -16,12 +16,13 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
-import { useMutation } from '@tanstack/react-query';
-import { useSession } from '@/features/auth/hooks/use-session';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useFormSubmit } from '@/hooks/use-form-submit';
-import { getSafeCallbackPath } from '@/convex/platform/auth/security';
+import { getSafeCallbackPath } from '@/convex/utils';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { getFieldErrors } from '@/components/forms/form-utils';
+import { api } from '@/convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
     callbackUrl?: string;
@@ -35,7 +36,7 @@ export default function LoginForm({
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
     const [loginError, setLoginError] = useState('');
-    const session = useSession();
+    const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
     const loginDefaultValues: z.infer<typeof loginSchema> = {
         email: '',

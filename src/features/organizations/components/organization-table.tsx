@@ -107,6 +107,19 @@ export default function OrganizationsTable() {
         },
     ];
 
+    let loadMoreButton = null;
+    if (organizations.hasMore) {
+        loadMoreButton = (
+            <Button
+                variant="outline"
+                disabled={organizations.isFetching}
+                onClick={organizations.loadMore}
+            >
+                {common('actions.loadMore')}
+            </Button>
+        );
+    }
+
     return (
         <div data-testid="organizations-table">
             <DataTable
@@ -118,15 +131,7 @@ export default function OrganizationsTable() {
                 data={organizations.data ?? []}
                 isLoading={organizations.isLoading}
             />
-            {organizations.hasMore ? (
-                <Button
-                    variant="outline"
-                    disabled={organizations.isFetching}
-                    onClick={organizations.loadMore}
-                >
-                    {common('actions.loadMore')}
-                </Button>
-            ) : null}
+            {loadMoreButton}
         </div>
     );
 }

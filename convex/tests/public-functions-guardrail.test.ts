@@ -72,6 +72,6 @@ describe('Convex test files stay out of the function bundle', () => {
     test('auth config does not load optional Convex env vars', () => {
         const source = readFileSync(join(root, 'convex/auth.config.ts'), 'utf8');
         expect(source).not.toMatch('SETUP_SECRET');
-        expect(source).not.toMatch("from './lib/env'");
+        expect(source).not.toMatch("from './env'");
     });
 });

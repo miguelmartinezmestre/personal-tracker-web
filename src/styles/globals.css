@@ -101,3 +101,11 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* TanStack Charts tooltips follow the app theme tokens instead of the system color scheme. */
+:root {
+    --ts-chart-tooltip-background: var(--popover);
+    --ts-chart-tooltip-color: var(--popover-foreground);
+    --ts-chart-tooltip-border: 1px solid var(--border);
+    --ts-chart-tooltip-border-radius: var(--radius);
+}

@@ -2,7 +2,7 @@ import { LoginForm } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
-import { getSafeCallbackPath } from '@/convex/platform/auth/security';
+import { getSafeCallbackPath } from '@/convex/utils';
 export const dynamic = 'force-dynamic';
 export default async function Login({
     searchParams,

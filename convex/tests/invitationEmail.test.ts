@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-    buildInvitationEmail,
-    buildInvitationUrl,
-    formatInvitationRole,
-} from '../platform/email/invitationEmail';
+import { buildInvitationEmail, buildInvitationUrl, formatInvitationRole } from '../utils';
 
 describe('invitation email helpers', () => {
     test('builds the public invitation URL from the app site URL', () => {

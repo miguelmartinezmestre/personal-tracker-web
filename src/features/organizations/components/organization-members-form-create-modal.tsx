@@ -15,7 +15,11 @@ import {
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganizationMember } from '@/features/organizations/hooks/use-organization-members';
-import { OrganizationRole, isOrganizationRoleValue } from '../types/roles';
+import {
+    OrganizationRole,
+    isOrganizationRoleValue,
+    type OrganizationRoleValue,
+} from '../types/roles';
 import FormModal from '@/components/forms/form-modal';
 import { getFieldErrors } from '@/components/forms/form-utils';
 interface CreateOrganizationMemberFormModalProps {
@@ -78,6 +82,10 @@ export default function CreateOrganizationMemberFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
+                            let value = '';
+                            if (typeof field.state.value === 'string') {
+                                value = field.state.value;
+                            }
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('email')}</FieldLabel>
@@ -86,11 +94,7 @@ export default function CreateOrganizationMemberFormModal({
                                         name={field.name}
                                         placeholder={t('enterEmail')}
                                         type="email"
-                                        value={
-                                            typeof field.state.value === 'string'
-                                                ? field.state.value
-                                                : ''
-                                        }
+                                        value={value}
                                         onChange={event => field.handleChange(event.target.value)}
                                         onBlur={field.handleBlur}
                                         aria-invalid={isInvalid}
@@ -109,6 +113,10 @@ export default function CreateOrganizationMemberFormModal({
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
+                            let value = 'member';
+                            if (typeof field.state.value === 'string') {
+                                value = field.state.value;
+                            }
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('role')}</FieldLabel>
@@ -119,14 +127,10 @@ export default function CreateOrganizationMemberFormModal({
                                                 typeof value === 'string' &&
                                                 isOrganizationRoleValue(value)
                                             ) {
-                                                field.handleChange(value);
+                                                field.handleChange(value as OrganizationRoleValue);
                                             }
                                         }}
-                                        value={
-                                            typeof field.state.value === 'string'
-                                                ? field.state.value
-                                                : 'member'
-                                        }
+                                        value={value}
                                         items={roleOptions}
                                     >
                                         <SelectTrigger

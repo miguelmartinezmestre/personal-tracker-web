@@ -4,10 +4,10 @@ import { ConvexQueryClient } from '@convex-dev/react-query';
 import { MutationCache, QueryClient } from '@tanstack/react-query';
 import { ConvexReactClient } from 'convex/react';
 import { toast } from 'sonner';
-import { env } from '@/lib/env';
 import { getErrorLocale, resolveErrorMessage } from '@/lib/error-messages';
+import { NEXT_PUBLIC_CONVEX_URL } from '@/lib/env';
 
-export const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
+export const convex = new ConvexReactClient(NEXT_PUBLIC_CONVEX_URL);
 
 const convexQueryClient = new ConvexQueryClient(convex);
 

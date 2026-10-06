@@ -1,81 +1,55 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
-import {
-    getOptionalString,
-    isJsonObject,
-    parseJsonValue,
-    type JsonValue,
-} from '@/convex/utils/json';
+import { z } from 'zod';
 type MailHogMessage = {
     Created?: string;
-    Content?: {
-        Body?: string;
-        Headers?: Record<string, string[]>;
-    };
+    Content?: { Body?: string; Headers?: Record<string, string[]> };
 };
+const mailHogHeaderValuesSchema = z.preprocess(value => {
+    if (Array.isArray(value)) {
+        return value.filter((item): item is string => typeof item === 'string');
+    } else {
+        return [];
+    }
+}, z.array(z.string()));
+const mailHogHeadersSchema = z.record(z.string(), mailHogHeaderValuesSchema).catch({});
+const mailHogMessageSchema = z
+    .object({
+        Created: z.string().optional().catch(undefined),
+        Content: z
+            .object({
+                Body: z.string().optional().catch(undefined),
+                Headers: mailHogHeadersSchema,
+            })
+            .optional()
+            .catch(undefined),
+    })
+    .transform(({ Created, Content }) => ({
+        ...(Created === undefined ? {} : { Created }),
+        ...(Content === undefined ? {} : { Content }),
+    }));
+const mailHogSearchResponseSchema = z.preprocess(
+    value => {
+        if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+            return { items: [] };
+        }
+        const items = (value as { items?: unknown }).items;
+        let filteredItems: unknown[];
+        if (Array.isArray(items)) {
+            filteredItems = items.filter(
+                item => item !== null && typeof item === 'object' && !Array.isArray(item)
+            );
+        } else {
+            filteredItems = [];
+        }
+        return { items: filteredItems };
+    },
+    z.object({ items: z.array(mailHogMessageSchema) })
+);
 const MAILHOG_BASE_URL =
     process.env.MAILHOG_HTTP_URL ?? `http://127.0.0.1:${process.env.E2E_MAILHOG_UI_PORT ?? '8026'}`;
-function readStringArray(value: JsonValue | undefined): string[] {
-    if (
-        value === undefined ||
-        value === null ||
-        typeof value === 'string' ||
-        typeof value === 'number' ||
-        typeof value === 'boolean' ||
-        isJsonObject(value)
-    ) {
-        return [];
-    }
-    return value.filter((value: unknown) => typeof value === 'string');
-}
-function readHeaders(value: JsonValue | undefined): Record<string, string[]> {
-    if (!isJsonObject(value)) {
-        return {};
-    }
-    const headers: Record<string, string[]> = {};
-    for (const [key, headerValue] of Object.entries(value)) {
-        headers[key] = readStringArray(headerValue);
-    }
-    return headers;
-}
-function parseMailHogMessage(value: JsonValue): MailHogMessage | undefined {
-    if (!isJsonObject(value)) {
-        return undefined;
-    }
-    const contentValue = value.Content;
-    const content = isJsonObject(contentValue)
-        ? {
-              Body: getOptionalString(contentValue.Body),
-              Headers: readHeaders(contentValue.Headers),
-          }
-        : undefined;
-    return {
-        Created: getOptionalString(value.Created),
-        Content: content,
-    };
-}
-function parseMailHogMessages(value: JsonValue): MailHogMessage[] {
-    if (!isJsonObject(value)) {
-        return [];
-    }
-    const items = value.items;
-    if (
-        items === undefined ||
-        items === null ||
-        typeof items === 'string' ||
-        typeof items === 'number' ||
-        typeof items === 'boolean' ||
-        isJsonObject(items)
-    ) {
-        return [];
-    }
-    const messages: MailHogMessage[] = [];
-    for (const item of items) {
-        const message = parseMailHogMessage(item);
-        if (message) {
-            messages.push(message);
-        }
-    }
-    return messages;
+function parseMailHogMessages(value: unknown): MailHogMessage[] {
+    const result = mailHogSearchResponseSchema.safeParse(value);
+    return result.success ? result.data.items : [];
 }
 function extractEmailUrl(
     message: MailHogMessage,
@@ -89,10 +63,12 @@ function extractEmailUrl(
     const links = body.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
     for (const candidate of links) {
         const url = new URL(candidate.replace(/&amp;/g, '&'));
-        const hasExpectedPath =
-            kind === 'invitation'
-                ? url.pathname.startsWith('/invitations/')
-                : url.pathname.startsWith(`/api/auth/${kind}`);
+        let hasExpectedPath: boolean;
+        if (kind === 'invitation') {
+            hasExpectedPath = url.pathname.startsWith('/invitations/');
+        } else {
+            hasExpectedPath = url.pathname.startsWith(`/api/auth/${kind}`);
+        }
         if (!hasExpectedPath) {
             continue;
         }
@@ -117,7 +93,7 @@ async function findLatestEmailUrl(
     if (!response.ok()) {
         return '';
     }
-    const payload = parseJsonValue(await response.text());
+    const payload: unknown = JSON.parse(await response.text());
     const messages = parseMailHogMessages(payload).sort((left, right) =>
         (right.Created ?? '').localeCompare(left.Created ?? '')
     );

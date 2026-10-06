@@ -40,16 +40,31 @@ export function usePendingInvitations() {
     );
     const { data } = result;
 
-    const invitations: Invitation[] | undefined = data?.map(rawInvitation => ({
-        id: rawInvitation.id,
-        email: rawInvitation.email,
-        role: isOrganizationRoleValue(rawInvitation.role) ? rawInvitation.role : 'member',
-        organizationId: rawInvitation.organizationId,
-        organization: rawInvitation.organization
-            ? { name: rawInvitation.organization.name }
-            : undefined,
-        inviter: rawInvitation.inviter ? { name: rawInvitation.inviter.name } : undefined,
-    }));
+    let invitations: Invitation[] | undefined;
+    if (data) {
+        invitations = data.map(rawInvitation => {
+            let organization: Invitation['organization'];
+            if (rawInvitation.organization) {
+                organization = { name: rawInvitation.organization.name };
+            }
+            let inviter: Invitation['inviter'];
+            if (rawInvitation.inviter) {
+                inviter = { name: rawInvitation.inviter.name };
+            }
+            let role: OrganizationRoleValue = 'member';
+            if (isOrganizationRoleValue(rawInvitation.role)) {
+                role = rawInvitation.role;
+            }
+            return {
+                id: rawInvitation.id,
+                email: rawInvitation.email,
+                role,
+                organizationId: rawInvitation.organizationId,
+                organization,
+                inviter,
+            };
+        });
+    }
 
     return { ...result, data: invitations ?? [] };
 }

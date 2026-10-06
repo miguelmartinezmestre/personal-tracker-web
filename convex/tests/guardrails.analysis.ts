@@ -66,12 +66,16 @@ export function findRawPublicFunctions(source: ts.SourceFile) {
         if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression))
             return undefined;
         const name = memberName(expression);
-        return ts.isIdentifier(expression.expression) &&
+        if (
+            ts.isIdentifier(expression.expression) &&
             namespaces.has(expression.expression.text) &&
             name &&
             RAW_BUILDERS.has(name)
-            ? name.replace('Generic', '')
-            : undefined;
+        ) {
+            return name.replace('Generic', '');
+        } else {
+            return undefined;
+        }
     }
     for (const statement of source.statements) {
         if (
@@ -102,11 +106,13 @@ export function findRawPublicFunctions(source: ts.SourceFile) {
         );
         for (const declaration of statement.declarationList.declarations) {
             if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
-            const kind = kindOf(
-                ts.isCallExpression(declaration.initializer)
-                    ? declaration.initializer.expression
-                    : declaration.initializer
-            );
+            let initializerExpression: ts.Expression;
+            if (ts.isCallExpression(declaration.initializer)) {
+                initializerExpression = declaration.initializer.expression;
+            } else {
+                initializerExpression = declaration.initializer;
+            }
+            const kind = kindOf(initializerExpression);
             if (!kind) continue;
             if (!ts.isCallExpression(declaration.initializer))
                 aliases.set(declaration.name.text, kind);

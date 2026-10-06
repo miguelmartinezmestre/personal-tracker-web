@@ -2,7 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { authClient } from '@/features/auth/client';
-import { type OrganizationRoleValue } from '../types/roles';
+import { type OrganizationRoleValue } from '@/features/organizations/types/roles';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 
 export interface CreateOrganizationMemberParams {

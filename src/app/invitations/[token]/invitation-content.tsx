@@ -3,17 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useSession } from '@/features/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { getInvitationCallbackPath } from '@/convex/platform/auth/security';
+import { getInvitationCallbackPath } from '@/convex/utils';
 import { InvitationActivationPending } from '@/features/organizations/components/invitation-activation-pending';
 import {
     acceptInvitationAndActivateOrganization,
     activateAcceptedOrganization,
 } from '@/features/organizations/lib/accept-invitation';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '@/convex/_generated/api';
 
 type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
@@ -24,7 +26,7 @@ interface InvitationContentProps {
 export default function InvitationContent({ token }: InvitationContentProps) {
     const router = useRouter();
     const t = useTranslations('Invitations');
-    const sessionQuery = useSession();
+    const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
 
     const [status, setStatus] = useState<InvitationStatus>('ready');
     const [errorMessage, setErrorMessage] = useState('');
@@ -167,6 +169,18 @@ export default function InvitationContent({ token }: InvitationContentProps) {
         );
     }
 
+    let acceptButtonContent;
+    if (status === 'accepting') {
+        acceptButtonContent = (
+            <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('accepting')}
+            </>
+        );
+    } else {
+        acceptButtonContent = t('accept');
+    }
+
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">
@@ -182,14 +196,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         disabled={status === 'accepting'}
                         className="w-full"
                     >
-                        {status === 'accepting' ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t('accepting')}
-                            </>
-                        ) : (
-                            t('accept')
-                        )}
+                        {acceptButtonContent}
                     </Button>
                     <Button
                         render={<Link href="/dashboard/home" />}

@@ -25,6 +25,14 @@ export default function SetupProgress({ currentStep, isStepValid }: SetupProgres
                     }
                     const isCompleted = index < currentStep && isStepValid(stepName);
                     const isCurrent = index === currentStep;
+                    let stepLabelClassName = 'text-muted-foreground';
+                    if (isCurrent) {
+                        stepLabelClassName = 'font-medium text-foreground';
+                    }
+                    let connectorClassName = 'bg-muted-foreground/20';
+                    if (index < currentStep) {
+                        connectorClassName = 'bg-primary';
+                    }
 
                     return (
                         <li key={stepName} className="flex flex-1 items-center">
@@ -45,9 +53,7 @@ export default function SetupProgress({ currentStep, isStepValid }: SetupProgres
                                 <span
                                     className={cn(
                                         'text-xs text-center max-w-[80px]',
-                                        isCurrent
-                                            ? 'font-medium text-foreground'
-                                            : 'text-muted-foreground'
+                                        stepLabelClassName
                                     )}
                                 >
                                     {label}
@@ -57,9 +63,7 @@ export default function SetupProgress({ currentStep, isStepValid }: SetupProgres
                                 <div
                                     className={cn(
                                         'mx-2 h-0.5 flex-1 transition-colors',
-                                        index < currentStep
-                                            ? 'bg-primary'
-                                            : 'bg-muted-foreground/20'
+                                        connectorClassName
                                     )}
                                 />
                             )}

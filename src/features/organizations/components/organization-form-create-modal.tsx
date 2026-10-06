@@ -56,6 +56,10 @@ export default function CreateOrganizationFormModal() {
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
+                            let value = '';
+                            if (typeof field.state.value === 'string') {
+                                value = field.state.value;
+                            }
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>{t('name')}</FieldLabel>
@@ -63,11 +67,7 @@ export default function CreateOrganizationFormModal() {
                                         id={field.name}
                                         name={field.name}
                                         placeholder={t('enterOrganizationName')}
-                                        value={
-                                            typeof field.state.value === 'string'
-                                                ? field.state.value
-                                                : ''
-                                        }
+                                        value={value}
                                         onChange={event => field.handleChange(event.target.value)}
                                         onBlur={field.handleBlur}
                                         aria-invalid={isInvalid}
@@ -86,6 +86,10 @@ export default function CreateOrganizationFormModal() {
                         {field => {
                             const errors = getFieldErrors(form, field);
                             const isInvalid = !!errors.length;
+                            let value = '';
+                            if (typeof field.state.value === 'string') {
+                                value = field.state.value;
+                            }
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>
@@ -96,11 +100,7 @@ export default function CreateOrganizationFormModal() {
                                         name={field.name}
                                         placeholder={t('describeOrganizationInDetail')}
                                         className="resize-none min-h-[80px]"
-                                        value={
-                                            typeof field.state.value === 'string'
-                                                ? field.state.value
-                                                : ''
-                                        }
+                                        value={value}
                                         onChange={event => field.handleChange(event.target.value)}
                                         onBlur={field.handleBlur}
                                         aria-invalid={isInvalid}

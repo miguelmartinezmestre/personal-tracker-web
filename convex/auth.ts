@@ -1,22 +1,19 @@
-import { internalMutation } from './platform/db/internalMutation';
 import { internal } from './_generated/api';
 import { internalQuery, type MutationCtx } from './_generated/server';
 import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
-import { ERROR_CODES } from './utils/constants';
+import { ERROR_CODES } from './constants';
 import { defineAuth } from './generated/auth';
-import { queryWithRLS } from './platform/rls/wrappers';
+import { queryWithRLS } from './rls/wrappers';
 import {
     DEFAULT_ORGANIZATION_NAME,
     buildPersonalOrganizationMetadata,
     buildDefaultOrganizationSlug,
     getPersonalOrganizationOwnerUserId,
     isPersonalOrganizationForUser,
-} from './domain/organizations/personalOrganization';
-import { userDocumentValidator } from './utils/documentValidators';
-import { buildBetterAuthOptions } from './platform/auth/betterAuthOptions';
-import type { GenericCtx } from './platform/auth/authRuntime';
-import { isActiveAccount } from './domain/organizations/operational';
+} from './personalOrganization';
+import { buildBetterAuthOptions } from './authOptions';
+import { internalMutation, isActiveAccount, type GenericCtx } from './utils';
 const SESSION_RECOVERY_BATCH_SIZE = 20;
 type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted' | 'affected';
 type SessionRecoveryResult = {
@@ -204,9 +201,15 @@ async function repairSessionsAfterOrganizationDeletion(
         let fallbackOrganizationId = fallbackByUser.get(session.userId);
         if (fallbackOrganizationId === undefined) {
             const userId = ctx.db.normalizeId('user', session.userId);
-            fallbackOrganizationId = userId
-                ? await findOrCreateFallbackOrganization(ctx, userId, deletedOrganizationId)
-                : null;
+            if (userId) {
+                fallbackOrganizationId = await findOrCreateFallbackOrganization(
+                    ctx,
+                    userId,
+                    deletedOrganizationId
+                );
+            } else {
+                fallbackOrganizationId = null;
+            }
             fallbackByUser.set(session.userId, fallbackOrganizationId);
         }
         if (!fallbackOrganizationId) {
@@ -363,6 +366,22 @@ export const getCredentialPasswordHashForDeletion = internalQuery({
     },
 });
 export default defineAuth((ctx: GenericCtx) => buildBetterAuthOptions(ctx));
+const userDocumentValidator = v.object({
+    _id: v.id('user'),
+    _creationTime: v.number(),
+    name: v.string(),
+    email: v.string(),
+    emailVerified: v.boolean(),
+    image: v.optional(v.union(v.null(), v.string())),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    userId: v.optional(v.union(v.null(), v.string())),
+    role: v.optional(v.union(v.null(), v.string())),
+    banned: v.optional(v.union(v.null(), v.boolean())),
+    banReason: v.optional(v.union(v.null(), v.string())),
+    banExpires: v.optional(v.union(v.null(), v.number())),
+    deletedAt: v.optional(v.number()),
+});
 export const getCurrentUser = queryWithRLS({
     args: {},
     returns: v.union(userDocumentValidator, v.null()),

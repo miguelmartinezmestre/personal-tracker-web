@@ -87,6 +87,27 @@ export function DataTable<TData extends RowData>({
         );
     }
 
+    let tableRows;
+    if (table.getRowModel().rows.length) {
+        tableRows = table.getRowModel().rows.map(row => (
+            <TableRow key={row.id} data-testid="table-row">
+                {row.getAllCells().map(cell => (
+                    <TableCell key={cell.id} data-testid="table-cell">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                ))}
+            </TableRow>
+        ));
+    } else {
+        tableRows = (
+            <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                    {t('noResults')}
+                </TableCell>
+            </TableRow>
+        );
+    }
+
     return (
         <div className="space-y-3">
             <div className="rounded-md border">
@@ -110,28 +131,7 @@ export function DataTable<TData extends RowData>({
                             </TableRow>
                         ))}
                     </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows.length ? (
-                            table.getRowModel().rows.map(row => (
-                                <TableRow key={row.id} data-testid="table-row">
-                                    {row.getAllCells().map(cell => (
-                                        <TableCell key={cell.id} data-testid="table-cell">
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    {t('noResults')}
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
+                    <TableBody>{tableRows}</TableBody>
                 </Table>
             </div>
             {pagination && (

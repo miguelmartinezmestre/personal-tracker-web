@@ -15,7 +15,7 @@ import { resolveErrorMessage } from '@/lib/error-messages';
 import SetupProgress from './setup-progress';
 import type { ErrorContext } from 'better-auth/client';
 import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
-import { SETUP_SECRET_HEADER } from '@/convex/platform/auth/security';
+import { SETUP_SECRET_HEADER } from '@/convex/env';
 import { SetupStepContent, SetupWizardActions } from './setup-step-content';
 export default function SetupWizard() {
     const router = useRouter();
@@ -44,19 +44,23 @@ export default function SetupWizard() {
         setIsSubmitting(true);
         const signUpFailedMsg = t('errors.signUpFailed');
         const setupFailedMsg = t('errors.setupFailed');
+        let fetchOptions;
+        if (data.admin.setupSecret) {
+            fetchOptions = {
+                headers: {
+                    [SETUP_SECRET_HEADER]: data.admin.setupSecret,
+                },
+            };
+        } else {
+            fetchOptions = undefined;
+        }
         try {
             await authClient.signUp.email(
                 {
                     name: data.admin.username,
                     email: data.admin.email,
                     password: data.admin.password,
-                    fetchOptions: data.admin.setupSecret
-                        ? {
-                              headers: {
-                                  [SETUP_SECRET_HEADER]: data.admin.setupSecret,
-                              },
-                          }
-                        : undefined,
+                    fetchOptions,
                 },
                 {
                     onSuccess: async () => {

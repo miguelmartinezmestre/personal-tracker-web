@@ -5,12 +5,12 @@ import { fetchQuery, type NextjsOptions } from 'convex/nextjs';
 import type { ArgsAndOptions, FunctionReference, FunctionReturnType } from 'convex/server';
 import { headers } from 'next/headers';
 import { cache } from 'react';
-import { env } from '@/lib/env';
+import { NEXT_PUBLIC_CONVEX_SITE_URL, NEXT_PUBLIC_CONVEX_URL } from '@/lib/env';
 
 const { createContext, createCaller, handler } = convexBetterAuth({
     api,
-    convexSiteUrl: env.NEXT_PUBLIC_CONVEX_SITE_URL,
-    convexUrl: env.NEXT_PUBLIC_CONVEX_URL,
+    convexSiteUrl: NEXT_PUBLIC_CONVEX_SITE_URL,
+    convexUrl: NEXT_PUBLIC_CONVEX_URL,
 });
 const createRSCContext = cache(async () =>
     createContext({
@@ -36,7 +36,7 @@ async function withAuthOptions<Func extends FunctionReference<'query' | 'mutatio
         {
             ...existingOptions,
             token,
-            url: env.NEXT_PUBLIC_CONVEX_URL,
+            url: NEXT_PUBLIC_CONVEX_URL,
         },
     ];
     return nextArgs;

@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import type { OrganizationMember } from '@/features/organizations/schemas/organization-member';
 import OrganizationMemberEditFormModal from '@/features/organizations/components/organization-members-form-edit-modal';
 import { useLocale, useTranslations } from 'next-intl';
-import { useSession } from '@/features/auth/hooks/use-session';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
@@ -39,7 +38,7 @@ export default function OrganizationMembersTable({
     const t = useTranslations('OrganizationMembers');
     const locale = useLocale();
     const deleteOrganizationMember = useDeleteOrganizationMember();
-    const session = useSession();
+    const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
@@ -90,12 +89,15 @@ export default function OrganizationMembersTable({
                     canManageMembers &&
                     !isCurrentUser &&
                     (!isOrganizationOwnerRole(organizationMemberRow.role) || canManageOwners);
-                return canManageTarget ? (
-                    <OrganizationMemberEditFormModal
-                        defaultValues={organizationMemberRow}
-                        canAssignOwner={canManageOwners}
-                    />
-                ) : null;
+                if (canManageTarget) {
+                    return (
+                        <OrganizationMemberEditFormModal
+                            defaultValues={organizationMemberRow}
+                            canAssignOwner={canManageOwners}
+                        />
+                    );
+                }
+                return null;
             },
         },
         {

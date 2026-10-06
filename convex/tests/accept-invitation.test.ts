@@ -8,7 +8,7 @@ import {
     createTestUser,
 } from './test.helpers';
 import { identityFor } from './test.identities';
-import { TIME } from '../utils/constants';
+import { TIME } from '../constants';
 
 describe('accept invitation active organization', () => {
     test('existing user session can activate invited organization after accept', async () => {

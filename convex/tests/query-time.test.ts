@@ -1,31 +1,44 @@
-import { ConvexError } from 'convex/values';
-import { describe, expect, test, vi } from 'vitest';
-import { assertValidReferenceTimestamp } from '../utils/queryTime';
+import { describe, expect, test } from 'vitest';
+import { api } from '../_generated/api';
+import { ERROR_CODES } from '../constants';
+import { initConvexTest } from './test.helper';
 
 describe('reference timestamp validation', () => {
-    test('accepts a client clock skew within one day', () => {
+    const t = initConvexTest();
+
+    test('accepts a client clock skew within one day', async () => {
         const now = Date.now();
 
-        expect(() => assertValidReferenceTimestamp(now - 23 * 60 * 60 * 1000)).not.toThrow();
-        expect(() => assertValidReferenceTimestamp(now + 23 * 60 * 60 * 1000)).not.toThrow();
+        await expect(
+            t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId: 'not-a-convex-id',
+                now: now - 23 * 60 * 60 * 1000,
+            })
+        ).resolves.toEqual({ isValid: false });
+        await expect(
+            t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId: 'not-a-convex-id',
+                now: now + 23 * 60 * 60 * 1000,
+            })
+        ).resolves.toEqual({ isValid: false });
     });
 
-    test('rejects stale, far-future, and non-finite timestamps', () => {
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date('2026-07-14T12:00:00.000Z'));
+    test('rejects stale, far-future, and non-finite timestamps', async () => {
+        const now = Date.now();
+        const queryWithNow = (referenceTime: number) =>
+            t.query(api.organizations.getPublicInvitationStatus, {
+                invitationId: 'not-a-convex-id',
+                now: referenceTime,
+            });
 
-        try {
-            expect(() => assertValidReferenceTimestamp(Date.now() - 25 * 60 * 60 * 1000)).toThrow(
-                ConvexError
-            );
-            expect(() => assertValidReferenceTimestamp(Date.now() + 25 * 60 * 60 * 1000)).toThrow(
-                ConvexError
-            );
-            expect(() => assertValidReferenceTimestamp(Number.POSITIVE_INFINITY)).toThrow(
-                ConvexError
-            );
-        } finally {
-            vi.useRealTimers();
-        }
+        await expect(queryWithNow(now - 25 * 60 * 60 * 1000)).rejects.toThrow(
+            ERROR_CODES.VALIDATION_ERROR
+        );
+        await expect(queryWithNow(now + 25 * 60 * 60 * 1000)).rejects.toThrow(
+            ERROR_CODES.VALIDATION_ERROR
+        );
+        await expect(queryWithNow(Number.POSITIVE_INFINITY)).rejects.toThrow(
+            ERROR_CODES.VALIDATION_ERROR
+        );
     });
 });

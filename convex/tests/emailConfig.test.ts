@@ -1,21 +1,27 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import {
-    getEmailProvider,
-    getResendEmailConfig,
-    getSmtpEmailConfig,
-} from '../platform/email/config';
-import { sendWithConfiguredProvider } from '../jobs/email/transactional';
-import type { MutationCtx } from '../_generated/server';
-import { asInvalidArg } from './test.casts';
+import resendTest from '@convex-dev/resend/test';
+import nodemailer from 'nodemailer';
+import { internal } from '../_generated/api';
+import { initConvexTest } from './test.helper';
+import { getEmailProvider, getResendEmailConfig, getSmtpEmailConfig } from '../email';
+
+const sendMail = vi.hoisted(() => vi.fn(async () => ({ messageId: 'test-message' })));
+vi.mock('nodemailer', () => ({
+    default: { createTransport: vi.fn(() => ({ sendMail })) },
+}));
 
 describe('email provider configuration', () => {
     afterEach(() => {
         vi.unstubAllEnvs();
+        vi.clearAllMocks();
     });
 
-    test('defaults to Resend when EMAIL_PROVIDER is omitted', () => {
-        expect(getEmailProvider({})).toBe('resend');
-    });
+    test.each([undefined, '', '   '])(
+        'defaults to Resend when EMAIL_PROVIDER is absent or blank: %s',
+        provider => {
+            expect(getEmailProvider({ EMAIL_PROVIDER: provider })).toBe('resend');
+        }
+    );
 
     test('requires Resend API key and sender for Resend provider', () => {
         expect(() =>
@@ -56,13 +62,14 @@ describe('email provider configuration', () => {
         });
     });
 
-    test('defaults SMTP secure mode from port 465', () => {
+    test.each([undefined, '', '   '])('defaults SMTP secure mode from port 465: %s', secure => {
         expect(
             getSmtpEmailConfig({
                 EMAIL_PROVIDER: 'smtp',
                 EMAIL_FROM: 'Metricas <noreply@example.com>',
                 SMTP_HOST: 'smtp.example.com',
                 SMTP_PORT: '465',
+                SMTP_SECURE: secure,
                 SMTP_USER: 'mailer',
                 SMTP_PASSWORD: 'secret',
             }).secure
@@ -144,11 +151,6 @@ describe('email provider configuration', () => {
     });
 
     test('queues SMTP email through the configured internal action', async () => {
-        const runAfter = vi.fn();
-        const ctx = asInvalidArg<MutationCtx>({
-            scheduler: { runAfter },
-        });
-
         vi.stubEnv('EMAIL_PROVIDER', 'smtp');
         vi.stubEnv('EMAIL_FROM', 'Metricas <noreply@example.com>');
         vi.stubEnv('SMTP_HOST', 'smtp.example.com');
@@ -163,9 +165,63 @@ describe('email provider configuration', () => {
             html: '<p>Hello</p>',
         };
 
-        const result = await sendWithConfiguredProvider(ctx, args);
+        const t = initConvexTest();
+        vi.useFakeTimers();
+        try {
+            const result = await t.action(internal.email.sendTransactionalEmail, args);
+            const scheduledJobs = await t.run(ctx =>
+                ctx.db.system.query('_scheduled_functions').collect()
+            );
 
-        expect(result).toEqual({ message: 'Email queued successfully', provider: 'smtp' });
-        expect(runAfter).toHaveBeenCalledWith(0, expect.anything(), args);
+            expect(result).toEqual({ message: 'Email queued successfully', provider: 'smtp' });
+            expect(scheduledJobs).toHaveLength(1);
+            expect(scheduledJobs[0]).toMatchObject({
+                name: 'email:sendEmail',
+                state: { kind: 'pending' },
+            });
+            expect(scheduledJobs[0].args).toEqual([args]);
+
+            await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+            expect(nodemailer.createTransport).toHaveBeenCalledWith({
+                host: 'smtp.example.com',
+                port: 587,
+                secure: false,
+                auth: { user: 'mailer', pass: 'secret' },
+            });
+            expect(sendMail).toHaveBeenCalledWith({
+                from: 'Metricas <noreply@example.com>',
+                ...args,
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    test('queues Resend email for real recipients in production', async () => {
+        vi.stubEnv('NODE_ENV', 'production');
+        vi.stubEnv('SITE_URL', 'https://app.example.com');
+        vi.stubEnv('BETTER_AUTH_URL', 'https://app.example.com');
+        vi.stubEnv('SETUP_SECRET', 's'.repeat(32));
+        vi.stubEnv('EMAIL_PROVIDER', 'resend');
+        vi.stubEnv('EMAIL_FROM', 'Metricas <noreply@example.com>');
+        vi.stubEnv('RESEND_API_KEY', 're_test_key');
+        vi.resetModules();
+
+        const t = initConvexTest();
+        resendTest.register(t);
+        vi.useFakeTimers();
+        try {
+            await expect(
+                t.action(internal.email.sendTransactionalEmail, {
+                    to: 'user@example.com',
+                    subject: 'Welcome',
+                    text: 'Hello',
+                })
+            ).resolves.toEqual({ message: 'Email queued successfully', provider: 'resend' });
+        } finally {
+            vi.clearAllTimers();
+            vi.useRealTimers();
+            vi.resetModules();
+        }
     });
 });

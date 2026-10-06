@@ -1,99 +1,89 @@
 import type { MutationCtx } from './_generated/server';
 import { getAuthUserId, type Triggers as BetterAuthTriggers } from 'kitcn/auth';
-import { requireMutationCtx, type GenericCtx } from './platform/auth/authRuntime';
+import { requireMutationCtx, type GenericCtx } from './utils';
 import type schema from './schema';
 import type { DataModel, Id } from './_generated/dataModel';
-import {
-    resolveActorUserId,
-    sanitizeAuditMetadata,
-    toAuditPrimitive,
-} from './domain/audit/privacy';
-import { startMemberLeaveCleanup } from './jobs/organizations/memberLeaveCleanup';
-import { isJsonObject, type JsonObject } from './utils/json';
+import { resolveActorUserId, sanitizeAuditMetadata, toAuditPrimitive } from './auditPrivacy';
+import { z } from 'zod';
 
 type BetterAuthSchema = typeof schema;
 
-const ALLOWED_SESSION_FIELDS = new Set([
-    '_id',
-    'userId',
-    'activeOrganizationId',
-    'expiresAt',
-    'createdAt',
-    'updatedAt',
-]);
+const auditPrimitiveSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const auditReferenceSchema = z.looseObject({ _id: z.string() });
+const auditFieldSchema = z
+    .union([
+        auditPrimitiveSchema.transform(toAuditPrimitive),
+        auditReferenceSchema.transform(reference => reference._id),
+    ])
+    .optional()
+    .catch(undefined);
+const auditRecordSchema = z.record(z.string(), auditPrimitiveSchema);
+const sessionAuditSourceSchema = z
+    .object({
+        _id: auditFieldSchema,
+        userId: auditFieldSchema,
+        activeOrganizationId: auditFieldSchema,
+        expiresAt: auditFieldSchema,
+        createdAt: auditFieldSchema,
+        updatedAt: auditFieldSchema,
+    })
+    .transform(toAuditRecord);
+const userAuditSourceSchema = z
+    .object({
+        _id: auditFieldSchema,
+        emailVerified: auditFieldSchema,
+        createdAt: auditFieldSchema,
+        updatedAt: auditFieldSchema,
+        role: auditFieldSchema,
+        banned: auditFieldSchema,
+        banExpires: auditFieldSchema,
+        deletedAt: auditFieldSchema,
+    })
+    .transform(toAuditRecord);
+const invitationAuditSourceSchema = z
+    .object({
+        _id: auditFieldSchema,
+        organizationId: auditFieldSchema,
+        role: auditFieldSchema,
+        status: auditFieldSchema,
+        expiresAt: auditFieldSchema,
+        createdAt: auditFieldSchema,
+        inviterId: auditFieldSchema,
+    })
+    .transform(toAuditRecord);
 
-const ALLOWED_USER_FIELDS = new Set([
-    '_id',
-    'emailVerified',
-    'createdAt',
-    'updatedAt',
-    'role',
-    'banned',
-    'banExpires',
-    'deletedAt',
-]);
+type AuditRecord = Record<string, string | number | boolean | null>;
 
-const ALLOWED_INVITATION_FIELDS = new Set([
-    '_id',
-    'organizationId',
-    'role',
-    'status',
-    'expiresAt',
-    'createdAt',
-    'inviterId',
-]);
-
-const sanitizeSession = (session: object): Record<string, string | number | boolean | null> => {
-    if (!isJsonObject(session)) {
-        return {};
-    }
-    const result: Record<string, string | number | boolean | null> = {};
-    for (const key of Object.keys(session)) {
-        if (ALLOWED_SESSION_FIELDS.has(key)) {
-            result[key] = toAuditPrimitive(session[key]);
+function toAuditRecord(
+    fields: Record<string, string | number | boolean | null | undefined>
+): AuditRecord {
+    const record: AuditRecord = {};
+    for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+            record[key] = value;
         }
     }
-    return result;
+    return record;
+}
+
+const sanitizeAuditSource = (schema: z.ZodType<AuditRecord>, source: object): AuditRecord => {
+    const result = schema.safeParse(source);
+    return result.success ? result.data : {};
 };
 
-const sanitizeUser = (user: object): Record<string, string | number | boolean | null> => {
-    if (!isJsonObject(user)) {
-        return {};
-    }
-    const result: Record<string, string | number | boolean | null> = {};
-    for (const key of Object.keys(user)) {
-        if (ALLOWED_USER_FIELDS.has(key)) {
-            result[key] = toAuditPrimitive(user[key]);
-        }
-    }
-    return result;
-};
+const sanitizeSession = (session: object): AuditRecord =>
+    sanitizeAuditSource(sessionAuditSourceSchema, session);
 
-const sanitizeInvitation = (
-    invitation: object
-): Record<string, string | number | boolean | null> => {
-    if (!isJsonObject(invitation)) {
-        return {};
-    }
-    const result: Record<string, string | number | boolean | null> = {};
-    for (const key of Object.keys(invitation)) {
-        if (ALLOWED_INVITATION_FIELDS.has(key)) {
-            result[key] = toAuditPrimitive(invitation[key]);
-        }
-    }
-    return result;
-};
+const sanitizeUser = (user: object): AuditRecord =>
+    sanitizeAuditSource(userAuditSourceSchema, user);
+
+const sanitizeInvitation = (invitation: object): AuditRecord =>
+    sanitizeAuditSource(invitationAuditSourceSchema, invitation);
 
 type AuthAuditMetadata = {
     before?: Record<string, string | number | boolean | null>;
     after?: Record<string, string | number | boolean | null>;
     context?: string;
-};
-
-const isAuditRecord = (
-    value: JsonObject | object | string | number | boolean | null | undefined
-): value is Record<string, string | number | boolean | null> => {
-    return isJsonObject(value);
 };
 
 const insertAuthAuditLog = async (
@@ -137,9 +127,12 @@ const insertAuthAuditLog = async (
     }
 
     const rawActorUserId = await getAuthUserId(ctx);
-    const normalizedActorUserId = rawActorUserId
-        ? (ctx.db.normalizeId('user', rawActorUserId) ?? undefined)
-        : undefined;
+    let normalizedActorUserId: Id<'user'> | undefined;
+    if (rawActorUserId) {
+        normalizedActorUserId = ctx.db.normalizeId('user', rawActorUserId) ?? undefined;
+    } else {
+        normalizedActorUserId = undefined;
+    }
     const actorUserId = resolveActorUserId(normalizedUserId, normalizedActorUserId);
 
     let metadata: AuthAuditMetadata | undefined;
@@ -147,11 +140,13 @@ const insertAuthAuditLog = async (
     if (args.metadata !== undefined) {
         const metadataSource = sanitizeAuditMetadata(args.resourceType, args.metadata);
         const normalizedMetadata: AuthAuditMetadata = {};
-        if (isAuditRecord(metadataSource?.before)) {
-            normalizedMetadata.before = metadataSource.before;
+        const before = auditRecordSchema.safeParse(metadataSource?.before);
+        if (before.success) {
+            normalizedMetadata.before = before.data;
         }
-        if (isAuditRecord(metadataSource?.after)) {
-            normalizedMetadata.after = metadataSource.after;
+        const after = auditRecordSchema.safeParse(metadataSource?.after);
+        if (after.success) {
+            normalizedMetadata.after = after.data;
         }
         if (metadataSource?.context !== undefined) {
             normalizedMetadata.context = metadataSource.context;
@@ -269,15 +264,6 @@ export const authAuditTriggers: BetterAuthTriggers<DataModel, BetterAuthSchema, 
         change: async (change, ctx) => {
             const mutationCtx = requireMutationCtx(ctx);
             if (change.operation === 'delete') {
-                const organizationId = mutationCtx.db.normalizeId(
-                    'organization',
-                    change.oldDoc.organizationId
-                );
-                const userId = mutationCtx.db.normalizeId('user', change.oldDoc.userId);
-                if (organizationId && userId) {
-                    await startMemberLeaveCleanup(mutationCtx, organizationId, userId);
-                }
-
                 const oldDoc = change.oldDoc;
                 const sanitizedMember: Record<string, string | number | boolean | null> = {
                     _id: toAuditPrimitive(oldDoc._id),

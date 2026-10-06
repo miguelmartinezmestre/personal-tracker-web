@@ -91,7 +91,7 @@
         "dashboardTitle": "Dashboard",
         "welcome": "Welcome {name}",
         "welcomeAnonymous": "Welcome",
-        "emptyState": "Your workspace is ready. Product features will return here as they are rebuilt.",
+        "emptyState": "There are no objectives in this organization yet. Create one to see your stats here.",
         "stats": {
             "active": "Active",
             "completed": "Completed"
@@ -117,7 +117,16 @@
             "progress": "Progress",
             "partialData": "This chart shows a partial data set.",
             "month": "Month",
-            "objective": "Objective"
+            "objective": "Objective",
+            "averageProgress": "Average progress",
+            "averageProgressDescription": "{count, plural, one {Average of # objective} other {Average of # objectives}}",
+            "averageProgressAria": "Average objective progress: {percent}%",
+            "byCategory": "Objectives by category",
+            "byCategoryDescription": "Number of objectives in each category",
+            "byCategoryAria": "Bar chart with the number of objectives per category",
+            "uncategorized": "Uncategorized",
+            "objectives": "Objectives",
+            "completed": "Completed"
         }
     },
     "HomePage": {
@@ -402,6 +411,16 @@
         "enterUnit": "Enter unit",
         "pickADate": "Pick a date",
         "saveObjective": "Save Objective",
+        "noCategory": "No category",
+        "backToList": "Back to objectives",
+        "completedNotice": "This objective is completed. Edit or delete a progress entry to reopen it.",
+        "notFound": "That objective no longer exists.",
+        "toast": {
+            "created": "Objective created",
+            "updated": "Objective updated",
+            "deleted": "Objective deleted",
+            "deleteFailed": "Failed to delete objective"
+        },
         "category": "Category",
         "unit": "Unit",
         "initialValue": "Initial value",
@@ -486,7 +505,8 @@
             "deleteObjective": "Are you sure you want to delete this objective?",
             "deleteObjectiveDescription": "The objective will be moved to the trash, where it can be restored or permanently deleted.",
             "deleteConfirm": "Delete",
-            "cancel": "Cancel"
+            "cancel": "Cancel",
+            "deletePermanentDescription": "This permanently deletes the objective and its progress. It cannot be undone."
         },
         "categories": {
             "title": "Categories",
@@ -527,6 +547,20 @@
                 "targetValueRequired": "Target value *",
                 "deadline": "Deadline"
             }
+        },
+        "chart": {
+            "title": "Evolution",
+            "ariaLabel": "Objective value over time",
+            "empty": "Log some progress to see how this objective evolves.",
+            "value": "Value",
+            "increment": "Increment",
+            "comment": "Comment",
+            "startValue": "Starting value",
+            "idealPace": "Ideal pace",
+            "legendProgress": "Progress",
+            "legendTarget": "Target",
+            "legendPace": "Ideal pace to the deadline",
+            "partialData": "Only the most recent progress entries are shown."
         }
     },
     "Sessions": {
@@ -733,6 +767,8 @@
         "comment": "Comment",
         "describeYourUpdateProgressInDetail": "Describe your update progress in detail",
         "saveProgress": "Save Progress",
+        "deltaDescription": "Amount to add to the current value.",
+        "empty": "No progress yet.",
         "cancel": "Cancel",
         "table": {
             "columns": {
@@ -750,6 +786,8 @@
             "cancel": "Cancel"
         },
         "toast": {
+            "created": "Progress saved",
+            "updated": "Progress updated",
             "deletedSuccess": "Update deleted successfully",
             "deleteFailed": "Failed to delete update"
         },

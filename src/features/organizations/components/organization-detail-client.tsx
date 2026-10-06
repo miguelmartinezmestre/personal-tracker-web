@@ -9,10 +9,7 @@ import OrganizationMembersTable from '@/features/organizations/components/organi
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import {
-    isOrganizationAdminRole,
-    isOrganizationOwnerRole,
-} from '@/features/organizations/types/roles';
+import { isOrganizationAdminRole, isOrganizationOwnerRole } from '@/convex/utils';
 
 function OrganizationInviteAction({
     organization,

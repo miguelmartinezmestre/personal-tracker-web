@@ -1,25 +1,98 @@
-import { paginateVisible } from './utils/visiblePagination';
 import { paginationResultValidator } from 'convex/server';
-import { isActiveAccount } from './domain/organizations/operational';
 import { ConvexError, v } from 'convex/values';
 import { paginationOptsValidator } from 'convex/server';
 import { query } from './_generated/server';
 import { getSession } from 'kitcn/auth';
-import { ERROR_CODES } from './utils/constants';
-import { resolveActiveMembership } from './platform/rls/authContext';
-import { isPersonalOrganizationForUser } from './domain/organizations/personalOrganization';
-import { queryWithRLS } from './platform/rls/wrappers';
+import { ERROR_CODES } from './constants';
+import { resolveActiveMembership } from './rls/authContext';
+import { isPersonalOrganizationForUser } from './personalOrganization';
+import { queryWithRLS } from './rls/wrappers';
 import {
-    activeMemberValidator,
-    currentSessionValidator,
-    organizationSummaryValidator,
-    paginatedOrganizationMembersValidator,
-    userInvitationValidator,
-} from './utils/apiReturnValidators';
-import { assertValidReferenceTimestamp, isInvitationActive } from './utils/queryTime';
-import { ORGANIZATION_ROLE, type OrganizationRole } from './domain/organizations/roles';
-import { withInvalidCursorRetry } from './utils/pagination';
-import { getOptionalString, isJsonObject, type JsonObject } from './utils/json';
+    isActiveAccount,
+    ORGANIZATION_ROLE,
+    paginateVisible,
+    withInvalidCursorRetry,
+    type OrganizationRole,
+} from './utils';
+import { z } from 'zod';
+
+const organizationRoleValidator = v.union(
+    v.literal(ORGANIZATION_ROLE.OWNER),
+    v.literal(ORGANIZATION_ROLE.ADMIN),
+    v.literal(ORGANIZATION_ROLE.MEMBER)
+);
+
+const organizationSummaryValidator = v.object({
+    id: v.id('organization'),
+    name: v.string(),
+    slug: v.string(),
+    description: v.string(),
+    logo: v.optional(v.union(v.null(), v.string())),
+    createdAt: v.number(),
+    role: organizationRoleValidator,
+    isPersonal: v.boolean(),
+});
+
+const activeMemberValidator = v.object({
+    id: v.id('member'),
+    organizationId: v.id('organization'),
+    userId: v.id('user'),
+    role: organizationRoleValidator,
+    createdAt: v.number(),
+});
+
+const organizationMemberValidator = v.object({
+    id: v.id('member'),
+    organizationId: v.id('organization'),
+    userId: v.id('user'),
+    role: organizationRoleValidator,
+    createdAt: v.number(),
+    user: v.union(
+        v.null(),
+        v.object({
+            email: v.string(),
+            name: v.string(),
+            image: v.optional(v.union(v.null(), v.string())),
+        })
+    ),
+});
+
+const paginatedOrganizationMembersValidator = paginationResultValidator(
+    organizationMemberValidator
+);
+
+const userInvitationValidator = v.object({
+    id: v.id('invitation'),
+    email: v.string(),
+    role: v.string(),
+    organizationId: v.id('organization'),
+    organization: v.optional(v.object({ name: v.string() })),
+    inviter: v.optional(v.object({ name: v.string() })),
+});
+
+const currentSessionValidator = v.object({
+    session: v.object({
+        id: v.id('session'),
+        userId: v.string(),
+        expiresAt: v.number(),
+        activeOrganizationId: v.union(v.id('organization'), v.null()),
+        createdAt: v.number(),
+    }),
+    user: v.union(
+        v.null(),
+        v.object({
+            id: v.id('user'),
+            name: v.string(),
+            email: v.string(),
+            image: v.optional(v.union(v.null(), v.string())),
+            emailVerified: v.boolean(),
+        })
+    ),
+});
+
+const MIN_REFERENCE_TIMESTAMP = Date.UTC(2020, 0, 1);
+const MAX_REFERENCE_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000;
+const organizationMetadataSchema = z.looseObject({ description: z.string().optional() });
 
 function normalizeOrganizationRole(role: string): OrganizationRole {
     if (role === ORGANIZATION_ROLE.OWNER || role === ORGANIZATION_ROLE.ADMIN) {
@@ -28,17 +101,14 @@ function normalizeOrganizationRole(role: string): OrganizationRole {
     return ORGANIZATION_ROLE.MEMBER;
 }
 
-function parseOrganizationMetadata(metadata: string): JsonObject | undefined {
+function parseOrganizationDescription(metadata: string): string | undefined {
     try {
-        // oxlint-disable-next-line typescript/no-unsafe-assignment -- JSON.parse is an untyped boundary; immediately narrowed by isJsonObject
-        const parsed: JsonObject | object | string | number | boolean | null = JSON.parse(metadata);
-        if (isJsonObject(parsed)) {
-            return parsed;
-        }
+        const parsed: unknown = JSON.parse(metadata);
+        const result = organizationMetadataSchema.safeParse(parsed);
+        return result.success ? result.data.description : undefined;
     } catch {
         return undefined;
     }
-    return undefined;
 }
 
 function getOrganizationDescription(metadata: string | null | undefined): string {
@@ -46,8 +116,17 @@ function getOrganizationDescription(metadata: string | null | undefined): string
         return '';
     }
 
-    const parsed = parseOrganizationMetadata(metadata);
-    return getOptionalString(parsed?.description) ?? '';
+    return parseOrganizationDescription(metadata) ?? '';
+}
+
+function assertValidReferenceTimestamp(now: number): void {
+    if (
+        !Number.isFinite(now) ||
+        now < MIN_REFERENCE_TIMESTAMP ||
+        Math.abs(now - Date.now()) > MAX_REFERENCE_CLOCK_SKEW_MS
+    ) {
+        throw new ConvexError(ERROR_CODES.VALIDATION_ERROR);
+    }
 }
 
 export const getPublicInvitationStatus = query({
@@ -65,7 +144,11 @@ export const getPublicInvitationStatus = query({
         }
 
         const invitation = await ctx.db.get('invitation', invitationId);
-        return { isValid: invitation ? isInvitationActive(invitation, serverNow) : false };
+        let isValid = false;
+        if (invitation) {
+            isValid = invitation.status === 'pending' && invitation.expiresAt > serverNow;
+        }
+        return { isValid };
     },
 });
 
@@ -83,17 +166,29 @@ export const getCurrentSession = query({
         if (!isActiveAccount(user, Date.now())) {
             return null;
         }
-        const activeOrganizationId =
-            userId && currentSession.activeOrganizationId
-                ? (
-                      await resolveActiveMembership(
-                          ctx,
-                          userId,
-                          ctx.db.normalizeId('organization', currentSession.activeOrganizationId)
-                      )
-                  ).organizationId
-                : null;
+        let activeOrganizationId = null;
+        if (userId && currentSession.activeOrganizationId) {
+            activeOrganizationId = (
+                await resolveActiveMembership(
+                    ctx,
+                    userId,
+                    ctx.db.normalizeId('organization', currentSession.activeOrganizationId)
+                )
+            ).organizationId;
+        }
 
+        let userSummary = null;
+        if (user) {
+            userSummary = {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                image: user.image,
+                emailVerified: user.emailVerified,
+            };
+        } else {
+            userSummary = null;
+        }
         return {
             session: {
                 id: currentSession._id,
@@ -102,15 +197,7 @@ export const getCurrentSession = query({
                 activeOrganizationId,
                 createdAt: currentSession.createdAt,
             },
-            user: user
-                ? {
-                      id: user._id,
-                      name: user.name,
-                      email: user.email,
-                      image: user.image,
-                      emailVerified: user.emailVerified,
-                  }
-                : null,
+            user: userSummary,
         };
     },
 });
@@ -173,12 +260,15 @@ export const getOrganizationByIdentifier = queryWithRLS({
     handler: async (ctx, args) => {
         const value = args.identifier.trim();
         const id = ctx.db.normalizeId('organization', value);
-        const org = id
-            ? await ctx.dbForIntegrityChecks.get('organization', id)
-            : await ctx.dbForIntegrityChecks
-                  .query('organization')
-                  .withIndex('slug', q => q.eq('slug', value))
-                  .first();
+        let org;
+        if (id) {
+            org = await ctx.dbForIntegrityChecks.get('organization', id);
+        } else {
+            org = await ctx.dbForIntegrityChecks
+                .query('organization')
+                .withIndex('slug', q => q.eq('slug', value))
+                .first();
+        }
         if (!org) {
             return null;
         }
@@ -229,13 +319,15 @@ export const getUserInvitationsPage = queryWithRLS({
                     .paginate(paginationOpts),
             get: async id => {
                 const normalized = ctx.db.normalizeId('invitation', id);
-                return normalized
-                    ? await ctx.dbForIntegrityChecks.get('invitation', normalized)
-                    : null;
+                if (normalized) {
+                    return await ctx.dbForIntegrityChecks.get('invitation', normalized);
+                }
+                return null;
             },
             accepts: async invitation =>
                 invitation.email === ctx.email &&
-                isInvitationActive(invitation, now) &&
+                invitation.status === 'pending' &&
+                invitation.expiresAt > now &&
                 Boolean(
                     await ctx.dbForIntegrityChecks.get('organization', invitation.organizationId)
                 ),
@@ -328,6 +420,12 @@ export const getOrganizationMembers = queryWithRLS({
 
         const enrichedPage = paginatedMembers.page.map(member => {
             const user = userMap.get(member.userId);
+            let userSummary = null;
+            if (user) {
+                userSummary = { email: user.email, name: user.name, image: user.image };
+            } else {
+                userSummary = null;
+            }
 
             return {
                 id: member._id,
@@ -335,13 +433,7 @@ export const getOrganizationMembers = queryWithRLS({
                 userId: member.userId,
                 role: normalizeOrganizationRole(member.role),
                 createdAt: member.createdAt,
-                user: user
-                    ? {
-                          email: user.email,
-                          name: user.name,
-                          image: user.image,
-                      }
-                    : null,
+                user: userSummary,
             };
         });
 

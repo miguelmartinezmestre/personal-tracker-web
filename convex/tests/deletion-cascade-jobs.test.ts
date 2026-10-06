@@ -32,14 +32,39 @@ describe('organization deletion cascade', () => {
             slug: `organization-to-delete-${suffix}`,
         });
         await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
+        const now = Date.now();
         const categoryId = await t.run(ctx =>
             ctx.db.insert('categories', {
                 userId: user.docId,
                 organizationId,
                 name: 'Category to delete',
                 color: '#000000',
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+        const objectiveId = await t.run(ctx =>
+            ctx.db.insert('objectives', {
+                organizationId,
+                createdBy: user.docId,
+                title: 'Objective to delete',
+                startValue: 0,
+                currentValue: 1,
+                targetValue: 5,
+                status: 'active',
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+        const progressId = await t.run(ctx =>
+            ctx.db.insert('progressUpdates', {
+                objective: objectiveId,
+                organizationId,
+                createdBy: user.docId,
+                updatedValue: 1,
+                updateDate: now,
+                createdAt: now,
+                updatedAt: now,
             })
         );
 
@@ -51,6 +76,8 @@ describe('organization deletion cascade', () => {
         await t.run(async ctx => {
             expect(await ctx.db.get('organization', organizationId)).toBeNull();
             expect(await ctx.db.get('categories', categoryId)).toBeNull();
+            expect(await ctx.db.get('objectives', objectiveId)).toBeNull();
+            expect(await ctx.db.get('progressUpdates', progressId)).toBeNull();
         });
     });
 
