@@ -15,6 +15,7 @@ import { getFieldErrors } from '@/components/forms/form-utils';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
+import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import {
     OBJECTIVE_DESCRIPTION_MAX_LENGTH,
     OBJECTIVE_TITLE_MAX_LENGTH,
@@ -36,43 +37,18 @@ export function ObjectiveFormFields({
     const today = todayDateInput();
     const minDeadline = keptDeadline && keptDeadline < today ? keptDeadline : today;
     const categories = useQuery(convexQuery(api.categories.listCategories, {}));
+    const categoryLabel = useCategoryLabel();
     const categoryOptions = [
         { value: NONE_CATEGORY, label: t('noCategory') },
-        ...(categories.data ?? []).map(category => ({ value: category.id, label: category.name })),
+        ...(categories.data ?? []).map(category => ({
+            value: category.id,
+            label: categoryLabel(category.name),
+        })),
     ];
 
     return (
         <FieldGroup>
-            <form.Field name="title">
-                {field => {
-                    const errors = getFieldErrors(form, field);
-                    const isInvalid = errors.length > 0;
-                    return (
-                        <Field data-invalid={isInvalid}>
-                            <FieldLabel htmlFor={field.name}>
-                                {t('smartForm.fields.titleRequired')}
-                            </FieldLabel>
-                            <Input
-                                id={field.name}
-                                name={field.name}
-                                value={
-                                    typeof field.state.value === 'string' ? field.state.value : ''
-                                }
-                                placeholder={t('enterObjectiveTitle')}
-                                maxLength={OBJECTIVE_TITLE_MAX_LENGTH}
-                                onBlur={field.handleBlur}
-                                onChange={event => field.handleChange(event.target.value)}
-                                aria-invalid={isInvalid}
-                                data-testid="objective-title-input"
-                            />
-                            <FieldDescription>
-                                {t('giveYourObjectiveAClearConciseTitle')}
-                            </FieldDescription>
-                            {isInvalid ? <FieldError errors={errors} /> : null}
-                        </Field>
-                    );
-                }}
-            </form.Field>
+            <TitleField form={form} />
             <form.Field name="description">
                 {field => {
                     const errors = getFieldErrors(form, field);
@@ -250,6 +226,55 @@ function NumberField({
                             aria-invalid={isInvalid}
                             data-testid={testId}
                         />
+                        {isInvalid ? <FieldError errors={errors} /> : null}
+                    </Field>
+                );
+            }}
+        </form.Field>
+    );
+}
+
+function TitleField({ form }: { form: TanStackFormApi<ObjectiveFormValues> }) {
+    const t = useTranslations('Objectives');
+    return (
+        <form.Field name="title">
+            {field => {
+                const errors = getFieldErrors(form, field);
+                const isInvalid = errors.length > 0;
+                const title = typeof field.state.value === 'string' ? field.state.value : '';
+                return (
+                    <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>
+                            {t('smartForm.fields.titleRequired')}
+                        </FieldLabel>
+                        <Input
+                            id={field.name}
+                            name={field.name}
+                            value={title}
+                            placeholder={t('enterObjectiveTitle')}
+                            maxLength={OBJECTIVE_TITLE_MAX_LENGTH}
+                            aria-describedby={`${field.name}-count`}
+                            onBlur={field.handleBlur}
+                            onChange={event => field.handleChange(event.target.value)}
+                            aria-invalid={isInvalid}
+                            data-testid="objective-title-input"
+                        />
+                        <div className="flex justify-between gap-4">
+                            <FieldDescription>
+                                {t('giveYourObjectiveAClearConciseTitle')}
+                            </FieldDescription>
+                            {/* The input stops at the limit, so show how close it is. */}
+                            <span
+                                id={`${field.name}-count`}
+                                className="text-muted-foreground shrink-0 text-xs tabular-nums"
+                                data-testid="objective-title-count"
+                            >
+                                {t('characterCount', {
+                                    count: title.length,
+                                    max: OBJECTIVE_TITLE_MAX_LENGTH,
+                                })}
+                            </span>
+                        </div>
                         {isInvalid ? <FieldError errors={errors} /> : null}
                     </Field>
                 );

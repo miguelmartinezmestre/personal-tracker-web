@@ -12,7 +12,7 @@ import { DataTable } from '@/components/data-table/components/table';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
 import { isOverdue } from '@/features/objectives/lib/dates';
-import { formatObjectiveDate } from '@/features/objectives/lib/format';
+import { formatObjectiveDate, formatProgressPercent } from '@/features/objectives/lib/format';
 import { api } from '@/convex/_generated/api';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
@@ -73,7 +73,9 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
             header: t('progress'),
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
-                    <span className="w-10 tabular-nums">{row.original.progressPercent}%</span>
+                    <span className="w-12 tabular-nums">
+                        {formatProgressPercent(row.original.progressPercent, locale)}
+                    </span>
                     <div
                         className="bg-muted hidden h-1.5 w-16 overflow-hidden rounded-full sm:block"
                         aria-hidden
@@ -106,7 +108,9 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
                         <EditObjectiveFormModal objective={row.original} compactTrigger />
                         <DeleteConfirmationDialog
                             title={t('confirm.deleteObjective')}
-                            description={t('confirm.deletePermanentDescription')}
+                            description={t('confirm.deletePermanentDescription', {
+                                title: row.original.title,
+                            })}
                             confirmLabel={t('confirm.deleteConfirm')}
                             cancelLabel={t('confirm.cancel')}
                             isLoading={deleteObjective.isPending}

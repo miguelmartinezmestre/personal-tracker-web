@@ -92,14 +92,16 @@ function Sidebar({ className, children, ...props }: React.ComponentProps<"div">)
       </div>
     </div>);
 }
-function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
+function SidebarTrigger({ className, onClick, label = "Toggle Sidebar", ...props }: React.ComponentProps<typeof Button> & {
+    label?: string;
+}) {
     const { toggleSidebar } = useSidebar();
     return (<Button data-sidebar="trigger" data-slot="sidebar-trigger" variant="ghost" size="icon" className={cn("size-7", className)} onClick={(event) => {
             onClick?.(event);
             toggleSidebar();
         }} {...props}>
       <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{label}</span>
     </Button>);
 }
 function SidebarInset({ className, ...props }: React.ComponentProps<"div">) {

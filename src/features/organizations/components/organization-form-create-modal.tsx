@@ -12,6 +12,7 @@ import { useCreateOrganization } from '@/features/organizations/hooks/use-organi
 import FormModal from '@/components/forms/form-modal';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 const defaultValues: CreateOrganization = {
     name: '',
     description: '',
@@ -41,6 +42,8 @@ export default function CreateOrganizationFormModal() {
             }}
             onSubmit={async (values: CreateOrganization) => {
                 await createOrganization.mutateAsync(values);
+                // Better Auth makes the new organization the active one.
+                toast.success(t('toast.createdAndActive', { name: values.name.trim() }));
                 router.refresh();
             }}
             submitLabel={t('saveOrganization')}

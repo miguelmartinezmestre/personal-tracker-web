@@ -2,15 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer } from '@/features/landing';
 import { Header } from '@/features/landing';
-import { Compass, Home, LogIn } from 'lucide-react';
+import { Compass, Home } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { NotFoundAccountAction } from '@/features/landing/components/not-found-account-action';
 
 export default async function NotFound() {
-    const [tNotFound, tHomePage] = await Promise.all([
-        getTranslations('NotFound'),
-        getTranslations('HomePage'),
-    ]);
+    const tNotFound = await getTranslations('NotFound');
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -51,21 +49,7 @@ export default async function NotFound() {
                             <Home aria-hidden />
                             {tNotFound('goHome')}
                         </Button>
-                        <Button
-                            nativeButton={false}
-                            render={
-                                <Link
-                                    href="/login"
-                                    prefetch={false}
-                                    data-testid="not-found-login-link"
-                                />
-                            }
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                        >
-                            <LogIn aria-hidden />
-                            {tHomePage('login')}
-                        </Button>
+                        <NotFoundAccountAction />
                     </CardFooter>
                 </Card>
             </main>

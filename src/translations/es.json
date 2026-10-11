@@ -24,7 +24,7 @@
         "fields": {
             "email": "Correo electrónico",
             "name": "Nombre",
-            "username": "Nombre de usuario",
+            "username": "Nombre",
             "password": "Contraseña",
             "confirmPassword": "Confirmar contraseña",
             "role": "Rol"
@@ -32,7 +32,7 @@
         "placeholders": {
             "email": "nombre@correo.com",
             "password": "Ingresa tu contraseña",
-            "username": "username",
+            "username": "Tu nombre",
             "min8Chars": "Mínimo 8 caracteres",
             "confirmPassword": "Confirmar contraseña",
             "userIdForSessions": "ID del usuario para ver sus sesiones..."
@@ -86,7 +86,8 @@
         "validation": {
             "invalidEmail": "Introduce un correo válido.",
             "minimumCharacters": "Introduce al menos {count} caracteres."
-        }
+        },
+        "toggleSidebar": "Mostrar u ocultar el menú lateral"
     },
     "DashboardHome": {
         "dashboardTitle": "Dashboard",
@@ -137,7 +138,7 @@
         "login": "Iniciar sesión",
         "register": "Registrarse",
         "mainFeatures": "Características principales",
-        "goToDashboard": "Ir al Dashboard",
+        "goToDashboard": "Ir al panel",
         "achieveGoals": "Logra tus objetivos con nuestro sistema",
         "ourPlatform": "Nuestra plataforma está diseñada para ayudarte a establecer, controlar y alcanzar tus objetivos personales y profesionales con herramientas intuitivas y visualizaciones informativas.",
         "customizableGoals": "Objetivos personalizables",
@@ -164,7 +165,8 @@
             "passwordsDontMatch": "Las contraseñas no coinciden",
             "weakPassword": "La contraseña debe incluir al menos una mayúscula, una minúscula y un número.",
             "registerFallback": "Error al registrar usuario. Por favor, intenta de nuevo."
-        }
+        },
+        "requestNewResetLink": "Solicitar un enlace nuevo"
     },
     "Sidebar": {
         "appName": "Métricas",
@@ -178,8 +180,8 @@
         "sessions": "Sesiones",
         "settings": "Configuración",
         "users": "Usuarios",
-        "adminSessions": "Gestión de Sesiones",
-        "adminAudit": "Logs de Auditoría",
+        "adminSessions": "Gestión de sesiones",
+        "adminAudit": "Registros de auditoría",
         "organizations": "Organizaciones"
     },
     "Achievements": {
@@ -357,7 +359,9 @@
     "CommandMenu": {
         "placeholder": "Buscar comandos...",
         "empty": "No se encontraron resultados.",
-        "navigation": "Navegación"
+        "navigation": "Navegación",
+        "title": "Paleta de comandos",
+        "description": "Busca un comando para ejecutarlo..."
     },
     "LanguageSwitcher": {
         "label": "Idioma"
@@ -371,7 +375,9 @@
         "activeOrganization": "Organización activa",
         "current": "Actual",
         "switchOrganization": "Cambiar a:",
-        "personal": "Personal"
+        "personal": "Personal",
+        "triggerLabel": "Organización activa: {name}",
+        "personalOrganizationName": "Organización personal"
     },
     "ThemeSwitcher": {
         "toggle": "Cambiar tema",
@@ -391,7 +397,7 @@
     },
     "Objectives": {
         "title": "Objetivos",
-        "pageTitle": "Objetivos | Metrics App",
+        "pageTitle": "Objetivos | Métricas",
         "description": "Define tus objetivos personales y profesionales para alcanzar tus metas.",
         "pageDescription": "Gestiona tus objetivos personales y profesionales.",
         "createObjective": "Crear objetivo",
@@ -518,7 +524,7 @@
             "deleteObjectiveDescription": "El objetivo se moverá a la papelera, donde podrá restaurarse o eliminarse definitivamente.",
             "deleteConfirm": "Eliminar",
             "cancel": "Cancelar",
-            "deletePermanentDescription": "Esto elimina el objetivo y sus avances de forma permanente. No se puede deshacer."
+            "deletePermanentDescription": "Se eliminarán «{title}» y todos sus avances de forma permanente. No se puede deshacer."
         },
         "categories": {
             "title": "Categorías",
@@ -589,7 +595,8 @@
         "columns": {
             "title": "Título"
         },
-        "completedOn": "Completado el {date}"
+        "completedOn": "Completado el {date}",
+        "characterCount": "{count}/{max}"
     },
     "Sessions": {
         "title": "Sesiones",
@@ -634,12 +641,14 @@
         },
         "toast": {
             "deletedSuccess": "Organización eliminada exitosamente",
-            "deleteFailed": "Error al eliminar organización"
+            "deleteFailed": "Error al eliminar organización",
+            "createdAndActive": "Organización creada. Ahora estás trabajando en «{name}»."
         },
         "validation": {
             "nameRequired": "Escribe un nombre.",
             "nameTooLong": "El nombre no puede superar los 100 caracteres."
-        }
+        },
+        "personalOrganizationName": "Organización personal"
     },
     "Settings": {
         "account": "Cuenta",
@@ -650,13 +659,13 @@
         "preferencesSavedDescription": "Tus preferencias de notificación han sido actualizadas.",
         "preferencesError": "Error",
         "preferencesErrorDescription": "No se pudieron actualizar las preferencias. Por favor, inténtalo de nuevo.",
-        "achievementNotifications": "Notificaciones de Logros",
+        "achievementNotifications": "Notificaciones de logros",
         "achievementNotificationsDescription": "Recibe notificaciones cuando desbloquees logros y ganes puntos.",
-        "deadlineNotifications": "Recordatorios de Fechas Límite",
+        "deadlineNotifications": "Recordatorios de fechas límite",
         "deadlineNotificationsDescription": "Recibe recordatorios cuando tus objetivos tengan fechas límite próximas.",
-        "progressNotifications": "Alertas de Progreso y Rachas",
+        "progressNotifications": "Alertas de progreso y rachas",
         "progressNotificationsDescription": "Recibe notificaciones sobre tus actualizaciones de progreso y hitos de rachas.",
-        "organizationNotifications": "Notificaciones de Organización",
+        "organizationNotifications": "Notificaciones de organización",
         "organizationNotificationsDescription": "Recibe notificaciones sobre logros organizacionales y actividades de miembros.",
         "title": "Configuración",
         "description": "Gestiona tus configuraciones para mantener un seguimiento de tu progreso.",
@@ -683,15 +692,15 @@
         "passwordUpdated": "Contraseña actualizada.",
         "accountUpdated": "Cuenta actualizada.",
         "emailChangeRequested": "Te hemos enviado un email de verificación para confirmar tu nueva dirección.",
-        "dangerZone": "Zona de Peligro",
-        "dangerZoneSettings": "Zona de Peligro",
+        "dangerZone": "Zona de peligro",
+        "dangerZoneSettings": "Zona de peligro",
         "dangerZoneSettingsDescription": "Acciones irreversibles para tu cuenta.",
-        "deleteAccountTitle": "Eliminar Cuenta",
+        "deleteAccountTitle": "Eliminar cuenta",
         "deleteAccountDescription": "La cuenta no se podrá recuperar. Se eliminan credenciales, sesiones, datos privados y espacios personales; las contribuciones compartidas solo permanecen como historial anonimizado.",
         "deleteAccountConfirmLabel": "Confirma ingresando tu correo electrónico",
         "deleteAccountPlaceholder": "Ingresa tu correo electrónico",
         "deleteAccountHelpText": "Escribe {email} para confirmar la eliminación",
-        "deleteAccountButton": "Eliminar Mi Cuenta",
+        "deleteAccountButton": "Eliminar mi cuenta",
         "deleteAccountSuccess": "Tu cuenta ha sido eliminada. Redireccionando...",
         "deleteAccountFailed": "No hemos podido eliminar tu cuenta. Inténtalo de nuevo.",
         "deleteAccountPasswordLabel": "Ingresa tu contraseña para confirmar",
@@ -700,11 +709,11 @@
         "deleteAccountProtectedDescription": "La cuenta que configuró esta plataforma no puede eliminarse. Transfiere las responsabilidades de administración a otro usuario antes de modificar esta cuenta."
     },
     "Admin": {
-        "userManagement": "Gestión de Usuarios",
+        "userManagement": "Gestión de usuarios",
         "userManagementDescription": "Gestiona cuentas de usuarios, roles y permisos.",
-        "sessionManagement": "Gestión de Sesiones",
+        "sessionManagement": "Gestión de sesiones",
         "sessionManagementDescription": "Visualiza y gestiona las sesiones de usuario.",
-        "auditLogManagement": "Gestión de Logs de Auditoría",
+        "auditLogManagement": "Gestión de registros de auditoría",
         "auditLogManagementDescription": "Visualiza los registros de actividad del sistema.",
         "usersTable": {
             "empty": "No se encontraron usuarios.",
@@ -756,7 +765,7 @@
                 "id": "ID",
                 "expires": "Expira",
                 "ip": "IP",
-                "userAgent": "User Agent",
+                "userAgent": "Navegador",
                 "actions": "Acciones"
             },
             "emptyWithUser": "No se encontraron sesiones para este usuario",
@@ -776,7 +785,7 @@
             }
         },
         "auditLogsTable": {
-            "title": "Logs de Auditoría",
+            "title": "Registros de auditoría",
             "description": "Registro de acciones realizadas en el sistema",
             "empty": "No hay logs de auditoría registrados",
             "columns": {
@@ -841,7 +850,11 @@
         "updatedValueWithUnit": "Cantidad a sumar ({unit})",
         "entryValue": "Cantidad de esta entrada",
         "entryValueWithUnit": "Cantidad de esta entrada ({unit})",
-        "entryValueDescription": "Al cambiarla se recalcula el valor actual del objetivo."
+        "entryValueDescription": "Al cambiarla se recalcula el valor actual del objetivo.",
+        "aria": {
+            "editEntry": "Editar el avance {entry}",
+            "deleteEntry": "Eliminar el avance {entry}"
+        }
     },
     "Header": {
         "appName": "Métricas",
@@ -861,34 +874,31 @@
     },
     "Table": {
         "noResults": "Sin resultados",
-        "showing": "Mostrando",
-        "rows": "filas",
         "previous": "Anterior",
-        "next": "Siguiente"
+        "next": "Siguiente",
+        "showingRows": "Mostrando {count, plural, one {# fila} other {# filas}}"
     },
     "OrganizationMembers": {
-        "createNewOrganizationMember": "Crear nuevo miembro de la organización",
         "selectRole": "Selecciona un rol",
         "roles": {
             "admin": "Administrador",
             "member": "Miembro",
             "owner": "Propietario"
         },
-        "createNewOrganizationMemberDescription": "Llena el formulario a continuación para crear un nuevo miembro de la organización. Haz clic en guardar cuando hayas terminado.",
         "email": "Correo electrónico",
         "enterEmail": "Ingresa el correo electrónico",
         "role": "Rol",
         "joinedAt": "Alta",
-        "currentRoleOfYourOrganizationMember": "Rol actual de tu miembro de la organización.",
-        "saveOrganizationMember": "Guardar miembro de la organización",
+        "currentRoleOfYourOrganizationMember": "Rol del miembro en la organización.",
+        "saveOrganizationMember": "Guardar cambios",
         "cancel": "Cancelar",
         "edit": "Editar",
         "delete": "Eliminar",
         "personalOrgInviteRestricted": "Las organizaciones personales no pueden invitar miembros.",
         "organizationNotFound": "No se ha encontrado la organización.",
         "title": "Miembros de la organización",
-        "editOrganizationMemberDescription": "Llena el formulario a continuación para editar tu miembro de la organización. Haz clic en guardar cuando hayas terminado.",
-        "giveYourOrganizationMemberAClearConciseEmail": "Dale a tu miembro de la organización un correo electrónico claro y conciso.",
+        "editOrganizationMemberDescription": "Cambia el rol de este miembro de la organización.",
+        "giveYourOrganizationMemberAClearConciseEmail": "Correo con el que el miembro accede a la aplicación.",
         "confirm": {
             "deleteTitle": "¿Estás seguro de que quieres eliminar este miembro?",
             "deleteDescription": "Esta acción no se puede deshacer. Se eliminará permanentemente este miembro de la organización.",
@@ -898,6 +908,30 @@
         "toast": {
             "deletedSuccess": "Miembro eliminado exitosamente",
             "deleteFailed": "Error al eliminar miembro"
+        },
+        "inviteMember": "Invitar miembro",
+        "inviteMemberDescription": "Enviaremos una invitación por correo. La persona se unirá cuando la acepte.",
+        "sendInvitation": "Enviar invitación",
+        "inviteEmailHelp": "Recibirá un enlace para unirse a la organización.",
+        "inviteRoleHelp": "Rol con el que se unirá a la organización.",
+        "backToOrganizations": "Volver a organizaciones",
+        "pendingInvitations": {
+            "title": "Invitaciones pendientes",
+            "empty": "No hay invitaciones pendientes.",
+            "expires": "Caduca",
+            "cancel": "Cancelar invitación",
+            "cancelFor": "Cancelar la invitación a {email}",
+            "cancelConfirmTitle": "¿Cancelar la invitación a {email}?",
+            "cancelConfirmDescription": "El enlace que recibió dejará de funcionar. Puedes volver a invitarle cuando quieras.",
+            "keep": "Mantener",
+            "canceled": "Invitación cancelada"
+        },
+        "leave": {
+            "button": "Abandonar organización",
+            "confirmTitle": "¿Abandonar «{name}»?",
+            "confirmDescription": "Dejarás de ver sus objetivos. Para volver necesitarás una nueva invitación.",
+            "confirm": "Abandonar",
+            "success": "Has abandonado «{name}»."
         }
     },
     "Invitations": {
@@ -921,16 +955,16 @@
         "sendingVerificationEmail": "Enviando correo de verificación...",
         "verificationEmailSent": "Correo de verificación enviado. Abre su enlace y vuelve aquí para responder a la invitación.",
         "verificationEmailError": "No hemos podido enviar el correo de verificación. Inténtalo de nuevo.",
-        "acceptedTitle": "¡Invitación Aceptada!",
+        "acceptedTitle": "¡Invitación aceptada!",
         "acceptedDescription": "Te has unido exitosamente a la organización.",
         "redirecting": "Redirigiendo al panel...",
-        "goToDashboard": "Ir al Panel",
-        "loginRequiredTitle": "Se Requiere Iniciar Sesión",
+        "goToDashboard": "Ir al panel",
+        "loginRequiredTitle": "Inicia sesión para continuar",
         "loginRequiredDescription": "Por favor inicia sesión para aceptar esta invitación.",
         "login": "Iniciar sesión",
         "noAccount": "¿No tienes una cuenta?",
         "register": "Registrarse",
-        "acceptTitle": "Aceptar Invitación",
+        "acceptTitle": "Aceptar invitación",
         "acceptDescription": "Has sido invitado a unirte a una organización. Haz clic en aceptar para unirte.",
         "cancel": "Cancelar",
         "orgSwitchNote": "Al aceptar, cambiarás tu organización activa a esta.",
@@ -942,16 +976,18 @@
         "activationPendingDescription": "Ya perteneces a la organización. No hemos podido activarla todavía.",
         "retryActivation": "Activar organización",
         "invalidTitle": "Invitación no disponible",
-        "invalidDescription": "Este enlace no es válido, ha caducado o la invitación ya se ha usado. Pide a quien te invitó que te envíe una nueva."
+        "invalidDescription": "Este enlace no es válido, ha caducado o la invitación ya se ha usado. Pide a quien te invitó que te envíe una nueva.",
+        "acceptDescriptionNamed": "Te han invitado a unirte a «{organization}». Pulsa aceptar para unirte.",
+        "loginRequiredDescriptionNamed": "Te han invitado a unirte a «{organization}». Inicia sesión o crea una cuenta para aceptar."
     },
     "Setup": {
-        "title": "Configuración de la Plataforma",
+        "title": "Configuración de la plataforma",
         "subtitle": "Configura tu plataforma antes de comenzar",
         "footer": "Paso {step} de {total}",
         "progressLabel": "Progreso de la configuración",
         "steps": {
             "platform": "Plataforma",
-            "admin": "Cuenta Admin",
+            "admin": "Cuenta de administrador",
             "organization": "Organización",
             "categories": "Categorías",
             "registration": "Registro",
@@ -960,18 +996,18 @@
         "navigation": {
             "next": "Siguiente",
             "back": "Atrás",
-            "complete": "Completar Configuración",
+            "complete": "Completar configuración",
             "completing": "Configurando..."
         },
         "platformConfig": {
-            "title": "Configuración de la Plataforma",
+            "title": "Configuración de la plataforma",
             "description": "Elige un nombre para tu plataforma y establece el idioma por defecto.",
-            "nameLabel": "Nombre de la Plataforma",
-            "namePlaceholder": "Mi Plataforma",
-            "languageLabel": "Idioma por Defecto"
+            "nameLabel": "Nombre de la plataforma",
+            "namePlaceholder": "Mi plataforma",
+            "languageLabel": "Idioma por defecto"
         },
         "adminAccount": {
-            "title": "Cuenta de Administrador",
+            "title": "Cuenta de administrador",
             "description": "Crea la cuenta de administrador para esta plataforma.",
             "setupSecretLabel": "Secreto de configuración",
             "setupSecretPlaceholder": "Pega SETUP_SECRET",
@@ -981,16 +1017,16 @@
         "organization": {
             "title": "Organización",
             "description": "Configura tu primera organización.",
-            "nameLabel": "Nombre de la Organización",
-            "namePlaceholder": "Mi Organización",
-            "logoLabel": "URL del Logo (opcional)",
+            "nameLabel": "Nombre de la organización",
+            "namePlaceholder": "Mi organización",
+            "logoLabel": "URL del logo (opcional)",
             "logoPlaceholder": "https://ejemplo.com/logo.png",
             "logoHint": "Proporciona una URL con la imagen del logo de tu organización."
         },
         "categories": {
-            "title": "Categorías por Defecto",
+            "title": "Categorías por defecto",
             "description": "Personaliza las categorías predefinidas para objetivos. Puedes editarlas, añadir nuevas o eliminarlas.",
-            "addNew": "Nueva Categoría",
+            "addNew": "Nueva categoría",
             "newPlaceholder": "Nombre de la categoría",
             "add": "Añadir",
             "nameLabel": "Nombre de la categoría {index}",
@@ -999,25 +1035,38 @@
             "removeLabel": "Eliminar {name}"
         },
         "registrationPolicy": {
-            "title": "Política de Registro",
+            "title": "Política de registro",
             "description": "Elige quién puede crear cuentas en esta plataforma.",
-            "openLabel": "Registro Abierto",
+            "openLabel": "Registro abierto",
             "openDescription": "Cualquier persona puede crear una cuenta y unirse a la plataforma.",
-            "invitationLabel": "Solo por Invitación",
+            "invitationLabel": "Solo por invitación",
             "invitationDescription": "Solo los usuarios con un enlace de invitación pueden registrarse.",
-            "invitationOnly": "Registro Solo por Invitación",
+            "invitationOnly": "Registro solo por invitación",
             "invitationOnlyMessage": "Esta plataforma requiere una invitación para registrarse. Contacta con un administrador para obtener acceso.",
             "invalidInvitation": "Invitación no válida",
             "invalidInvitationMessage": "Esta invitación no existe, ha caducado o ya se ha utilizado. Solicita una nueva invitación a un administrador."
         },
         "summary": {
-            "title": "Revisar Configuración",
+            "title": "Revisar configuración",
             "description": "Revisa tu configuración antes de completar la instalación."
         },
         "errors": {
             "title": "Error",
             "signUpFailed": "No se pudo crear la cuenta de administrador",
             "setupFailed": "No se pudo completar la configuración de la plataforma. Inténtalo de nuevo."
+        }
+    },
+    "Categories": {
+        "defaults": {
+            "Health": "Salud",
+            "Career": "Carrera",
+            "Education": "Educación",
+            "Finance": "Finanzas",
+            "Personal": "Personal",
+            "Team": "Equipo",
+            "Creative": "Creatividad",
+            "Fitness": "Forma física",
+            "Productivity": "Productividad"
         }
     }
 }

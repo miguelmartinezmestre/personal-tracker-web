@@ -65,11 +65,19 @@ export default function ProgressList({
             {emptyState}
             <ul className="divide-y rounded-md border empty:hidden">
                 {progress.data.map(entry => {
+                    // Every row has the same buttons, so screen readers need to know which entry.
+                    const entryLabel = `+${formatObjectiveValue(entry.updatedValue, locale)}${
+                        unit ? ` ${unit}` : ''
+                    } · ${formatObjectiveDate(entry.updateDate, locale)}`;
                     let editActions = null;
                     if (entry.canEdit) {
                         editActions = (
                             <div className="flex gap-2">
-                                <EditProgressModal entry={entry} unit={unit} />
+                                <EditProgressModal
+                                    entry={entry}
+                                    unit={unit}
+                                    triggerLabel={t('aria.editEntry', { entry: entryLabel })}
+                                />
                                 <DeleteConfirmationDialog
                                     title={t('confirm.deleteTitle')}
                                     description={t('confirm.deleteDescription')}
@@ -80,6 +88,9 @@ export default function ProgressList({
                                         <Button
                                             variant="destructive"
                                             size="sm"
+                                            aria-label={t('aria.deleteEntry', {
+                                                entry: entryLabel,
+                                            })}
                                             data-testid="progress-delete-button"
                                         >
                                             {t('table.columns.delete')}
@@ -122,7 +133,15 @@ export default function ProgressList({
     );
 }
 
-function EditProgressModal({ entry, unit }: { entry: ProgressEntry; unit?: string | undefined }) {
+function EditProgressModal({
+    entry,
+    unit,
+    triggerLabel,
+}: {
+    entry: ProgressEntry;
+    unit?: string | undefined;
+    triggerLabel: string;
+}) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
     const formSchema = useProgressFormSchema();
@@ -138,7 +157,12 @@ function EditProgressModal({ entry, unit }: { entry: ProgressEntry; unit?: strin
     return (
         <FormModal<ProgressFormValues>
             trigger={
-                <Button variant="outline" size="sm" data-testid="progress-edit-open">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label={triggerLabel}
+                    data-testid="progress-edit-open"
+                >
                     {t('table.columns.edit')}
                 </Button>
             }

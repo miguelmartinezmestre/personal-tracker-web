@@ -6,6 +6,9 @@ import {
 } from '@/features/organizations/hooks/use-organizations';
 import CreateOrganizationMemberFormModal from '@/features/organizations/components/organization-members-form-create-modal';
 import OrganizationMembersTable from '@/features/organizations/components/organization-members-table';
+import OrganizationPendingInvitations from '@/features/organizations/components/organization-pending-invitations';
+import OrganizationLeaveButton from '@/features/organizations/components/organization-leave-button';
+import Link from 'next/link';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
@@ -46,6 +49,7 @@ export default function OrganizationDetailClient({
     organizationId,
 }: OrganizationDetailClientProps) {
     const tMembers = useTranslations('OrganizationMembers');
+    const tOrganizations = useTranslations('Organizations');
     const {
         data: organization,
         isLoading,
@@ -76,8 +80,15 @@ export default function OrganizationDetailClient({
 
     if (!organization) {
         return (
-            <div className="text-center py-8" data-testid="organization-detail-empty">
+            <div className="space-y-3 py-8 text-center" data-testid="organization-detail-empty">
                 <p className="text-muted-foreground">{tMembers('organizationNotFound')}</p>
+                <Link
+                    href="/dashboard/organizations"
+                    prefetch={false}
+                    className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                    {tMembers('backToOrganizations')}
+                </Link>
             </div>
         );
     }
@@ -86,11 +97,18 @@ export default function OrganizationDetailClient({
         <>
             <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h1 className="min-w-0 text-2xl font-bold" data-testid="organization-detail-title">
-                    {organization.name}{' '}
-                    <span className="text-sm text-muted-foreground">({organization.slug})</span>
+                    {organization.isPersonal
+                        ? tOrganizations('personalOrganizationName')
+                        : organization.name}
                 </h1>
-                <div className="w-full sm:w-auto">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                     <OrganizationInviteAction organization={organization} />
+                    {!organization.isPersonal && (
+                        <OrganizationLeaveButton
+                            organizationId={organization.id}
+                            organizationName={organization.name}
+                        />
+                    )}
                 </div>
             </div>
             <section className="space-y-3" aria-labelledby="organization-members-heading">
@@ -103,6 +121,11 @@ export default function OrganizationDetailClient({
                     actorRole={organization.role}
                 />
             </section>
+            {!organization.isPersonal && isOrganizationAdminRole(organization.role) && (
+                <div className="mt-8">
+                    <OrganizationPendingInvitations organizationId={organization.id} />
+                </div>
+            )}
         </>
     );
 }

@@ -1,7 +1,7 @@
 {
     "App": {
-        "title": "Metricas",
-        "description": "Metricas"
+        "title": "Métricas",
+        "description": "Métricas"
     },
     "Common": {
         "error": "Error",
@@ -24,7 +24,7 @@
         "fields": {
             "email": "Email",
             "name": "Name",
-            "username": "Username",
+            "username": "Name",
             "password": "Password",
             "confirmPassword": "Confirm password",
             "role": "Role"
@@ -32,7 +32,7 @@
         "placeholders": {
             "email": "name@email.com",
             "password": "Enter your password",
-            "username": "username",
+            "username": "Your name",
             "min8Chars": "At least 8 characters",
             "confirmPassword": "Confirm password",
             "userIdForSessions": "User ID to view sessions..."
@@ -86,7 +86,8 @@
         "validation": {
             "invalidEmail": "Enter a valid email address.",
             "minimumCharacters": "Enter at least {count} characters."
-        }
+        },
+        "toggleSidebar": "Toggle sidebar"
     },
     "DashboardHome": {
         "dashboardTitle": "Dashboard",
@@ -164,10 +165,11 @@
             "passwordsDontMatch": "Passwords do not match",
             "weakPassword": "Password must include at least one uppercase letter, one lowercase letter, and one number.",
             "registerFallback": "Error registering user. Please try again."
-        }
+        },
+        "requestNewResetLink": "Request a new link"
     },
     "Sidebar": {
-        "appName": "Metricas",
+        "appName": "Métricas",
         "navigationLabel": "Main navigation",
         "home": "Home",
         "objectives": "Objectives",
@@ -357,7 +359,9 @@
     "CommandMenu": {
         "placeholder": "Search commands...",
         "empty": "No results found.",
-        "navigation": "Navigation"
+        "navigation": "Navigation",
+        "title": "Command palette",
+        "description": "Search for a command to run..."
     },
     "LanguageSwitcher": {
         "label": "Language"
@@ -371,7 +375,9 @@
         "activeOrganization": "Active organization",
         "current": "Current",
         "switchOrganization": "Switch to:",
-        "personal": "Personal"
+        "personal": "Personal",
+        "triggerLabel": "Active organization: {name}",
+        "personalOrganizationName": "Personal organization"
     },
     "ThemeSwitcher": {
         "toggle": "Change theme",
@@ -391,7 +397,7 @@
     },
     "Objectives": {
         "title": "Objectives",
-        "pageTitle": "Objectives | Metrics App",
+        "pageTitle": "Objectives | Métricas",
         "description": "Define your personal and professional goals to achieve your goals.",
         "pageDescription": "Manage your personal and professional goals.",
         "createObjective": "Create Objective",
@@ -518,7 +524,7 @@
             "deleteObjectiveDescription": "The objective will be moved to the trash, where it can be restored or permanently deleted.",
             "deleteConfirm": "Delete",
             "cancel": "Cancel",
-            "deletePermanentDescription": "This permanently deletes the objective and its progress. It cannot be undone."
+            "deletePermanentDescription": "This permanently deletes “{title}” and all its progress. It cannot be undone."
         },
         "categories": {
             "title": "Categories",
@@ -589,7 +595,8 @@
         "columns": {
             "title": "Title"
         },
-        "completedOn": "Completed on {date}"
+        "completedOn": "Completed on {date}",
+        "characterCount": "{count}/{max}"
     },
     "Sessions": {
         "title": "Sessions",
@@ -634,12 +641,14 @@
         },
         "toast": {
             "deletedSuccess": "Organization deleted successfully",
-            "deleteFailed": "Failed to delete organization"
+            "deleteFailed": "Failed to delete organization",
+            "createdAndActive": "Organization created. You are now working in “{name}”."
         },
         "validation": {
             "nameRequired": "Enter a name.",
             "nameTooLong": "The name cannot be longer than 100 characters."
-        }
+        },
+        "personalOrganizationName": "Personal organization"
     },
     "Settings": {
         "title": "Settings",
@@ -841,7 +850,11 @@
         "updatedValueWithUnit": "Amount to add ({unit})",
         "entryValue": "Amount of this entry",
         "entryValueWithUnit": "Amount of this entry ({unit})",
-        "entryValueDescription": "Changing it recalculates the objective's current value."
+        "entryValueDescription": "Changing it recalculates the objective's current value.",
+        "aria": {
+            "editEntry": "Edit progress entry {entry}",
+            "deleteEntry": "Delete progress entry {entry}"
+        }
     },
     "Header": {
         "appName": "Métricas",
@@ -861,34 +874,31 @@
     },
     "Table": {
         "noResults": "No results",
-        "showing": "Showing",
-        "rows": "rows",
         "previous": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "showingRows": "Showing {count, plural, one {# row} other {# rows}}"
     },
     "OrganizationMembers": {
-        "createNewOrganizationMember": "Create New Organization Member",
         "selectRole": "Select a role",
         "roles": {
             "admin": "Admin",
             "member": "Member",
             "owner": "Owner"
         },
-        "createNewOrganizationMemberDescription": "Fill out the form below to create a new organization member. Click save when you're done.",
         "email": "Email",
         "enterEmail": "Enter email",
         "role": "Role",
         "joinedAt": "Joined",
-        "currentRoleOfYourOrganizationMember": "Current role of your organization member.",
-        "saveOrganizationMember": "Save Organization Member",
+        "currentRoleOfYourOrganizationMember": "The member's role in the organization.",
+        "saveOrganizationMember": "Save changes",
         "cancel": "Cancel",
         "edit": "Edit",
         "delete": "Delete",
         "personalOrgInviteRestricted": "Personal organizations cannot invite members.",
         "organizationNotFound": "Organization not found.",
-        "title": "Organization Members",
-        "editOrganizationMemberDescription": "Fill out the form below to edit your organization member. Click save when you're done.",
-        "giveYourOrganizationMemberAClearConciseEmail": "Give your organization member a clear, concise email.",
+        "title": "Organization members",
+        "editOrganizationMemberDescription": "Change this member's role in the organization.",
+        "giveYourOrganizationMemberAClearConciseEmail": "The email this member signs in with.",
         "confirm": {
             "deleteTitle": "Are you sure you want to delete this member?",
             "deleteDescription": "This action cannot be undone. This will permanently delete this organization member.",
@@ -898,6 +908,30 @@
         "toast": {
             "deletedSuccess": "Member deleted successfully",
             "deleteFailed": "Failed to delete member"
+        },
+        "inviteMember": "Invite member",
+        "inviteMemberDescription": "We'll send an invitation by email. They join once they accept it.",
+        "sendInvitation": "Send invitation",
+        "inviteEmailHelp": "They'll get a link to join the organization.",
+        "inviteRoleHelp": "The role they will have when they join.",
+        "backToOrganizations": "Back to organizations",
+        "pendingInvitations": {
+            "title": "Pending invitations",
+            "empty": "No pending invitations.",
+            "expires": "Expires",
+            "cancel": "Cancel invitation",
+            "cancelFor": "Cancel the invitation to {email}",
+            "cancelConfirmTitle": "Cancel the invitation to {email}?",
+            "cancelConfirmDescription": "The link they received will stop working. You can invite them again at any time.",
+            "keep": "Keep",
+            "canceled": "Invitation canceled"
+        },
+        "leave": {
+            "button": "Leave organization",
+            "confirmTitle": "Leave “{name}”?",
+            "confirmDescription": "You will stop seeing its objectives. To come back you'll need a new invitation.",
+            "confirm": "Leave",
+            "success": "You left “{name}”."
         }
     },
     "Invitations": {
@@ -942,7 +976,9 @@
         "activationPendingDescription": "You have joined the organization. We could not activate it yet.",
         "retryActivation": "Activate organization",
         "invalidTitle": "Invitation unavailable",
-        "invalidDescription": "This link is invalid, has expired, or the invitation has already been used. Ask the person who invited you to send a new one."
+        "invalidDescription": "This link is invalid, has expired, or the invitation has already been used. Ask the person who invited you to send a new one.",
+        "acceptDescriptionNamed": "You have been invited to join “{organization}”. Click accept to join.",
+        "loginRequiredDescriptionNamed": "You have been invited to join “{organization}”. Sign in or create an account to accept."
     },
     "Setup": {
         "title": "Platform Setup",
@@ -1018,6 +1054,19 @@
             "title": "Error",
             "signUpFailed": "Failed to create admin account",
             "setupFailed": "Failed to complete platform setup. Please try again."
+        }
+    },
+    "Categories": {
+        "defaults": {
+            "Health": "Health",
+            "Career": "Career",
+            "Education": "Education",
+            "Finance": "Finance",
+            "Personal": "Personal",
+            "Team": "Team",
+            "Creative": "Creative",
+            "Fitness": "Fitness",
+            "Productivity": "Productivity"
         }
     }
 }

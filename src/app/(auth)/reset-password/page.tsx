@@ -1,6 +1,9 @@
 import { ResetPassword } from '@/features/auth';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { translatedPageTitle } from '@/lib/page-metadata';
+
+export const generateMetadata = translatedPageTitle('HomePage', 'resetPassword');
 
 export default async function ResetPasswordPage({
     searchParams,

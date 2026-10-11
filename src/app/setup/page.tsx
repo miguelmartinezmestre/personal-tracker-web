@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
 import SetupWizard from '@/features/setup/components/setup-wizard';
 import { getTranslations } from 'next-intl/server';
+import { translatedPageTitle } from '@/lib/page-metadata';
+
+export const generateMetadata = translatedPageTitle('Setup', 'title');
 
 export const dynamic = 'force-dynamic';
 

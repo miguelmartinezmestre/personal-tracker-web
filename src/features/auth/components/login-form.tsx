@@ -2,7 +2,7 @@
 
 import type { Route } from 'next';
 
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -87,7 +87,7 @@ export default function LoginForm({
         >
             {showPasswordResetSuccess && (
                 <Alert variant="default" className="mb-6">
-                    <AlertCircle className="h-4 w-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>{tCommon('success')}</AlertTitle>
                     <AlertDescription>{t('resetPasswordSuccess')}</AlertDescription>
                 </Alert>

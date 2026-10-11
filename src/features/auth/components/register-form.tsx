@@ -6,6 +6,7 @@ import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/client';
@@ -94,6 +95,11 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
             await onSubmit(value);
         },
     });
+    // Signing in from here should bring the invited person back to the invitation.
+    const loginHref = invitationToken
+        ? `/login?${new URLSearchParams({ callbackUrl: getInvitationCallbackPath(invitationToken) }).toString()}`
+        : '/login';
+
     async function onSubmit(values: RegisterFormValues) {
         setRegisterError('');
         setVerificationSent(false);
@@ -123,6 +129,16 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
             .finally(() => setIsSubmitting(false));
     }
 
+    // The account exists now; resubmitting would only fail, so leave just the next step.
+    if (verificationSent) {
+        return (
+            <Alert data-testid="register-verification-sent">
+                <AlertTitle>{t('verificationSentTitle')}</AlertTitle>
+                <AlertDescription>{t('verificationSentDescription')}</AlertDescription>
+            </Alert>
+        );
+    }
+
     return (
         <form
             action={() => {
@@ -136,12 +152,6 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{tCommon('error')}</AlertTitle>
                         <AlertDescription>{registerError}</AlertDescription>
-                    </Alert>
-                )}
-                {verificationSent && (
-                    <Alert className="mb-6">
-                        <AlertTitle>{t('verificationSentTitle')}</AlertTitle>
-                        <AlertDescription>{t('verificationSentDescription')}</AlertDescription>
                     </Alert>
                 )}
 
@@ -191,7 +201,7 @@ export default function RegisterForm({ invitationToken }: RegisterFormProps) {
 
                 <div className="text-center mt-4">
                     <p className="text-sm text-muted-foreground">
-                        <Link href="/login" prefetch={false}>
+                        <Link href={loginHref as Route} prefetch={false}>
                             {t('alreadyHaveAccount')} {t('login')}
                         </Link>
                     </p>

@@ -39,6 +39,12 @@ const EN: ErrorDictionary = {
     YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION:
         'This invitation was sent to another email address.',
     ORGANIZATION_SLUG_ALREADY_TAKEN: 'An organization with that identifier already exists.',
+    ORGANIZATION_NAME_TAKEN: 'You already have an organization with that name.',
+    ORGANIZATION_ALREADY_EXISTS: 'An organization with that identifier already exists.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
+        'You are the only owner. Make someone else an owner before leaving.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER:
+        'The organization needs an owner. Make someone else an owner before leaving.',
     NOT_AUTHORIZED_OBJECTIVE: "You don't have permission to modify this objective.",
     NOT_AUTHORIZED_PROGRESS: "You don't have permission to modify this progress entry.",
     COLLABORATOR_NOT_FOUND: 'That collaborator no longer exists.',
@@ -104,6 +110,12 @@ const ES: ErrorDictionary = {
     YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION:
         'Esta invitación se envió a otra dirección de correo.',
     ORGANIZATION_SLUG_ALREADY_TAKEN: 'Ya existe una organización con ese identificador.',
+    ORGANIZATION_NAME_TAKEN: 'Ya tienes una organización con ese nombre.',
+    ORGANIZATION_ALREADY_EXISTS: 'Ya existe una organización con ese identificador.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER:
+        'Eres el único propietario. Nombra a otra persona propietaria antes de salir.',
+    YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER:
+        'La organización necesita un propietario. Nombra a otra persona propietaria antes de salir.',
     NOT_AUTHORIZED_OBJECTIVE: 'No tienes permiso para modificar este objetivo.',
     NOT_AUTHORIZED_PROGRESS: 'No tienes permiso para modificar este registro de progreso.',
     COLLABORATOR_NOT_FOUND: 'Ese colaborador ya no existe.',

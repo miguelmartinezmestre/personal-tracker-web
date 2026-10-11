@@ -45,6 +45,7 @@ export const ERROR_CODES = {
     DEADLINE_TOO_OLD: 'DEADLINE_TOO_OLD',
     DEADLINE_TOO_FAR: 'DEADLINE_TOO_FAR',
     START_AFTER_TARGET: 'START_AFTER_TARGET',
+    ORGANIZATION_NAME_TAKEN: 'ORGANIZATION_NAME_TAKEN',
 } as const;
 
 export const CATEGORY_NAME_MAX_LENGTH = 50;
@@ -78,3 +79,20 @@ export const CATEGORY_ICONS = [
     'camera',
     'plane',
 ] as const;
+
+// Seeded into every new organization; the setup wizard starts from the same list.
+export const DEFAULT_CATEGORIES: ReadonlyArray<{
+    name: string;
+    color: string;
+    icon: (typeof CATEGORY_ICONS)[number];
+}> = [
+    { name: 'Health', color: '#EF4444', icon: 'heart' },
+    { name: 'Career', color: '#3B82F6', icon: 'briefcase' },
+    { name: 'Education', color: '#8B5CF6', icon: 'book' },
+    { name: 'Finance', color: '#10B981', icon: 'dollar-sign' },
+    { name: 'Personal', color: '#F59E0B', icon: 'user' },
+    { name: 'Team', color: '#06B6D4', icon: 'users' },
+    { name: 'Creative', color: '#EC4899', icon: 'palette' },
+    { name: 'Fitness', color: '#14B8A6', icon: 'target' },
+    { name: 'Productivity', color: '#6366F1', icon: 'trending-up' },
+];

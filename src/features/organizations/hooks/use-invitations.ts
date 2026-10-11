@@ -1,7 +1,8 @@
 'use client';
 
 import { useConvexPages } from '@/hooks/use-convex-pages';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import type { Id } from '@/convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
@@ -90,6 +91,26 @@ export function useRejectInvitation() {
             const result = await authClient.organization.rejectInvitation({
                 invitationId,
             });
+            throwIfAuthClientError(result);
+            return result.data;
+        },
+    });
+}
+
+export function usePendingOrganizationInvitations(organizationId: string, enabled: boolean) {
+    return useQuery(
+        convexQuery(
+            api.organizations.getOrganizationPendingInvitations,
+            enabled ? { organizationId: organizationId as Id<'organization'> } : 'skip'
+        )
+    );
+}
+
+export function useCancelInvitation() {
+    return useMutation({
+        meta: { handlesErrorsLocally: true },
+        mutationFn: async (invitationId: string) => {
+            const result = await authClient.organization.cancelInvitation({ invitationId });
             throwIfAuthClientError(result);
             return result.data;
         },

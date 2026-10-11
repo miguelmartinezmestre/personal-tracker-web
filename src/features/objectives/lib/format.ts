@@ -14,3 +14,10 @@ export function formatObjectiveDate(timestamp: number, locale: string): string {
 export function formatInstantDate(timestamp: number, locale: string): string {
     return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(timestamp);
 }
+
+/** A 0–100 progress value written the way the locale writes percentages ("75 %" in Spanish). */
+export function formatProgressPercent(percent: number, locale: string): string {
+    return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(
+        percent / 100
+    );
+}

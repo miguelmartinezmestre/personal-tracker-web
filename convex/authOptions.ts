@@ -1,7 +1,7 @@
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { convex, type BetterAuthOptionsWithoutDatabase } from 'kitcn/auth';
 import { admin, organization } from 'better-auth/plugins';
-import { internal } from './_generated/api';
+import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { authAuditTriggers } from './authAuditTriggers';
 import authConfig from './auth.config';
@@ -9,13 +9,17 @@ import { ERROR_CODES } from './constants';
 import { accountDeletionPlugin } from './accountDeletionPlugin';
 import {
     buildInvitationEmail,
+    buildPasswordResetEmail,
+    buildVerificationEmail,
     getInvitationIdFromCallbackPath,
     platformAdminRoles,
     platformRoles,
     readAuthStringField,
     requireRunnableCtx,
+    resolveEmailLocale,
     usesReservedPersonalOrganizationIdentity,
     validatePasswordPolicy,
+    type EmailLocale,
     type GenericCtx,
 } from './utils';
 import { z } from 'zod';
@@ -39,6 +43,25 @@ function throwReservedPersonalOrganizationIdentity() {
     });
 }
 
+async function assertOrganizationNameAvailable(
+    ctx: GenericCtx,
+    userId: string,
+    name: string,
+    excludeOrganizationId?: string
+) {
+    const taken = await requireRunnableCtx(ctx).runQuery(internal.auth.userHasOrganizationNamed, {
+        userId,
+        name,
+        ...(excludeOrganizationId ? { excludeOrganizationId } : {}),
+    });
+    if (taken) {
+        throw new APIError('BAD_REQUEST', {
+            code: ERROR_CODES.ORGANIZATION_NAME_TAKEN,
+            message: 'You already belong to an organization with that name.',
+        });
+    }
+}
+
 async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: string) {
     const runnableCtx = requireRunnableCtx(ctx);
     return await runnableCtx.runQuery(internal.auth.isDefaultOrganization, {
@@ -46,29 +69,43 @@ async function isProtectedDefaultOrganization(ctx: GenericCtx, organizationId: s
     });
 }
 
+async function getEmailLocale(ctx: GenericCtx, request?: Request): Promise<EmailLocale> {
+    const settings = await requireRunnableCtx(ctx).runQuery(
+        api.setup.getPublicPlatformSettings,
+        {}
+    );
+    return resolveEmailLocale(request, settings?.defaultLanguage);
+}
+
 function createPasswordHooks(ctx: GenericCtx) {
     return {
-        sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
+        sendResetPassword: async (
+            { user, url }: { user: { email: string }; url: string },
+            request?: Request
+        ) => {
             await requireRunnableCtx(ctx).scheduler.runAfter(
                 0,
                 internal.email.sendTransactionalEmail,
-                {
+                buildPasswordResetEmail({
                     to: user.email,
-                    subject: 'Reset your password',
-                    text: `Click the link to reset your password: ${url}`,
-                }
+                    url,
+                    locale: await getEmailLocale(ctx, request),
+                })
             );
         },
         onPasswordReset: () => Promise.resolve(),
-        sendVerificationEmail: async ({ user, url }: { user: { email: string }; url: string }) => {
+        sendVerificationEmail: async (
+            { user, url }: { user: { email: string }; url: string },
+            request?: Request
+        ) => {
             await requireRunnableCtx(ctx).scheduler.runAfter(
                 0,
                 internal.email.sendTransactionalEmail,
-                {
+                buildVerificationEmail({
                     to: user.email,
-                    subject: 'Verify your email address',
-                    text: `Click the link to verify your email address: ${url}`,
-                }
+                    url,
+                    locale: await getEmailLocale(ctx, request),
+                })
             );
         },
     };
@@ -156,11 +193,21 @@ function createOrganizationPlugin(ctx: GenericCtx) {
         invitationExpiresIn: 60 * 60 * 24 * 2,
         defaultRole: 'member',
         organizationHooks: {
-            beforeCreateOrganization: ({ organization: newOrganization }) => {
+            beforeCreateOrganization: async ({ organization: newOrganization, user }) => {
                 if (usesReservedPersonalOrganizationIdentity(newOrganization)) {
                     throwReservedPersonalOrganizationIdentity();
                 }
-                return Promise.resolve();
+                if (typeof newOrganization.name === 'string') {
+                    await assertOrganizationNameAvailable(ctx, user.id, newOrganization.name);
+                }
+            },
+            afterCreateOrganization: async ({ organization }) => {
+                await requireRunnableCtx(ctx).runMutation(
+                    internal.categories.seedDefaultCategories,
+                    {
+                        organizationId: organization.id,
+                    }
+                );
             },
             beforeDeleteOrganization: async ({ organization }) => {
                 if (await isProtectedDefaultOrganization(ctx, organization.id)) {
@@ -187,7 +234,15 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                     }
                 );
             },
-            beforeUpdateOrganization: async ({ organization, member }) => {
+            beforeUpdateOrganization: async ({ organization, member, user }) => {
+                if (typeof organization.name === 'string') {
+                    await assertOrganizationNameAvailable(
+                        ctx,
+                        user.id,
+                        organization.name,
+                        member.organizationId
+                    );
+                }
                 if (!('slug' in organization) && !('metadata' in organization)) {
                     return;
                 }
@@ -228,8 +283,9 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                 }
             },
         },
-        sendInvitationEmail: async ({ id, email, organization, inviter, role }) => {
+        sendInvitationEmail: async ({ id, email, organization, inviter, role }, request) => {
             const inviterName = inviter.user.name;
+            // The inviter's language: the invitee has no preference stored yet.
             const invitationEmail = buildInvitationEmail({
                 siteUrl: getEnvs().SITE_URL,
                 invitationId: id,
@@ -237,6 +293,7 @@ function createOrganizationPlugin(ctx: GenericCtx) {
                 organizationName: organization.name,
                 inviterName: inviterName ? inviterName : inviter.user.email,
                 role,
+                locale: await getEmailLocale(ctx, request),
             });
 
             await requireRunnableCtx(ctx).scheduler.runAfter(

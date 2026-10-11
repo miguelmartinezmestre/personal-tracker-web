@@ -23,9 +23,14 @@ interface InvitationContentProps {
     token: string;
     // Pending and not expired when the page was rendered.
     invitationValid: boolean;
+    organizationName?: string | undefined;
 }
 
-export default function InvitationContent({ token, invitationValid }: InvitationContentProps) {
+export default function InvitationContent({
+    token,
+    invitationValid,
+    organizationName,
+}: InvitationContentProps) {
     const router = useRouter();
     const t = useTranslations('Invitations');
     const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
@@ -133,7 +138,13 @@ export default function InvitationContent({ token, invitationValid }: Invitation
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle>{t('loginRequiredTitle')}</CardTitle>
-                        <CardDescription>{t('loginRequiredDescription')}</CardDescription>
+                        <CardDescription>
+                            {organizationName
+                                ? t('loginRequiredDescriptionNamed', {
+                                      organization: organizationName,
+                                  })
+                                : t('loginRequiredDescription')}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Button
@@ -177,7 +188,11 @@ export default function InvitationContent({ token, invitationValid }: Invitation
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>{t('acceptTitle')}</CardTitle>
-                    <CardDescription>{t('acceptDescription')}</CardDescription>
+                    <CardDescription>
+                        {organizationName
+                            ? t('acceptDescriptionNamed', { organization: organizationName })
+                            : t('acceptDescription')}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Button

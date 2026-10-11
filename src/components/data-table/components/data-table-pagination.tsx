@@ -28,7 +28,7 @@ export function DataTablePagination({
     return (
         <div className="flex items-center justify-between gap-2 px-2">
             <div className="text-sm text-muted-foreground">
-                {t('showing')} {rowCount} {t('rows')}
+                {t('showingRows', { count: rowCount })}
             </div>
             <div className="flex items-center gap-1">
                 <Button

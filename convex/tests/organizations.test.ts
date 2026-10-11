@@ -58,6 +58,54 @@ describe('convex organizations', () => {
         expect(result.page[0]?.userId).toBe(memberUserId);
         expect(result.isDone).toBe(true);
     });
+    test('getOrganizationPendingInvitations lists only live invitations, and only to admins', async () => {
+        const now = Date.now();
+        const insertInvitation = (email: string, status: string, expiresAt: number) =>
+            t.run(async ctx =>
+                ctx.db.insert('invitation', {
+                    organizationId,
+                    email,
+                    role: 'member',
+                    status,
+                    expiresAt,
+                    createdAt: now,
+                    inviterId: memberUserId,
+                })
+            );
+        await insertInvitation('pending@example.com', 'pending', now + 60_000);
+        await insertInvitation('expired@example.com', 'pending', now - 60_000);
+        await insertInvitation('accepted@example.com', 'accepted', now + 60_000);
+
+        const asOwner = await userIdentity.query(
+            api.organizations.getOrganizationPendingInvitations,
+            { organizationId }
+        );
+        expect(asOwner.map(invitation => invitation.email)).toEqual(['pending@example.com']);
+
+        const suffix = Math.random().toString(36).substring(2, 15);
+        const plainMember = await createTestUser(t, {
+            userId: `plain-member-${suffix}`,
+            email: `plain-member-${suffix}@example.com`,
+            name: 'Plain member',
+        });
+        await createTestMember(t, { organizationId, userId: plainMember.docId, role: 'member' });
+        const asMember = await t
+            .withIdentity({
+                subject: plainMember.docId,
+                role: 'user',
+                email: plainMember.email,
+                name: plainMember.name,
+                emailVerified: false,
+                createdAt: now,
+                userId: plainMember.docId,
+                image: 'https://example.com/image.png',
+                banExpires: null,
+                banReason: null,
+                banned: false,
+            })
+            .query(api.organizations.getOrganizationPendingInvitations, { organizationId });
+        expect(asMember).toEqual([]);
+    });
     test('getOrganizationMembers rejects unauthenticated users', async () => {
         await expect(
             t.query(api.organizations.getOrganizationMembers, {

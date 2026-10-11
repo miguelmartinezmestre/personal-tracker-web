@@ -200,6 +200,16 @@ export const completeSetup = mutation({
 
         const now = Date.now();
         for (const category of args.categories) {
+            // A reused organization may already have the default categories.
+            const sameName = await ctx.db
+                .query('categories')
+                .withIndex('by_organization_name', q =>
+                    q.eq('organizationId', organizationId).eq('name', category.name)
+                )
+                .first();
+            if (sameName) {
+                continue;
+            }
             await ctx.db.insert('categories', {
                 userId,
                 organizationId,

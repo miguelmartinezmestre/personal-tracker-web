@@ -77,7 +77,9 @@ export default function OrganizationMembersTable({
             accessorKey: 'createdAt',
             header: t('joinedAt'),
             cell: ({ row }) =>
-                new Intl.DateTimeFormat(locale).format(new Date(row.original.createdAt)),
+                new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+                    new Date(row.original.createdAt)
+                ),
         },
         {
             header: t('edit'),
@@ -147,7 +149,12 @@ export default function OrganizationMembersTable({
                 onRetry={() => {
                     void membersQuery.refetch();
                 }}
-                columns={columns}
+                // Members cannot edit or remove anyone, so those columns would always be empty.
+                columns={
+                    canManageMembers
+                        ? columns
+                        : columns.filter(column => column.id !== 'edit' && column.id !== 'delete')
+                }
                 data={members}
                 isLoading={membersQuery.isLoading}
                 pagination={{

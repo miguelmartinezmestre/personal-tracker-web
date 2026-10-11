@@ -19,8 +19,10 @@ import {
     formatInstantDate,
     formatObjectiveDate,
     formatObjectiveValue,
+    formatProgressPercent,
 } from '@/features/objectives/lib/format';
 import { api } from '@/convex/_generated/api';
+import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
 import ProgressChart from '@/features/objectives/components/progress-chart';
 import ProgressForm from '@/features/objectives/components/progress-form';
@@ -38,6 +40,7 @@ export default function ObjectiveDetail({
     const t = useTranslations('Objectives');
     const locale = useLocale();
     const progressT = useTranslations('UpdateProgress');
+    const categoryLabel = useCategoryLabel();
     const router = useRouter();
     const objective = useQuery(convexQuery(api.objectives.getObjective, { id: objectiveId }));
     const deleteObjective = useMutation({
@@ -70,7 +73,7 @@ export default function ObjectiveDetail({
                 <EditObjectiveFormModal objective={current} />
                 <DeleteConfirmationDialog
                     title={t('confirm.deleteObjective')}
-                    description={t('confirm.deletePermanentDescription')}
+                    description={t('confirm.deletePermanentDescription', { title: current.title })}
                     confirmLabel={t('confirm.deleteConfirm')}
                     cancelLabel={t('confirm.cancel')}
                     isLoading={deleteObjective.isPending}
@@ -117,7 +120,7 @@ export default function ObjectiveDetail({
         );
     }
     const details = [
-        current.categoryName ? `${t('category')}: ${current.categoryName}` : null,
+        current.categoryName ? `${t('category')}: ${categoryLabel(current.categoryName)}` : null,
         current.deadline !== undefined
             ? `${t('deadline')}: ${formatObjectiveDate(current.deadline, locale)}`
             : null,
@@ -157,7 +160,7 @@ export default function ObjectiveDetail({
                             </Badge>
                         ) : null}
                         <span data-testid="objective-progress-percent">
-                            {current.progressPercent}%
+                            {formatProgressPercent(current.progressPercent, locale)}
                         </span>
                         <span
                             className="text-muted-foreground text-sm"

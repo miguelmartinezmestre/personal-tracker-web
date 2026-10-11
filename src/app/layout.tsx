@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('App');
 
     return {
-        title: t('title'),
+        title: { template: `%s | ${t('title')}`, default: t('title') },
         description: t('description'),
     };
 }

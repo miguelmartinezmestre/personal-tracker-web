@@ -29,13 +29,16 @@ export default function OrganizationsTable() {
         {
             accessorKey: 'name',
             header: t('name'),
+            // Personal organizations cannot be renamed, so show their default name translated.
+            cell: ({ row }) =>
+                row.original.isPersonal ? t('personalOrganizationName') : row.original.name,
         },
         {
             accessorKey: 'description',
             header: t('tableDescription'),
         },
         {
-            header: '',
+            header: () => <span className="sr-only">{t('editOrganization')}</span>,
             id: 'update-organization',
             cell: ({ row }) => {
                 const organizationRow = row.original;
@@ -47,7 +50,7 @@ export default function OrganizationsTable() {
             },
         },
         {
-            header: '',
+            header: () => <span className="sr-only">{t('deleteOrganization')}</span>,
             id: 'delete',
             cell: ({ row }) => {
                 const organizationRow = row.original;
@@ -84,7 +87,7 @@ export default function OrganizationsTable() {
             },
         },
         {
-            header: '',
+            header: () => <span className="sr-only">{t('goToOrganization')}</span>,
             id: 'go-to-activity',
             cell: ({ row }) => {
                 const organizationId = row.original.id;
@@ -95,6 +98,7 @@ export default function OrganizationsTable() {
                         <Link
                             href={`/dashboard/organizations/${organizationId}`}
                             prefetch={false}
+                            className="font-medium underline underline-offset-4 hover:text-primary/80"
                             data-testid="organization-detail-link"
                         >
                             {t('goToOrganization')}

@@ -13,6 +13,7 @@ import {
     isPersonalOrganizationForUser,
 } from './personalOrganization';
 import { buildBetterAuthOptions } from './authOptions';
+import { insertDefaultCategories } from './categories';
 import { internalMutation, isActiveAccount, type GenericCtx } from './utils';
 const SESSION_RECOVERY_BATCH_SIZE = 20;
 type SessionRecoveryPhase = 'actor-null' | 'actor-unset' | 'actor-deleted' | 'affected';
@@ -110,6 +111,7 @@ export const ensureDefaultOrganizationForUser = internalMutation({
             role: 'owner',
             createdAt: now,
         });
+        await insertDefaultCategories(ctx, organizationId, userId);
         return organizationId;
     },
 });
@@ -181,6 +183,7 @@ async function findOrCreateFallbackOrganization(
         role: 'owner',
         createdAt: now,
     });
+    await insertDefaultCategories(ctx, organizationId, userId);
     return organizationId;
 }
 async function repairSessionsAfterOrganizationDeletion(
@@ -321,6 +324,44 @@ export const recoverAffectedOrganizationSessions = internalMutation({
         return { remaining: sessions.length === SESSION_RECOVERY_BATCH_SIZE };
     },
 });
+// Enough for any real account; the check only needs to see the user's own organizations.
+const ORGANIZATION_NAME_CHECK_LIMIT = 200;
+
+function normalizeOrganizationName(name: string) {
+    return name.trim().toLocaleLowerCase();
+}
+
+/** Whether the user already belongs to another organization with this name (case-insensitive). */
+export const userHasOrganizationNamed = internalQuery({
+    returns: v.boolean(),
+    args: {
+        userId: v.string(),
+        name: v.string(),
+        excludeOrganizationId: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const userId = ctx.db.normalizeId('user', args.userId);
+        if (!userId) {
+            return false;
+        }
+        const wanted = normalizeOrganizationName(args.name);
+        const memberships = await ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))
+            .take(ORGANIZATION_NAME_CHECK_LIMIT);
+        for (const membership of memberships) {
+            if (membership.organizationId === args.excludeOrganizationId) {
+                continue;
+            }
+            const organization = await ctx.db.get('organization', membership.organizationId);
+            if (organization && normalizeOrganizationName(organization.name) === wanted) {
+                return true;
+            }
+        }
+        return false;
+    },
+});
+
 export const isDefaultOrganization = internalQuery({
     returns: v.boolean(),
     args: {

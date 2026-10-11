@@ -9,6 +9,7 @@ import { isPersonalOrganizationForUser } from './personalOrganization';
 import { queryWithRLS } from './rls/wrappers';
 import {
     isActiveAccount,
+    isOrganizationAdminRole,
     ORGANIZATION_ROLE,
     paginateVisible,
     withInvalidCursorRetry,
@@ -134,7 +135,8 @@ export const getPublicInvitationStatus = query({
         invitationId: v.string(),
         now: v.number(),
     },
-    returns: v.object({ isValid: v.boolean() }),
+    // The organization name is only shown to whoever holds a valid invitation link.
+    returns: v.object({ isValid: v.boolean(), organizationName: v.optional(v.string()) }),
     handler: async (ctx, args) => {
         assertValidReferenceTimestamp(args.now);
         const serverNow = Date.now();
@@ -144,11 +146,14 @@ export const getPublicInvitationStatus = query({
         }
 
         const invitation = await ctx.db.get('invitation', invitationId);
-        let isValid = false;
-        if (invitation) {
-            isValid = invitation.status === 'pending' && invitation.expiresAt > serverNow;
+        if (!invitation || invitation.status !== 'pending' || invitation.expiresAt <= serverNow) {
+            return { isValid: false };
         }
-        return { isValid };
+        const organization = await ctx.db.get('organization', invitation.organizationId);
+        if (!organization) {
+            return { isValid: false };
+        }
+        return { isValid: true, organizationName: organization.name };
     },
 });
 
@@ -441,5 +446,45 @@ export const getOrganizationMembers = queryWithRLS({
             ...paginatedMembers,
             page: enrichedPage,
         };
+    },
+});
+
+// Admins see every pending invitation at once; organizations rarely have more than a handful.
+const PENDING_INVITATIONS_LIMIT = 100;
+
+export const getOrganizationPendingInvitations = queryWithRLS({
+    args: { organizationId: v.id('organization') },
+    returns: v.array(
+        v.object({
+            id: v.id('invitation'),
+            email: v.string(),
+            role: v.string(),
+            expiresAt: v.number(),
+        })
+    ),
+    handler: async (ctx, args) => {
+        const membership = await ctx.db
+            .query('member')
+            .withIndex('by_organizationId_and_userId', q =>
+                q.eq('organizationId', args.organizationId).eq('userId', ctx.userId)
+            )
+            .first();
+        if (!membership || !isOrganizationAdminRole(membership.role)) {
+            return [];
+        }
+        const now = Date.now();
+        const invitations = await ctx.db
+            .query('invitation')
+            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
+            .order('desc')
+            .take(PENDING_INVITATIONS_LIMIT);
+        return invitations
+            .filter(invitation => invitation.status === 'pending' && invitation.expiresAt > now)
+            .map(invitation => ({
+                id: invitation._id,
+                email: invitation.email,
+                role: invitation.role || 'member',
+                expiresAt: invitation.expiresAt,
+            }));
     },
 });

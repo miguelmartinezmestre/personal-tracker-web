@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { api, internal } from '../_generated/api';
 import { initConvexTest } from './test.helper';
+import { DEFAULT_CATEGORIES } from '../constants';
 import {
     createTestUser,
     createTestOrganization,
@@ -176,6 +177,92 @@ describe('convex auth', () => {
         });
 
         expect(isDefaultOrganization).toBe(true);
+    });
+
+    test('default organization starts with the default categories once', async () => {
+        const randomSuffix = Math.random().toString(36).substring(2, 15);
+        const user = await createTestUser(t, {
+            userId: `default-categories-user-${randomSuffix}`,
+            email: `default-categories-user-${randomSuffix}@example.com`,
+            name: 'Default Categories User',
+        });
+
+        const organizationId = await t.mutation(internal.auth.ensureDefaultOrganizationForUser, {
+            userId: user.docId,
+        });
+        await t.mutation(internal.categories.seedDefaultCategories, { organizationId });
+
+        const categories = await t.run(
+            async ctx =>
+                await ctx.db
+                    .query('categories')
+                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                    .take(50)
+        );
+        expect(categories.map(category => category.name).sort()).toEqual(
+            DEFAULT_CATEGORIES.map(category => category.name).sort()
+        );
+    });
+
+    test('backfill seeds only organizations without categories', async () => {
+        const organizationId = await createTestOrganization(t, {
+            name: 'Backfill org',
+            slug: `backfill-org-${Math.random().toString(36).slice(2, 10)}`,
+        });
+
+        let cursor: string | null = null;
+        let seeded = 0;
+        for (;;) {
+            const page: { isDone: boolean; continueCursor: string; seeded: number } =
+                await t.mutation(internal.categories.backfillDefaultCategories, {
+                    paginationOpts: { numItems: 50, cursor },
+                });
+            seeded += page.seeded;
+            if (page.isDone) {
+                break;
+            }
+            cursor = page.continueCursor;
+        }
+        expect(seeded).toBeGreaterThan(0);
+
+        const second = await t.mutation(internal.categories.backfillDefaultCategories, {
+            paginationOpts: { numItems: 50, cursor: null },
+        });
+        expect(second.seeded).toBe(0);
+
+        const categories = await t.run(
+            async ctx =>
+                await ctx.db
+                    .query('categories')
+                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
+                    .take(50)
+        );
+        expect(categories).toHaveLength(DEFAULT_CATEGORIES.length);
+    });
+
+    test('detects an organization name the user already has, ignoring case', async () => {
+        const suffix = Math.random().toString(36).slice(2, 10);
+        const user = await createTestUser(t, {
+            userId: `org-name-user-${suffix}`,
+            email: `org-name-user-${suffix}@example.com`,
+            name: 'Org Name User',
+        });
+        const organizationId = await createTestOrganization(t, {
+            name: 'Acme Team',
+            slug: `acme-team-${suffix}`,
+        });
+        await createTestMember(t, { organizationId, userId: user.docId, role: 'owner' });
+
+        const check = (name: string, excludeOrganizationId?: string) =>
+            t.query(internal.auth.userHasOrganizationNamed, {
+                userId: user.docId,
+                name,
+                ...(excludeOrganizationId ? { excludeOrganizationId } : {}),
+            });
+        expect(await check('  acme team ')).toBe(true);
+        expect(await check('Other team')).toBe(false);
+        // Renaming an organization to its own name is not a duplicate.
+        expect(await check('Acme Team', organizationId)).toBe(false);
     });
 
     test('regular organization is not protected as default organization', async () => {

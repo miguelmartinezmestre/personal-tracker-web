@@ -30,6 +30,7 @@ function OrganizationSwitcherMenuItems({
     loadingLabel,
     emptyLabel,
     personalLabel,
+    personalOrganizationName,
     currentLabel,
     onSelect,
 }: {
@@ -39,6 +40,7 @@ function OrganizationSwitcherMenuItems({
     loadingLabel: string;
     emptyLabel: string;
     personalLabel: string;
+    personalOrganizationName: string;
     currentLabel: string;
     onSelect: (organizationId: string) => void;
 }) {
@@ -87,13 +89,26 @@ function OrganizationSwitcherMenuItems({
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
                     <Building className="h-3 w-3" />
                 </div>
-                <span className="flex-1 truncate">{organization.name}</span>
+                <span className="flex-1 truncate">
+                    {organization.isPersonal ? personalOrganizationName : organization.name}
+                </span>
                 {personalBadge}
                 {currentLabelElement}
                 {currentCheck}
             </DropdownMenuItem>
         );
     });
+}
+
+// Personal organizations cannot be renamed, so their stored name is always the default one.
+function organizationDisplayName(
+    organization: Pick<Organization, 'name' | 'isPersonal'> | null | undefined,
+    labels: { personal: string; none: string }
+): string {
+    if (organization?.isPersonal) {
+        return labels.personal;
+    }
+    return organization?.name || labels.none;
 }
 
 interface OrganizationSwitcherProps {
@@ -132,7 +147,10 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     const activeOrganization =
         organizations.find(organization => organization.id === activeOrganizationId) ??
         activeQuery.data;
-    const displayName = activeOrganization?.name || t('noOrganization');
+    const displayName = organizationDisplayName(activeOrganization, {
+        personal: t('personalOrganizationName'),
+        none: t('noOrganization'),
+    });
     const activeIsPersonal = Boolean(activeOrganization?.isPersonal);
 
     const handleOrganizationChange = (organizationId: string) => {
@@ -151,10 +169,12 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Building className="h-3 w-3 text-primary" />
                 </div>
-                <span className="hidden min-w-0 truncate font-medium sm:inline">{displayName}</span>
+                <span className="hidden min-w-0 truncate font-medium sm:inline" aria-hidden>
+                    {displayName}
+                </span>
                 <div
                     className="ml-1 hidden h-2 w-2 shrink-0 rounded-full bg-green-500 sm:block"
-                    title={t('activeOrganization')}
+                    aria-hidden
                 />
             </>
         );
@@ -209,7 +229,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                         disabled={setActiveMutation.isPending || isLoadingData}
                     >
                         {triggerContent}
-                        <span className="sr-only">{t('label')}</span>
+                        <span className="sr-only">{t('triggerLabel', { name: displayName })}</span>
                     </Button>
                 }
             />
@@ -236,6 +256,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                             organizationsQuery.isError ? common('queryError') : t('noOrganizations')
                         }
                         personalLabel={t('personal')}
+                        personalOrganizationName={t('personalOrganizationName')}
                         currentLabel={t('current')}
                         onSelect={handleOrganizationChange}
                     />

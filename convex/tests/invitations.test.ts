@@ -9,7 +9,7 @@ import type { DataModel } from '../_generated/dataModel';
 describe('convex invitations (better-auth)', () => {
     const t = initConvexTest();
 
-    test('public invitation status exposes only validity', async () => {
+    test('public invitation status exposes only validity and the organization name', async () => {
         const now = Date.now();
         const inviter = await createTestUser(t, {
             userId: `public-inviter-${now}`,
@@ -37,13 +37,13 @@ describe('convex invitations (better-auth)', () => {
                 invitationId,
                 now,
             })
-        ).resolves.toEqual({ isValid: true });
+        ).resolves.toEqual({ isValid: true, organizationName: `Public invitation org ${now}` });
         await expect(
             t.query(api.organizations.getPublicInvitationStatus, {
                 invitationId,
                 now: now + 60 * 60 * 1000,
             })
-        ).resolves.toEqual({ isValid: true });
+        ).resolves.toEqual({ isValid: true, organizationName: `Public invitation org ${now}` });
         await expect(
             t.query(api.organizations.getPublicInvitationStatus, {
                 invitationId: 'not-a-convex-id',

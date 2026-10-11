@@ -3,6 +3,9 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { checkPlatformSetUp } from '@/features/setup/server';
 import { getSafeCallbackPath } from '@/convex/utils';
+import { translatedPageTitle } from '@/lib/page-metadata';
+
+export const generateMetadata = translatedPageTitle('HomePage', 'login');
 export const dynamic = 'force-dynamic';
 export default async function Login({
     searchParams,

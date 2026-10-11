@@ -7,6 +7,7 @@ import { Chart } from '@tanstack/charts/react';
 import { scaleBand } from '@tanstack/charts/scales/band';
 import { scaleLinear } from '@tanstack/charts/scales/linear';
 import { tooltip } from '@tanstack/charts/tooltip';
+import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 
 const BAR_HEIGHT = 36;
 const FALLBACK_COLOR = 'var(--muted-foreground)';
@@ -23,11 +24,12 @@ export type CategoryStats = {
 export default function CategoryChart({ categories }: { categories: readonly CategoryStats[] }) {
     const t = useTranslations('DashboardHome.charts');
     const locale = useLocale();
+    const categoryLabel = useCategoryLabel();
     const definition = useMemo(() => {
         const formatNumber = new Intl.NumberFormat(locale);
         const rows = categories.map(category => ({
             ...category,
-            label: category.name ?? t('uncategorized'),
+            label: category.name === null ? t('uncategorized') : categoryLabel(category.name),
         }));
         // Counts are whole numbers, so the axis only offers integer ticks.
         const maxTotal = Math.max(1, ...rows.map(row => row.total));
@@ -83,7 +85,7 @@ export default function CategoryChart({ categories }: { categories: readonly Cat
                 },
             },
         });
-    }, [categories, locale, t]);
+    }, [categories, categoryLabel, locale, t]);
 
     return (
         <Chart

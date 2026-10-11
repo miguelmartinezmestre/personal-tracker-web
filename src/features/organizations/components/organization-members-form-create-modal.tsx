@@ -43,11 +43,11 @@ export default function CreateOrganizationMemberFormModal({
             trigger={
                 <Button className="gap-2" data-testid="organization-member-create-open">
                     <PlusCircle className="h-4 w-4" />
-                    {t('createNewOrganizationMember')}
+                    {t('inviteMember')}
                 </Button>
             }
-            title={t('createNewOrganizationMember')}
-            description={t('createNewOrganizationMemberDescription')}
+            title={t('inviteMember')}
+            description={t('inviteMemberDescription')}
             formOptions={{
                 defaultValues: {
                     email: '',
@@ -69,7 +69,7 @@ export default function CreateOrganizationMemberFormModal({
                     role: values.role,
                 });
             }}
-            submitLabel={t('saveOrganizationMember')}
+            submitLabel={t('sendInvitation')}
             pendingLabel={tCommon('loading')}
             cancelLabel={t('cancel')}
             isPending={createOrganizationMember.isPending}
@@ -100,9 +100,7 @@ export default function CreateOrganizationMemberFormModal({
                                         aria-invalid={isInvalid}
                                         data-testid="organization-member-email-input"
                                     />
-                                    <FieldDescription>
-                                        {t('giveYourOrganizationMemberAClearConciseEmail')}
-                                    </FieldDescription>
+                                    <FieldDescription>{t('inviteEmailHelp')}</FieldDescription>
                                     {isInvalid && <FieldError errors={errors} />}
                                 </Field>
                             );
@@ -149,9 +147,7 @@ export default function CreateOrganizationMemberFormModal({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <FieldDescription>
-                                        {t('currentRoleOfYourOrganizationMember')}
-                                    </FieldDescription>
+                                    <FieldDescription>{t('inviteRoleHelp')}</FieldDescription>
                                     {isInvalid && <FieldError errors={errors} />}
                                 </Field>
                             );

@@ -44,7 +44,13 @@ export default function CommandMenu() {
     return (
         <>
             <span data-testid="command-menu-ready" className="hidden" />
-            <CommandDialog open={open} onOpenChange={setOpen} data-testid="command-dialog">
+            <CommandDialog
+                open={open}
+                onOpenChange={setOpen}
+                title={t('title')}
+                description={t('description')}
+                data-testid="command-dialog"
+            >
                 <CommandInput placeholder={t('placeholder')} data-testid="command-input" />
                 <CommandList>
                     <CommandEmpty>{t('empty')}</CommandEmpty>

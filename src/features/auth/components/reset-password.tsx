@@ -18,7 +18,7 @@ import { authClient } from '@/features/auth/client';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { getFieldErrors } from '@/components/forms/form-utils';
-import { resolveErrorMessage } from '@/lib/error-messages';
+import { extractErrorCode, resolveErrorMessage } from '@/lib/error-messages';
 
 interface ResetPasswordProps {
     resetPasswordKey?: string;
@@ -37,6 +37,8 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
     });
 
     const [registerError, setRegisterError] = useState('');
+    // An unusable link can only be fixed by asking for a new one.
+    const [linkUnusable, setLinkUnusable] = useState(false);
 
     const resetPasswordDefaultValues: ResetPasswordFormValues = {
         password: '',
@@ -69,6 +71,8 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
         });
 
         if (error) {
+            const code = extractErrorCode(error);
+            setLinkUnusable(code === 'INVALID_TOKEN' || code === 'TOKEN_EXPIRED');
             setRegisterError(
                 resolveErrorMessage(error, locale, tCommon('genericErrorDescription'))
             );
@@ -91,7 +95,19 @@ export default function ResetPassword({ resetPasswordKey }: ResetPasswordProps) 
                     <Alert variant="destructive" className="mb-6">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{tCommon('error')}</AlertTitle>
-                        <AlertDescription>{registerError}</AlertDescription>
+                        <AlertDescription>
+                            {registerError}{' '}
+                            {linkUnusable && (
+                                <Link
+                                    href="/forget-password"
+                                    prefetch={false}
+                                    className="underline underline-offset-4"
+                                    data-testid="reset-password-request-new-link"
+                                >
+                                    {t('requestNewResetLink')}
+                                </Link>
+                            )}
+                        </AlertDescription>
                     </Alert>
                 )}
 
