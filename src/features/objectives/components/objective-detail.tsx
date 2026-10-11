@@ -21,7 +21,6 @@ import {
     formatObjectiveValue,
 } from '@/features/objectives/lib/format';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
 import ProgressChart from '@/features/objectives/components/progress-chart';
 import ProgressForm from '@/features/objectives/components/progress-form';
@@ -40,9 +39,7 @@ export default function ObjectiveDetail({
     const locale = useLocale();
     const progressT = useTranslations('UpdateProgress');
     const router = useRouter();
-    const objective = useQuery(
-        convexQuery(api.objectives.getObjective, { id: objectiveId as Id<'objectives'> })
-    );
+    const objective = useQuery(convexQuery(api.objectives.getObjective, { id: objectiveId }));
     const deleteObjective = useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: useConvexMutation(api.objectives.deleteObjective),
@@ -62,7 +59,7 @@ export default function ObjectiveDetail({
         );
     }
     if (!objective.data) {
-        return <p data-testid="objective-not-found">{t('notFound')}</p>;
+        return <ObjectiveNotFound listHref={listHref} />;
     }
 
     const current = objective.data;
@@ -228,5 +225,21 @@ function CompletedNotice() {
             <AlertTitle>{t('completedTitle')}</AlertTitle>
             <AlertDescription>{t('completedNotice')}</AlertDescription>
         </Alert>
+    );
+}
+
+function ObjectiveNotFound({ listHref }: { listHref: Route }) {
+    const t = useTranslations('Objectives');
+    return (
+        <div className="space-y-3" data-testid="objective-not-found">
+            <p>{t('notFound')}</p>
+            <Link
+                href={listHref}
+                prefetch={false}
+                className="text-sm text-primary underline-offset-4 hover:underline"
+            >
+                {t('backToList')}
+            </Link>
+        </div>
     );
 }

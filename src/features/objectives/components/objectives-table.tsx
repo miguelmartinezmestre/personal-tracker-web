@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,13 @@ import {
     type ObjectiveStatusFilter,
 } from '@/features/objectives/lib/status-filter';
 import { useLocale, useTranslations } from 'next-intl';
+
+// On phones the filters already say the status and the deadline is on the detail page, which
+// leaves room for the actions.
+const MOBILE_HIDDEN_COLUMNS = {
+    status: 'hidden sm:table-cell',
+    deadline: 'hidden md:table-cell',
+};
 
 export default function ObjectivesTable({ status }: { status: ObjectiveStatusFilter }) {
     const t = useTranslations('Objectives');
@@ -66,7 +74,10 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <span className="w-10 tabular-nums">{row.original.progressPercent}%</span>
-                    <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full" aria-hidden>
+                    <div
+                        className="bg-muted hidden h-1.5 w-16 overflow-hidden rounded-full sm:block"
+                        aria-hidden
+                    >
                         <div
                             className="bg-primary h-full"
                             style={{ width: `${row.original.progressPercent}%` }}
@@ -92,7 +103,7 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
                 }
                 return (
                     <div className="flex justify-end gap-2">
-                        <EditObjectiveFormModal objective={row.original} />
+                        <EditObjectiveFormModal objective={row.original} compactTrigger />
                         <DeleteConfirmationDialog
                             title={t('confirm.deleteObjective')}
                             description={t('confirm.deletePermanentDescription')}
@@ -103,9 +114,11 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
                                 <Button
                                     variant="destructive"
                                     size="sm"
+                                    aria-label={t('deleteObjective')}
                                     data-testid="objective-delete-button"
                                 >
-                                    {t('deleteObjective')}
+                                    <Trash2 className="sm:hidden" aria-hidden />
+                                    <span className="hidden sm:inline">{t('deleteObjective')}</span>
                                 </Button>
                             }
                             onConfirm={async () => {
@@ -141,6 +154,7 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
         <div data-testid="objectives-table">
             <DataTable
                 columns={columns}
+                columnClassNames={MOBILE_HIDDEN_COLUMNS}
                 data={objectives.data}
                 isLoading={objectives.isLoading}
                 emptyMessage={

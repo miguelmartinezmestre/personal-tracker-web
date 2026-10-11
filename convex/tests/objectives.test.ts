@@ -70,6 +70,12 @@ describe('objectives and progress', () => {
         expect(listed.page[0]?.canManage).toBe(true);
     });
 
+    test('reports a malformed objective id as not found', async () => {
+        expect(
+            await ownerIdentity.query(api.objectives.getObjective, { id: 'not-a-real-id' })
+        ).toBeNull();
+    });
+
     test.each(invalidValues)(
         'rejects %s starting values on create and update',
         async (_label, startValue, errorCode) => {

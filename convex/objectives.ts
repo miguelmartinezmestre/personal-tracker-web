@@ -190,11 +190,16 @@ export const listObjectives = queryWithRLS({
 });
 
 export const getObjective = queryWithRLS({
-    args: { id: v.id('objectives') },
+    // The id comes from the URL, so a malformed one is reported as not found.
+    args: { id: v.string() },
     returns: v.union(objectiveSummaryValidator, v.null()),
     handler: async (ctx, args) => {
         const organizationId = requireOrganizationId(ctx.organizationId);
-        const objective = await ctx.db.get('objectives', args.id);
+        const objectiveId = ctx.db.normalizeId('objectives', args.id);
+        if (!objectiveId) {
+            return null;
+        }
+        const objective = await ctx.db.get('objectives', objectiveId);
         if (!objective || objective.organizationId !== organizationId) {
             return null;
         }

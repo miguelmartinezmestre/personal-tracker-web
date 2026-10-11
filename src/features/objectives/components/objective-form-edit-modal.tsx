@@ -1,6 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
+import { Pencil } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,14 @@ import { useObjectiveFormSchema } from '@/features/objectives/hooks/use-form-sch
 import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
 
-export default function EditObjectiveFormModal({ objective }: { objective: ObjectiveSummary }) {
+export default function EditObjectiveFormModal({
+    objective,
+    compactTrigger = false,
+}: {
+    objective: ObjectiveSummary;
+    // Icon-only trigger on small screens, for table rows.
+    compactTrigger?: boolean;
+}) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
     const updateObjective = useMutation({
@@ -34,9 +42,21 @@ export default function EditObjectiveFormModal({ objective }: { objective: Objec
     return (
         <FormModal<ObjectiveFormValues>
             trigger={
-                <Button variant="outline" size="sm" data-testid="objective-edit-open">
-                    {t('editObjective')}
-                </Button>
+                compactTrigger ? (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label={t('editObjective')}
+                        data-testid="objective-edit-open"
+                    >
+                        <Pencil className="sm:hidden" aria-hidden />
+                        <span className="hidden sm:inline">{t('editObjective')}</span>
+                    </Button>
+                ) : (
+                    <Button variant="outline" size="sm" data-testid="objective-edit-open">
+                        {t('editObjective')}
+                    </Button>
+                )
             }
             title={t('editObjective')}
             description={t('editObjectiveDescription')}

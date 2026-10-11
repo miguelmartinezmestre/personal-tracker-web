@@ -29,6 +29,8 @@ interface DataTableProps<TData extends RowData> {
         isLoading?: boolean;
     };
     emptyMessage?: ReactNode;
+    // Extra classes for a column's header and cells, keyed by column id (e.g. to hide on mobile).
+    columnClassNames?: Partial<Record<string, string>>;
 }
 
 export function DataTable<TData extends RowData>({
@@ -40,6 +42,7 @@ export function DataTable<TData extends RowData>({
     onRetry,
     pagination,
     emptyMessage,
+    columnClassNames,
 }: DataTableProps<TData>) {
     'use no memo';
 
@@ -95,7 +98,11 @@ export function DataTable<TData extends RowData>({
         tableRows = table.getRowModel().rows.map(row => (
             <TableRow key={row.id} data-testid="table-row">
                 {row.getAllCells().map(cell => (
-                    <TableCell key={cell.id} data-testid="table-cell">
+                    <TableCell
+                        key={cell.id}
+                        className={columnClassNames?.[cell.column.id]}
+                        data-testid="table-cell"
+                    >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                 ))}
@@ -119,11 +126,12 @@ export function DataTable<TData extends RowData>({
                         {table.getHeaderGroups().map(headerGroup => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map(header => {
+                                    const className = columnClassNames?.[header.column.id];
                                     if (header.isPlaceholder) {
-                                        return <TableHead key={header.id} />;
+                                        return <TableHead key={header.id} className={className} />;
                                     }
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead key={header.id} className={className}>
                                             {flexRender(
                                                 header.column.columnDef.header,
                                                 header.getContext()

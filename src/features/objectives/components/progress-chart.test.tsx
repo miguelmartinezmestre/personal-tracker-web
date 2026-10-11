@@ -100,6 +100,33 @@ test('labels each day on the time axis only once', () => {
     expect(new Set(tickLabels).size).toBe(tickLabels.length);
 });
 
+test('labels a multi-year time axis with distinct years', () => {
+    const { container } = renderWithHistory(
+        [
+            { updateDate: Date.UTC(2000, 0, 1), value: 0.1, delta: 0.1 },
+            { updateDate: Date.UTC(2026, 9, 7), value: 0.2, delta: 0.1 },
+        ],
+        { ...objective, createdAt: Date.UTC(2026, 9, 7), deadline: Date.UTC(2027, 11, 31) }
+    );
+    const tickLabels = [...container.querySelectorAll('svg text')]
+        .map(node => node.textContent)
+        .filter(label => /\d{4}/.test(label));
+    expect(tickLabels.length).toBeGreaterThan(1);
+    expect(new Set(tickLabels).size).toBe(tickLabels.length);
+});
+
+test('adds the year to day labels when the axis crosses into a new year', () => {
+    const { container } = renderWithHistory(
+        [{ updateDate: Date.UTC(2026, 0, 10), value: 2, delta: 2 }],
+        { ...objective, createdAt: Date.UTC(2025, 11, 1), deadline: Date.UTC(2026, 1, 1) }
+    );
+    const tickLabels = [...container.querySelectorAll('svg text')]
+        .map(node => node.textContent)
+        .filter(label => /[a-z]/.test(label));
+    expect(tickLabels.length).toBeGreaterThan(0);
+    expect(tickLabels.every(label => /\d{4}/.test(label))).toBe(true);
+});
+
 test('omits the pace legend when the deadline leaves no pace line', () => {
     renderWithHistory([{ updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 }], {
         ...objective,

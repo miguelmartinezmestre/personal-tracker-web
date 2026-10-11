@@ -40,8 +40,10 @@ type SeriesPoint = {
 
 type PacePoint = { kind: 'pace'; date: number; value: number };
 
-const TICK_STEP_DAYS = [1, 2, 7, 14, 30, 61, 91, 182, 365];
+const TICK_STEP_DAYS = [1, 2, 7, 14, 30, 61, 91, 182];
 const MAX_DATE_TICKS = 7;
+// From this span on, ticks fall on 1 January and only the year is labelled.
+const YEAR_TICKS_MIN_DAYS = 2 * 365;
 
 // Points sit on UTC day boundaries; ticks between them would repeat the same day label.
 function dayTicks(min: number, max: number): number[] {
@@ -55,6 +57,29 @@ function dayTicks(min: number, max: number): number[] {
         ticks.push(day * DAY_MS);
     }
     return ticks;
+}
+
+// A fixed number of days drifts against leap years, so long spans step by whole years instead.
+function yearTicks(min: number, max: number): number[] {
+    let firstYear = new Date(min).getUTCFullYear();
+    if (Date.UTC(firstYear, 0, 1) < min) {
+        firstYear++;
+    }
+    const lastYear = new Date(max).getUTCFullYear();
+    const step = Math.max(1, Math.ceil((lastYear - firstYear + 1) / MAX_DATE_TICKS));
+    const ticks: number[] = [];
+    for (let year = firstYear; year <= lastYear; year += step) {
+        ticks.push(Date.UTC(year, 0, 1));
+    }
+    return ticks;
+}
+
+function usesYearTicks(min: number, max: number): boolean {
+    return (max - min) / DAY_MS >= YEAR_TICKS_MIN_DAYS;
+}
+
+function crossesYear(min: number, max: number): boolean {
+    return new Date(min).getUTCFullYear() !== new Date(max).getUTCFullYear();
 }
 
 type HistoryPoint = {
@@ -113,11 +138,6 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
         if (!points || points.length === 0) {
             return null;
         }
-        const formatDate = new Intl.DateTimeFormat(locale, {
-            day: 'numeric',
-            month: 'short',
-            timeZone: 'UTC',
-        });
         const formatLongDate = new Intl.DateTimeFormat(locale, {
             dateStyle: 'medium',
             timeZone: 'UTC',
@@ -133,6 +153,12 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
         const xMax = Math.max(...dates);
         const xDomain: [number, number] =
             xMin === xMax ? [xMin - DAY_MS, xMax + DAY_MS] : [xMin, xMax];
+        const yearAxis = usesYearTicks(...xDomain);
+        const formatDate = new Intl.DateTimeFormat(locale, {
+            ...(yearAxis ? {} : { day: 'numeric', month: 'short' }),
+            ...(yearAxis || crossesYear(...xDomain) ? { year: 'numeric' } : {}),
+            timeZone: 'UTC',
+        });
         const values = series.map(point => point.value);
         // Values are never negative; float noise just below zero would make `nice` add a
         // whole negative tick.
@@ -179,7 +205,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
                     scale: scaleLinear().domain(xDomain),
                     axis: {
                         ticks: {
-                            values: dayTicks(...xDomain),
+                            values: yearAxis ? yearTicks(...xDomain) : dayTicks(...xDomain),
                             format: value => formatDate.format(value),
                         },
                     },
