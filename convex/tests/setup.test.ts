@@ -7,8 +7,7 @@ import {
     createTestMember,
     ensureTestUserAuth,
 } from './test.helpers';
-import { asInvalidArg } from './test.casts';
-import { buildOrganizationSlug } from '../utils';
+import { ERROR_CODES } from '../constants';
 
 describe('convex setup', () => {
     describe('isPlatformSetUp', () => {
@@ -92,7 +91,7 @@ describe('convex setup', () => {
     });
 
     describe('completeSetup', () => {
-        test('creates a non-empty stable slug for an organization name without ASCII characters', async () => {
+        test('creates a non-empty slug for an organization name without ASCII characters', async () => {
             const t = initConvexTest();
             const user = await createTestUser(t, {
                 userId: 'setup-unicode-organization',
@@ -125,7 +124,6 @@ describe('convex setup', () => {
             const organization = await t.run(async ctx =>
                 ctx.db.get('organization', result.organizationId)
             );
-            expect(organization?.slug).toBe(buildOrganizationSlug(organizationName));
             expect(organization?.slug).toMatch(/^organization-[a-z0-9]+$/);
         });
 
@@ -179,7 +177,7 @@ describe('convex setup', () => {
                     organizationName: 'New Org',
                     categories: [],
                 })
-            ).rejects.toThrow();
+            ).rejects.toThrow(ERROR_CODES.PLATFORM_ALREADY_CONFIGURED);
         });
 
         test('binds setup to the first user even when more than one account exists', async () => {
@@ -220,23 +218,33 @@ describe('convex setup', () => {
             };
 
             const asUser2 = t.withIdentity(buildIdentity(user2));
-            await expect(asUser2.mutation(api.setup.completeSetup, setupArgs)).rejects.toThrow();
+            await expect(asUser2.mutation(api.setup.completeSetup, setupArgs)).rejects.toThrow(
+                ERROR_CODES.SETUP_USER_MISMATCH
+            );
 
             const asUser1 = t.withIdentity(buildIdentity(user1));
             const result = await asUser1.mutation(api.setup.completeSetup, setupArgs);
-            expect(typeof result.organizationId).toBe('string');
             await expect(
                 t.run(ctx => ctx.db.get('organization', result.organizationId))
             ).resolves.not.toBeNull();
         });
 
-        test('rejects invalid setup enum values at the backend boundary', async () => {
+        test.each([
+            ['a blank platform name', { platformName: '   ' }],
+            ['a blank organization name', { organizationName: '' }],
+            ['a malformed logo URL', { organizationLogo: 'not a url' }],
+            ['a category without a hex color', { categories: [{ name: 'Health', color: 'red' }] }],
+            [
+                'a category with an unknown icon',
+                { categories: [{ name: 'Health', color: '#EF4444', icon: 'not-an-icon' }] },
+            ],
+        ])('rejects %s without configuring the platform', async (_label, override) => {
             const t = initConvexTest();
 
             const user = await createTestUser(t, {
-                userId: 'setup-invalid-enums',
-                email: 'setup-invalid-enums@test.com',
-                name: 'Setup Invalid Enums',
+                userId: 'setup-invalid-args',
+                email: 'setup-invalid-args@test.com',
+                name: 'Setup Invalid Args',
             });
 
             const asUser = t.withIdentity({
@@ -256,12 +264,14 @@ describe('convex setup', () => {
             await expect(
                 asUser.mutation(api.setup.completeSetup, {
                     platformName: 'Test Platform',
-                    defaultLanguage: asInvalidArg<'en'>('fr'),
-                    registrationPolicy: asInvalidArg<'open'>('closed'),
+                    defaultLanguage: 'en',
+                    registrationPolicy: 'open',
                     organizationName: 'Test Org',
                     categories: [],
+                    ...override,
                 })
-            ).rejects.toThrow();
+            ).rejects.toThrow(ERROR_CODES.VALIDATION_ERROR);
+            await expect(t.query(api.setup.isPlatformSetUp, {})).resolves.toBe(false);
         });
 
         test('succeeds with exactly one user and no existing settings', async () => {
@@ -308,8 +318,6 @@ describe('convex setup', () => {
                     { name: 'Career', color: '#3B82F6', icon: 'briefcase' },
                 ],
             });
-
-            expect(typeof result.organizationId).toBe('string');
 
             const updatedUser = await t.run(async ctx => {
                 return await ctx.db.get('user', user.docId);

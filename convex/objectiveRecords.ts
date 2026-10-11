@@ -36,20 +36,27 @@ export function roundStoredValue(value: number): number {
     return Number(value.toPrecision(15));
 }
 
+/**
+ * 0% and 100% are reserved for "nothing logged yet" and "target reached": rounding would show
+ * 100% next to an active status at 99.6%, or 0% for an objective that already has progress.
+ */
 export function progressPercent(objective: {
     startValue: number;
     currentValue: number;
     targetValue: number;
 }): number {
+    if (objective.currentValue >= objective.targetValue) {
+        return 100;
+    }
     const denominator = objective.targetValue - objective.startValue;
-    if (denominator <= 0) {
-        if (objective.currentValue >= objective.targetValue) {
-            return 100;
-        }
+    if (denominator <= 0 || objective.currentValue <= objective.startValue) {
         return 0;
     }
-    const percent = ((objective.currentValue - objective.startValue) / denominator) * 100;
-    return Math.min(Math.max(Math.round(percent), 0), 100);
+    // Rounding the ratio first keeps float noise such as 28.999999999999996 from flooring a step.
+    const percent = Math.floor(
+        roundStoredValue(((objective.currentValue - objective.startValue) / denominator) * 100)
+    );
+    return Math.min(Math.max(percent, 1), 99);
 }
 
 export function canManageObjective(

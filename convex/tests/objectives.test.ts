@@ -649,6 +649,73 @@ describe('objectives and progress', () => {
         expect(reopened.completedAt).toBeUndefined();
     });
 
+    test('keeps 0% and 100% for objectives without progress and completed ones', async () => {
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Almost there',
+            startValue: 0,
+            targetValue: 1000,
+        });
+        const first = await ownerIdentity.mutation(api.objectives.createProgress, {
+            objectiveId,
+            updatedValue: 4,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+        expect(
+            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
+        ).toMatchObject({ currentValue: 4, status: 'active', progressPercent: 1 });
+
+        await ownerIdentity.mutation(api.objectives.updateProgress, {
+            id: first.id,
+            updatedValue: 996,
+            updateDate: Date.UTC(2026, 0, 2),
+        });
+        expect(
+            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
+        ).toMatchObject({ currentValue: 996, status: 'active', progressPercent: 99 });
+
+        await ownerIdentity.mutation(api.objectives.createProgress, {
+            objectiveId,
+            updatedValue: 4,
+            updateDate: Date.UTC(2026, 0, 3),
+        });
+        expect(
+            await ownerIdentity.query(api.objectives.getObjective, { id: objectiveId })
+        ).toMatchObject({ currentValue: 1000, status: 'completed', progressPercent: 100 });
+    });
+
+    test('rejects a new deadline in the past but keeps one that has already passed', async () => {
+        const pastDeadline = Date.UTC(2020, 0, 1);
+        await expect(
+            ownerIdentity.mutation(api.objectives.createObjective, {
+                title: 'Late',
+                startValue: 0,
+                targetValue: 10,
+                deadline: pastDeadline,
+            })
+        ).rejects.toThrow('DEADLINE_TOO_OLD');
+
+        const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Overdue',
+            startValue: 0,
+            targetValue: 10,
+        });
+        await expect(
+            ownerIdentity.mutation(api.objectives.updateObjective, {
+                id: objectiveId,
+                deadline: pastDeadline,
+            })
+        ).rejects.toThrow('DEADLINE_TOO_OLD');
+
+        // The deadline passed while the objective was still open.
+        await t.run(ctx => ctx.db.patch('objectives', objectiveId, { deadline: pastDeadline }));
+        const renamed = await ownerIdentity.mutation(api.objectives.updateObjective, {
+            id: objectiveId,
+            title: 'Overdue, renamed',
+            deadline: pastDeadline,
+        });
+        expect(renamed).toMatchObject({ title: 'Overdue, renamed', deadline: pastDeadline });
+    });
+
     test('preserves totals through fractional progress create, update and delete', async () => {
         const objectiveId = await ownerIdentity.mutation(api.objectives.createObjective, {
             title: 'Progress round trip',

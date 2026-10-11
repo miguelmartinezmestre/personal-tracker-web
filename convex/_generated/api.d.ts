@@ -20,6 +20,7 @@ import type * as constants from "../constants.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as email from "../email.js";
+import type * as emailSmtp from "../emailSmtp.js";
 import type * as env from "../env.js";
 import type * as generated_auth from "../generated/auth.js";
 import type * as generated_server from "../generated/server.js";
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   dashboard: typeof dashboard;
   email: typeof email;
+  emailSmtp: typeof emailSmtp;
   env: typeof env;
   "generated/auth": typeof generated_auth;
   "generated/server": typeof generated_server;

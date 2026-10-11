@@ -5,7 +5,7 @@ productivo, rendimiento bajo carga ni funcionamiento sobre dispositivos físicos
 
 ## Preparación
 
-Utiliza Node 24.19.0, pnpm 12.3.4 y Docker Desktop. Ejecuta desde la raíz de la aplicación:
+Utiliza Node 24.19.0, pnpm 12.9.1 y Docker Desktop. Ejecuta desde la raíz de la aplicación:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -13,7 +13,7 @@ pnpm run convex:local
 pnpm run dev:front
 ```
 
-El segundo comando inicia MySQL, Convex, su dashboard y MailHog. Despliega las funciones y escribe
+El segundo comando inicia MySQL, Convex, su dashboard y Mailpit. Despliega las funciones y escribe
 las conexiones locales en `.env.local`. El tercero sirve Next.js en `http://localhost:3000`.
 Completa `/setup` con el primer usuario registrado.
 
@@ -23,7 +23,7 @@ Completa `/setup` con el primer usuario registrado.
 | API Convex              | http://127.0.0.1:3210 |
 | Acciones HTTP de Convex | http://127.0.0.1:3211 |
 | Dashboard Convex        | http://127.0.0.1:6791 |
-| Bandeja MailHog         | http://127.0.0.1:8025 |
+| Bandeja Mailpit         | http://127.0.0.1:8025 |
 
 Las imágenes están fijadas por digest en `infrastructure/docker-compose.yml`. MySQL es el
 almacenamiento del backend autoalojado. La aplicación accede a Convex, sin una capa SQL propia.
@@ -52,7 +52,7 @@ locales que gestiona el perfil. Comprueba antes que dispones de la copia que qui
 ## Variables y secretos
 
 Los procesos hijos heredan las variables del terminal. Los scripts superponen encima las del stack
-(URL, claves de Convex, MailHog). Las claves, el secreto de Better Auth y los JWKS permanecen en
+(URL, claves de Convex, Mailpit). Las claves, el secreto de Better Auth y los JWKS permanecen en
 archivos locales ignorados por Git. Los cambios de secretos del backend se envían por entrada
 estándar, fuera de los argumentos del proceso.
 
@@ -60,7 +60,7 @@ No añadas credenciales a variables `NEXT_PUBLIC_*`. Conserva los secretos origi
 una copia si necesitas mantener válidas las sesiones y claves cifradas. La rotación requiere un
 procedimiento separado, porque puede invalidarlas.
 
-MailHog captura el correo en local. Este perfil configura SMTP interno y no envía correo a Resend.
+Mailpit captura el correo en local. Este perfil configura SMTP interno y no envía correo a Resend.
 
 ## E2E
 
@@ -69,7 +69,7 @@ pnpm run playwright:install
 pnpm run test:e2e
 ```
 
-Cada ejecución usa un proyecto Docker independiente, MySQL interno y MailHog. Sus volúmenes son
+Cada ejecución usa un proyecto Docker independiente, MySQL interno y Mailpit. Sus volúmenes son
 efímeros. Al terminar conserva informes y logs en `reports/e2e`, además de las trazas y capturas de
 Playwright.
 

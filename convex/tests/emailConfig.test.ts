@@ -168,7 +168,7 @@ describe('email provider configuration', () => {
         const t = initConvexTest();
         vi.useFakeTimers();
         try {
-            const result = await t.action(internal.email.sendTransactionalEmail, args);
+            const result = await t.mutation(internal.email.sendTransactionalEmail, args);
             const scheduledJobs = await t.run(ctx =>
                 ctx.db.system.query('_scheduled_functions').collect()
             );
@@ -176,7 +176,7 @@ describe('email provider configuration', () => {
             expect(result).toEqual({ message: 'Email queued successfully', provider: 'smtp' });
             expect(scheduledJobs).toHaveLength(1);
             expect(scheduledJobs[0]).toMatchObject({
-                name: 'email:sendEmail',
+                name: 'emailSmtp:sendEmail',
                 state: { kind: 'pending' },
             });
             expect(scheduledJobs[0].args).toEqual([args]);
@@ -212,7 +212,7 @@ describe('email provider configuration', () => {
         vi.useFakeTimers();
         try {
             await expect(
-                t.action(internal.email.sendTransactionalEmail, {
+                t.mutation(internal.email.sendTransactionalEmail, {
                     to: 'user@example.com',
                     subject: 'Welcome',
                     text: 'Hello',

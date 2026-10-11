@@ -1,65 +1,33 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 import { z } from 'zod';
-type MailHogMessage = {
-    Created?: string;
-    Content?: { Body?: string; Headers?: Record<string, string[]> };
-};
-const mailHogHeaderValuesSchema = z.preprocess(value => {
-    if (Array.isArray(value)) {
-        return value.filter((item): item is string => typeof item === 'string');
-    } else {
-        return [];
-    }
-}, z.array(z.string()));
-const mailHogHeadersSchema = z.record(z.string(), mailHogHeaderValuesSchema).catch({});
-const mailHogMessageSchema = z
-    .object({
-        Created: z.string().optional().catch(undefined),
-        Content: z
-            .object({
-                Body: z.string().optional().catch(undefined),
-                Headers: mailHogHeadersSchema,
+
+type EmailKind = 'verify-email' | 'reset-password' | 'invitation';
+
+// Mailpit lists summaries newest first; bodies come from the per-message endpoint already
+// decoded, so links need no quoted-printable handling.
+const mailpitSummarySchema = z.object({
+    ID: z.string(),
+    Created: z.string().optional().catch(undefined),
+    To: z.array(z.object({ Address: z.string().catch('') })).catch([]),
+});
+const mailpitSearchResponseSchema = z.object({
+    messages: z
+        .array(z.unknown())
+        .catch([])
+        .transform(items =>
+            items.flatMap(item => {
+                const parsed = mailpitSummarySchema.safeParse(item);
+                return parsed.success ? [parsed.data] : [];
             })
-            .optional()
-            .catch(undefined),
-    })
-    .transform(({ Created, Content }) => ({
-        ...(Created === undefined ? {} : { Created }),
-        ...(Content === undefined ? {} : { Content }),
-    }));
-const mailHogSearchResponseSchema = z.preprocess(
-    value => {
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-            return { items: [] };
-        }
-        const items = (value as { items?: unknown }).items;
-        let filteredItems: unknown[];
-        if (Array.isArray(items)) {
-            filteredItems = items.filter(
-                item => item !== null && typeof item === 'object' && !Array.isArray(item)
-            );
-        } else {
-            filteredItems = [];
-        }
-        return { items: filteredItems };
-    },
-    z.object({ items: z.array(mailHogMessageSchema) })
-);
-const MAILHOG_BASE_URL =
-    process.env.MAILHOG_HTTP_URL ?? `http://127.0.0.1:${process.env.E2E_MAILHOG_UI_PORT ?? '8026'}`;
-function parseMailHogMessages(value: unknown): MailHogMessage[] {
-    const result = mailHogSearchResponseSchema.safeParse(value);
-    return result.success ? result.data.items : [];
-}
-function extractEmailUrl(
-    message: MailHogMessage,
-    kind: 'verify-email' | 'reset-password' | 'invitation'
-): string | null {
-    const body = (message.Content?.Body ?? '')
-        .replace(/=\r?\n/g, '')
-        .replace(/=([0-9a-f]{2})/gi, (_match, hex: string) =>
-            String.fromCharCode(Number.parseInt(hex, 16))
-        );
+        ),
+});
+const mailpitMessageSchema = z.object({
+    Text: z.string().catch(''),
+    HTML: z.string().catch(''),
+});
+const MAILPIT_BASE_URL =
+    process.env.MAILPIT_HTTP_URL ?? `http://127.0.0.1:${process.env.E2E_MAILPIT_UI_PORT ?? '8026'}`;
+function extractEmailUrl(body: string, kind: EmailKind): string | null {
     const links = body.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
     for (const candidate of links) {
         const url = new URL(candidate.replace(/&amp;/g, '&'));
@@ -73,7 +41,7 @@ function extractEmailUrl(
             continue;
         }
         if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
-            throw new Error('MailHog email links must target loopback');
+            throw new Error('Mailpit email links must target loopback');
         }
         return url.toString();
     }
@@ -82,38 +50,39 @@ function extractEmailUrl(
 async function findLatestEmailUrl(
     request: APIRequestContext,
     email: string,
-    kind: 'verify-email' | 'reset-password' | 'invitation',
+    kind: EmailKind,
     since = 0
 ): Promise<string> {
-    const searchUrl = new URL('/api/v2/search', MAILHOG_BASE_URL);
-    searchUrl.searchParams.set('kind', 'to');
-    searchUrl.searchParams.set('query', email);
+    const searchUrl = new URL('/api/v1/search', MAILPIT_BASE_URL);
+    searchUrl.searchParams.set('query', `to:"${email}"`);
     searchUrl.searchParams.set('limit', '50');
     const response = await request.get(searchUrl.toString());
     if (!response.ok()) {
         return '';
     }
-    const payload: unknown = JSON.parse(await response.text());
-    const messages = parseMailHogMessages(payload).sort((left, right) =>
-        (right.Created ?? '').localeCompare(left.Created ?? '')
-    );
-    for (const message of messages) {
-        if (Date.parse(message.Created ?? '') < since) {
+    const search = mailpitSearchResponseSchema.safeParse(await response.json());
+    if (!search.success) {
+        return '';
+    }
+    for (const summary of search.data.messages) {
+        if (Date.parse(summary.Created ?? '') < since) {
             continue;
         }
-        const recipients = message.Content?.Headers?.To ?? [];
-        if (
-            !recipients.some(
-                recipient =>
-                    recipient
-                        .toLowerCase()
-                        .match(/[^\s<>" ,;]+@[^\s<>" ,;]+/g)
-                        ?.some(address => address === email.toLowerCase()) ?? false
-            )
-        ) {
+        // `to:` matches substrings, so a@x.com would also find aa@x.com.
+        if (!summary.To.some(({ Address }) => Address.toLowerCase() === email.toLowerCase())) {
             continue;
         }
-        const url = extractEmailUrl(message, kind);
+        const messageUrl = new URL(`/api/v1/message/${summary.ID}`, MAILPIT_BASE_URL);
+        const messageResponse = await request.get(messageUrl.toString());
+        if (!messageResponse.ok()) {
+            continue;
+        }
+        const message = mailpitMessageSchema.safeParse(await messageResponse.json());
+        if (!message.success) {
+            continue;
+        }
+        const url =
+            extractEmailUrl(message.data.Text, kind) ?? extractEmailUrl(message.data.HTML, kind);
         if (url) {
             return url;
         }

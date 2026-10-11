@@ -8,8 +8,8 @@ achievements.
 ## Requirements
 
 - Node `24.19.0` for reproducible verification (see `.nvmrc`)
-- pnpm `12.3.4` (`packageManager` field)
-- Docker (for the local self-hosted Convex + MySQL + MailHog stack)
+- pnpm `12.9.1` (`packageManager` field)
+- Docker (for the local self-hosted Convex + MySQL + Mailpit stack)
 
 ## Quick start
 
@@ -42,7 +42,7 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 - `pnpm ci` — `checks:static`, `test:coverage`, `build`, and `test:e2e`.
 - `pnpm test` — `test:backend` then `test:frontend`.
 - `pnpm test:coverage` — both Vitest suites with coverage thresholds.
-- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailHog SMTP).
+- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes Mailpit SMTP).
 - `pnpm run convex:local` starts development services and preserves data. `convex:local:stop` stops
   them; only `convex:local:reset` deletes the managed local data. See
   [self-host.md](./self-host.md).
@@ -55,7 +55,7 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 - [Local operation and recovery](docs/operacion-local.md).
 
 - [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.
-- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailHog) and
+- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, Mailpit) and
   environment variables.
 - `convex/_generated/ai/guidelines.md` — Convex conventions (read before editing backend code).
 
@@ -105,7 +105,7 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 - Mail: send a password-reset or invitation and confirm delivery (Resend dashboard or SMTP inbox).
 - Do **not** set `E2E_SETUP_SECRET` in a real deployment (local e2e runner flag only).
 
-Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailHog (`:8025`) is for
+Local self-hosting remains documented in [`self-host.md`](./self-host.md); Mailpit (`:8025`) is for
 dev/e2e SMTP capture, not production.
 
 ## Testing note

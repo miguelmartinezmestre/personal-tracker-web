@@ -18,14 +18,14 @@ export const CONVEX_START_TIMEOUT_MS = 120_000;
 export const POLL_INTERVAL_MS = 1_000;
 export const HTTP_REQUEST_TIMEOUT_MS = 3_000;
 
-const DEFAULT_MAILHOG_SMTP_ENV = {
+const DEFAULT_MAILPIT_SMTP_ENV = {
     EMAIL_PROVIDER: 'smtp',
     EMAIL_FROM: 'Metricas <noreply@metricas.local>',
-    SMTP_HOST: 'mailhog',
+    SMTP_HOST: 'mailpit',
     SMTP_PORT: '1025',
     SMTP_SECURE: 'false',
-    SMTP_USER: 'mailhog',
-    SMTP_PASSWORD: 'mailhog',
+    SMTP_USER: 'mailpit',
+    SMTP_PASSWORD: 'mailpit',
 } as const;
 
 const credentialsSchema = z.object({
@@ -312,7 +312,7 @@ export function buildConvexCommandEnv(params: {
         ...(params.allowLocalHttp ? { NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: 'true' } : {}),
         NEXT_PUBLIC_SITE_URL: params.siteUrl,
         SITE_URL: params.siteUrl,
-        ...DEFAULT_MAILHOG_SMTP_ENV,
+        ...DEFAULT_MAILPIT_SMTP_ENV,
     });
 }
 
@@ -338,7 +338,7 @@ export async function configureConvexEnv(
         SETUP_SECRET: options?.setupSecret,
         BETTER_AUTH_SECRET: commandEnv.BETTER_AUTH_SECRET,
         JWKS: commandEnv.JWKS,
-        ...DEFAULT_MAILHOG_SMTP_ENV,
+        ...DEFAULT_MAILPIT_SMTP_ENV,
     };
     for (const [key, value] of Object.entries(values)) {
         if (value !== undefined) await setConvexEnvVar(commandEnv, key, value);

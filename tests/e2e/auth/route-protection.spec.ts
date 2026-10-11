@@ -33,8 +33,7 @@ test.describe('Route Protection', () => {
 
             for (const route of protectedRoutes) {
                 await page.goto(route, { waitUntil: 'domcontentloaded' });
-                await expect(page).toHaveURL(/\/dashboard\//);
-                expect(page.url()).not.toContain('/login');
+                await expect(page).toHaveURL(new RegExp(`${route}(\\?|$)`));
             }
 
             await logoutUser(page);

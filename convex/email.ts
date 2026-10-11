@@ -1,10 +1,7 @@
-'use node';
-
 import { Resend } from '@convex-dev/resend';
 import { v } from 'convex/values';
 import { components, internal } from './_generated/api';
-import { env, internalAction } from './_generated/server';
-import nodemailer from 'nodemailer';
+import { env, internalMutation } from './_generated/server';
 
 export type EmailProvider = 'resend' | 'smtp';
 
@@ -126,7 +123,11 @@ const resend = new Resend(components.resend, {
     testMode: false,
 });
 
-export const sendTransactionalEmail = internalAction({
+// A mutation, not a Node action: on a self-hosted backend a Node action reaches the scheduler
+// through CONVEX_CLOUD_ORIGIN, which is the host-facing URL and is not reachable from inside the
+// container when the published port differs (as in the e2e stack). Only the SMTP delivery itself
+// needs Node, and it makes no calls back into Convex.
+export const sendTransactionalEmail = internalMutation({
     args: {
         to: v.union(v.string(), v.array(v.string())),
         subject: v.string(),
@@ -139,7 +140,7 @@ export const sendTransactionalEmail = internalAction({
 
         if (provider === 'smtp') {
             getSmtpEmailConfig();
-            await ctx.scheduler.runAfter(0, internal.email.sendEmail, args);
+            await ctx.scheduler.runAfter(0, internal.emailSmtp.sendEmail, args);
             return { message: 'Email queued successfully', provider };
         }
 
@@ -152,37 +153,5 @@ export const sendTransactionalEmail = internalAction({
             html: args.html,
         });
         return { message: 'Email queued successfully', provider };
-    },
-});
-
-export const sendEmail = internalAction({
-    args: {
-        to: v.union(v.string(), v.array(v.string())),
-        subject: v.string(),
-        text: v.optional(v.string()),
-        html: v.optional(v.string()),
-    },
-    returns: v.object({ message: v.string() }),
-    handler: async (_, args) => {
-        const config = getSmtpEmailConfig();
-        const transporter = nodemailer.createTransport({
-            host: config.host,
-            port: config.port,
-            secure: config.secure,
-            auth: {
-                user: config.user,
-                pass: config.password,
-            },
-        });
-
-        await transporter.sendMail({
-            from: config.from,
-            to: args.to,
-            subject: args.subject,
-            text: args.text,
-            html: args.html,
-        });
-
-        return { message: 'Email sent successfully' };
     },
 });

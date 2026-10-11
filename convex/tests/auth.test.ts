@@ -77,8 +77,7 @@ describe('convex auth', () => {
 
     test('getCurrentUser returns user when authenticated', async () => {
         const current = await userIdentity.query(api.auth.getCurrentUser, {});
-        expect(current).not.toBeNull();
-        expect(current?.name).toBeDefined();
+        expect(current?._id).toBe(userId);
     });
 
     test('auth triggersApi writes audit logs for session create and delete', async () => {

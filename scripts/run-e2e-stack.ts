@@ -81,8 +81,8 @@ const COMPOSE_PROJECT = BROWSER_PROJECT ? `metricas-e2e-${BROWSER_PROJECT}` : 'm
 const E2E_CONVEX_PORT = process.env.E2E_CONVEX_PORT ?? '4210';
 const E2E_CONVEX_SITE_PORT = process.env.E2E_CONVEX_SITE_PORT ?? '4211';
 const E2E_FRONTEND_PORT = process.env.E2E_FRONTEND_PORT ?? '4300';
-const E2E_MAILHOG_SMTP_PORT = process.env.E2E_MAILHOG_SMTP_PORT ?? '2026';
-const E2E_MAILHOG_UI_PORT = process.env.E2E_MAILHOG_UI_PORT ?? '8026';
+const E2E_MAILPIT_SMTP_PORT = process.env.E2E_MAILPIT_SMTP_PORT ?? '2026';
+const E2E_MAILPIT_UI_PORT = process.env.E2E_MAILPIT_UI_PORT ?? '8026';
 const E2E_NEXT_DIST_DIR =
     process.env.E2E_NEXT_DIST_DIR ??
     (BROWSER_PROJECT ? `.next-e2e-${BROWSER_PROJECT}` : '.next-e2e');
@@ -150,8 +150,8 @@ function getComposeEnv(extraEnv: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     return overlayEnv({
         PORT: E2E_CONVEX_PORT,
         SITE_PROXY_PORT: E2E_CONVEX_SITE_PORT,
-        MAILHOG_SMTP_PORT: E2E_MAILHOG_SMTP_PORT,
-        MAILHOG_UI_PORT: E2E_MAILHOG_UI_PORT,
+        MAILPIT_SMTP_PORT: E2E_MAILPIT_SMTP_PORT,
+        MAILPIT_UI_PORT: E2E_MAILPIT_UI_PORT,
         ...extraEnv,
     });
 }
@@ -462,7 +462,7 @@ async function main(): Promise<void> {
     console.log(`  - Convex backend: port ${E2E_CONVEX_PORT}`);
     console.log(`  - Convex site: port ${E2E_CONVEX_SITE_PORT}`);
     console.log(`  - Frontend: port ${E2E_FRONTEND_PORT}`);
-    console.log(`  - MailHog UI: http://127.0.0.1:${E2E_MAILHOG_UI_PORT}`);
+    console.log(`  - Mailpit UI: http://127.0.0.1:${E2E_MAILPIT_UI_PORT}`);
     console.log(`  - Docker project: ${COMPOSE_PROJECT}`);
     console.log(`  - Build directory: ${E2E_NEXT_DIST_DIR}`);
     await dockerCompose(['up', '-d']);
@@ -492,7 +492,7 @@ async function main(): Promise<void> {
             E2E_SETUP_SECRET: e2eSetupSecret,
             SETUP_SECRET: setupSecret,
             BASE_URL: baseUrl,
-            E2E_MAILHOG_UI_PORT,
+            E2E_MAILPIT_UI_PORT,
             NEXT_DIST_DIR: nextDistDir,
             PLAYWRIGHT_HTML_OPEN: process.env.PLAYWRIGHT_HTML_OPEN ?? 'never',
         },

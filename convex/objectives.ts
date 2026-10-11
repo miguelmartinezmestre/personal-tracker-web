@@ -27,10 +27,20 @@ const OBJECTIVE_DELETION_BATCH_SIZE = 50;
 const PROGRESS_HISTORY_LIMIT = 200;
 // Progress dates are the UTC midnight of the user's local day, which can be up to UTC+14.
 const MAX_UTC_OFFSET_MS = 14 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function validateProgressDate(updateDate: number, now: number) {
     if (updateDate > now + MAX_UTC_OFFSET_MS) {
         throw new ConvexError(ERROR_CODES.FUTURE_DATE_NOT_ALLOWED);
+    }
+}
+
+// Deadlines are also the UTC midnight of a local day; the user's local date can trail the UTC
+// date by one day, so only dates before yesterday in UTC are certainly in the past.
+function validateDeadline(deadline: number, now: number) {
+    const startOfUtcDay = now - (now % DAY_MS);
+    if (deadline < startOfUtcDay - DAY_MS) {
+        throw new ConvexError(ERROR_CODES.DEADLINE_TOO_OLD);
     }
 }
 
@@ -221,6 +231,9 @@ export const createObjective = mutationWithRLS({
         }
 
         validateObjectiveValues(args.startValue, args.targetValue);
+        if (args.deadline !== undefined) {
+            validateDeadline(args.deadline, now);
+        }
         const status = statusFromCurrentValue(args.startValue, args.targetValue);
         return await ctx.db.insert('objectives', {
             organizationId,
@@ -261,6 +274,10 @@ export const updateObjective = mutationWithRLS({
         const { title, description, unit, categoryId, deadline, startValue, targetValue } =
             resolvedObjectiveFields(existing, args);
         validateObjectiveValues(startValue, targetValue);
+        // An objective whose deadline already passed can still be edited without moving it.
+        if (deadline !== undefined && deadline !== existing.deadline) {
+            validateDeadline(deadline, now);
+        }
         if (
             categoryId &&
             (await ctx.db.get('categories', categoryId))?.organizationId !== organizationId

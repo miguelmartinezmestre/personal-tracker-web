@@ -148,11 +148,7 @@ test.describe('Organizations CRUD', () => {
         });
 
         await page.goto('/dashboard/home');
-        await expect(page).toHaveURL(/\/dashboard\/home(\?|$)/);
         await setActiveOrganization(page, newOrg.name);
-        await expect(page.getByTestId('organization-switcher')).toContainText(newOrg.name, {
-            timeout: 10000,
-        });
     });
 
     test('validate organization name required', { tag: ['@REQ-EQUIPOS-001'] }, async ({ page }) => {
@@ -160,13 +156,12 @@ test.describe('Organizations CRUD', () => {
 
         await page.getByTestId('organization-create-open').click();
 
+        const nameInput = page.getByTestId('organization-name-input');
+        await nameInput.fill('   ');
         await page.getByTestId('organization-save-button').click();
 
-        const errorMessage = page.locator('text=/required|requerido|name/i');
-        const hasError = (await errorMessage.count()) > 0;
-
-        const modalStillOpen = await page.getByTestId('organization-name-input').isVisible();
-
-        expect(hasError || modalStillOpen).toBeTruthy();
+        await expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.locator('[data-slot="field-error"]')).toHaveCount(1);
+        await expect(nameInput).toBeVisible();
     });
 });

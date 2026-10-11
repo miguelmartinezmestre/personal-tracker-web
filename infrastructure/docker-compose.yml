@@ -17,15 +17,19 @@ services:
             retries: 5
             start_period: 30s
 
-    mailhog:
-        container_name: mailhog-metricas
-        image: mailhog/mailhog:v1.0.1@sha256:8d76a3d4ffa32a3661311944007a415332c4bb855657f4f6c57996405c009bea
+    mailpit:
+        container_name: mailpit-metricas
+        image: axllent/mailpit:v1.31.3@sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d
         ports:
-            - '127.0.0.1:${MAILHOG_SMTP_PORT:-1025}:1025'
-            - '127.0.0.1:${MAILHOG_UI_PORT:-8025}:8025'
+            - '127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025'
+            - '127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025'
         restart: unless-stopped
+        environment:
+            # The backend always authenticates over plain SMTP; Mailpit rejects that by default.
+            - MP_SMTP_AUTH_ACCEPT_ANY=1
+            - MP_SMTP_AUTH_ALLOW_INSECURE=1
         healthcheck:
-            test: ['CMD-SHELL', 'wget -q -O- http://localhost:8025/api/v2/messages >/dev/null']
+            test: ['CMD', '/mailpit', 'readyz']
             interval: 10s
             timeout: 5s
             retries: 5
@@ -37,7 +41,7 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
-            mailhog:
+            mailpit:
                 condition: service_healthy
         restart: on-failure
         stop_grace_period: 10s
