@@ -3,12 +3,11 @@
 import type { FunctionReturnType } from 'convex/server';
 import { usePaginatedQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { ObjectiveStatusFilter } from '@/features/objectives/lib/status-filter';
 
 export type ObjectiveSummary = FunctionReturnType<
     typeof api.objectives.listObjectives
 >['page'][number];
-export type ObjectiveStatusFilter = 'all' | 'active' | 'completed';
-
 export function useObjectives(status: ObjectiveStatusFilter) {
     const pagination = usePaginatedQuery(
         api.objectives.listObjectives,

@@ -10,11 +10,8 @@ import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { dateInputToUtcTimestamp } from '@/features/objectives/lib/dates';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
-import {
-    NONE_CATEGORY,
-    objectiveFormSchema,
-    type ObjectiveFormValues,
-} from '@/features/objectives/schemas/objective';
+import { useObjectiveFormSchema } from '@/features/objectives/hooks/use-form-schemas';
+import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
 
 const defaultValues: ObjectiveFormValues = {
@@ -27,9 +24,14 @@ const defaultValues: ObjectiveFormValues = {
     deadline: '',
 };
 
-export default function CreateObjectiveFormModal() {
+export default function CreateObjectiveFormModal({
+    triggerTestId = 'objective-create-open',
+}: {
+    triggerTestId?: string;
+}) {
     const t = useTranslations('Objectives');
     const tCommon = useTranslations('Common');
+    const formSchema = useObjectiveFormSchema();
     const createObjective = useMutation({
         mutationFn: useConvexMutation(api.objectives.createObjective),
     });
@@ -37,7 +39,7 @@ export default function CreateObjectiveFormModal() {
     return (
         <FormModal<ObjectiveFormValues>
             trigger={
-                <Button className="gap-2" data-testid="objective-create-open">
+                <Button className="gap-2" data-testid={triggerTestId}>
                     <PlusCircle className="h-4 w-4" />
                     {t('createObjective')}
                 </Button>
@@ -47,8 +49,8 @@ export default function CreateObjectiveFormModal() {
             formOptions={{
                 defaultValues,
                 validators: {
-                    onChange: objectiveFormSchema,
-                    onSubmit: objectiveFormSchema,
+                    onChange: formSchema,
+                    onSubmit: formSchema,
                 },
             }}
             onSubmit={async values => {

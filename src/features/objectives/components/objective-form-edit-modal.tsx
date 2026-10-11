@@ -10,11 +10,8 @@ import type { Id } from '@/convex/_generated/dataModel';
 import { dateInputToUtcTimestamp, timestampToDateInput } from '@/features/objectives/lib/dates';
 import { type ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import { ObjectiveFormFields } from '@/features/objectives/components/objective-form-fields';
-import {
-    NONE_CATEGORY,
-    objectiveFormSchema,
-    type ObjectiveFormValues,
-} from '@/features/objectives/schemas/objective';
+import { useObjectiveFormSchema } from '@/features/objectives/hooks/use-form-schemas';
+import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
 
 export default function EditObjectiveFormModal({ objective }: { objective: ObjectiveSummary }) {
@@ -32,6 +29,7 @@ export default function EditObjectiveFormModal({ objective }: { objective: Objec
         targetValue: objective.targetValue,
         deadline: timestampToDateInput(objective.deadline),
     };
+    const formSchema = useObjectiveFormSchema(defaultValues.deadline);
 
     return (
         <FormModal<ObjectiveFormValues>
@@ -45,8 +43,8 @@ export default function EditObjectiveFormModal({ objective }: { objective: Objec
             formOptions={{
                 defaultValues,
                 validators: {
-                    onChange: objectiveFormSchema,
-                    onSubmit: objectiveFormSchema,
+                    onChange: formSchema,
+                    onSubmit: formSchema,
                 },
             }}
             onSubmit={async values => {
@@ -62,7 +60,7 @@ export default function EditObjectiveFormModal({ objective }: { objective: Objec
                 } else {
                     categoryId = values.categoryId as Id<'categories'>;
                 }
-                await updateObjective.mutateAsync({
+                const updated = await updateObjective.mutateAsync({
                     id: objective.id,
                     title: values.title,
                     description: values.description.trim() || null,
@@ -72,7 +70,13 @@ export default function EditObjectiveFormModal({ objective }: { objective: Objec
                     startValue: values.startValue,
                     targetValue: values.targetValue,
                 });
-                toast.success(t('toast.updated'));
+                if (updated.status === objective.status) {
+                    toast.success(t('toast.updated'));
+                } else if (updated.status === 'completed') {
+                    toast.success(t('toast.completed'));
+                } else {
+                    toast.info(t('toast.reopened'));
+                }
             }}
             submitLabel={t('saveObjective')}
             pendingLabel={tCommon('actions.saving')}
@@ -81,7 +85,7 @@ export default function EditObjectiveFormModal({ objective }: { objective: Objec
             cancelTestId="objective-edit-cancel-button"
             submitTestId="objective-edit-save-button"
         >
-            {form => <ObjectiveFormFields form={form} />}
+            {form => <ObjectiveFormFields form={form} keptDeadline={defaultValues.deadline} />}
         </FormModal>
     );
 }

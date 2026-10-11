@@ -2,28 +2,35 @@
 
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import FormModal from '@/components/forms/form-modal';
+import { getFieldErrors } from '@/components/forms/form-utils';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import {
     dateInputToUtcTimestamp,
     timestampToDateInput,
     todayDateInput,
 } from '@/features/objectives/lib/dates';
-import { formatObjectiveValue } from '@/features/objectives/lib/format';
+import { formatObjectiveDate, formatObjectiveValue } from '@/features/objectives/lib/format';
 import { useProgress, type ProgressEntry } from '@/features/objectives/hooks/use-progress';
-import {
-    progressFormSchema,
-    type ProgressFormValues,
-} from '@/features/objectives/schemas/objective';
+import { useProgressFormSchema } from '@/features/objectives/hooks/use-form-schemas';
+import { PROGRESS_COMMENT_MAX_LENGTH } from '@/convex/constants';
+import { type ProgressFormValues } from '@/features/objectives/schemas/objective';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
 
-export default function ProgressList({ objectiveId }: { objectiveId: string }) {
+export default function ProgressList({
+    objectiveId,
+    unit,
+}: {
+    objectiveId: string;
+    unit?: string | undefined;
+}) {
     const t = useTranslations('UpdateProgress');
     const common = useTranslations('Common');
     const locale = useLocale();
@@ -33,7 +40,15 @@ export default function ProgressList({ objectiveId }: { objectiveId: string }) {
         mutationFn: useConvexMutation(api.objectives.deleteProgress),
     });
     let emptyState = null;
-    if (!progress.isLoading && progress.data.length === 0) {
+    if (progress.isLoading) {
+        emptyState = (
+            <div className="space-y-2" data-testid="progress-list-loading">
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+            </div>
+        );
+    } else if (progress.data.length === 0) {
         emptyState = <p className="text-muted-foreground text-sm">{t('empty')}</p>;
     }
     let loadMoreButton = null;
@@ -48,13 +63,13 @@ export default function ProgressList({ objectiveId }: { objectiveId: string }) {
     return (
         <div className="space-y-3" data-testid="progress-list">
             {emptyState}
-            <ul className="divide-y rounded-md border">
+            <ul className="divide-y rounded-md border empty:hidden">
                 {progress.data.map(entry => {
                     let editActions = null;
                     if (entry.canEdit) {
                         editActions = (
                             <div className="flex gap-2">
-                                <EditProgressModal entry={entry} />
+                                <EditProgressModal entry={entry} unit={unit} />
                                 <DeleteConfirmationDialog
                                     title={t('confirm.deleteTitle')}
                                     description={t('confirm.deleteDescription')}
@@ -87,12 +102,13 @@ export default function ProgressList({ objectiveId }: { objectiveId: string }) {
                             key={entry.id}
                             className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
                         >
-                            <div>
+                            <div className="min-w-0">
                                 <p className="font-medium" data-testid="progress-entry-value">
                                     +{formatObjectiveValue(entry.updatedValue, locale)}
+                                    {unit ? ` ${unit}` : ''}
                                 </p>
-                                <p className="text-muted-foreground text-sm">
-                                    {timestampToDateInput(entry.updateDate)}
+                                <p className="text-muted-foreground text-sm whitespace-pre-line wrap-anywhere">
+                                    {formatObjectiveDate(entry.updateDate, locale)}
                                     {entry.comment ? ` · ${entry.comment}` : ''}
                                 </p>
                             </div>
@@ -106,9 +122,10 @@ export default function ProgressList({ objectiveId }: { objectiveId: string }) {
     );
 }
 
-function EditProgressModal({ entry }: { entry: ProgressEntry }) {
+function EditProgressModal({ entry, unit }: { entry: ProgressEntry; unit?: string | undefined }) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
+    const formSchema = useProgressFormSchema();
     const updateProgress = useMutation({
         mutationFn: useConvexMutation(api.objectives.updateProgress),
     });
@@ -130,8 +147,8 @@ function EditProgressModal({ entry }: { entry: ProgressEntry }) {
             formOptions={{
                 defaultValues,
                 validators: {
-                    onChange: progressFormSchema,
-                    onSubmit: progressFormSchema,
+                    onChange: formSchema,
+                    onSubmit: formSchema,
                 },
             }}
             onSubmit={async values => {
@@ -157,12 +174,8 @@ function EditProgressModal({ entry }: { entry: ProgressEntry }) {
                 <FieldGroup>
                     <form.Field name="updatedValue">
                         {field => {
-                            let errors = [];
-                            if (form.state.submissionAttempts > 0) {
-                                errors = field.state.meta.errors;
-                            } else {
-                                errors = [];
-                            }
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = errors.length > 0;
                             let value: number | '' = '';
                             if (
                                 typeof field.state.value === 'number' &&
@@ -182,33 +195,34 @@ function EditProgressModal({ entry }: { entry: ProgressEntry }) {
                                 field.handleChange(nextValue);
                             };
                             return (
-                                <Field>
+                                <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={`edit-${field.name}`}>
-                                        {t('updatedValue')}
+                                        {unit ? t('entryValueWithUnit', { unit }) : t('entryValue')}
                                     </FieldLabel>
                                     <Input
                                         id={`edit-${field.name}`}
+                                        name={field.name}
                                         type="number"
                                         step="any"
                                         min={0}
                                         value={value}
                                         onBlur={field.handleBlur}
                                         onChange={event => handleChange(event.target.value)}
+                                        aria-invalid={isInvalid}
                                         data-testid="progress-edit-value-input"
                                     />
-                                    {errors.length > 0 ? <FieldError errors={errors} /> : null}
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('entryValueDescription')}
+                                    </p>
+                                    {isInvalid ? <FieldError errors={errors} /> : null}
                                 </Field>
                             );
                         }}
                     </form.Field>
                     <form.Field name="updateDate">
                         {field => {
-                            let errors = [];
-                            if (form.state.submissionAttempts > 0) {
-                                errors = field.state.meta.errors;
-                            } else {
-                                errors = [];
-                            }
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = errors.length > 0;
                             let value: string;
                             if (typeof field.state.value === 'string') {
                                 value = field.state.value;
@@ -216,25 +230,29 @@ function EditProgressModal({ entry }: { entry: ProgressEntry }) {
                                 value = '';
                             }
                             return (
-                                <Field>
+                                <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={`edit-${field.name}`}>
                                         {t('table.columns.date')}
                                     </FieldLabel>
                                     <Input
                                         id={`edit-${field.name}`}
+                                        name={field.name}
                                         type="date"
                                         max={todayDateInput()}
                                         value={value}
                                         onBlur={field.handleBlur}
                                         onChange={event => field.handleChange(event.target.value)}
+                                        aria-invalid={isInvalid}
                                     />
-                                    {errors.length > 0 ? <FieldError errors={errors} /> : null}
+                                    {isInvalid ? <FieldError errors={errors} /> : null}
                                 </Field>
                             );
                         }}
                     </form.Field>
                     <form.Field name="comment">
                         {field => {
+                            const errors = getFieldErrors(form, field);
+                            const isInvalid = errors.length > 0;
                             let value: string;
                             if (typeof field.state.value === 'string') {
                                 value = field.state.value;
@@ -242,16 +260,20 @@ function EditProgressModal({ entry }: { entry: ProgressEntry }) {
                                 value = '';
                             }
                             return (
-                                <Field>
+                                <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={`edit-${field.name}`}>
                                         {t('comment')}
                                     </FieldLabel>
                                     <Textarea
                                         id={`edit-${field.name}`}
+                                        name={field.name}
                                         value={value}
+                                        maxLength={PROGRESS_COMMENT_MAX_LENGTH}
                                         onBlur={field.handleBlur}
                                         onChange={event => field.handleChange(event.target.value)}
+                                        aria-invalid={isInvalid}
                                     />
+                                    {isInvalid ? <FieldError errors={errors} /> : null}
                                 </Field>
                             );
                         }}

@@ -43,6 +43,7 @@ export default async function NotFound() {
 
                     <CardFooter className="flex flex-col justify-center gap-3 sm:flex-row">
                         <Button
+                            nativeButton={false}
                             render={
                                 <Link href="/" prefetch={false} data-testid="not-found-home-link" />
                             }
@@ -51,6 +52,7 @@ export default async function NotFound() {
                             {tNotFound('goHome')}
                         </Button>
                         <Button
+                            nativeButton={false}
                             render={
                                 <Link
                                     href="/login"

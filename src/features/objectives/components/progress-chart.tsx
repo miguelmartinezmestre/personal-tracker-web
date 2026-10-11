@@ -29,6 +29,8 @@ type ProgressChartObjective = {
 };
 
 type SeriesPoint = {
+    // Several entries can share a day, so the date alone cannot identify a point.
+    key: string;
     kind: 'start' | 'update';
     date: number;
     value: number;
@@ -38,7 +40,30 @@ type SeriesPoint = {
 
 type PacePoint = { kind: 'pace'; date: number; value: number };
 
-type HistoryPoint = { updateDate: number; value: number; delta: number; comment?: string };
+const TICK_STEP_DAYS = [1, 2, 7, 14, 30, 61, 91, 182, 365];
+const MAX_DATE_TICKS = 7;
+
+// Points sit on UTC day boundaries; ticks between them would repeat the same day label.
+function dayTicks(min: number, max: number): number[] {
+    const first = Math.ceil(min / DAY_MS);
+    const last = Math.floor(max / DAY_MS);
+    const step =
+        TICK_STEP_DAYS.find(days => (last - first) / days < MAX_DATE_TICKS) ??
+        Math.ceil((last - first) / MAX_DATE_TICKS);
+    const ticks: number[] = [];
+    for (let day = first; day <= last; day += step) {
+        ticks.push(day * DAY_MS);
+    }
+    return ticks;
+}
+
+type HistoryPoint = {
+    id: string;
+    updateDate: number;
+    value: number;
+    delta: number;
+    comment?: string;
+};
 
 function buildSeries(
     objective: ProgressChartObjective,
@@ -47,6 +72,7 @@ function buildSeries(
 ) {
     const firstDate = points[0]?.updateDate ?? objective.createdAt;
     const series: SeriesPoint[] = points.map(point => ({
+        key: point.id,
         kind: 'update',
         date: point.updateDate,
         value: point.value,
@@ -57,6 +83,7 @@ function buildSeries(
     // dates are UTC days, so a same-day start is drawn one day earlier to keep it visible.
     if (!truncated) {
         series.unshift({
+            key: 'start',
             kind: 'start',
             date: objective.createdAt < firstDate ? objective.createdAt : firstDate - DAY_MS,
             value: objective.startValue,
@@ -82,7 +109,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
     const points = history.data?.points;
     const truncated = history.data?.truncated ?? false;
 
-    const definition = useMemo(() => {
+    const chart = useMemo(() => {
         if (!points || points.length === 0) {
             return null;
         }
@@ -104,17 +131,19 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
         const dates = [...series, ...pace].map(point => point.date);
         const xMin = Math.min(...dates);
         const xMax = Math.max(...dates);
-        const xDomain = xMin === xMax ? [xMin - DAY_MS, xMax + DAY_MS] : [xMin, xMax];
+        const xDomain: [number, number] =
+            xMin === xMax ? [xMin - DAY_MS, xMax + DAY_MS] : [xMin, xMax];
         const values = series.map(point => point.value);
         // Values are never negative; float noise just below zero would make `nice` add a
         // whole negative tick.
         const yMin = Math.max(0, Math.min(objective.startValue, ...values));
         const yMax = Math.max(objective.targetValue, ...values);
 
-        return defineChart({
+        const definition = defineChart({
             marks: [
                 areaY(series, {
                     id: 'progress-area',
+                    key: 'key',
                     x: 'date',
                     y1: yMin,
                     y2: 'value',
@@ -137,6 +166,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
                 }),
                 lineY(series, {
                     id: 'progress-line',
+                    key: 'key',
                     x: 'date',
                     y: 'value',
                     stroke: LINE_COLOR,
@@ -147,7 +177,12 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
             scales: {
                 x: {
                     scale: scaleLinear().domain(xDomain),
-                    axis: { ticks: { format: value => formatDate.format(value) } },
+                    axis: {
+                        ticks: {
+                            values: dayTicks(...xDomain),
+                            format: value => formatDate.format(value),
+                        },
+                    },
                 },
                 y: {
                     scale: scaleLinear().domain([yMin, yMax]),
@@ -191,6 +226,8 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
                 },
             },
         });
+        // A deadline at or before the first point leaves no pace line to explain.
+        return { definition, hasPace: pace.length > 0 };
     }, [points, truncated, locale, objective, t]);
 
     if (history.isPending) {
@@ -199,7 +236,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
     if (history.isError) {
         return <QueryErrorFallback error={history.error} onRetry={() => void history.refetch()} />;
     }
-    if (!definition) {
+    if (!chart) {
         return (
             <p className="text-muted-foreground text-sm" data-testid="progress-chart-empty">
                 {t('empty')}
@@ -210,7 +247,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
     return (
         <div className="space-y-2" data-testid="progress-chart">
             <Chart
-                definition={definition}
+                definition={chart.definition}
                 height={CHART_HEIGHT}
                 initialWidth={640}
                 ariaLabel={t('ariaLabel')}
@@ -229,7 +266,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
                     <span className="w-4 border-t border-dashed border-current" aria-hidden />
                     {t('legendTarget')}
                 </li>
-                {objective.deadline !== undefined ? (
+                {chart.hasPace ? (
                     <li className="flex items-center gap-1.5">
                         <span className="w-4 border-t border-dotted border-current" aria-hidden />
                         {t('legendPace')}

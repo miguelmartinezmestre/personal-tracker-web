@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -9,18 +10,29 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import { useConvexMutation } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
-import { getFieldErrors } from '@/components/forms/form-utils';
+import { focusFirstInvalidField, getFieldErrors } from '@/components/forms/form-utils';
 import type { Id } from '@/convex/_generated/dataModel';
 import { dateInputToUtcTimestamp, todayDateInput } from '@/features/objectives/lib/dates';
-import {
-    progressFormSchema,
-    type ProgressFormValues,
-} from '@/features/objectives/schemas/objective';
+import { useProgressFormSchema } from '@/features/objectives/hooks/use-form-schemas';
+import { PROGRESS_COMMENT_MAX_LENGTH } from '@/convex/constants';
+import { type ProgressFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
 
-export default function ProgressForm({ objectiveId }: { objectiveId: string }) {
+export default function ProgressForm({
+    objectiveId,
+    currentValue,
+    targetValue,
+    unit,
+}: {
+    objectiveId: string;
+    currentValue: number;
+    targetValue: number;
+    unit?: string | undefined;
+}) {
     const t = useTranslations('UpdateProgress');
     const tCommon = useTranslations('Common');
+    const formSchema = useProgressFormSchema();
+    const formRef = useRef<HTMLFormElement>(null);
     const createProgress = useMutation({
         mutationFn: useConvexMutation(api.objectives.createProgress),
     });
@@ -31,8 +43,8 @@ export default function ProgressForm({ objectiveId }: { objectiveId: string }) {
             comment: '',
         } satisfies ProgressFormValues,
         validators: {
-            onChange: progressFormSchema,
-            onSubmit: progressFormSchema,
+            onChange: formSchema,
+            onSubmit: formSchema,
         },
         onSubmit: async ({ value, formApi }) => {
             const updateDate = dateInputToUtcTimestamp(value.updateDate);
@@ -46,13 +58,19 @@ export default function ProgressForm({ objectiveId }: { objectiveId: string }) {
                 updateDate,
                 ...(comment ? { comment } : {}),
             });
-            toast.success(t('toast.created'));
+            // Same 15-digit rounding as the stored total, so 0.7 + 0.1 reaches a target of 0.8.
+            const reachedTarget =
+                Number((currentValue + value.updatedValue).toPrecision(15)) >= targetValue;
+            toast.success(reachedTarget ? t('toast.completed') : t('toast.created'));
             formApi.reset();
         },
+        onSubmitInvalid: () => focusFirstInvalidField(formRef.current),
     });
 
     return (
         <form
+            ref={formRef}
+            noValidate
             className="space-y-4"
             data-testid="progress-form"
             onSubmit={event => {
@@ -85,7 +103,9 @@ export default function ProgressForm({ objectiveId }: { objectiveId: string }) {
                         };
                         return (
                             <Field data-invalid={isInvalid}>
-                                <FieldLabel htmlFor={field.name}>{t('updatedValue')}</FieldLabel>
+                                <FieldLabel htmlFor={field.name}>
+                                    {unit ? t('updatedValueWithUnit', { unit }) : t('updatedValue')}
+                                </FieldLabel>
                                 <Input
                                     id={field.name}
                                     name={field.name}
@@ -155,6 +175,7 @@ export default function ProgressForm({ objectiveId }: { objectiveId: string }) {
                                     name={field.name}
                                     value={value}
                                     placeholder={t('describeYourUpdateProgressInDetail')}
+                                    maxLength={PROGRESS_COMMENT_MAX_LENGTH}
                                     onBlur={field.handleBlur}
                                     onChange={event => field.handleChange(event.target.value)}
                                     aria-invalid={isInvalid}

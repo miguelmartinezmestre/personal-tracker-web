@@ -20,7 +20,15 @@ const emptyStats = {
 
 function renderHome(stats: typeof emptyStats | Record<string, unknown>) {
     const queryClient = new QueryClient({
-        defaultOptions: { queries: { staleTime: Number.POSITIVE_INFINITY, retry: false } },
+        defaultOptions: {
+            queries: {
+                staleTime: Number.POSITIVE_INFINITY,
+                retry: false,
+                // Tests render seeded data only; a fetch means a query was not seeded.
+                queryFn: ({ queryKey }) =>
+                    Promise.reject(new Error(`Unseeded query: ${JSON.stringify(queryKey)}`)),
+            },
+        },
     });
     queryClient.setQueryData(convexQuery(api.auth.getCurrentUser, {}).queryKey, {
         name: 'Ada',

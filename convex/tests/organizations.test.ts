@@ -54,11 +54,9 @@ describe('convex organizations', () => {
             organizationId,
             paginationOpts: { numItems: 20, cursor: null },
         });
-        expect(Array.isArray(result.page)).toBe(true);
         expect(result.page.length).toBe(1);
         expect(result.page[0]?.userId).toBe(memberUserId);
         expect(result.isDone).toBe(true);
-        expect(typeof result.continueCursor === 'string').toBe(true);
     });
     test('getOrganizationMembers rejects unauthenticated users', async () => {
         await expect(

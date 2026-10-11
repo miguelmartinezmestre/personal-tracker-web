@@ -1,29 +1,36 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import type { z } from 'zod';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
-import { forgetPasswordSchema } from '@/features/auth/schemas/forget-password';
+import {
+    createForgetPasswordSchema,
+    type ForgetPasswordFormValues,
+} from '@/features/auth/schemas/forget-password';
 import { authClient } from '@/features/auth/client';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { getFieldErrors } from '@/components/forms/form-utils';
+import { resolveErrorMessage } from '@/lib/error-messages';
 
 export default function ForgetPasswordForm() {
     const hydrated = useHydrated();
+    const locale = useLocale() === 'es' ? 'es' : 'en';
     const tCommon = useTranslations('Common');
     const t = useTranslations('ForgotPassword');
+    const forgetPasswordSchema = createForgetPasswordSchema({
+        invalidEmail: tCommon('validation.invalidEmail'),
+    });
 
     const [loginError, setLoginError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const forgetPasswordDefaultValues: z.infer<typeof forgetPasswordSchema> = {
+    const forgetPasswordDefaultValues: ForgetPasswordFormValues = {
         email: '',
     };
 
@@ -33,12 +40,12 @@ export default function ForgetPasswordForm() {
             onChange: forgetPasswordSchema,
             onSubmit: forgetPasswordSchema,
         },
-        onSubmit: async ({ value }: { value: z.infer<typeof forgetPasswordSchema> }) => {
+        onSubmit: async ({ value }: { value: ForgetPasswordFormValues }) => {
             await onSubmit(value);
         },
     });
 
-    async function handleRequestReset(values: z.infer<typeof forgetPasswordSchema>) {
+    async function handleRequestReset(values: ForgetPasswordFormValues) {
         setLoginError('');
         setSuccessMessage('');
 
@@ -49,7 +56,7 @@ export default function ForgetPasswordForm() {
         });
 
         if (error) {
-            setLoginError(error.message || tCommon('genericErrorDescription'));
+            setLoginError(resolveErrorMessage(error, locale, tCommon('genericErrorDescription')));
             return;
         }
 

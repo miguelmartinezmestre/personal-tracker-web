@@ -1,12 +1,25 @@
 import { z } from 'zod';
 
-export const organizationSchema = z.object({
-    name: z.string().trim().min(1).max(100),
-    description: z.string(),
-});
+const ORGANIZATION_NAME_MAX_LENGTH = 100;
 
-export const savedOrganizationSchema = organizationSchema.extend({
-    id: z.string(),
-});
+type OrganizationValidationKey = 'nameRequired' | 'nameTooLong';
 
-export type CreateOrganization = z.infer<typeof organizationSchema>;
+export function organizationSchema(message: (key: OrganizationValidationKey) => string) {
+    return z.object({
+        name: z
+            .string()
+            .trim()
+            .min(1, { error: message('nameRequired') })
+            .max(ORGANIZATION_NAME_MAX_LENGTH, { error: message('nameTooLong') }),
+        description: z.string(),
+    });
+}
+
+export function savedOrganizationSchema(message: (key: OrganizationValidationKey) => string) {
+    return organizationSchema(message).extend({
+        id: z.string(),
+    });
+}
+
+export type CreateOrganization = z.infer<ReturnType<typeof organizationSchema>>;
+export type SavedOrganization = z.infer<ReturnType<typeof savedOrganizationSchema>>;

@@ -1,9 +1,10 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useForm, type AnyFormOptions } from '@tanstack/react-form';
 import { Button } from '@/components/ui/button';
 import type { TanStackFormApi } from './form-types';
+import { focusFirstInvalidField } from './form-utils';
 import {
     Dialog,
     DialogContent,
@@ -52,10 +53,15 @@ export default function FormModal<TFormValues extends object>({
     submitTestId,
 }: FormModalProps<TFormValues>) {
     const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
     const isControlled = controlledOpen !== undefined;
     const open = isControlled ? controlledOpen : uncontrolledOpen;
 
     const setOpen = (nextOpen: boolean) => {
+        // Closing without saving discards the draft, so reopening shows the stored values.
+        if (!nextOpen) {
+            form.reset();
+        }
         if (isControlled) {
             controlledOnOpenChange?.(nextOpen);
         } else {
@@ -68,8 +74,8 @@ export default function FormModal<TFormValues extends object>({
         onSubmit: async ({ value }: { value: TFormValues }) => {
             await onSubmit(value);
             setOpen(false);
-            form.reset();
         },
+        onSubmitInvalid: () => focusFirstInvalidField(formRef.current),
     });
 
     return (
@@ -81,7 +87,10 @@ export default function FormModal<TFormValues extends object>({
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
 
+                {/* The schema messages replace the browser's own validation bubbles. */}
                 <form
+                    ref={formRef}
+                    noValidate
                     onSubmit={event => {
                         event.preventDefault();
                         event.stopPropagation();

@@ -1,11 +1,11 @@
 'use client';
-import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { savedOrganizationSchema } from '@/features/organizations/schemas/organization';
+import type { SavedOrganization } from '@/features/organizations/schemas/organization';
+import { useSavedOrganizationFormSchema } from '@/features/organizations/hooks/use-organization-form-schemas';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import {
@@ -22,8 +22,9 @@ export default function EditOrganizationFormModal({
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const updateOrganization = useUpdateOrganization();
+    const savedOrganizationSchema = useSavedOrganizationFormSchema();
     return (
-        <FormModal<z.infer<typeof savedOrganizationSchema>>
+        <FormModal<SavedOrganization>
             trigger={
                 <Button className="gap-2" data-testid="organization-edit-open">
                     <PlusCircle className="h-4 w-4" />
@@ -43,7 +44,7 @@ export default function EditOrganizationFormModal({
                     onSubmit: savedOrganizationSchema,
                 },
             }}
-            onSubmit={async (values: z.infer<typeof savedOrganizationSchema>) => {
+            onSubmit={async (values: SavedOrganization) => {
                 await updateOrganization.mutateAsync({
                     id: values.id,
                     name: values.name,

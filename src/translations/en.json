@@ -18,7 +18,8 @@
             "cancel": "Cancel",
             "signOut": "Sign out",
             "signingOut": "Signing out...",
-            "loadMore": "Load more"
+            "loadMore": "Load more",
+            "close": "Close"
         },
         "fields": {
             "email": "Email",
@@ -396,7 +397,7 @@
         "createObjective": "Create Objective",
         "editObjective": "Edit Objective",
         "deleteObjective": "Delete Objective",
-        "objectiveProgress": "Objective Progress",
+        "objectiveProgress": "Progress history",
         "createObjectiveDescription": "Fill out the form below to create a new objective. Click save when you're done.",
         "tableDescription": "Description",
         "targetValue": "Target Value",
@@ -413,13 +414,16 @@
         "saveObjective": "Save Objective",
         "noCategory": "No category",
         "backToList": "Back to objectives",
-        "completedNotice": "This objective is completed. Edit or delete a progress entry to reopen it.",
+        "completedNotice": "You reached the target. To keep logging progress, raise the target value; if it was a mistake, edit or delete a progress entry.",
+        "completedTitle": "Objective completed!",
         "notFound": "That objective no longer exists.",
         "toast": {
             "created": "Objective created",
             "updated": "Objective updated",
             "deleted": "Objective deleted",
-            "deleteFailed": "Failed to delete objective"
+            "deleteFailed": "Failed to delete objective",
+            "completed": "Objective completed! 🎉",
+            "reopened": "Objective updated. It is active again because the target is not reached yet."
         },
         "category": "Category",
         "unit": "Unit",
@@ -456,11 +460,19 @@
             "search": "Search objectives...",
             "status": "Status",
             "category": "Category",
-            "deadline": "Deadline"
+            "deadline": "Deadline",
+            "options": {
+                "all": "All",
+                "active": "Active",
+                "completed": "Completed"
+            }
         },
         "unitExample": "e.g., kg, miles, hours",
         "empty": {
-            "noObjectivesFound": "No objectives found"
+            "all": "You have no objectives yet.",
+            "active": "There are no active objectives.",
+            "completed": "You have not completed any objective yet.",
+            "allHint": "Create one to start tracking your progress."
         },
         "visibility": {
             "label": "Visibility",
@@ -561,7 +573,23 @@
             "legendTarget": "Target",
             "legendPace": "Ideal pace to the deadline",
             "partialData": "Only the most recent progress entries are shown."
-        }
+        },
+        "validation": {
+            "titleRequired": "Enter a title.",
+            "titleTooLong": "The title can be at most 120 characters.",
+            "descriptionTooLong": "The description can be at most 2000 characters.",
+            "unitTooLong": "The unit can be at most 32 characters.",
+            "numberRequired": "Enter a number.",
+            "startNegative": "The starting value cannot be negative.",
+            "targetTooSmall": "The target value must be at least 0.001.",
+            "startBelowTarget": "The starting value must be lower than the target value.",
+            "dateInvalid": "Enter a valid date.",
+            "deadlinePast": "The deadline cannot be in the past."
+        },
+        "columns": {
+            "title": "Title"
+        },
+        "completedOn": "Completed on {date}"
     },
     "Sessions": {
         "title": "Sessions",
@@ -607,6 +635,10 @@
         "toast": {
             "deletedSuccess": "Organization deleted successfully",
             "deleteFailed": "Failed to delete organization"
+        },
+        "validation": {
+            "nameRequired": "Enter a name.",
+            "nameTooLong": "The name cannot be longer than 100 characters."
         }
     },
     "Settings": {
@@ -757,16 +789,16 @@
     },
     "UpdateProgress": {
         "pageDescription": "Track progress updates for this objective.",
-        "createNewUpdateProgress": "Create New Update Progress",
-        "editProgress": "Edit progress",
-        "editProgressDescription": "Fill out the form below to edit your progress. Click save when you're done.",
+        "createNewUpdateProgress": "Log progress",
+        "editProgress": "Edit progress entry",
+        "editProgressDescription": "Correct the amount, date or comment of this entry.",
         "pickADate": "Pick a date",
-        "createNewUpdateProgressDescription": "Fill out the form below to create a new update progress. Click save when you're done.",
-        "updatedValue": "Updated Value",
-        "enterUpdatedValue": "Enter updated value",
+        "createNewUpdateProgressDescription": "Record how far you have moved towards the objective.",
+        "updatedValue": "Amount to add",
+        "enterUpdatedValue": "Enter the amount",
         "comment": "Comment",
-        "describeYourUpdateProgressInDetail": "Describe your update progress in detail",
-        "saveProgress": "Save Progress",
+        "describeYourUpdateProgressInDetail": "What did you do? (optional)",
+        "saveProgress": "Save progress",
         "deltaDescription": "Amount to add to the current value.",
         "empty": "No progress yet.",
         "cancel": "Cancel",
@@ -780,16 +812,17 @@
             }
         },
         "confirm": {
-            "deleteTitle": "Are you sure you want to delete this update?",
-            "deleteDescription": "This action cannot be undone. This will permanently delete this progress update.",
+            "deleteTitle": "Delete this progress entry?",
+            "deleteDescription": "Its amount will be subtracted from the objective's current value. This cannot be undone.",
             "deleteConfirm": "Delete",
             "cancel": "Cancel"
         },
         "toast": {
             "created": "Progress saved",
             "updated": "Progress updated",
-            "deletedSuccess": "Update deleted successfully",
-            "deleteFailed": "Failed to delete update"
+            "deletedSuccess": "Progress entry deleted",
+            "deleteFailed": "Could not delete the progress entry",
+            "completed": "Objective completed! 🎉"
         },
         "charts": {
             "progressTimeline": "Progress Timeline",
@@ -797,10 +830,21 @@
             "value": "Value",
             "target": "Target"
         },
-        "historyLimited": "The chart shows the latest 500 updates and includes the earlier accumulated progress."
+        "historyLimited": "The chart shows the latest 500 updates and includes the earlier accumulated progress.",
+        "validation": {
+            "amountRequired": "Enter an amount.",
+            "amountPositive": "The amount must be greater than 0.",
+            "dateInvalid": "Enter a valid date.",
+            "dateFuture": "The date cannot be in the future.",
+            "commentTooLong": "The comment can be at most 500 characters."
+        },
+        "updatedValueWithUnit": "Amount to add ({unit})",
+        "entryValue": "Amount of this entry",
+        "entryValueWithUnit": "Amount of this entry ({unit})",
+        "entryValueDescription": "Changing it recalculates the objective's current value."
     },
     "Header": {
-        "appName": "Metricas",
+        "appName": "Métricas",
         "aria": {
             "closeMenu": "Close menu",
             "openMenu": "Open menu"

@@ -15,11 +15,26 @@ import { getFieldErrors } from '@/components/forms/form-utils';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '@/convex/_generated/api';
+import {
+    OBJECTIVE_DESCRIPTION_MAX_LENGTH,
+    OBJECTIVE_TITLE_MAX_LENGTH,
+    OBJECTIVE_UNIT_MAX_LENGTH,
+} from '@/convex/constants';
+import { todayDateInput } from '@/features/objectives/lib/dates';
 import { NONE_CATEGORY, type ObjectiveFormValues } from '@/features/objectives/schemas/objective';
 import { useTranslations } from 'next-intl';
 
-export function ObjectiveFormFields({ form }: { form: TanStackFormApi<ObjectiveFormValues> }) {
+export function ObjectiveFormFields({
+    form,
+    keptDeadline = '',
+}: {
+    form: TanStackFormApi<ObjectiveFormValues>;
+    keptDeadline?: string;
+}) {
     const t = useTranslations('Objectives');
+    // The picker offers today onwards, or the deadline an overdue objective already keeps.
+    const today = todayDateInput();
+    const minDeadline = keptDeadline && keptDeadline < today ? keptDeadline : today;
     const categories = useQuery(convexQuery(api.categories.listCategories, {}));
     const categoryOptions = [
         { value: NONE_CATEGORY, label: t('noCategory') },
@@ -44,6 +59,7 @@ export function ObjectiveFormFields({ form }: { form: TanStackFormApi<ObjectiveF
                                     typeof field.state.value === 'string' ? field.state.value : ''
                                 }
                                 placeholder={t('enterObjectiveTitle')}
+                                maxLength={OBJECTIVE_TITLE_MAX_LENGTH}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}
@@ -71,6 +87,7 @@ export function ObjectiveFormFields({ form }: { form: TanStackFormApi<ObjectiveF
                                     typeof field.state.value === 'string' ? field.state.value : ''
                                 }
                                 placeholder={t('describeObjectiveInDetail')}
+                                maxLength={OBJECTIVE_DESCRIPTION_MAX_LENGTH}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}
@@ -135,6 +152,7 @@ export function ObjectiveFormFields({ form }: { form: TanStackFormApi<ObjectiveF
                                     typeof field.state.value === 'string' ? field.state.value : ''
                                 }
                                 placeholder={t('unitExample')}
+                                maxLength={OBJECTIVE_UNIT_MAX_LENGTH}
                                 onBlur={field.handleBlur}
                                 onChange={event => field.handleChange(event.target.value)}
                                 aria-invalid={isInvalid}
@@ -154,7 +172,7 @@ export function ObjectiveFormFields({ form }: { form: TanStackFormApi<ObjectiveF
             <NumberField
                 form={form}
                 name="targetValue"
-                label={t('targetValue')}
+                label={t('smartForm.fields.targetValueRequired')}
                 testId="objective-target-input"
             />
             <form.Field name="deadline">
@@ -168,6 +186,7 @@ export function ObjectiveFormFields({ form }: { form: TanStackFormApi<ObjectiveF
                                 id={field.name}
                                 name={field.name}
                                 type="date"
+                                min={minDeadline}
                                 value={
                                     typeof field.state.value === 'string' ? field.state.value : ''
                                 }

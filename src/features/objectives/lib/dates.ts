@@ -30,3 +30,12 @@ export function todayDateInput(): string {
     const now = new Date();
     return timestampToDateInput(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 }
+
+// A deadline set to today is still on time; it is overdue from the next local day.
+export function isOverdue(objective: { status: string; deadline?: number }): boolean {
+    return (
+        objective.status === 'active' &&
+        objective.deadline !== undefined &&
+        timestampToDateInput(objective.deadline) < todayDateInput()
+    );
+}

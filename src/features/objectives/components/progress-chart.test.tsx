@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,10 +20,19 @@ const objective = {
 };
 
 function renderWithHistory(
-    points: { updateDate: number; value: number; delta: number; comment?: string }[]
+    points: { updateDate: number; value: number; delta: number; comment?: string }[],
+    chartObjective: typeof objective = objective
 ) {
     const queryClient = new QueryClient({
-        defaultOptions: { queries: { staleTime: Number.POSITIVE_INFINITY, retry: false } },
+        defaultOptions: {
+            queries: {
+                staleTime: Number.POSITIVE_INFINITY,
+                retry: false,
+                // Tests render seeded data only; a fetch means a query was not seeded.
+                queryFn: ({ queryKey }) =>
+                    Promise.reject(new Error(`Unseeded query: ${JSON.stringify(queryKey)}`)),
+            },
+        },
     });
     queryClient.setQueryData(
         convexQuery(api.objectives.getProgressHistory, { objectiveId }).queryKey,
@@ -38,7 +47,7 @@ function renderWithHistory(
     return render(
         <QueryClientProvider client={queryClient}>
             <NextIntlClientProvider locale="es" messages={es}>
-                <ProgressChart objective={objective} />
+                <ProgressChart objective={chartObjective} />
             </NextIntlClientProvider>
         </QueryClientProvider>
     );
@@ -77,4 +86,34 @@ test('never extends the value axis below zero', () => {
     const tickLabels = [...container.querySelectorAll('svg text')].map(node => node.textContent);
     expect(tickLabels).toContain('0');
     expect(tickLabels.filter(label => label.startsWith('-'))).toEqual([]);
+});
+
+test('labels each day on the time axis only once', () => {
+    const { container } = renderWithHistory(
+        [{ updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 }],
+        { ...objective, createdAt: Date.UTC(2026, 0, 6), deadline: Date.UTC(2025, 11, 1) }
+    );
+    const tickLabels = [...container.querySelectorAll('svg text')]
+        .map(node => node.textContent)
+        .filter(label => /[a-z]/.test(label));
+    expect(tickLabels.length).toBeGreaterThan(0);
+    expect(new Set(tickLabels).size).toBe(tickLabels.length);
+});
+
+test('omits the pace legend when the deadline leaves no pace line', () => {
+    renderWithHistory([{ updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 }], {
+        ...objective,
+        deadline: Date.UTC(2025, 11, 1),
+    });
+    expect(screen.queryByText(es.Objectives.chart.legendPace)).not.toBeInTheDocument();
+});
+
+test('identifies same-day entries without falling back to row position', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderWithHistory([
+        { updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 },
+        { updateDate: Date.UTC(2026, 0, 5), value: 5, delta: 3 },
+    ]);
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('could not infer a unique key');
+    warn.mockRestore();
 });

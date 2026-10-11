@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { QueryErrorFallback } from '@/components/ui/query-error-fallback';
 import { type ColumnDef, type RowData, useTable, flexRender } from '@tanstack/react-table';
 import {
@@ -27,6 +28,7 @@ interface DataTableProps<TData extends RowData> {
         hasPreviousPage: boolean;
         isLoading?: boolean;
     };
+    emptyMessage?: ReactNode;
 }
 
 export function DataTable<TData extends RowData>({
@@ -37,6 +39,7 @@ export function DataTable<TData extends RowData>({
     error,
     onRetry,
     pagination,
+    emptyMessage,
 }: DataTableProps<TData>) {
     'use no memo';
 
@@ -102,7 +105,7 @@ export function DataTable<TData extends RowData>({
         tableRows = (
             <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                    {t('noResults')}
+                    {emptyMessage ?? t('noResults')}
                 </TableCell>
             </TableRow>
         );

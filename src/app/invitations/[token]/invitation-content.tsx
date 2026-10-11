@@ -110,7 +110,11 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         <CardDescription>{errorMessage || t('errorDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button render={<Link href="/dashboard/home" />} className="w-full">
+                        <Button
+                            nativeButton={false}
+                            render={<Link href="/dashboard/home" />}
+                            className="w-full"
+                        >
                             {t('goToDashboard')}
                         </Button>
                     </CardContent>
@@ -199,6 +203,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         {acceptButtonContent}
                     </Button>
                     <Button
+                        nativeButton={false}
                         render={<Link href="/dashboard/home" />}
                         variant="ghost"
                         className="w-full"

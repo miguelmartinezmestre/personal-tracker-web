@@ -19,3 +19,12 @@ export function getFieldErrors(form: FormStateLike, field: FieldStateLike): read
     }
     return [];
 }
+
+// Moves focus to the first invalid control after a rejected submit, so keyboard and screen
+// reader users land on the error instead of staying on the submit button. Waits a frame for
+// the fields to render their aria-invalid state.
+export function focusFirstInvalidField(form: HTMLFormElement | null): void {
+    requestAnimationFrame(() => {
+        form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    });
+}

@@ -4,14 +4,30 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import ObjectivesTable from '@/features/objectives/components/objectives-table';
-import type { ObjectiveStatusFilter } from '@/features/objectives/hooks/use-objectives';
+import {
+    OBJECTIVE_STATUS_FILTERS,
+    type ObjectiveStatusFilter,
+} from '@/features/objectives/lib/status-filter';
 import { useTranslations } from 'next-intl';
 
-const filters: ObjectiveStatusFilter[] = ['all', 'active', 'completed'];
-
-export default function ObjectivesLayout() {
+export default function ObjectivesLayout({
+    initialStatus,
+}: {
+    initialStatus: ObjectiveStatusFilter;
+}) {
     const t = useTranslations('Objectives');
-    const [status, setStatus] = useState<ObjectiveStatusFilter>('all');
+    const [status, setStatus] = useState(initialStatus);
+    // The filter lives in the URL so a reload or the back button keeps it.
+    const selectStatus = (next: ObjectiveStatusFilter) => {
+        setStatus(next);
+        const url = new URL(window.location.href);
+        if (next === 'all') {
+            url.searchParams.delete('status');
+        } else {
+            url.searchParams.set('status', next);
+        }
+        window.history.replaceState(null, '', url);
+    };
 
     return (
         <div className="w-full min-w-0 space-y-6">
@@ -24,15 +40,16 @@ export default function ObjectivesLayout() {
                 </div>
             </div>
             <div className="flex flex-wrap gap-2" role="group" aria-label={t('filters.status')}>
-                {filters.map(filter => (
+                {OBJECTIVE_STATUS_FILTERS.map(filter => (
                     <Button
                         key={filter}
                         variant={status === filter ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setStatus(filter)}
+                        aria-pressed={status === filter}
+                        onClick={() => selectStatus(filter)}
                         data-testid={`objectives-filter-${filter}`}
                     >
-                        {t(`statusOptions.${filter}`)}
+                        {t(`filters.options.${filter}`)}
                     </Button>
                 ))}
             </div>

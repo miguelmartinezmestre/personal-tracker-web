@@ -1,26 +1,36 @@
 import { z } from 'zod';
-import { STRONG_PASSWORD_MESSAGE_ES, STRONG_PASSWORD_REGEX } from '@/convex/utils';
+import { STRONG_PASSWORD_REGEX } from '@/convex/utils';
 
-export const resetPasswordSchema = z
-    .object({
-        password: z.string().min(8),
-        confirmPassword: z.string().min(8),
-        resetPasswordKey: z.string().min(1),
-    })
-    .superRefine((values, ctx) => {
-        if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {
-            ctx.addIssue({
-                code: 'custom',
-                path: ['password'],
-                message: STRONG_PASSWORD_MESSAGE_ES,
-            });
-        }
+interface ResetPasswordValidationMessages {
+    weakPassword: string;
+    passwordsDontMatch: string;
+    shortPassword: string;
+}
 
-        if (values.password !== values.confirmPassword) {
-            ctx.addIssue({
-                code: 'custom',
-                path: ['confirmPassword'],
-                message: 'Las contraseñas no coinciden',
-            });
-        }
-    });
+export function createResetPasswordSchema(messages: ResetPasswordValidationMessages) {
+    return z
+        .object({
+            password: z.string().min(8, { error: messages.shortPassword }),
+            confirmPassword: z.string().min(8, { error: messages.shortPassword }),
+            resetPasswordKey: z.string().min(1),
+        })
+        .superRefine((values, ctx) => {
+            if (values.password.length >= 8 && !STRONG_PASSWORD_REGEX.test(values.password)) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['password'],
+                    message: messages.weakPassword,
+                });
+            }
+
+            if (values.password !== values.confirmPassword) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['confirmPassword'],
+                    message: messages.passwordsDontMatch,
+                });
+            }
+        });
+}
+
+export type ResetPasswordFormValues = z.infer<ReturnType<typeof createResetPasswordSchema>>;

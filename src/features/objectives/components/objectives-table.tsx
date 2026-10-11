@@ -10,19 +10,22 @@ import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/data-table/components/table';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import type { DataTableFeatures } from '@/components/data-table/data-table-features';
-import { timestampToDateInput } from '@/features/objectives/lib/dates';
+import { isOverdue } from '@/features/objectives/lib/dates';
+import { formatObjectiveDate } from '@/features/objectives/lib/format';
 import { api } from '@/convex/_generated/api';
+import CreateObjectiveFormModal from '@/features/objectives/components/objective-form-create-modal';
 import EditObjectiveFormModal from '@/features/objectives/components/objective-form-edit-modal';
+import { useObjectives, type ObjectiveSummary } from '@/features/objectives/hooks/use-objectives';
 import {
-    useObjectives,
+    objectiveDetailHref,
     type ObjectiveStatusFilter,
-    type ObjectiveSummary,
-} from '@/features/objectives/hooks/use-objectives';
-import { useTranslations } from 'next-intl';
+} from '@/features/objectives/lib/status-filter';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function ObjectivesTable({ status }: { status: ObjectiveStatusFilter }) {
     const t = useTranslations('Objectives');
     const common = useTranslations('Common');
+    const locale = useLocale();
     const objectives = useObjectives(status);
     const deleteObjective = useMutation({
         meta: { handlesErrorsLocally: true },
@@ -31,12 +34,12 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
     const columns: ColumnDef<DataTableFeatures, ObjectiveSummary>[] = [
         {
             accessorKey: 'title',
-            header: t('smartForm.fields.titleRequired'),
+            header: t('columns.title'),
             cell: ({ row }) => (
                 <Link
-                    href={`/dashboard/objectives/${row.original.id}`}
+                    href={objectiveDetailHref(row.original.id, status)}
                     prefetch={false}
-                    className="font-medium underline-offset-4 hover:underline"
+                    className="block max-w-xs min-w-40 font-medium whitespace-normal underline-offset-4 wrap-anywhere hover:underline"
                     data-testid="objective-row-link"
                 >
                     {row.original.title}
@@ -47,20 +50,38 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
             accessorKey: 'status',
             header: t('status'),
             cell: ({ row }) => (
-                <Badge variant={row.original.status === 'completed' ? 'default' : 'secondary'}>
-                    {t(`statusOptions.${row.original.status}`)}
-                </Badge>
+                <div className="flex flex-wrap gap-1">
+                    <Badge variant={row.original.status === 'completed' ? 'default' : 'secondary'}>
+                        {t(`statusOptions.${row.original.status}`)}
+                    </Badge>
+                    {isOverdue(row.original) ? (
+                        <Badge variant="destructive">{t('statusOptions.overdue')}</Badge>
+                    ) : null}
+                </div>
             ),
         },
         {
             accessorKey: 'progressPercent',
             header: t('progress'),
-            cell: ({ row }) => `${row.original.progressPercent}%`,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <span className="w-10 tabular-nums">{row.original.progressPercent}%</span>
+                    <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full" aria-hidden>
+                        <div
+                            className="bg-primary h-full"
+                            style={{ width: `${row.original.progressPercent}%` }}
+                        />
+                    </div>
+                </div>
+            ),
         },
         {
             id: 'deadline',
             header: t('deadline'),
-            cell: ({ row }) => timestampToDateInput(row.original.deadline) || '—',
+            cell: ({ row }) =>
+                row.original.deadline !== undefined
+                    ? formatObjectiveDate(row.original.deadline, locale)
+                    : '—',
         },
         {
             id: 'actions',
@@ -101,12 +122,6 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
             },
         },
     ];
-    let emptyState = null;
-    if (!objectives.isLoading && objectives.data.length === 0) {
-        emptyState = (
-            <p className="text-muted-foreground text-sm">{t('empty.noObjectivesFound')}</p>
-        );
-    }
     let loadMoreButton = null;
     if (objectives.hasMore) {
         loadMoreButton = (
@@ -124,8 +139,25 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
 
     return (
         <div data-testid="objectives-table">
-            <DataTable columns={columns} data={objectives.data} isLoading={objectives.isLoading} />
-            {emptyState}
+            <DataTable
+                columns={columns}
+                data={objectives.data}
+                isLoading={objectives.isLoading}
+                emptyMessage={
+                    status === 'all' ? (
+                        <div
+                            className="flex flex-col items-center gap-3 py-6 whitespace-normal"
+                            data-testid="objectives-empty"
+                        >
+                            <p className="font-medium">{t('empty.all')}</p>
+                            <p className="text-muted-foreground">{t('empty.allHint')}</p>
+                            <CreateObjectiveFormModal triggerTestId="objectives-empty-create" />
+                        </div>
+                    ) : (
+                        t(`empty.${status}`)
+                    )
+                }
+            />
             {loadMoreButton}
         </div>
     );

@@ -7,12 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { loginSchema } from '@/features/auth/schemas/login';
-import type { z } from 'zod';
+import { createLoginSchema, type LoginFormValues } from '@/features/auth/schemas/login';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/features/auth/client';
 import { useSignOutMutationOptions } from '@/features/auth/client';
@@ -23,6 +22,7 @@ import { useHydrated } from '@/hooks/use-hydrated';
 import { getFieldErrors } from '@/components/forms/form-utils';
 import { api } from '@/convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
+import { resolveErrorMessage } from '@/lib/error-messages';
 interface LoginFormProps {
     showPasswordResetSuccess?: boolean;
     callbackUrl?: string;
@@ -33,12 +33,17 @@ export default function LoginForm({
 }: LoginFormProps) {
     const hydrated = useHydrated();
     const router = useRouter();
+    const locale = useLocale() === 'es' ? 'es' : 'en';
     const t = useTranslations('HomePage');
     const tCommon = useTranslations('Common');
+    const loginSchema = createLoginSchema({
+        invalidEmail: tCommon('validation.invalidEmail'),
+        shortPassword: tCommon('validation.minimumCharacters', { count: 8 }),
+    });
     const [loginError, setLoginError] = useState('');
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const signOutMutation = useMutation(useSignOutMutationOptions());
-    const loginDefaultValues: z.infer<typeof loginSchema> = {
+    const loginDefaultValues: LoginFormValues = {
         email: '',
         password: '',
     };
@@ -48,11 +53,11 @@ export default function LoginForm({
             onChange: loginSchema,
             onSubmit: loginSchema,
         },
-        onSubmit: async ({ value }: { value: z.infer<typeof loginSchema> }) => {
+        onSubmit: async ({ value }: { value: LoginFormValues }) => {
             await onSubmit(value);
         },
     });
-    async function handleSignIn(values: z.infer<typeof loginSchema>) {
+    async function handleSignIn(values: LoginFormValues) {
         if (session.data?.user) {
             await signOutMutation.mutateAsync();
         }
@@ -67,7 +72,7 @@ export default function LoginForm({
                     router.push(getSafeCallbackPath(callbackUrl) as Route);
                 },
                 onError: ctx => {
-                    setLoginError(ctx.error.message);
+                    setLoginError(resolveErrorMessage(ctx.error, locale));
                 },
             }
         );

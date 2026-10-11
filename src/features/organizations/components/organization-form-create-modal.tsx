@@ -1,12 +1,11 @@
 'use client';
-import type { z } from 'zod';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
-import { organizationSchema } from '@/features/organizations/schemas/organization';
+import { useOrganizationFormSchema } from '@/features/organizations/hooks/use-organization-form-schemas';
 import { useTranslations } from 'next-intl';
 import { useTranslations as useTranslationsCommon } from 'next-intl';
 import { useCreateOrganization } from '@/features/organizations/hooks/use-organizations';
@@ -21,9 +20,10 @@ export default function CreateOrganizationFormModal() {
     const t = useTranslations('Organizations');
     const tCommon = useTranslationsCommon('Common');
     const createOrganization = useCreateOrganization();
+    const organizationSchema = useOrganizationFormSchema();
     const router = useRouter();
     return (
-        <FormModal<z.infer<typeof organizationSchema>>
+        <FormModal<CreateOrganization>
             trigger={
                 <Button className="gap-2" data-testid="organization-create-open">
                     <PlusCircle className="h-4 w-4" />
