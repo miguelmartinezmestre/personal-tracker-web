@@ -940,7 +940,9 @@
         "confirmJoin": "Sí, unirme a la organización",
         "activationPendingTitle": "Invitación aceptada",
         "activationPendingDescription": "Ya perteneces a la organización. No hemos podido activarla todavía.",
-        "retryActivation": "Activar organización"
+        "retryActivation": "Activar organización",
+        "invalidTitle": "Invitación no disponible",
+        "invalidDescription": "Este enlace no es válido, ha caducado o la invitación ya se ha usado. Pide a quien te invitó que te envíe una nueva."
     },
     "Setup": {
         "title": "Configuración de la Plataforma",

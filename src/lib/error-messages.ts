@@ -33,6 +33,12 @@ const EN: ErrorDictionary = {
     CATEGORY_NOT_FOUND: 'That category no longer exists.',
     USER_NOT_FOUND: 'That user could not be found in this organization.',
     INVITATION_NOT_FOUND: 'That invitation no longer exists.',
+    USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
+        'That user is already a member of this organization.',
+    USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: 'That user already has a pending invitation.',
+    YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION:
+        'This invitation was sent to another email address.',
+    ORGANIZATION_SLUG_ALREADY_TAKEN: 'An organization with that identifier already exists.',
     NOT_AUTHORIZED_OBJECTIVE: "You don't have permission to modify this objective.",
     NOT_AUTHORIZED_PROGRESS: "You don't have permission to modify this progress entry.",
     COLLABORATOR_NOT_FOUND: 'That collaborator no longer exists.',
@@ -92,6 +98,12 @@ const ES: ErrorDictionary = {
     CATEGORY_NOT_FOUND: 'Esa categoría ya no existe.',
     USER_NOT_FOUND: 'No se ha encontrado ese usuario en esta organización.',
     INVITATION_NOT_FOUND: 'Esa invitación ya no existe.',
+    USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION:
+        'Ese usuario ya es miembro de esta organización.',
+    USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: 'Ese usuario ya tiene una invitación pendiente.',
+    YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION:
+        'Esta invitación se envió a otra dirección de correo.',
+    ORGANIZATION_SLUG_ALREADY_TAKEN: 'Ya existe una organización con ese identificador.',
     NOT_AUTHORIZED_OBJECTIVE: 'No tienes permiso para modificar este objetivo.',
     NOT_AUTHORIZED_PROGRESS: 'No tienes permiso para modificar este registro de progreso.',
     COLLABORATOR_NOT_FOUND: 'Ese colaborador ya no existe.',

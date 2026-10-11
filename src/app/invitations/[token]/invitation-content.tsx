@@ -21,9 +21,11 @@ type InvitationStatus = 'ready' | 'accepting' | 'accepted' | 'error';
 
 interface InvitationContentProps {
     token: string;
+    // Pending and not expired when the page was rendered.
+    invitationValid: boolean;
 }
 
-export default function InvitationContent({ token }: InvitationContentProps) {
+export default function InvitationContent({ token, invitationValid }: InvitationContentProps) {
     const router = useRouter();
     const t = useTranslations('Invitations');
     const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
@@ -101,26 +103,7 @@ export default function InvitationContent({ token }: InvitationContentProps) {
     }
 
     if (status === 'error') {
-        return (
-            <div className="flex min-h-screen items-center justify-center p-4">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <AlertCircle className="h-12 w-12 text-destructive" />
-                        <CardTitle>{t('errorTitle')}</CardTitle>
-                        <CardDescription>{errorMessage || t('errorDescription')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button
-                            nativeButton={false}
-                            render={<Link href="/dashboard/home" />}
-                            className="w-full"
-                        >
-                            {t('goToDashboard')}
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        return <InvitationError message={errorMessage} />;
     }
 
     if (status === 'accepted') {
@@ -138,6 +121,10 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                 </Card>
             </div>
         );
+    }
+
+    if (!invitationValid && status === 'ready') {
+        return <InvitationUnavailable />;
     }
 
     if (!sessionQuery.data?.user && status === 'ready') {
@@ -209,6 +196,54 @@ export default function InvitationContent({ token }: InvitationContentProps) {
                         className="w-full"
                     >
                         {t('cancel')}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function InvitationUnavailable() {
+    const t = useTranslations('Invitations');
+    return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <Card className="w-full max-w-md" data-testid="invitation-invalid">
+                <CardHeader>
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                    <CardTitle>{t('invalidTitle')}</CardTitle>
+                    <CardDescription>{t('invalidDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard/home" />}
+                        className="w-full"
+                    >
+                        {t('goToDashboard')}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function InvitationError({ message }: { message: string }) {
+    const t = useTranslations('Invitations');
+    return (
+        <div className="flex min-h-screen items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                    <CardTitle>{t('errorTitle')}</CardTitle>
+                    <CardDescription>{message || t('errorDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button
+                        nativeButton={false}
+                        render={<Link href="/dashboard/home" />}
+                        className="w-full"
+                    >
+                        {t('goToDashboard')}
                     </Button>
                 </CardContent>
             </Card>

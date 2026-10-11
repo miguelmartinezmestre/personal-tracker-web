@@ -33,12 +33,11 @@ test.describe('Language Switching', () => {
         async ({ page }) => {
             await page.goto('/');
             await switchLanguage(page, 'es');
-            await expect(page.locator('[data-testid="navbar-register-link"]:visible')).toHaveText(
-                'Registrarse'
+            // This project runs signed in, so the navbar offers the dashboard instead of auth.
+            await expect(page.locator('[data-testid="navbar-dashboard-link"]:visible')).toHaveText(
+                'Ir al Dashboard'
             );
-            await expect(page.locator('[data-testid="navbar-login-link"]:visible')).toHaveText(
-                'Iniciar sesión'
-            );
+            await expect(page.locator('[data-testid="navbar-login-link"]')).toHaveCount(0);
         }
     );
 });

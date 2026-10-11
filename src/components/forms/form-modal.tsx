@@ -72,7 +72,12 @@ export default function FormModal<TFormValues extends object>({
     const form = useForm({
         ...formOptions,
         onSubmit: async ({ value }: { value: TFormValues }) => {
-            await onSubmit(value);
+            try {
+                await onSubmit(value);
+            } catch {
+                // The mutation cache already reports the error; keep the dialog open to retry.
+                return;
+            }
             setOpen(false);
         },
         onSubmitInvalid: () => focusFirstInvalidField(formRef.current),

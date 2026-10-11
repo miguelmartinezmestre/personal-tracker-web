@@ -31,17 +31,18 @@ export default function NavBar() {
 
     return (
         <div className="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0 items-center">
-            {links.map(link => (
-                <Link
-                    key={link.name}
-                    href={link.href}
-                    className="text-primary hover:text-primary/80"
-                    prefetch={false}
-                    data-testid={navbarLinkTestId(link.href)}
-                >
-                    {link.name}
-                </Link>
-            ))}
+            {!isAuthenticated &&
+                links.map(link => (
+                    <Link
+                        key={link.name}
+                        href={link.href}
+                        className="text-primary hover:text-primary/80"
+                        prefetch={false}
+                        data-testid={navbarLinkTestId(link.href)}
+                    >
+                        {link.name}
+                    </Link>
+                ))}
             {isAuthenticated && (
                 <Link
                     href="/dashboard/home"
