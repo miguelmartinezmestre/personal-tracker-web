@@ -9,7 +9,8 @@ achievements.
 
 - Node `24.19.0` for reproducible verification (see `.nvmrc`)
 - pnpm `12.9.1` (`packageManager` field)
-- Docker (for the local self-hosted Convex + MySQL + Mailpit stack)
+- Docker (for the local self-hosted Convex + MySQL + MailDev stack), or none with
+  `convex:local:no-docker` (see [self-host.md](./self-host.md#sin-docker))
 
 ## Quick start
 
@@ -42,10 +43,15 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 - `pnpm ci` — `checks:static`, `test:coverage`, `build`, and `test:e2e`.
 - `pnpm test` — `test:backend` then `test:frontend`.
 - `pnpm test:coverage` — both Vitest suites with coverage thresholds.
-- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes Mailpit SMTP).
+- `pnpm test:e2e` — Playwright against the Docker e2e stack (includes MailDev SMTP).
+- `pnpm test:e2e:no-docker` — same suite against a throwaway Convex backend binary and MailDev run
+  as plain processes (Node 24 required; see [self-host.md](./self-host.md#e2e-sin-docker)).
 - `pnpm run convex:local` starts development services and preserves data. `convex:local:stop` stops
   them; only `convex:local:reset` deletes the managed local data. See
   [self-host.md](./self-host.md).
+- `pnpm run convex:local:no-docker` — same setup without Docker: the Convex CLI runs a local
+  deployment under `.convex/local/default`; then use `pnpm dev`, plus `pnpm mail:local` (MailDev,
+  `:1080`) to capture email. `convex:local:no-docker:reset` deletes that deployment's data.
 - `pnpm build` / `pnpm start` — production Next build and serve (needs a configured Convex
   deployment).
 
@@ -55,7 +61,7 @@ Install Playwright browsers only when you need E2E tests: `pnpm run playwright:i
 - [Local operation and recovery](docs/operacion-local.md).
 
 - [`AGENTS.md`](./AGENTS.md) — project structure, coding style, and the full command reference.
-- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, Mailpit) and
+- [`self-host.md`](./self-host.md) — local Docker stack (Convex self-hosted, MySQL, MailDev) and
   environment variables.
 - `convex/_generated/ai/guidelines.md` — Convex conventions (read before editing backend code).
 
@@ -105,7 +111,7 @@ against a personal/dev deployment. Use `npx convex deploy` **only** for producti
 - Mail: send a password-reset or invitation and confirm delivery (Resend dashboard or SMTP inbox).
 - Do **not** set `E2E_SETUP_SECRET` in a real deployment (local e2e runner flag only).
 
-Local self-hosting remains documented in [`self-host.md`](./self-host.md); Mailpit (`:8025`) is for
+Local self-hosting remains documented in [`self-host.md`](./self-host.md); MailDev (`:1080`) is for
 dev/e2e SMTP capture, not production.
 
 ## Testing note

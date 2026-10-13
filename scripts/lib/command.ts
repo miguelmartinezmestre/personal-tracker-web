@@ -1,14 +1,23 @@
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
 import process from 'node:process';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { execa, type Options, type ResultPromise } from 'execa';
 
 export const PNPM_COMMAND = 'pnpm';
 export const DOCKER_COMMAND = 'docker';
 
-export interface RunCommandOptions extends SpawnOptions {
-    ignoreExitCode?: boolean;
+export const POLL_INTERVAL_MS = 1_000;
+export const HTTP_REQUEST_TIMEOUT_MS = 3_000;
+const DEFAULT_WAIT_TIMEOUT_MS = 120_000;
+const PROCESS_STOP_TIMEOUT_MS = 10_000;
+
+export interface RunCommandOptions {
+    env?: NodeJS.ProcessEnv;
+    input?: string;
+    // Also written to this file, which is truncated first.
     logFile?: string;
+    ignoreExitCode?: boolean;
 }
 
 export function overlayEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
@@ -21,121 +30,147 @@ export function overlayEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv
     return env;
 }
 
-function formatCommand(command: string, args: Array<string>): string {
-    return [command, ...args].join(' ');
+function truncatedLogFile(logFile: string): { file: string; append: true } {
+    mkdirSync(dirname(logFile), { recursive: true });
+    writeFileSync(logFile, '');
+    // Both streams append to the same file, so neither overwrites the other.
+    return { file: logFile, append: true };
 }
 
-function lineWriter(write: (text: string) => void) {
-    let pending = '';
+function commandOptions(options: RunCommandOptions): Options {
     return {
-        append(chunk: Buffer | string) {
-            pending += String(chunk);
-            const end = pending.lastIndexOf('\n');
-            if (end >= 0) {
-                write(pending.slice(0, end + 1));
-                pending = pending.slice(end + 1);
-            }
-        },
-        flush() {
-            if (pending) write(pending);
-            pending = '';
-        },
+        env: options.env,
+        extendEnv: false,
+        reject: !options.ignoreExitCode,
+        ...(options.input === undefined ? { stdin: 'ignore' } : { input: options.input }),
     };
 }
 
-export function spawnCommand(
-    command: string,
-    args: Array<string>,
-    options: SpawnOptions = {}
-): ChildProcess {
-    const { env, ...rest } = options;
-    return spawn(command, args, {
-        cwd: process.cwd(),
-        shell: process.platform === 'win32',
-        ...rest,
-        env: overlayEnv(env),
-    });
-}
-
-function execute(
-    command: string,
-    args: Array<string>,
-    options: RunCommandOptions,
-    input: string | undefined,
-    capture: boolean
-): Promise<string> {
-    const { ignoreExitCode = false, logFile, ...spawnOptions } = options;
-    if (logFile) {
-        mkdirSync(dirname(logFile), { recursive: true });
-        writeFileSync(logFile, '');
-    }
-    const record = (text: string, stream: NodeJS.WriteStream) => {
-        if (logFile) {
-            appendFileSync(logFile, text);
-        }
-        if (!capture) {
-            stream.write(text);
-        }
-    };
-
-    return new Promise((resolve, reject) => {
-        const child = spawnCommand(command, args, {
-            ...spawnOptions,
-            stdio: ['pipe', 'pipe', 'pipe'],
-        });
-        let output = '';
-        const stdout = lineWriter(text => record(text, process.stdout));
-        const stderr = lineWriter(text => record(text, process.stderr));
-        child.stdout?.on('data', (chunk: Buffer) => {
-            output += String(chunk);
-            stdout.append(chunk);
-        });
-        child.stderr?.on('data', (chunk: Buffer) => {
-            output += String(chunk);
-            stderr.append(chunk);
-        });
-        child.stdin?.on('error', () => {
-            /* Exit status reports a closed input pipe. */
-        });
-        child.stdin?.end(input);
-        child.on('error', error => reject(error));
-        child.on('close', (code, signal) => {
-            stdout.flush();
-            stderr.flush();
-            if (code === 0 || ignoreExitCode) {
-                resolve(output);
-            } else {
-                reject(
-                    new Error(
-                        `Command failed (${formatCommand(command, args)}), exit=${code ?? 'unknown'}, signal=${signal ?? 'none'}\n${output}`
-                    )
-                );
-            }
-        });
-    });
-}
-
+// Streams the output to the terminal.
 export async function runCommand(
     command: string,
     args: Array<string>,
     options: RunCommandOptions = {}
 ): Promise<void> {
-    await execute(command, args, options, undefined, false);
+    const log = options.logFile ? [truncatedLogFile(options.logFile)] : [];
+    await execa(command, args, {
+        ...commandOptions(options),
+        stdout: ['inherit', ...log],
+        stderr: ['inherit', ...log],
+    });
 }
 
-export async function runCommandWithInput(
-    command: string,
-    args: Array<string>,
-    input: string,
-    options: RunCommandOptions = {}
-): Promise<void> {
-    await execute(command, args, options, input, false);
-}
-
-export function runCommandCapture(
+// Returns stdout and stderr interleaved.
+export async function runCommandCapture(
     command: string,
     args: Array<string>,
     options: RunCommandOptions = {}
 ): Promise<string> {
-    return execute(command, args, options, undefined, true);
+    const result = await execa(command, args, { ...commandOptions(options), all: true });
+    return String(result.all ?? '');
+}
+
+export type LongRunningProcess = ResultPromise;
+
+// Starts a process that outlives the call. It is killed with `killSignal` if this script exits
+// first, and `stopProcess` falls back to SIGKILL when it does not stop in time.
+export function startProcess(
+    command: string,
+    args: Array<string>,
+    options: {
+        env?: NodeJS.ProcessEnv;
+        killSignal?: NodeJS.Signals;
+        logFile?: string;
+        // `inherit` shows the output; `pipe` leaves it to the caller's listeners.
+        output?: 'inherit' | 'pipe';
+    } = {}
+): LongRunningProcess {
+    const output = options.logFile ? truncatedLogFile(options.logFile) : (options.output ?? 'pipe');
+    return execa(command, args, {
+        env: options.env,
+        stdin: 'ignore',
+        stdout: output,
+        stderr: output,
+        buffer: false,
+        // Resolves node_modules/.bin directly, so signals reach the tool rather than a pnpm wrapper.
+        preferLocal: true,
+        reject: false,
+        killSignal: options.killSignal ?? 'SIGTERM',
+        forceKillAfterDelay: PROCESS_STOP_TIMEOUT_MS,
+    });
+}
+
+function exitStatus(subprocess: LongRunningProcess): string | null {
+    const { exitCode, signalCode } = subprocess.nodeChildProcess;
+    return exitCode === null ? signalCode : String(exitCode);
+}
+
+export async function stopProcess(subprocess: LongRunningProcess): Promise<void> {
+    if (exitStatus(subprocess) !== null) {
+        return;
+    }
+    if (process.platform === 'win32' && subprocess.pid !== undefined) {
+        // Windows signals do not reach the process tree behind a .cmd shim.
+        await runCommand('taskkill.exe', ['/PID', String(subprocess.pid), '/T', '/F'], {
+            ignoreExitCode: true,
+        });
+    } else {
+        subprocess.kill();
+    }
+    await subprocess;
+}
+
+export function buildUrl(base: string, path: string): string {
+    return `${base.replace(/\/$/, '')}${path}`;
+}
+
+export async function fetchWithTimeout(url: string): Promise<Response> {
+    return fetch(url, { signal: AbortSignal.timeout(HTTP_REQUEST_TIMEOUT_MS) });
+}
+
+export async function isListening(url: string): Promise<boolean> {
+    try {
+        await fetchWithTimeout(url);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// Polls `url` until `isReady` accepts a response. Gives up early when `process` exits, since the
+// service it was meant to start will never answer.
+export async function waitForHttp(
+    url: string,
+    options: {
+        timeoutMs?: number;
+        isReady?: (response: Response) => boolean;
+        process?: LongRunningProcess;
+    } = {}
+): Promise<void> {
+    const { timeoutMs = DEFAULT_WAIT_TIMEOUT_MS, isReady = response => response.ok } = options;
+    const start = Date.now();
+    let lastAttempt = 'no response yet';
+
+    for (let attempt = 1; Date.now() - start < timeoutMs; attempt += 1) {
+        const exit = options.process ? exitStatus(options.process) : null;
+        if (exit !== null) {
+            throw new Error(`Process exited before ${url} was ready (exit=${exit})`);
+        }
+        try {
+            const response = await fetchWithTimeout(url);
+            if (isReady(response)) {
+                return;
+            }
+            lastAttempt = `last status=${response.status}`;
+        } catch (error) {
+            lastAttempt = `last error=${error instanceof Error ? error.message : String(error)}`;
+        }
+        if (attempt % 5 === 0) {
+            const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
+            console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${lastAttempt})`);
+        }
+        await sleep(POLL_INTERVAL_MS);
+    }
+
+    throw new Error(`Timed out waiting for ${url} (${lastAttempt})`);
 }

@@ -20,7 +20,10 @@ Use `pnpm` with Node `>=24.19.0`.
 - `pnpm test`: `test:backend` then `test:frontend`.
 - `pnpm test:coverage`: both Vitest suites with coverage.
 - `pnpm test:e2e`: run Playwright against the local Docker e2e stack through
-  `scripts/run-e2e-stack.ts`.
+  `scripts/run-e2e-stack.ts`. `pnpm test:e2e:no-docker` runs the same suite with the Convex backend
+  binary and MailDev as plain processes.
+- `pnpm convex:local` / `pnpm convex:local:no-docker`: prepare the local Convex deployment with
+  Docker (default) or with the Convex CLI's own local backend; see `self-host.md`.
 - `pnpm format`: format supported files with Prettier.
 - `pnpm ci`: `checks:static`, `test:coverage`, `build`, and `test:e2e`.
 
@@ -61,13 +64,8 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your
-training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's
-directory; in monorepos the `next` package may not be visible from the repo root) before writing any
-code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
-This block is written and re-added by `next dev` — verify at
-`node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates
-the uncommitted change; committing it with your work keeps the tree clean.
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->

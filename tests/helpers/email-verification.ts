@@ -3,30 +3,26 @@ import { z } from 'zod';
 
 type EmailKind = 'verify-email' | 'reset-password' | 'invitation';
 
-// Mailpit lists summaries newest first; bodies come from the per-message endpoint already
-// decoded, so links need no quoted-printable handling.
-const mailpitSummarySchema = z.object({
-    ID: z.string(),
-    Created: z.string().optional().catch(undefined),
-    To: z.array(z.object({ Address: z.string().catch('') })).catch([]),
+// MailDev returns every captured email, bodies included, in arrival order. `time` comes from the
+// Date header and has second precision.
+const maildevEmailSchema = z.object({
+    time: z.string().catch(''),
+    to: z.array(z.object({ address: z.string().catch('') })).catch([]),
+    text: z.string().catch(''),
+    html: z.string().catch(''),
 });
-const mailpitSearchResponseSchema = z.object({
-    messages: z
-        .array(z.unknown())
-        .catch([])
-        .transform(items =>
-            items.flatMap(item => {
-                const parsed = mailpitSummarySchema.safeParse(item);
-                return parsed.success ? [parsed.data] : [];
-            })
-        ),
-});
-const mailpitMessageSchema = z.object({
-    Text: z.string().catch(''),
-    HTML: z.string().catch(''),
-});
-const MAILPIT_BASE_URL =
-    process.env.MAILPIT_HTTP_URL ?? `http://127.0.0.1:${process.env.E2E_MAILPIT_UI_PORT ?? '8026'}`;
+const maildevEmailListSchema = z
+    .array(z.unknown())
+    .catch([])
+    .transform(items =>
+        items.flatMap(item => {
+            const parsed = maildevEmailSchema.safeParse(item);
+            return parsed.success ? [parsed.data] : [];
+        })
+    );
+const MAILDEV_BASE_URL =
+    process.env.MAILDEV_HTTP_URL ??
+    `http://127.0.0.1:${process.env.E2E_MAILDEV_WEB_PORT ?? '1081'}`;
 function extractEmailUrl(body: string, kind: EmailKind): string | null {
     const links = body.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
     for (const candidate of links) {
@@ -41,7 +37,7 @@ function extractEmailUrl(body: string, kind: EmailKind): string | null {
             continue;
         }
         if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
-            throw new Error('Mailpit email links must target loopback');
+            throw new Error('MailDev email links must target loopback');
         }
         return url.toString();
     }
@@ -53,36 +49,24 @@ async function findLatestEmailUrl(
     kind: EmailKind,
     since = 0
 ): Promise<string> {
-    const searchUrl = new URL('/api/v1/search', MAILPIT_BASE_URL);
-    searchUrl.searchParams.set('query', `to:"${email}"`);
-    searchUrl.searchParams.set('limit', '50');
-    const response = await request.get(searchUrl.toString());
+    const response = await request.get(new URL('/api/email', MAILDEV_BASE_URL).toString());
     if (!response.ok()) {
         return '';
     }
-    const search = mailpitSearchResponseSchema.safeParse(await response.json());
-    if (!search.success) {
+    const emails = maildevEmailListSchema.safeParse(await response.json());
+    if (!emails.success) {
         return '';
     }
-    for (const summary of search.data.messages) {
-        if (Date.parse(summary.Created ?? '') < since) {
+    // Truncate `since` like `time`, so an email sent in the same second still counts.
+    const sinceSecond = Math.floor(since / 1000) * 1000;
+    for (const message of emails.data.toReversed()) {
+        if (Date.parse(message.time) < sinceSecond) {
             continue;
         }
-        // `to:` matches substrings, so a@x.com would also find aa@x.com.
-        if (!summary.To.some(({ Address }) => Address.toLowerCase() === email.toLowerCase())) {
+        if (!message.to.some(({ address }) => address.toLowerCase() === email.toLowerCase())) {
             continue;
         }
-        const messageUrl = new URL(`/api/v1/message/${summary.ID}`, MAILPIT_BASE_URL);
-        const messageResponse = await request.get(messageUrl.toString());
-        if (!messageResponse.ok()) {
-            continue;
-        }
-        const message = mailpitMessageSchema.safeParse(await messageResponse.json());
-        if (!message.success) {
-            continue;
-        }
-        const url =
-            extractEmailUrl(message.data.Text, kind) ?? extractEmailUrl(message.data.HTML, kind);
+        const url = extractEmailUrl(message.text, kind) ?? extractEmailUrl(message.html, kind);
         if (url) {
             return url;
         }

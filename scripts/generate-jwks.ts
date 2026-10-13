@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { z } from 'zod';
-import { PNPM_COMMAND, overlayEnv, runCommandCapture, runCommandWithInput } from './lib/command';
+import { PNPM_COMMAND, overlayEnv, runCommand, runCommandCapture } from './lib/command';
 
 async function main() {
     const local = parseEnv(readFileSync('.env.local', 'utf8'));
@@ -20,8 +20,9 @@ async function main() {
         .min(1)
         .parse(value);
     const serialized = JSON.stringify(value);
-    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'JWKS'], serialized, {
+    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', 'JWKS'], {
         env,
+        input: serialized,
     });
     console.log('Local JWKS updated');
 }

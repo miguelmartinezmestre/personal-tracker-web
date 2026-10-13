@@ -5,7 +5,7 @@ import { waitForPasswordResetUrl } from '../../helpers/email-verification';
 
 test.describe('Password Reset', () => {
     test(
-        'resets through Mailpit, accepts the new password and rejects the previous one',
+        'resets through MailDev, accepts the new password and rejects the previous one',
         { tag: ['@REQ-AUTENTICACION-003'] },
         async ({ page }) => {
             const user = await createTestUser(page);

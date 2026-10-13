@@ -5,31 +5,54 @@ import { symmetricEncrypt } from 'better-auth/crypto';
 import { generateExportedKeyPair } from 'better-auth/plugins';
 import { z } from 'zod';
 import {
+    buildUrl,
     DOCKER_COMMAND,
+    type LongRunningProcess,
     PNPM_COMMAND,
     type RunCommandOptions,
     overlayEnv,
     runCommand,
     runCommandCapture,
-    runCommandWithInput,
+    waitForHttp,
 } from './command';
 
-export const CONVEX_START_TIMEOUT_MS = 120_000;
-export const POLL_INTERVAL_MS = 1_000;
-export const HTTP_REQUEST_TIMEOUT_MS = 3_000;
+// Where the backend reaches MailDev, the local SMTP server that captures outgoing mail.
+export interface SmtpCapture {
+    host: string;
+    port: string;
+}
 
-const DEFAULT_MAILPIT_SMTP_ENV = {
-    EMAIL_PROVIDER: 'smtp',
-    EMAIL_FROM: 'Metricas <noreply@metricas.local>',
-    SMTP_HOST: 'mailpit',
-    SMTP_PORT: '1025',
-    SMTP_SECURE: 'false',
-    SMTP_USER: 'mailpit',
-    SMTP_PASSWORD: 'mailpit',
-} as const;
+// Inside the compose network the backend reaches MailDev by its service name.
+const DOCKER_MAILDEV_SMTP: SmtpCapture = { host: 'maildev', port: '1025' };
+
+// MailDev requires these credentials: the compose files and `pnpm mail:local` set the same ones.
+const MAILDEV_SMTP_CREDENTIALS = { user: 'maildev', password: 'maildev' } as const;
+
+const SMTP_CAPTURE_KEYS = [
+    'EMAIL_PROVIDER',
+    'EMAIL_FROM',
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_SECURE',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+] as const;
+
+function smtpCaptureEnv(capture: SmtpCapture): Record<(typeof SMTP_CAPTURE_KEYS)[number], string> {
+    return {
+        EMAIL_PROVIDER: 'smtp',
+        EMAIL_FROM: 'Metricas <noreply@metricas.local>',
+        SMTP_HOST: capture.host,
+        SMTP_PORT: capture.port,
+        SMTP_SECURE: 'false',
+        SMTP_USER: MAILDEV_SMTP_CREDENTIALS.user,
+        SMTP_PASSWORD: MAILDEV_SMTP_CREDENTIALS.password,
+    };
+}
 
 const credentialsSchema = z.object({
-    mysqlRootPassword: z.string().min(1),
+    // Only the Docker stack has MySQL; the CLI-managed local deployment keeps its own storage.
+    mysqlRootPassword: z.string().min(1).optional(),
     betterAuthSecret: z.string().min(1).optional(),
     jwks: z.string().min(1).optional(),
 });
@@ -56,87 +79,6 @@ export function writeLocalStackCredentials(root: string, credentials: LocalStack
         JSON.stringify(credentialsSchema.parse(credentials)),
         { mode: 0o600 }
     );
-}
-
-export function buildUrl(base: string, path: string): string {
-    return `${base.replace(/\/$/, '')}${path}`;
-}
-
-export function sleep(milliseconds: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(resolve, milliseconds);
-    });
-}
-
-export async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(() => {
-        abortController.abort();
-    }, timeoutMs);
-
-    try {
-        return await fetch(url, {
-            signal: abortController.signal,
-        });
-    } catch (error) {
-        if (abortController.signal.aborted) {
-            throw new Error(`Request timeout after ${timeoutMs}ms`, { cause: error });
-        }
-        throw error;
-    } finally {
-        clearTimeout(timeoutId);
-    }
-}
-
-async function waitForHttp({
-    url,
-    timeoutMs,
-    requestTimeoutMs,
-    pollIntervalMs,
-    isReady,
-}: {
-    url: string;
-    timeoutMs: number;
-    requestTimeoutMs: number;
-    pollIntervalMs: number;
-    isReady: (response: Response) => boolean;
-}): Promise<void> {
-    const start = Date.now();
-    let lastStatus: number | null = null;
-    let lastError: string | null = null;
-    let attempts = 0;
-
-    while (Date.now() - start < timeoutMs) {
-        attempts += 1;
-
-        try {
-            const response = await fetchWithTimeout(url, requestTimeoutMs);
-            lastStatus = response.status;
-
-            if (isReady(response)) {
-                return;
-            }
-        } catch (error) {
-            lastError = error instanceof Error ? error.message : String(error);
-        }
-
-        if (attempts % 5 === 0) {
-            const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
-            let progressHint: string;
-            if (lastStatus !== null) {
-                progressHint = `last status=${lastStatus}`;
-            } else {
-                progressHint = `last error=${lastError ?? 'unknown'}`;
-            }
-            console.log(`Still waiting for ${url} (${elapsedSeconds}s elapsed, ${progressHint})`);
-        }
-
-        await sleep(pollIntervalMs);
-    }
-
-    const statusMessage =
-        lastStatus !== null ? `last status=${lastStatus}` : `last error=${lastError ?? 'unknown'}`;
-    throw new Error(`Timed out waiting for ${url} (${statusMessage})`);
 }
 
 function stripAnsi(value: string): string {
@@ -263,14 +205,21 @@ export function createDockerComposeHelpers(config: {
     return { dockerCompose, dockerComposeCapture };
 }
 
-export async function waitForConvexBackend(convexUrl: string): Promise<void> {
-    await waitForHttp({
-        url: buildUrl(convexUrl, '/version'),
-        timeoutMs: CONVEX_START_TIMEOUT_MS,
-        requestTimeoutMs: HTTP_REQUEST_TIMEOUT_MS,
-        pollIntervalMs: POLL_INTERVAL_MS,
-        isReady: response => response.ok,
-    });
+export async function waitForConvexBackend(
+    convexUrl: string,
+    backendProcess?: LongRunningProcess
+): Promise<void> {
+    await waitForHttp(buildUrl(convexUrl, '/version'), { process: backendProcess });
+}
+
+export async function generateAuthSecrets(previous?: {
+    betterAuthSecret?: string;
+    jwks?: string;
+}): Promise<{ betterAuthSecret: string; jwks: string }> {
+    const betterAuthSecret = previous?.betterAuthSecret ?? randomBytes(32).toString('base64');
+    const jwks = previous?.jwks ?? (await generateStaticJwks(betterAuthSecret));
+
+    return { betterAuthSecret, jwks };
 }
 
 export async function bootstrapConvexCredentials(
@@ -284,35 +233,57 @@ export async function bootstrapConvexCredentials(
         './generate_admin_key.sh',
     ]);
     const adminKey = extractAdminKey(adminKeyOutput);
-    const betterAuthSecret = previous?.betterAuthSecret ?? randomBytes(32).toString('base64');
-    const jwks = previous?.jwks ?? (await generateStaticJwks(betterAuthSecret));
 
-    return { adminKey, betterAuthSecret, jwks };
+    return { adminKey, ...(await generateAuthSecrets(previous)) };
+}
+
+// The Convex CLI refuses to run when both selection styles are present, and it reads .env.local
+// for whichever is missing from the process. An empty value counts as unset and blocks that read.
+export type ConvexDeploymentTarget =
+    { kind: 'self-hosted'; adminKey: string } | { kind: 'cli-local'; deploymentName: string };
+
+function deploymentSelectionEnv(
+    target: ConvexDeploymentTarget,
+    convexUrl: string
+): NodeJS.ProcessEnv {
+    if (target.kind === 'self-hosted') {
+        return {
+            CONVEX_DEPLOYMENT: '',
+            CONVEX_SELF_HOSTED_ADMIN_KEY: target.adminKey,
+            CONVEX_SELF_HOSTED_URL: convexUrl,
+        };
+    }
+
+    return {
+        CONVEX_DEPLOYMENT: `anonymous:${target.deploymentName}`,
+        CONVEX_SELF_HOSTED_ADMIN_KEY: '',
+        CONVEX_SELF_HOSTED_URL: '',
+    };
 }
 
 export function buildConvexCommandEnv(params: {
-    adminKey: string;
+    deployment: ConvexDeploymentTarget;
     betterAuthSecret: string;
     jwks: string;
     convexUrl: string;
     convexSiteUrl: string;
     siteUrl: string;
+    smtp?: SmtpCapture;
     allowLocalHttp?: boolean;
     extra?: NodeJS.ProcessEnv;
 }): NodeJS.ProcessEnv {
     return overlayEnv({
         ...params.extra,
+        ...deploymentSelectionEnv(params.deployment, params.convexUrl),
         BETTER_AUTH_SECRET: params.betterAuthSecret,
         BETTER_AUTH_URL: params.siteUrl,
-        CONVEX_SELF_HOSTED_ADMIN_KEY: params.adminKey,
-        CONVEX_SELF_HOSTED_URL: params.convexUrl,
         JWKS: params.jwks,
         NEXT_PUBLIC_CONVEX_SITE_URL: params.convexSiteUrl,
         NEXT_PUBLIC_CONVEX_URL: params.convexUrl,
         ...(params.allowLocalHttp ? { NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: 'true' } : {}),
         NEXT_PUBLIC_SITE_URL: params.siteUrl,
         SITE_URL: params.siteUrl,
-        ...DEFAULT_MAILPIT_SMTP_ENV,
+        ...smtpCaptureEnv(params.smtp ?? DOCKER_MAILDEV_SMTP),
     });
 }
 
@@ -321,16 +292,17 @@ async function setConvexEnvVar(
     key: string,
     value: string
 ): Promise<void> {
-    await runCommandWithInput(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], `${value}\n`, {
+    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', key], {
         env: commandEnv,
+        input: `${value}\n`,
     });
 }
 
-export async function configureConvexEnv(
+function convexEnvValues(
     commandEnv: NodeJS.ProcessEnv,
     siteUrl: string,
     options?: { e2eSetupSecret?: string; setupSecret?: string }
-): Promise<void> {
+): Record<string, string> {
     const values: Record<string, string | undefined> = {
         SITE_URL: siteUrl,
         BETTER_AUTH_URL: siteUrl,
@@ -338,11 +310,43 @@ export async function configureConvexEnv(
         SETUP_SECRET: options?.setupSecret,
         BETTER_AUTH_SECRET: commandEnv.BETTER_AUTH_SECRET,
         JWKS: commandEnv.JWKS,
-        ...DEFAULT_MAILPIT_SMTP_ENV,
+        ...Object.fromEntries(SMTP_CAPTURE_KEYS.map(key => [key, commandEnv[key]])),
     };
-    for (const [key, value] of Object.entries(values)) {
-        if (value !== undefined) await setConvexEnvVar(commandEnv, key, value);
+    return Object.fromEntries(
+        Object.entries(values).filter((entry): entry is [string, string] => entry[1] !== undefined)
+    );
+}
+
+export async function configureConvexEnv(
+    commandEnv: NodeJS.ProcessEnv,
+    siteUrl: string,
+    options?: { e2eSetupSecret?: string; setupSecret?: string }
+): Promise<void> {
+    for (const [key, value] of Object.entries(convexEnvValues(commandEnv, siteUrl, options))) {
+        await setConvexEnvVar(commandEnv, key, value);
     }
+}
+
+// Sends every variable in one `convex env set` call. A CLI-managed backend lives only as long as
+// the `convex dev` that started it, and that process exits as soon as a push succeeds, so the
+// variables a push depends on must not arrive one at a time.
+export async function configureConvexEnvAtOnce(
+    commandEnv: NodeJS.ProcessEnv,
+    siteUrl: string,
+    options?: { setupSecret?: string }
+): Promise<void> {
+    const lines = Object.entries(convexEnvValues(commandEnv, siteUrl, options)).map(
+        ([key, value]) => {
+            if (/['\r\n]/.test(value)) {
+                throw new Error(`Cannot pass ${key} through a dotenv file`);
+            }
+            return `${key}='${value}'`;
+        }
+    );
+    await runCommand(PNPM_COMMAND, ['exec', 'convex', 'env', 'set', '--force'], {
+        env: commandEnv,
+        input: `${lines.join('\n')}\n`,
+    });
 }
 
 export async function deployConvexFunctions(commandEnv: NodeJS.ProcessEnv): Promise<void> {
