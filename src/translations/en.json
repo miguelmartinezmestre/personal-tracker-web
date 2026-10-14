@@ -80,7 +80,6 @@
             "na": "N/A"
         },
         "loading": "Loading...",
-        "updatingData": "We are updating the dashboard data.",
         "chartData": "View chart data",
         "skipToContent": "Skip to content",
         "validation": {
@@ -101,7 +100,6 @@
         "upcomingDeadlines": "Upcoming Deadlines",
         "noUpcomingDeadlines": "No deadlines in the next 7 days",
         "deadlineDaysRemaining": "{days}d",
-        "partialData": "Showing a partial result because there is more data than can be processed at once.",
         "recentActivity": "Recent Activity",
         "activity": {
             "progressUpdates": "Progress updates",
@@ -117,7 +115,6 @@
             "noDataAvailable": "No data available",
             "updates": "Updates",
             "progress": "Progress",
-            "partialData": "This chart shows a partial data set.",
             "month": "Month",
             "objective": "Objective",
             "averageProgress": "Average progress",
@@ -183,178 +180,6 @@
         "adminSessions": "Sessions Management",
         "adminAudit": "Audit Logs",
         "organizations": "Organizations"
-    },
-    "Achievements": {
-        "title": "Achievements",
-        "widget": {
-            "title": "Achievements",
-            "viewAll": "View All",
-            "recentlyEarned": "Recently Earned",
-            "noAchievements": "No achievements yet. Keep working on your objectives!"
-        },
-        "stats": {
-            "totalPoints": "Total Points",
-            "earned": "Earned",
-            "completion": "Progress",
-            "completionDescription": "Overall completion"
-        },
-        "filters": {
-            "all": "All",
-            "earned": "Earned",
-            "locked": "Locked"
-        },
-        "types": {
-            "individual": "Individual",
-            "organization": "Organization"
-        },
-        "tiers": {
-            "bronze": "Bronze",
-            "silver": "Silver",
-            "gold": "Gold"
-        },
-        "card": {
-            "earned": "Earned",
-            "progress": "Progress",
-            "locked": "Locked",
-            "points": "{points} pts"
-        },
-        "definitions": {
-            "first_objective": {
-                "name": "First Steps",
-                "description": "Create your first objective"
-            },
-            "objectives_created_5": {
-                "name": "Planner",
-                "description": "Create {threshold} objectives"
-            },
-            "objectives_created_15": {
-                "name": "Strategist",
-                "description": "Create {threshold} objectives"
-            },
-            "objectives_created_30": {
-                "name": "Master Planner",
-                "description": "Create {threshold} objectives"
-            },
-            "objectives_completed_3": {
-                "name": "Achiever",
-                "description": "Complete {threshold} objectives"
-            },
-            "objectives_completed_10": {
-                "name": "Champion",
-                "description": "Complete {threshold} objectives"
-            },
-            "objectives_completed_25": {
-                "name": "Legend",
-                "description": "Complete {threshold} objectives"
-            },
-            "streak_3": {
-                "name": "Consistent",
-                "description": "Log progress for {threshold} consecutive days"
-            },
-            "streak_7": {
-                "name": "Dedicated",
-                "description": "Log progress for {threshold} consecutive days"
-            },
-            "streak_14": {
-                "name": "Unstoppable",
-                "description": "Log progress for {threshold} consecutive days"
-            },
-            "progress_updates_10": {
-                "name": "Progress Tracker",
-                "description": "Log {threshold} progress updates"
-            },
-            "progress_updates_50": {
-                "name": "Diligent",
-                "description": "Log {threshold} progress updates"
-            },
-            "progress_updates_100": {
-                "name": "Persistent",
-                "description": "Log {threshold} progress updates"
-            },
-            "early_bird": {
-                "name": "Early Bird",
-                "description": "Complete an objective before its deadline"
-            },
-            "organization_first_objective": {
-                "name": "Organization Kickoff",
-                "description": "Organization creates their first objective"
-            },
-            "organization_completed_5": {
-                "name": "Winning Organization",
-                "description": "Organization completes {threshold} objectives"
-            },
-            "organization_completed_15": {
-                "name": "Elite Squad",
-                "description": "Organization completes {threshold} objectives"
-            },
-            "organization_completed_30": {
-                "name": "Dream Organization",
-                "description": "Organization completes {threshold} objectives"
-            },
-            "organization_streak_7": {
-                "name": "Organization Momentum",
-                "description": "Organization logs progress for {threshold} consecutive days"
-            }
-        },
-        "empty": {
-            "noAchievements": "No achievements available.",
-            "noEarned": "You haven't earned any achievements yet.",
-            "noLocked": "You've earned all available achievements!",
-            "noOrganizationAchievements": "No organization achievements available. Join an organization to unlock organization achievements."
-        }
-    },
-    "Notifications": {
-        "title": "Notifications",
-        "description": "View your notifications and updates.",
-        "empty": "No notifications yet.",
-        "markAllRead": "Mark all as read",
-        "allCaughtUp": "You're all caught up.",
-        "unreadCount": "You have {count} unread notifications.",
-        "unreadCountAtLeast": "You have at least {count} unread notifications.",
-        "table": {
-            "columns": {
-                "message": "Message",
-                "objective": "Objective",
-                "type": "Type",
-                "date": "Date",
-                "status": "Status",
-                "actions": "Actions"
-            },
-            "unknownObjective": "Unknown objective",
-            "read": "Read",
-            "unread": "Unread",
-            "markRead": "Mark as read",
-            "markUnread": "Mark as unread",
-            "delete": "Delete"
-        },
-        "typeOptions": {
-            "deadline": "Deadline",
-            "progress": "Progress",
-            "status": "Status"
-        },
-        "toast": {
-            "updated": "Notification updated.",
-            "updateFailed": "Failed to update notification.",
-            "deleted": "Notification deleted.",
-            "deleteFailed": "Failed to delete notification.",
-            "markAll": "All notifications marked as read.",
-            "markAllFailed": "Failed to mark notifications as read."
-        },
-        "confirm": {
-            "deleteTitle": "Delete notification?",
-            "deleteDescription": "This will permanently remove the notification.",
-            "deleteConfirm": "Delete",
-            "cancel": "Cancel"
-        },
-        "messages": {
-            "objectiveCompleted": "Objective \"{title}\" completed.",
-            "progressAdded": "Progress added to \"{title}\": +{amount, number} {unit}",
-            "deadlineToday": "Objective \"{title}\" is due today, {date}.",
-            "deadlineUpcoming": "Objective \"{title}\" is due in {days, plural, one {# day} other {# days}}, on {date}.",
-            "deadlineOverdue": "Objective \"{title}\" is overdue by {days, plural, one {# day} other {# days}}, due on {date}.",
-            "achievementEarned": "You unlocked \"{name}\" and earned {points, number} points.",
-            "organizationAchievementEarned": "The organization unlocked \"{name}\" and earned {points, number} points."
-        }
     },
     "CommandMenu": {
         "placeholder": "Search commands...",
@@ -577,8 +402,7 @@
             "idealPace": "Ideal pace",
             "legendProgress": "Progress",
             "legendTarget": "Target",
-            "legendPace": "Ideal pace to the deadline",
-            "partialData": "Only the most recent progress entries are shown."
+            "legendPace": "Ideal pace to the deadline"
         },
         "validation": {
             "titleRequired": "Enter a title.",
@@ -597,24 +421,6 @@
         },
         "completedOn": "Completed on {date}",
         "characterCount": "{count}/{max}"
-    },
-    "Sessions": {
-        "title": "Sessions",
-        "description": "Manage your sessions to keep track of your progress.",
-        "device": "Device",
-        "date": "Date",
-        "status": "Status",
-        "expiresAt": "Expires",
-        "currentSession": "Current",
-        "active": "Active",
-        "expired": "Expired",
-        "revoke": "Revoke",
-        "revoking": "Revoking...",
-        "sessionRevoked": "Session revoked",
-        "sessionRevokeFailed": "Failed to revoke session",
-        "revokeAllOtherSessions": "Close other sessions",
-        "allOtherSessionsRevoked": "Closed {count} sessions",
-        "allOtherSessionsRevokeFailed": "Failed to close other sessions"
     },
     "Organizations": {
         "title": "Organizations",
@@ -650,152 +456,6 @@
         },
         "personalOrganizationName": "Personal organization"
     },
-    "Settings": {
-        "title": "Settings",
-        "description": "Manage your settings to keep track of your progress.",
-        "account": "Account",
-        "accountSettings": "Account Settings",
-        "passwordSettings": "Password Settings",
-        "accountSettingsDescription": "Edit your account settings here.",
-        "passwordSettingsDescription": "Edit your password settings here.",
-        "password": "Password",
-        "saveAccount": "Save Account",
-        "username": "Username",
-        "email": "Email",
-        "placeholders": {
-            "enterUsername": "Enter username",
-            "enterEmail": "Enter email"
-        },
-        "notifications": "Notifications",
-        "notificationsDescription": "Manage how and when you receive notifications.",
-        "preferencesSaved": "Preferences saved",
-        "preferencesSavedDescription": "Your notification preferences have been updated.",
-        "preferencesError": "Error",
-        "preferencesErrorDescription": "Failed to update preferences. Please try again.",
-        "achievementNotifications": "Achievement Notifications",
-        "achievementNotificationsDescription": "Receive notifications when you unlock achievements and earn points.",
-        "deadlineNotifications": "Deadline Reminders",
-        "deadlineNotificationsDescription": "Get reminded when your objectives have upcoming deadlines.",
-        "progressNotifications": "Progress & Streak Alerts",
-        "progressNotificationsDescription": "Receive notifications about your progress updates and streak milestones.",
-        "organizationNotifications": "Organization Notifications",
-        "organizationNotificationsDescription": "Receive notifications about organization-wide achievements and member activities.",
-        "cancel": "Cancel",
-        "savePassword": "Save Password",
-        "confirmPassword": "Confirm Password",
-        "newPassword": "New Password",
-        "saving": "Saving...",
-        "passwordMismatch": "Passwords do not match.",
-        "passwordSameAsOld": "The new password must be different from the current password.",
-        "weakPassword": "Password must include at least one uppercase letter, one lowercase letter, and one number.",
-        "passwordUpdateFailed": "We couldn't update your password. Please try again.",
-        "passwordUpdated": "Password updated.",
-        "accountUpdated": "Account updated.",
-        "emailChangeRequested": "We sent a verification email to confirm your new address.",
-        "dangerZone": "Danger Zone",
-        "dangerZoneSettings": "Danger Zone",
-        "dangerZoneSettingsDescription": "Irreversible actions for your account.",
-        "deleteAccountTitle": "Delete Account",
-        "deleteAccountDescription": "Once deleted, your account cannot be recovered. Credentials, sessions, private data, and personal workspaces are removed; shared contributions remain only as anonymized history.",
-        "deleteAccountConfirmLabel": "Confirm by entering your email",
-        "deleteAccountPlaceholder": "Enter your email address",
-        "deleteAccountHelpText": "Type {email} to confirm deletion",
-        "deleteAccountButton": "Delete My Account",
-        "deleteAccountSuccess": "Your account has been deleted. Redirecting...",
-        "deleteAccountFailed": "We couldn't delete your account. Please try again.",
-        "deleteAccountPasswordLabel": "Enter your password to confirm",
-        "deleteAccountPasswordPlaceholder": "Your password",
-        "deleteAccountProtectedTitle": "Account Protected",
-        "deleteAccountProtectedDescription": "The account that configured this platform cannot be deleted. Transfer admin responsibilities to another user before making changes to this account."
-    },
-    "Admin": {
-        "userManagement": "User Management",
-        "userManagementDescription": "Manage user accounts, roles, and permissions.",
-        "sessionManagement": "Session Management",
-        "sessionManagementDescription": "View and manage user sessions.",
-        "auditLogManagement": "Audit Log Management",
-        "auditLogManagementDescription": "View system activity logs.",
-        "usersTable": {
-            "defaults": {
-                "banReason": "Banned by administrator"
-            },
-            "empty": "No users found.",
-            "emptyWithSearch": "No users match your search.",
-            "searchPlaceholder": "Search users by name or email...",
-            "columns": {
-                "id": "ID",
-                "email": "Email",
-                "name": "Name",
-                "role": "Role",
-                "status": "Status",
-                "actions": "Actions"
-            },
-            "roles": {
-                "globalAdmin": "Global admin",
-                "user": "User"
-            },
-            "confirm": {
-                "deleteUser": "Are you sure you want to delete this user?",
-                "deleteUserDescription": "This action cannot be undone. Credentials, sessions, private data, and personal workspaces are deleted; shared contributions remain only as anonymized history.",
-                "deleteConfirm": "Delete",
-                "cancel": "Cancel"
-            },
-            "setupUserDeleteDisabled": "The platform setup user cannot be deleted.",
-            "toast": {
-                "bannedSuccess": "User banned successfully",
-                "unbannedSuccess": "User unbanned successfully",
-                "deletedSuccess": "User deleted successfully",
-                "updatedSuccess": "User updated successfully",
-                "banFailed": "Error banning user: {message}",
-                "unbanFailed": "Error unbanning user: {message}",
-                "deleteFailed": "Error deleting user: {message}",
-                "updateFailed": "Error updating user: {message}"
-            }
-        },
-        "editUserModal": {
-            "title": "Edit user",
-            "description": "Update the user's information",
-            "roles": {
-                "globalAdmin": "Global admin",
-                "user": "User"
-            }
-        },
-        "userSessions": {
-            "columns": {
-                "id": "ID",
-                "expires": "Expires",
-                "ip": "IP",
-                "userAgent": "User Agent",
-                "actions": "Actions"
-            },
-            "emptyWithUser": "No sessions found for this user",
-            "emptyNoUser": "Enter a user ID to view sessions",
-            "buttons": {
-                "revoke": "Revoke session",
-                "revokeAll": "Revoke all"
-            },
-            "confirm": {
-                "revokeAll": "Are you sure you want to revoke all sessions for this user?"
-            },
-            "toast": {
-                "revokeSuccess": "Session revoked successfully",
-                "revokeAllSuccess": "All sessions revoked successfully",
-                "revokeFailed": "Error revoking session: {message}",
-                "revokeAllFailed": "Error revoking sessions: {message}"
-            }
-        },
-        "auditLogsTable": {
-            "title": "Audit logs",
-            "description": "Record of actions performed in the system",
-            "empty": "No audit logs recorded",
-            "columns": {
-                "userId": "User ID",
-                "actorUserId": "Performed by",
-                "action": "Action",
-                "date": "Date"
-            }
-        }
-    },
     "UpdateProgress": {
         "pageDescription": "Track progress updates for this objective.",
         "createNewUpdateProgress": "Log progress",
@@ -817,7 +477,8 @@
                 "date": "Date",
                 "comment": "Comment",
                 "edit": "Edit",
-                "delete": "Delete"
+                "delete": "Delete",
+                "amount": "Amount"
             }
         },
         "confirm": {
@@ -863,19 +524,11 @@
             "openMenu": "Open menu"
         }
     },
-    "UserAgent": {
-        "device": "Device",
-        "smartphone": "Smartphone",
-        "tablet": "Tablet",
-        "botCrawler": "Bot/Crawler"
-    },
     "DeleteConfirmation": {
         "deleting": "Deleting..."
     },
     "Table": {
         "noResults": "No results",
-        "previous": "Previous",
-        "next": "Next",
         "showingRows": "Showing {count, plural, one {# row} other {# rows}}"
     },
     "OrganizationMembers": {
@@ -979,7 +632,12 @@
         "invalidTitle": "Invitation unavailable",
         "invalidDescription": "This link is invalid, has expired, or the invitation has already been used. Ask the person who invited you to send a new one.",
         "acceptDescriptionNamed": "You have been invited to join “{organization}”. Click accept to join.",
-        "loginRequiredDescriptionNamed": "You have been invited to join “{organization}”. Sign in or create an account to accept."
+        "loginRequiredDescriptionNamed": "You have been invited to join “{organization}”. Sign in or create an account to accept.",
+        "columns": {
+            "organization": "Organization",
+            "role": "Role",
+            "actions": "Actions"
+        }
     },
     "Setup": {
         "title": "Platform Setup",

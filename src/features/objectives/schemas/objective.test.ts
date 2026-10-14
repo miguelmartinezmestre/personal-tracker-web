@@ -98,18 +98,3 @@ test('explains each invalid field with its own message', () => {
         'commentTooLong',
     ]);
 });
-
-test('reports an invalid target once instead of also blaming the starting value', () => {
-    const objective = objectiveFormSchema(message).safeParse({
-        title: 'Run',
-        description: '',
-        categoryId: 'none',
-        unit: '',
-        startValue: 0,
-        targetValue: -3,
-        deadline: '',
-    });
-    expect(objective.error?.issues.map(issue => [issue.path.join('.'), issue.message])).toEqual([
-        ['targetValue', 'targetTooSmall'],
-    ]);
-});

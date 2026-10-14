@@ -90,11 +90,7 @@ type HistoryPoint = {
     comment?: string;
 };
 
-function buildSeries(
-    objective: ProgressChartObjective,
-    points: readonly HistoryPoint[],
-    truncated: boolean
-) {
+function buildSeries(objective: ProgressChartObjective, points: readonly HistoryPoint[]) {
     const firstDate = points[0]?.updateDate ?? objective.createdAt;
     const series: SeriesPoint[] = points.map(point => ({
         key: point.id,
@@ -104,16 +100,13 @@ function buildSeries(
         delta: point.delta,
         ...(point.comment !== undefined ? { comment: point.comment } : {}),
     }));
-    // The starting value is only an exact anchor when the full history is loaded. Progress
-    // dates are UTC days, so a same-day start is drawn one day earlier to keep it visible.
-    if (!truncated) {
-        series.unshift({
-            key: 'start',
-            kind: 'start',
-            date: objective.createdAt < firstDate ? objective.createdAt : firstDate - DAY_MS,
-            value: objective.startValue,
-        });
-    }
+    // Progress dates are UTC days, so a same-day start is drawn one day earlier to keep it visible.
+    series.unshift({
+        key: 'start',
+        kind: 'start',
+        date: objective.createdAt < firstDate ? objective.createdAt : firstDate - DAY_MS,
+        value: objective.startValue,
+    });
     const startDate = series[0]?.date ?? firstDate;
     const pace: PacePoint[] =
         objective.deadline !== undefined && objective.deadline > startDate
@@ -132,7 +125,6 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
         convexQuery(api.objectives.getProgressHistory, { objectiveId: objective.id })
     );
     const points = history.data?.points;
-    const truncated = history.data?.truncated ?? false;
 
     const chart = useMemo(() => {
         if (!points || points.length === 0) {
@@ -146,7 +138,7 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
         const withUnit = (value: number) =>
             objective.unit ? `${formatNumber(value)} ${objective.unit}` : formatNumber(value);
 
-        const { series, pace } = buildSeries(objective, points, truncated);
+        const { series, pace } = buildSeries(objective, points);
 
         const dates = [...series, ...pace].map(point => point.date);
         const xMin = Math.min(...dates);
@@ -254,13 +246,13 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
         });
         // A deadline at or before the first point leaves no pace line to explain.
         return { definition, hasPace: pace.length > 0 };
-    }, [points, truncated, locale, objective, t]);
+    }, [points, locale, objective, t]);
 
     if (history.isPending) {
         return <Skeleton className="w-full" style={{ height: CHART_HEIGHT }} />;
     }
     if (history.isError) {
-        return <QueryErrorFallback error={history.error} onRetry={() => void history.refetch()} />;
+        return <QueryErrorFallback onRetry={() => void history.refetch()} />;
     }
     if (!chart) {
         return (
@@ -299,7 +291,6 @@ export default function ProgressChart({ objective }: { objective: ProgressChartO
                     </li>
                 ) : null}
             </ul>
-            {truncated ? <p className="text-muted-foreground text-xs">{t('partialData')}</p> : null}
         </div>
     );
 }

@@ -5,7 +5,6 @@ import {
     wrapDatabaseWriter,
 } from 'convex-helpers/server/rowLevelSecurity';
 import {
-    mutation,
     query,
     type DatabaseReader,
     type DatabaseWriter,
@@ -15,6 +14,7 @@ import {
 import type { Id } from '../_generated/dataModel';
 import { resolveAuthContext } from './authContext';
 import { createRlsRules } from './policies';
+import { mutation } from '../objectiveStats';
 
 const config: RLSConfig = { defaultPolicy: 'deny' };
 

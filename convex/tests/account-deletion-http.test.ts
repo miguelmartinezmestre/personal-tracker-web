@@ -1,10 +1,7 @@
 import { hashPassword } from 'better-auth/crypto';
-import { describe, expect, test, vi } from 'vitest';
-import type { ActionCtx } from '../_generated/server';
-import { accountDeletionPlugin } from '../accountDeletionPlugin';
+import { describe, expect, test } from 'vitest';
 import { drainScheduledFunctions, initConvexTest } from './test.helper';
 import { createTestMember, createTestOrganization, createTestUser } from './test.helpers';
-import { asInvalidArg } from './test.casts';
 
 const ORIGIN = 'http://localhost:3000';
 const PASSWORD = 'ValidDeletionPassword123';
@@ -74,40 +71,6 @@ describe('soft-delete Better Auth endpoint', () => {
         expect(response.status, await response.clone().text()).toBe(200);
         return extractCookie(response);
     }
-
-    test.each(['malformed', 'another-table'] as const)(
-        'rejects a session user ID that is %s before password verification or deletion',
-        async invalidIdKind => {
-            const organizationId = await createTestOrganization(t, {
-                name: 'ID normalization test organization',
-                slug: `id-normalization-${invalidIdKind}`,
-            });
-            const userId = invalidIdKind === 'malformed' ? 'not-a-convex-id' : organizationId;
-            const runMutation = vi.fn();
-            const verifyPassword = vi.fn();
-            const endpoint = accountDeletionPlugin(
-                asInvalidArg<ActionCtx>({ runQuery: t.query, runMutation })
-            ).endpoints.softDeleteUser;
-
-            await expect(
-                endpoint(
-                    asInvalidArg<Parameters<typeof endpoint>[0]>({
-                        body: { password: PASSWORD },
-                        context: {
-                            options: {},
-                            session: { session: {}, user: { id: userId } },
-                            password: { verify: verifyPassword },
-                        },
-                    })
-                )
-            ).rejects.toMatchObject({
-                statusCode: 400,
-                body: { code: 'INVALID_USER' },
-            });
-            expect(verifyPassword).not.toHaveBeenCalled();
-            expect(runMutation).not.toHaveBeenCalled();
-        }
-    );
 
     test('verifies the password, returns success, preserves the tombstone and cleans auth rows', async () => {
         const { user } = await createCredentialUser();

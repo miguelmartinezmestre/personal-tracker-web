@@ -5,7 +5,7 @@ import { internalQuery, mutation, query } from './_generated/server';
 import type { MutationCtx } from './_generated/server';
 import { ERROR_CODES } from './constants';
 import { GLOBAL_ADMIN_ROLE } from './utils';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { isPersonalOrganizationForUser } from './personalOrganization';
 import { buildOrganizationSlug } from './utils';
 import { CATEGORY_COLOR_PATTERN, CATEGORY_ICONS, CATEGORY_NAME_MAX_LENGTH } from './constants';
@@ -16,7 +16,6 @@ const SETUP_LIMITS = {
     CATEGORIES_MAX: 100,
 } as const;
 
-const SETUP_MEMBERSHIP_LIMIT = 100;
 const CATEGORY_ICON_SET = new Set<string>(CATEGORY_ICONS);
 const completeSetupArgsValidator = {
     platformName: v.string(),
@@ -127,17 +126,11 @@ export const completeSetup = mutation({
 
         await ctx.db.patch('user', userId, { role: GLOBAL_ADMIN_ROLE });
 
-        const memberships = await ctx.db
-            .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .take(SETUP_MEMBERSHIP_LIMIT + 1);
-        if (memberships.length > SETUP_MEMBERSHIP_LIMIT) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
-        }
-
         let reusableOrganizationId: Id<'organization'> | null = null;
         const personalOrganizationIds = new Set<Id<'organization'>>();
-        for (const membership of memberships) {
+        for await (const membership of ctx.db
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', userId))) {
             const organization = await ctx.db.get('organization', membership.organizationId);
             if (!organization) {
                 continue;
@@ -173,12 +166,12 @@ export const completeSetup = mutation({
             });
         }
 
-        const sessions = await ctx.db
+        // Read every session before patching any, so the writes do not affect the iteration.
+        const sessions: Doc<'session'>[] = [];
+        for await (const session of ctx.db
             .query('session')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .take(SETUP_MEMBERSHIP_LIMIT + 1);
-        if (sessions.length > SETUP_MEMBERSHIP_LIMIT) {
-            throw new ConvexError(ERROR_CODES.INTERNAL_ERROR);
+            .withIndex('userId', q => q.eq('userId', userId))) {
+            sessions.push(session);
         }
         for (const session of sessions) {
             let currentOrganizationId = null;

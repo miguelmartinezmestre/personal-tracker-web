@@ -1,3 +1,4 @@
+import aggregateTest from '@convex-dev/aggregate/test';
 import { convexTest } from 'convex-test';
 import { afterAll } from 'vitest';
 import schema from '../schema';
@@ -17,6 +18,7 @@ export async function drainScheduledFunctions(t: ReturnType<typeof convexTest>) 
 export function initConvexTest() {
     process.env.BETTER_AUTH_SECRET ??= 'synthetic-secret-for-convex-pagination-tests-only';
     const t = convexTest(schema, modules);
+    aggregateTest.register(t, 'objectiveStats');
 
     const withIdentity = t.withIdentity.bind(t);
     const withIdentityAndSession = (identity: Parameters<typeof t.withIdentity>[0]) => {

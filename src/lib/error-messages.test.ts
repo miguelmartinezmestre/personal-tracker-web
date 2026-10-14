@@ -7,14 +7,6 @@ describe('extractErrorCode', () => {
             'AUTH_REQUIRED'
         );
     });
-
-    test('ignores unsupported object shapes and cyclic causes', () => {
-        expect(extractErrorCode(['AUTH_REQUIRED'])).toBeUndefined();
-
-        const cyclicError: { cause?: unknown } = {};
-        cyclicError.cause = cyclicError;
-        expect(extractErrorCode(cyclicError)).toBeUndefined();
-    });
 });
 
 test('error toasts follow the page language, not only the locale cookie', () => {

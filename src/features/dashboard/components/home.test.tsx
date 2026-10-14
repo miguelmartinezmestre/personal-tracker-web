@@ -15,7 +15,6 @@ const emptyStats = {
     completed: 0,
     averageProgress: 0,
     categories: [],
-    truncated: false,
 };
 
 function renderHome(stats: typeof emptyStats | Record<string, unknown>) {
@@ -75,7 +74,6 @@ test('renders the average progress gauge and the category chart', () => {
                 averageProgress: 36,
             },
         ],
-        truncated: false,
     });
     expect(screen.getByTestId('dashboard-stats')).toBeInTheDocument();
     expect(

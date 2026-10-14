@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
 import type { CreateOrganization } from '@/features/organizations/schemas/organization';
@@ -12,10 +13,16 @@ import { DEFAULT_ORGANIZATION_SLUG_BASE } from '@/convex/personalOrganization';
 
 type UpdateOrganization = CreateOrganization & { id: string };
 
-export type Organization = FunctionReturnType<typeof api.organizations.getOrganizations>[number];
+export type Organization = FunctionReturnType<
+    typeof api.organizations.listOrganizations
+>['page'][number];
 
-export function useOrganizations() {
-    return useQuery(convexQuery(api.organizations.getOrganizations, {}));
+export function usePersonalOrganizationId() {
+    return useQuery(convexQuery(api.organizations.getPersonalOrganizationId, {}));
+}
+
+export function usePaginatedOrganizations() {
+    return usePaginatedList(api.organizations.listOrganizations, {});
 }
 
 export function useOrganizationByIdentifier(identifier: string) {

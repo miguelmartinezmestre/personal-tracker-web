@@ -2,7 +2,7 @@
 
 import { DataTable } from '@/components/data-table/components/table';
 import {
-    useOrganizations,
+    usePaginatedOrganizations,
     useDeleteOrganization,
     type Organization,
 } from '@/features/organizations/hooks/use-organizations';
@@ -21,7 +21,7 @@ import {
 
 export default function OrganizationsTable() {
     const t = useTranslations('Organizations');
-    const organizations = useOrganizations();
+    const organizations = usePaginatedOrganizations();
     const deleteOrganization = useDeleteOrganization();
 
     const columns: ColumnDef<DataTableFeatures, Organization>[] = [
@@ -113,13 +113,10 @@ export default function OrganizationsTable() {
     return (
         <div data-testid="organizations-table">
             <DataTable
-                isError={organizations.isError}
-                onRetry={() => {
-                    void organizations.refetch();
-                }}
                 columns={columns}
-                data={organizations.data ?? []}
+                data={organizations.data}
                 isLoading={organizations.isLoading}
+                pagination={organizations}
             />
         </div>
     );

@@ -27,12 +27,12 @@ export default async function Layout({ children }: { children: React.ReactNode }
         }
         throw error;
     }
-    const { user: initialUser, organizationId: activeOrganizationId } = dashboardContext;
+    const { organizationId: activeOrganizationId } = dashboardContext;
     const dashboardScopeKey = activeOrganizationId ?? 'no-active-organization';
     return (
         <SidebarProvider>
             <SkipToContent targetId="dashboard-main" label={t('skipToContent')} />
-            <AppSidebar initialUser={initialUser} />
+            <AppSidebar />
             <SidebarInset>
                 <header className="grid h-16 min-w-0 shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
                     <div className="flex min-w-0 items-center gap-2">

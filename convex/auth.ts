@@ -304,9 +304,6 @@ export const recoverAffectedOrganizationSessions = internalMutation({
         return { remaining: sessions.length === SESSION_RECOVERY_BATCH_SIZE };
     },
 });
-// Enough for any real account; the check only needs to see the user's own organizations.
-const ORGANIZATION_NAME_CHECK_LIMIT = 200;
-
 function normalizeOrganizationName(name: string) {
     return name.trim().toLocaleLowerCase();
 }
@@ -325,11 +322,9 @@ export const userHasOrganizationNamed = internalQuery({
             return false;
         }
         const wanted = normalizeOrganizationName(args.name);
-        const memberships = await ctx.db
+        for await (const membership of ctx.db
             .query('member')
-            .withIndex('userId', q => q.eq('userId', userId))
-            .take(ORGANIZATION_NAME_CHECK_LIMIT);
-        for (const membership of memberships) {
+            .withIndex('userId', q => q.eq('userId', userId))) {
             if (membership.organizationId === args.excludeOrganizationId) {
                 continue;
             }

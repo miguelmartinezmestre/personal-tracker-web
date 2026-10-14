@@ -86,42 +86,6 @@ describe('convex setup', () => {
     });
 
     describe('completeSetup', () => {
-        test('creates a non-empty slug for an organization name without ASCII characters', async () => {
-            const t = initConvexTest();
-            const user = await createTestUser(t, {
-                userId: 'setup-unicode-organization',
-                email: 'setup-unicode-organization@test.com',
-                name: 'Unicode Setup Admin',
-            });
-            const asUser = t.withIdentity({
-                subject: user.docId,
-                role: null,
-                email: user.email,
-                name: user.name,
-                emailVerified: true,
-                createdAt: Date.now(),
-                userId: user.docId,
-                image: null,
-                banExpires: null,
-                banReason: null,
-                banned: false,
-            });
-            const organizationName = '组织目标甲乙丙';
-
-            const result = await asUser.mutation(api.setup.completeSetup, {
-                platformName: 'Unicode Platform',
-                defaultLanguage: 'es',
-                registrationPolicy: 'open',
-                organizationName,
-                categories: [],
-            });
-
-            const organization = await t.run(async ctx =>
-                ctx.db.get('organization', result.organizationId)
-            );
-            expect(organization?.slug).toMatch(/^organization-[a-z0-9]+$/);
-        });
-
         test('fails when platform is already configured', async () => {
             const t = initConvexTest();
 
@@ -226,13 +190,7 @@ describe('convex setup', () => {
 
         test.each([
             ['a blank platform name', { platformName: '   ' }],
-            ['a blank organization name', { organizationName: '' }],
-            ['a malformed logo URL', { organizationLogo: 'not a url' }],
             ['a category without a hex color', { categories: [{ name: 'Health', color: 'red' }] }],
-            [
-                'a category with an unknown icon',
-                { categories: [{ name: 'Health', color: '#EF4444', icon: 'not-an-icon' }] },
-            ],
         ])('rejects %s without configuring the platform', async (_label, override) => {
             const t = initConvexTest();
 

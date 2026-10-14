@@ -8,6 +8,7 @@ import {
     createTestUser,
     type TestUserData,
 } from './test.helpers';
+import { identityFor } from './test.identities';
 
 describe('dashboard stats', () => {
     const t = initConvexTest();
@@ -15,19 +16,7 @@ describe('dashboard stats', () => {
     let organizationId: Id<'organization'>;
 
     function asUser(user: TestUserData) {
-        return t.withIdentity({
-            subject: user.docId,
-            role: user.role ?? 'user',
-            email: user.email,
-            name: user.name,
-            emailVerified: false,
-            createdAt: Date.now(),
-            userId: user.docId,
-            image: 'https://example.com/image.png',
-            banExpires: null,
-            banReason: null,
-            banned: false,
-        });
+        return t.withIdentity(identityFor(user));
     }
 
     async function createCategory(name: string, color: string) {
@@ -66,7 +55,6 @@ describe('dashboard stats', () => {
             completed: 0,
             averageProgress: 0,
             categories: [],
-            truncated: false,
         });
     });
 
@@ -115,7 +103,6 @@ describe('dashboard stats', () => {
             active: 3,
             completed: 1,
             averageProgress: 38,
-            truncated: false,
         });
         expect(stats.categories).toEqual([
             {
@@ -145,6 +132,37 @@ describe('dashboard stats', () => {
         ]);
     });
 
+    test('listCategories only offers a next page when this organization has one', async () => {
+        await createCategory('Health', '#EF4444');
+        await createCategory('Career', '#3B82F6');
+        const otherOrganizationId = await createTestOrganization(t, {
+            name: `Other categories ${Math.random().toString(36).slice(2, 10)}`,
+            slug: `other-categories-${Math.random().toString(36).slice(2, 10)}`,
+        });
+        const now = Date.now();
+        await t.run(ctx =>
+            ctx.db.insert('categories', {
+                organizationId: otherOrganizationId,
+                name: 'Elsewhere',
+                color: '#000000',
+                createdAt: now,
+                updatedAt: now,
+            })
+        );
+
+        const full = await asUser(owner).query(api.categories.listCategories, {
+            paginationOpts: { numItems: 2, cursor: null },
+        });
+        expect(full.page.map(category => category.name)).toEqual(['Health', 'Career']);
+        expect(full.isDone).toBe(true);
+
+        await createCategory('Finance', '#22C55E');
+        const again = await asUser(owner).query(api.categories.listCategories, {
+            paginationOpts: { numItems: 2, cursor: null },
+        });
+        expect(again.isDone).toBe(false);
+    });
+
     test('does not count objectives from another organization', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const outsider = await createTestUser(t, {
@@ -170,5 +188,23 @@ describe('dashboard stats', () => {
 
         const stats = await asUser(outsider).query(api.dashboard.getDashboardStats, {});
         expect(stats.total).toBe(0);
+    });
+
+    test('keeps stats in sync when an objective is deleted', async () => {
+        const ownerIdentity = asUser(owner);
+        await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Kept',
+            startValue: 0,
+            targetValue: 10,
+        });
+        const removed = await ownerIdentity.mutation(api.objectives.createObjective, {
+            title: 'Removed',
+            startValue: 0,
+            targetValue: 10,
+        });
+        await ownerIdentity.mutation(api.objectives.deleteObjective, { id: removed });
+        await expect(
+            ownerIdentity.query(api.dashboard.getDashboardStats, {})
+        ).resolves.toMatchObject({ total: 1, active: 1, completed: 0, averageProgress: 0 });
     });
 });

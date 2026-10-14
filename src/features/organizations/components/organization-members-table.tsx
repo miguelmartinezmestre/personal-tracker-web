@@ -1,7 +1,6 @@
 'use client';
 
 import type { Id } from '@/convex/_generated/dataModel';
-import { requiredRouteParam } from '@/features/lib/route-param';
 
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -15,7 +14,7 @@ import OrganizationMemberEditFormModal from '@/features/organizations/components
 import { useLocale, useTranslations } from 'next-intl';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
 import { toast } from 'sonner';
-import { useServerPagination } from '@/components/data-table/hooks/use-server-pagination';
+import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 import {
     isOrganizationAdminRole,
@@ -42,18 +41,10 @@ export default function OrganizationMembersTable({
     const currentUserId = session.data?.user?.id;
     const canManageMembers = isOrganizationAdminRole(actorRole);
     const canManageOwners = isOrganizationOwnerRole(actorRole);
-    const { paginationOpts, nextPage, previousPage, hasPreviousPage } = useServerPagination();
-    const organizationTableId = requiredRouteParam(organizationId) as Id<'organization'>;
-    const membersQuery = useQuery(
-        convexQuery(api.organizations.getOrganizationMembers, {
-            organizationId: organizationTableId,
-            paginationOpts,
-        })
-    );
-    const continueCursor = membersQuery.data?.continueCursor ?? null;
-    const pageIsDone = membersQuery.data?.isDone ?? false;
-    const hasNextPage = Boolean(continueCursor) && !pageIsDone;
-    const members: OrganizationMember[] = (membersQuery.data?.page ?? []).map(
+    const membersQuery = usePaginatedList(api.organizations.getOrganizationMembers, {
+        organizationId: organizationId as Id<'organization'>,
+    });
+    const members: OrganizationMember[] = membersQuery.data.map(
         (member: OrganizationMemberRaw) => ({
             id: member.id,
             organizationId: member.organizationId,
@@ -144,11 +135,6 @@ export default function OrganizationMembersTable({
     return (
         <div data-testid="organization-members-table">
             <DataTable
-                isError={membersQuery.isError}
-                error={membersQuery.error}
-                onRetry={() => {
-                    void membersQuery.refetch();
-                }}
                 // Members cannot edit or remove anyone, so those columns would always be empty.
                 columns={
                     canManageMembers
@@ -157,13 +143,7 @@ export default function OrganizationMembersTable({
                 }
                 data={members}
                 isLoading={membersQuery.isLoading}
-                pagination={{
-                    onNextPage: () => nextPage(continueCursor, pageIsDone),
-                    onPreviousPage: previousPage,
-                    hasNextPage,
-                    hasPreviousPage,
-                    isLoading: membersQuery.isFetching,
-                }}
+                pagination={membersQuery}
             />
         </div>
     );

@@ -155,5 +155,6 @@ export default defineSchema({
         .index('role', ['role'])
         .index('status', ['status'])
         .index('inviterId', ['inviterId'])
-        .index('by_email_status_expiresAt', ['email', 'status', 'expiresAt']),
+        .index('by_email_status_expiresAt', ['email', 'status', 'expiresAt'])
+        .index('by_organizationId_status_expiresAt', ['organizationId', 'status', 'expiresAt']),
 });

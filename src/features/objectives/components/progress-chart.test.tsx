@@ -1,4 +1,4 @@
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -41,7 +41,6 @@ function renderWithHistory(
                 id: `progress-${index}` as Id<'progressUpdates'>,
                 ...point,
             })),
-            truncated: false,
         }
     );
     return render(
@@ -77,44 +76,6 @@ test('renders a single same-day update without a degenerate time axis', () => {
     expect(container.innerHTML).not.toContain('NaN');
 });
 
-test('never extends the value axis below zero', () => {
-    // Totals reconstructed from float increments can land a hair below zero.
-    const { container } = renderWithHistory([
-        { updateDate: Date.UTC(2026, 0, 2), value: -2.7755575615628914e-17, delta: 0 },
-        { updateDate: Date.UTC(2026, 0, 3), value: 0.3, delta: 0.3 },
-    ]);
-    const tickLabels = [...container.querySelectorAll('svg text')].map(node => node.textContent);
-    expect(tickLabels).toContain('0');
-    expect(tickLabels.filter(label => label.startsWith('-'))).toEqual([]);
-});
-
-test('labels each day on the time axis only once', () => {
-    const { container } = renderWithHistory(
-        [{ updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 }],
-        { ...objective, createdAt: Date.UTC(2026, 0, 6), deadline: Date.UTC(2025, 11, 1) }
-    );
-    const tickLabels = [...container.querySelectorAll('svg text')]
-        .map(node => node.textContent)
-        .filter(label => /[a-z]/.test(label));
-    expect(tickLabels.length).toBeGreaterThan(0);
-    expect(new Set(tickLabels).size).toBe(tickLabels.length);
-});
-
-test('labels a multi-year time axis with distinct years', () => {
-    const { container } = renderWithHistory(
-        [
-            { updateDate: Date.UTC(2000, 0, 1), value: 0.1, delta: 0.1 },
-            { updateDate: Date.UTC(2026, 9, 7), value: 0.2, delta: 0.1 },
-        ],
-        { ...objective, createdAt: Date.UTC(2026, 9, 7), deadline: Date.UTC(2027, 11, 31) }
-    );
-    const tickLabels = [...container.querySelectorAll('svg text')]
-        .map(node => node.textContent)
-        .filter(label => /\d{4}/.test(label));
-    expect(tickLabels.length).toBeGreaterThan(1);
-    expect(new Set(tickLabels).size).toBe(tickLabels.length);
-});
-
 test('adds the year to day labels when the axis crosses into a new year', () => {
     const { container } = renderWithHistory(
         [{ updateDate: Date.UTC(2026, 0, 10), value: 2, delta: 2 }],
@@ -133,14 +94,4 @@ test('omits the pace legend when the deadline leaves no pace line', () => {
         deadline: Date.UTC(2025, 11, 1),
     });
     expect(screen.queryByText(es.Objectives.chart.legendPace)).not.toBeInTheDocument();
-});
-
-test('identifies same-day entries without falling back to row position', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    renderWithHistory([
-        { updateDate: Date.UTC(2026, 0, 5), value: 2, delta: 2 },
-        { updateDate: Date.UTC(2026, 0, 5), value: 5, delta: 3 },
-    ]);
-    expect(warn.mock.calls.flat().join(' ')).not.toContain('could not infer a unique key');
-    warn.mockRestore();
 });

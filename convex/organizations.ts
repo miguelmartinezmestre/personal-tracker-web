@@ -1,17 +1,21 @@
-import { paginationResultValidator } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
-import { paginationOptsValidator } from 'convex/server';
-import { query } from './_generated/server';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
+import { query, type DatabaseReader } from './_generated/server';
+import type { Doc, Id } from './_generated/dataModel';
 import { getSession } from 'kitcn/auth';
 import { ERROR_CODES } from './constants';
 import { resolveActiveMembership } from './rls/authContext';
-import { isPersonalOrganizationForUser } from './personalOrganization';
+import {
+    buildDefaultOrganizationSlug,
+    isPersonalOrganizationForUser,
+} from './personalOrganization';
 import { queryWithRLS } from './rls/wrappers';
+import { withNextPageCheck } from './pagination';
 import {
     isActiveAccount,
     isOrganizationAdminRole,
     ORGANIZATION_ROLE,
-    withInvalidCursorRetry,
+    withPaginationLimits,
     type OrganizationRole,
 } from './utils';
 import { z } from 'zod';
@@ -184,45 +188,93 @@ export const getCurrentSession = query({
     },
 });
 
-// shortcut: users belong to a handful of organizations and invitations, so both lists are read
-// whole up to this cap; switch to index pagination if real accounts approach it.
-const USER_LIST_LIMIT = 200;
+async function toOrganizationSummaries(
+    ctx: { dbForIntegrityChecks: DatabaseReader; userId: Id<'user'> },
+    memberships: Doc<'member'>[]
+) {
+    const organizations = await Promise.all(
+        memberships.map(async member => {
+            // An organization being deleted loses its row before its memberships.
+            const org = await ctx.dbForIntegrityChecks.get('organization', member.organizationId);
+            if (!org) {
+                return null;
+            }
+            return {
+                id: org._id,
+                name: org.name,
+                slug: org.slug,
+                description: getOrganizationDescription(org.metadata),
+                logo: org.logo,
+                createdAt: org.createdAt,
+                role: normalizeOrganizationRole(member.role),
+                isPersonal: isPersonalOrganizationForUser({
+                    metadata: org.metadata,
+                    userId: ctx.userId,
+                }),
+            };
+        })
+    );
+    return organizations.filter(organization => organization !== null);
+}
 
-export const getOrganizations = queryWithRLS({
+/** The caller's personal organization, which leaving the active organization falls back to. */
+export const getPersonalOrganizationId = queryWithRLS({
     args: {},
-    returns: v.array(organizationSummaryValidator),
+    returns: v.union(v.id('organization'), v.null()),
     handler: async ctx => {
-        const memberships = await ctx.dbForIntegrityChecks
+        // Usually found by its slug; a slug collision at creation gave it a suffixed one instead.
+        const bySlug = await ctx.dbForIntegrityChecks
+            .query('organization')
+            .withIndex('slug', q => q.eq('slug', buildDefaultOrganizationSlug(ctx.userId)))
+            .first();
+        if (
+            bySlug &&
+            isPersonalOrganizationForUser({ metadata: bySlug.metadata, userId: ctx.userId })
+        ) {
+            return bySlug._id;
+        }
+        for await (const membership of ctx.dbForIntegrityChecks
+            .query('member')
+            .withIndex('userId', q => q.eq('userId', ctx.userId))) {
+            const organization = await ctx.dbForIntegrityChecks.get(
+                'organization',
+                membership.organizationId
+            );
+            if (
+                organization &&
+                isPersonalOrganizationForUser({
+                    metadata: organization.metadata,
+                    userId: ctx.userId,
+                })
+            ) {
+                return organization._id;
+            }
+        }
+        return null;
+    },
+});
+
+export const listOrganizations = queryWithRLS({
+    args: { paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(organizationSummaryValidator),
+    handler: async (ctx, args) => {
+        const result = await ctx.dbForIntegrityChecks
             .query('member')
             .withIndex('userId', q => q.eq('userId', ctx.userId))
             .order('desc')
-            .take(USER_LIST_LIMIT);
-        const organizations = await Promise.all(
-            memberships.map(async member => {
-                // An organization being deleted loses its row before its memberships.
-                const org = await ctx.dbForIntegrityChecks.get(
-                    'organization',
-                    member.organizationId
-                );
-                if (!org) {
-                    return null;
-                }
-                return {
-                    id: org._id,
-                    name: org.name,
-                    slug: org.slug,
-                    description: getOrganizationDescription(org.metadata),
-                    logo: org.logo,
-                    createdAt: org.createdAt,
-                    role: normalizeOrganizationRole(member.role),
-                    isPersonal: isPersonalOrganizationForUser({
-                        metadata: org.metadata,
-                        userId: ctx.userId,
-                    }),
-                };
-            })
+            .paginate(withPaginationLimits(args.paginationOpts));
+        return await withNextPageCheck(
+            ctx.dbForIntegrityChecks,
+            {
+                table: 'member',
+                index: 'userId',
+                prefix: [ctx.userId],
+                indexKey: doc => [doc.userId],
+                paginationOpts: args.paginationOpts,
+            },
+            result,
+            await toOrganizationSummaries(ctx, result.page)
         );
-        return organizations.filter(organization => organization !== null);
     },
 });
 
@@ -270,22 +322,25 @@ export const getOrganizationByIdentifier = queryWithRLS({
 });
 
 export const getUserInvitations = queryWithRLS({
-    args: {},
-    returns: v.array(userInvitationValidator),
-    handler: async ctx => {
+    args: { paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(userInvitationValidator),
+    handler: async (ctx, args) => {
         const email = ctx.email;
         if (!email) {
-            return [];
+            return { page: [], isDone: true, continueCursor: '' };
         }
-        const invitations = await ctx.dbForIntegrityChecks
+        const result = await ctx.dbForIntegrityChecks
             .query('invitation')
+            // Date.now() stays out of the index range: a moving bound invalidates the cursor.
             .withIndex('by_email_status_expiresAt', q =>
-                q.eq('email', email).eq('status', 'pending').gt('expiresAt', Date.now())
+                q.eq('email', email).eq('status', 'pending')
             )
             .order('desc')
-            .take(USER_LIST_LIMIT);
+            .paginate(withPaginationLimits(args.paginationOpts));
+        const now = Date.now();
+        const live = result.page.filter(invitation => invitation.expiresAt > now);
         const page = await Promise.all(
-            invitations.map(async invitation => {
+            live.map(async invitation => {
                 const [organization, inviter] = await Promise.all([
                     ctx.dbForIntegrityChecks.get('organization', invitation.organizationId),
                     ctx.dbForIntegrityChecks.get('user', invitation.inviterId),
@@ -303,7 +358,20 @@ export const getUserInvitations = queryWithRLS({
                 };
             })
         );
-        return page.filter(invitation => invitation !== null);
+        return await withNextPageCheck(
+            ctx.dbForIntegrityChecks,
+            {
+                table: 'invitation',
+                index: 'by_email_status_expiresAt',
+                prefix: [email, 'pending'],
+                indexKey: doc => [doc.email, doc.status, doc.expiresAt],
+                paginationOpts: args.paginationOpts,
+                isLive: doc => doc.expiresAt > now,
+            },
+            // Newest expiry first, so once one has expired every later one has too.
+            { ...result, isDone: result.isDone || live.length < result.page.length },
+            page.filter(invitation => invitation !== null)
+        );
     },
 });
 
@@ -325,13 +393,11 @@ export const getOrganizationMembers = queryWithRLS({
             throw new ConvexError(ERROR_CODES.FORBIDDEN);
         }
 
-        const paginatedMembers = await withInvalidCursorRetry(args.paginationOpts, paginationOpts =>
-            ctx.db
-                .query('member')
-                .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
-                .order('desc')
-                .paginate(paginationOpts)
-        );
+        const paginatedMembers = await ctx.db
+            .query('member')
+            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
+            .order('desc')
+            .paginate(withPaginationLimits(args.paginationOpts));
 
         const userIds = [...new Set(paginatedMembers.page.map(member => member.userId))];
         const users = await Promise.all(
@@ -362,19 +428,24 @@ export const getOrganizationMembers = queryWithRLS({
             };
         });
 
-        return {
-            ...paginatedMembers,
-            page: enrichedPage,
-        };
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'member',
+                index: 'organizationId',
+                prefix: [args.organizationId],
+                indexKey: doc => [doc.organizationId],
+                paginationOpts: args.paginationOpts,
+            },
+            paginatedMembers,
+            enrichedPage
+        );
     },
 });
 
-// Admins see every pending invitation at once; organizations rarely have more than a handful.
-const PENDING_INVITATIONS_LIMIT = 100;
-
 export const getOrganizationPendingInvitations = queryWithRLS({
-    args: { organizationId: v.id('organization') },
-    returns: v.array(
+    args: { organizationId: v.id('organization'), paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(
         v.object({
             id: v.id('invitation'),
             email: v.string(),
@@ -390,21 +461,36 @@ export const getOrganizationPendingInvitations = queryWithRLS({
             )
             .first();
         if (!membership || !isOrganizationAdminRole(membership.role)) {
-            return [];
+            return { page: [], isDone: true, continueCursor: '' };
         }
-        const now = Date.now();
-        const invitations = await ctx.db
+        const result = await ctx.db
             .query('invitation')
-            .withIndex('organizationId', q => q.eq('organizationId', args.organizationId))
+            // Date.now() stays out of the index range: a moving bound invalidates the cursor.
+            .withIndex('by_organizationId_status_expiresAt', q =>
+                q.eq('organizationId', args.organizationId).eq('status', 'pending')
+            )
             .order('desc')
-            .take(PENDING_INVITATIONS_LIMIT);
-        return invitations
-            .filter(invitation => invitation.status === 'pending' && invitation.expiresAt > now)
-            .map(invitation => ({
+            .paginate(withPaginationLimits(args.paginationOpts));
+        const now = Date.now();
+        const live = result.page.filter(invitation => invitation.expiresAt > now);
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'invitation',
+                index: 'by_organizationId_status_expiresAt',
+                prefix: [args.organizationId, 'pending'],
+                indexKey: doc => [doc.organizationId, doc.status, doc.expiresAt],
+                paginationOpts: args.paginationOpts,
+                isLive: doc => doc.expiresAt > now,
+            },
+            // Newest expiry first, so once one has expired every later one has too.
+            { ...result, isDone: result.isDone || live.length < result.page.length },
+            live.map(invitation => ({
                 id: invitation._id,
                 email: invitation.email,
                 role: invitation.role || 'member',
                 expiresAt: invitation.expiresAt,
-            }));
+            }))
+        );
     },
 });

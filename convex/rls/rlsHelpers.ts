@@ -151,18 +151,23 @@ export function createRlsHelpers(args: CreateRlsRulesArgs): RlsHelpers {
             return [];
         }
         if (!pendingInvitationsForEmailPromise) {
-            pendingInvitationsForEmailPromise = ctx.db
-                .query('invitation')
-                .withIndex('by_email_status_expiresAt', q =>
-                    q.eq('email', email).eq('status', 'pending').gt('expiresAt', authorizationNow)
-                )
-                .take(1000)
-                .then(invitations =>
-                    invitations.map(invitation => ({
+            pendingInvitationsForEmailPromise = (async () => {
+                const invitations = [];
+                for await (const invitation of ctx.db
+                    .query('invitation')
+                    .withIndex('by_email_status_expiresAt', q =>
+                        q
+                            .eq('email', email)
+                            .eq('status', 'pending')
+                            .gt('expiresAt', authorizationNow)
+                    )) {
+                    invitations.push({
                         organizationId: invitation.organizationId,
                         inviterId: invitation.inviterId,
-                    }))
-                );
+                    });
+                }
+                return invitations;
+            })();
         }
 
         return await pendingInvitationsForEmailPromise;

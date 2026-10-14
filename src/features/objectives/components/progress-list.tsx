@@ -2,9 +2,11 @@
 
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import FormModal from '@/components/forms/form-modal';
 import { DeleteConfirmationDialog } from '@/components/data-table/components/delete-confirmation-dialog';
+import { DataTable } from '@/components/data-table/components/table';
+import type { DataTableFeatures } from '@/components/data-table/data-table-features';
+import type { ColumnDef } from '@tanstack/react-table';
 import { dateInputToUtcTimestamp, timestampToDateInput } from '@/features/objectives/lib/dates';
 import { formatObjectiveDate, formatObjectiveValue } from '@/features/objectives/lib/format';
 import { useProgress, type ProgressEntry } from '@/features/objectives/hooks/use-progress';
@@ -24,103 +26,107 @@ export default function ProgressList({
     unit?: string | undefined;
 }) {
     const t = useTranslations('UpdateProgress');
-    const common = useTranslations('Common');
     const locale = useLocale();
     const progress = useProgress(objectiveId);
     const deleteProgress = useMutation({
         meta: { handlesErrorsLocally: true },
         mutationFn: useConvexMutation(api.objectives.deleteProgress),
     });
-    let emptyState = null;
-    if (progress.isLoading) {
-        emptyState = (
-            <div className="space-y-2" data-testid="progress-list-loading">
-                <Skeleton className="h-14 w-full" />
-                <Skeleton className="h-14 w-full" />
-                <Skeleton className="h-14 w-full" />
-            </div>
-        );
-    } else if (progress.data.length === 0) {
-        emptyState = <p className="text-muted-foreground text-sm">{t('empty')}</p>;
-    }
-    let loadMoreButton = null;
-    if (progress.hasMore) {
-        loadMoreButton = (
-            <Button variant="outline" disabled={progress.isFetching} onClick={progress.loadMore}>
-                {common('actions.loadMore')}
-            </Button>
-        );
-    }
+    const formatAmount = (entry: ProgressEntry) =>
+        `+${formatObjectiveValue(entry.updatedValue, locale)}${unit ? ` ${unit}` : ''}`;
+
+    const columns: ColumnDef<DataTableFeatures, ProgressEntry>[] = [
+        {
+            id: 'amount',
+            header: t('table.columns.amount'),
+            cell: ({ row }) => (
+                <span className="font-medium" data-testid="progress-entry-value">
+                    {formatAmount(row.original)}
+                </span>
+            ),
+        },
+        {
+            id: 'date',
+            header: t('table.columns.date'),
+            cell: ({ row }) => (
+                <>
+                    {formatObjectiveDate(row.original.updateDate, locale)}
+                    {/* The comment column is hidden on narrow screens, so show it here instead. */}
+                    {row.original.comment ? (
+                        <span className="text-muted-foreground block max-w-48 whitespace-normal wrap-anywhere sm:hidden">
+                            {row.original.comment}
+                        </span>
+                    ) : null}
+                </>
+            ),
+        },
+        {
+            id: 'comment',
+            header: t('table.columns.comment'),
+            cell: ({ row }) => (
+                <span className="text-muted-foreground whitespace-pre-line wrap-anywhere">
+                    {row.original.comment}
+                </span>
+            ),
+        },
+        {
+            id: 'actions',
+            header: () => <span className="sr-only">{t('table.columns.edit')}</span>,
+            cell: ({ row }) => {
+                const entry = row.original;
+                if (!entry.canEdit) {
+                    return null;
+                }
+                // Every row has the same buttons, so screen readers need to know which entry.
+                const entryLabel = `${formatAmount(entry)} · ${formatObjectiveDate(entry.updateDate, locale)}`;
+                return (
+                    <div className="flex justify-end gap-2">
+                        <EditProgressModal
+                            entry={entry}
+                            unit={unit}
+                            triggerLabel={t('aria.editEntry', { entry: entryLabel })}
+                        />
+                        <DeleteConfirmationDialog
+                            title={t('confirm.deleteTitle')}
+                            description={t('confirm.deleteDescription')}
+                            confirmLabel={t('confirm.deleteConfirm')}
+                            cancelLabel={t('confirm.cancel')}
+                            isLoading={deleteProgress.isPending}
+                            trigger={
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    aria-label={t('aria.deleteEntry', { entry: entryLabel })}
+                                    data-testid="progress-delete-button"
+                                >
+                                    {t('table.columns.delete')}
+                                </Button>
+                            }
+                            onConfirm={async () => {
+                                try {
+                                    await deleteProgress.mutateAsync({ id: entry.id });
+                                    toast.success(t('toast.deletedSuccess'));
+                                } catch {
+                                    toast.error(t('toast.deleteFailed'));
+                                }
+                            }}
+                        />
+                    </div>
+                );
+            },
+        },
+    ];
 
     return (
-        <div className="space-y-3" data-testid="progress-list">
-            {emptyState}
-            <ul className="divide-y rounded-md border empty:hidden">
-                {progress.data.map(entry => {
-                    // Every row has the same buttons, so screen readers need to know which entry.
-                    const entryLabel = `+${formatObjectiveValue(entry.updatedValue, locale)}${
-                        unit ? ` ${unit}` : ''
-                    } · ${formatObjectiveDate(entry.updateDate, locale)}`;
-                    let editActions = null;
-                    if (entry.canEdit) {
-                        editActions = (
-                            <div className="flex gap-2">
-                                <EditProgressModal
-                                    entry={entry}
-                                    unit={unit}
-                                    triggerLabel={t('aria.editEntry', { entry: entryLabel })}
-                                />
-                                <DeleteConfirmationDialog
-                                    title={t('confirm.deleteTitle')}
-                                    description={t('confirm.deleteDescription')}
-                                    confirmLabel={t('confirm.deleteConfirm')}
-                                    cancelLabel={t('confirm.cancel')}
-                                    isLoading={deleteProgress.isPending}
-                                    trigger={
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            aria-label={t('aria.deleteEntry', {
-                                                entry: entryLabel,
-                                            })}
-                                            data-testid="progress-delete-button"
-                                        >
-                                            {t('table.columns.delete')}
-                                        </Button>
-                                    }
-                                    onConfirm={async () => {
-                                        try {
-                                            await deleteProgress.mutateAsync({ id: entry.id });
-                                            toast.success(t('toast.deletedSuccess'));
-                                        } catch {
-                                            toast.error(t('toast.deleteFailed'));
-                                        }
-                                    }}
-                                />
-                            </div>
-                        );
-                    }
-                    return (
-                        <li
-                            key={entry.id}
-                            className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                            <div className="min-w-0">
-                                <p className="font-medium" data-testid="progress-entry-value">
-                                    +{formatObjectiveValue(entry.updatedValue, locale)}
-                                    {unit ? ` ${unit}` : ''}
-                                </p>
-                                <p className="text-muted-foreground text-sm whitespace-pre-line wrap-anywhere">
-                                    {formatObjectiveDate(entry.updateDate, locale)}
-                                    {entry.comment ? ` · ${entry.comment}` : ''}
-                                </p>
-                            </div>
-                            {editActions}
-                        </li>
-                    );
-                })}
-            </ul>
-            {loadMoreButton}
+        <div data-testid="progress-list">
+            <DataTable
+                columns={columns}
+                data={progress.data}
+                columnClassNames={{ comment: 'hidden sm:table-cell' }}
+                isLoading={progress.isLoading}
+                pagination={progress}
+                emptyMessage={t('empty')}
+            />
         </div>
     );
 }

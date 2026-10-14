@@ -23,7 +23,7 @@ function DashboardStats() {
         );
     }
     if (stats.isError) {
-        return <QueryErrorFallback error={stats.error} onRetry={() => void stats.refetch()} />;
+        return <QueryErrorFallback onRetry={() => void stats.refetch()} />;
     }
     if (stats.data.total === 0) {
         return (
@@ -36,7 +36,7 @@ function DashboardStats() {
         );
     }
 
-    const { total, active, completed, averageProgress, categories, truncated } = stats.data;
+    const { total, active, completed, averageProgress, categories } = stats.data;
     return (
         <div className="space-y-2" data-testid="dashboard-stats">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
@@ -76,7 +76,6 @@ function DashboardStats() {
                     </CardContent>
                 </Card>
             </div>
-            {truncated ? <p className="text-muted-foreground text-xs">{t('partialData')}</p> : null}
         </div>
     );
 }
@@ -84,10 +83,10 @@ function DashboardStats() {
 export default function Home() {
     const t = useTranslations('DashboardHome');
     const userQuery = useQuery(convexQuery(api.auth.getCurrentUser, {}));
-    const { data: user, isError, error, refetch } = userQuery;
+    const { data: user, isError, refetch } = userQuery;
 
     if (isError) {
-        return <QueryErrorFallback error={error} onRetry={() => void refetch()} />;
+        return <QueryErrorFallback onRetry={() => void refetch()} />;
     }
 
     return (

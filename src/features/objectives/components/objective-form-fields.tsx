@@ -12,8 +12,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { TanStackFormApi } from '@/components/forms/form-types';
 import { getFieldErrors } from '@/components/forms/form-utils';
-import { useQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 import { useCategoryLabel } from '@/features/categories/hooks/use-category-label';
 import {
@@ -28,22 +29,30 @@ import { useTranslations } from 'next-intl';
 export function ObjectiveFormFields({
     form,
     keptDeadline = '',
+    currentCategory,
 }: {
     form: TanStackFormApi<ObjectiveFormValues>;
     keptDeadline?: string;
+    // The objective's own category, which may not be on the pages loaded so far.
+    currentCategory?: { id: string; name: string };
 }) {
     const t = useTranslations('Objectives');
+    const common = useTranslations('Common');
     // The picker offers today onwards, or the deadline an overdue objective already keeps.
     const today = todayDateInput();
     const minDeadline = keptDeadline && keptDeadline < today ? keptDeadline : today;
-    const categories = useQuery(convexQuery(api.categories.listCategories, {}));
+    const categories = usePaginatedList(api.categories.listCategories, {});
     const categoryLabel = useCategoryLabel();
+    const loaded = categories.data.map(category => ({
+        id: category.id as string,
+        name: category.name,
+    }));
+    if (currentCategory && !loaded.some(category => category.id === currentCategory.id)) {
+        loaded.push(currentCategory);
+    }
     const categoryOptions = [
         { value: NONE_CATEGORY, label: t('noCategory') },
-        ...(categories.data ?? []).map(category => ({
-            value: category.id,
-            label: categoryLabel(category.name),
-        })),
+        ...loaded.map(category => ({ value: category.id, label: categoryLabel(category.name) })),
     ];
 
     return (
@@ -107,6 +116,20 @@ export function ObjectiveFormFields({
                                             {option.label}
                                         </SelectItem>
                                     ))}
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full"
+                                        disabled={!categories.canLoadMore || categories.isFetching}
+                                        onClick={categories.loadMore}
+                                        data-testid="objective-category-load-more"
+                                    >
+                                        {categories.isFetching && (
+                                            <Loader2 className="animate-spin" aria-hidden />
+                                        )}
+                                        {common('actions.loadMore')}
+                                    </Button>
                                 </SelectContent>
                             </Select>
                             {isInvalid ? <FieldError errors={errors} /> : null}

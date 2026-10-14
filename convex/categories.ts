@@ -1,13 +1,15 @@
 import { ConvexError, v } from 'convex/values';
-import { paginationOptsValidator } from 'convex/server';
+import { paginationOptsValidator, paginationResultValidator } from 'convex/server';
 import type { Id } from './_generated/dataModel';
 import { internalMutation, type MutationCtx } from './_generated/server';
 import { queryWithRLS } from './rls/wrappers';
+import { withNextPageCheck } from './pagination';
+import { withPaginationLimits } from './utils';
 import { DEFAULT_CATEGORIES, ERROR_CODES } from './constants';
 
 export const listCategories = queryWithRLS({
-    args: {},
-    returns: v.array(
+    args: { paginationOpts: paginationOptsValidator },
+    returns: paginationResultValidator(
         v.object({
             id: v.id('categories'),
             name: v.string(),
@@ -15,21 +17,33 @@ export const listCategories = queryWithRLS({
             icon: v.optional(v.string()),
         })
     ),
-    handler: async ctx => {
+    handler: async (ctx, args) => {
         const organizationId = ctx.organizationId;
         if (!organizationId) {
             throw new ConvexError(ERROR_CODES.NO_ACTIVE_ORG);
         }
-        const categories = await ctx.db
+        const result = await ctx.db
             .query('categories')
             .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-            .take(100);
-        return categories.map(category => ({
-            id: category._id,
-            name: category.name,
-            color: category.color,
-            ...(category.icon !== undefined ? { icon: category.icon } : {}),
-        }));
+            .paginate(withPaginationLimits(args.paginationOpts));
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'categories',
+                index: 'by_organization',
+                prefix: [organizationId],
+                indexKey: doc => [doc.organizationId],
+                paginationOpts: args.paginationOpts,
+                order: 'asc',
+            },
+            result,
+            result.page.map(category => ({
+                id: category._id,
+                name: category.name,
+                color: category.color,
+                ...(category.icon !== undefined ? { icon: category.icon } : {}),
+            }))
+        );
     },
 });
 
@@ -70,34 +84,5 @@ export const seedDefaultCategories = internalMutation({
         }
         await insertDefaultCategories(ctx, organizationId);
         return null;
-    },
-});
-
-/**
- * One-off backfill for organizations created before categories were seeded on creation. Run it
- * page by page (`npx convex run categories:backfillDefaultCategories '{"paginationOpts":
- * {"numItems": 50, "cursor": null}}'`) until `isDone` is true.
- */
-export const backfillDefaultCategories = internalMutation({
-    args: { paginationOpts: paginationOptsValidator },
-    returns: v.object({
-        isDone: v.boolean(),
-        continueCursor: v.string(),
-        seeded: v.number(),
-    }),
-    handler: async (ctx, args) => {
-        const page = await ctx.db.query('organization').paginate(args.paginationOpts);
-        let seeded = 0;
-        for (const organization of page.page) {
-            const hadCategories = await ctx.db
-                .query('categories')
-                .withIndex('by_organization', q => q.eq('organizationId', organization._id))
-                .first();
-            if (!hadCategories) {
-                await insertDefaultCategories(ctx, organization._id);
-                seeded++;
-            }
-        }
-        return { isDone: page.isDone, continueCursor: page.continueCursor, seeded };
     },
 });

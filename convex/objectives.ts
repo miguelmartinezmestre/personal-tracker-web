@@ -2,7 +2,8 @@ import { paginationOptsValidator, paginationResultValidator } from 'convex/serve
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
-import { internalMutation, type MutationCtx, type QueryCtx } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
+import { internalMutation } from './objectiveStats';
 import { mutationWithRLS, queryWithRLS } from './rls/wrappers';
 import { ERROR_CODES } from './constants';
 import {
@@ -22,9 +23,9 @@ import {
     toProgressEntry,
 } from './objectiveRecords';
 import { withPaginationLimits } from './utils';
+import { withNextPageCheck } from './pagination';
 
 const OBJECTIVE_DELETION_BATCH_SIZE = 50;
-const PROGRESS_HISTORY_LIMIT = 200;
 // Progress dates are the UTC midnight of the user's local day, which can be up to UTC+14.
 const MAX_UTC_OFFSET_MS = 14 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -135,7 +136,6 @@ const progressHistoryValidator = v.object({
             comment: v.optional(v.string()),
         })
     ),
-    truncated: v.boolean(),
 });
 
 const objectiveListValidator = paginationResultValidator(objectiveSummaryValidator);
@@ -177,15 +177,31 @@ export const listObjectives = queryWithRLS({
                 }
             }
         }
-        return {
-            ...result,
-            page: result.page.map(objective => {
+        return await withNextPageCheck(
+            ctx.db,
+            status === 'all'
+                ? {
+                      table: 'objectives',
+                      index: 'by_organization_createdAt',
+                      prefix: [organizationId],
+                      indexKey: doc => [doc.organizationId, doc.createdAt],
+                      paginationOpts: args.paginationOpts,
+                  }
+                : {
+                      table: 'objectives',
+                      index: 'by_organization_status_createdAt',
+                      prefix: [organizationId, status],
+                      indexKey: doc => [doc.organizationId, doc.status, doc.createdAt],
+                      paginationOpts: args.paginationOpts,
+                  },
+            result,
+            result.page.map(objective => {
                 const categoryName = objective.categoryId
                     ? categoryNames.get(objective.categoryId)
                     : undefined;
                 return toObjectiveSummary(objective, categoryName, ctx);
-            }),
-        };
+            })
+        );
     },
 });
 
@@ -394,15 +410,23 @@ export const listProgress = queryWithRLS({
             .withIndex('by_objective_date', q => q.eq('objective', objective._id))
             .order('desc')
             .paginate(withPaginationLimits(args.paginationOpts));
-        return {
-            ...result,
-            page: result.page.map(entry =>
+        return await withNextPageCheck(
+            ctx.db,
+            {
+                table: 'progressUpdates',
+                index: 'by_objective_date',
+                prefix: [objective._id],
+                indexKey: doc => [doc.objective, doc.updateDate],
+                paginationOpts: args.paginationOpts,
+            },
+            result,
+            result.page.map(entry =>
                 toProgressEntry(
                     entry,
                     entry.createdBy === ctx.userId || canManageObjective(ctx, objective)
                 )
-            ),
-        };
+            )
+        );
     },
 });
 
@@ -416,16 +440,14 @@ export const getProgressHistory = queryWithRLS({
             args.objectiveId,
             organizationId
         );
-        const latest = await ctx.db
+        const newestFirst: Doc<'progressUpdates'>[] = [];
+        for await (const entry of ctx.db
             .query('progressUpdates')
             .withIndex('by_objective_date', q => q.eq('objective', objective._id))
-            .order('desc')
-            .take(PROGRESS_HISTORY_LIMIT + 1);
-        const truncated = latest.length > PROGRESS_HISTORY_LIMIT;
-        return {
-            points: progressHistoryPoints(objective, latest.slice(0, PROGRESS_HISTORY_LIMIT)),
-            truncated,
-        };
+            .order('desc')) {
+            newestFirst.push(entry);
+        }
+        return { points: progressHistoryPoints(objective, newestFirst) };
     },
 });
 

@@ -28,7 +28,7 @@ export default function OrganizationPendingInvitations({
 }) {
     const t = useTranslations('OrganizationMembers');
     const locale = useLocale();
-    const invitations = usePendingOrganizationInvitations(organizationId, true);
+    const invitations = usePendingOrganizationInvitations(organizationId);
     const cancelInvitation = useCancelInvitation();
     const formatDate = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' });
 
@@ -97,13 +97,9 @@ export default function OrganizationPendingInvitations({
             </h2>
             <DataTable
                 columns={columns}
-                data={invitations.data ?? []}
+                data={invitations.data}
                 isLoading={invitations.isLoading}
-                isError={invitations.isError}
-                error={invitations.error}
-                onRetry={() => {
-                    void invitations.refetch();
-                }}
+                pagination={invitations}
                 emptyMessage={t('pendingInvitations.empty')}
             />
         </section>

@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import '@/styles/globals.css';
 
 import { BetterConvexProvider } from '@/platform/convex/providers/convex-provider';
-import { ThemeProvider } from '@/platform/theme/theme';
+import { ThemeProvider } from 'next-themes';
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';

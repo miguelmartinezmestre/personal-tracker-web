@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { Goal, Home, Mail, Target, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -17,14 +17,11 @@ import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import type { api } from '@/convex/_generated/api';
-import type { FunctionReturnType } from 'convex/server';
 type ProjectNavItem = {
     name: string;
     url: Route;
     icon: LucideIcon;
 };
-type CurrentUser = NonNullable<FunctionReturnType<typeof api.auth.getCurrentUser>>;
 const baseProjects: ProjectNavItem[] = [
     {
         name: 'home',
@@ -47,7 +44,7 @@ const baseProjects: ProjectNavItem[] = [
         icon: Users,
     },
 ];
-export function AppSidebar({ initialUser: _initialUser }: { initialUser: CurrentUser }) {
+export function AppSidebar() {
     const t = useTranslations('Sidebar');
     const pathname = usePathname();
     const { isMobile, setOpenMobile } = useSidebar();

@@ -14,7 +14,7 @@ import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-    useOrganizations,
+    usePaginatedOrganizations,
     useOrganizationByIdentifier,
     type Organization,
 } from '@/features/organizations/hooks/use-organizations';
@@ -119,7 +119,7 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
     const t = useTranslations('OrganizationSwitcher');
     const common = useTranslations('Common');
     const router = useRouter();
-    const organizationsQuery = useOrganizations();
+    const organizationsQuery = usePaginatedOrganizations();
     const sessionQuery = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
     const [optimisticOrganizationId, setOptimisticOrganizationId] = useState<string | null>(null);
     const sessionActiveOrganizationId = sessionQuery.data?.session.activeOrganizationId ?? null;
@@ -127,8 +127,8 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
         optimisticOrganizationId ??
         (sessionQuery.data ? sessionActiveOrganizationId : initialActiveOrganizationId);
     const activeQuery = useOrganizationByIdentifier(activeOrganizationId ?? '');
-    const organizations = organizationsQuery.isError ? [] : (organizationsQuery.data ?? []);
-    const isLoadingData = organizationsQuery.isPending;
+    const organizations = organizationsQuery.data;
+    const isLoadingData = organizationsQuery.isLoading;
 
     const setActiveMutation = useMutation({
         mutationFn: async (organizationId: string) => {
@@ -189,16 +189,18 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
         );
     }
 
-    let retryItem = null;
-    if (organizationsQuery.isError) {
-        retryItem = (
+    let loadMoreItem = null;
+    if (organizations.length > 0) {
+        loadMoreItem = (
             <DropdownMenuItem
                 closeOnClick={false}
-                onClick={() => {
-                    void organizationsQuery.refetch();
-                }}
+                disabled={!organizationsQuery.canLoadMore || organizationsQuery.isFetching}
+                onClick={organizationsQuery.loadMore}
+                data-testid="organization-switcher-load-more"
+                className="justify-center text-muted-foreground"
             >
-                {common('actions.retry')}
+                {organizationsQuery.isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+                {common('actions.loadMore')}
             </DropdownMenuItem>
         );
     }
@@ -237,16 +239,14 @@ export function OrganizationSwitcher({ initialActiveOrganizationId }: Organizati
                         organizations={organizations}
                         activeOrganizationId={activeOrganizationId}
                         loadingLabel={t('loading')}
-                        emptyLabel={
-                            organizationsQuery.isError ? common('queryError') : t('noOrganizations')
-                        }
+                        emptyLabel={t('noOrganizations')}
                         personalLabel={t('personal')}
                         personalOrganizationName={t('personalOrganizationName')}
                         currentLabel={t('current')}
                         onSelect={handleOrganizationChange}
                     />
+                    {loadMoreItem}
                 </div>
-                {retryItem}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={() => router.push('/dashboard/organizations')}

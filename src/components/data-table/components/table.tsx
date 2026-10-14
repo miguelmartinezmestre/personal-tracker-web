@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { DataTablePagination } from './data-table-pagination';
+import { LoadMorePagination } from './load-more-pagination';
+import type { PaginatedList } from '../hooks/use-paginated-list';
 import { dataTableFeatures, type DataTableFeatures } from '../data-table-features';
 
 interface DataTableProps<TData extends RowData> {
@@ -19,15 +20,8 @@ interface DataTableProps<TData extends RowData> {
     data: TData[];
     isLoading?: boolean;
     isError?: boolean;
-    error?: unknown;
     onRetry?: () => void;
-    pagination?: {
-        onNextPage: () => void;
-        onPreviousPage: () => void;
-        hasNextPage: boolean;
-        hasPreviousPage: boolean;
-        isLoading?: boolean;
-    };
+    pagination?: PaginatedList;
     emptyMessage?: ReactNode;
     // Extra classes for a column's header and cells, keyed by column id (e.g. to hide on mobile).
     columnClassNames?: Partial<Record<string, string>>;
@@ -38,7 +32,6 @@ export function DataTable<TData extends RowData>({
     data,
     isLoading = false,
     isError = false,
-    error,
     onRetry,
     pagination,
     emptyMessage,
@@ -55,7 +48,7 @@ export function DataTable<TData extends RowData>({
     });
 
     if (isError) {
-        return <QueryErrorFallback error={error} onRetry={onRetry} />;
+        return <QueryErrorFallback onRetry={onRetry} />;
     }
 
     if (isLoading) {
@@ -145,16 +138,7 @@ export function DataTable<TData extends RowData>({
                     <TableBody>{tableRows}</TableBody>
                 </Table>
             </div>
-            {pagination && (
-                <DataTablePagination
-                    onNextPage={pagination.onNextPage}
-                    onPreviousPage={pagination.onPreviousPage}
-                    hasNextPage={pagination.hasNextPage}
-                    hasPreviousPage={pagination.hasPreviousPage}
-                    rowCount={data.length}
-                    isLoading={pagination.isLoading}
-                />
-            )}
+            {pagination && <LoadMorePagination pagination={pagination} rowCount={data.length} />}
         </div>
     );
 }

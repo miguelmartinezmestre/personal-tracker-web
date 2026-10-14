@@ -290,22 +290,6 @@ export function withPaginationLimits(paginationOpts: PaginationOptions): Paginat
     };
 }
 
-export async function withInvalidCursorRetry<T>(
-    paginationOpts: PaginationOptions,
-    queryPage: (paginationOpts: PaginationOptions) => Promise<T>
-): Promise<T> {
-    let normalizedOptions = withPaginationLimits(paginationOpts);
-    if (paginationOpts.cursor) {
-        try {
-            JSON.parse(paginationOpts.cursor);
-        } catch {
-            normalizedOptions = { ...normalizedOptions, cursor: null };
-        }
-    }
-
-    return await queryPage(normalizedOptions);
-}
-
 export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
 const PASSWORD_MIN_LENGTH = 8;
 type PasswordPolicyCode = 'PASSWORD_TOO_SHORT' | 'WEAK_PASSWORD';

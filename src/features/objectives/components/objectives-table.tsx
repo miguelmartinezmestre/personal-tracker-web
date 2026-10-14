@@ -32,7 +32,6 @@ const MOBILE_HIDDEN_COLUMNS = {
 
 export default function ObjectivesTable({ status }: { status: ObjectiveStatusFilter }) {
     const t = useTranslations('Objectives');
-    const common = useTranslations('Common');
     const locale = useLocale();
     const objectives = useObjectives(status);
     const deleteObjective = useMutation({
@@ -139,21 +138,6 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
             },
         },
     ];
-    let loadMoreButton = null;
-    if (objectives.hasMore) {
-        loadMoreButton = (
-            <Button
-                variant="outline"
-                className="mt-4"
-                disabled={objectives.isFetching}
-                onClick={objectives.loadMore}
-                data-testid="objectives-load-more"
-            >
-                {common('actions.loadMore')}
-            </Button>
-        );
-    }
-
     return (
         <div data-testid="objectives-table">
             <DataTable
@@ -161,6 +145,7 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
                 columnClassNames={MOBILE_HIDDEN_COLUMNS}
                 data={objectives.data}
                 isLoading={objectives.isLoading}
+                pagination={objectives}
                 emptyMessage={
                     status === 'all' ? (
                         <div
@@ -176,7 +161,6 @@ export default function ObjectivesTable({ status }: { status: ObjectiveStatusFil
                     )
                 }
             />
-            {loadMoreButton}
         </div>
     );
 }

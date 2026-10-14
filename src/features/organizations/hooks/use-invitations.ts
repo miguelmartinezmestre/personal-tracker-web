@@ -1,11 +1,11 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import type { Id } from '@/convex/_generated/dataModel';
 import { useRouter } from 'next/navigation';
+import { usePaginatedList } from '@/components/data-table/hooks/use-paginated-list';
 import { api } from '@/convex/_generated/api';
 import { authClient } from '@/features/auth/client';
-import { convexQuery } from '@convex-dev/react-query';
 import {
     isOrganizationRoleValue,
     type OrganizationRoleValue,
@@ -14,7 +14,9 @@ import { throwIfAuthClientError } from '@/features/auth/auth-client-response';
 import { acceptInvitationAndActivateOrganization } from '@/features/organizations/lib/accept-invitation';
 import type { FunctionReturnType } from 'convex/server';
 
-type InvitationRaw = FunctionReturnType<typeof api.organizations.getUserInvitations>[number];
+type InvitationRaw = FunctionReturnType<
+    typeof api.organizations.getUserInvitations
+>['page'][number];
 
 export interface Invitation {
     id: InvitationRaw['id'];
@@ -26,32 +28,17 @@ export interface Invitation {
 }
 
 export function usePendingInvitations() {
-    const result = useQuery(convexQuery(api.organizations.getUserInvitations, {}));
-    const { data } = result;
+    const pagination = usePaginatedList(api.organizations.getUserInvitations, {});
+    const invitations: Invitation[] = pagination.data.map(rawInvitation => ({
+        id: rawInvitation.id,
+        email: rawInvitation.email,
+        role: isOrganizationRoleValue(rawInvitation.role) ? rawInvitation.role : 'member',
+        organizationId: rawInvitation.organizationId,
+        organization: rawInvitation.organization,
+        inviter: rawInvitation.inviter ? { name: rawInvitation.inviter.name } : undefined,
+    }));
 
-    let invitations: Invitation[] | undefined;
-    if (data) {
-        invitations = data.map(rawInvitation => {
-            let inviter: Invitation['inviter'];
-            if (rawInvitation.inviter) {
-                inviter = { name: rawInvitation.inviter.name };
-            }
-            let role: OrganizationRoleValue = 'member';
-            if (isOrganizationRoleValue(rawInvitation.role)) {
-                role = rawInvitation.role;
-            }
-            return {
-                id: rawInvitation.id,
-                email: rawInvitation.email,
-                role,
-                organizationId: rawInvitation.organizationId,
-                organization: rawInvitation.organization,
-                inviter,
-            };
-        });
-    }
-
-    return { ...result, data: invitations ?? [] };
+    return { ...pagination, data: invitations };
 }
 
 export function useAcceptInvitation() {
@@ -81,13 +68,10 @@ export function useRejectInvitation() {
     });
 }
 
-export function usePendingOrganizationInvitations(organizationId: string, enabled: boolean) {
-    return useQuery(
-        convexQuery(
-            api.organizations.getOrganizationPendingInvitations,
-            enabled ? { organizationId: organizationId as Id<'organization'> } : 'skip'
-        )
-    );
+export function usePendingOrganizationInvitations(organizationId: string) {
+    return usePaginatedList(api.organizations.getOrganizationPendingInvitations, {
+        organizationId: organizationId as Id<'organization'>,
+    });
 }
 
 export function useCancelInvitation() {

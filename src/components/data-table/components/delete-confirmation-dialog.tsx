@@ -11,7 +11,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -19,8 +18,7 @@ interface DeleteConfirmationDialogProps {
     onConfirm: () => void | Promise<void>;
     title: string;
     description: string;
-    trigger?: React.ReactElement;
-    triggerLabel?: string;
+    trigger: React.ReactElement;
     confirmLabel: string;
     cancelLabel: string;
     isLoading: boolean;
@@ -31,7 +29,6 @@ export function DeleteConfirmationDialog({
     title,
     description,
     trigger,
-    triggerLabel,
     confirmLabel,
     cancelLabel,
     isLoading: externalIsLoading,
@@ -46,25 +43,17 @@ export function DeleteConfirmationDialog({
         event.preventDefault();
         setInternalIsLoading(true);
         try {
+            // Callers report their own errors, so the dialog closes either way.
             await onConfirm();
             setOpen(false);
-        } catch {
-            setOpen(true);
+        } finally {
+            setInternalIsLoading(false);
         }
-        setInternalIsLoading(false);
     };
 
     return (
         <AlertDialog open={open} onOpenChange={setOpen}>
-            <AlertDialogTrigger
-                render={
-                    trigger || (
-                        <Button variant="destructive" size="sm" disabled={isLoading}>
-                            {triggerLabel || confirmLabel}
-                        </Button>
-                    )
-                }
-            />
+            <AlertDialogTrigger render={trigger} />
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>

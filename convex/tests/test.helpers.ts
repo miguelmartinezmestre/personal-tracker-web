@@ -2,8 +2,6 @@ import type { GenericSchema, SchemaDefinition } from 'convex/server';
 import type { TestConvex } from 'convex-test';
 import type { MutationCtx } from '../_generated/server';
 import type { Id } from '../_generated/dataModel';
-import { z } from 'zod';
-import { asTestId } from './test.casts';
 
 const defaultTestSessionIds = new WeakMap<
     TestConvex<SchemaDefinition<GenericSchema, boolean>>,
@@ -63,25 +61,6 @@ export async function createTestUser(
         password: options.password,
         role,
     };
-}
-
-export async function createTestUsers(
-    t: TestConvex<SchemaDefinition<GenericSchema, boolean>>,
-    users: Array<{
-        userId: string;
-        email: string;
-        name: string;
-        password?: string;
-        role?: string;
-        emailVerified?: boolean;
-    }>
-): Promise<TestUserData[]> {
-    const results: TestUserData[] = [];
-    for (const user of users) {
-        const result = await createTestUser(t, user);
-        results.push(result);
-    }
-    return results;
 }
 
 export async function createTestOrganization(
@@ -195,23 +174,4 @@ export async function createTestSession(
             updatedAt: now,
         });
     });
-}
-
-export function readScheduledFunctionArg(row: {
-    readonly args: readonly (string | number | boolean | null | object | undefined)[];
-}): { trigger?: string; userId?: Id<'user'> } | undefined {
-    const value = row.args[0];
-    const parsed = z
-        .object({ trigger: z.string().optional(), userId: z.string().optional() })
-        .safeParse(value);
-    if (!parsed.success) return undefined;
-    const trigger = parsed.data.trigger;
-    const userIdValue = parsed.data.userId;
-    if (userIdValue === undefined) {
-        return { trigger };
-    }
-    return {
-        trigger,
-        userId: asTestId<'user'>(userIdValue),
-    };
 }

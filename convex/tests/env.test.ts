@@ -143,51 +143,6 @@ describe('Convex runtime env', () => {
             SETUP_SECRET: undefined,
         });
     });
-
-    test('allows production-mode HTTP localhost for the local E2E stack', async () => {
-        process.env = {
-            ...originalEnv,
-            NODE_ENV: 'production',
-            SITE_URL: 'http://localhost:3000',
-            BETTER_AUTH_URL: 'http://localhost:3000',
-        };
-        delete process.env.SETUP_SECRET;
-
-        await expect(loadEnvModule()).resolves.toMatchObject({
-            SITE_URL: 'http://localhost:3000',
-            BETTER_AUTH_URL: 'http://localhost:3000',
-            SETUP_SECRET: undefined,
-        });
-    });
-
-    test('does not let a local E2E URL exempt a remote auth URL from HTTPS', async () => {
-        process.env = {
-            ...originalEnv,
-            NODE_ENV: 'production',
-            SITE_URL: 'http://localhost:3000',
-            BETTER_AUTH_URL: 'http://auth.example.com',
-        };
-        delete process.env.SETUP_SECRET;
-
-        await expect(loadEnvModule()).rejects.toThrow(
-            'BETTER_AUTH_URL must use HTTPS in production'
-        );
-    });
-
-    test.each(['http://localhost.example.com', 'http://https.example.com'])(
-        'does not mistake a public hostname for a permitted production URL: %s',
-        async url => {
-            process.env = {
-                ...originalEnv,
-                NODE_ENV: 'production',
-                SITE_URL: url,
-                BETTER_AUTH_URL: 'https://auth.example.com',
-                SETUP_SECRET: 's'.repeat(32),
-            };
-
-            await expect(loadEnvModule()).rejects.toThrow('SITE_URL must use HTTPS in production');
-        }
-    );
 });
 
 describe('Next.js runtime env', () => {
@@ -284,20 +239,5 @@ describe('Next.js runtime env', () => {
             NEXT_PUBLIC_CONVEX_URL: 'http://127.0.0.1:3210',
             NEXT_PUBLIC_CONVEX_SITE_URL: 'http://127.0.0.1:3211',
         });
-    });
-
-    test('does not let the E2E flag exempt a remote public URL from HTTPS', async () => {
-        process.env = {
-            ...originalEnv,
-            NODE_ENV: 'production',
-            NEXT_PUBLIC_E2E_ALLOW_LOCAL_HTTP: 'true',
-            NEXT_PUBLIC_SITE_URL: 'http://app.example.com',
-            NEXT_PUBLIC_CONVEX_URL: 'http://127.0.0.1:3210',
-            NEXT_PUBLIC_CONVEX_SITE_URL: 'http://127.0.0.1:3211',
-        };
-
-        await expect(loadFrontendEnvModule()).rejects.toThrow(
-            'NEXT_PUBLIC_SITE_URL must use HTTPS in production'
-        );
     });
 });

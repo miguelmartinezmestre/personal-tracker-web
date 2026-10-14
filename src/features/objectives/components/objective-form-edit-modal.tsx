@@ -105,7 +105,17 @@ export default function EditObjectiveFormModal({
             cancelTestId="objective-edit-cancel-button"
             submitTestId="objective-edit-save-button"
         >
-            {form => <ObjectiveFormFields form={form} keptDeadline={defaultValues.deadline} />}
+            {form => (
+                <ObjectiveFormFields
+                    form={form}
+                    keptDeadline={defaultValues.deadline}
+                    currentCategory={
+                        objective.categoryId && objective.categoryName
+                            ? { id: objective.categoryId, name: objective.categoryName }
+                            : undefined
+                    }
+                />
+            )}
         </FormModal>
     );
 }

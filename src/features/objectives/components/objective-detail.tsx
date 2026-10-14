@@ -54,7 +54,6 @@ export default function ObjectiveDetail({
     if (objective.isError) {
         return (
             <QueryErrorFallback
-                error={objective.error}
                 onRetry={() => {
                     void objective.refetch();
                 }}

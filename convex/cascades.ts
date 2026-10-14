@@ -1,6 +1,7 @@
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
-import { internalMutation, type MutationCtx } from './_generated/server';
+import type { MutationCtx } from './_generated/server';
+import { internalMutation } from './objectiveStats';
 import { isPersonalOrganizationForUser } from './personalOrganization';
 import { v } from 'convex/values';
 

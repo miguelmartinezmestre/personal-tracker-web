@@ -25,8 +25,10 @@ import type * as generated_auth from "../generated/auth.js";
 import type * as generated_server from "../generated/server.js";
 import type * as http from "../http.js";
 import type * as objectiveRecords from "../objectiveRecords.js";
+import type * as objectiveStats from "../objectiveStats.js";
 import type * as objectives from "../objectives.js";
 import type * as organizations from "../organizations.js";
+import type * as pagination from "../pagination.js";
 import type * as personalOrganization from "../personalOrganization.js";
 import type * as rls_authContext from "../rls/authContext.js";
 import type * as rls_organizationTableRules from "../rls/organizationTableRules.js";
@@ -60,8 +62,10 @@ declare const fullApi: ApiFromModules<{
   "generated/server": typeof generated_server;
   http: typeof http;
   objectiveRecords: typeof objectiveRecords;
+  objectiveStats: typeof objectiveStats;
   objectives: typeof objectives;
   organizations: typeof organizations;
+  pagination: typeof pagination;
   personalOrganization: typeof personalOrganization;
   "rls/authContext": typeof rls_authContext;
   "rls/organizationTableRules": typeof rls_organizationTableRules;
@@ -100,4 +104,5 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
+  objectiveStats: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"objectiveStats">;
 };

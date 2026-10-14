@@ -78,9 +78,27 @@ describe('convex organizations', () => {
 
         const asOwner = await userIdentity.query(
             api.organizations.getOrganizationPendingInvitations,
-            { organizationId }
+            { organizationId, paginationOpts: { numItems: 20, cursor: null } }
         );
-        expect(asOwner.map(invitation => invitation.email)).toEqual(['pending@example.com']);
+        expect(asOwner.page.map(invitation => invitation.email)).toEqual(['pending@example.com']);
+        expect(asOwner.isDone).toBe(true);
+
+        await insertInvitation('later@example.com', 'pending', now + 120_000);
+        const firstPage = await userIdentity.query(
+            api.organizations.getOrganizationPendingInvitations,
+            { organizationId, paginationOpts: { numItems: 1, cursor: null } }
+        );
+        expect(firstPage.page.map(invitation => invitation.email)).toEqual(['later@example.com']);
+        expect(firstPage.isDone).toBe(false);
+        const secondPage = await userIdentity.query(
+            api.organizations.getOrganizationPendingInvitations,
+            { organizationId, paginationOpts: { numItems: 1, cursor: firstPage.continueCursor } }
+        );
+        expect(secondPage.page.map(invitation => invitation.email)).toEqual([
+            'pending@example.com',
+        ]);
+        // Only an expired invitation follows, so there is no next page to offer.
+        expect(secondPage.isDone).toBe(true);
 
         const suffix = Math.random().toString(36).substring(2, 15);
         const plainMember = await createTestUser(t, {
@@ -103,8 +121,11 @@ describe('convex organizations', () => {
                 banReason: null,
                 banned: false,
             })
-            .query(api.organizations.getOrganizationPendingInvitations, { organizationId });
-        expect(asMember).toEqual([]);
+            .query(api.organizations.getOrganizationPendingInvitations, {
+                organizationId,
+                paginationOpts: { numItems: 20, cursor: null },
+            });
+        expect(asMember.page).toEqual([]);
     });
     test('getOrganizationMembers rejects unauthenticated users', async () => {
         await expect(

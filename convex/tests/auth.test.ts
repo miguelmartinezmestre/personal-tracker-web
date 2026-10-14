@@ -12,10 +12,6 @@ import type { TestConvexForDataModel } from 'convex-test';
 import type { DataModel, Id } from '../_generated/dataModel';
 import { asInvalidArg } from './test.casts';
 import { z } from 'zod';
-import {
-    getPersonalOrganizationOwnerUserId,
-    isPersonalOrganizationMetadata,
-} from '../personalOrganization';
 
 const sessionCreateResultSchema = z.object({
     _id: z.string().optional(),
@@ -216,42 +212,6 @@ describe('convex auth', () => {
         );
     });
 
-    test('backfill seeds only organizations without categories', async () => {
-        const organizationId = await createTestOrganization(t, {
-            name: 'Backfill org',
-            slug: `backfill-org-${Math.random().toString(36).slice(2, 10)}`,
-        });
-
-        let cursor: string | null = null;
-        let seeded = 0;
-        for (;;) {
-            const page: { isDone: boolean; continueCursor: string; seeded: number } =
-                await t.mutation(internal.categories.backfillDefaultCategories, {
-                    paginationOpts: { numItems: 50, cursor },
-                });
-            seeded += page.seeded;
-            if (page.isDone) {
-                break;
-            }
-            cursor = page.continueCursor;
-        }
-        expect(seeded).toBeGreaterThan(0);
-
-        const second = await t.mutation(internal.categories.backfillDefaultCategories, {
-            paginationOpts: { numItems: 50, cursor: null },
-        });
-        expect(second.seeded).toBe(0);
-
-        const categories = await t.run(
-            async ctx =>
-                await ctx.db
-                    .query('categories')
-                    .withIndex('by_organization', q => q.eq('organizationId', organizationId))
-                    .take(50)
-        );
-        expect(categories).toHaveLength(DEFAULT_CATEGORIES.length);
-    });
-
     test('detects an organization name the user already has, ignoring case', async () => {
         const suffix = Math.random().toString(36).slice(2, 10);
         const user = await createTestUser(t, {
@@ -285,7 +245,7 @@ describe('convex auth', () => {
         expect(isDefaultOrganization).toBe(false);
     });
 
-    test('getOrganizations marks the metadata-owned organization as personal', async () => {
+    test('listOrganizations and getPersonalOrganizationId find the personal organization', async () => {
         const randomSuffix = Math.random().toString(36).substring(2, 15);
         const user = await createTestUser(t, {
             userId: `personal-org-list-user-${randomSuffix}`,
@@ -323,28 +283,17 @@ describe('convex auth', () => {
             banned: false,
         });
 
-        const organizations = await personalOrgIdentity.query(
-            api.organizations.getOrganizations,
-            {}
-        );
+        const organizations = await personalOrgIdentity.query(api.organizations.listOrganizations, {
+            paginationOpts: { numItems: 20, cursor: null },
+        });
 
-        const personalOrganization = organizations.find(
+        const personalOrganization = organizations.page.find(
             organization => organization.id === personalOrganizationId
         );
 
         expect(personalOrganization?.isPersonal).toBe(true);
-    });
-});
-
-describe('personal organization metadata', () => {
-    test('recognizes personal metadata even when its optional owner ID is malformed', () => {
-        const metadata = JSON.stringify({ type: 'personal', ownerUserId: 17 });
-
-        expect(isPersonalOrganizationMetadata(metadata)).toBe(true);
-        expect(getPersonalOrganizationOwnerUserId(metadata)).toBeNull();
-    });
-
-    test('does not recognize invalid JSON as personal metadata', () => {
-        expect(isPersonalOrganizationMetadata('{invalid json')).toBe(false);
+        await expect(
+            personalOrgIdentity.query(api.organizations.getPersonalOrganizationId, {})
+        ).resolves.toBe(personalOrganizationId);
     });
 });

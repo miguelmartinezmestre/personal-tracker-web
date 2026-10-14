@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
     allowedDevOrigins: ['127.0.0.1', 'localhost'],
     experimental: {
         turbopackFileSystemCacheForDev: e2eDistDir ? false : true,
+        turbopackGc: true,
+        turbopackRustReactCompiler: true,
     },
     typedRoutes: true,
     compiler: {

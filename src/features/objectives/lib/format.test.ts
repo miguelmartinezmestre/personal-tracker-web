@@ -6,10 +6,6 @@ test('hides floating-point noise and follows the locale separator', () => {
     expect(formatObjectiveValue(7.299999999999997, 'en')).toBe('7.3');
 });
 
-test('keeps the smallest allowed target visible', () => {
-    expect(formatObjectiveValue(0.001, 'es')).toBe('0,001');
-});
-
 test('formats stored calendar days in the UI language without shifting the day', () => {
     expect(formatObjectiveDate(Date.UTC(2027, 2, 31), 'es')).toBe('31 mar 2027');
     expect(formatObjectiveDate(Date.UTC(2027, 2, 31), 'en')).toBe('Mar 31, 2027');

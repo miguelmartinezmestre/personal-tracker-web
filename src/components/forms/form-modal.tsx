@@ -16,9 +16,7 @@ import {
 } from '@/components/ui/dialog';
 
 type FormModalProps<TFormValues extends object> = {
-    trigger?: React.ReactElement;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
+    trigger: React.ReactElement;
     title: string;
     description?: string;
     formOptions: Omit<AnyFormOptions, 'onSubmit'> & {
@@ -30,15 +28,12 @@ type FormModalProps<TFormValues extends object> = {
     cancelLabel: string;
     pendingLabel?: string;
     isPending?: boolean;
-    contentClassName?: string;
     cancelTestId?: string;
     submitTestId?: string;
 };
 
 export default function FormModal<TFormValues extends object>({
     trigger,
-    open: controlledOpen,
-    onOpenChange: controlledOnOpenChange,
     title,
     description,
     formOptions,
@@ -48,25 +43,18 @@ export default function FormModal<TFormValues extends object>({
     cancelLabel,
     pendingLabel,
     isPending = false,
-    contentClassName = 'sm:max-w-[600px] max-h-[90vh] overflow-y-auto',
     cancelTestId,
     submitTestId,
 }: FormModalProps<TFormValues>) {
-    const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+    const [open, setOpenState] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    const isControlled = controlledOpen !== undefined;
-    const open = isControlled ? controlledOpen : uncontrolledOpen;
 
     const setOpen = (nextOpen: boolean) => {
         // Closing without saving discards the draft, so reopening shows the stored values.
         if (!nextOpen) {
             form.reset();
         }
-        if (isControlled) {
-            controlledOnOpenChange?.(nextOpen);
-        } else {
-            setUncontrolledOpen(nextOpen);
-        }
+        setOpenState(nextOpen);
     };
 
     const form = useForm({
@@ -85,8 +73,8 @@ export default function FormModal<TFormValues extends object>({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {trigger ? <DialogTrigger render={trigger} /> : null}
-            <DialogContent className={contentClassName}>
+            <DialogTrigger render={trigger} />
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}

@@ -12,7 +12,7 @@ import { DeleteConfirmationDialog } from '@/components/data-table/components/del
 import { getErrorLocale, resolveErrorMessage } from '@/lib/error-messages';
 import {
     useLeaveOrganization,
-    useOrganizations,
+    usePersonalOrganizationId,
 } from '@/features/organizations/hooks/use-organizations';
 
 export default function OrganizationLeaveButton({
@@ -25,15 +25,13 @@ export default function OrganizationLeaveButton({
     const t = useTranslations('OrganizationMembers');
     const router = useRouter();
     const session = useQuery(convexQuery(api.organizations.getCurrentSession, {}));
-    const organizations = useOrganizations();
+    const personalOrganization = usePersonalOrganizationId();
     const leaveOrganization = useLeaveOrganization();
     const isActive = session.data?.session.activeOrganizationId === organizationId;
-    const personalOrganizationId = organizations.data?.find(
-        organization => organization.isPersonal
-    )?.id;
+    const personalOrganizationId = personalOrganization.data ?? undefined;
     // Without both answers we cannot tell whether to switch first; leaving the active
     // organization without a fallback would end the session's organization context.
-    const isReady = !session.isPending && !organizations.isPending;
+    const isReady = !session.isPending && !personalOrganization.isPending;
     const missingFallback = isActive && !personalOrganizationId;
 
     return (
